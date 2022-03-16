@@ -1,0 +1,23 @@
+#!/bin/sh -e
+
+usage() {
+  echo "OVERVIEW: Build all workspace packages in order of dependencies."
+  exit
+}
+
+if [ "$1" = '-h' ] || [ "$1" = '--help' ]; then
+  usage
+fi
+
+(
+  PROJECT_ROOT="$(cd $(dirname $0)/..; pwd)"
+
+  cd $PROJECT_ROOT
+  echo "[BOOTSTRAP]: Installing workspace dependencies"
+  yarn install
+  echo "[BOOTSTRAP]: Compiling packages..."
+  yarn workspace utils build
+  echo "[BOOTSTRAP]: Built 'utils' package."
+  yarn workspace react-ui build
+  echo "[BOOTSTRAP]: Built 'react-ui' package."
+)

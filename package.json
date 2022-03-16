@@ -1,0 +1,21 @@
+{
+  "name": "mbari",
+  "version": "1.0.0",
+  "description": "Web based UI and client applications for MBARI.",
+  "repository": "https://github.com/SumoCreations/mbari.git",
+  "author": "Sumo Creations LLC",
+  "license": "MIT",
+  "private": true,
+  "workspaces": [
+    "packages/*"
+  ],
+  "engines": {
+    "node": "16.x.x",
+    "yarn": "1.22.x"
+  },
+  "scripts": {
+    "prettier": "npx prettier --write packages/*/src/**/*.{js,md,ts,tsx}",
+    "build": "./scripts/bootstrap.build",
+    "build-test": "./scripts/test.build"
+  }
+}
