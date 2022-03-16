@@ -6,9 +6,17 @@ Simply install the project dependencies, run the bootstrap script to build the p
 
 ```
 yarn install
-./scripts/bootstrap.build
+yarn build
 yarn workspace lrauv-dash2 start
 ```
+
+If you would like to run the storybook to reference the UI library you can start the react-ui workspace:
+
+```
+yarn workspace react-ui
+```
+
+We've pre-fixed the ui workspace with 'react' to future proof in case we create a duplicate component set in another framework down the road (i.e. Vue.js)
 
 ### Deployment
 
