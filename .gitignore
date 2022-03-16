@@ -2,15 +2,12 @@
 
 # dependencies
 node_modules
-/.pnp
+.pnp
 .pnp.js
 
-# testing
-/coverage
-
 # next.js
-/.next/
-/out/
+.next/
+out/
 
 # production
 build
@@ -26,6 +23,9 @@ yarn-debug.log*
 yarn-error.log*
 .pnpm-debug.log*
 
+# Mac OS
+.DS_Store
+
 # local env files
 .env.local
 .env.development.local
@@ -37,3 +37,6 @@ yarn-error.log*
 
 # typescript
 *.tsbuildinfo
+
+# testing
+coverage
