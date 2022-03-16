@@ -1,0 +1,42 @@
+{
+  "name": "utils",
+  "version": "1.0.0",
+  "types": "./lib/index.d.ts",
+  "files": [
+    "lib"
+  ],
+  "main": "lib/index.js",
+  "private": true,
+  "sideEffects": false,
+  "scripts": {
+    "build": "rm -rf ./lib && tsc",
+    "build-test": "rm -rf ./lib && tsc -m CommonJS"
+  },
+  "eslintConfig": {
+    "extends": "react-app"
+  },
+  "browserslist": {
+    "production": [
+      ">0.2%",
+      "not dead",
+      "not op_mini all"
+    ],
+    "development": [
+      "last 1 chrome version",
+      "last 1 firefox version",
+      "last 1 safari version"
+    ]
+  },
+  "devDependencies": {
+    "@types/humps": "^2.0.0",
+    "@types/node": "12.6.8",
+    "@types/react": "16.8.23",
+    "jest": "26.6.0",
+    "prettier": "^2.1.2",
+    "typescript": "^4.0.5"
+  },
+  "dependencies": {
+    "clsx": "^1.1.1",
+    "humps": "^2.0.1"
+  }
+}
