@@ -1,0 +1,30 @@
+{
+  "compilerOptions": {
+    "target": "ES5",
+    "lib": ["es2015", "es2017", "dom"],
+    "module": "esnext",
+    "declaration": true,
+    "outDir": "./lib",
+    "esModuleInterop": true,
+    "strict": true,
+    "types": ["jest"],
+    "jsx": "react",
+    "moduleResolution": "node",
+    "allowJs": true,
+    "skipLibCheck": true,
+    "allowSyntheticDefaultImports": true,
+    "forceConsistentCasingInFileNames": true,
+    "resolveJsonModule": true,
+    "isolatedModules": true,
+    "noEmit": false
+  },
+  "include": ["src"],
+  "exclude": [
+    "node_modules",
+    "__tests__",
+    "**/__tests__/*",
+    "**/*.test.*",
+    "lib",
+    "src/stories/**"
+  ]
+}

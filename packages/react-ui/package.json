@@ -1,0 +1,109 @@
+{
+  "name": "react-ui",
+  "version": "1.0.0",
+  "private": true,
+  "types": "./lib/index.d.ts",
+  "files": [
+    "lib"
+  ],
+  "main": "lib/index.js",
+  "scripts": {
+    "start": "yarn tailwind & yarn storybook",
+    "build": "rm -rf ./lib && tsc && yarn build-tailwind",
+    "build-tailwind": "npx tailwindcss -i ./src/css/base.css -o ./lib/mbari-ui.css",
+    "build-test": "rm -rf ./lib && tsc -m CommonJS",
+    "tailwind": "npx tailwindcss -i ./src/css/base.css -o ./lib/mbari-ui.css  --watch",
+    "storybook": "start-storybook -p 5000",
+    "prettier": "prettier --config ../../.prettierrc 'src/**/*.{js,jsx,ts,tsx}' --write"
+  },
+  "eslintConfig": {
+    "extends": [
+      "react-app",
+      "react-app/jest"
+    ],
+    "overrides": [
+      {
+        "files": [
+          "**/*.stories.*"
+        ],
+        "rules": {
+          "import/no-anonymous-default-export": "off"
+        }
+      }
+    ]
+  },
+  "browserslist": {
+    "production": [
+      ">0.2%",
+      "not dead",
+      "not op_mini all"
+    ],
+    "development": [
+      "last 1 chrome version",
+      "last 1 firefox version",
+      "last 1 safari version"
+    ]
+  },
+  "dependencies": {
+    "@fortawesome/fontawesome-svg-core": "^1.2.36",
+    "@fortawesome/pro-duotone-svg-icons": "^5.15.4",
+    "@fortawesome/pro-light-svg-icons": "^5.15.4",
+    "@fortawesome/pro-regular-svg-icons": "^5.15.4",
+    "@fortawesome/pro-solid-svg-icons": "^5.15.4",
+    "@fortawesome/react-fontawesome": "^0.1.16",
+    "@hookform/resolvers": "^2.8.2",
+    "@sumocreations/forms": "^1.0.1",
+    "@testing-library/jest-dom": "^5.11.4",
+    "@testing-library/react": "^11.1.0",
+    "@testing-library/user-event": "^12.1.10",
+    "@types/jest": "^26.0.15",
+    "@types/node": "^12.0.0",
+    "@types/react": "^17.0.0",
+    "@types/react-dom": "^17.0.0",
+    "autoprefixer": "^9",
+    "clsx": "^1.1.1",
+    "immutability-helper": "^3.1.1",
+    "luxon": "^2.3.1",
+    "postcss": "^8",
+    "postcss-cli": "^9",
+    "postcss-import": "^14.0.2",
+    "react": "^17.0.2",
+    "react-dnd": "^15.1.1",
+    "react-dnd-html5-backend": "^15.1.2",
+    "react-dom": "^17.0.2",
+    "react-hook-form": "^7.17.5",
+    "react-router-dom": "^6.2.1",
+    "react-select": "^5.1.0",
+    "tailwindcss": "^3.0.7",
+    "typescript": "^4.1.2",
+    "uuid": "^8.3.2",
+    "yup": "^0.32.11"
+  },
+  "devDependencies": {
+    "@storybook/addon-a11y": "^6.4.9",
+    "@storybook/addon-actions": "^6.4.9",
+    "@storybook/addon-console": "^1.2.3",
+    "@storybook/addon-controls": "^6.4.9",
+    "@storybook/addon-docs": "^6.4.9",
+    "@storybook/addon-essentials": "^6.4.9",
+    "@storybook/addon-knobs": "^6.3.1",
+    "@storybook/addon-links": "^6.4.9",
+    "@storybook/addon-postcss": "^2.0.0",
+    "@storybook/addon-viewport": "^6.4.9",
+    "@storybook/builder-webpack5": "^6.4.9",
+    "@storybook/manager-webpack5": "^6.4.9",
+    "@storybook/node-logger": "^6.4.9",
+    "@storybook/react": "^6.4.9",
+    "@sumocreations/scaffolds": "^1.0.9",
+    "@types/uuid": "^8.3.4",
+    "babel-loader": "8.1.0",
+    "css-loader": "^6.5.1",
+    "postcss-import": "^14.0.2",
+    "postcss-loader": "^6.2.1",
+    "prettier-plugin-tailwindcss": "^0.1.7",
+    "resolve-url-loader": "^5.0.0",
+    "simple-scaffold": "^1.0.3",
+    "storybook-addon-designs": "^6.2.0",
+    "style-loader": "^2.0.0"
+  }
+}
