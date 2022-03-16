@@ -47,10 +47,9 @@ commands:
       - save_cache:
           paths:
             - node_modules
-            - packages/client/node_modules
-            - packages/api-client/node_modules
-            - packages/parsers/node_modules
-            - packages/ui/node_modules
+            - packages/lrauv-dash2/node_modules
+            # - packages/api-client/node_modules
+            - packages/react-ui/node_modules
             - packages/utils/node_modules
           key: v1-packages-{{ .Branch }}-{{ .Revision }}
 
@@ -122,23 +121,23 @@ jobs:
       - test-workspace:
           workspace: 'lrauv-dash2'
 
-  deploy_client:
-    executor:
-      name: node/default
-      tag: '16.13.1'
-    steps:
-      - checkout
-      - setup-environment
-      - restore-monorepo
-      - install-monorepo
-      - aws-cli/setup:
-          profile-name: AWS_PROFILE_NAME
-          aws-secret-access-key: AWS_SECRET_ACCESS_KEY
-          aws-access-key-id: AWS_ACCESS_KEY_ID
-          aws-region: AWS_ACCESS_DEFAULT_REGION
-      - run:
-          command: cd packages/client && aws s3 cp build $CLIENT_S3_BUCKET_URL --recursive
-          name: deploy
+  # deploy_client:
+  #   executor:
+  #     name: node/default
+  #     tag: '16.13.1'
+  #   steps:
+  #     - checkout
+  #     - setup-environment
+  #     - restore-monorepo
+  #     - install-monorepo
+  #     - aws-cli/setup:
+  #         profile-name: AWS_PROFILE_NAME
+  #         aws-secret-access-key: AWS_SECRET_ACCESS_KEY
+  #         aws-access-key-id: AWS_ACCESS_KEY_ID
+  #         aws-region: AWS_ACCESS_DEFAULT_REGION
+  #     - run:
+  #         command: cd packages/client && aws s3 cp build $CLIENT_S3_BUCKET_URL --recursive
+  #         name: deploy
 
 workflows:
   build_and_deploy:
