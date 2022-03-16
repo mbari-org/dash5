@@ -146,12 +146,12 @@ workflows:
       - test_client:
           requires:
             - build
-      - deploy_client:
-          requires:
-            - build
-          filters:
-            branches:
-              only:
-                - develop
-                - staging
-                - main
+      # - deploy_client:
+      #     requires:
+      #       - build
+      #     filters:
+      #       branches:
+      #         only:
+      #           - develop
+      #           - staging
+      #           - main
