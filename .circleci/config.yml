@@ -16,18 +16,21 @@ commands:
             case $CIRCLE_BRANCH in
               staging)
                 echo 'export STAGE="staging"' >> $BASH_ENV
+                echo 'export CLIENT_S3_BUCKET_URL="s3://mbari-dash-staging" >> $BASH_ENV'
                 echo 'export REACT_APP_API_URL=$API_URL_STAGING' >> $BASH_ENV
                 echo 'export REACT_APP_STAGE="staging"' >> $BASH_ENV
                 ;;
 
               main)
                 echo 'export STAGE="prod"' >> $BASH_ENV
+                echo 'export CLIENT_S3_BUCKET_URL="s3://mbari-dash-prod" >> $BASH_ENV'
                 echo 'export REACT_APP_API_URL=$API_URL_PROD' >> $BASH_ENV
                 echo 'export REACT_APP_STAGE="prod"' >> $BASH_ENV
                 ;;
 
               *)
                 echo 'export STAGE="dev"' >> $BASH_ENV
+                echo 'export CLIENT_S3_BUCKET_URL="s3://mbari-dash-dev"' >> $BASH_ENV
                 echo 'export REACT_APP_API_URL=$API_URL_DEV' >> $BASH_ENV
                 echo 'export REACT_APP_STAGE="dev"' >> $BASH_ENV
                 ;;
@@ -112,46 +115,46 @@ jobs:
       - install-monorepo
       - build-monorepo
 
-  test_client:
+  test_ui:
     executor:
       name: node/default
       tag: '16.13.1'
     steps:
       - checkout
       - test-workspace:
-          workspace: 'lrauv-dash2'
+          workspace: 'react-ui'
 
-  # deploy_client:
-  #   executor:
-  #     name: node/default
-  #     tag: '16.13.1'
-  #   steps:
-  #     - checkout
-  #     - setup-environment
-  #     - restore-monorepo
-  #     - install-monorepo
-  #     - aws-cli/setup:
-  #         profile-name: AWS_PROFILE_NAME
-  #         aws-secret-access-key: AWS_SECRET_ACCESS_KEY
-  #         aws-access-key-id: AWS_ACCESS_KEY_ID
-  #         aws-region: AWS_ACCESS_DEFAULT_REGION
-  #     - run:
-  #         command: cd packages/client && aws s3 cp build $CLIENT_S3_BUCKET_URL --recursive
-  #         name: deploy
+  deploy_ui:
+    executor:
+      name: node/default
+      tag: '16.13.1'
+    steps:
+      - checkout
+      - setup-environment
+      - restore-monorepo
+      - install-monorepo
+      - aws-cli/setup:
+          profile-name: AWS_PROFILE_NAME
+          aws-secret-access-key: AWS_SECRET_ACCESS_KEY
+          aws-access-key-id: AWS_ACCESS_KEY_ID
+          aws-region: AWS_ACCESS_DEFAULT_REGION
+      - run:
+          command: cd packages/react-ui && aws s3 cp build $CLIENT_S3_BUCKET_URL --recursive
+          name: deploy
 
 workflows:
   build_and_deploy:
     jobs:
       - build
-      - test_client:
+      - test_ui:
           requires:
             - build
-      # - deploy_client:
-      #     requires:
-      #       - build
-      #     filters:
-      #       branches:
-      #         only:
-      #           - develop
-      #           - staging
-      #           - main
+      - deploy_ui:
+          requires:
+            - test_ui
+          filters:
+            branches:
+              only:
+                - develop
+                - staging
+                - main
