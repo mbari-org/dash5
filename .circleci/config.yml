@@ -76,8 +76,8 @@ commands:
           name: Bootstrap Project
           command: yarn build
       - run:
-          name: Build Client
-          command: yarn workspace client build
+          name: Build Dash2 Client
+          command: yarn workspace lrauv-dash2 build
       - save_cache:
           paths:
             - packages/client/build
