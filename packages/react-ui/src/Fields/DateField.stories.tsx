@@ -56,7 +56,7 @@ export const Error = Template.bind({})
 Error.args = {
   ...args,
   required: true,
-  error: 'Please select a valid date.',
+  errorMessage: 'Please select a valid date.',
 }
 
 export const Disabled = Template.bind({})
