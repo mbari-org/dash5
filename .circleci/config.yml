@@ -80,10 +80,9 @@ commands:
           command: yarn workspace lrauv-dash2 build
       - save_cache:
           paths:
-            - packages/client/build
-            - packages/api-client/lib
-            - packages/parsers/lib
-            - packages/ui/lib
+            - packages/lrauv-dash2/build
+            # - packages/api-client/lib
+            - packages/react-ui/lib
             - packages/utils/lib
           key: v1-builds-{{ .Branch }}-{{ .Revision }}
 
