@@ -138,6 +138,9 @@ jobs:
           aws-access-key-id: AWS_ACCESS_KEY_ID
           aws-region: AWS_ACCESS_DEFAULT_REGION
       - run:
+          command: yarn workspace react-ui build:storybook
+          name: build storybook
+      - run:
           command: cd packages/react-ui && aws s3 cp build $CLIENT_S3_BUCKET_URL --recursive
           name: deploy
 
