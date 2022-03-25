@@ -148,12 +148,12 @@ workflows:
   build_and_deploy:
     jobs:
       - build
-      - test_ui:
+      - test:
           requires:
             - build
       - deploy_ui:
           requires:
-            - test_ui
+            - test
           filters:
             branches:
               only:
