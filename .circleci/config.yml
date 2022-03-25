@@ -50,8 +50,7 @@ commands:
       - save_cache:
           paths:
             - node_modules
-            - packages/lrauv-dash2/node_modules
-            # - packages/api-client/node_modules
+            - apps/lrauv-dash2/node_modules
             - packages/react-ui/node_modules
             - packages/utils/node_modules
           key: v1-packages-{{ .Branch }}-{{ .Revision }}
@@ -73,17 +72,16 @@ commands:
   build-monorepo:
     steps:
       - run:
-          name: Bootstrap Project
-          command: yarn build
-      - run:
-          name: Build Dash2 Client
-          command: yarn workspace lrauv-dash2 build
+          name: Build with Turborepo
+          command: yarn turbo run build
       - save_cache:
           paths:
-            - packages/lrauv-dash2/build
-            # - packages/api-client/lib
+            - apps/lrauv-dash2/.next
+            - apps/lrauv-dash2/.turbo
             - packages/react-ui/lib
+            - packages/react-ui/.turbo
             - packages/utils/lib
+            - packages/utils/.turbo
           key: v1-builds-{{ .Branch }}-{{ .Revision }}
 
   test-workspace:
@@ -107,26 +105,28 @@ jobs:
   build:
     executor:
       name: node/default
-      tag: '16.13.1'
+      tag: '14.19.1'
     steps:
       - checkout
       - setup-environment
       - install-monorepo
       - build-monorepo
 
-  test_ui:
+  test:
     executor:
       name: node/default
-      tag: '16.13.1'
+      tag: '14.19.1'
     steps:
       - checkout
-      - test-workspace:
-          workspace: 'react-ui'
+      - restore-monorepo
+      - run:
+          command: yarn workspace << parameters.workspace >> test
+          name: Run YARN tests
 
   deploy_ui:
     executor:
       name: node/default
-      tag: '16.13.1'
+      tag: '14.19.1'
     steps:
       - checkout
       - setup-environment
