@@ -84,23 +84,6 @@ commands:
             - packages/utils/.turbo
           key: v1-builds-{{ .Branch }}-{{ .Revision }}
 
-  test-workspace:
-    parameters:
-      workspace:
-        description: The workspace to test
-        type: string
-        default: lrauv-dash2
-    steps:
-      - checkout
-      - restore-monorepo
-      - install-monorepo
-      - run:
-          name: Rebuild dependencies with CommonJS
-          command: yarn build-test
-      - run:
-          command: yarn workspace << parameters.workspace >> test
-          name: Run YARN tests
-
 jobs:
   build:
     executor:
@@ -118,10 +101,12 @@ jobs:
       tag: '14.19.1'
     steps:
       - checkout
+      - setup-environment
       - restore-monorepo
+      - install-monorepo
       - run:
-          command: yarn workspace << parameters.workspace >> test
-          name: Run YARN tests
+          command: yarn turbo run test
+          name: Run turbo repo tests
 
   deploy_ui:
     executor:
