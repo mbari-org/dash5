@@ -10,7 +10,6 @@ const packages = readdirSync(basePath).filter((name) =>
 module.exports = {
   preset: 'ts-jest',
   testEnvironment: 'jsdom',
-
   moduleNameMapper: {
     '^.+\\.(css|less|scss)$': 'babel-jest',
     // automatically generated list of our packages from packages directory.
@@ -24,6 +23,8 @@ module.exports = {
     ),
   },
   modulePathIgnorePatterns: [
+    'node_modules',
+    'jest-test-results.json',
     ...packages.reduce(
       (acc, name) => [...acc, `<rootDir>/packages/${name}/dist`],
       []

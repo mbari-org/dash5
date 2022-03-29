@@ -15,6 +15,7 @@
     "tailwind": "npx tailwindcss -i ./src/css/base.css -o ./dist/mbari-ui.css  --watch",
     "storybook": "start-storybook -p 5000",
     "prettier": "prettier --config ../../.prettierrc 'src/**/*.{js,jsx,ts,tsx}' --write",
+    "test:watch": "jest --watch --json --outputFile=.jest-test-results.json",
     "test:generate-output": "jest --json --outputFile=.jest-test-results.json || true",
     "test": "jest",
     "prebuild:storybook": "npm run test:generate-output",
