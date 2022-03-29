@@ -39,7 +39,7 @@ const style = {
   hiddenLeft: 'opacity-0 -translate-x-1',
   hiddenRight: 'opacity-0 translate-x-1',
   tooltip:
-    'bg-indigo-500 px-2 text-xs text-white rounded-full whitespace-nowrap not-italic shadow-md',
+    'bg-primary-600 px-2 text-xs text-white rounded-full whitespace-nowrap not-italic shadow-md',
   shortcut: 'font-semibold opacity-75',
 }
 

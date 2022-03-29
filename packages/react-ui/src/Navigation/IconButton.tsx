@@ -16,11 +16,12 @@ export interface IconButtonProps {
   className?: string
   style?: React.CSSProperties
   noPadding?: boolean
+  ariaLabel: string
 }
 
 const style = {
-  button: 'rounded-full w-10 flex-shrink-0',
-  buttonHover: 'hover:bg-stone-400 hover:bg-opacity-25',
+  button: 'rounded-full w-10 h-10 flex-shrink-0 text-lg leading-none',
+  buttonHover: 'hover:bg-primary-600 hover:bg-opacity-10',
   inactive: 'opacity-50',
   disabled: 'opacity-25 pointer-events-none',
 }
@@ -36,6 +37,7 @@ export const IconButton: React.FC<IconButtonProps> = ({
   toolTipDirection = 'below',
   inactive,
   noPadding,
+  ariaLabel,
 }) => {
   const [hoverTimeout, setHoverTimeout] = useState<any>()
   const [hover, setHover] = useState(false)
@@ -73,6 +75,7 @@ export const IconButton: React.FC<IconButtonProps> = ({
       style={styleFromProps}
       onMouseEnter={handleMouseOver}
       onMouseLeave={handleMouseOut}
+      aria-label={ariaLabel}
     >
       <FontAwesomeIcon icon={icon as IconProp} />
       {tooltip ? (

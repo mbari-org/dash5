@@ -8,6 +8,7 @@ export interface AvatarProps {
   imageUrl?: string
   size?: AvatarSize
   className?: string
+  onClick?: () => void
 }
 
 const getInitials = (name: string) =>
@@ -48,22 +49,32 @@ export const Avatar: React.FC<AvatarProps> = ({
   size = 'md',
   imageUrl,
   className,
-}) => (
-  <div
-    className={clsx(style.avatar, className, styleForSize(size))}
-    style={{ background: color ?? '' }}
-  >
-    {imageUrl ? (
-      <span
-        className="flex h-full w-full rounded-full bg-cover bg-center"
-        style={{ backgroundImage: `url(${imageUrl})` }}
-      />
-    ) : (
-      <span className="font-body m-auto flex font-semibold text-white">
-        {getInitials(name)}
-      </span>
-    )}
-  </div>
-)
+  onClick: handleClick,
+}) => {
+  const handleMouseClick = (e: React.MouseEvent) => {
+    e.stopPropagation()
+    e.preventDefault()
+    handleClick?.()
+  }
+
+  return (
+    <button
+      className={clsx(style.avatar, className, styleForSize(size))}
+      style={{ background: color ?? '' }}
+      onClick={handleMouseClick}
+    >
+      {imageUrl ? (
+        <span
+          className="flex h-full w-full rounded-full bg-cover bg-center"
+          style={{ backgroundImage: `url(${imageUrl})` }}
+        />
+      ) : (
+        <span className="font-body m-auto flex font-semibold text-white">
+          {getInitials(name)}
+        </span>
+      )}
+    </button>
+  )
+}
 
 Avatar.displayName = 'Navigation.Avatar'
