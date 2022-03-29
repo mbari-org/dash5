@@ -12,6 +12,7 @@ out/
 # production
 build
 lib
+dist
 build/**
 dist/**
 .next/**
