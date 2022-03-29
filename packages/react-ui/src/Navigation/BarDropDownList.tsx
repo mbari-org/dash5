@@ -1,6 +1,6 @@
 import React, { useState } from 'react'
 import clsx from 'clsx'
-import { remCalc, wait } from 'utils'
+import { remCalc, wait } from '@mbari/utils'
 
 const CONTAINER_STYLE = 'mx-1 my-auto relative'
 const RESULT_STYLES =

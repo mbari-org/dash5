@@ -12,6 +12,10 @@ out/
 # production
 build
 lib
+dist
+build/**
+dist/**
+.next/**
 
 # misc
 .DS_Store
@@ -40,3 +44,6 @@ yarn-error.log*
 
 # testing
 coverage
+
+# turborepo cache
+.turbo

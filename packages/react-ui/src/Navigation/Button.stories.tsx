@@ -16,6 +16,9 @@ const Template: Story<ButtonProps> = (args) => (
 
 export const Default = Template.bind({})
 Default.args = {}
+Default.parameters = {
+  jest: 'Button.test.tsx',
+}
 
 export const Left = Template.bind({})
 Left.args = { align: 'left' }

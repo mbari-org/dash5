@@ -1,6 +1,6 @@
 import React, { useState } from 'react'
 
-import { Button } from '../Fields'
+import { Button } from '../Navigation'
 import { Overlay, OverlayProps } from './Overlay'
 import { Story, Meta } from '@storybook/react/types-6-0'
 

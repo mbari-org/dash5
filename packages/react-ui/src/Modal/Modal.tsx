@@ -2,7 +2,7 @@ import React, { useCallback, useEffect, useRef, useState } from 'react'
 import { faTimes } from '@fortawesome/pro-regular-svg-icons'
 
 import { Icon } from '../Navigation'
-import { useEventListener } from 'utils'
+import { useEventListener } from '@mbari/utils'
 import clsx from 'clsx'
 
 export interface ModalProps {

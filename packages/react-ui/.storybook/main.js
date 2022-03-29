@@ -9,6 +9,7 @@ module.exports = {
         },
       },
     },
+    '@storybook/addon-jest',
     '@storybook/addon-links',
     '@storybook/addon-essentials',
     '@storybook/addon-actions',

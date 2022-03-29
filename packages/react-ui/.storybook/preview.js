@@ -1,18 +1,27 @@
-import React from "react";
-import { HTML5Backend } from "react-dnd-html5-backend";
-import { DndProvider } from "react-dnd";
-import { addDecorator } from "@storybook/react";
-import "../lib/mbari-ui.css";
+import React from 'react'
+import { HTML5Backend } from 'react-dnd-html5-backend'
+import { DndProvider } from 'react-dnd'
+import { addDecorator } from '@storybook/react'
+import { withTests } from '@storybook/addon-jest'
+
+import '../lib/mbari-ui.css'
+import results from '../.jest-test-results.json'
+
+export const decorators = [
+  withTests({
+    results,
+  }),
+]
 
 export const parameters = {
-  actions: { argTypesRegex: "^on[A-Z].*" },
+  actions: { argTypesRegex: '^on[A-Z].*' },
   controls: {
     matchers: {
       color: /(background|color)$/i,
       date: /Date$/,
     },
   },
-};
+}
 
 const Layout = ({ children }) => {
   return (
@@ -20,8 +29,8 @@ const Layout = ({ children }) => {
       {children}
       <div id="overlay-root" />
     </div>
-  );
-};
+  )
+}
 
 addDecorator((Story) => (
   <DndProvider backend={HTML5Backend}>
@@ -31,8 +40,8 @@ addDecorator((Story) => (
       <link
         href="https://fonts.googleapis.com/css2?family=Mulish:wght@200;400;600&display=swap"
         rel="stylesheet"
-      />{" "}
+      />{' '}
       <Story />
     </Layout>
   </DndProvider>
-));
+))

@@ -1,0 +1,147 @@
+# Javascript Node CircleCI 2.1 configuration file
+#
+# Check https://circleci.com/docs/2.1/language-javascript/ for more details
+#
+orbs:
+  aws-cli: circleci/aws-cli@1.3.0
+  node: circleci/node@4.1.0
+  serverless-framework: circleci/serverless-framework@1.0.1
+version: 2.1
+commands:
+  setup-environment:
+    steps:
+      - run:
+          name: Configure build variables
+          command: |
+            case $CIRCLE_BRANCH in
+              staging)
+                echo 'export STAGE="staging"' >> $BASH_ENV
+                echo 'export CLIENT_S3_BUCKET_URL="s3://mbari-dash-staging" >> $BASH_ENV'
+                echo 'export REACT_APP_API_URL=$API_URL_STAGING' >> $BASH_ENV
+                echo 'export REACT_APP_STAGE="staging"' >> $BASH_ENV
+                ;;
+
+              main)
+                echo 'export STAGE="prod"' >> $BASH_ENV
+                echo 'export CLIENT_S3_BUCKET_URL="s3://mbari-dash-prod" >> $BASH_ENV'
+                echo 'export REACT_APP_API_URL=$API_URL_PROD' >> $BASH_ENV
+                echo 'export REACT_APP_STAGE="prod"' >> $BASH_ENV
+                ;;
+
+              *)
+                echo 'export STAGE="dev"' >> $BASH_ENV
+                echo 'export CLIENT_S3_BUCKET_URL="s3://mbari-dash-dev"' >> $BASH_ENV
+                echo 'export REACT_APP_API_URL=$API_URL_DEV' >> $BASH_ENV
+                echo 'export REACT_APP_STAGE="dev"' >> $BASH_ENV
+                ;;
+            esac
+      - run:
+          name: Load build variables
+          command: source $BASH_ENV
+
+  install-monorepo:
+    steps:
+      - restore-packages
+      - run: |
+          npm config set "@fortawesome:registry" https://npm.fontawesome.com/ && \
+          npm config set "//npm.fontawesome.com/:_authToken" $FONT_AWESOME_TOKEN
+      - run: |
+          yarn install --network-concurrency 1
+      - save_cache:
+          paths:
+            - node_modules
+            - apps/lrauv-dash2/node_modules
+            - packages/react-ui/node_modules
+            - packages/utils/node_modules
+          key: v1-packages-{{ .Branch }}-{{ .Revision }}
+
+  restore-monorepo:
+    steps:
+      # Download pre-existing build from cache
+      - restore_cache:
+          keys:
+            - v1-builds-{{ .Branch }}-{{ .Revision }}
+
+  restore-packages:
+    steps:
+      # Download pre-existing build from cache
+      - restore_cache:
+          keys:
+            - v1-packages-{{ .Branch }}-{{ .Revision }}
+
+  build-monorepo:
+    steps:
+      - run:
+          name: Build with Turborepo
+          command: yarn turbo run build
+      - save_cache:
+          paths:
+            - apps/lrauv-dash2/.next
+            - apps/lrauv-dash2/.turbo
+            - packages/react-ui/lib
+            - packages/react-ui/.turbo
+            - packages/utils/lib
+            - packages/utils/.turbo
+          key: v1-builds-{{ .Branch }}-{{ .Revision }}
+
+jobs:
+  build:
+    executor:
+      name: node/default
+      tag: '14.19.1'
+    steps:
+      - checkout
+      - setup-environment
+      - install-monorepo
+      - build-monorepo
+
+  test:
+    executor:
+      name: node/default
+      tag: '14.19.1'
+    steps:
+      - checkout
+      - setup-environment
+      - restore-monorepo
+      - install-monorepo
+      - run:
+          command: yarn turbo run test
+          name: Run turbo repo tests
+
+  deploy_ui:
+    executor:
+      name: node/default
+      tag: '14.19.1'
+    steps:
+      - checkout
+      - setup-environment
+      - restore-monorepo
+      - install-monorepo
+      - aws-cli/setup:
+          profile-name: AWS_PROFILE_NAME
+          aws-secret-access-key: AWS_SECRET_ACCESS_KEY
+          aws-access-key-id: AWS_ACCESS_KEY_ID
+          aws-region: AWS_ACCESS_DEFAULT_REGION
+      - run:
+          command: yarn workspace react-ui build:storybook
+          name: build storybook
+      - run:
+          command: cd packages/react-ui && aws s3 cp build $CLIENT_S3_BUCKET_URL --recursive
+          name: deploy
+
+workflows:
+  build_and_deploy:
+    jobs:
+      - build
+      - test:
+          requires:
+            - build
+      - deploy_ui:
+          requires:
+            - test
+          filters:
+            branches:
+              only:
+                - develop
+                - staging
+                - main

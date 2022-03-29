@@ -7,15 +7,21 @@
   "license": "MIT",
   "private": true,
   "workspaces": [
-    "packages/*"
+    "packages/*",
+    "apps/*"
   ],
   "engines": {
-    "node": "16.x.x",
+    "node": "14.x.x",
     "yarn": "1.22.x"
   },
   "scripts": {
     "prettier": "npx prettier --write packages/*/src/**/*.{js,md,ts,tsx}",
-    "build": "./scripts/bootstrap.build",
-    "build-test": "./scripts/test.build"
+    "build": "turbo run build",
+    "test": "turbo run test"
+  },
+  "devDependencies": {
+    "@changesets/cli": "^2.21.1",
+    "rimraf": "^3.0.2",
+    "turbo": "^1.1.10"
   }
 }

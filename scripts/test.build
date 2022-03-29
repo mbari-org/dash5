@@ -16,12 +16,8 @@ fi
   echo "[BOOTSTRAP]: Installing workspace dependencies"
   yarn install
   echo "[BOOTSTRAP]: Compiling packages..."
-  yarn workspace api-client build-test
-  echo "[BOOTSTRAP]: Built 'api-client' package (for testing)."
   yarn workspace utils build-test
   echo "[BOOTSTRAP]: Built 'utils' package (for testing)."
-  yarn workspace parsers build-test
-  echo "[BOOTSTRAP]: Built 'parsers' package (for testing)."
-  yarn workspace ui build-test
-  echo "[BOOTSTRAP]: Built 'ui' package (for testing)."
+  yarn workspace react-ui build-test
+  echo "[BOOTSTRAP]: Built 'react-ui' package (for testing)."
 )

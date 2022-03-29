@@ -5,7 +5,7 @@ import { faChevronRight } from '@fortawesome/pro-regular-svg-icons/faChevronRigh
 import { faChevronDoubleLeft } from '@fortawesome/pro-regular-svg-icons/faChevronDoubleLeft'
 import { faChevronDoubleRight } from '@fortawesome/pro-regular-svg-icons/faChevronDoubleRight'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
-import { concatStyles } from 'utils'
+import { concatStyles } from '@mbari/utils'
 import { IconProp } from '@fortawesome/fontawesome-svg-core'
 
 export interface DateSelectorProps {
