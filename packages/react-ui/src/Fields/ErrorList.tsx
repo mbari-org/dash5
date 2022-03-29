@@ -3,7 +3,7 @@ import { faExclamationTriangle } from '@fortawesome/pro-regular-svg-icons'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import clsx from 'clsx'
 import React from 'react'
-import { humanize } from 'utils'
+import { humanize } from '@mbari/utils'
 
 const style = {
   list: 'my-2 border border-red-400 p-2 rounded flex flex-col',

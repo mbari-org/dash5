@@ -1,7 +1,7 @@
 import React, { useState } from 'react'
 import { Story, Meta } from '@storybook/react'
 import { Login, LoginProps, LoginValues } from './Login'
-import { wait } from 'utils'
+import { wait } from '@mbari/utils'
 
 export default {
   title: 'Forms/Login',

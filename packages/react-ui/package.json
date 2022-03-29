@@ -1,18 +1,18 @@
 {
-  "name": "react-ui",
+  "name": "@mbari/react-ui",
   "version": "1.0.0",
   "private": true,
-  "types": "./lib/index.d.ts",
+  "types": "./dist/index.d.ts",
   "files": [
-    "lib"
+    "dist"
   ],
-  "main": "lib/index.js",
+  "main": "dist/index.js",
   "scripts": {
     "start": "yarn tailwind & yarn storybook & jest --watch --json --outputFile=.jest-test-results.json || true",
-    "build": "rm -rf ./lib && tsc && yarn build-tailwind",
-    "build-tailwind": "npx tailwindcss -i ./src/css/base.css -o ./lib/mbari-ui.css",
-    "build-test": "rm -rf ./lib && tsc -m CommonJS",
-    "tailwind": "npx tailwindcss -i ./src/css/base.css -o ./lib/mbari-ui.css  --watch",
+    "build": "rm -rf ./dist && tsc && yarn build-tailwind",
+    "build-tailwind": "npx tailwindcss -i ./src/css/base.css -o ./dist/mbari-ui.css",
+    "build-test": "rm -rf ./dist && tsc -m CommonJS",
+    "tailwind": "npx tailwindcss -i ./src/css/base.css -o ./dist/mbari-ui.css  --watch",
     "storybook": "start-storybook -p 5000",
     "prettier": "prettier --config ../../.prettierrc 'src/**/*.{js,jsx,ts,tsx}' --write",
     "test:generate-output": "jest --json --outputFile=.jest-test-results.json || true",
@@ -58,7 +58,7 @@
     "@fortawesome/pro-solid-svg-icons": "^5.15.4",
     "@fortawesome/react-fontawesome": "^0.1.16",
     "@hookform/resolvers": "^2.8.2",
-    "@sumocreations/forms": "^1.0.1",
+    "@sumocreations/forms": "^1.0.2",
     "clsx": "^1.1.1",
     "immutability-helper": "^3.1.1",
     "luxon": "^2.3.1",
@@ -70,11 +70,12 @@
     "react-router-dom": "^6.2.1",
     "react-select": "^5.1.0",
     "tailwindcss": "^3.0.7",
+    "@mbari/utils": "^1.0.0",
     "uuid": "^8.3.2",
-    "yup": "^0.32.11",
-    "utils": "^1.0.0"
+    "yup": "^0.32.11"
   },
   "devDependencies": {
+    "@babel/core": "^7.17.8",
     "@storybook/addon-a11y": "^6.4.9",
     "@storybook/addon-actions": "^6.4.9",
     "@storybook/addon-console": "^1.2.3",
@@ -101,6 +102,7 @@
     "@types/react-dom": "^17.0.0",
     "@types/uuid": "^8.3.4",
     "autoprefixer": "^9",
+    "babel-jest": "^27.5.1",
     "babel-loader": "8.1.0",
     "css-loader": "^6.5.1",
     "jest": "^27.5.1",

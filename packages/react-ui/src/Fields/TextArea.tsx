@@ -1,5 +1,5 @@
 import React from 'react'
-import { concatStyles } from 'utils'
+import { concatStyles } from '@mbari/utils'
 
 export interface TextAreaProps {
   name: string
