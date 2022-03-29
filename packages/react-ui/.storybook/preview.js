@@ -4,7 +4,7 @@ import { DndProvider } from 'react-dnd'
 import { addDecorator } from '@storybook/react'
 import { withTests } from '@storybook/addon-jest'
 
-import '../lib/mbari-ui.css'
+import '../dist/mbari-ui.css'
 import results from '../.jest-test-results.json'
 
 export const decorators = [
