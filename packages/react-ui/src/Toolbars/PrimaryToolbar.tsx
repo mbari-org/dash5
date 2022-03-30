@@ -4,7 +4,6 @@ import { Logo } from './Logo'
 import { Button, IconButton } from '../Navigation'
 import { Avatar } from '../Navigation/Avatar'
 import { faPlus, faSignIn } from '@fortawesome/pro-regular-svg-icons'
-import { url } from 'inspector'
 import { faUser } from '@fortawesome/pro-solid-svg-icons'
 
 const styles = {
