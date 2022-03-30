@@ -4,11 +4,10 @@ import { Logo } from './Logo'
 import { Button, IconButton } from '../Navigation'
 import { Avatar } from '../Navigation/Avatar'
 import { faPlus, faSignIn } from '@fortawesome/pro-regular-svg-icons'
-import { url } from 'inspector'
 import { faUser } from '@fortawesome/pro-solid-svg-icons'
 
 const styles = {
-  bar: 'w-full bg-gray-900 flex flex-row bg-secondary-300 px-8 py-4',
+  bar: 'w-full flex flex-row bg-secondary-300 px-8 py-4',
   list: 'flex flex-row items-center align-center justify-between flex-grow',
   item: 'flex my-auto self-center',
   option: 'mr-2',
