@@ -19,17 +19,10 @@ const Template: Story<ModalProps> = (args) => {
   return (
     <>
       <Modal {...args} open={open} onClose={handleClose}>
-        <form>
-          <Fields grow>
-            <TextField
-              label="Customer Name"
-              name="name"
-              className="flex-grow"
-              icon={faOrnament}
-            />
-            <Button type="submit">Create Order</Button>
-          </Fields>
-        </form>
+        <p className="text-sm text-stone-500">
+          Are you sure you want to delete your account? All of your data will be
+          permenantly lost.
+        </p>
       </Modal>
       <Button onClick={handleOpen} disabled={open}>
         Open Window
@@ -42,6 +35,13 @@ export const Primary = Template.bind({})
 Primary.args = {
   title: 'Create Order',
   open: true,
+  disableCancel: true,
+}
+Primary.parameters = {
+  design: {
+    type: 'figma',
+    url: 'https://www.figma.com/file/FtsKsOCBQ2YjTZlwezG6aI/MBARI-Components?node-id=137%3A271',
+  },
 }
 
 export const Draggable = Template.bind({})
@@ -49,4 +49,10 @@ Draggable.args = {
   title: 'Drag Me!',
   open: true,
   draggable: true,
+}
+Primary.parameters = {
+  design: {
+    type: 'figma',
+    url: 'https://www.figma.com/file/FtsKsOCBQ2YjTZlwezG6aI/MBARI-Components?node-id=137%3A271',
+  },
 }
