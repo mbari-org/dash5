@@ -42,7 +42,7 @@ test('should not render the login button if the toolbar is signed in', async () 
 })
 
 test('should render a generic profile button if there are no profile credentials', async () => {
-  render(<PrimaryToolbar options={options} />)
+  render(<PrimaryToolbar options={options} signedIn />)
   expect(screen.queryByLabelText(/profile/i)).toBeInTheDocument()
 })
 
