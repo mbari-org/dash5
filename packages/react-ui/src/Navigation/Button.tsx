@@ -33,7 +33,7 @@ export const backgroundStyles = (appearance?: ButtonAppearance) => {
     case 'primary':
       return 'bg-primary-600 text-white'
     case 'secondary':
-      return 'bg-white border-2 border-indigo-600 text-indigo-600'
+      return 'bg-white border border-stone-400 text-stone-600'
     case 'destructive':
       return 'bg-red-600 text-white'
     case 'transparent':

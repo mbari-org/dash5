@@ -45,6 +45,9 @@ Disabled.parameters = {
   },
 }
 
+export const Transparent = Template.bind({})
+Transparent.args = { appearance: 'transparent' }
+
 export const Destructive = Template.bind({})
 Destructive.args = { appearance: 'destructive' }
 
