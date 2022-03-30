@@ -10,6 +10,7 @@ export interface AccordionHeaderProps {
   style?: React.CSSProperties
   label: string
   secondaryLabel?: string
+  ariaLabel?: string
   onExpand?: () => void
   onToggle: (open: boolean) => void
   open?: boolean
@@ -30,6 +31,7 @@ export const AccordionHeader: React.FC<AccordionHeaderProps> = ({
   style,
   label,
   secondaryLabel,
+  ariaLabel,
   onExpand,
   onToggle,
   open,
@@ -46,6 +48,7 @@ export const AccordionHeader: React.FC<AccordionHeaderProps> = ({
         className,
         open ? styles.open : styles.closed
       )}
+      aria-label={ariaLabel || ''}
     >
       <button className={styles.textButton}>
         <span className={clsx(open && 'font-semibold')}>{label}</span>{' '}
@@ -55,7 +58,10 @@ export const AccordionHeader: React.FC<AccordionHeaderProps> = ({
       </button>
       {onExpand && (
         <button className={styles.expandButton} onClick={swallow(onExpand)}>
-          <FontAwesomeIcon icon={faExpandArrows as IconProp} />
+          <FontAwesomeIcon
+            icon={faExpandArrows as IconProp}
+            title="expand icon"
+          />
         </button>
       )}
       <button className={styles.chevronButton} onClick={handleToggle}>
