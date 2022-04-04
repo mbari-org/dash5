@@ -1,5 +1,6 @@
 import React from 'react'
 import clsx from 'clsx'
+import { swallow } from '@mbari/utils'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import {
   faClock,
@@ -21,16 +22,17 @@ export interface ScheduleCellProps {
   description: string
   description2?: string
   description3?: string
+  onOption: () => void
 }
 
 const styles = {
   container: 'flex font-display',
   icon: 'flex items-center px-4',
   labelContainer: 'flex flex-grow flex-col p-2',
-  label: 'flex text-blue-700', // needs updated colors
-  text: 'text-stone-500 opacity-60',
+  text: 'text-stone-500, opacity-60',
+  textLight: 'text-stone-500, opacity-40',
   descriptionContainer: 'flex flex-col justify-center pr-8 pl-4',
-  options: 'flex items-center px-4',
+  option: 'flex items-center px-4',
   open: 'font-semibold',
   closed: 'opacity-60',
 }
@@ -53,11 +55,12 @@ export const ScheduleCell: React.FC<ScheduleCellProps> = ({
   description,
   description2,
   description3,
+  onOption,
   ...props
 }) => {
   const backgroundColor = (() => {
-    if (status === 'running') return 'bg-indigo-400' // needs updated colors
-    if (status === 'paused') return 'bg-red-600' // needs updated colors
+    if (status === 'running') return 'bg-indigo-200'
+    if (status === 'paused') return 'bg-orange-100'
     return 'bg-white'
   })()
 
@@ -67,8 +70,14 @@ export const ScheduleCell: React.FC<ScheduleCellProps> = ({
 
   const iconColor = (() => {
     if (status === 'running') return 'black'
-    if (status === 'paused') return styles.label
+    if (status === 'paused') return 'text-orange-400'
     return styles.text
+  })()
+
+  const labelColor = (() => {
+    if (status === 'paused') return 'text-orange-400'
+    if (status === 'executed') return 'text-teal-600'
+    return 'text-primary-600'
   })()
 
   return (
@@ -80,24 +89,36 @@ export const ScheduleCell: React.FC<ScheduleCellProps> = ({
         <FontAwesomeIcon
           icon={icons[status]}
           title={status}
-          className={clsx(iconColor, 'text-2xl')}
+          className={clsx(iconColor, 'text-xl')}
         />
       </button>
       <div className={styles.labelContainer}>
         <button
-          className={clsx(styles.label, isOpen ? styles.open : styles.closed)}
+          className={clsx(
+            'flex',
+            labelColor,
+            isOpen ? styles.open : styles.closed
+          )}
         >
           {label}
         </button>
-        <div className={clsx(styles.text, 'italic')}>{secondary}</div>
-        <div className={styles.text}>{name}</div>
+        <div className={isOpen ? styles.text : styles.textLight}>
+          <div className="italic">{secondary}</div>
+          <div>{name}</div>
+        </div>
       </div>
-      <div className={styles.descriptionContainer}>
-        <div className={styles.text}>{description}</div>
-        {description2 && <div className={styles.text}>{description2}</div>}
-        {description3 && <div className={styles.text}>{description3}</div>}
+      <div
+        className={clsx(
+          styles.descriptionContainer,
+          styles.text,
+          isOpen ? styles.text : styles.textLight
+        )}
+      >
+        <div>{description}</div>
+        {description2 && <div>{description2}</div>}
+        {description3 && <div>{description3}</div>}
       </div>
-      <button className={styles.options}>
+      <button className={styles.option} onClick={swallow(onOption)}>
         <FontAwesomeIcon icon={faEllipsisV as IconProp} className="text-2xl" />
       </button>
     </div>

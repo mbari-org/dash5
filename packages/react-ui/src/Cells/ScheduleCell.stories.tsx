@@ -21,6 +21,7 @@ const args: ScheduleCellProps = {
   secondary: 'Deeper sample',
   name: 'Reiko Michisaki',
   description: 'Today',
+  onOption: () => {},
 }
 
 export const Scheduled = Template.bind({})
