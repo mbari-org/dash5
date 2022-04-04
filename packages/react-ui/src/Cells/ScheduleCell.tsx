@@ -15,6 +15,7 @@ export interface ScheduleCellProps {
   style?: React.CSSProperties
   status: 'scheduled' | 'running' | 'ended' | 'executed' | 'paused'
   label: string
+  ariaLabel?: string
   secondary: string
   name: string
   description: string
@@ -27,7 +28,7 @@ const styles = {
   icon: 'flex items-center px-4',
   labelContainer: 'flex flex-grow flex-col p-2',
   label: 'flex text-blue-700', // needs updated colors
-  infoText: 'text-stone-500 opacity-60',
+  text: 'text-stone-500 opacity-60',
   descriptionContainer: 'flex flex-col justify-center pr-8 pl-4',
   options: 'flex items-center px-4',
   open: 'font-semibold',
@@ -46,6 +47,7 @@ export const ScheduleCell: React.FC<ScheduleCellProps> = ({
   className,
   status,
   label,
+  ariaLabel,
   secondary,
   name,
   description,
@@ -66,15 +68,18 @@ export const ScheduleCell: React.FC<ScheduleCellProps> = ({
   const iconColor = (() => {
     if (status === 'running') return 'black'
     if (status === 'paused') return styles.label
-    return styles.infoText
+    return styles.text
   })()
 
   return (
-    <div className={clsx(styles.container, className, backgroundColor)}>
+    <div
+      className={clsx(styles.container, className, backgroundColor)}
+      aria-label={ariaLabel || ''}
+    >
       <button className={styles.icon}>
         <FontAwesomeIcon
           icon={icons[status]}
-          title="clock icon"
+          title={status}
           className={clsx(iconColor, 'text-2xl')}
         />
       </button>
@@ -84,13 +89,13 @@ export const ScheduleCell: React.FC<ScheduleCellProps> = ({
         >
           {label}
         </button>
-        <div className={clsx(styles.infoText, 'italic')}>{secondary}</div>
-        <div className={styles.infoText}>{name}</div>
+        <div className={clsx(styles.text, 'italic')}>{secondary}</div>
+        <div className={styles.text}>{name}</div>
       </div>
       <div className={styles.descriptionContainer}>
-        <div className={styles.infoText}>{description}</div>
-        {description2 && <div className={styles.infoText}>{description2}</div>}
-        {description3 && <div className={styles.infoText}>{description3}</div>}
+        <div className={styles.text}>{description}</div>
+        {description2 && <div className={styles.text}>{description2}</div>}
+        {description3 && <div className={styles.text}>{description3}</div>}
       </div>
       <button className={styles.options}>
         <FontAwesomeIcon icon={faEllipsisV as IconProp} className="text-2xl" />
