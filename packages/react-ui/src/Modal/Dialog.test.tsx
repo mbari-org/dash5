@@ -27,6 +27,13 @@ test('should render the confirm button', async () => {
   expect(screen.getByText(/Confirm/i)).toHaveTextContent('Confirm')
 })
 
+test('should render the confirm button if an external form has been specified', async () => {
+  render(
+    <Dialog title="Test" message="Here is a message" form="testForm" open />
+  )
+  expect(screen.getByText(/Confirm/i)).toHaveAttribute('form', 'testForm')
+})
+
 test('should not render the confirm button', async () => {
   render(<Dialog title="Test" message="Here is a message" open />)
   expect(screen.queryByText(/Confirm/i)).not.toBeInTheDocument()
