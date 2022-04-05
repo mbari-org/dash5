@@ -8,8 +8,9 @@ export interface FooterProps {
   style?: React.CSSProperties
   confirmButtonText?: string
   cancelButtonText?: string
-  onConfirm?: () => void
-  onCancel?: () => void
+  form?: string
+  onConfirm?: (() => void) | null
+  onCancel?: (() => void) | null
   disableCancel?: boolean
   disableConfirm?: boolean
 }
@@ -29,17 +30,20 @@ export const Footer: React.FC<FooterProps> = ({
   onConfirm: handleConfirm,
   disableCancel,
   disableConfirm,
+  form,
 }) => {
   return (
     <nav className={clsx(styles.bar, className)}>
       <ol className={styles.list}>
-        {handleConfirm && (
+        {(handleConfirm || form) && (
           <li className={clsx(styles.item, 'ml-auto')}>
             <Button
               appearance="primary"
-              onClick={swallow(handleConfirm)}
+              onClick={handleConfirm ? swallow(handleConfirm) : undefined}
               disabled={disableConfirm}
               aria-label="Confirm"
+              type={form ? 'submit' : 'button'}
+              form={form}
             >
               {confirmButtonText}
             </Button>
