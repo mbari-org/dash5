@@ -140,7 +140,7 @@ jobs:
       - install-monorepo
       - run: |
           prodRun=""
-          if [[ ${$CIRCLE_BRANCH} == "main" ]]; then
+          if [[ ${CIRCLE_BRANCH} == "main" ]]; then
             prodRun="--prod"
           fi
 
