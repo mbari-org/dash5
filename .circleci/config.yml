@@ -129,7 +129,7 @@ jobs:
           command: cd packages/react-ui && aws s3 cp build $CLIENT_S3_BUCKET_URL --recursive
           name: deploy
 
-  deply_dash:
+  deploy_dash:
     executor:
       name: node/default
       tag: '14.19.1'
