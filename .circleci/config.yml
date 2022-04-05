@@ -165,9 +165,9 @@ workflows:
       - deploy_dash:
           requires:
             - test
-          # filters:
-          #   branches:
-          #     only:
-          #       - develop
-          #       - staging
-          #       - master
+          filters:
+            branches:
+              only:
+                - develop
+                - staging
+                - master
