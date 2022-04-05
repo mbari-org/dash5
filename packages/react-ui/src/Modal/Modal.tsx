@@ -1,7 +1,7 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react'
 import { faTimes } from '@fortawesome/pro-regular-svg-icons'
 
-import { Icon, IconButton } from '../Navigation'
+import { IconButton } from '../Navigation'
 import { useEventListener } from '@mbari/utils'
 import clsx from 'clsx'
 import { Footer, FooterProps } from './Footer'
@@ -66,6 +66,7 @@ export const Modal: React.FC<ModalProps & FooterProps> = ({
   confirmButtonText,
   disableCancel,
   disableConfirm,
+  form,
 }) => {
   const [state, setState] = useState<ModalDragState>(DEFAULT_STATE)
   const dialog = useRef<HTMLElement>(null)
@@ -173,14 +174,17 @@ export const Modal: React.FC<ModalProps & FooterProps> = ({
           ) : null}
         </header>
         <div className={MODAL_BODY}>{children}</div>
-        <Footer
-          onConfirm={handleConfirm}
-          onCancel={handleCancel}
-          cancelButtonText={cancelButtonText}
-          confirmButtonText={confirmButtonText}
-          disableCancel={disableCancel}
-          disableConfirm={disableConfirm}
-        />
+        {(handleConfirm || handleCancel || form) && (
+          <Footer
+            onConfirm={handleConfirm}
+            onCancel={handleCancel}
+            cancelButtonText={cancelButtonText}
+            confirmButtonText={confirmButtonText}
+            disableCancel={disableCancel}
+            disableConfirm={disableConfirm}
+            form={form}
+          />
+        )}
       </section>
     </div>
   ) : null
