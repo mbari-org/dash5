@@ -8,8 +8,8 @@ export interface FooterProps {
   style?: React.CSSProperties
   confirmButtonText?: string
   cancelButtonText?: string
-  onConfirm?: () => void
-  onCancel?: () => void
+  onConfirm?: (() => void) | null
+  onCancel?: (() => void) | null
   disableCancel?: boolean
   disableConfirm?: boolean
 }
