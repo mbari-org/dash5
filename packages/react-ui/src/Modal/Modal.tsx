@@ -66,6 +66,7 @@ export const Modal: React.FC<ModalProps & FooterProps> = ({
   confirmButtonText,
   disableCancel,
   disableConfirm,
+  form,
 }) => {
   const [state, setState] = useState<ModalDragState>(DEFAULT_STATE)
   const dialog = useRef<HTMLElement>(null)
@@ -173,7 +174,7 @@ export const Modal: React.FC<ModalProps & FooterProps> = ({
           ) : null}
         </header>
         <div className={MODAL_BODY}>{children}</div>
-        {(handleConfirm || handleCancel) && (
+        {(handleConfirm || handleCancel || form) && (
           <Footer
             onConfirm={handleConfirm}
             onCancel={handleCancel}
@@ -181,6 +182,7 @@ export const Modal: React.FC<ModalProps & FooterProps> = ({
             confirmButtonText={confirmButtonText}
             disableCancel={disableCancel}
             disableConfirm={disableConfirm}
+            form={form}
           />
         )}
       </section>
