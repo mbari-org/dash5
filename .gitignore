@@ -47,3 +47,4 @@ coverage
 
 # turborepo cache
 .turbo
+/packages/react-ui/.jest-test-results.json

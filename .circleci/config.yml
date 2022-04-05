@@ -129,6 +129,23 @@ jobs:
           command: cd packages/react-ui && aws s3 cp build $CLIENT_S3_BUCKET_URL --recursive
           name: deploy
 
+  deploy_dash:
+    executor:
+      name: node/default
+      tag: '14.19.1'
+    steps:
+      - checkout
+      - setup-environment
+      - restore-monorepo
+      - install-monorepo
+      - run: |
+          prodRun=""
+          if [[ ${CIRCLE_BRANCH} == "main" ]]; then
+            prodRun="--prod"
+          fi
+
+          npx vercel --token ${VERCEL_TOKEN} $prodRun
+
 workflows:
   build_and_deploy:
     jobs:
@@ -145,3 +162,12 @@ workflows:
                 - develop
                 - staging
                 - main
+      - deploy_dash:
+          requires:
+            - test
+          filters:
+            branches:
+              only:
+                - develop
+                - staging
+                - master
