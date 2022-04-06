@@ -3344,10 +3344,10 @@
     react "^17.0.2"
     yup "^0.32.9"
 
-"@sumocreations/scaffolds@^1.0.11":
-  version "1.0.11"
-  resolved "https://registry.yarnpkg.com/@sumocreations/scaffolds/-/scaffolds-1.0.11.tgz#7af74f417c72cb7847914bf82fb8a62db97728d4"
-  integrity sha512-KJA/ikpryRUprIPh1FiutWt+Gtgp3k1r3gCRgI+SZbViMPVtsv8mkeUw+wlJKL0QqhsR3So5NLGuW5TQnIJ/pQ==
+"@sumocreations/scaffolds@^1.0.12":
+  version "1.0.12"
+  resolved "https://registry.yarnpkg.com/@sumocreations/scaffolds/-/scaffolds-1.0.12.tgz#b6df685340ac524bac3e70986d46eec97cff85fb"
+  integrity sha512-vq7+4lttm7pqktO5VpqZnum3T2vulYHenQHCjA+IUFT37HoxGitwki3pjpuYruqw07iw2ElvdpW1TNVvtu+i7A==
   dependencies:
     simple-scaffold "^1.0.3"
 

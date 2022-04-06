@@ -14,6 +14,7 @@ const Template: Story<DialogProps> = (args) => {
   const [open, setOpen] = useState(args.open)
   const handleClose = () => setOpen(false)
   const handleOpen = () => setOpen(true)
+  console.log(args)
   return (
     <>
       <Dialog
@@ -42,8 +43,8 @@ Primary.args = {
 export const CustomLabels = Template.bind({})
 CustomLabels.args = {
   ...Primary.args,
-  confirmLabel: 'Yes, Please!',
-  cancelLabel: 'On second thought...',
+  confirmButtonText: 'Yes, Please!',
+  cancelButtonText: 'On second thought...',
   onConfirm: () => {},
   onCancel: () => {},
 }
@@ -53,6 +54,14 @@ ConfirmOnly.args = {
   title: 'Documents Not Available',
   message: 'Sorry - you do not have access to the documents.',
   open: true,
-  confirmLabel: 'OK',
+  confirmButtonText: 'OK',
   onConfirm: () => {},
+  onCancel: null,
+}
+
+export const NoFooter = Template.bind({})
+NoFooter.args = {
+  ...Primary.args,
+  onCancel: null,
+  onConfirm: null,
 }

@@ -22,3 +22,8 @@ test('should render confirm button if a handler has been specified', async () =>
   render(<Footer onConfirm={() => {}} />)
   expect(screen.queryByText(/confirm/i)).toBeInTheDocument()
 })
+
+test('should render confirm button if an external form has been specified', async () => {
+  render(<Footer form="testForm" />)
+  expect(screen.queryByText(/confirm/i)).toHaveAttribute('form', 'testForm')
+})
