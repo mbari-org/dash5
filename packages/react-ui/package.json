@@ -8,7 +8,7 @@
   ],
   "main": "dist/index.js",
   "scripts": {
-    "start": "yarn tailwind & yarn storybook & jest --watch --json --outputFile=.jest-test-results.json || true",
+    "start": "yarn tailwind & yarn storybook --port 5001",
     "build": "rm -rf ./dist && tsc && yarn build-tailwind",
     "build-tailwind": "npx tailwindcss -i ./src/css/base.css -o ./dist/mbari-ui.css",
     "build-test": "rm -rf ./dist && tsc -m CommonJS",

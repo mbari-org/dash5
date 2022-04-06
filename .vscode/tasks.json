@@ -1,0 +1,38 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "[react-ui]: Storybook",
+      "type": "shell",
+      "command": "yarn workspace @mbari/react-ui start",
+      "presentation": {
+        "reveal": "always",
+        "panel": "new",
+        "group": "develop"
+      },
+      "runOptions": { "runOn": "folderOpen" }
+    },
+    {
+      "label": "[react-ui]: Tailwind",
+      "type": "shell",
+      "command": "yarn workspace @mbari/react-ui tailwind",
+      "presentation": {
+        "reveal": "always",
+        "panel": "new",
+        "group": "develop"
+      },
+      "runOptions": { "runOn": "folderOpen" }
+    },
+    {
+      "label": "[react-ui]: Tests",
+      "type": "shell",
+      "command": "yarn workspace @mbari/react-ui test:watch",
+      "presentation": {
+        "reveal": "always",
+        "panel": "new",
+        "group": "develop"
+      },
+      "runOptions": { "runOn": "folderOpen" }
+    }
+  ]
+}
