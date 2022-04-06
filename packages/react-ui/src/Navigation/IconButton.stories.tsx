@@ -5,7 +5,7 @@ import { IconButton, IconButtonProps } from './IconButton'
 import { faHomeLgAlt } from '@fortawesome/pro-duotone-svg-icons'
 
 export default {
-  title: 'IconButton',
+  title: 'Navigation/IconButton',
   component: IconButton,
 } as Meta
 
