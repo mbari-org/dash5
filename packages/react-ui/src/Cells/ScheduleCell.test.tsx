@@ -10,7 +10,8 @@ const props: ScheduleCellProps = {
   secondary: 'breakfast of champions',
   name: 'Kurt Vonnegut',
   description: 'breakfast with Kilgore Trout',
-  onOption: () => {},
+  onSelect: () => {},
+  onSelectMore: () => {},
 }
 
 test('should render the label', async () => {
@@ -28,7 +29,7 @@ test('should render the appropriate icon', async () => {
 test('should have blue background when running', async () => {
   render(<ScheduleCell {...props} status={'running'} />)
 
-  expect(screen.getByLabelText(/cell container/i)).toHaveClass('bg-indigo-200')
+  expect(screen.getByLabelText(/cell container/i)).toHaveClass('bg-violet-100')
 })
 
 test('should have orange background when paused', async () => {
