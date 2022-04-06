@@ -9,24 +9,30 @@ export interface AccessoryButtonProps extends ButtonProps {
   style?: React.CSSProperties
   label: string
   icon?: IconProp
+  reverse?: boolean
 }
 
 export const AccessoryButton: React.FC<AccessoryButtonProps> = ({
   className,
   icon,
   label,
+  reverse,
   ...props
 }) => {
   return (
-    <Button {...props} appearance="secondary">
+    <Button
+      {...props}
+      appearance="secondary"
+      className={clsx(className, 'flex', reverse && 'flex-row-reverse')}
+    >
       {icon && (
         <FontAwesomeIcon
           icon={icon}
-          className="my-auto mr-3 text-stone-800"
+          className={clsx('my-auto text-stone-800', reverse ? 'ml-3' : 'mr-3')}
           aria-label="supporting icon"
         />
       )}
-      {label}
+      <span className="flex-grow">{label}</span>
     </Button>
   )
 }
