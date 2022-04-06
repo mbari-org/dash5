@@ -32,7 +32,7 @@ export const AccessoryButton: React.FC<AccessoryButtonProps> = ({
           aria-label="supporting icon"
         />
       )}
-      {label}
+      <span className="flex-grow">{label}</span>
     </Button>
   )
 }

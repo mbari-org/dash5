@@ -25,7 +25,8 @@ interface Mission {
 
 const styles = {
   container: 'flex items-center bg-white font-display',
-  accButton: 'font-semibold text-gray-700 flex border-gray-300 !w-full',
+  accButton:
+    'font-semibold text-gray-700 flex border-gray-300 !w-full !text-left',
   iconButton: 'absolute right-4 my-auto',
 }
 
@@ -71,6 +72,7 @@ export const DocCell: React.FC<DocCellProps> = ({
         ariaLabel={'More options'}
         onClick={onSelectMore}
         className={styles.iconButton}
+        size={'text-2xl'}
       />
     </article>
   )
