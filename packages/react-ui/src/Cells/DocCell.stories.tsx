@@ -22,17 +22,29 @@ const args: DocCellProps = {
   time: '16:29:32',
   date: 'Dec. 15, 2021',
   label: 'Maintenance Log - Brizo',
-  missions: [
-    { name: 'Brizo 7 EcoHAB', id: '1' },
-    { name: 'Gup S EcoHAB', id: '2' },
-    { name: 'Gup S EcoHAB', id: '2' },
-    { name: 'Gup S EcoHAB', id: '2' },
-  ],
+  missions: [{ name: 'Brizo 7 EcoHAB', id: '1' }],
 }
 
 export const Standard = Template.bind({})
 Standard.args = args
 Standard.parameters = {
+  design: {
+    type: 'figma',
+    url: 'https://www.figma.com/file/FtsKsOCBQ2YjTZlwezG6aI/MBARI-Components?node-id=296%3A447',
+  },
+}
+
+export const MultipleTags = Template.bind({})
+MultipleTags.args = {
+  ...args,
+  missions: [
+    { name: 'Brizo 7 EcoHAB', id: '1' },
+    { name: 'Gup S Narwhal', id: '2' },
+    { name: 'Gup C Sub', id: '3' },
+    { name: 'Gup X Special', id: '4' },
+  ],
+}
+MultipleTags.parameters = {
   design: {
     type: 'figma',
     url: 'https://www.figma.com/file/FtsKsOCBQ2YjTZlwezG6aI/MBARI-Components?node-id=296%3A447',

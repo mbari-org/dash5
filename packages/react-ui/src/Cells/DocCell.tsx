@@ -25,7 +25,8 @@ interface Mission {
 
 const styles = {
   container: 'flex items-center bg-white font-display',
-  accButton: 'font-semibold text-gray-700 flex border-gray-300 w-full',
+  accButton: 'font-semibold text-gray-700 flex border-gray-300 !w-full',
+  iconButton: 'absolute right-4 my-auto',
 }
 
 export const DocCell: React.FC<DocCellProps> = ({
@@ -53,13 +54,15 @@ export const DocCell: React.FC<DocCellProps> = ({
         </button>
         <ul className="grid grid-cols-2 gap-1">
           {missions.map(({ name, id }) => (
-            <AccessoryButton
-              className={styles.accButton}
-              label={name}
-              icon={faTimes as IconProp}
-              onClick={swallow(() => onSelectMission(id))}
-              reverse={true}
-            />
+            <li key={id}>
+              <AccessoryButton
+                className={styles.accButton}
+                label={name}
+                icon={faTimes as IconProp}
+                onClick={swallow(() => onSelectMission(id))}
+                reverse={true}
+              />
+            </li>
           ))}
         </ul>
       </div>
@@ -67,7 +70,7 @@ export const DocCell: React.FC<DocCellProps> = ({
         icon={faEllipsisV}
         ariaLabel={'More options'}
         onClick={onSelectMore}
-        className={'absolute right-4 my-auto'}
+        className={styles.iconButton}
       />
     </article>
   )
