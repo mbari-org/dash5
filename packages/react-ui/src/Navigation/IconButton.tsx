@@ -33,7 +33,7 @@ export interface IconButtonProps {
 }
 
 const style = {
-  button: 'rounded-full w-10 h-10 flex-shrink-0 leading-none',
+  button: 'rounded-full flex-shrink-0 leading-none',
   buttonHover: 'hover:bg-primary-600 hover:bg-opacity-10',
   inactive: 'opacity-50',
   disabled: 'opacity-25 pointer-events-none',
@@ -82,6 +82,13 @@ export const IconButton: React.FC<IconButtonProps> = ({
         (className ?? '').indexOf('hover:bg') < 0 && style.buttonHover,
         !noPadding && 'p-2',
         size,
+        size === 'text-xs' && 'h-7 w-7',
+        size === 'text-sm' && 'h-8 w-8',
+        size === 'text-md' && 'h-9 w-9',
+        size === 'text-lg' && 'h-10 w-10',
+        size === 'text-xl' && 'h-11 w-11',
+        size === 'text-2xl' && 'h-12 w-12',
+        size === 'text-3xl' && 'h-14 w-14',
         className,
         disabled && !inactive && style.disabled,
         inactive && style.inactive,
