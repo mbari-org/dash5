@@ -135,7 +135,7 @@ export const ScheduleCell: React.FC<ScheduleCellProps> = ({
         icon={faEllipsisV}
         ariaLabel={'More options'}
         onClick={onSelectMore}
-        className={'my-auto pl-4'}
+        className={'my-auto'}
         size={'text-2xl'}
       />
     </article>
