@@ -25,6 +25,7 @@ const styles = {
 
 const acknowledgeIcon = (
   <svg
+    aria-label="acknowledge icon"
     width="36"
     height="30"
     viewBox="0 0 36 30"
@@ -76,14 +77,19 @@ export const CommsCell: React.FC<CommsCellProps> = ({
           {command}
         </li>
         <li>
-          <span>{regFontEntry}</span>
-          <span className="font-semibold">{boldFontEntry}</span>
+          <span aria-label="entry">{regFontEntry}</span>
+          <span aria-label="entry id" className="font-semibold">
+            {boldFontEntry}
+          </span>
         </li>
         <li className="opacity-60">{name}</li>
       </ul>
       <div className={styles.icon}>
         {isUpload ? (
-          <FontAwesomeIcon icon={faBuilding as IconProp} />
+          <FontAwesomeIcon
+            icon={faBuilding as IconProp}
+            aria-label="transmitting icon"
+          />
         ) : (
           <div>{acknowledgeIcon}</div>
         )}
