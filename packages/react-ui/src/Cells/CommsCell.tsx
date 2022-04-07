@@ -19,6 +19,8 @@ export interface CommsCellProps {
 
 const styles = {
   container: 'flex items-center bg-white p-4 font-display',
+  detailsContainer: 'flex flex-grow flex-col pl-1',
+  command: 'whitespace-pre-line font-light',
   icon: 'px-6 text-2xl',
   description: 'flex flex-grow flex-col p-2 opacity-60',
 }
@@ -67,10 +69,10 @@ export const CommsCell: React.FC<CommsCellProps> = ({
   })()
   return (
     <article style={style} className={clsx(styles.container, className)}>
-      <ul className="flex flex-grow flex-col pl-1">
+      <ul className={styles.detailsContainer}>
         <li
           className={clsx(
-            'whitespace-pre-line font-light',
+            styles.command,
             isScheduled ? 'text-indigo-600' : 'text-green-600'
           )}
           aria-label="command text"
