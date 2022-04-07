@@ -73,6 +73,7 @@ export const CommsCell: React.FC<CommsCellProps> = ({
             'whitespace-pre-line font-light',
             isScheduled ? 'text-indigo-600' : 'text-green-600'
           )}
+          aria-label="command text"
         >
           {command}
         </li>
@@ -82,7 +83,9 @@ export const CommsCell: React.FC<CommsCellProps> = ({
             {boldFontEntry}
           </span>
         </li>
-        <li className="opacity-60">{name}</li>
+        <li className="opacity-60" aria-label="owner name">
+          {name}
+        </li>
       </ul>
       <div className={styles.icon}>
         {isUpload ? (
@@ -96,9 +99,10 @@ export const CommsCell: React.FC<CommsCellProps> = ({
       </div>
 
       <ul className={styles.description}>
-        <li>{description}</li>
+        <li aria-label="action description">{description}</li>
         <li>
-          <span>{day}</span> <span>{time}</span>
+          <span aria-label="day">{day}</span>{' '}
+          <span aria-label="time">{time}</span>
         </li>
       </ul>
     </article>
