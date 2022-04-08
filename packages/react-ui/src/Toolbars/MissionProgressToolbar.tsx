@@ -1,4 +1,4 @@
-import React, { useRef } from 'react'
+import React, { useCallback, useRef, useState } from 'react'
 import clsx from 'clsx'
 import { DateTime } from 'luxon'
 import { useResizeObserver } from '@mbari/utils'
@@ -9,7 +9,7 @@ import { Point } from './MissionProgress/Point'
 
 const styles = {
   container: 'flex py-2',
-  toolbar: 'flex-grow mx-4 my-auto h-9 overflow-hidden',
+  toolbar: 'flex-grow mx-4 my-auto h-9 overflow-hidden cursor-pointer',
   title: 'flex-shrink-0 text-md font-display my-auto mx-4',
 }
 
@@ -41,16 +41,47 @@ export const MissionProgressToolbar: React.FC<MissionProgressToolbarProps> = ({
   const totalSegments = ticks + 1 // +1 for start and end which are not rendered
   const height = containerHeight || 20
   const width = containerWidth || 100
+  const missionInProgress = progress > 0 && progress < 1
+
+  const [hoverProgress, setHoverProgress] = useState(null as null | number)
+  const handleMouseMove = useCallback(
+    (e: React.MouseEvent<SVGSVGElement>) => {
+      const x =
+        e.clientX - (container?.current?.getBoundingClientRect?.().left ?? 0)
+      setHoverProgress(x / containerWidth)
+    },
+    [container, setHoverProgress, containerWidth]
+  )
+
+  const timeout = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const handleMouseOver = useCallback(() => {
+    if (timeout.current) {
+      clearTimeout(timeout.current)
+    }
+  }, [timeout])
+  const handleMouseOut = useCallback(() => {
+    if (timeout.current) {
+      clearTimeout(timeout.current)
+    }
+    timeout.current = setTimeout(() => setHoverProgress(null), 250)
+  }, [timeout])
+
   return (
     <div className={clsx(styles.container, className)} aria-label={ariaLabel}>
       <h3 className={styles.title}>Timeline</h3>
-      <div ref={container} className={styles.toolbar}>
+      <div
+        ref={container}
+        className={styles.toolbar}
+        onMouseOver={handleMouseOver}
+        onMouseOut={handleMouseOut}
+      >
         {height > 0 && width > 0 && (
           <svg
             height={height}
             viewBox={`0 0 ${width} ${height}`}
             fill="none"
             xmlns="http://www.w3.org/2000/svg"
+            onMouseMove={handleMouseMove}
           >
             <Point x={5} y={height / 2} label="Launch" />
             {[...Array(totalSegments)].map((_, i) => {
@@ -63,7 +94,7 @@ export const MissionProgressToolbar: React.FC<MissionProgressToolbarProps> = ({
               const hours = Math.abs(Math.round(diff.hours))
               const label = days >= 1 ? `${days}d` : `${hours}h`
               const tickId = `${ariaLabel}-tick-${i}-${label}`
-              console.log(tickId)
+
               return (
                 <Tick
                   key={tickId}
@@ -75,7 +106,19 @@ export const MissionProgressToolbar: React.FC<MissionProgressToolbarProps> = ({
                 />
               )
             })}
-            <Point x={width * progress} y={height / 2} label="Projected" />
+            {missionInProgress && (
+              <Point x={width * progress} y={height / 2} label="Projected" />
+            )}
+            {hoverProgress && (
+              <Point
+                x={width * hoverProgress}
+                y={height / 2}
+                label={start
+                  .plus({ seconds: hoverProgress * duration })
+                  .toFormat('MMM d, h:mm a')}
+                highlight
+              />
+            )}
             <Progress x={0} y={height / 2} width={width} percent={progress} />
             <End x={width - 7} y={height / 2 - 6} height={12} width={6} />
           </svg>
