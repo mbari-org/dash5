@@ -5,7 +5,7 @@ import {
   MissionProgressToolbar,
   MissionProgressToolbarProps,
 } from './MissionProgressToolbar'
-
+import { DateTime } from 'luxon'
 export default {
   title: 'Toolbars/MissionProgressToolbar',
   component: MissionProgressToolbar,
@@ -17,6 +17,12 @@ const Template: Story<MissionProgressToolbarProps> = (args) => (
 
 const args: MissionProgressToolbarProps = {
   className: '',
+  height: 20,
+  width: 1024,
+  ariaLabel: 'Mission Progress Toolbar',
+  ticks: 5,
+  startTime: DateTime.local().minus({ days: 3, hours: 7 }).toISO(),
+  endTime: DateTime.local().plus({ days: 2, hours: 3 }).toISO(),
 }
 
 export const Standard = Template.bind({})
