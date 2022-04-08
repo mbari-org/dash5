@@ -24,6 +24,7 @@ const args: CommsCellProps = {
   time: '16:29',
   isUpload: true,
   isScheduled: true,
+  onSelect: () => {},
 }
 
 export const Waiting = Template.bind({})

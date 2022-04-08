@@ -13,6 +13,7 @@ const props: CommsCellProps = {
   time: '3:22',
   isUpload: true,
   isScheduled: true,
+  onSelect: () => {},
 }
 
 test('should render command to the screen', async () => {
@@ -30,14 +31,6 @@ test('should have green command text if any state other than scheduled', async (
   render(<CommsCell {...props} isScheduled={false} />)
 
   expect(screen.getByText(props.command)).toHaveClass('text-green-600')
-})
-
-test('should have bold font for the id portion of the entry text', async () => {
-  render(<CommsCell {...props} />)
-
-  const entryId = props.entry.slice(-3)
-
-  expect(screen.getByText(entryId)).toHaveClass('font-semibold')
 })
 
 test('should display transmitting icon when uploading', async () => {
