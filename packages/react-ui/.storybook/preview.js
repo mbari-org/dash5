@@ -41,6 +41,10 @@ addDecorator((Story) => (
         href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&display=swap"
         rel="stylesheet"
       />{' '}
+      <link
+        href="https://fonts.googleapis.com/css2?family=Inconsolata:wght@300&display=swap"
+        rel="stylesheet"
+      />{' '}
       <Story />
     </Layout>
   </DndProvider>

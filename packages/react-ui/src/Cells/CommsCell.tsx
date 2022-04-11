@@ -22,7 +22,7 @@ export interface CommsCellProps {
 const styles = {
   container: 'flex items-center bg-white p-4 font-display',
   detailsContainer: 'flex flex-grow flex-col pl-1',
-  command: 'whitespace-pre-line font-light',
+  command: 'whitespace-pre-line font-mono',
   icon: 'px-6 text-2xl opacity-60',
   description: 'flex flex-grow flex-col p-2 opacity-60',
   buttonWrapper: 'flex w-full items-center text-left',
