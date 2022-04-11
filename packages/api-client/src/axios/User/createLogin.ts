@@ -6,16 +6,20 @@ export interface CreateLoginParams {
   password: string
 }
 
+export interface CreateLoginResponse {
+  token: string
+}
+
 export const createLogin = async (
   params: CreateLoginParams,
   { debug, instance = getInstance() }: RequestConfig = {}
 ) => {
-  const method = 'POST'
   const url = '/user/auth'
 
   if (debug) {
-    console.debug(`${method} ${url}`)
+    console.debug(`POST ${url}`)
   }
 
-  return instance({ method, url, data: params })
+  const response = await instance.post(url, params)
+  return response.data as CreateLoginResponse
 }
