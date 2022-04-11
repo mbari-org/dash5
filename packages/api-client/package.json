@@ -1,5 +1,5 @@
 {
-  "name": "@mbari/utils",
+  "name": "@mbari/api-client",
   "version": "1.0.0",
   "source": "src/index.ts",
   "types": "./dist/index.d.ts",
@@ -21,7 +21,8 @@
     "prebuild": "yarn clean",
     "build": "yarn build:modern",
     "build:modern": "rollup -c ./scripts/rollup/rollup.config.js",
-    "build:esm": "rollup -c ./scripts/rollup/rollup.esm.config.js"
+    "build:esm": "rollup -c ./scripts/rollup/rollup.esm.config.js",
+    "test": "yarn jest"
   },
   "eslintConfig": {
     "extends": "react-app"
@@ -44,19 +45,31 @@
     "@types/humps": "^2.0.0",
     "@types/node": "12.6.8",
     "@types/react": "16.8.23",
-    "jest": "27.5.1",
+    "axios-mock-adapter": "^1.20.0",
+    "babel-jest": "^27.5.1",
+    "babel-loader": "8.1.0",
+    "jest": "^27.5.1",
     "prettier": "^2.1.2",
+    "resolve-url-loader": "^5.0.0",
     "rimraf": "^3.0.2",
     "rollup": "^2.66.1",
     "rollup-plugin-peer-deps-external": "^2.2.4",
     "rollup-plugin-sourcemaps": "^0.6.2",
     "rollup-plugin-terser": "^7.0.2",
     "rollup-plugin-typescript2": "^0.31.1",
-    "typescript": "^4.0.5"
+    "ts-jest": "^27.1.4",
+    "ts-node": "^10.7.0",
+    "typescript": "^4.0.5",
+    "@testing-library/jest-dom": "^5.16.2",
+    "@testing-library/react": "^12.1.4",
+    "@testing-library/user-event": "^13.5.0"
   },
   "dependencies": {
+    "axios": "^0.26.1",
     "clsx": "^1.1.1",
     "humps": "^2.0.1",
+    "react": "^17.0.2",
+    "react-query": "^3.34.19",
     "resize-observer-polyfill": "^1.5.1"
   }
 }
