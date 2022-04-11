@@ -1,6 +1,7 @@
-import { AxiosInstance } from 'axios'
+import { AxiosInstance, AxiosRequestHeaders } from 'axios'
 
 export interface RequestConfig {
   debug?: boolean
   instance?: AxiosInstance
+  headers?: AxiosRequestHeaders
 }
