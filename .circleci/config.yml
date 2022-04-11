@@ -96,6 +96,7 @@ jobs:
       - build-monorepo
 
   test:
+    resouce_class: xlarge
     executor:
       name: node/default
       tag: '14.19.1'
@@ -109,6 +110,7 @@ jobs:
           name: Run turbo repo tests
 
   deploy_ui:
+    resouce_class: xlarge
     executor:
       name: node/default
       tag: '14.19.1'
