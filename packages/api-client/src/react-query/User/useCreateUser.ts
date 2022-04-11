@@ -1,5 +1,5 @@
 import { useMutation } from 'react-query'
-import { CreateUserParams, createUser } from '../../axios/User/createUser'
+import { CreateUserParams, createUser } from '../../axios'
 
 export const useCreateUser = () => {
   const mutation = useMutation((params: CreateUserParams) => {
