@@ -18,6 +18,7 @@ module.exports = {
       },
       fontFamily: {
         display: "'Inter', sans-serif",
+        mono: "'Inconsolata', monospace",
       },
       screens: { print: { raw: 'print' } },
       maxHeight: {

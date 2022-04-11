@@ -44,7 +44,7 @@ yarn-error.log*
 
 # testing
 coverage
+.jest-test-results.json
 
 # turborepo cache
 .turbo
-/packages/react-ui/.jest-test-results.json
