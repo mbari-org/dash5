@@ -1,8 +1,5 @@
-jest.unmock('axios') // Do this just in case the library is already mocked
-
-import axios from 'axios'
-import MockAdapter from 'axios-mock-adapter'
-
+import { rest } from 'msw'
+import { setupServer } from 'msw/node'
 import { createLogin } from './createLogin'
 
 describe('createLogin', () => {
@@ -11,28 +8,29 @@ describe('createLogin', () => {
     password: 'some-password',
   }
 
-  let mock: MockAdapter
+  const mockResponse = { token: 'authentication-token' }
 
-  beforeAll(() => {
-    mock = new MockAdapter(axios)
-  })
+  const server = setupServer(
+    rest.post('/user/auth', (_req, res, ctx) => {
+      return res(ctx.status(200), ctx.json(mockResponse))
+    })
+  )
 
-  afterEach(() => {
-    mock.reset()
-  })
+  beforeAll(() => server.listen())
+  afterEach(() => server.resetHandlers())
+  afterAll(() => server.close())
 
   it('should return the authentication token when successful', async () => {
-    const mockResponse = { token: 'authentication-token' }
-    mock.onPost('/user/auth').reply(200, mockResponse)
-
     const { token } = await createLogin(params)
-
-    expect(mock.history.post[0].url).toEqual('/user/auth')
     expect(token).toEqual(mockResponse.token)
   })
 
   it('should throw when unsuccessful', async () => {
-    mock.onPost('/user/auth').reply(500)
+    server.use(
+      rest.post('/user/auth', (_req, res, ctx) => {
+        return res(ctx.status(500))
+      })
+    )
 
     try {
       await createLogin(params)
