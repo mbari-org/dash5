@@ -23,17 +23,18 @@ const styles = {
   container:
     'rounded-md bg-white font-display flex drop-shadow-lg border-solid border-stone-300 border-2',
   header: 'py-3 pl-4',
-  options: 'py-2 pl-4 flex w-full items-center text-left',
+  options: 'py-2 pl-4 flex w-full items-center text-left hover:bg-stone-100',
 }
 
 export const Dropdown: React.FC<DropdownProps> = ({
   className,
+  style,
   currentValue,
   description,
   options,
 }) => {
   return (
-    <article className={clsx(styles.container, className)}>
+    <article style={style} className={clsx(styles.container, className)}>
       <ul className="w-full">
         {(currentValue || description) && (
           <li className={styles.header}>
@@ -48,12 +49,19 @@ export const Dropdown: React.FC<DropdownProps> = ({
             <hr />
             <button
               aria-label="option"
-              className={clsx(styles.options, disabled && 'opacity-30')}
+              className={styles.options}
               onClick={swallow(onSelect)}
               disabled={disabled}
             >
-              {icon && <FontAwesomeIcon icon={icon} className="pr-2 text-xs" />}
-              {label}
+              <span>
+                {icon && (
+                  <FontAwesomeIcon
+                    icon={icon}
+                    className={clsx('pr-2 text-xs', disabled && 'opacity-30')}
+                  />
+                )}
+              </span>
+              <span className={clsx(disabled && 'opacity-30')}>{label}</span>
             </button>
           </li>
         ))}
