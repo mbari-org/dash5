@@ -17,7 +17,7 @@
     "prettier": "prettier --config ../../.prettierrc 'src/**/*.{js,jsx,ts,tsx}' --write",
     "test:watch": "jest --watch --json --outputFile=.jest-test-results.json",
     "test:generate-output": "jest --json --outputFile=.jest-test-results.json || true",
-    "test": "jest",
+    "test": "yarn jest",
     "prebuild:storybook": "npm run test:generate-output",
     "build:storybook": "build-storybook -c .storybook -o build/",
     "predeploy": "npm run build:storybook",
