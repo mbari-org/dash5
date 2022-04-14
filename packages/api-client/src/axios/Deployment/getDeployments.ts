@@ -4,6 +4,7 @@ import { RequestConfig } from '../types'
 
 export interface GetDeploymentsParams {
   vehicleName?: string
+  deploymentId?: string
 }
 
 export interface GetDeploymentsResponse {
