@@ -18,6 +18,7 @@ const args: AccessoryButtonProps = {
   className: '',
   label: 'Shannon J. / Brian K.',
   icon: faEye as IconProp,
+  isActive: false,
 }
 
 export const Standard = Template.bind({})

@@ -14,6 +14,7 @@ export interface OverviewToolbarProps {
   style?: React.CSSProperties
   mission: string
   btnLabel: string
+  btnSecondary: string
   btnIcon?: IconDefinition
   open?: boolean
   onToggle: (open: boolean) => void
@@ -135,6 +136,7 @@ export const OverviewToolbar: React.FC<OverviewToolbarProps> = ({
   style,
   mission,
   btnLabel,
+  btnSecondary,
   btnIcon,
   open,
   onToggle,
@@ -161,8 +163,10 @@ export const OverviewToolbar: React.FC<OverviewToolbarProps> = ({
         <li className="pr-2">
           <AccessoryButton
             label={btnLabel}
+            secondary={btnSecondary}
             icon={btnIcon as IconProp}
             onClick={swallow(onUserSelect)}
+            isActive={true}
           />
         </li>
         <li className="p-4">{networkIcon}</li>

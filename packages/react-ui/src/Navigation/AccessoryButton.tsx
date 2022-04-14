@@ -8,15 +8,19 @@ export interface AccessoryButtonProps extends ButtonProps {
   className?: string
   style?: React.CSSProperties
   label: string
+  secondary?: string
   icon?: IconProp
   reverse?: boolean
+  isActive?: boolean
 }
 
 export const AccessoryButton: React.FC<AccessoryButtonProps> = ({
   className,
   icon,
   label,
+  secondary,
   reverse,
+  isActive,
   ...props
 }) => {
   return (
@@ -32,7 +36,15 @@ export const AccessoryButton: React.FC<AccessoryButtonProps> = ({
           aria-label="supporting icon"
         />
       )}
-      <span className="flex-grow">{label}</span>
+      <div className="flex-grow">
+        <span className={clsx(isActive && 'text-teal-500')}>{label}</span>
+        {secondary && (
+          <>
+            {' / '}
+            <span>{secondary}</span>
+          </>
+        )}
+      </div>
     </Button>
   )
 }
