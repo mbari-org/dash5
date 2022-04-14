@@ -21,6 +21,9 @@ const args: OverviewToolbarProps = {
   mission: 'Brizo 7 EcoHab',
   btnLabel: 'Tanner P. (you)/ Brian K.',
   btnIcon: faEye as IconDefinition,
+  open: false,
+  onToggle: () => {},
+  onUserSelect: () => {},
 }
 
 export const Standard = Template.bind({})
