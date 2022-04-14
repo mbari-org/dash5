@@ -12,7 +12,7 @@ export interface GetMapLayersResponse {
 
 export const getMapLayers = async (
   params: GetMapLayersParams,
-  { debug, instance = getInstance() }: RequestConfig = {}
+  { debug, instance = getInstance(), ...config }: RequestConfig = {}
 ) => {
   const url = '/info/map/'
 
@@ -21,7 +21,8 @@ export const getMapLayers = async (
   }
 
   const response = await instance.get(
-    `${url}?${new URLSearchParams({ ...params })}`
+    `${url}?${new URLSearchParams({ ...params })}`,
+    config
   )
   return response.data as GetMapLayersResponse
 }

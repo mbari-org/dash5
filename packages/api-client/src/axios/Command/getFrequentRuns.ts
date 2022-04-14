@@ -12,7 +12,7 @@ export interface GetFrequentRunsResponse {
 
 export const getFrequentRuns = async (
   params: GetFrequentRunsParams,
-  { debug, instance = getInstance() }: RequestConfig = {}
+  { debug, instance = getInstance(), ...config }: RequestConfig = {}
 ) => {
   const url = '/commands/frequent/runs'
 
@@ -21,7 +21,8 @@ export const getFrequentRuns = async (
   }
 
   const response = await instance.get(
-    `${url}?${new URLSearchParams({ ...params })}`
+    `${url}?${new URLSearchParams({ ...params })}`,
+    config
   )
   return response.data as GetFrequentRunsResponse
 }

@@ -13,7 +13,7 @@ export interface GetDeploymentsResponse {
 
 export const getDeployments = async (
   params: GetDeploymentsParams,
-  { debug, instance = getInstance() }: RequestConfig = {}
+  { debug, instance = getInstance(), ...config }: RequestConfig = {}
 ) => {
   const url = '/deployments'
 
@@ -22,7 +22,8 @@ export const getDeployments = async (
   }
 
   const response = await instance.get(
-    `${url}?${new URLSearchParams({ ...params })}`
+    `${url}?${new URLSearchParams({ ...params })}`,
+    config
   )
   return response.data as GetDeploymentsResponse
 }

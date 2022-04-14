@@ -13,7 +13,7 @@ export interface DeleteEmailAddressesForNotificationsResponse {
 
 export const deleteEmailAddressesForNotifications = async (
   params: DeleteEmailAddressesForNotificationsParams,
-  { debug, instance = getInstance() }: RequestConfig = {}
+  { debug, instance = getInstance(), ...config }: RequestConfig = {}
 ) => {
   const url = '/ens/email'
 
@@ -22,7 +22,8 @@ export const deleteEmailAddressesForNotifications = async (
   }
 
   const response = await instance.delete(
-    `${url}?${new URLSearchParams({ ...params })}`
+    `${url}?${new URLSearchParams({ ...params })}`,
+    config
   )
   return response.data as DeleteEmailAddressesForNotificationsResponse
 }

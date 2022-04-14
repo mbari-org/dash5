@@ -17,7 +17,7 @@ export interface GetUsersResponse {
 
 export const getUsers = async (
   params: GetUsersParams,
-  { debug, instance = getInstance() }: RequestConfig = {}
+  { debug, instance = getInstance(), ...config }: RequestConfig = {}
 ) => {
   const url = '/user'
 
@@ -25,6 +25,9 @@ export const getUsers = async (
     console.debug(`GET ${url}`)
   }
 
-  const response = await instance.get(url, params)
+  const response = await instance.get(
+    `${url}?${new URLSearchParams({ ...params })}`,
+    config
+  )
   return response.data as GetUsersResponse
 }

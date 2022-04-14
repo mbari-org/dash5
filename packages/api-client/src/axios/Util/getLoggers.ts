@@ -16,7 +16,7 @@ export interface GetLoggersResponse {
 
 export const getLoggers = async (
   params: GetLoggersParams,
-  { debug, instance = getInstance() }: RequestConfig = {}
+  { debug, instance = getInstance(), ...config }: RequestConfig = {}
 ) => {
   const url = '/util/logger'
 
@@ -24,6 +24,9 @@ export const getLoggers = async (
     console.debug(`GET ${url}`)
   }
 
-  const response = await instance.get(url, params)
+  const response = await instance.get(
+    `${url}?${new URLSearchParams({ ...params })}`,
+    config
+  )
   return response.data as GetLoggersResponse
 }

@@ -12,7 +12,7 @@ export interface GetMapKmlLayerResponse {
 
 export const getMapKmlLayer = async (
   params: GetMapKmlLayerParams,
-  { debug, instance = getInstance() }: RequestConfig = {}
+  { debug, instance = getInstance(), ...config }: RequestConfig = {}
 ) => {
   const url = '/info/map/kmlLayer'
 
@@ -21,7 +21,8 @@ export const getMapKmlLayer = async (
   }
 
   const response = await instance.get(
-    `${url}?${new URLSearchParams({ ...params })}`
+    `${url}?${new URLSearchParams({ ...params })}`,
+    config
   )
   return response.data as GetMapKmlLayerResponse
 }

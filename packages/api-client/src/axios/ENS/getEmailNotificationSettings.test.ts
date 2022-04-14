@@ -11,7 +11,7 @@ let params: GetEmailNotificationSettingsParams = {
 
 const mockResponse = { value: 'some-value' }
 const server = setupServer(
-  rest.post('/ens', (_req, res, ctx) => {
+  rest.get('/ens', (_req, res, ctx) => {
     return res(ctx.status(200), ctx.json(mockResponse))
   })
 )
@@ -28,7 +28,7 @@ describe('getEmailNotificationSettings', () => {
 
   it('should throw when unsuccessful', async () => {
     server.use(
-      rest.post('/ens', (_req, res, ctx) => {
+      rest.get('/ens', (_req, res, ctx) => {
         return res.once(ctx.status(500))
       })
     )

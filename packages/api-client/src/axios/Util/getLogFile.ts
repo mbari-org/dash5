@@ -13,7 +13,7 @@ export interface GetLogFileResponse {
 
 export const getLogFile = async (
   { logfilePath, ...params }: GetLogFileParams,
-  { debug, instance = getInstance() }: RequestConfig = {}
+  { debug, instance = getInstance(), ...config }: RequestConfig = {}
 ) => {
   const url = `/util/logger/file/${logfilePath}`
 
@@ -21,6 +21,6 @@ export const getLogFile = async (
     console.debug(`GET ${url}`)
   }
   const qs = new URLSearchParams({ tail: params.tail.toString() })
-  const response = await instance.get(`${url}?${qs}`)
+  const response = await instance.get(`${url}?${qs}`, config)
   return response.data as GetLogFileResponse
 }

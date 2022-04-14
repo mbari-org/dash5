@@ -20,7 +20,7 @@ export interface AlterDeploymentResponse {
 
 export const alterDeployment = async (
   { deploymentType, ...params }: AlterDeploymentParams,
-  { debug, instance = getInstance() }: RequestConfig = {}
+  { debug, instance = getInstance(), ...config }: RequestConfig = {}
 ) => {
   const url = `/deployments/${deploymentType}`
 
@@ -28,6 +28,6 @@ export const alterDeployment = async (
     console.debug(`POST ${url}`)
   }
 
-  const response = await instance.post(url, params)
+  const response = await instance.post(url, params, config)
   return response.data as AlterDeploymentResponse
 }

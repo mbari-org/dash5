@@ -18,7 +18,7 @@ export interface GetEventsResponse {
 
 export const getEvents = async (
   params: GetEventsParams,
-  { debug, instance = getInstance() }: RequestConfig = {}
+  { debug, instance = getInstance(), ...config }: RequestConfig = {}
 ) => {
   const url = '/events'
 
@@ -30,7 +30,8 @@ export const getEvents = async (
     `${url}?${new URLSearchParams({
       ...params,
       limit: params.limit.toString(),
-    })}`
+    })}`,
+    config
   )
   return response.data as GetEventsResponse
 }

@@ -14,7 +14,7 @@ export interface GetScriptResponse {
 
 export const getScript = async (
   params: GetScriptParams,
-  { debug, instance = getInstance() }: RequestConfig = {}
+  { debug, instance = getInstance(), ...config }: RequestConfig = {}
 ) => {
   const url = '/commands/script'
 
@@ -23,7 +23,8 @@ export const getScript = async (
   }
 
   const response = await instance.get(
-    `${url}?${new URLSearchParams({ ...params })}`
+    `${url}?${new URLSearchParams({ ...params })}`,
+    config
   )
   return response.data as GetScriptResponse
 }

@@ -1,9 +1,9 @@
 // Use scaffold axiosBase to generate the resources imported below.
-import { getInstance } from "../getInstance";
-import { RequestConfig } from "../types";
+import { getInstance } from '../getInstance'
+import { RequestConfig } from '../types'
 
 export interface GenerateDeploymentDListParams {
-  deploymentId: string 
+  deploymentId: string
 }
 
 export interface GenerateDeploymentDListResponse {
@@ -12,14 +12,14 @@ export interface GenerateDeploymentDListResponse {
 
 export const generateDeploymentDList = async (
   params: GenerateDeploymentDListParams,
-  { debug, instance = getInstance() }: RequestConfig = {}
+  { debug, instance = getInstance(), ...config }: RequestConfig = {}
 ) => {
-  const url = "/deployments/dlist";
+  const url = '/deployments/dlist'
 
   if (debug) {
-    console.debug(`PUT ${url}`);
+    console.debug(`PUT ${url}`)
   }
 
-  const response = await instance.put(url, params);
-  return response.data as GenerateDeploymentDListResponse;
-};
+  const response = await instance.put(url, params, config)
+  return response.data as GenerateDeploymentDListResponse
+}

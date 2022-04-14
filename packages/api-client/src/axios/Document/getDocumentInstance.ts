@@ -12,7 +12,7 @@ export interface GetDocumentInstanceResponse {
 
 export const getDocumentInstance = async (
   params: GetDocumentInstanceParams,
-  { debug, instance = getInstance() }: RequestConfig = {}
+  { debug, instance = getInstance(), ...config }: RequestConfig = {}
 ) => {
   const url = '/documents/instance'
 
@@ -21,7 +21,8 @@ export const getDocumentInstance = async (
   }
 
   const response = await instance.get(
-    `${url}?${new URLSearchParams({ ...params })}`
+    `${url}?${new URLSearchParams({ ...params })}`,
+    config
   )
   return response.data as GetDocumentInstanceResponse
 }

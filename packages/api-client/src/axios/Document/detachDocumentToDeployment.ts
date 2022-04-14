@@ -13,7 +13,7 @@ export interface DetachDocumentToDeploymentResponse {
 
 export const detachDocumentToDeployment = async (
   params: DetachDocumentToDeploymentParams,
-  { debug, instance = getInstance() }: RequestConfig = {}
+  { debug, instance = getInstance(), ...config }: RequestConfig = {}
 ) => {
   const url = '/documents/deployment'
 
@@ -22,7 +22,8 @@ export const detachDocumentToDeployment = async (
   }
 
   const response = await instance.delete(
-    `${url}?${new URLSearchParams({ ...params })}`
+    `${url}?${new URLSearchParams({ ...params })}`,
+    config
   )
   return response.data as DetachDocumentToDeploymentResponse
 }

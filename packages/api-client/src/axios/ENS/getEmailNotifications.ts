@@ -12,7 +12,7 @@ export interface GetEmailNotificationsResponse {
 
 export const getEmailNotifications = async (
   params: GetEmailNotificationsParams,
-  { debug, instance = getInstance() }: RequestConfig = {}
+  { debug, instance = getInstance(), ...config }: RequestConfig = {}
 ) => {
   const url = '/ens/emails'
 
@@ -21,7 +21,8 @@ export const getEmailNotifications = async (
   }
 
   const response = await instance.get(
-    `${url}?${new URLSearchParams({ ...params })}`
+    `${url}?${new URLSearchParams({ ...params })}`,
+    config
   )
   return response.data as GetEmailNotificationsResponse
 }

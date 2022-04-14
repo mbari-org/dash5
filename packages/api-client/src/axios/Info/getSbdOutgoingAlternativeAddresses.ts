@@ -10,7 +10,7 @@ export interface GetSbdOutgoingAlternativeAddressesResponse {
 
 export const getSbdOutgoingAlternativeAddresses = async (
   params: GetSbdOutgoingAlternativeAddressesParams,
-  { debug, instance = getInstance() }: RequestConfig = {}
+  { debug, instance = getInstance(), ...config }: RequestConfig = {}
 ) => {
   const url = '/info/sbd/destAddresses'
 
@@ -19,7 +19,8 @@ export const getSbdOutgoingAlternativeAddresses = async (
   }
 
   const response = await instance.get(
-    `${url}?${new URLSearchParams({ ...params })}`
+    `${url}?${new URLSearchParams({ ...params })}`,
+    config
   )
   return response.data as GetSbdOutgoingAlternativeAddressesResponse
 }

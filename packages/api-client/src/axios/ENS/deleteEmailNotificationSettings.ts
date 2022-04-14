@@ -12,7 +12,7 @@ export interface DeleteEmailNotificationSettingsResponse {
 
 export const deleteEmailNotificationSettings = async (
   params: DeleteEmailNotificationSettingsParams,
-  { debug, instance = getInstance() }: RequestConfig = {}
+  { debug, instance = getInstance(), ...config }: RequestConfig = {}
 ) => {
   const url = '/ens'
 
@@ -21,7 +21,8 @@ export const deleteEmailNotificationSettings = async (
   }
 
   const response = await instance.delete(
-    `${url}?${new URLSearchParams({ ...params })}`
+    `${url}?${new URLSearchParams({ ...params })}`,
+    config
   )
   return response.data as DeleteEmailNotificationSettingsResponse
 }

@@ -1,10 +1,10 @@
 // Use scaffold axiosBase to generate the resources imported below.
-import { getInstance } from "../getInstance";
-import { RequestConfig } from "../types";
+import { getInstance } from '../getInstance'
+import { RequestConfig } from '../types'
 
 export interface AttachDocumentToVehicleParams {
   docId: string
-  vehicleName: string 
+  vehicleName: string
 }
 
 export interface AttachDocumentToVehicleResponse {
@@ -13,14 +13,14 @@ export interface AttachDocumentToVehicleResponse {
 
 export const attachDocumentToVehicle = async (
   params: AttachDocumentToVehicleParams,
-  { debug, instance = getInstance() }: RequestConfig = {}
+  { debug, instance = getInstance(), ...config }: RequestConfig = {}
 ) => {
-  const url = "/documents/vehicle";
+  const url = '/documents/vehicle'
 
   if (debug) {
-    console.debug(`POST ${url}`);
+    console.debug(`POST ${url}`)
   }
 
-  const response = await instance.post(url, params);
-  return response.data as AttachDocumentToVehicleResponse;
-};
+  const response = await instance.post(url, params, config)
+  return response.data as AttachDocumentToVehicleResponse
+}

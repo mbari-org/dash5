@@ -12,7 +12,7 @@ export interface CreateUserParams {
 
 export const createUser = async (
   params: CreateUserParams,
-  { debug, instance = getInstance() }: RequestConfig = {}
+  { debug, instance = getInstance(), ...config }: RequestConfig = {}
 ) => {
   const url = '/user'
 
@@ -20,5 +20,5 @@ export const createUser = async (
     console.debug(`POST ${url}`)
   }
 
-  return instance.post(url, { data: params })
+  return instance.post(url, { data: params }, config)
 }

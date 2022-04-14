@@ -1,10 +1,10 @@
 // Use scaffold axiosBase to generate the resources imported below.
-import { getInstance } from "../getInstance";
-import { RequestConfig } from "../types";
+import { getInstance } from '../getInstance'
+import { RequestConfig } from '../types'
 
 export interface CreateNoteParams {
   vehicle: string
-  note: string 
+  note: string
 }
 
 export interface CreateNoteResponse {
@@ -13,14 +13,14 @@ export interface CreateNoteResponse {
 
 export const createNote = async (
   params: CreateNoteParams,
-  { debug, instance = getInstance() }: RequestConfig = {}
+  { debug, instance = getInstance(), ...config }: RequestConfig = {}
 ) => {
-  const url = "/events/note";
+  const url = '/events/note'
 
   if (debug) {
-    console.debug(`POST ${url}`);
+    console.debug(`POST ${url}`)
   }
 
-  const response = await instance.post(url, params);
-  return response.data as CreateNoteResponse;
-};
+  const response = await instance.post(url, params, config)
+  return response.data as CreateNoteResponse
+}

@@ -17,7 +17,7 @@ export interface UpdateUserResponse {
 
 export const updateUser = async (
   params: UpdateUserParams,
-  { debug, instance = getInstance() }: RequestConfig = {}
+  { debug, instance = getInstance(), ...config }: RequestConfig = {}
 ) => {
   const url = '/user'
 
@@ -25,6 +25,6 @@ export const updateUser = async (
     console.debug(`PUT ${url}`)
   }
 
-  const response = await instance.put(url, params)
+  const response = await instance.put(url, params, config)
   return response.data as UpdateUserResponse
 }

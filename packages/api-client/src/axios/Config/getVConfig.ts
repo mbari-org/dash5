@@ -14,7 +14,7 @@ export interface GetVConfigResponse {
 
 export const getVConfig = async (
   params: GetVConfigParams,
-  { debug, instance = getInstance() }: RequestConfig = {}
+  { debug, instance = getInstance(), ...config }: RequestConfig = {}
 ) => {
   const url = '/vconfig'
 
@@ -23,7 +23,8 @@ export const getVConfig = async (
   }
 
   const response = await instance.get(
-    `${url}?${new URLSearchParams({ ...params })}`
+    `${url}?${new URLSearchParams({ ...params })}`,
+    config
   )
   return response.data as GetVConfigResponse
 }

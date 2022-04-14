@@ -14,7 +14,7 @@ export interface UpdateLoggerResponse {
 
 export const updateLogger = async (
   params: UpdateLoggerParams,
-  { debug, instance = getInstance() }: RequestConfig = {}
+  { debug, instance = getInstance(), ...config }: RequestConfig = {}
 ) => {
   const url = '/util/logger'
 
@@ -22,6 +22,6 @@ export const updateLogger = async (
     console.debug(`PUT ${url}`)
   }
 
-  const response = await instance.put(url, params)
+  const response = await instance.put(url, params, config)
   return response.data as UpdateLoggerResponse
 }

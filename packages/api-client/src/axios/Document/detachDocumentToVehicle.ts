@@ -13,7 +13,7 @@ export interface DetachDocumentToVehicleResponse {
 
 export const detachDocumentToVehicle = async (
   params: DetachDocumentToVehicleParams,
-  { debug, instance = getInstance() }: RequestConfig = {}
+  { debug, instance = getInstance(), ...config }: RequestConfig = {}
 ) => {
   const url = '/documents/vehicle'
 
@@ -22,7 +22,8 @@ export const detachDocumentToVehicle = async (
   }
 
   const response = await instance.delete(
-    `${url}?${new URLSearchParams({ ...params })}`
+    `${url}?${new URLSearchParams({ ...params })}`,
+    config
   )
   return response.data as DetachDocumentToVehicleResponse
 }

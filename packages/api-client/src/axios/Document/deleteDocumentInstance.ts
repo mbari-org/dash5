@@ -12,7 +12,7 @@ export interface DeleteDocumentInstanceResponse {
 
 export const deleteDocumentInstance = async (
   params: DeleteDocumentInstanceParams,
-  { debug, instance = getInstance() }: RequestConfig = {}
+  { debug, instance = getInstance(), ...config }: RequestConfig = {}
 ) => {
   const url = '/documents/instance'
 
@@ -21,7 +21,8 @@ export const deleteDocumentInstance = async (
   }
 
   const response = await instance.delete(
-    `${url}?${new URLSearchParams({ ...params })}`
+    `${url}?${new URLSearchParams({ ...params })}`,
+    config
   )
   return response.data as DeleteDocumentInstanceResponse
 }

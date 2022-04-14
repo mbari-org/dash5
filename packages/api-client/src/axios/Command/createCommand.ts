@@ -17,7 +17,7 @@ export interface CreateCommandResponse {
 
 export const createCommand = async (
   params: CreateCommandParams,
-  { debug, instance = getInstance() }: RequestConfig = {}
+  { debug, instance = getInstance(), ...config }: RequestConfig = {}
 ) => {
   const url = '/commands'
 
@@ -25,6 +25,6 @@ export const createCommand = async (
     console.debug(`POST ${url}`)
   }
 
-  const response = await instance.post(url, params)
+  const response = await instance.post(url, params, config)
   return response.data as CreateCommandResponse
 }

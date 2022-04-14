@@ -10,7 +10,7 @@ export interface DeleteSimFutureEventsResponse {
 
 export const deleteSimFutureEvents = async (
   _params: DeleteSimFutureEventsParams = {},
-  { debug, instance = getInstance() }: RequestConfig = {}
+  { debug, instance = getInstance(), ...config }: RequestConfig = {}
 ) => {
   const url = '/events/future'
 
@@ -18,6 +18,6 @@ export const deleteSimFutureEvents = async (
     console.debug(`DELETE ${url}`)
   }
 
-  const response = await instance.delete(url)
+  const response = await instance.delete(url, config)
   return response.data as DeleteSimFutureEventsResponse
 }

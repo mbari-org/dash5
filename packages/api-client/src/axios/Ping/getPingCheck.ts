@@ -12,7 +12,7 @@ export interface GetPingCheckResponse {
 
 export const getPingCheck = async (
   params: GetPingCheckParams,
-  { debug, instance = getInstance() }: RequestConfig = {}
+  { debug, instance = getInstance(), ...config }: RequestConfig = {}
 ) => {
   const url = '/ping/check'
 
@@ -21,7 +21,8 @@ export const getPingCheck = async (
   }
 
   const response = await instance.get(
-    `${url}?${new URLSearchParams({ ...params })}`
+    `${url}?${new URLSearchParams({ ...params })}`,
+    config
   )
   return response.data as GetPingCheckResponse
 }

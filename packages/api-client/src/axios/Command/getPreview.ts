@@ -15,7 +15,7 @@ export interface GetPreviewResponse {
 
 export const getPreview = async (
   params: GetPreviewParams,
-  { debug, instance = getInstance() }: RequestConfig = {}
+  { debug, instance = getInstance(), ...config }: RequestConfig = {}
 ) => {
   const url = '/commands/preview'
 
@@ -24,7 +24,8 @@ export const getPreview = async (
   }
 
   const response = await instance.get(
-    `${url}?${new URLSearchParams({ ...params })}`
+    `${url}?${new URLSearchParams({ ...params })}`,
+    config
   )
   return response.data as GetPreviewResponse
 }

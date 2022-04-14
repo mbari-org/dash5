@@ -12,7 +12,7 @@ export interface ResetPasswordResponse {
 
 export const resetPassword = async (
   params: ResetPasswordParams,
-  { debug, instance = getInstance() }: RequestConfig = {}
+  { debug, instance = getInstance(), ...config }: RequestConfig = {}
 ) => {
   const url = '/user/rpw'
 
@@ -20,6 +20,6 @@ export const resetPassword = async (
     console.debug(`POST ${url}`)
   }
 
-  const response = await instance.post(url, params)
+  const response = await instance.post(url, params, config)
   return response.data as ResetPasswordResponse
 }
