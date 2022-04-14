@@ -1,15 +1,20 @@
-jest.unmock('axios') // Do this just in case the library is already mocked
 import '@testing-library/jest-dom'
 import React from 'react'
-import axios from 'axios'
-import MockAdapter from 'axios-mock-adapter'
 import { AuthProvider } from './AuthProvider'
 import { render, screen, fireEvent, waitFor } from '@testing-library/react'
 import { useAuthContext } from './useAuthContext'
 import { QueryClientProvider, QueryClient } from 'react-query'
+import { rest } from 'msw'
+import { setupServer } from 'msw/node'
 
 const queryClient = new QueryClient()
 const mockResponse = { token: 'authentication-token' }
+
+const server = setupServer(
+  rest.post('/user/auth', (_req, res, ctx) => {
+    return res(ctx.status(200), ctx.json(mockResponse))
+  })
+)
 
 const AuthContent: React.FC = () => {
   const { authenticated, token, login, logout, error } = useAuthContext()
@@ -40,23 +45,18 @@ const AuthContent: React.FC = () => {
   )
 }
 
+const MockComponent: React.FC = () => (
+  <QueryClientProvider client={queryClient}>
+    <AuthProvider>
+      <AuthContent />
+    </AuthProvider>
+  </QueryClientProvider>
+)
+
 describe('AuthProvider', () => {
-  let mock: MockAdapter
-  const MockComponent: React.FC = () => (
-    <QueryClientProvider client={queryClient}>
-      <AuthProvider>
-        <AuthContent />
-      </AuthProvider>
-    </QueryClientProvider>
-  )
-
-  beforeAll(() => {
-    mock = new MockAdapter(axios)
-  })
-
-  afterEach(() => {
-    mock.reset()
-  })
+  beforeAll(() => server.listen())
+  afterEach(() => server.resetHandlers())
+  afterAll(() => server.close())
 
   it('should render the login button if not authenticated', async () => {
     render(<MockComponent />)
@@ -79,15 +79,10 @@ describe('AuthProvider', () => {
   })
 
   it('should render the logout button and auth token after the user authenticates', async () => {
-    mock.onPost('/user/auth').reply(200, mockResponse)
-
     render(<MockComponent />)
     fireEvent.click(screen.getByText('login'))
 
-    await waitFor(() =>
-      // getByRole throws an error if it cannot find an element
-      screen.queryByLabelText('auth-content-token')
-    )
+    await waitFor(() => screen.getByLabelText('auth-content-token'))
     expect(screen.queryByLabelText(/auth-content-token/i)).toHaveTextContent(
       mockResponse.token
     )
@@ -97,15 +92,16 @@ describe('AuthProvider', () => {
   })
 
   it('should not render the logout button and auth token if the user authentication fails', async () => {
-    mock.onPost('/user/auth').reply(500)
+    server.use(
+      rest.post('/user/auth', (_req, res, ctx) => {
+        return res(ctx.status(500))
+      })
+    )
 
     render(<MockComponent />)
     fireEvent.click(screen.getByText('login'))
 
-    await waitFor(() =>
-      // getByRole throws an error if it cannot find an element
-      screen.queryByLabelText('auth-content-token')
-    )
+    await waitFor(() => screen.getByLabelText('auth-content-error'))
     expect(
       screen.queryByLabelText(/auth-content-token/i)
     ).not.toBeInTheDocument()
@@ -115,39 +111,36 @@ describe('AuthProvider', () => {
   })
 
   it('should render an error if the user authentication fails', async () => {
-    mock.onPost('/user/auth').reply(500)
+    server.use(
+      rest.post('/user/auth', (_req, res, ctx) => {
+        return res(ctx.status(500))
+      })
+    )
 
     render(<MockComponent />)
     fireEvent.click(screen.getByText('login'))
 
-    await waitFor(() =>
-      // getByRole throws an error if it cannot find an element
-      screen.queryByLabelText('auth-content-token')
-    )
-    expect(screen.queryByLabelText(/auth-content-error/i)).toBeInTheDocument()
+    await waitFor(() => screen.getByLabelText('auth-content-error'))
+    expect(screen.getByLabelText(/auth-content-error/i)).toBeInTheDocument()
   })
 
   it('should clear an error if the user authenticates successfully after failure', async () => {
     render(<MockComponent />)
 
-    mock.onPost('/user/auth').reply(500)
+    server.use(
+      rest.post('/user/auth', (_req, res, ctx) => {
+        return res.once(ctx.status(500))
+      })
+    )
 
     fireEvent.click(screen.getByText('login'))
 
-    await waitFor(() =>
-      // getByRole throws an error if it cannot find an element
-      screen.queryByLabelText('auth-content-token')
-    )
-    expect(screen.queryByLabelText(/auth-content-error/i)).toBeInTheDocument()
-
-    mock.onPost('/user/auth').reply(200, mockResponse)
+    await waitFor(() => screen.getByLabelText('auth-content-error'))
+    expect(screen.getByLabelText(/auth-content-error/i)).toBeInTheDocument()
 
     fireEvent.click(screen.getByText('login'))
 
-    await waitFor(() =>
-      // getByRole throws an error if it cannot find an element
-      screen.queryByLabelText('auth-content-logout-button')
-    )
+    await waitFor(() => screen.getByLabelText('auth-content-token'))
     expect(
       screen.queryByLabelText(/auth-content-error/i)
     ).not.toBeInTheDocument()
@@ -155,15 +148,9 @@ describe('AuthProvider', () => {
 
   it('should logout the user if the user clicks the logout button after authenticating', async () => {
     render(<MockComponent />)
-
-    mock.onPost('/user/auth').reply(200, mockResponse)
-
     fireEvent.click(screen.getByText('login'))
 
-    await waitFor(() =>
-      // getByRole throws an error if it cannot find an element
-      screen.queryByLabelText('auth-content-logout-button')
-    )
+    await waitFor(() => screen.getByLabelText('auth-content-logout-button'))
     expect(
       screen.queryByLabelText(/auth-content-logout-button/i)
     ).toBeInTheDocument()
@@ -173,10 +160,7 @@ describe('AuthProvider', () => {
 
     fireEvent.click(screen.getByText('logout'))
 
-    await waitFor(() =>
-      // getByRole throws an error if it cannot find an element
-      screen.queryByLabelText('auth-content-login-button')
-    )
+    await waitFor(() => screen.getByLabelText('auth-content-login-button'))
     expect(
       screen.queryByLabelText(/auth-content-login-button/i)
     ).toBeInTheDocument()
