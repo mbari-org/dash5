@@ -2,20 +2,25 @@
 import { getInstance } from '../getInstance'
 import { RequestConfig } from '../types'
 
+export interface GetDocumentsParams {
+  docId?: string
+}
 export interface GetDocumentsResponse {
   result: string
 }
 
-export const getDocuments = async ({
-  debug,
-  instance = getInstance(),
-}: RequestConfig = {}) => {
+export const getDocuments = async (
+  params: GetDocumentsParams = {},
+  { debug, instance = getInstance() }: RequestConfig = {}
+) => {
   const url = '/documents'
 
   if (debug) {
     console.debug(`GET ${url}`)
   }
 
-  const response = await instance.get(url)
+  const response = await instance.get(
+    `${url}?${new URLSearchParams({ ...params })}`
+  )
   return response.data as GetDocumentsResponse
 }
