@@ -32,9 +32,9 @@ const Template: Story<DialogProps> = (args) => {
 
 export const Primary = Template.bind({})
 Primary.args = {
-  title: 'Delete Order?',
+  title: 'Abort Mission?',
   message:
-    'Are you sure you want to delete this order? You cannot undo this action.',
+    "Are you sure you want to abort your mission? There's no turning back now Jim.",
   open: true,
   onConfirm: () => {},
   onCancel: () => {},
