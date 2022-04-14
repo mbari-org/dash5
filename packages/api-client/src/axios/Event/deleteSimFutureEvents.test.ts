@@ -1,14 +1,15 @@
 import { rest } from 'msw'
 import { setupServer } from 'msw/node'
-import { deleteSimFutureEvents, DeleteSimFutureEventsParams } from './deleteSimFutureEvents'
+import {
+  deleteSimFutureEvents,
+  DeleteSimFutureEventsParams,
+} from './deleteSimFutureEvents'
 
-let params: DeleteSimFutureEventsParams = {
-  
-}
+let params: DeleteSimFutureEventsParams = {}
 
 const mockResponse = { value: 'some-value' }
 const server = setupServer(
-  rest.delete("/events/future", (_req, res, ctx) => {
+  rest.delete('/events/future', (_req, res, ctx) => {
     return res(ctx.status(200), ctx.json(mockResponse))
   })
 )
@@ -18,8 +19,6 @@ afterEach(() => server.resetHandlers())
 afterAll(() => server.close())
 
 describe('deleteSimFutureEvents', () => {
-
-  // TODO: Add tests for the actual API call
   it('should return the mocked value when successful', async () => {
     const response = await deleteSimFutureEvents(params)
     expect(response).toEqual(mockResponse)
@@ -27,7 +26,7 @@ describe('deleteSimFutureEvents', () => {
 
   it('should throw when unsuccessful', async () => {
     server.use(
-      rest.delete("/events/future", (_req, res, ctx) => {
+      rest.delete('/events/future', (_req, res, ctx) => {
         return res.once(ctx.status(500))
       })
     )

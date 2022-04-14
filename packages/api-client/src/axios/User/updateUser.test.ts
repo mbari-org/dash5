@@ -21,7 +21,6 @@ afterEach(() => server.resetHandlers())
 afterAll(() => server.close())
 
 describe('updateUser', () => {
-  // TODO: Add tests for the actual API call
   it('should return the mocked value when successful', async () => {
     server.use(
       rest.put('/user', (_req, res, ctx) => {

@@ -22,7 +22,6 @@ afterEach(() => server.resetHandlers())
 afterAll(() => server.close())
 
 describe('sendEmail', () => {
-  // TODO: Add tests for the actual API call
   it('should return the mocked value when successful', async () => {
     const response = await sendEmail(params)
     expect(response).toEqual(mockResponse)

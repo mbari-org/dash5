@@ -16,7 +16,6 @@ afterEach(() => server.resetHandlers())
 afterAll(() => server.close())
 
 describe('getUsers', () => {
-  // TODO: Add tests for the actual API call
   it('should return the mocked users when successful', async () => {
     const { users } = await getUsers(params)
     expect(users).toEqual(mockResponse.users)

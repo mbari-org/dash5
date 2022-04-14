@@ -16,7 +16,6 @@ afterEach(() => server.resetHandlers())
 afterAll(() => server.close())
 
 describe('getLoggers', () => {
-  // TODO: Add tests for the actual API call
   it('should return the mocked loggers when successful', async () => {
     const { loggers } = await getLoggers(params)
     expect(loggers).toEqual(mockResponse.loggers)

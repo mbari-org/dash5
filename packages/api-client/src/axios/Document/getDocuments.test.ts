@@ -14,7 +14,6 @@ afterEach(() => server.resetHandlers())
 afterAll(() => server.close())
 
 describe('getDocuments', () => {
-  // TODO: Add tests for the actual API call
   it('should return the mocked value when successful', async () => {
     const response = await getDocuments()
     expect(response).toEqual(mockResponse)
