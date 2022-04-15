@@ -1,28 +1,16 @@
-import React, { useEffect, useRef, useState } from 'react'
-import { faCalendarAlt } from '@fortawesome/pro-regular-svg-icons'
-import { faArrowLeft, faArrowRight } from '@fortawesome/pro-solid-svg-icons'
-import { Field } from './Field'
+import React, { useCallback, useEffect, useRef, useState } from 'react'
+import { faClock } from '@fortawesome/pro-regular-svg-icons'
+import { Field, FieldProps, getErrorMessage } from './Field'
 import { Input, InputProps } from './Input'
-import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
-import { Overlay } from '../Overlay'
-import clsx from 'clsx'
 import { DateTime } from 'luxon'
-import { IconProp } from '@fortawesome/fontawesome-svg-core'
-import { DateTimePicker } from '@material-ui/pickers'
+import { Calendar, ClockView } from '@material-ui/pickers'
+import { useSharedRef } from '@mbari/utils'
 
-export interface DateFieldProps extends InputProps {
+export interface DateFieldInputProps extends InputProps {
   /**
    * An initial date to display
    */
-  initialDate?: DateTime
-  /**
-   * Indicates whether or not to align the calendar on the left of right side of the Text.
-   */
-  alignCalendar?: 'left' | 'right'
-  /**
-   * A date selected on this widget
-   */
-  dates?: DateTime[]
+  value?: string
   /**
    * The format the selected date should be rendered in. Defaults to "YYYY-MM-DD"
    */
@@ -30,7 +18,7 @@ export interface DateFieldProps extends InputProps {
   /**
    * A callback that renders when a date on the calendar has been selected.
    */
-  onDateChange?: (dates: DateTime) => void
+  onChange?: (value: string) => void
   /**
    * Disables the field from user interaction.
    */
@@ -39,55 +27,129 @@ export interface DateFieldProps extends InputProps {
    * A placeholder string. Defaults to the date format if not supplied.
    */
   placeholder?: string
-  /**
-   * An optional form label to display.
-   */
-  label?: string
-  /**
-   * The name of the associated Text.
-   */
-  name: string
-  /**
-   * Indicates if the content of the field is required.
-   */
-  required?: boolean
-  /**
-   * Extend the class name to add your own styles to the rendered calendars.
-   */
-  className?: string
-  /**
-   * An optional inline error message.
-   */
-  errorMessage?: string
 }
 
-export const SEPARATOR = ' to '
-
-const SELECTED_DATE_STYLE =
-  'text-white font-bold text-sm bg-indigo-600 rounded p-1'
+export type DateFieldProps = DateFieldInputProps & FieldProps
 
 export const DateField = React.forwardRef<HTMLInputElement, DateFieldProps>(
   (
-    { disabled, errorMessage, required, label, name, className },
+    {
+      disabled,
+      errorMessage,
+      required,
+      label,
+      name,
+      className,
+      errors,
+      value,
+      placeholder,
+      ...fieldProps
+    },
     forwardedRef
   ) => {
-    const [selectedDate, handleDateChange] = useState(null as DateTime | null)
-    const [date, setDate] = useState<Date | undefined>()
-    const [focused, setFocus] = useState(false)
-    const buttonRef = useRef<HTMLButtonElement>(null)
+    // Maintain a reference to the input element so we can focus it
+    const inputRef = useRef<HTMLInputElement | null>(null)
+    const determinedErrorMessage = getErrorMessage({
+      name,
+      errorMessage,
+      errors,
+    })
 
-    const toggleFocus: React.MouseEventHandler<HTMLButtonElement> = (e) => {
-      e.preventDefault()
-      setFocus(!focused)
+    // Manage the current date value
+    const [lastDateFromValue, setLastDateFromValue] =
+      useState<undefined | string>()
+    const [selectedDate, handleDateChange] = useState<DateTime | null>(null)
+    useEffect(() => {
+      if (lastDateFromValue !== value) {
+        setLastDateFromValue(value)
+        const date = DateTime.fromISO(value ?? '')
+        if (!date.isValid) {
+          handleDateChange(null)
+        } else if (date.toISO() !== selectedDate?.toISO()) {
+          handleDateChange(date)
+        }
+      }
+    }, [value, selectedDate, handleDateChange])
+
+    // Manage when to display the inline date/time picker.
+    const [focused, setFocus] = useState(false)
+    const [interacting, setInteracting] = useState(false)
+    const blurTimeout = useRef<ReturnType<typeof setTimeout> | null>(null)
+    const handleFocus = useCallback(
+      (newValue: boolean) => () => {
+        if (blurTimeout.current) {
+          clearTimeout(blurTimeout.current)
+        }
+        if (!newValue && interacting) {
+          return
+        }
+        blurTimeout.current = setTimeout(
+          () => {
+            setFocus(newValue)
+            if (newValue) inputRef?.current?.focus()
+          },
+          newValue ? 0 : 50
+        )
+      },
+      [setFocus, blurTimeout, interacting]
+    )
+    const handleInteraction = (newValue: boolean) => () => {
+      setInteracting(newValue)
+    }
+    const handleMouseUp = () => {
+      inputRef.current?.focus()
     }
 
     return (
       <>
-        <DateTimePicker
-          value={selectedDate}
-          onChange={(date) => handleDateChange(date)}
-          label="With Today Button"
-        />
+        <Field
+          name={name}
+          disabled={disabled}
+          required={required}
+          label={label}
+          className={className}
+          errorMessage={determinedErrorMessage}
+          icon={faClock}
+          {...fieldProps}
+        >
+          <Input
+            ref={inputRef}
+            disabled={disabled}
+            name={name}
+            className="pl-8"
+            onFocus={handleFocus(true)}
+            onBlur={handleFocus(false)}
+            placeholder={placeholder}
+            value={selectedDate?.toISO()}
+          />
+          {focused && (
+            <div
+              className="absolute left-0 mt-2 flex border border-stone-200 bg-white p-2 shadow-lg"
+              style={{ top: '100%' }}
+              onMouseEnter={handleInteraction(true)}
+              onMouseLeave={handleInteraction(false)}
+              onMouseUp={handleMouseUp}
+            >
+              <div className="relative w-1/2 flex-grow overflow-hidden px-2">
+                <Calendar
+                  date={selectedDate ?? DateTime.local()}
+                  onChange={handleDateChange}
+                />
+              </div>
+              <div className="relative w-1/2 flex-grow overflow-hidden px-2">
+                <ClockView
+                  date={selectedDate ?? DateTime.local()}
+                  type="minutes"
+                  onHourChange={handleDateChange}
+                  onMinutesChange={handleDateChange}
+                  onSecondsChange={handleDateChange}
+                />
+              </div>
+            </div>
+          )}
+          {/* This hidden input and forward ref maintains the actual value controlled by 'useForm' */}
+          <input type="hidden" name={name} ref={forwardedRef} />
+        </Field>
       </>
     )
   }
