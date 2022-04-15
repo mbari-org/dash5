@@ -109,6 +109,7 @@ export const MissionProgressToolbar: React.FC<MissionProgressToolbarProps> = ({
             {missionInProgress && (
               <Point x={width * progress} y={height / 2} label="Projected" />
             )}
+            <Progress x={0} y={height / 2} width={width} percent={progress} />
             {hoverProgress && (
               <Point
                 x={width * hoverProgress}
@@ -119,7 +120,6 @@ export const MissionProgressToolbar: React.FC<MissionProgressToolbarProps> = ({
                 highlight
               />
             )}
-            <Progress x={0} y={height / 2} width={width} percent={progress} />
             <End x={width - 7} y={height / 2 - 6} height={12} width={6} />
           </svg>
         )}

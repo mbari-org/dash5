@@ -1,6 +1,5 @@
 import React from 'react'
-import { HTML5Backend } from 'react-dnd-html5-backend'
-import { DndProvider } from 'react-dnd'
+import { UIProvider } from '../src/UIProvider'
 import { addDecorator } from '@storybook/react'
 import { withTests } from '@storybook/addon-jest'
 
@@ -33,7 +32,7 @@ const Layout = ({ children }) => {
 }
 
 addDecorator((Story) => (
-  <DndProvider backend={HTML5Backend}>
+  <UIProvider>
     <Layout>
       <link rel="preconnect" href="https://fonts.googleapis.com" />
       <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
@@ -47,5 +46,5 @@ addDecorator((Story) => (
       />{' '}
       <Story />
     </Layout>
-  </DndProvider>
+  </UIProvider>
 ))

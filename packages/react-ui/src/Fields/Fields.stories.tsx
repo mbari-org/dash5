@@ -101,6 +101,12 @@ export const Default = Template.bind({})
 Default.args = {
   register: () => null,
 }
+Default.parameters = {
+  design: {
+    type: 'figma',
+    url: 'https://www.figma.com/file/FtsKsOCBQ2YjTZlwezG6aI/MBARI-Components?node-id=1554%3A495',
+  },
+}
 
 export const Mobile = Template.bind({})
 Mobile.parameters = {

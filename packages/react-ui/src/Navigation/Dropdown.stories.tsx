@@ -4,17 +4,27 @@ import { Story, Meta } from '@storybook/react/types-6-0'
 import { Dropdown, DropdownProps } from './Dropdown'
 import { IconDefinition } from '@fortawesome/fontawesome-svg-core'
 import { faPlus } from '@fortawesome/pro-regular-svg-icons'
+import { Button } from './Button'
 
 export default {
   title: 'Navigation/Dropdown',
   component: Dropdown,
 } as Meta
 
-const Template: Story<DropdownProps> = (args) => (
-  <div className="bg-stone-200 p-4">
-    <Dropdown {...args} />
-  </div>
-)
+const Template: Story<DropdownProps> = (args) => {
+  const [visible, setVisible] = React.useState(true)
+
+  return (
+    <div className="bg-stone-200 p-4">
+      <Button onClick={() => setVisible(!visible)}>Toggle DropDown</Button>
+      {visible && (
+        <div className="relative mt-4 w-60">
+          <Dropdown {...args} />
+        </div>
+      )}
+    </div>
+  )
+}
 
 const args: DropdownProps = {
   className: '',
