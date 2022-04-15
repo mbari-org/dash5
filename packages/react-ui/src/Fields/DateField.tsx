@@ -6,7 +6,7 @@ import { DateTime } from 'luxon'
 import { Calendar, ClockView } from '@material-ui/pickers'
 import { useSharedRef } from '@mbari/utils'
 
-export interface DateFieldInputProps extends InputProps {
+export interface DateFieldInputProps {
   /**
    * An initial date to display
    */
@@ -124,7 +124,7 @@ export const DateField = React.forwardRef<HTMLInputElement, DateFieldProps>(
           />
           {focused && (
             <div
-              className="absolute left-0 mt-2 flex border border-stone-200 bg-white p-2 shadow-lg"
+              className="absolute left-0 z-10 mt-2 flex border border-stone-200 bg-white p-2 shadow-lg"
               style={{ top: '100%' }}
               onMouseEnter={handleInteraction(true)}
               onMouseLeave={handleInteraction(false)}
@@ -134,6 +134,7 @@ export const DateField = React.forwardRef<HTMLInputElement, DateFieldProps>(
                 <Calendar
                   date={selectedDate ?? DateTime.local()}
                   onChange={handleDateChange}
+                  onMonthChange={handleDateChange}
                 />
               </div>
               <div className="relative w-1/2 flex-grow overflow-hidden px-2">
