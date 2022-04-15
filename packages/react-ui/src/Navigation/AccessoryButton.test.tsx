@@ -19,3 +19,9 @@ test('should not render an icon if none was specified', async () => {
   render(<AccessoryButton label="Click Here" />)
   expect(screen.queryByLabelText(/icon/i)).not.toBeInTheDocument()
 })
+
+test('should display label in teal if active', async () => {
+  render(<AccessoryButton label="Click Here" isActive={true} />)
+
+  expect(screen.getByText(/Click Here/i)).toHaveClass('text-teal-500')
+})
