@@ -17,13 +17,14 @@ const Template: Story<StepProgressProps> = (args) => (
 const args: StepProgressProps = {
   className: '',
   steps: [
-    { id: '1', title: 'Mission', inProgress: true },
-    { id: '2', title: 'Waypoints', inProgress: false },
-    { id: '3', title: 'Parameters', inProgress: false },
-    { id: '4', title: 'Safety & comms', inProgress: false },
-    { id: '5', title: 'Review', inProgress: false },
-    { id: '6', title: 'Schedule', inProgress: false },
+    'Mission',
+    'Waypoints',
+    'Parameters',
+    'Safety & comms',
+    'Review',
+    'Schedule',
   ],
+  currentIndex: 0,
 }
 
 export const Standard = Template.bind({})
