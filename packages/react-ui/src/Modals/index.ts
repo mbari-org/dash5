@@ -1,2 +1,2 @@
 export * from './ConfirmStopModal'
-export * from './NewDeployment'
+export * from './NewDeploymentModal'
