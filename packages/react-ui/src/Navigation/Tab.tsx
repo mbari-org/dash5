@@ -1,72 +1,58 @@
-import React, { FC, useState } from 'react'
-import { IconDefinition } from '@fortawesome/fontawesome-common-types'
-import { Icon } from './Icon'
-import { ToolTip } from './ToolTip'
+import React, { FC } from 'react'
 import clsx from 'clsx'
 
 export interface TabProps {
-  /**
-   * The FontAwesome icon definition to be utilized.
-   */
-  icon: IconDefinition
   /**
    * The determines if the tab is selected.
    */
   selected?: boolean
   /**
-   * The determines if the tab should expand to fill the parent container (flexbox).
+   * The label for this tab.
    */
-  grow?: boolean
-  /**
-   * An optional tool tip for the item
-   */
-  toolTip?: string
+  label: string | JSX.Element
   /**
    * A callback fired when the tab is clicked.
    */
   onClick: () => void
   /**
-   * Indicates the tab should be compact in appearance.
+   * Apply any additional styles.
    */
-  compact?: boolean
+  className?: string
+  /**
+   * Apply any additional styles.
+   */
+  style?: React.CSSProperties
 }
 
-const style = {
-  tab: 'outline-none active:outline-none px-2 flex-shrink-0 relative flex',
+const styles = {
+  tab: 'outline-none text-md active:outline-none px-4 py-2 flex-shrink-0 relative flex border-t border-l border-r border-stone-300',
   default: 'bg-stone-200 hover:bg-stone-300',
-  selected: 'bg-indigo-500 hover:bg-indigo-500',
+  selected: 'bg-white',
 }
 
 export const Tab: FC<TabProps> = ({
-  icon,
+  label,
   selected,
   onClick,
-  grow,
-  toolTip,
-  compact,
+  className,
+  style,
 }) => {
   const handleClick = (e: React.MouseEvent) => {
     e.preventDefault()
     onClick()
   }
-  const [hover, setHover] = useState(false)
+
   return (
     <button
-      style={{ outlineColor: 'rgba(0,0,0,0)' }}
+      style={style}
       className={clsx(
-        style.tab,
-        selected ? style.selected : style.default,
-        compact ? 'py-1' : 'py-4',
-        grow && 'flex-grow'
+        styles.tab,
+        selected ? styles.selected : styles.default,
+        className
       )}
       onClick={handleClick}
-      onMouseOver={() => setHover(true)}
-      onMouseOut={() => setHover(false)}
     >
-      <Icon mode={selected ? 'negative' : 'default'} icon={icon} />
-      {toolTip ? (
-        <ToolTip label={toolTip} direction="below" active={hover} />
-      ) : null}
+      {label}
     </button>
   )
 }

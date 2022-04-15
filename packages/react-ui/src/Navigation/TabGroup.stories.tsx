@@ -22,22 +22,14 @@ const Template: Story<{ grow: boolean }> = ({ grow }) => {
   return (
     <TabGroup>
       <Tab
-        icon={faCamera}
+        label="Vehicle State"
         selected={selected === 'camera'}
         onClick={() => setSelected('camera')}
-        grow={grow}
       />
       <Tab
-        icon={faVideo}
+        label="Depth Data"
         selected={selected === 'video'}
         onClick={() => setSelected('video')}
-        grow={grow}
-      />
-      <Tab
-        icon={faSpeaker}
-        selected={selected === 'audio'}
-        onClick={() => setSelected('audio')}
-        grow={grow}
       />
     </TabGroup>
   )
@@ -47,6 +39,12 @@ const args = {}
 
 export const Standard: any = Template.bind({})
 Standard.args = args
+Standard.parameters = {
+  design: {
+    type: 'figma',
+    url: 'https://www.figma.com/file/FtsKsOCBQ2YjTZlwezG6aI/MBARI-Components?node-id=1601%3A524',
+  },
+}
 
 export const Grow: any = Template.bind({}, { grow: true })
 Grow.args = args
