@@ -1,6 +1,6 @@
 import React from 'react'
 import { render, screen } from '@testing-library/react'
 import '@testing-library/jest-dom'
-import { NewDeployment } from './NewDeployment'
+import { NewDeploymentModal } from './NewDeploymentModal'
 
 test.todo('should render child content')

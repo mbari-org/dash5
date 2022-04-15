@@ -1,18 +1,21 @@
 import React from 'react'
 // also exported from '@storybook/react' if you can deal with breaking changes in 6.1
 import { Story, Meta } from '@storybook/react/types-6-0'
-import { NewDeployment, NewDeploymentProps } from './NewDeployment'
+import {
+  NewDeploymentModal,
+  NewDeploymentModalProps,
+} from './NewDeploymentModal'
 
 export default {
-  title: 'Modals/NewDeployment',
-  component: NewDeployment,
+  title: 'Modals/NewDeploymentModal',
+  component: NewDeploymentModal,
 } as Meta
 
-const Template: Story<NewDeploymentProps> = (args) => (
-  <NewDeployment {...args} />
+const Template: Story<NewDeploymentModalProps> = (args) => (
+  <NewDeploymentModal {...args} />
 )
 
-const args: NewDeploymentProps = {
+const args: NewDeploymentModalProps = {
   className: '',
 }
 
