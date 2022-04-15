@@ -38,12 +38,14 @@ export const Input = React.forwardRef<HTMLInputElement, InputProps>(
       onKeyUp,
       onKeyDown,
       type = 'text',
+      ...props
     },
     forwardedRef
   ) => {
     const controlledInputProps = value ? { value } : {}
     return (
       <input
+        {...props}
         name={name}
         ref={forwardedRef}
         className={clsx(
@@ -61,6 +63,8 @@ export const Input = React.forwardRef<HTMLInputElement, InputProps>(
         onKeyUp={onKeyUp}
         onKeyDown={onKeyDown}
         type={type}
+        autoComplete="off"
+        autoCorrect="off"
         {...controlledInputProps}
       />
     )

@@ -1,10 +1,9 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react'
 import { faClock } from '@fortawesome/pro-regular-svg-icons'
 import { Field, FieldProps, getErrorMessage } from './Field'
-import { Input, InputProps } from './Input'
+import { Input } from './Input'
 import { DateTime } from 'luxon'
 import { Calendar, ClockView } from '@material-ui/pickers'
-import { useSharedRef } from '@mbari/utils'
 
 export interface DateFieldInputProps {
   /**
@@ -121,6 +120,7 @@ export const DateField = React.forwardRef<HTMLInputElement, DateFieldProps>(
             onBlur={handleFocus(false)}
             placeholder={placeholder}
             value={selectedDate?.toISO()}
+            aria-label={'date picker'}
           />
           {focused && (
             <div
@@ -129,6 +129,7 @@ export const DateField = React.forwardRef<HTMLInputElement, DateFieldProps>(
               onMouseEnter={handleInteraction(true)}
               onMouseLeave={handleInteraction(false)}
               onMouseUp={handleMouseUp}
+              role="alertdialog"
             >
               <div className="relative w-1/2 flex-grow overflow-hidden px-2">
                 <Calendar
