@@ -26,7 +26,7 @@ export const StepProgress: React.FC<StepProgressProps> = ({
 }) => {
   return (
     <article className={clsx(styles.container, className)}>
-      <ul className="flex">
+      <ul className="flex overflow-visible">
         {steps.map(({ title, inProgress }, index) => (
           <li
             key={index}
@@ -37,7 +37,7 @@ export const StepProgress: React.FC<StepProgressProps> = ({
           >
             <span>{index + 1}</span>
             {'.'}
-            <span className="pl-2">{title}</span>
+            <span className="truncate pl-2">{title}</span>
           </li>
         ))}
       </ul>
