@@ -4,33 +4,47 @@ import '@testing-library/jest-dom'
 import { StepProgress, StepProgressProps } from './StepProgress'
 
 const props: StepProgressProps = {
-  steps: [
-    { id: '1', title: 'Mission', inProgress: true },
-    { id: '2', title: 'Waypoints', inProgress: false },
-  ],
+  steps: ['Mission', 'Waypoints'],
+  currentIndex: 0,
 }
 
 test('should render step title', async () => {
   render(<StepProgress {...props} />)
-  expect(screen.getByText(props.steps[0].title)).toBeInTheDocument()
+
+  expect(screen.queryAllByText(/mission/i)[0]).toHaveTextContent('1. Mission')
+  expect(screen.queryAllByText(/waypoints/i)[0]).toHaveTextContent(
+    '2. Waypoints'
+  )
 })
 
-test('should display step with a blue background and white text when in progress', async () => {
-  props.steps[0].inProgress = true
+test('should display step with white text when in progress', async () => {
   render(<StepProgress {...props} />)
 
-  const step = screen.getByText(props.steps[0].title).closest('li')
+  const step = screen.queryAllByText(/mission/i)[1]
 
-  expect(step).toHaveClass('bg-primary-600')
   expect(step).toHaveClass('text-white')
 })
 
-test('should display step with a light gray background and dark gray text when in progress', async () => {
-  props.steps[1].inProgress = false
+test('should display step with gray text when in progress', async () => {
   render(<StepProgress {...props} />)
 
-  const step = screen.getByText(props.steps[1].title).closest('li')
+  const step = screen.queryAllByText(/waypoints/i)[1]
 
-  expect(step).toHaveClass('bg-stone-200')
-  expect(step).toHaveClass('text-stone-500')
+  expect(step).toHaveClass('text-stone-500/90')
+})
+
+test('should display step with a light gray background and dark gray text when in progress', async () => {
+  render(<StepProgress {...props} />)
+
+  const svg = screen.getAllByTestId('step-progress-svg')[0]
+
+  expect(svg).toHaveClass('fill-primary-600')
+})
+
+test('should display step with a light gray background and dark gray text when in progress', async () => {
+  render(<StepProgress {...props} />)
+
+  const svg = screen.getAllByTestId('step-progress-svg')[1]
+
+  expect(svg).toHaveClass('fill-stone-200')
 })
