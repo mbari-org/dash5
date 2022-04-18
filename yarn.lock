@@ -3401,10 +3401,10 @@
   dependencies:
     simple-scaffold "^1.0.3"
 
-"@sumocreations/scaffolds@^1.1.4":
-  version "1.1.4"
-  resolved "https://registry.yarnpkg.com/@sumocreations/scaffolds/-/scaffolds-1.1.4.tgz#649732adc0249916fd9ab377b5cba7675a8979f8"
-  integrity sha512-8PSYbnycf2isJkbQgTNy9GVi0h0eLaT4l/Ss428c5P5wfH9WjZ/NENtW5uONfimfXjFXbTzxgIGWUuTnthdMUw==
+"@sumocreations/scaffolds@^1.1.5":
+  version "1.1.5"
+  resolved "https://registry.yarnpkg.com/@sumocreations/scaffolds/-/scaffolds-1.1.5.tgz#154f42a1a4b9d1019f6110da8d8d185beef68595"
+  integrity sha512-bXZlJTcVoKbQJWNloRdNljikhKOSGqWTZUmMKD6vq0raEPeGeyFAp72T7AapvN5UCQHw5Yr9mTpKyBBtgtWybA==
   dependencies:
     simple-scaffold "^1.0.3"
 
