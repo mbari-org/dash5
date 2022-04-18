@@ -59,10 +59,10 @@ const mockResponse = {
         tethysdash: 'https://okeanids.mbari.org/TethysDash',
         useradmin: 'https://okeanids.mbari.org/',
       },
-      googleApiKey: 'AIzaSyACRv0ozE3Bxu3d5ke5Al6LtuDxgHJg0aY',
+      googleApiKey: 'AIza55555v055555xu555555Al6L55555HJ5555',
       odss2dashApi: 'https://okeanids.mbari.org/odss2dash/api',
       recaptcha: {
-        siteKey: '6LehDCYTAAAAAHqmuOjcwjXAb97__48Nvg9C48rI',
+        siteKey: '5555555555555555wjXAb97__99Abc8888fP',
       },
       slack: {
         primaryChannel: '#lrauvs',
@@ -72,7 +72,7 @@ const mockResponse = {
         maxIdleTimeout: 60000,
       },
       pusher: {
-        appKey: 'c0542053872394230b36',
+        appKey: 'c0555553555554555556',
         eventChannel: 'td-events',
         cluster: 'mt1',
       },
