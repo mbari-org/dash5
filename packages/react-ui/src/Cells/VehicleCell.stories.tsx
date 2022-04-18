@@ -62,6 +62,7 @@ const args: VehicleCellProps = {
       12 minutes
     </div>
   ),
+  onSelect: () => {},
 }
 
 export const Running = Template.bind({})
