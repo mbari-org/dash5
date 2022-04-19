@@ -36,7 +36,7 @@ export const VehicleInfoCell: React.FC<VehicleInfoCellProps> = ({
     <article className={clsx(styles.container, className)} style={style}>
       <button className={styles.button} onClick={swallow(onSelect)}>
         <section className={styles.topHalf}>
-          <span className=" pr-6">{icon}</span>
+          <span className="pr-6">{icon}</span>
           <ul>
             <li>{headline}</li>
             <li className={clsx(styles.lighterText, styles.subtitle)}>
@@ -53,7 +53,11 @@ export const VehicleInfoCell: React.FC<VehicleInfoCellProps> = ({
               </li>
             )}
 
-            {estimate && <li className="pb-2 pl-2">{estimate}</li>}
+            {estimate && (
+              <li className="pb-2 pl-2" aria-label={'time estimate'}>
+                {estimate}
+              </li>
+            )}
           </ul>
         </section>
       </button>
