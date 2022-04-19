@@ -14,7 +14,8 @@ export interface VehicleCommsCellProps {
 }
 
 const styles = {
-  container: 'bg-white font-display',
+  container:
+    'bg-white font-display rounded-md drop-shadow-lg border-2 border-solid border-stone-300',
   info: 'p-2 opacity-60',
   button: 'w-full text-left',
 }
