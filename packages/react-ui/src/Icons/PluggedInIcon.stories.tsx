@@ -13,7 +13,7 @@ const Template: Story<PluggedInIconProps> = (args) => (
 )
 
 const args: PluggedInIconProps = {
-  className: 'fill-red-500',
+  className: 'fill-stone-500',
 }
 
 export const Standard = Template.bind({})

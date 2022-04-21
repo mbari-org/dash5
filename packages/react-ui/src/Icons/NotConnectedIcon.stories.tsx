@@ -13,7 +13,7 @@ const Template: Story<NotConnectedIconProps> = (args) => (
 )
 
 const args: NotConnectedIconProps = {
-  className: 'text-red-500 stroke-red-500 fill-green-400',
+  className: 'text-stone-500 stroke-stone-500 fill-transparent',
 }
 
 export const Standard = Template.bind({})

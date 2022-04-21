@@ -11,7 +11,7 @@ export default {
 const Template: Story<UploadIconProps> = (args) => <UploadIcon {...args} />
 
 const args: UploadIconProps = {
-  className: 'stroke-purple-500 fill-green-300',
+  className: 'stroke-stone-500 fill-transparent',
 }
 
 export const Standard = Template.bind({})

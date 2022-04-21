@@ -11,7 +11,7 @@ export default {
 const Template: Story<SurfacedIconProps> = (args) => <SurfacedIcon {...args} />
 
 const args: SurfacedIconProps = {
-  className: 'fill-red-500 stroke-red-500',
+  className: 'fill-stone-500 stroke-stone-500',
 }
 
 export const Standard = Template.bind({})

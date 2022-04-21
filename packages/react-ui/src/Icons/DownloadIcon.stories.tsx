@@ -11,7 +11,7 @@ export default {
 const Template: Story<DownloadIconProps> = (args) => <DownloadIcon {...args} />
 
 const args: DownloadIconProps = {
-  className: 'stroke-teal-500 fill-red-200',
+  className: 'stroke-stone-500 fill-transparent',
 }
 
 export const Standard = Template.bind({})

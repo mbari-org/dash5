@@ -13,7 +13,7 @@ const Template: Story<UnderwaterIconProps> = (args) => (
 )
 
 const args: UnderwaterIconProps = {
-  className: 'stroke-pink-500 fill-pink-500',
+  className: 'stroke-stone-500 fill-stone-500',
 }
 
 export const Standard = Template.bind({})
