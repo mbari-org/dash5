@@ -98,8 +98,8 @@ jobs:
       - install-monorepo
       - build-monorepo
 
-  test:
-    resource_class: 2xlarge
+  test_ui:
+    resource_class: xlarge
     parallelism: 4
     executor:
       name: node/default
@@ -111,7 +111,55 @@ jobs:
       - restore-monorepo
       - install-monorepo
       - run:
-          command: yarn turbo run test
+          command: yarn turbo run test --filter=@mbari/react-ui
+          name: Run turbo repo tests
+
+  test_api:
+    resource_class: xlarge
+    parallelism: 1
+    executor:
+      name: node/default
+      tag: '14.19.1'
+    steps:
+      - checkout
+      - setup-environment
+      - restore-packages
+      - restore-monorepo
+      - install-monorepo
+      - run:
+          command: yarn turbo run test --filter=@mbari/api-client
+          name: Run turbo repo tests
+
+  test_utils:
+    resource_class: xlarge
+    parallelism: 1
+    executor:
+      name: node/default
+      tag: '14.19.1'
+    steps:
+      - checkout
+      - setup-environment
+      - restore-packages
+      - restore-monorepo
+      - install-monorepo
+      - run:
+          command: yarn turbo run test --filter=@mbari/utils
+          name: Run turbo repo tests
+
+  test_dash:
+    resource_class: xlarge
+    parallelism: 1
+    executor:
+      name: node/default
+      tag: '14.19.1'
+    steps:
+      - checkout
+      - setup-environment
+      - restore-packages
+      - restore-monorepo
+      - install-monorepo
+      - run:
+          command: yarn turbo run test --filter=lrauv-dash2
           name: Run turbo repo tests
 
   deploy_ui:
@@ -159,12 +207,21 @@ workflows:
   build_and_deploy:
     jobs:
       - build
-      - test:
+      - test_utils:
+          requires:
+            - build
+      - test_dash:
+          requires:
+            - build
+      - test_ui:
+          requires:
+            - build
+      - test_api:
           requires:
             - build
       - deploy_ui:
           requires:
-            - test
+            - test_ui
           filters:
             branches:
               only:
@@ -173,7 +230,10 @@ workflows:
                 - main
       - deploy_dash:
           requires:
-            - test
+            - test_utils
+            - test_dash
+            - test_ui
+            - test_api
           filters:
             branches:
               only:

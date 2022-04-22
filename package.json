@@ -23,6 +23,6 @@
     "@changesets/cli": "^2.21.1",
     "@sumocreations/scaffolds": "^1.1.6",
     "rimraf": "^3.0.2",
-    "turbo": "^1.1.10"
+    "turbo": "^1.2.5"
   }
 }
