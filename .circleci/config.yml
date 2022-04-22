@@ -82,6 +82,7 @@ commands:
             - packages/react-ui/.turbo
             - packages/utils/dist
             - packages/utils/.turbo
+            - node_modules/.cache
           key: v1-builds-{{ .Branch }}-{{ .Revision }}
 
 jobs:
