@@ -14,7 +14,7 @@ import { TextField, Fields, ErrorList } from '../Fields'
 import { Button } from '../Navigation'
 import { AbsoluteOverlay } from '../Indicators'
 
-export type LoginValues = {
+export type LoginFormValues = {
   email: string
   password: string
 }
@@ -24,12 +24,12 @@ const schema = yup.object({
   password: yup.string().required('cannot be blank'),
 })
 
-export interface LoginProps extends FormProps<LoginValues> {
+export interface LoginFormProps extends FormProps<LoginFormValues> {
   loading?: boolean
   hasAgreedToTerms?: (agreed: boolean) => void
 }
 
-export const Login: React.FC<LoginProps> = ({
+export const LoginForm: React.FC<LoginFormProps> = ({
   onSubmit: externalSubmitHandler,
   loading,
   defaultValues,
@@ -41,19 +41,19 @@ export const Login: React.FC<LoginProps> = ({
     formState: { errors: formErrors },
     setError,
     reset,
-  } = useForm<LoginValues>({
+  } = useForm<LoginFormValues>({
     resolver: yupResolver(schema),
     mode: 'onBlur',
   })
 
-  useDefaultValueListener<LoginValues>(defaultValues, reset)
+  useDefaultValueListener<LoginFormValues>(defaultValues, reset)
 
   const handleFormSubmit = handleSubmit(async (data) => {
     const { errors = {} } = (await externalSubmitHandler(data)) ?? {}
     const keys = Object.keys(errors)
     if (keys.length) {
       keys.map((key) =>
-        setError(camelCase(key) as keyof LoginValues, {
+        setError(camelCase(key) as keyof LoginFormValues, {
           message: errors[key],
         })
       )
