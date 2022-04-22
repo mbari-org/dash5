@@ -22,7 +22,7 @@
     "build": "yarn build:modern",
     "build:modern": "rollup -c ./scripts/rollup/rollup.config.js",
     "build:esm": "rollup -c ./scripts/rollup/rollup.esm.config.js",
-    "test": "yarn jest",
+    "test": "yarn jest --maxWorkers=4",
     "test:watch": "yarn jest --watch"
   },
   "eslintConfig": {

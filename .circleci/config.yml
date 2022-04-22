@@ -88,7 +88,7 @@ commands:
 
 jobs:
   build:
-    resource_class: xlarge
+    resource_class: large
     executor:
       name: node/default
       tag: '14.19.1'
@@ -111,14 +111,11 @@ jobs:
       - restore-monorepo
       - install-monorepo
       - run:
-          command: yarn turbo run build --filter=@mbari/react-ui
-          name: Run turbo build react-ui
-      - run:
-          command: yarn workspace @mbari/react-ui test
+          command: yarn turbo run test --filter=@mbari/react-ui
           name: Run react-ui tests
 
   test_api:
-    resource_class: xlarge
+    resource_class: large
     parallelism: 1
     executor:
       name: node/default
@@ -134,7 +131,7 @@ jobs:
           name: Run turbo repo tests
 
   test_utils:
-    resource_class: xlarge
+    resource_class: medium
     parallelism: 1
     executor:
       name: node/default
@@ -150,7 +147,7 @@ jobs:
           name: Run turbo repo tests
 
   test_dash:
-    resource_class: xlarge
+    resource_class: medium
     parallelism: 1
     executor:
       name: node/default
