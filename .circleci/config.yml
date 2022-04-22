@@ -48,12 +48,13 @@ commands:
       - run: |
           yarn install --network-concurrency 1
       - save_cache:
+          key: v1-packages-{{ checksum "yarn.lock" }}
           paths:
             - node_modules
             - apps/lrauv-dash2/node_modules
             - packages/react-ui/node_modules
             - packages/utils/node_modules
-          key: v1-packages-{{ .Branch }}-{{ .Revision }}
+            - packages/api-client/node_modules
 
   restore-monorepo:
     steps:
@@ -67,7 +68,7 @@ commands:
       # Download pre-existing build from cache
       - restore_cache:
           keys:
-            - v1-packages-{{ .Branch }}-{{ .Revision }}
+            - v1-packages-{{ checksum "yarn.lock" }}
 
   build-monorepo:
     steps:
@@ -106,6 +107,7 @@ jobs:
     steps:
       - checkout
       - setup-environment
+      - restore-packages
       - restore-monorepo
       - install-monorepo
       - run:
@@ -120,6 +122,7 @@ jobs:
     steps:
       - checkout
       - setup-environment
+      - restore-packages
       - restore-monorepo
       - install-monorepo
       - aws-cli/setup:
@@ -141,6 +144,7 @@ jobs:
     steps:
       - checkout
       - setup-environment
+      - restore-packages
       - restore-monorepo
       - install-monorepo
       - run: |
