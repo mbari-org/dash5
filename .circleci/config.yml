@@ -100,7 +100,7 @@ jobs:
 
   test_ui:
     resource_class: xlarge
-    parallelism: 4
+    parallelism: 1
     executor:
       name: node/default
       tag: '14.19.1'
