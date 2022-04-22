@@ -86,6 +86,7 @@ commands:
 
 jobs:
   build:
+    resource_class: xlarge
     executor:
       name: node/default
       tag: '14.19.1'
@@ -96,7 +97,7 @@ jobs:
       - build-monorepo
 
   test:
-    resource_class: xlarge
+    resource_class: 2xlarge
     executor:
       name: node/default
       tag: '14.19.1'
