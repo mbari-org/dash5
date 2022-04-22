@@ -111,8 +111,11 @@ jobs:
       - restore-monorepo
       - install-monorepo
       - run:
-          command: yarn turbo run test --filter=@mbari/react-ui
-          name: Run turbo repo tests
+          command: yarn turbo run build --filter=@mbari/react-ui
+          name: Run turbo build react-ui
+      - run:
+          command: yarn workspace @mbari/react-ui test
+          name: Run react-ui tests
 
   test_api:
     resource_class: xlarge
