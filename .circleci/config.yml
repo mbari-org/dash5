@@ -99,6 +99,7 @@ jobs:
 
   test:
     resource_class: 2xlarge
+    parallelism: 4
     executor:
       name: node/default
       tag: '14.19.1'
