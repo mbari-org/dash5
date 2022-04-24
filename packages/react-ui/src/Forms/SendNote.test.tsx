@@ -19,10 +19,8 @@ test('should render the initial value', () => {
   const bugReportCheckbox = screen.getByLabelText(/bug/i)
   const criticalCheckbox = screen.getByLabelText(/critical/i)
 
-  expect(screen.getByDisplayValue('example')).toBeInTheDocument()
-  expect(bugReportCheckbox).toBeInTheDocument()
+  expect(screen.getByDisplayValue(/example/i)).toBeInTheDocument()
   expect(bugReportCheckbox).toBeChecked()
-  expect(criticalCheckbox).toBeInTheDocument()
   expect(criticalCheckbox).toBeChecked()
 })
 
@@ -37,9 +35,7 @@ test('should uncheck checkboxes', () => {
   const bugReportCheckbox = screen.getByLabelText(/bug/i)
   const criticalCheckbox = screen.getByLabelText(/critical/i)
 
-  expect(bugReportCheckbox).toBeInTheDocument()
   expect(bugReportCheckbox).toBeChecked()
-  expect(criticalCheckbox).toBeInTheDocument()
   expect(criticalCheckbox).toBeChecked()
 
   fireEvent.click(bugReportCheckbox)
@@ -59,11 +55,10 @@ test('should submit with correct values', async () => {
     />
   )
 
-  const textArea = screen.getByDisplayValue('example')
+  const textArea = screen.getByDisplayValue(/example/i)
   const bugReportCheckbox = screen.getByLabelText(/bug/i)
   const submitButton = screen.getByText(/submit form/i)
 
-  expect(bugReportCheckbox).toBeInTheDocument()
   expect(bugReportCheckbox).toBeChecked()
 
   expect(submitButton).toBeInTheDocument()
