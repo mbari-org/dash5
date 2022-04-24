@@ -20,7 +20,7 @@ import { Button } from '../Navigation'
 import { AbsoluteOverlay } from '../Indicators'
 import { IconProp } from '@fortawesome/fontawesome-svg-core'
 
-export type SendNoteValues = {
+export type SendNoteFormValues = {
   note: string
   bugReport?: boolean
   critical?: boolean
@@ -32,14 +32,14 @@ const schema = yup.object({
   critical: yup.boolean(),
 })
 
-export interface SendNoteProps extends FormProps<SendNoteValues> {
+export interface SendNoteFormProps extends FormProps<SendNoteFormValues> {
   loading?: boolean
 }
 
 const text =
   'This note will also go to the #lrauvs channel in Slack. Additional channels can be indicated by enclosing them in curly brackets at the beginning of the note, for example, {#wavegilder, @johndoe}... Make sure these Slack names are spelled correctly as they are not validated here.'
 
-export const SendNote: React.FC<SendNoteProps> = ({
+export const SendNoteForm: React.FC<SendNoteFormProps> = ({
   onSubmit: externalSubmitHandler,
   loading,
   defaultValues,
@@ -53,19 +53,19 @@ export const SendNote: React.FC<SendNoteProps> = ({
     formState: { errors: formErrors },
     setError,
     reset,
-  } = useForm<SendNoteValues>({
+  } = useForm<SendNoteFormValues>({
     resolver: yupResolver(schema),
     mode: 'onBlur',
   })
 
-  useDefaultValueListener<SendNoteValues>(defaultValues, reset)
+  useDefaultValueListener<SendNoteFormValues>(defaultValues, reset)
 
   const handleFormSubmit = handleSubmit(async (data) => {
     const { errors = {} } = (await externalSubmitHandler(data)) ?? {}
     const keys = Object.keys(errors)
     if (keys.length) {
       keys.map((key) =>
-        setError(camelCase(key) as keyof SendNoteValues, {
+        setError(camelCase(key) as keyof SendNoteFormValues, {
           message: errors[key],
         })
       )
@@ -115,4 +115,4 @@ export const SendNote: React.FC<SendNoteProps> = ({
   )
 }
 
-SendNote.displayName = 'Forms.SendNote'
+SendNoteForm.displayName = 'Forms.SendNote'

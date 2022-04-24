@@ -1,11 +1,15 @@
 import React, { useState } from 'react'
 import { Story, Meta } from '@storybook/react'
-import { SendNote, SendNoteProps, SendNoteValues } from './SendNote'
+import {
+  SendNoteForm,
+  SendNoteFormProps,
+  SendNoteFormValues,
+} from './SendNoteForm'
 import { wait } from '@mbari/utils'
 
 export default {
   title: 'Forms/SendNote',
-  component: SendNote,
+  component: SendNoteForm,
   parameters: {
     design: {
       type: 'figma',
@@ -14,10 +18,10 @@ export default {
   },
 } as Meta
 
-const Template: Story<SendNoteProps> = (args) => {
+const Template: Story<SendNoteFormProps> = (args) => {
   const [loading, setLoading] = useState(args.loading ?? false)
 
-  const onSubmit: any = async (values: SendNoteValues) => {
+  const onSubmit: any = async (values: SendNoteFormValues) => {
     setLoading(true)
     await wait(1)
     setLoading(false)
@@ -27,12 +31,12 @@ const Template: Story<SendNoteProps> = (args) => {
 
   return (
     <div className="rounded border p-4">
-      <SendNote {...args} onSubmit={onSubmit} loading={loading} />
+      <SendNoteForm {...args} onSubmit={onSubmit} loading={loading} />
     </div>
   )
 }
 
-const args: SendNoteProps = {
+const args: SendNoteFormProps = {
   onSubmit: async (values) => {
     await wait(1)
     console.log('Submitted', values)

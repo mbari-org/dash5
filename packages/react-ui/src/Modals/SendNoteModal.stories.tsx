@@ -3,7 +3,7 @@ import React from 'react'
 import { Story, Meta } from '@storybook/react/types-6-0'
 import { action } from '@storybook/addon-actions'
 import { SendNoteModal, SendNoteModalProps } from './SendNoteModal'
-import { SendNoteValues } from '../Forms/SendNote'
+import { SendNoteFormValues } from '../Forms/SendNoteForm'
 import { wait } from '@mbari/utils'
 
 export default {
@@ -18,7 +18,7 @@ export default {
 } as Meta
 
 const Template: Story<SendNoteModalProps> = (args) => {
-  const onSubmit: any = async (values: SendNoteValues) => {
+  const onSubmit: any = async (values: SendNoteFormValues) => {
     await wait(1)
     console.log('Submitted', values)
     return undefined

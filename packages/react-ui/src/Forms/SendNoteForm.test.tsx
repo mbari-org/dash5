@@ -1,16 +1,16 @@
 import React from 'react'
 import { render, screen, fireEvent, waitFor } from '@testing-library/react'
 import '@testing-library/jest-dom'
-import { SendNote, SendNoteValues } from './SendNote'
+import { SendNoteForm, SendNoteFormValues } from './SendNoteForm'
 
-const handleSubmit = async (values: SendNoteValues) => {
+const handleSubmit = async (values: SendNoteFormValues) => {
   await new Promise((res) => setTimeout(res, 1000))
   return undefined
 }
 
 test('should render the initial value', () => {
   render(
-    <SendNote
+    <SendNoteForm
       defaultValues={{ note: 'example', bugReport: true, critical: true }}
       onSubmit={handleSubmit}
     />
@@ -26,7 +26,7 @@ test('should render the initial value', () => {
 
 test('should uncheck checkboxes', () => {
   render(
-    <SendNote
+    <SendNoteForm
       defaultValues={{ note: 'example', bugReport: true, critical: true }}
       onSubmit={handleSubmit}
     />
@@ -49,7 +49,7 @@ test('should submit with correct values', async () => {
   const onSubmit = jest.fn()
 
   render(
-    <SendNote
+    <SendNoteForm
       defaultValues={{ note: 'example', bugReport: true, critical: true }}
       onSubmit={onSubmit}
     />

@@ -1,13 +1,13 @@
 import { AsyncSubmitHandler } from '@sumocreations/forms'
 import React from 'react'
-import { SendNote, SendNoteValues } from '../Forms/SendNote'
+import { SendNoteForm, SendNoteFormValues } from '../Forms/SendNoteForm'
 import { Modal, ModalProps } from '../Modal'
 
 type ModalPropsWithoutTitle = Omit<ModalProps, 'title'>
 
 export interface SendNoteModalProps extends ModalPropsWithoutTitle {
   vehicleName: string
-  onSubmit: AsyncSubmitHandler<SendNoteValues>
+  onSubmit: AsyncSubmitHandler<SendNoteFormValues>
 }
 
 export const SendNoteModal: React.FC<SendNoteModalProps> = ({
@@ -16,7 +16,7 @@ export const SendNoteModal: React.FC<SendNoteModalProps> = ({
   ...modalProps
 }) => (
   <Modal {...modalProps} title={`Add note for ${vehicleName}`} form="noteForm">
-    <SendNote onSubmit={onSubmit} id="noteForm" hideSubmit />
+    <SendNoteForm onSubmit={onSubmit} id="noteForm" hideSubmit />
   </Modal>
 )
 
