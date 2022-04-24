@@ -31,4 +31,5 @@ export const Standard = Template.bind({})
 Standard.args = {
   vehicleName: 'Brizo',
   open: true,
+  onClose: action('close'),
 }

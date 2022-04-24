@@ -8,11 +8,17 @@ import {
   ErrorMap,
 } from '@sumocreations/forms'
 import { camelCase } from 'lodash'
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
+import {
+  faExclamationTriangle,
+  faEdit,
+} from '@fortawesome/pro-regular-svg-icons'
 
 // Assumes we have some existing UI implementation for forms in our library. Replace as needed.
 import { TextAreaField, Fields, ErrorList } from '../Fields'
 import { Button } from '../Navigation'
 import { AbsoluteOverlay } from '../Indicators'
+import { IconProp } from '@fortawesome/fontawesome-svg-core'
 
 export type SendNoteValues = {
   note: string
@@ -29,6 +35,9 @@ const schema = yup.object({
 export interface SendNoteProps extends FormProps<SendNoteValues> {
   loading?: boolean
 }
+
+const text =
+  'This note will also go to the #lrauvs channel in Slack. Additional channels can be indicated by enclosing them in curly brackets at the beginning of the note, for example, {#wavegilder, @johndoe}... Make sure these Slack names are spelled correctly as they are not validated here.'
 
 export const SendNote: React.FC<SendNoteProps> = ({
   onSubmit: externalSubmitHandler,
@@ -66,12 +75,22 @@ export const SendNote: React.FC<SendNoteProps> = ({
   return (
     <form onSubmit={handleFormSubmit} className="relative" id={id}>
       <Fields register={register} errors={formErrors} grow className="pb-2">
-        <TextAreaField
-          name="note"
-          label="Enter your note"
-          className="w-full"
-          required
-        />
+        <div className="relative flex w-full flex-row items-baseline">
+          <div className="flex-1">
+            <TextAreaField
+              name="note"
+              label="Enter your note"
+              className="w-full"
+              required
+            />
+          </div>
+
+          <div className="absolute right-0 -top-2">
+            <button className="flex items-center justify-center rounded-md border p-2">
+              <FontAwesomeIcon icon={faEdit as IconProp} />
+            </button>
+          </div>
+        </div>
         <label htmlFor="bugReport">
           <input type="checkbox" id="bugReport" {...register('bugReport')} />{' '}
           Bug Report
@@ -79,8 +98,12 @@ export const SendNote: React.FC<SendNoteProps> = ({
         <label htmlFor="critical">
           <input type="checkbox" id="critical" {...register('critical')} />{' '}
           Critical
+          <span className="ml-2 text-red-600">
+            <FontAwesomeIcon icon={faExclamationTriangle as IconProp} />
+          </span>
         </label>
         <ErrorList errors={formErrors as ErrorMap} />
+        <p className="text-xs text-gray-500">{text}</p>
         {!hideSubmit ? (
           <Button type="submit" className="mt-2 w-full">
             {submitTitle ?? 'Submit Form'}
