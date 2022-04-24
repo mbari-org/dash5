@@ -78,10 +78,10 @@ export const SendNoteForm: React.FC<SendNoteFormProps> = ({
         <div className="relative flex w-full flex-row items-baseline">
           <div className="flex-1">
             <TextAreaField
-              name="note"
               label="Enter your note"
               className="w-full"
               required
+              {...register('note')}
             />
           </div>
 

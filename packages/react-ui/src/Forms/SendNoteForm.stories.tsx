@@ -8,7 +8,7 @@ import {
 import { wait } from '@mbari/utils'
 
 export default {
-  title: 'Forms/SendNote',
+  title: 'Forms/SendNoteForm',
   component: SendNoteForm,
   parameters: {
     design: {
