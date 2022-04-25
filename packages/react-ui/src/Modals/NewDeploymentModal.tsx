@@ -22,6 +22,7 @@ export const NewDeploymentModal: React.FC<NewDeploymentModalProps> = ({
       {...modalProps}
       title={`New ${vehicleName} deployment`}
       form="newDeploymentForm"
+      confirmButtonText="Submit"
     >
       <NewDeploymentForm
         onSubmit={onSubmit}
