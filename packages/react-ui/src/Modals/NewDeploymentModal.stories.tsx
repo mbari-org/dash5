@@ -34,4 +34,5 @@ Standard.args = {
     return undefined
   },
   onClose: action('close'),
+  onCancel: action('cancel'),
 }
