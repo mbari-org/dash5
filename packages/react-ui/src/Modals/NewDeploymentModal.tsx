@@ -1,16 +1,35 @@
 import React from 'react'
-import clsx from 'clsx'
+import {
+  NewDeploymentForm,
+  NewDeploymentFormValues,
+} from '../Forms/NewDeploymentForm'
+import { AsyncSubmitHandler } from '@sumocreations/forms'
+import { Modal, ModalProps } from '../Modal/Modal'
 
-export interface NewDeploymentModalProps {
-  className?: string
-  style?: React.CSSProperties
+type ModalPropsWithOutTitle = Omit<ModalProps, 'title'>
+export interface NewDeploymentModalProps extends ModalPropsWithOutTitle {
+  vehicleName: string
+  onSubmit: AsyncSubmitHandler<NewDeploymentFormValues>
 }
 
 export const NewDeploymentModal: React.FC<NewDeploymentModalProps> = ({
-  className,
-  ...props
+  vehicleName,
+  onSubmit,
+  ...modalProps
 }) => {
-  return <div className={clsx('', className)}>NewDeploymentModal Component</div>
+  return (
+    <Modal
+      {...modalProps}
+      title={`New ${vehicleName} deployment`}
+      form="newDeploymentForm"
+    >
+      <NewDeploymentForm
+        onSubmit={onSubmit}
+        id="newDeploymentForm"
+        hideSubmit
+      />
+    </Modal>
+  )
 }
 
 NewDeploymentModal.displayName = 'Modals.NewDeploymentModal'
