@@ -119,7 +119,7 @@ export const DateField = React.forwardRef<HTMLInputElement, DateFieldProps>(
             onFocus={handleFocus(true)}
             onBlur={handleFocus(false)}
             placeholder={placeholder}
-            value={selectedDate?.toISO()}
+            value={selectedDate?.toISO() ?? ''}
             aria-label={'date picker'}
           />
           {focused && (
