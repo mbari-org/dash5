@@ -67,4 +67,4 @@ export const TextAreaField = React.forwardRef<
   }
 )
 
-TextAreaField.displayName = 'Form.TextAreaField'
+TextAreaField.displayName = 'Fields.TextAreaField'
