@@ -37,7 +37,7 @@ const style = {
   icon: 'm-auto text-stone-700 text-sm',
   fieldWrap: 'relative flex flex-grow flex-wrap',
   required: 'text-emerald-500 text-xs mx-2 my-auto',
-  label: 'flex text-sm pb-3',
+  label: 'flex text-sm pb-1',
 }
 
 const getGrowStyle = (grow?: boolean) => (grow ? 'flex-grow' : '')

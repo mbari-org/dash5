@@ -15,7 +15,7 @@ export type TextFieldProps = TextFieldInputProps & FieldProps
 
 const hasError = (error?: string) => (error ?? '').length > 0
 
-const getPaddingForField = (hasIcon?: boolean) => (hasIcon ? 'pl-8' : '')
+const getPaddingForField = (hasIcon?: boolean) => (hasIcon ? 'pl-9' : '')
 
 export const TextField = React.forwardRef<HTMLInputElement, TextFieldProps>(
   (
