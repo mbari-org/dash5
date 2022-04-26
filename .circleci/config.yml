@@ -253,6 +253,7 @@ workflows:
             - test_dash
             - test_ui
             - test_api
+            - lint
           filters:
             branches:
               only:
