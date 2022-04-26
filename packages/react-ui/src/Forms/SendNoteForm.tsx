@@ -75,22 +75,12 @@ export const SendNoteForm: React.FC<SendNoteFormProps> = ({
   return (
     <form onSubmit={handleFormSubmit} className="relative" id={id}>
       <Fields register={register} errors={formErrors} grow className="pb-2">
-        <div className="relative flex w-full flex-row items-baseline">
-          <div className="flex-1">
-            <TextAreaField
-              label="Enter your note"
-              className="w-full"
-              required
-              {...register('note')}
-            />
-          </div>
-
-          <div className="absolute right-0 -top-2">
-            <button className="flex items-center justify-center rounded-md border p-2">
-              <FontAwesomeIcon icon={faEdit as IconProp} />
-            </button>
-          </div>
-        </div>
+        <TextAreaField
+          label="Enter your note"
+          className="w-full"
+          required
+          {...register('note')}
+        />
         <label htmlFor="bugReport">
           <input type="checkbox" id="bugReport" {...register('bugReport')} />{' '}
           Bug Report
@@ -103,7 +93,15 @@ export const SendNoteForm: React.FC<SendNoteFormProps> = ({
           </span>
         </label>
         <ErrorList errors={formErrors as ErrorMap} />
-        <p className="text-xs text-gray-500">{text}</p>
+        <p className="text-xs text-gray-500">
+          This note will also go to the{' '}
+          <span className="font-mono text-violet-600">#lrauvs</span> channel in
+          Slack. Additional channels can be indicated by enclosing them in curly
+          brackets at the beginning of the note, for example,{' '}
+          <span className="font-mono text-violet-600">{`{#wavegilder, @johndoe}`}</span>
+          ... Make sure these Slack names are spelled correctly as they are not
+          validated here.
+        </p>
         {!hideSubmit ? (
           <Button type="submit" className="mt-2 w-full">
             {submitTitle ?? 'Submit Form'}

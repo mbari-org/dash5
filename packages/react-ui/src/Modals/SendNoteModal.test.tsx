@@ -14,8 +14,6 @@ const props: SendNoteModalProps = {
   },
 }
 
-test.todo('should have tests')
-
 test('should render the component', async () => {
   expect(() => render(<SendNoteModal {...props} />)).not.toThrow()
 })
