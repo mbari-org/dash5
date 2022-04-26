@@ -1,16 +1,16 @@
 import React, { useState } from 'react'
 import { Story, Meta } from '@storybook/react'
-import { Login, LoginProps, LoginValues } from './Login'
+import { LoginForm, LoginFormProps, LoginFormValues } from './LoginForm'
 import { wait } from '@mbari/utils'
 
 export default {
-  title: 'Forms/Login',
+  title: 'Forms/LoginForm',
 } as Meta
 
-const Template: Story<LoginProps> = (args) => {
+const Template: Story<LoginFormProps> = (args) => {
   const [loading, setLoading] = useState(args.loading ?? false)
 
-  const onSubmit: any = async (values: LoginValues) => {
+  const onSubmit: any = async (values: LoginFormValues) => {
     setLoading(true)
     await wait(1)
     setLoading(false)
@@ -20,12 +20,12 @@ const Template: Story<LoginProps> = (args) => {
 
   return (
     <div className="rounded border p-4">
-      <Login {...args} onSubmit={onSubmit} loading={loading} />
+      <LoginForm {...args} onSubmit={onSubmit} loading={loading} />
     </div>
   )
 }
 
-const args: LoginProps = {
+const args: LoginFormProps = {
   onSubmit: async (values) => {
     await wait(1)
     console.log('Submitted', values)
