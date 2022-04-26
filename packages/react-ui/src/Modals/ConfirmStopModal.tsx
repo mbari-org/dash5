@@ -79,7 +79,7 @@ export const ConfirmStopModal: React.FC<ConfirmStopModalProps> = ({
             <>
               {' '}
               <Link href={vehicleUrl}>
-                <a className="text-teal-500">{vehicleName}</a>
+                <button className="text-teal-500">{vehicleName}</button>
               </Link>
             </>
           )}

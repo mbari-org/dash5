@@ -13,10 +13,10 @@ const Template: Story<LoginModalProps> = (args) => <LoginModal {...args} />
 const args: LoginModalProps = {
   open: true,
   onSubmit: async () => undefined,
-  onForgotPass: () => {},
-  onCreateAcct: () => {},
-  onCancel: () => {},
-  onClose: () => {},
+  onForgotPass: () => undefined,
+  onCreateAcct: () => undefined,
+  onCancel: () => undefined,
+  onClose: () => undefined,
 }
 
 export const Standard = Template.bind({})

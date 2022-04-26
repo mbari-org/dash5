@@ -45,7 +45,7 @@ export const LoginModal: React.FC<LoginModalProps> = ({
         </button>
         <div className={styles.createContainer}>
           <span className={clsx(styles.noAcctText, styles.lightSans)}>
-            Don't have an account?
+            Don&apos;t have an account?
           </span>
           <button
             className={clsx(styles.createBtn, styles.lightSans)}
