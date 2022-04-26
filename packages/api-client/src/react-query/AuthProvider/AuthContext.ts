@@ -22,8 +22,12 @@ export interface AuthContextProviderProps {
 const defaultContext: AuthContextProviderProps = {
   authenticated: false,
   loading: false,
-  login: () => {},
-  logout: () => {},
+  login: () => {
+    console.log('event fired')
+  },
+  logout: () => {
+    console.log('event fired')
+  },
 }
 
 export const AuthContext = React.createContext(defaultContext)

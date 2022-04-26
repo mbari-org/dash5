@@ -6,7 +6,9 @@ import { AccordionHeader, AccordionHeaderProps } from './AccordionHeader'
 const props: AccordionHeaderProps = {
   label: 'Any string',
   ariaLabel: 'Accordion container',
-  onToggle: () => {},
+  onToggle: () => {
+    console.log('event fired')
+  },
 }
 
 test('should render the label', async () => {
@@ -36,7 +38,15 @@ test('should render the header with a blue background when open', async () => {
 })
 
 test('should render the expand icon when appropriate', async () => {
-  render(<AccordionHeader {...props} open={true} onExpand={() => {}} />)
+  render(
+    <AccordionHeader
+      {...props}
+      open={true}
+      onExpand={() => {
+        console.log('event fired')
+      }}
+    />
+  )
 
   expect(screen.getByTitle(/expand icon/i)).toBeInTheDocument()
 })

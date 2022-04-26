@@ -38,7 +38,9 @@ const args: VehicleCellProps = {
       12 minutes
     </div>
   ),
-  onSelect: () => {},
+  onSelect: () => {
+    console.log('event fired')
+  },
 }
 
 export const Running = Template.bind({})
