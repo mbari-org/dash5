@@ -1,4 +1,6 @@
 #!/bin/sh
 . "$(dirname "$0")/_/husky.sh"
-
+# Use correct node / yarn
+export PATH=~/.volta/bin:$PATH
+# Lint staged files.
 yarn lint:staged
