@@ -33,6 +33,17 @@
         "group": "develop"
       },
       "runOptions": { "runOn": "folderOpen" }
+    },
+    {
+      "label": "[project]: Lint",
+      "type": "shell",
+      "command": "yarn esw --watch",
+      "presentation": {
+        "reveal": "always",
+        "panel": "new",
+        "group": "root"
+      },
+      "runOptions": { "runOn": "folderOpen" }
     }
   ]
 }

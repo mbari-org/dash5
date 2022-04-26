@@ -1,14 +1,16 @@
 module.exports = {
+  root: true,
   env: {
     browser: true,
     es6: true,
   },
   extends: [
-    'eslint:recommended',
+    'plugin:@typescript-eslint/recommended',
     'plugin:react/recommended',
     'plugin:react-hooks/recommended',
     'plugin:prettier/recommended',
     'plugin:jsx-a11y/strict',
+    'react-app',
   ],
   parser: '@typescript-eslint/parser',
   parserOptions: {
@@ -27,6 +29,12 @@ module.exports = {
     radix: 'error',
     'space-before-blocks': 'error',
     'import/prefer-default-export': 'off',
+    'react/prop-types': 'off',
+  },
+  settings: {
+    react: {
+      version: 'detect',
+    },
   },
   overrides: [
     {
