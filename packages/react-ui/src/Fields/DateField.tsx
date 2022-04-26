@@ -83,7 +83,7 @@ export const DateField = React.forwardRef<HTMLInputElement, DateFieldProps>(
           handleDateChange(date)
         }
       }
-    }, [value, selectedDate, handleDateChange])
+    }, [value, selectedDate, handleDateChange, lastDateFromValue])
 
     // Manage when to display the inline date/time picker.
     const [focused, setFocus] = useState(false)
@@ -144,8 +144,9 @@ export const DateField = React.forwardRef<HTMLInputElement, DateFieldProps>(
                 onMouseEnter={handleInteraction(true)}
                 onMouseLeave={handleInteraction(false)}
                 onMouseUp={handleMouseUp}
-                role="alertdialog"
                 style={{ top: getPos?.y ?? 0, left: getPos?.x ?? 0 }}
+                role="button"
+                tabIndex={0}
               >
                 <div className="relative w-1/2 flex-grow overflow-hidden px-2">
                   <Calendar
