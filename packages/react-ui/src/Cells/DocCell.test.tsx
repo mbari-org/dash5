@@ -4,9 +4,15 @@ import '@testing-library/jest-dom'
 import { DocCell, DocCellProps } from './DocCell'
 
 const props: DocCellProps = {
-  onSelect: () => {},
-  onSelectMore: () => {},
-  onSelectMission: (id) => {},
+  onSelect: () => {
+    console.log('event fired')
+  },
+  onSelectMore: () => {
+    console.log('event fired')
+  },
+  onSelectMission: (id) => {
+    console.log(id)
+  },
   time: '16:29:32',
   date: 'Dec. 15, 2021',
   label: 'Maintenance Log - Brizo',

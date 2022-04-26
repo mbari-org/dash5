@@ -29,15 +29,11 @@ export const LogCell: React.FC<LogCellProps> = ({
   date,
   log,
   isUpload,
-  onSelect,
+  onSelect: handleSelect,
 }) => {
   return (
-    <article
-      style={style}
-      className={clsx(styles.container, className)}
-      onClick={swallow(onSelect)}
-    >
-      <button className="flex" onClick={swallow(onSelect)}>
+    <article style={style} className={clsx(styles.container, className)}>
+      <button className="flex" onClick={swallow(handleSelect)}>
         <ul className={styles.details}>
           <li>{label}</li>
           <li className="flex flex-row">
