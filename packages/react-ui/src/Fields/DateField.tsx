@@ -4,6 +4,7 @@ import { Field, FieldProps, getErrorMessage } from './Field'
 import { Input } from './Input'
 import { DateTime } from 'luxon'
 import { Calendar, ClockView } from '@material-ui/pickers'
+import { Overlay } from '../Overlay'
 
 export interface DateFieldInputProps {
   /**
@@ -46,6 +47,8 @@ export const DateField = React.forwardRef<HTMLInputElement, DateFieldProps>(
     },
     forwardedRef
   ) => {
+    // Store the position of the field in the viewport.
+    const [getPos, setPos] = useState<{ x: number; y: number } | null>(null)
     // Maintain a reference to the input element so we can focus it
     const inputRef = useRef<HTMLInputElement | null>(null)
     const determinedErrorMessage = getErrorMessage({
@@ -53,6 +56,18 @@ export const DateField = React.forwardRef<HTMLInputElement, DateFieldProps>(
       errorMessage,
       errors,
     })
+
+    useEffect(() => {
+      const {
+        top = 0,
+        left: x = 0,
+        height = 0,
+      } = inputRef?.current?.getBoundingClientRect() ?? {}
+      const y = top + height
+      if (getPos?.x !== x || getPos?.y !== y) {
+        setPos({ x, y })
+      }
+    }, [inputRef, getPos, setPos])
 
     // Manage the current date value
     const [lastDateFromValue, setLastDateFromValue] =
@@ -123,31 +138,33 @@ export const DateField = React.forwardRef<HTMLInputElement, DateFieldProps>(
             aria-label={'date picker'}
           />
           {focused && (
-            <div
-              className="absolute left-0 z-10 mt-2 flex border border-stone-200 bg-white p-2 shadow-lg"
-              style={{ top: '100%' }}
-              onMouseEnter={handleInteraction(true)}
-              onMouseLeave={handleInteraction(false)}
-              onMouseUp={handleMouseUp}
-              role="alertdialog"
-            >
-              <div className="relative w-1/2 flex-grow overflow-hidden px-2">
-                <Calendar
-                  date={selectedDate ?? DateTime.local()}
-                  onChange={handleDateChange}
-                  onMonthChange={handleDateChange}
-                />
+            <Overlay>
+              <div
+                className="absolute left-0 z-50 mt-2 flex border border-stone-200 bg-white p-2 shadow-lg"
+                onMouseEnter={handleInteraction(true)}
+                onMouseLeave={handleInteraction(false)}
+                onMouseUp={handleMouseUp}
+                role="alertdialog"
+                style={{ top: getPos?.y ?? 0, left: getPos?.x ?? 0 }}
+              >
+                <div className="relative w-1/2 flex-grow overflow-hidden px-2">
+                  <Calendar
+                    date={selectedDate ?? DateTime.local()}
+                    onChange={handleDateChange}
+                    onMonthChange={handleDateChange}
+                  />
+                </div>
+                <div className="relative w-1/2 flex-grow overflow-hidden px-2">
+                  <ClockView
+                    date={selectedDate ?? DateTime.local()}
+                    type="minutes"
+                    onHourChange={handleDateChange}
+                    onMinutesChange={handleDateChange}
+                    onSecondsChange={handleDateChange}
+                  />
+                </div>
               </div>
-              <div className="relative w-1/2 flex-grow overflow-hidden px-2">
-                <ClockView
-                  date={selectedDate ?? DateTime.local()}
-                  type="minutes"
-                  onHourChange={handleDateChange}
-                  onMinutesChange={handleDateChange}
-                  onSecondsChange={handleDateChange}
-                />
-              </div>
-            </div>
+            </Overlay>
           )}
           {/* This hidden input and forward ref maintains the actual value controlled by 'useForm' */}
           <input type="hidden" name={name} ref={forwardedRef} />
