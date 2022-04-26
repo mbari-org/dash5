@@ -35,6 +35,7 @@
     "@changesets/cli": "^2.21.1",
     "@sumocreations/scaffolds": "^1.1.6",
     "eslint": "^8.11",
+    "eslint-config-next": "^12.1.5",
     "eslint-config-prettier": "^8.5.0",
     "eslint-config-react-app": "^7.0.1",
     "eslint-plugin-prettier": "^4.0.0",
