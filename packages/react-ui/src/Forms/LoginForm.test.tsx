@@ -1,17 +1,17 @@
 import React from 'react'
 import { render, screen } from '@testing-library/react'
 import '@testing-library/jest-dom'
-import { Login, LoginValues } from './Login'
+import { LoginForm, LoginFormValues } from './LoginForm'
 import { wait } from '@mbari/utils'
 
-const handleSubmit = async (values: LoginValues) => {
+const handleSubmit = async (values: LoginFormValues) => {
   await wait(1)
   return undefined
 }
 
 test('should render the placeholder value', async () => {
   render(
-    <Login
+    <LoginForm
       defaultValues={{ email: 'admin@example.com', password: '123456789' }}
       onSubmit={handleSubmit}
     />
