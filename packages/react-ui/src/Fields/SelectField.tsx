@@ -55,3 +55,5 @@ export const SelectField = React.forwardRef<
     )
   }
 )
+
+SelectField.displayName = 'Fields.SelectField'

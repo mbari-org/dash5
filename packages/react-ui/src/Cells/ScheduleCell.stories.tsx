@@ -21,8 +21,12 @@ const args: ScheduleCellProps = {
   secondary: 'Deeper sample',
   name: 'Reiko Michisaki',
   description: 'Today',
-  onSelect: () => {},
-  onSelectMore: () => {},
+  onSelect: () => {
+    console.log('event fired')
+  },
+  onSelectMore: () => {
+    console.log('event fired')
+  },
 }
 
 export const Scheduled = Template.bind({})

@@ -45,11 +45,7 @@ export const CommsCell: React.FC<CommsCellProps> = ({
   const regFontEntry = entry.slice(0, -3)
   const boldFontEntry = entry.slice(-3)
   return (
-    <article
-      style={style}
-      className={clsx(styles.container, className)}
-      onClick={swallow(onSelect)}
-    >
+    <article style={style} className={clsx(styles.container, className)}>
       <button className={styles.buttonWrapper}>
         <ul className={styles.detailsContainer}>
           <li

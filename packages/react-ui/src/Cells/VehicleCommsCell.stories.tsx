@@ -22,7 +22,9 @@ const args: VehicleCommsCellProps = {
   host: 'lrauv-brizo-cell.shore.mbari.org',
   lastPing: 'Today at 14:40:36 (3s ago)',
   nextComms: '14:55 (in 15m)',
-  onSelect: () => {},
+  onSelect: () => {
+    console.log('event fired')
+  },
 }
 
 export const Connected = Template.bind({})

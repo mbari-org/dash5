@@ -22,7 +22,14 @@ test('should render the selected option', async () => {
 })
 
 test('should render the add button if a handler is present', async () => {
-  render(<PrimaryToolbar options={options} onAddClick={() => {}} />)
+  render(
+    <PrimaryToolbar
+      options={options}
+      onAddClick={() => {
+        console.log('event fired')
+      }}
+    />
+  )
   expect(screen.queryByLabelText(/add vehicle/i)).toBeInTheDocument()
 })
 

@@ -1,8 +1,6 @@
 import React, { useEffect, useRef } from 'react'
 import { createPortal } from 'react-dom'
 
-export interface OverlayProps {}
-
 export const useOverlayRoot = () => document.getElementById('overlay-root')
 
 export const Overlay: React.FC = ({ children }) => {
@@ -10,9 +8,10 @@ export const Overlay: React.FC = ({ children }) => {
   const el = useRef(document.createElement('div'))
 
   useEffect(() => {
+    const node = el.current
     overlayRoot?.appendChild(el.current)
     return () => {
-      overlayRoot?.removeChild(el.current)
+      overlayRoot?.removeChild(node)
     }
   })
 

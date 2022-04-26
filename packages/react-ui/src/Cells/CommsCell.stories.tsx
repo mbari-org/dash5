@@ -24,7 +24,9 @@ const args: CommsCellProps = {
   time: '16:29',
   isUpload: true,
   isScheduled: true,
-  onSelect: () => {},
+  onSelect: () => {
+    console.log('event fired')
+  },
 }
 
 export const Waiting = Template.bind({})

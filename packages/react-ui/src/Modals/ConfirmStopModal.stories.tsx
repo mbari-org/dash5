@@ -14,9 +14,15 @@ const Template: Story<ConfirmStopModalProps> = (args) => (
 
 const args: ConfirmStopModalProps = {
   open: true,
-  onClose: () => {},
-  onCancel: () => {},
-  onConfirmValue: () => {},
+  onClose: () => {
+    console.log('event fired')
+  },
+  onCancel: () => {
+    console.log('event fired')
+  },
+  onConfirmValue: () => {
+    console.log('event fired')
+  },
   vehicleName: 'Brizo',
   vehicleUrl: '/vehicles/brizo',
   title: '',

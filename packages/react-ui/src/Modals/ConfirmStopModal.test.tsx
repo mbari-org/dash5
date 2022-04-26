@@ -5,9 +5,15 @@ import { ConfirmStopModal, ConfirmStopModalProps } from './ConfirmStopModal'
 
 const args: ConfirmStopModalProps = {
   open: true,
-  onClose: () => {},
-  onCancel: () => {},
-  onConfirmValue: () => {},
+  onClose: () => {
+    console.log('event fired')
+  },
+  onCancel: () => {
+    console.log('event fired')
+  },
+  onConfirmValue: () => {
+    console.log('event fired')
+  },
   vehicleName: 'Brizo',
   vehicleUrl: '/vehicles/brizo',
   title: '',
@@ -25,7 +31,14 @@ test('should not render the vehicle name if blank', async () => {
 
 test('should throw an error if the default submit handler is used', async () => {
   expect(() =>
-    render(<ConfirmStopModal {...args} onConfirm={() => {}} />)
+    render(
+      <ConfirmStopModal
+        {...args}
+        onConfirm={() => {
+          console.log('event fired')
+        }}
+      />
+    )
   ).toThrow(
     "ConfirmStopModal does not support default 'onConfirm' method. Use 'onConfirmValue' instead."
   )

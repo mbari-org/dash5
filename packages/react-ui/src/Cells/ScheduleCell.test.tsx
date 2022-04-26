@@ -10,8 +10,12 @@ const props: ScheduleCellProps = {
   secondary: 'breakfast of champions',
   name: 'Kurt Vonnegut',
   description: 'breakfast with Kilgore Trout',
-  onSelect: () => {},
-  onSelectMore: () => {},
+  onSelect: () => {
+    console.log('event fired')
+  },
+  onSelectMore: () => {
+    console.log('event fired')
+  },
 }
 
 test('should render the label', async () => {

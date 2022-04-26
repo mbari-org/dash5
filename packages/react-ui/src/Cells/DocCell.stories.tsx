@@ -16,9 +16,15 @@ const Template: Story<DocCellProps> = (args) => (
 
 const args: DocCellProps = {
   className: '',
-  onSelectMore: () => {},
-  onSelect: () => {},
-  onSelectMission: (id) => {},
+  onSelectMore: () => {
+    console.log('event fired')
+  },
+  onSelect: () => {
+    console.log('event fired')
+  },
+  onSelectMission: (id) => {
+    console.log(`Selected mission ${id}`)
+  },
   time: '16:29:32',
   date: 'Dec. 15, 2021',
   label: 'Maintenance Log - Brizo',

@@ -6,8 +6,8 @@ import { LoginModal, LoginModalProps } from './LoginModal'
 const props: LoginModalProps = {
   open: true,
   onSubmit: async () => undefined,
-  onForgotPass: () => {},
-  onCreateAcct: () => {},
+  onForgotPass: () => undefined,
+  onCreateAcct: () => undefined,
 }
 
 test('should render the component', async () => {

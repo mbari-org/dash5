@@ -1,7 +1,7 @@
 import React, { useState } from 'react'
 
 import { Button } from '../Navigation'
-import { Overlay, OverlayProps } from './Overlay'
+import { Overlay } from './Overlay'
 import { Story, Meta } from '@storybook/react/types-6-0'
 
 export default {
@@ -15,7 +15,7 @@ const ExampleContent: React.FC = () => (
   </div>
 )
 
-const Template: Story<OverlayProps> = (args) => {
+const Template: Story<Record<string, unknown>> = () => {
   const [enabled, setEnabled] = useState(false)
   const toggleEnabled = () => setEnabled(!enabled)
   return (
