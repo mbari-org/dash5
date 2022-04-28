@@ -13,11 +13,11 @@ export const ProfileDropdown: React.FC<ProfileDropdownProps> = ({
   emailAddress,
   profileRole,
   avatarUrl,
-  ...DropdownProps
+  ...dropdownProps
 }) => {
   return (
     <Dropdown
-      {...DropdownProps}
+      {...dropdownProps}
       header={
         <ul className="flex">
           <li className="pr-4">
