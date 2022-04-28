@@ -28,8 +28,12 @@ const Template: Story<DropdownProps> = (args) => {
 
 const args: DropdownProps = {
   className: '',
-  currentValue: 'Brizo 7 EcoHab',
-  description: 'Started 4+ days ago',
+  header: (
+    <ul>
+      <li>Started 4+ days ago</li>
+      <li className="font-medium">Brizo 7 EcoHab</li>
+    </ul>
+  ),
   options: [
     {
       label: 'New Brizo deployment',
