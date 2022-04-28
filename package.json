@@ -17,12 +17,36 @@
   "scripts": {
     "prettier": "npx prettier --write packages/*/src/**/*.{js,md,ts,tsx}",
     "build": "turbo run build",
-    "test": "turbo run test"
+    "test": "turbo run test",
+    "prepare": "husky install",
+    "lint": "eslint --quiet --fix ./packages/*/src/**/*.{ts,tsx}",
+    "lint:watch": "esw --quiet --fix --watch ./packages/*/src/**/*.{ts,tsx}",
+    "lint:staged": "lint-staged"
+  },
+  "lint-staged": {
+    "*.{js,ts,tsx, jsx}": [
+      "eslint --quiet --fix"
+    ],
+    "*.{json,md,html,js,jsx,ts,tsx}": [
+      "prettier --write"
+    ]
   },
   "devDependencies": {
     "@changesets/cli": "^2.21.1",
     "@sumocreations/scaffolds": "^1.1.6",
+    "eslint": "^8.11",
+    "eslint-config-next": "^12.1.5",
+    "eslint-config-prettier": "^8.5.0",
+    "eslint-config-react-app": "^7.0.1",
+    "eslint-plugin-prettier": "^4.0.0",
+    "eslint-watch": "^8.0.0",
+    "husky": "^7.0.4",
+    "lint-staged": "^12.4.1",
     "rimraf": "^3.0.2",
-    "turbo": "^1.1.10"
+    "turbo": "^1.2.5"
+  },
+  "volta": {
+    "node": "14.19.1",
+    "yarn": "1.22.18"
   }
 }

@@ -29,7 +29,7 @@ export const MissionProgressToolbar: React.FC<MissionProgressToolbarProps> = ({
   startTime,
   endTime,
 }) => {
-  const container = useRef(null as HTMLDivElement | null)
+  const container = useRef(null as HTMLButtonElement | null)
   const {
     size: { height: containerHeight, width: containerWidth },
   } = useResizeObserver({ element: container, wait: 100 })
@@ -69,11 +69,13 @@ export const MissionProgressToolbar: React.FC<MissionProgressToolbarProps> = ({
   return (
     <div className={clsx(styles.container, className)} aria-label={ariaLabel}>
       <h3 className={styles.title}>Timeline</h3>
-      <div
+      <button
         ref={container}
         className={styles.toolbar}
         onMouseOver={handleMouseOver}
+        onFocus={handleMouseOver}
         onMouseOut={handleMouseOut}
+        onBlur={handleMouseOut}
       >
         {height > 0 && width > 0 && (
           <svg
@@ -123,7 +125,7 @@ export const MissionProgressToolbar: React.FC<MissionProgressToolbarProps> = ({
             <End x={width - 7} y={height / 2 - 6} height={12} width={6} />
           </svg>
         )}
-      </div>
+      </button>
     </div>
   )
 }

@@ -9,7 +9,13 @@ test('should not render cancel button if a handler has not been specified', asyn
 })
 
 test('should render cancel button if a handler has been specified', async () => {
-  render(<Footer onCancel={() => {}} />)
+  render(
+    <Footer
+      onCancel={() => {
+        console.log('event fired')
+      }}
+    />
+  )
   expect(screen.queryByText(/Cancel/i)).toBeInTheDocument()
 })
 
@@ -19,7 +25,13 @@ test('should not render confirm button if a handler has not been specified', asy
 })
 
 test('should render confirm button if a handler has been specified', async () => {
-  render(<Footer onConfirm={() => {}} />)
+  render(
+    <Footer
+      onConfirm={() => {
+        console.log('event fired')
+      }}
+    />
+  )
   expect(screen.queryByText(/confirm/i)).toBeInTheDocument()
 })
 

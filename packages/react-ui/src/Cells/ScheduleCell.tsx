@@ -85,7 +85,6 @@ export const ScheduleCell: React.FC<ScheduleCellProps> = ({
     <article
       className={clsx(styles.container, className, backgroundColor)}
       aria-label={ariaLabel || ''}
-      onClick={swallow(onSelect)}
     >
       <button
         className="flex flex-grow items-center"

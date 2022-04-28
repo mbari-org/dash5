@@ -12,18 +12,47 @@ const props: DropdownProps = {
     {
       label: 'New Brizo deployment',
       icon: faPlus as IconDefinition,
-      onSelect: () => {},
+      onSelect: () => {
+        console.log('event fired')
+      },
       disabled: true,
     },
     {
       label: 'Brizo 6 Canon',
-      onSelect: () => {},
+      onSelect: () => {
+        console.log('event fired')
+      },
     },
-    { label: 'Brizo 5 Canon', onSelect: () => {} },
-    { label: 'Brizo 4 Engineering', onSelect: () => {} },
-    { label: 'Brizo 3 Canon', onSelect: () => {} },
-    { label: 'Brizo 2 Canon', onSelect: () => {} },
-    { label: 'Sea Trial 1', onSelect: () => {} },
+    {
+      label: 'Brizo 5 Canon',
+      onSelect: () => {
+        console.log('event fired')
+      },
+    },
+    {
+      label: 'Brizo 4 Engineering',
+      onSelect: () => {
+        console.log('event fired')
+      },
+    },
+    {
+      label: 'Brizo 3 Canon',
+      onSelect: () => {
+        console.log('event fired')
+      },
+    },
+    {
+      label: 'Brizo 2 Canon',
+      onSelect: () => {
+        console.log('event fired')
+      },
+    },
+    {
+      label: 'Sea Trial 1',
+      onSelect: () => {
+        console.log('event fired')
+      },
+    },
   ],
 }
 
@@ -40,7 +69,9 @@ test('should render disabled options with lighter text', async () => {
       options={[
         {
           label: 'Disabled test option',
-          onSelect: () => {},
+          onSelect: () => {
+            console.log('event fired')
+          },
           disabled: true,
         },
       ]}

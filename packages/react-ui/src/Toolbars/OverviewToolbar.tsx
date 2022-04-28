@@ -88,10 +88,14 @@ export const OverviewToolbar: React.FC<OverviewToolbarProps> = ({
           />
         </li>
         <li className="p-4">
-          <button onMouseOver={onIcon1hover}>{supportIcon1}</button>
+          <button onMouseOver={onIcon1hover} onFocus={onIcon1hover}>
+            {supportIcon1}
+          </button>
         </li>
         <li>
-          <button onMouseOver={onIcon2hover}>{supportIcon2}</button>
+          <button onMouseOver={onIcon2hover} onFocus={onIcon2hover}>
+            {supportIcon2}
+          </button>
         </li>
       </ul>
     </article>

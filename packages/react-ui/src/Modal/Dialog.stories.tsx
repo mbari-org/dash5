@@ -36,8 +36,12 @@ Primary.args = {
   message:
     "Are you sure you want to abort your mission? There's no turning back now Jim.",
   open: true,
-  onConfirm: () => {},
-  onCancel: () => {},
+  onConfirm: () => {
+    console.log('event fired')
+  },
+  onCancel: () => {
+    console.log('event fired')
+  },
 }
 
 export const CustomLabels = Template.bind({})
@@ -45,8 +49,12 @@ CustomLabels.args = {
   ...Primary.args,
   confirmButtonText: 'Yes, Please!',
   cancelButtonText: 'On second thought...',
-  onConfirm: () => {},
-  onCancel: () => {},
+  onConfirm: () => {
+    console.log('event fired')
+  },
+  onCancel: () => {
+    console.log('event fired')
+  },
 }
 
 export const ConfirmOnly = Template.bind({})
@@ -55,7 +63,9 @@ ConfirmOnly.args = {
   message: 'Sorry - you do not have access to the documents.',
   open: true,
   confirmButtonText: 'OK',
-  onConfirm: () => {},
+  onConfirm: () => {
+    console.log('event fired')
+  },
   onCancel: null,
 }
 
