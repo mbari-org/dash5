@@ -7,8 +7,7 @@ import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 export interface DropdownProps {
   className?: string
   style?: React.CSSProperties
-  currentValue?: string
-  description?: string
+  header?: JSX.Element
   options: DropDownOption[]
 }
 
@@ -22,34 +21,26 @@ interface DropDownOption {
 const styles = {
   container:
     'rounded-md bg-white font-display flex drop-shadow-lg border-solid border-stone-300 border-2',
-  header: 'py-3 pl-4',
-  options: 'py-2 pl-4 flex w-full items-center text-left hover:bg-stone-100',
+  cellPadding: 'py-4 pl-4',
+  options: 'flex w-full items-center text-left hover:bg-stone-100',
 }
 
 export const Dropdown: React.FC<DropdownProps> = ({
   className,
   style,
-  currentValue,
-  description,
+  header,
   options,
 }) => {
   return (
     <article style={style} className={clsx(styles.container, className)}>
       <ul className="w-full">
-        {(currentValue || description) && (
-          <li className={styles.header}>
-            <div aria-label="description">{description}</div>
-            <div aria-label="current value" className="font-medium">
-              {currentValue}
-            </div>
-          </li>
-        )}
+        {header && <li className={styles.cellPadding}>{header}</li>}
         {options.map(({ label, disabled, onSelect, icon }, index) => (
           <li key={index}>
             <hr />
             <button
               aria-label="option"
-              className={styles.options}
+              className={clsx(styles.options, styles.cellPadding)}
               onClick={swallow(onSelect)}
               disabled={disabled}
             >

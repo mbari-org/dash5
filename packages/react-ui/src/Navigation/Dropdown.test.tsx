@@ -6,8 +6,12 @@ import { IconDefinition } from '@fortawesome/fontawesome-svg-core'
 import { faPlus } from '@fortawesome/pro-regular-svg-icons'
 
 const props: DropdownProps = {
-  currentValue: 'Brizo 7 EcoHab',
-  description: 'Started 4+ days ago',
+  header: (
+    <ul>
+      <li>Test header</li>
+      <li className="font-medium">Test subheader</li>
+    </ul>
+  ),
   options: [
     {
       label: 'New Brizo deployment',
@@ -56,10 +60,10 @@ const props: DropdownProps = {
   ],
 }
 
-test('should render current value when provided', async () => {
+test('should display header when provided', async () => {
   render(<Dropdown {...props} />)
 
-  expect(screen.getByLabelText(/current value/i)).toBeInTheDocument()
+  expect(screen.getByText(/test header/i)).toBeInTheDocument()
 })
 
 test('should render disabled options with lighter text', async () => {
