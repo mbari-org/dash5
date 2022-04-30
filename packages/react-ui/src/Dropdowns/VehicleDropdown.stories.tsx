@@ -4,6 +4,7 @@ import { Story, Meta } from '@storybook/react/types-6-0'
 import { VehicleDropdown } from './VehicleDropdown'
 import { VehicleDropdownOption } from './VehicleDropdownOption'
 import { DropdownProps } from '../Navigation'
+import { DateTime } from 'luxon'
 
 export default {
   title: 'Dropdowns/VehicleDropdown',
@@ -11,6 +12,8 @@ export default {
 } as Meta
 
 const Template: Story<DropdownProps> = (args) => <VehicleDropdown {...args} />
+
+const current = DateTime.fromJSDate(new Date())
 
 const args: DropdownProps = {
   options: [
@@ -20,7 +23,7 @@ const args: DropdownProps = {
           name="pontus"
           status="deployed"
           missionName="Pontus 20 MBA photoshoot"
-          lastEvent="5d"
+          lastEvent={current.plus({ days: 5 }).toISO()}
         />
       ),
       onSelect: () => {
@@ -33,7 +36,7 @@ const args: DropdownProps = {
           name="daphne"
           status="ended"
           missionName="Daphne 109 MBTS"
-          lastEvent="5d"
+          lastEvent={current.plus({ days: 5 }).toISO()}
         />
       ),
       onSelect: () => {
@@ -46,7 +49,7 @@ const args: DropdownProps = {
           name="triton"
           status="ended"
           missionName="Triton 16 BoAc"
-          lastEvent="25d"
+          lastEvent={current.plus({ days: 25 }).toISO()}
         />
       ),
       onSelect: () => {
@@ -59,7 +62,7 @@ const args: DropdownProps = {
           name="galene"
           status="ended"
           missionName="Galene AyeRis 3"
-          lastEvent="26d"
+          lastEvent={current.plus({ days: 26 }).toISO()}
         />
       ),
       onSelect: () => {
@@ -72,7 +75,7 @@ const args: DropdownProps = {
           name="sim"
           status="ended"
           missionName="lrauv operator training"
-          lastEvent="28d"
+          lastEvent={current.plus({ days: 28 }).toISO()}
         />
       ),
       onSelect: () => {
@@ -85,7 +88,7 @@ const args: DropdownProps = {
           name="tethys"
           status="ended"
           missionName="Tethys 165 docking"
-          lastEvent="40d"
+          lastEvent={current.plus({ days: 40 }).toISO()}
         />
       ),
       onSelect: () => {
@@ -98,7 +101,7 @@ const args: DropdownProps = {
           name="makai"
           status="ended"
           missionName="Makai Lake Michigan"
-          lastEvent="5m"
+          lastEvent={current.plus({ months: 5.01 }).toISO()}
         />
       ),
       onSelect: () => {
@@ -111,7 +114,7 @@ const args: DropdownProps = {
           name="pallas"
           status="ended"
           missionName="trunk"
-          lastEvent="2y"
+          lastEvent={current.plus({ years: 2.01 }).toISO()}
         />
       ),
       onSelect: () => {

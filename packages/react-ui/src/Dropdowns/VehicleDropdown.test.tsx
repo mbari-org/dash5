@@ -5,6 +5,7 @@ import { VehicleDropdown } from './VehicleDropdown'
 import { DropdownProps } from '../Navigation'
 import { VehicleDropdownOption } from './VehicleDropdownOption'
 
+const current = new Date().toISOString()
 const props: DropdownProps = {
   options: [
     {
@@ -13,7 +14,7 @@ const props: DropdownProps = {
           name="pontus"
           status="deployed"
           missionName="Pontus 20 MBA photoshoot"
-          lastEvent="5d"
+          lastEvent={current}
         />
       ),
       onSelect: () => {
@@ -26,7 +27,7 @@ const props: DropdownProps = {
           name="daphne"
           status="ended"
           missionName="Daphne 109 MBTS"
-          lastEvent="5d"
+          lastEvent={current}
         />
       ),
       onSelect: () => {
@@ -39,7 +40,7 @@ const props: DropdownProps = {
           name="triton"
           status="ended"
           missionName="Triton 16 BoAc"
-          lastEvent="25d"
+          lastEvent={current}
         />
       ),
       onSelect: () => {

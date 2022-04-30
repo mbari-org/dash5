@@ -1,5 +1,6 @@
 import React from 'react'
 import clsx from 'clsx'
+import { timeSinceStart } from '@mbari/utils'
 
 interface VehicleOptionProps {
   name: string
@@ -29,7 +30,7 @@ export const VehicleDropdownOption: React.FC<VehicleOptionProps> = ({
         )}
       ></li>
       <li className="mr-1 opacity-60">{missionName}</li>
-      <li className="opacity-60">~{lastEvent}</li>
+      <li className="opacity-60">~{timeSinceStart(lastEvent)}</li>
     </ul>
   )
 }
