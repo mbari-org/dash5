@@ -46,6 +46,7 @@ export const DateField = React.forwardRef<HTMLInputElement, DateFieldProps>(
     },
     forwardedRef
   ) => {
+    const [calendarStyles, setCalendarStyles] = useState({ top: 0, left: 0 })
     // Maintain a reference to the input element so we can focus it
     const inputRef = useRef<HTMLInputElement | null>(null)
     const determinedErrorMessage = getErrorMessage({
@@ -76,6 +77,13 @@ export const DateField = React.forwardRef<HTMLInputElement, DateFieldProps>(
     const blurTimeout = useRef<ReturnType<typeof setTimeout> | null>(null)
     const handleFocus = useCallback(
       (newValue: boolean) => () => {
+        const domRect = inputRef.current?.getBoundingClientRect()
+
+        setCalendarStyles({
+          top: domRect?.bottom ?? 0,
+          left: domRect?.left ?? 0,
+        })
+
         if (blurTimeout.current) {
           clearTimeout(blurTimeout.current)
         }
@@ -124,8 +132,9 @@ export const DateField = React.forwardRef<HTMLInputElement, DateFieldProps>(
           />
           {focused && (
             <div
-              className="absolute left-0 z-10 mt-2 flex border border-stone-200 bg-white p-2 shadow-lg"
-              style={{ top: '100%' }}
+              className="fixed z-10 mt-2 flex border border-stone-200 bg-white p-2 shadow-lg"
+              // style={{ top: '100%' }}
+              style={calendarStyles}
               onMouseEnter={handleInteraction(true)}
               onMouseLeave={handleInteraction(false)}
               onMouseUp={handleMouseUp}

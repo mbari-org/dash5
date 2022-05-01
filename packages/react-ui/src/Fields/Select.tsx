@@ -55,6 +55,8 @@ export const Select = React.forwardRef<any, SelectProps>(
           isClearable={clearable}
           isDisabled={disabled}
           onChange={handleChange}
+          styles={{ menuPortal: (base) => ({ ...base, zIndex: 9999 }) }}
+          menuPortalTarget={document.body}
           closeMenuOnSelect
         />
         <input type="hidden" ref={ref} name={name} id={id} />

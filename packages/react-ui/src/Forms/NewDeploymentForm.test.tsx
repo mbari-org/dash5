@@ -20,14 +20,14 @@ describe('NewDeploymentForm', () => {
     )
 
     const input = screen.getByDisplayValue('Deployment Example')
-    const submitBtn = screen.getByText(/submit/i)
+    const submitBtn = screen.getByText(/Submit Form/i)
 
     fireEvent.change(input, { target: { value: 'New Deployment' } })
 
-    fireEvent.click(submitBtn)
+    fireEvent.submit(submitBtn)
 
     await waitFor(() => {
-      expect(onSubmit).toBeCalledTimes(1)
+      expect(onSubmit).toBeCalled()
 
       expect(onSubmit).toBeCalledWith({
         ...defaultValues,

@@ -1,13 +1,18 @@
 {
   "compilerOptions": {
     "target": "ES5",
-    "lib": ["es2020", "dom"],
+    "lib": [
+      "es2020",
+      "dom"
+    ],
     "module": "esnext",
     "declaration": true,
     "outDir": "./dist",
     "esModuleInterop": true,
     "strict": true,
-    "types": ["jest"],
+    "types": [
+      "jest"
+    ],
     "jsx": "react",
     "moduleResolution": "node",
     "allowJs": true,
@@ -16,14 +21,21 @@
     "forceConsistentCasingInFileNames": true,
     "resolveJsonModule": true,
     "isolatedModules": true,
+    "downlevelIteration": true,
     "noEmit": false,
     "baseUrl": "../",
     "paths": {
-      "@mbari/utils": ["utils/src/*"],
-      "@mbari/utils/*": ["utils/src/*"]
+      "@mbari/utils": [
+        "utils/src/*"
+      ],
+      "@mbari/utils/*": [
+        "utils/src/*"
+      ]
     }
   },
-  "include": ["src"],
+  "include": [
+    "src"
+  ],
   "exclude": [
     "node_modules",
     "__tests__",
