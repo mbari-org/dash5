@@ -1,5 +1,5 @@
-import React, { useState } from 'react'
-import { useForm, Controller } from 'react-hook-form'
+import React, { useCallback, useState } from 'react'
+import { Controller, useForm } from 'react-hook-form'
 import { yupResolver } from '@hookform/resolvers/yup'
 import * as yup from 'yup'
 import {
@@ -27,14 +27,14 @@ export type NewDeploymentFormValues = {
   deploymentName?: string
   gitTag?: string
   startTime?: string
-  localTime?: string
+  timeZone?: string
 }
 
 const schema = yup.object({
   deploymentName: yup.string().required('cannot be blank'),
   gitTag: yup.string().required('cannot be blank'),
   startTime: yup.string().required('cannot be blank'),
-  localTime: yup.string().required('cannot be blank'),
+  timeZone: yup.string(),
 })
 
 export interface NewDeploymentFormProps
@@ -47,7 +47,7 @@ export const NewDeploymentForm: React.FC<NewDeploymentFormProps> = ({
   onSubmit: externalSubmitHandler,
   loading,
   tags,
-  defaultValues,
+  defaultValues = { startTime: '', timeZone: '' },
   hideSubmit,
   submitTitle,
   id,
@@ -57,15 +57,17 @@ export const NewDeploymentForm: React.FC<NewDeploymentFormProps> = ({
   const {
     handleSubmit,
     register,
-    control,
     formState: { errors: formErrors },
     setError,
     reset,
     watch,
+    control,
   } = useForm<NewDeploymentFormValues>({
     resolver: yupResolver(schema),
     mode: 'onBlur',
   })
+
+  const [timeZone, startTime] = watch(['timeZone', 'startTime'])
 
   useDefaultValueListener<NewDeploymentFormValues>(defaultValues, reset)
 
@@ -87,62 +89,80 @@ export const NewDeploymentForm: React.FC<NewDeploymentFormProps> = ({
         <TextField
           label="Deployment Name"
           className="w-full"
-          {...register('deploymentName')}
+          name="deploymentName"
         />
         <Controller
-          control={control}
           name="gitTag"
-          render={({ field }) => (
+          control={control}
+          render={({ field, formState: { errors } }) => (
             <SelectField
               placeholder="Select a git tag"
               options={tags}
+              selfControllable
               {...field}
+              onChange={undefined}
+              onSelect={field.onChange}
+              errorMessage={errors?.gitTag?.message}
             />
           )}
         />
-        <div className="flex flex-row items-end">
-          <div className="w-7/12">
+        <Fields nested grow>
+          <Controller
+            name="startTime"
+            control={control}
+            render={({ field, formState: { errors } }) => {
+              return (
+                <DateField
+                  label="Start time"
+                  className="flex-shrink-0 flex-grow"
+                  timeZone={timeZone}
+                  {...field}
+                  errorMessage={errors['startTime']?.message}
+                />
+              )
+            }}
+          />
+
+          {isSelectMode ? (
             <Controller
+              name="timeZone"
               control={control}
-              name="startTime"
               render={({ field }) => (
-                <DateField label="Start time" className="w-full" {...field} />
+                <SelectField
+                  className="mt-auto flex-shrink-0 flex-grow"
+                  placeholder="Local time"
+                  options={luxonValidTimezones}
+                  selfControllable
+                  {...field}
+                  onChange={undefined}
+                  onSelect={field.onChange}
+                  value={
+                    luxonValidTimezones.find((tz) => tz.name === timeZone)?.id
+                  }
+                />
               )}
             />
-          </div>
-          <div className="ml-2 w-5/12">
-            {isSelectMode ? (
-              <Controller
-                control={control}
-                name="localTime"
-                render={({ field: { value, onChange, name, ref } }) => (
-                  <SelectField
-                    ref={ref}
-                    placeholder="Local time"
-                    name={name}
-                    value={
-                      luxonValidTimezones.find((tz) => tz.name === value)?.id
-                    }
-                    options={luxonValidTimezones}
-                    onChange={(value) => {
-                      setIsSelectMode(false)
-                      console.log(value)
-                      onChange(value)
-                    }}
-                  />
-                )}
-              />
-            ) : (
-              <div
-                className="p-2"
-                role="button"
-                onClick={() => setIsSelectMode(true)}
-              >
-                <span className="underline">Local time</span>/ UTC
-              </div>
-            )}
-          </div>
-        </div>
+          ) : (
+            <div
+              className="mt-auto p-2"
+              role="button"
+              onClick={() => setIsSelectMode(true)}
+            >
+              {timeZone ? (
+                <span className="underline">{timeZone}</span>
+              ) : (
+                <>
+                  <span className="underline">Local time</span>/ UTC
+                </>
+              )}
+            </div>
+          )}
+        </Fields>
+        {timeZone && startTime ? (
+          <span className="-mt-2 block stroke-stone-400 text-sm">
+            {DateTime.fromISO(startTime).toString()}
+          </span>
+        ) : null}
         <ErrorList errors={formErrors as ErrorMap} />
         {!hideSubmit ? (
           <Button type="submit" className="mt-2 w-full">
