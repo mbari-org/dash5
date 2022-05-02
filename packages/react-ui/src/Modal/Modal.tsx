@@ -48,7 +48,7 @@ const styles = {
   dragButton:
     'cursor-move flex flex-grow bg-opacity-50 hover:bg-stone-100 ml-1 my-1 rounded transition-colors duration-100 ease-out',
   closeButton: 'my-1 mr-2 text-stone-400',
-  modalBody: 'px-4 py-4 text-base font-normal overflow-scroll -mt-2',
+  modalBody: 'px-4 py-4 text-base font-normal overflow-auto -mt-2 mb-6',
   notDragging: 'shadow-xl border-stone-100',
   dragging: 'shadow-2xl border-stone-200',
 }
