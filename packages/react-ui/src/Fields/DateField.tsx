@@ -26,6 +26,10 @@ export interface DateFieldInputProps {
    * A placeholder string. Defaults to the date format if not supplied.
    */
   placeholder?: string
+  /**
+   * A timeZone to set on the date preview.
+   */
+  timeZone?: string
 }
 
 export type DateFieldProps = DateFieldInputProps & FieldProps
@@ -42,6 +46,8 @@ export const DateField = React.forwardRef<HTMLInputElement, DateFieldProps>(
       errors,
       value,
       placeholder,
+      timeZone,
+      onChange: handleChange,
       ...fieldProps
     },
     forwardedRef
@@ -58,7 +64,14 @@ export const DateField = React.forwardRef<HTMLInputElement, DateFieldProps>(
     // Manage the current date value
     const [lastDateFromValue, setLastDateFromValue] =
       useState<undefined | string>()
-    const [selectedDate, handleDateChange] = useState<DateTime | null>(null)
+    const [selectedDate, setDateChange] = useState<DateTime | null>(null)
+    const handleDateChange = (date: DateTime | null) => {
+      setDateChange(date)
+      if (handleChange) {
+        handleChange(date?.toISO() ?? '')
+      }
+    }
+
     useEffect(() => {
       if (lastDateFromValue !== value) {
         setLastDateFromValue(value)
@@ -127,7 +140,13 @@ export const DateField = React.forwardRef<HTMLInputElement, DateFieldProps>(
             onFocus={handleFocus(true)}
             onBlur={handleFocus(false)}
             placeholder={placeholder}
-            value={selectedDate?.toISO()}
+            value={
+              (timeZone
+                ? selectedDate?.setZone(timeZone)
+                : selectedDate
+              )?.toFormat('h:mm a, MMM, d yyyy') ?? ' '
+            }
+            onChange={() => {}}
             aria-label={'date picker'}
           />
           {focused && (
@@ -150,7 +169,7 @@ export const DateField = React.forwardRef<HTMLInputElement, DateFieldProps>(
               <div className="relative w-1/2 flex-grow overflow-hidden px-2">
                 <ClockView
                   date={selectedDate ?? DateTime.local()}
-                  type="minutes"
+                  type="hours"
                   onHourChange={handleDateChange}
                   onMinutesChange={handleDateChange}
                   onSecondsChange={handleDateChange}
