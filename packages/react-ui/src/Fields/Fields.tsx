@@ -71,7 +71,9 @@ export const Fields: React.FC<FieldsProps> = ({
                 ...{
                   ...child.props,
                   ...(child.props.nested ? { register } : {}),
-                  ...(child?.props?.name && !child?.props?.selfControllable
+                  ...(child?.props?.name &&
+                  !child?.props?.selfControllable &&
+                  !child?.props?.control
                     ? register(child.props.name)
                     : {}),
                   errors,
