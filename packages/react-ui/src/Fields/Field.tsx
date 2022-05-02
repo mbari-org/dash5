@@ -19,6 +19,7 @@ export interface FieldProps {
   grow?: boolean
   disabled?: boolean
   errors?: ErrorMap
+  selfControllable?: boolean
 }
 
 export const getErrorMessage = ({
