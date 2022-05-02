@@ -7,12 +7,12 @@ import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 export interface DropdownProps {
   className?: string
   style?: React.CSSProperties
-  header?: JSX.Element
+  header?: JSX.Element | string
   options: DropDownOption[]
 }
 
-interface DropDownOption {
-  label: string
+export interface DropDownOption {
+  label: JSX.Element | string
   onSelect: () => void
   icon?: IconDefinition
   disabled?: boolean
@@ -52,7 +52,9 @@ export const Dropdown: React.FC<DropdownProps> = ({
                   />
                 )}
               </span>
-              <span className={clsx(disabled && 'opacity-30')}>{label}</span>
+              <span className={clsx('w-full', disabled && 'opacity-30')}>
+                {label}
+              </span>
             </button>
           </li>
         ))}

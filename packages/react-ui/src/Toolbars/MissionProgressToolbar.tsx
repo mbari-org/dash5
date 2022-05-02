@@ -6,6 +6,7 @@ import { Tick } from './MissionProgress/Tick'
 import { Progress } from './MissionProgress/Progress'
 import { End } from './MissionProgress/End'
 import { Point } from './MissionProgress/Point'
+import { timeSinceStart } from '@mbari/utils'
 
 const styles = {
   container: 'flex py-2',
@@ -89,12 +90,7 @@ export const MissionProgressToolbar: React.FC<MissionProgressToolbarProps> = ({
             {[...Array(totalSegments)].map((_, i) => {
               if (i < 1 || i === totalSegments) return null
               const x = (width / totalSegments) * i
-              const diff = start
-                .plus({ seconds: (duration * x) / width })
-                .diffNow(['hours', 'days', 'minutes'])
-              const days = Math.abs(diff.days + Math.round(diff.hours / 24))
-              const hours = Math.abs(Math.round(diff.hours))
-              const label = days >= 1 ? `${days}d` : `${hours}h`
+              const label = timeSinceStart(startTime, (duration * x) / width)
               const tickId = `${ariaLabel}-tick-${i}-${label}`
 
               return (
