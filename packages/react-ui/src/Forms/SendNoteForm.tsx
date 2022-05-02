@@ -36,8 +36,10 @@ export interface SendNoteFormProps extends FormProps<SendNoteFormValues> {
   loading?: boolean
 }
 
-const text =
-  'This note will also go to the #lrauvs channel in Slack. Additional channels can be indicated by enclosing them in curly brackets at the beginning of the note, for example, {#wavegilder, @johndoe}... Make sure these Slack names are spelled correctly as they are not validated here.'
+const styles = {
+  code: 'font-mono text-violet-600',
+  alert: 'ml-2 text-red-600',
+}
 
 export const SendNoteForm: React.FC<SendNoteFormProps> = ({
   onSubmit: externalSubmitHandler,
@@ -76,10 +78,10 @@ export const SendNoteForm: React.FC<SendNoteFormProps> = ({
     <form onSubmit={handleFormSubmit} className="relative" id={id}>
       <Fields register={register} errors={formErrors} grow className="pb-2">
         <TextAreaField
+          name="note"
           label="Enter your note"
           className="w-full"
           required
-          {...register('note')}
         />
         <label htmlFor="bugReport">
           <input type="checkbox" id="bugReport" {...register('bugReport')} />{' '}
@@ -88,17 +90,17 @@ export const SendNoteForm: React.FC<SendNoteFormProps> = ({
         <label htmlFor="critical">
           <input type="checkbox" id="critical" {...register('critical')} />{' '}
           Critical
-          <span className="ml-2 text-red-600">
+          <span className={styles.alert}>
             <FontAwesomeIcon icon={faExclamationTriangle as IconProp} />
           </span>
         </label>
         <ErrorList errors={formErrors as ErrorMap} />
         <p className="text-xs text-gray-500">
           This note will also go to the{' '}
-          <span className="font-mono text-violet-600">#lrauvs</span> channel in
-          Slack. Additional channels can be indicated by enclosing them in curly
+          <span className={styles.code}>#lrauvs</span> channel in Slack.
+          Additional channels can be indicated by enclosing them in curly
           brackets at the beginning of the note, for example,{' '}
-          <span className="font-mono text-violet-600">{`{#wavegilder, @johndoe}`}</span>
+          <span className={styles.code}>#wavegilder, @johndoe</span>
           ... Make sure these Slack names are spelled correctly as they are not
           validated here.
         </p>
