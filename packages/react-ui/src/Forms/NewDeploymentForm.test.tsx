@@ -9,6 +9,7 @@ const defaultValues: NewDeploymentFormValues = {
   deploymentName: 'Deployment Example',
   gitTag: 'v1.4.5',
   startTime: DateTime.local().toISO(),
+  timeZone: '',
 }
 
 describe('NewDeploymentForm', () => {
