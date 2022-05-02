@@ -21,7 +21,7 @@ const luxonValidTimezones = [
   ...new Set(
     Object.keys(zones)
       .filter((tz) => tz.includes('/') && DateTime.local().setZone(tz).isValid)
-      .map((tz, idx) => ({ id: idx.toString(), name: tz }))
+      .map((tz) => ({ id: tz, name: tz }))
   ),
 ].sort((a, b) => (a.name < b.name ? -1 : 1))
 
