@@ -5,16 +5,19 @@ import {
 } from '../Forms/NewDeploymentForm'
 import { AsyncSubmitHandler } from '@sumocreations/forms'
 import { Modal, ModalProps } from '../Modal/Modal'
+import { SelectOption } from '../Fields/Select'
 
 type ModalPropsWithOutTitle = Omit<ModalProps, 'title'>
 export interface NewDeploymentModalProps extends ModalPropsWithOutTitle {
   vehicleName: string
   onSubmit: AsyncSubmitHandler<NewDeploymentFormValues>
+  tags: SelectOption[]
 }
 
 export const NewDeploymentModal: React.FC<NewDeploymentModalProps> = ({
   vehicleName,
   onSubmit,
+  tags,
   ...modalProps
 }) => {
   return (
@@ -27,6 +30,7 @@ export const NewDeploymentModal: React.FC<NewDeploymentModalProps> = ({
       <NewDeploymentForm
         onSubmit={onSubmit}
         id="newDeploymentForm"
+        tags={tags}
         hideSubmit
       />
     </Modal>
