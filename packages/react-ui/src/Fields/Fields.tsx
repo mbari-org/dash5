@@ -41,7 +41,9 @@ export const Fields: React.FC<FieldsProps> = ({
   nested,
   strictVertical,
   grow,
-  register = () => {},
+  register = () => {
+    console.log('event fired')
+  },
   errors,
 }) => (
   <ul

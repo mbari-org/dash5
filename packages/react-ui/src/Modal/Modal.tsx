@@ -98,7 +98,7 @@ export const Modal: React.FC<ModalProps & FooterProps> = ({
         setState({ ...state, translate: { x, y } })
       }
     }
-  }, [mouse, dialog.current, translate, dragging, state, setState])
+  }, [mouse, dialog, translate, dragging, state, setState])
 
   // Update mouse pos on move...
   const onMouseMove: EventListener = useCallback(
@@ -146,12 +146,19 @@ export const Modal: React.FC<ModalProps & FooterProps> = ({
     handleFocus?.()
   }
 
-  const handleClick: React.MouseEventHandler = (e) => {
+  const handleClick = () => {
     handleFocus?.()
   }
 
   return open ? (
-    <div className={clsx(styles.overlay, zIndex)} onClick={handleClick}>
+    <div
+      className={clsx(styles.overlay, zIndex)}
+      onClick={handleClick}
+      onKeyDown={handleClick}
+      onFocus={handleClick}
+      role="button"
+      tabIndex={0}
+    >
       <section
         className={clsx(
           styles.modal,

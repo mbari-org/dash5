@@ -73,13 +73,13 @@ export const ConfirmStopModal: React.FC<ConfirmStopModalProps> = ({
       disableConfirm={!confirmValue}
       title={
         <p className={styles.prompt}>
-          This will stop this mission, even if it's not complete, and pause the
-          mission
+          This will stop this mission, even if it&apos;s not complete, and pause
+          the mission
           {vehicleName && vehicleUrl && (
             <>
               {' '}
               <Link href={vehicleUrl}>
-                <a className="text-teal-500">{vehicleName}</a>
+                <button className="text-teal-500">{vehicleName}</button>
               </Link>
             </>
           )}

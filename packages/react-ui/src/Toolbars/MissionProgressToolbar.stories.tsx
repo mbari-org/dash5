@@ -12,9 +12,9 @@ export default {
 } as Meta
 
 const Template: Story<MissionProgressToolbarProps> = (args) => (
-  <p className="bg-secondary-100">
+  <div className="bg-secondary-100">
     <MissionProgressToolbar {...args} />
-  </p>
+  </div>
 )
 
 const args: MissionProgressToolbarProps = {

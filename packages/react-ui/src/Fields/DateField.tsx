@@ -5,6 +5,7 @@ import { Input } from './Input'
 import { DateTime } from 'luxon'
 import { Calendar, ClockView } from '@material-ui/pickers'
 import { Overlay } from '../Overlay'
+
 export interface DateFieldInputProps {
   /**
    * An initial date to display
@@ -53,6 +54,7 @@ export const DateField = React.forwardRef<HTMLInputElement, DateFieldProps>(
     forwardedRef
   ) => {
     const [calendarStyles, setCalendarStyles] = useState({ top: 0, left: 0 })
+
     // Maintain a reference to the input element so we can focus it
     const inputRef = useRef<HTMLInputElement | null>(null)
     const determinedErrorMessage = getErrorMessage({
@@ -60,6 +62,18 @@ export const DateField = React.forwardRef<HTMLInputElement, DateFieldProps>(
       errorMessage,
       errors,
     })
+
+    useEffect(() => {
+      const {
+        top = 0,
+        left: x = 0,
+        height = 0,
+      } = inputRef?.current?.getBoundingClientRect() ?? {}
+      const y = top + height
+      if (getPos?.x !== x || getPos?.y !== y) {
+        setPos({ x, y })
+      }
+    }, [inputRef, getPos, setPos])
 
     // Manage the current date value
     const [lastDateFromValue, setLastDateFromValue] =
@@ -82,7 +96,7 @@ export const DateField = React.forwardRef<HTMLInputElement, DateFieldProps>(
           handleDateChange(date)
         }
       }
-    }, [value, selectedDate, handleDateChange])
+    }, [value, selectedDate, handleDateChange, lastDateFromValue])
 
     // Manage when to display the inline date/time picker.
     const [focused, setFocus] = useState(false)
@@ -157,7 +171,8 @@ export const DateField = React.forwardRef<HTMLInputElement, DateFieldProps>(
                 onMouseEnter={handleInteraction(true)}
                 onMouseLeave={handleInteraction(false)}
                 onMouseUp={handleMouseUp}
-                role="alertdialog"
+                role="button"
+                tabIndex={0}
               >
                 <div className="relative w-1/2 flex-grow overflow-hidden px-2">
                   <Calendar

@@ -15,7 +15,12 @@ const args: FooterProps = {
 }
 
 export const Standard = Template.bind({})
-Standard.args = { ...args, onConfirm: () => {} }
+Standard.args = {
+  ...args,
+  onConfirm: () => {
+    console.log('event fired')
+  },
+}
 Standard.parameters = {
   design: {
     type: 'figma',
@@ -24,7 +29,15 @@ Standard.parameters = {
 }
 
 export const WithCancel = Template.bind({})
-WithCancel.args = { ...args, onConfirm: () => {}, onCancel: () => {} }
+WithCancel.args = {
+  ...args,
+  onConfirm: () => {
+    console.log('event fired')
+  },
+  onCancel: () => {
+    console.log('event fired')
+  },
+}
 WithCancel.parameters = {
   design: {
     type: 'figma',
@@ -35,8 +48,12 @@ WithCancel.parameters = {
 export const WithCancelDisabled = Template.bind({})
 WithCancelDisabled.args = {
   ...args,
-  onConfirm: () => {},
-  onCancel: () => {},
+  onConfirm: () => {
+    console.log('event fired')
+  },
+  onCancel: () => {
+    console.log('event fired')
+  },
   disableCancel: true,
 }
 WithCancelDisabled.parameters = {
@@ -49,8 +66,12 @@ WithCancelDisabled.parameters = {
 export const WithCconfirmDisabled = Template.bind({})
 WithCconfirmDisabled.args = {
   ...args,
-  onConfirm: () => {},
-  onCancel: () => {},
+  onConfirm: () => {
+    console.log('event fired')
+  },
+  onCancel: () => {
+    console.log('event fired')
+  },
   disableConfirm: true,
 }
 WithCconfirmDisabled.parameters = {

@@ -6,31 +6,64 @@ import { IconDefinition } from '@fortawesome/fontawesome-svg-core'
 import { faPlus } from '@fortawesome/pro-regular-svg-icons'
 
 const props: DropdownProps = {
-  currentValue: 'Brizo 7 EcoHab',
-  description: 'Started 4+ days ago',
+  header: (
+    <ul>
+      <li>Test header</li>
+      <li className="font-medium">Test subheader</li>
+    </ul>
+  ),
   options: [
     {
       label: 'New Brizo deployment',
       icon: faPlus as IconDefinition,
-      onSelect: () => {},
+      onSelect: () => {
+        console.log('event fired')
+      },
       disabled: true,
     },
     {
       label: 'Brizo 6 Canon',
-      onSelect: () => {},
+      onSelect: () => {
+        console.log('event fired')
+      },
     },
-    { label: 'Brizo 5 Canon', onSelect: () => {} },
-    { label: 'Brizo 4 Engineering', onSelect: () => {} },
-    { label: 'Brizo 3 Canon', onSelect: () => {} },
-    { label: 'Brizo 2 Canon', onSelect: () => {} },
-    { label: 'Sea Trial 1', onSelect: () => {} },
+    {
+      label: 'Brizo 5 Canon',
+      onSelect: () => {
+        console.log('event fired')
+      },
+    },
+    {
+      label: 'Brizo 4 Engineering',
+      onSelect: () => {
+        console.log('event fired')
+      },
+    },
+    {
+      label: 'Brizo 3 Canon',
+      onSelect: () => {
+        console.log('event fired')
+      },
+    },
+    {
+      label: 'Brizo 2 Canon',
+      onSelect: () => {
+        console.log('event fired')
+      },
+    },
+    {
+      label: 'Sea Trial 1',
+      onSelect: () => {
+        console.log('event fired')
+      },
+    },
   ],
 }
 
-test('should render current value when provided', async () => {
+test('should display header when provided', async () => {
   render(<Dropdown {...props} />)
 
-  expect(screen.getByLabelText(/current value/i)).toBeInTheDocument()
+  expect(screen.getByText(/test header/i)).toBeInTheDocument()
 })
 
 test('should render disabled options with lighter text', async () => {
@@ -40,7 +73,9 @@ test('should render disabled options with lighter text', async () => {
       options={[
         {
           label: 'Disabled test option',
-          onSelect: () => {},
+          onSelect: () => {
+            console.log('event fired')
+          },
           disabled: true,
         },
       ]}

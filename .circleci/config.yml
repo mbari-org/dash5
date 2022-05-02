@@ -98,6 +98,22 @@ jobs:
       - install-monorepo
       - build-monorepo
 
+  lint:
+    resource_class: xlarge
+    parallelism: 1
+    executor:
+      name: node/default
+      tag: '14.19.1'
+    steps:
+      - checkout
+      - setup-environment
+      - restore-packages
+      - restore-monorepo
+      - install-monorepo
+      - run:
+          command: yarn lint
+          name: Run eslint across all projects.
+
   test_ui:
     resource_class: xlarge
     parallelism: 1
@@ -210,6 +226,9 @@ workflows:
       - test_utils:
           requires:
             - build
+      - lint:
+          requires:
+            - build
       - test_dash:
           requires:
             - build
@@ -234,6 +253,7 @@ workflows:
             - test_dash
             - test_ui
             - test_api
+            - lint
           filters:
             branches:
               only:

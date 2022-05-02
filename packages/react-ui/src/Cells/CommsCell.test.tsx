@@ -13,7 +13,9 @@ const props: CommsCellProps = {
   time: '3:22',
   isUpload: true,
   isScheduled: true,
-  onSelect: () => {},
+  onSelect: () => {
+    console.log('event fired')
+  },
 }
 
 test('should render command to the screen', async () => {

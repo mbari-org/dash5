@@ -64,3 +64,5 @@ export const Select = React.forwardRef<any, SelectProps>(
     )
   }
 )
+
+Select.displayName = 'Fields.Select'

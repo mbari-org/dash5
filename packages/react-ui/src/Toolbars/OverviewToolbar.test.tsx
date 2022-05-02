@@ -11,9 +11,15 @@ const props: OverviewToolbarProps = {
   pilotOnCall: 'Brian K.',
   btnIcon: faEye as IconDefinition,
   open: false,
-  onClickDeployment: () => {},
-  onClickMissions: () => {},
-  onClickPilot: () => {},
+  onClickDeployment: () => {
+    console.log('event fired')
+  },
+  onClickMissions: () => {
+    console.log('event fired')
+  },
+  onClickPilot: () => {
+    console.log('event fired')
+  },
   onIcon1hover: () => <></>,
   onIcon2hover: () => <></>,
 }

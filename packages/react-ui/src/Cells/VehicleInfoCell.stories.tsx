@@ -22,7 +22,9 @@ const args: VehicleInfoCellProps = {
   subtitle: 'Last confirmed on surface 47min ago',
   lastCommsOverSat: 'Today at 14:08:36 (47m ago)',
   estimate: 'Est. to surface in 15 mins at ~14:55',
-  onSelect: () => {},
+  onSelect: () => {
+    console.log('event fired')
+  },
 }
 
 export const Underwater = Template.bind({})

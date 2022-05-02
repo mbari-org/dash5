@@ -28,24 +28,57 @@ const Template: Story<DropdownProps> = (args) => {
 
 const args: DropdownProps = {
   className: '',
-  currentValue: 'Brizo 7 EcoHab',
-  description: 'Started 4+ days ago',
+  header: (
+    <ul>
+      <li>Started 4+ days ago</li>
+      <li className="font-medium">Brizo 7 EcoHab</li>
+    </ul>
+  ),
   options: [
     {
       label: 'New Brizo deployment',
       icon: faPlus as IconDefinition,
-      onSelect: () => {},
+      onSelect: () => {
+        console.log('event fired')
+      },
       disabled: true,
     },
     {
       label: 'Brizo 6 Canon',
-      onSelect: () => {},
+      onSelect: () => {
+        console.log('event fired')
+      },
     },
-    { label: 'Brizo 5 Canon', onSelect: () => {} },
-    { label: 'Brizo 4 Engineering', onSelect: () => {} },
-    { label: 'Brizo 3 Canon', onSelect: () => {} },
-    { label: 'Brizo 2 Canon', onSelect: () => {} },
-    { label: 'Sea Trial 1', onSelect: () => {} },
+    {
+      label: 'Brizo 5 Canon',
+      onSelect: () => {
+        console.log('event fired')
+      },
+    },
+    {
+      label: 'Brizo 4 Engineering',
+      onSelect: () => {
+        console.log('event fired')
+      },
+    },
+    {
+      label: 'Brizo 3 Canon',
+      onSelect: () => {
+        console.log('event fired')
+      },
+    },
+    {
+      label: 'Brizo 2 Canon',
+      onSelect: () => {
+        console.log('event fired')
+      },
+    },
+    {
+      label: 'Sea Trial 1',
+      onSelect: () => {
+        console.log('event fired')
+      },
+    },
   ],
 }
 

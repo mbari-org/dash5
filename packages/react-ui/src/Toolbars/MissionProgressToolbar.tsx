@@ -6,6 +6,7 @@ import { Tick } from './MissionProgress/Tick'
 import { Progress } from './MissionProgress/Progress'
 import { End } from './MissionProgress/End'
 import { Point } from './MissionProgress/Point'
+import { timeSinceStart } from '@mbari/utils'
 
 const styles = {
   container: 'flex py-2',
@@ -29,7 +30,7 @@ export const MissionProgressToolbar: React.FC<MissionProgressToolbarProps> = ({
   startTime,
   endTime,
 }) => {
-  const container = useRef(null as HTMLDivElement | null)
+  const container = useRef(null as HTMLButtonElement | null)
   const {
     size: { height: containerHeight, width: containerWidth },
   } = useResizeObserver({ element: container, wait: 100 })
@@ -69,11 +70,13 @@ export const MissionProgressToolbar: React.FC<MissionProgressToolbarProps> = ({
   return (
     <div className={clsx(styles.container, className)} aria-label={ariaLabel}>
       <h3 className={styles.title}>Timeline</h3>
-      <div
+      <button
         ref={container}
         className={styles.toolbar}
         onMouseOver={handleMouseOver}
+        onFocus={handleMouseOver}
         onMouseOut={handleMouseOut}
+        onBlur={handleMouseOut}
       >
         {height > 0 && width > 0 && (
           <svg
@@ -87,12 +90,7 @@ export const MissionProgressToolbar: React.FC<MissionProgressToolbarProps> = ({
             {[...Array(totalSegments)].map((_, i) => {
               if (i < 1 || i === totalSegments) return null
               const x = (width / totalSegments) * i
-              const diff = start
-                .plus({ seconds: (duration * x) / width })
-                .diffNow(['hours', 'days', 'minutes'])
-              const days = Math.abs(diff.days + Math.round(diff.hours / 24))
-              const hours = Math.abs(Math.round(diff.hours))
-              const label = days >= 1 ? `${days}d` : `${hours}h`
+              const label = timeSinceStart(startTime, (duration * x) / width)
               const tickId = `${ariaLabel}-tick-${i}-${label}`
 
               return (
@@ -123,7 +121,7 @@ export const MissionProgressToolbar: React.FC<MissionProgressToolbarProps> = ({
             <End x={width - 7} y={height / 2 - 6} height={12} width={6} />
           </svg>
         )}
-      </div>
+      </button>
     </div>
   )
 }

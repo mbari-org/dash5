@@ -20,7 +20,9 @@ test('should render the confirm button', async () => {
     <Dialog
       title="Test"
       message="Here is a message"
-      onConfirm={() => {}}
+      onConfirm={() => {
+        console.log('event fired')
+      }}
       open
     />
   )
@@ -41,7 +43,14 @@ test('should not render the confirm button', async () => {
 
 test('should render the cancel button', async () => {
   render(
-    <Dialog title="Test" message="Here is a message" open onCancel={() => {}} />
+    <Dialog
+      title="Test"
+      message="Here is a message"
+      open
+      onCancel={() => {
+        console.log('event fired')
+      }}
+    />
   )
   expect(screen.getByText(/Cancel/i)).toHaveTextContent('Cancel')
 })

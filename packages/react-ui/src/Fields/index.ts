@@ -5,6 +5,6 @@ export * from './Fields'
 export * from './FieldTypes'
 export * from './Input'
 export * from './TextField'
-export * from './DateField'
 export * from './SelectField'
 export * from './DateField'
+export * from "./TextAreaField"

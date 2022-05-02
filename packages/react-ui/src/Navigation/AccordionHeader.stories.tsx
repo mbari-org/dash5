@@ -18,7 +18,9 @@ const args: AccordionHeaderProps = {
   className: '',
   label: 'Handoff / On call',
   secondaryLabel: 'Tanner P.(you) / Brian K.',
-  onToggle: () => {},
+  onToggle: () => {
+    console.log('event fired')
+  },
   open: true,
 }
 
@@ -32,7 +34,12 @@ Standard.parameters = {
 }
 
 export const WithExpand = Template.bind({})
-WithExpand.args = { ...args, onExpand: () => {} }
+WithExpand.args = {
+  ...args,
+  onExpand: () => {
+    console.log('event fired')
+  },
+}
 WithExpand.parameters = {
   design: {
     type: 'figma',
