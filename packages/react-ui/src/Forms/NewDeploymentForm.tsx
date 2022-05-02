@@ -10,8 +10,6 @@ import {
 import { camelCase } from 'lodash'
 import { DateTime } from 'luxon'
 import { zones } from 'tzdata'
-
-// Assumes we have some existing UI implementation for forms in our library. Replace as needed.
 import { TextField, Fields, ErrorList, SelectField, DateField } from '../Fields'
 import { Button } from '../Navigation'
 import { AbsoluteOverlay } from '../Indicators'
