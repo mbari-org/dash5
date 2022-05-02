@@ -4,7 +4,7 @@ import { Field, FieldProps, getErrorMessage } from './Field'
 import { Input } from './Input'
 import { DateTime } from 'luxon'
 import { Calendar, ClockView } from '@material-ui/pickers'
-
+import { Overlay } from '../Overlay'
 export interface DateFieldInputProps {
   /**
    * An initial date to display
@@ -150,32 +150,33 @@ export const DateField = React.forwardRef<HTMLInputElement, DateFieldProps>(
             aria-label={'date picker'}
           />
           {focused && (
-            <div
-              className="fixed z-10 mt-2 flex border border-stone-200 bg-white p-2 shadow-lg"
-              // style={{ top: '100%' }}
-              style={calendarStyles}
-              onMouseEnter={handleInteraction(true)}
-              onMouseLeave={handleInteraction(false)}
-              onMouseUp={handleMouseUp}
-              role="alertdialog"
-            >
-              <div className="relative w-1/2 flex-grow overflow-hidden px-2">
-                <Calendar
-                  date={selectedDate ?? DateTime.local()}
-                  onChange={handleDateChange}
-                  onMonthChange={handleDateChange}
-                />
+            <Overlay>
+              <div
+                className="fixed z-50 mt-2 flex border border-stone-200 bg-white p-2 shadow-lg"
+                style={calendarStyles}
+                onMouseEnter={handleInteraction(true)}
+                onMouseLeave={handleInteraction(false)}
+                onMouseUp={handleMouseUp}
+                role="alertdialog"
+              >
+                <div className="relative w-1/2 flex-grow overflow-hidden px-2">
+                  <Calendar
+                    date={selectedDate ?? DateTime.local()}
+                    onChange={handleDateChange}
+                    onMonthChange={handleDateChange}
+                  />
+                </div>
+                <div className="relative w-1/2 flex-grow overflow-hidden px-2">
+                  <ClockView
+                    date={selectedDate ?? DateTime.local()}
+                    type="hours"
+                    onHourChange={handleDateChange}
+                    onMinutesChange={handleDateChange}
+                    onSecondsChange={handleDateChange}
+                  />
+                </div>
               </div>
-              <div className="relative w-1/2 flex-grow overflow-hidden px-2">
-                <ClockView
-                  date={selectedDate ?? DateTime.local()}
-                  type="hours"
-                  onHourChange={handleDateChange}
-                  onMinutesChange={handleDateChange}
-                  onSecondsChange={handleDateChange}
-                />
-              </div>
-            </div>
+            </Overlay>
           )}
           {/* This hidden input and forward ref maintains the actual value controlled by 'useForm' */}
           <input type="hidden" name={name} ref={forwardedRef} />
