@@ -35,4 +35,11 @@ Standard.args = {
   },
   onClose: action('close'),
   onCancel: action('cancel'),
+  tags: [
+    '2022-04-25',
+    '2022-04-22A',
+    '2022-04-22',
+    '2022-04-20',
+    '2022-04-13',
+  ].map((tag) => ({ id: tag, name: tag })),
 }
