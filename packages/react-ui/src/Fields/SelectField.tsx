@@ -15,7 +15,8 @@ export const SelectField = React.forwardRef<
       name,
       value,
       options,
-      onChange,
+      onChange: handleChange,
+      onSelect: handleSelect,
       placeholder,
       style,
       className,
@@ -48,7 +49,8 @@ export const SelectField = React.forwardRef<
           value={value ?? ''}
           options={options}
           disabled={disabled}
-          onChange={onChange}
+          onSelect={handleSelect}
+          onChange={handleChange}
           placeholder={placeholder}
         />
       </Field>
