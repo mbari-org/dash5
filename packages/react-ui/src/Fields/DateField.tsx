@@ -63,28 +63,19 @@ export const DateField = React.forwardRef<HTMLInputElement, DateFieldProps>(
       errors,
     })
 
-    useEffect(() => {
-      const {
-        top = 0,
-        left: x = 0,
-        height = 0,
-      } = inputRef?.current?.getBoundingClientRect() ?? {}
-      const y = top + height
-      if (getPos?.x !== x || getPos?.y !== y) {
-        setPos({ x, y })
-      }
-    }, [inputRef, getPos, setPos])
-
     // Manage the current date value
     const [lastDateFromValue, setLastDateFromValue] =
       useState<undefined | string>()
     const [selectedDate, setDateChange] = useState<DateTime | null>(null)
-    const handleDateChange = (date: DateTime | null) => {
-      setDateChange(date)
-      if (handleChange) {
-        handleChange(date?.toISO() ?? '')
-      }
-    }
+    const handleDateChange = useCallback(
+      (date: DateTime | null) => {
+        setDateChange(date)
+        if (handleChange) {
+          handleChange(date?.toISO() ?? '')
+        }
+      },
+      [handleChange, setDateChange]
+    )
 
     useEffect(() => {
       if (lastDateFromValue !== value) {
@@ -160,7 +151,9 @@ export const DateField = React.forwardRef<HTMLInputElement, DateFieldProps>(
                 : selectedDate
               )?.toFormat('h:mm a, MMM, d yyyy') ?? ' '
             }
-            onChange={() => {}}
+            onChange={() => {
+              return
+            }}
             aria-label={'date picker'}
           />
           {focused && (
