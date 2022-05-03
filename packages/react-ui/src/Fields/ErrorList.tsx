@@ -30,7 +30,7 @@ export const ErrorList: React.FC<ErrorListProps> = ({
             size="sm"
             className="my-auto mr-2 text-red-400"
           />
-          <strong className={style.name}>{humanize(k)}&nbsp;</strong>{' '}
+          <strong className={style.name}>{humanize(k, true)}&nbsp;</strong>{' '}
           {errors[k]?.message}
         </li>
       ))}

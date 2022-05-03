@@ -19,6 +19,8 @@ export interface FieldProps {
   grow?: boolean
   disabled?: boolean
   errors?: ErrorMap
+  selfControllable?: boolean
+  hint?: string
 }
 
 export const getErrorMessage = ({
@@ -53,6 +55,7 @@ export const Field: React.FC<FieldProps> = ({
   grow,
   children,
   disabled,
+  hint,
 }) => (
   <div
     className={clsx(
@@ -76,6 +79,7 @@ export const Field: React.FC<FieldProps> = ({
       )}
       {errorMessage ? <Error>{errorMessage}</Error> : null}
     </div>
+    {hint ? <p className="mt-1 text-sm text-stone-300">{hint}</p> : null}
   </div>
 )
 

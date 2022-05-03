@@ -72,10 +72,14 @@ export const Fields: React.FC<FieldsProps> = ({
             ? React.createElement(child.type, {
                 ...{
                   ...child.props,
-                  register,
+                  ...(child.props.nested ? { register } : {}),
+                  ...(child?.props?.name &&
+                  !child?.props?.selfControllable &&
+                  !child?.props?.control
+                    ? register(child.props.name)
+                    : {}),
                   errors,
                   key: `child${child.type}${index}${child?.props?.name ?? ''}`,
-                  ...(child?.props?.name ? register?.(child?.props?.name) : {}),
                 },
               })
             : React.createElement(child.type, {
