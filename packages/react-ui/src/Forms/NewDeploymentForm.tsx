@@ -143,9 +143,8 @@ export const NewDeploymentForm: React.FC<NewDeploymentFormProps> = ({
               )}
             />
           ) : (
-            <div
+            <button
               className="mt-auto p-2"
-              role="button"
               onClick={() => setIsSelectMode(true)}
             >
               {timeZone ? (
@@ -155,7 +154,7 @@ export const NewDeploymentForm: React.FC<NewDeploymentFormProps> = ({
                   <span className="underline">Local time</span>/ UTC
                 </>
               )}
-            </div>
+            </button>
           )}
         </Fields>
         {timeZone && startTime ? (
