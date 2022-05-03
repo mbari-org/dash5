@@ -135,7 +135,10 @@ export const NewDeploymentForm: React.FC<NewDeploymentFormProps> = ({
                   selfControllable
                   {...field}
                   onChange={undefined}
-                  onSelect={field.onChange}
+                  onSelect={(id: string | null) => {
+                    setIsSelectMode(false)
+                    field.onChange(id)
+                  }}
                   value={
                     luxonValidTimezones.find((tz) => tz.name === timeZone)?.id
                   }
