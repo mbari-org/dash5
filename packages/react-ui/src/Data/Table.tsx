@@ -35,8 +35,8 @@ export const Table: React.FC<TableProps> = ({
   header,
   highlightedStyle,
 }) => {
-  // dynamically calculate grid columns including accessory header label
-  const colsInRow = (rows[0]?.values.length + (header.accessory ? 1 : 0)) | 0
+  // dynamically calculate grid columns
+  const colsInRow = rows[0]?.values.length | 0
 
   return (
     <table className={clsx(styles.container, className)} style={style}>
@@ -53,6 +53,7 @@ export const Table: React.FC<TableProps> = ({
             className={clsx(gridClassNames[colsInRow], styles.gridGap)}
             {...row}
             highlightedStyle={highlightedStyle}
+            aria-label="table row"
           />
         ))}
       </tbody>

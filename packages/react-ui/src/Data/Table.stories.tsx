@@ -91,10 +91,10 @@ ExtraHeader.args = {
   header: {
     labels: ['SAFETY/COMMS', 'VALUES'],
     accessory: (
-      <div className="text-orange-500 opacity-60">
+      <span className="text-orange-500 opacity-60">
         DVL is off
         <FontAwesomeIcon icon={faInfoCircle as IconProp} className="ml-2" />
-      </div>
+      </span>
     ),
   },
 }

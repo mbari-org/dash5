@@ -50,3 +50,20 @@ test('should style unhighlighted cells as a lighter color', async () => {
     'opacity-60'
   )
 })
+
+test('should apply style with 2 grid columns if two values are provided for the content rows', async () => {
+  render(<Table {...props} />)
+
+  expect(screen.queryByTestId(/table header/i)).toHaveClass('grid-cols-2')
+})
+
+test('should apply style with 2 grid columns if two values are provided for the content rows', async () => {
+  render(
+    <Table
+      {...props}
+      rows={[{ values: ['Suspect', 'is', 'fleeing', 'the interview'] }]}
+    />
+  )
+
+  expect(screen.queryByTestId(/table header/i)).toHaveClass('grid-cols-4')
+})
