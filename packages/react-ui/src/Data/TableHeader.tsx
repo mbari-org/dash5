@@ -3,28 +3,23 @@ import React from 'react'
 
 export interface TableHeaderProps {
   className?: string
-  values: string[] | JSX.Element[]
+  labels: string[] | JSX.Element[]
   accessory?: string | JSX.Element
 }
 
 export const TableHeader: React.FC<TableHeaderProps> = ({
   className,
-  values,
+  labels,
   accessory,
 }) => {
   return (
-    <>
-      <tr className={clsx('bg-stone-100 p-4', className)}>
-        {values.map((value, index) => (
-          <th
-            className="text-left font-sans font-light"
-            key={`${value}${index}`}
-          >
-            {value}
-          </th>
-        ))}
-        {accessory && <th className="text-left font-light">{accessory}</th>}
-      </tr>
-    </>
+    <tr className={clsx('bg-stone-100 p-4', className)}>
+      {labels.map((label, index) => (
+        <th className="text-left font-sans font-light" key={`${label}${index}`}>
+          {label}
+        </th>
+      ))}
+      {accessory && <th className="text-left font-light">{accessory}</th>}
+    </tr>
   )
 }

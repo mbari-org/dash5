@@ -45,7 +45,7 @@ const args: TableProps = {
     },
   ],
   header: {
-    values: ['WAYPOINTS', 'VALUES'],
+    labels: ['WAYPOINTS', 'VALUES'],
   },
   highlightedStyle: 'text-teal-500',
 }
@@ -68,7 +68,7 @@ SingleHeader.args = {
     { values: ['Bottom depth:', '100 to 180 meters'] },
   ],
   header: {
-    values: ['ESTIMATES'],
+    labels: ['ESTIMATES'],
   },
 }
 SingleHeader.parameters = {
@@ -89,7 +89,7 @@ ExtraHeader.args = {
     { values: ['DiveInterval', '3 hours'] },
   ],
   header: {
-    values: ['SAFETY/COMMS', 'VALUES'],
+    labels: ['SAFETY/COMMS', 'VALUES'],
     accessory: (
       <div className="text-orange-500 opacity-60">
         DVL is off

@@ -40,18 +40,22 @@ export const Table: React.FC<TableProps> = ({
 
   return (
     <table className={clsx(styles.container, className)} style={style}>
-      <TableHeader
-        className={clsx(gridClassNames[colsInRow], styles.gridGap)}
-        {...header}
-      />
-      {rows.map((row, index) => (
-        <TableCell
-          key={`${row.values[0]}${index}`}
+      <thead>
+        <TableHeader
           className={clsx(gridClassNames[colsInRow], styles.gridGap)}
-          {...row}
-          highlightedStyle={highlightedStyle}
+          {...header}
         />
-      ))}
+      </thead>
+      <tbody>
+        {rows.map((row, index) => (
+          <TableCell
+            key={`${row?.values[0]}${index}`}
+            className={clsx(gridClassNames[colsInRow], styles.gridGap)}
+            {...row}
+            highlightedStyle={highlightedStyle}
+          />
+        ))}
+      </tbody>
     </table>
   )
 }

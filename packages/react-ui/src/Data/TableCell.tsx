@@ -20,16 +20,11 @@ export const TableCell: React.FC<TableCellProps> = ({
   highlightedStyle,
 }) => {
   return (
-    <tr
-      className={clsx(
-        styles.container,
-        highlighted && highlightedStyle,
-        className
-      )}
-    >
+    <tr className={clsx(styles.container, className)}>
       {values.map((value, index) => (
         <td
           className={clsx(
+            highlighted && highlightedStyle,
             !highlighted && 'opacity-60',
             index === 0 && 'font-mono font-bold'
           )}

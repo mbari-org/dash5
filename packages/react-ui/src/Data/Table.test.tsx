@@ -1,46 +1,52 @@
 import React from 'react'
-import { render } from '@testing-library/react'
+import { render, screen } from '@testing-library/react'
 import '@testing-library/jest-dom'
 import { Table, TableProps } from './Table'
 
 const props: TableProps = {
   rows: [
-    {
-      values: [
-        <div key="1">Lat1/Lon1</div>,
-        <div key="2">
-          <span className="font-bold">C1</span> 36.797, -121.847
-        </div>,
-      ],
-      highlighted: true,
-    },
-    {
-      values: [
-        <div key="3">Lat2/Lon2</div>,
-        <div key="4">
-          <span className="font-bold">M1</span> 36.797, -121.847
-        </div>,
-      ],
-      highlighted: false,
-    },
-    {
-      values: [
-        <div key="5">Lat3/Lon3</div>,
-        <div key="6">
-          <span className="font-bold">Custom</span> 36.797, -121.847
-        </div>,
-      ],
-      highlighted: true,
-    },
+    { values: ['MissionTimeout', '2 hours'] },
+    { values: ['MaxDepth', '150 meters'], highlighted: true },
   ],
   header: {
-    values: ['WAYPOINTS', 'VALUES'],
+    labels: ['SAFETY/COMMS', 'VALUES'],
   },
   highlightedStyle: 'text-teal-500',
 }
 
-test.todo('should have tests')
+const headerWithAccessory = {
+  labels: ['SAFETY/COMMS', 'VALUES'],
+  accessory: <div className="text-orange-500 opacity-60">DVL is off</div>,
+}
 
 test('should render the component', async () => {
   expect(() => render(<Table {...props} />)).not.toThrow()
+})
+
+test('should display header labels', async () => {
+  render(<Table {...props} />)
+
+  expect(screen.queryByText(`${props.header.labels[0]}`)).toBeInTheDocument()
+})
+
+test('should display accessory header when provided', async () => {
+  render(<Table {...props} header={headerWithAccessory} />)
+
+  expect(screen.queryByText(/dvl is off/i)).toBeInTheDocument()
+})
+
+test('should style highlighted cells with provided highlighted styling', async () => {
+  render(<Table {...props} />)
+
+  expect(screen.queryByText(`${props.rows[1].values[0]}`)).toHaveClass(
+    'text-teal-500'
+  )
+})
+
+test('should style unhighlighted cells as a lighter color', async () => {
+  render(<Table {...props} />)
+
+  expect(screen.queryByText(`${props.rows[0].values[0]}`)).toHaveClass(
+    'opacity-60'
+  )
 })
