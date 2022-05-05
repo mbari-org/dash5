@@ -16,7 +16,7 @@ const props: TableProps = {
 
 const headerWithAccessory = {
   labels: ['SAFETY/COMMS', 'VALUES'],
-  accessory: <div className="text-orange-500 opacity-60">DVL is off</div>,
+  accessory: <span className="text-orange-500 opacity-60">DVL is off</span>,
 }
 
 test('should render the component', async () => {

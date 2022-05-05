@@ -19,15 +19,16 @@ export const TableHeader: React.FC<TableHeaderProps> = ({
     >
       {labels.map((label, index) => (
         <th
-          className="text-left font-sans font-normal"
+          className="flex flex-grow text-left font-sans font-normal"
           key={`${label}${index}`}
         >
           <span>{label}</span>
 
           {index === labels.length - 1 && accessory && (
-            <span className="pl-10" aria-label="Additional header label">
+            <>
+              <span className="flex w-8 flex-grow" />
               {accessory}
-            </span>
+            </>
           )}
         </th>
       ))}
