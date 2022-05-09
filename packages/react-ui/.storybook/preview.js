@@ -31,7 +31,7 @@ const Layout = ({ children }) => {
   )
 }
 
-addDecorator((Story) => (
+addDecorator(Story => (
   <UIProvider>
     <Layout>
       <link rel="preconnect" href="https://fonts.googleapis.com" />
@@ -41,7 +41,7 @@ addDecorator((Story) => (
         rel="stylesheet"
       />{' '}
       <link
-        href="https://fonts.googleapis.com/css2?family=Inconsolata:wght@300&display=swap"
+        href="https://fonts.googleapis.com/css2?family=Inconsolata:wght@300;700&display=swap"
         rel="stylesheet"
       />{' '}
       <Story />
