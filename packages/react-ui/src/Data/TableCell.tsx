@@ -3,7 +3,7 @@ import clsx from 'clsx'
 
 export interface TableCellProps {
   className?: string
-  values: string[] | JSX.Element[]
+  values: (string | JSX.Element)[]
   highlighted?: boolean
   highlightedStyle?: string
 }

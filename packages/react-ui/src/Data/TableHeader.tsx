@@ -3,7 +3,7 @@ import React from 'react'
 
 export interface TableHeaderProps {
   className?: string
-  labels: string[] | JSX.Element[]
+  labels: (string | JSX.Element)[]
   accessory?: string | JSX.Element
 }
 
