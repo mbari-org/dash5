@@ -33,10 +33,10 @@ const args: MissionDetailsPopUpProps = {
     },
   ],
   missionDetails: [
-    { name: 'Total mission time', value: '9 hours 20 minutes' },
-    { name: 'Time in transit', value: '4 hours' },
-    { name: 'Travel distance', value: '7.2km over 3 waypoints' },
-    { name: 'Bottom depth', value: '100 to 180 meters' },
+    { name: 'Total mission time:', value: '9 hours 20 minutes' },
+    { name: 'Time in transit:', value: '4 hours' },
+    { name: 'Travel distance:', value: '7.2km over 3 waypoints' },
+    { name: 'Bottom depth:', value: '100 to 180 meters' },
   ],
 
   missionId: 1,
@@ -74,10 +74,10 @@ InProgress.args = {
   transmission: '12kb completed at 14:28:53',
   acknowledge: 'Today at 14:30:08',
   missionDetails: [
-    { name: 'Total mission time', value: '12 minutes of 6h 10m' },
-    { name: 'Time in transit', value: '1.5 of 4 hours complete' },
-    { name: 'Travel distance', value: '3.6 of 7.2km complete' },
-    { name: 'Bottom depth', value: '100 to 180 meters' },
+    { name: 'Total mission time:', value: '12 minutes of 6h 10m' },
+    { name: 'Time in transit:', value: '1.5 of 4 hours complete' },
+    { name: 'Travel distance:', value: '3.6 of 7.2km complete' },
+    { name: 'Bottom depth:', value: '100 to 180 meters' },
   ],
   overrides: [
     {
@@ -114,10 +114,10 @@ Completed.args = {
   transmission: '12kb completed at 14:28:53',
   acknowledge: 'Today at 14:30:08',
   missionDetails: [
-    { name: 'Total mission time', value: '3 hours 5 minutes' },
-    { name: 'Time in transit', value: '2 hours 42 minutes' },
-    { name: 'Travel distance', value: '2km over 4 waypoints' },
-    { name: 'Bottom depth range', value: '100 to 180 meters' },
+    { name: 'Total mission time:', value: '3 hours 5 minutes' },
+    { name: 'Time in transit:', value: '2 hours 42 minutes' },
+    { name: 'Travel distance:', value: '2km over 4 waypoints' },
+    { name: 'Bottom depth range:', value: '100 to 180 meters' },
   ],
   overrides: [
     {

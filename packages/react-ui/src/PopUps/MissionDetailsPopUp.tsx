@@ -45,8 +45,10 @@ export interface OverrideSection {
 const styles = {
   grayText: 'opacity-60',
   highlightedText: 'text-teal-600',
+  header: 'flex pb-1',
   tableSection: 'w-full bg-white pt-2',
   statusDisplay: 'flex flex-col items-center justify-center',
+  commandDetails: 'flex py-4',
   list: 'flex flex-col',
   logButton: 'text-left text-purple-600',
 }
@@ -70,30 +72,34 @@ export const MissionDetailsPopUp: React.FC<MissionDetailsPopUpProps> = ({
   onLog,
 }) => {
   const statusDisplay = () => {
-    if (missionStatus === 'waiting') {
-      return (
-        <>
-          <FontAwesomeIcon icon={faBuilding as IconProp} className="text-3xl" />
-          <div>Waiting to</div>
-          <div>transmit</div>
-        </>
-      )
-    }
-    if (missionStatus === 'in progress') {
-      return (
-        <>
-          <InProgressIcon />
-          <div>In progress</div>
-        </>
-      )
-    }
-    if (missionStatus === 'completed') {
-      return (
-        <>
-          <FontAwesomeIcon icon={faCheck as IconProp} className="text-3xl" />
-          <div>Completed</div>
-        </>
-      )
+    switch (missionStatus) {
+      case 'waiting':
+        return (
+          <>
+            <FontAwesomeIcon
+              icon={faBuilding as IconProp}
+              className="text-3xl"
+            />
+            <div>Waiting to</div>
+            <div>transmit</div>
+          </>
+        )
+      case 'in progress':
+        return (
+          <>
+            <InProgressIcon />
+            <div>In progress</div>
+          </>
+        )
+      case 'completed':
+        return (
+          <>
+            <FontAwesomeIcon icon={faCheck as IconProp} className="text-3xl" />
+            <div>Completed</div>
+          </>
+        )
+      default:
+        return <></>
     }
   }
 
@@ -104,10 +110,10 @@ export const MissionDetailsPopUp: React.FC<MissionDetailsPopUpProps> = ({
       }}
       grayHeader={true}
       title={
-        <div className="flex pb-1">
+        <div className={styles.header}>
           <ul className={clsx('flex-grow', styles.list)}>
             <li>
-              <span className="font-bold">{missionName}</span>
+              <span className="font-medium">{missionName}</span>
               <span className={clsx('ml-1 italic', styles.grayText)}>
                 {commandName}
               </span>
@@ -146,7 +152,7 @@ export const MissionDetailsPopUp: React.FC<MissionDetailsPopUpProps> = ({
       className={clsx('', className)}
       style={style}
     >
-      <section className="flex bg-white py-4">
+      <section className={styles.commandDetails}>
         <ShoreToShipIcon
           className="fill-transparent stroke-stone-600"
           waiting={missionStatus === 'waiting'}
@@ -157,7 +163,7 @@ export const MissionDetailsPopUp: React.FC<MissionDetailsPopUpProps> = ({
             <span>{queue}</span>
           </li>
           {missionStatus === 'waiting' ? (
-            <li className="py-1">Waiting to transmit...</li>
+            <li className="py-1 font-medium">Waiting to transmit...</li>
           ) : (
             transmission && (
               <li className="py-1">
