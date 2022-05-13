@@ -205,6 +205,7 @@ export const MissionDetailsPopUp: React.FC<MissionDetailsPopUpProps> = ({
               values: [name, value],
               highlighted: true,
             }))}
+            stackable={index > 0}
           />
         ))}
       </section>
