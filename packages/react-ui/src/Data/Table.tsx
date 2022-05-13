@@ -9,6 +9,7 @@ export interface TableProps {
   rows: TableRowProps[]
   header: TableHeaderProps
   highlightedStyle?: string
+  stackable?: boolean
 }
 
 const gridClassNames = [
@@ -34,12 +35,17 @@ export const Table: React.FC<TableProps> = ({
   rows,
   header,
   highlightedStyle,
+  stackable,
 }) => {
   // dynamically calculate grid columns
   const colsInRow = rows[0]?.values.length | 0
 
   return (
-    <table className={clsx(styles.container, className)} style={style}>
+    <table
+      className={clsx(styles.container, className, stackable && 'border-t-0')}
+      style={style}
+      role="table"
+    >
       <thead>
         <TableHeader
           className={clsx(gridClassNames[colsInRow], styles.gridGap)}

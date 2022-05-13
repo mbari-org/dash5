@@ -67,3 +67,9 @@ test('should apply style with 2 grid columns if two values are provided for the 
 
   expect(screen.queryByTestId(/table header/i)).toHaveClass('grid-cols-4')
 })
+
+test('should apply no top border style to a stackable table instance', async () => {
+  render(<Table {...props} stackable />)
+
+  expect(screen.queryByRole('table')).toHaveClass('border-t-0')
+})
