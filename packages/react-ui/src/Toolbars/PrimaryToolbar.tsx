@@ -24,6 +24,7 @@ export interface PrimaryToolbarProps {
   avatarUrl?: string
   avatarColor?: string
   onAvatarClick?: () => void
+  onLoginClick?: () => void
   signedIn?: boolean
 }
 
@@ -38,6 +39,7 @@ export const PrimaryToolbar: React.FC<PrimaryToolbarProps> = ({
   avatarName,
   avatarColor = '#666',
   onAvatarClick: handleAvatarClick,
+  onLoginClick: handleLoginClick,
 }) => {
   const handleOptionClick = (option: string) => (e: React.MouseEvent) => {
     e.preventDefault()
@@ -72,7 +74,12 @@ export const PrimaryToolbar: React.FC<PrimaryToolbarProps> = ({
         )}
         <li className="my-auto ml-auto">
           {!signedIn && (
-            <IconButton icon={faSignIn} tooltip="Login" ariaLabel="login" />
+            <IconButton
+              icon={faSignIn}
+              tooltip="Login"
+              ariaLabel="login"
+              onClick={handleLoginClick}
+            />
           )}
           {signedIn && !avatarName && (
             <IconButton
