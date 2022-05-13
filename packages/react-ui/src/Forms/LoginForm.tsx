@@ -14,8 +14,6 @@ import { TextField, Fields, ErrorList } from '../Fields'
 import { Button } from '../Navigation'
 import { AbsoluteOverlay } from '../Indicators'
 import { faEnvelope, faEyeSlash } from '@fortawesome/pro-regular-svg-icons'
-import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
-import { IconProp } from '@fortawesome/fontawesome-svg-core'
 
 export type LoginFormValues = {
   email: string
@@ -100,10 +98,6 @@ export const LoginForm: React.FC<LoginFormProps> = ({
           </Button>
         )}
       </Fields>
-      <FontAwesomeIcon
-        icon={faEnvelope as IconProp}
-        className="absolute top-0 left-0"
-      />
       {loading ? <AbsoluteOverlay /> : null}
     </form>
   )
