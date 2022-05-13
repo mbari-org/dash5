@@ -1,6 +1,6 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react'
 import { faTimes } from '@fortawesome/pro-light-svg-icons'
-
+import { AbsoluteOverlay as LoadingOverlay } from '../Indicators'
 import { IconButton } from '../Navigation'
 import { useEventListener } from '@mbari/utils'
 import clsx from 'clsx'
@@ -14,6 +14,7 @@ export interface ModalViewProps {
   onClose?: () => void
   draggable?: boolean
   onFocus?: () => void
+  loading?: boolean
 }
 
 export type ModalProps = ModalViewProps & FooterProps
@@ -71,6 +72,7 @@ export const Modal: React.FC<ModalProps & FooterProps> = ({
   disableCancel,
   disableConfirm,
   form,
+  loading,
 }) => {
   const [state, setState] = useState<ModalDragState>(DEFAULT_STATE)
   const dialog = useRef<HTMLElement>(null)
@@ -149,19 +151,8 @@ export const Modal: React.FC<ModalProps & FooterProps> = ({
     handleFocus?.()
   }
 
-  const handleClick = () => {
-    handleFocus?.()
-  }
-
   return open ? (
-    <div
-      className={clsx(styles.overlay, zIndex)}
-      onClick={handleClick}
-      onKeyDown={handleClick}
-      onFocus={handleClick}
-      role="button"
-      tabIndex={0}
-    >
+    <div className={clsx(styles.overlay, zIndex)}>
       <section
         className={clsx(
           styles.modal,
@@ -169,6 +160,7 @@ export const Modal: React.FC<ModalProps & FooterProps> = ({
         )}
         ref={dialog}
       >
+        {loading && <LoadingOverlay />}
         <header className={clsx(styles.header, !grayHeader && 'bg-opacity-10')}>
           {draggable ? (
             <button onMouseDown={handleMouseDown} className={styles.dragButton}>

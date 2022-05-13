@@ -14,6 +14,8 @@ import { TextField, Fields, ErrorList } from '../Fields'
 import { Button } from '../Navigation'
 import { AbsoluteOverlay } from '../Indicators'
 import { faEnvelope, faEyeSlash } from '@fortawesome/pro-regular-svg-icons'
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
+import { IconProp } from '@fortawesome/fontawesome-svg-core'
 
 export type LoginFormValues = {
   email: string
@@ -21,7 +23,7 @@ export type LoginFormValues = {
 }
 
 const schema = yup.object({
-  email: yup.string().required('cannot be blank'),
+  email: yup.string().email().required('cannot be blank'),
   password: yup.string().required('cannot be blank'),
 })
 
@@ -37,6 +39,7 @@ export const LoginForm: React.FC<LoginFormProps> = ({
   defaultValues,
   submitTitle,
   hideSubmit,
+  id,
 }) => {
   const {
     handleSubmit,
@@ -70,7 +73,7 @@ export const LoginForm: React.FC<LoginFormProps> = ({
   })
 
   return (
-    <form onSubmit={handleFormSubmit} className="relative">
+    <form onSubmit={handleFormSubmit} className="relative" id={id}>
       <Fields register={register} errors={formErrors} grow>
         <TextField
           name="email"
@@ -97,6 +100,10 @@ export const LoginForm: React.FC<LoginFormProps> = ({
           </Button>
         )}
       </Fields>
+      <FontAwesomeIcon
+        icon={faEnvelope as IconProp}
+        className="absolute top-0 left-0"
+      />
       {loading ? <AbsoluteOverlay /> : null}
     </form>
   )
