@@ -36,7 +36,7 @@ export const getErrorMessage = ({
 const style = {
   container: 'flex flex-col font-display',
   iconWrap: 'absolute inset-y-0 flex text-stone-300 left-0 ml-3',
-  icon: 'm-auto text-stone-700 text-sm',
+  icon: 'm-auto text-stone-700 text-sm w-4',
   fieldWrap: 'relative flex flex-grow flex-wrap',
   required: 'text-emerald-500 text-xs mx-2 my-auto',
   label: 'flex text-sm pb-1',
