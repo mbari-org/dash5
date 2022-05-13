@@ -3,7 +3,7 @@ import React from 'react'
 
 export interface TableHeaderProps {
   className?: string
-  labels: string[] | JSX.Element[]
+  labels: (string | JSX.Element)[]
   accessory?: string | JSX.Element
 }
 
@@ -14,12 +14,12 @@ export const TableHeader: React.FC<TableHeaderProps> = ({
 }) => {
   return (
     <tr
-      className={clsx('bg-stone-100 p-4', className)}
+      className={clsx('whitespace-nowrap bg-stone-100 py-2 px-4', className)}
       data-testid="table header"
     >
       {labels.map((label, index) => (
         <th
-          className="flex flex-grow text-left font-sans font-normal"
+          className="flex flex-grow text-left font-sans text-sm font-normal"
           key={`${label}${index}`}
         >
           <span>{label}</span>

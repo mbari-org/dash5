@@ -10,6 +10,7 @@ export interface ModalViewProps {
   title: string | JSX.Element
   open: boolean
   zIndex?: string
+  grayHeader?: boolean
   onClose?: () => void
   draggable?: boolean
   onFocus?: () => void
@@ -43,12 +44,13 @@ const styles = {
     'fixed inset-0 flex flex-col items-center justify-center w-screen h-screen pointer-events-none font-display',
   modal:
     'flex flex-col bg-white w-full overflow-hidden md:max-h-3/4 md:max-w-md lg:max-w-lg rounded-md border m-auto pointer-events-auto transition-shadow transition-colors duration-300 ease-out relative',
-  header: 'flex justify-between bg-stone-100 bg-opacity-10 rounded mt-0',
-  title: 'text-stone-900 font-medium text-md font-display mt-auto pt-6 px-4',
+  header: 'flex justify-between bg-stone-100 rounded mt-0',
+  title:
+    'text-stone-900 font-medium text-md font-display mt-auto pt-6 px-4 w-full',
   dragButton:
     'cursor-move flex flex-grow bg-opacity-50 hover:bg-stone-100 ml-1 my-1 rounded transition-colors duration-100 ease-out',
   closeButton: 'my-1 mr-2 text-stone-400',
-  modalBody: 'px-4 py-4 text-base font-normal overflow-auto -mt-2 mb-6',
+  modalBody: 'px-4 py-4 text-base font-normal overflow-auto mb-6',
   notDragging: 'shadow-xl border-stone-100',
   dragging: 'shadow-2xl border-stone-200',
 }
@@ -56,6 +58,7 @@ const styles = {
 export const Modal: React.FC<ModalProps & FooterProps> = ({
   title,
   open,
+  grayHeader,
   onClose: handleOnClose,
   children,
   draggable,
@@ -166,7 +169,7 @@ export const Modal: React.FC<ModalProps & FooterProps> = ({
         )}
         ref={dialog}
       >
-        <header className={styles.header}>
+        <header className={clsx(styles.header, !grayHeader && 'bg-opacity-10')}>
           {draggable ? (
             <button onMouseDown={handleMouseDown} className={styles.dragButton}>
               <h2 className={styles.title}>{title}</h2>
