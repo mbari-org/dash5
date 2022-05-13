@@ -8,6 +8,7 @@ import { InProgressIcon } from '../Icons/InProgressIcon'
 import { ShoreToShipIcon } from '../Icons/ShoreToShipIcon'
 import { Table } from '../Data/Table'
 import { Modal } from '../Modal'
+import { SummaryList } from '../Data/SummaryList'
 
 export interface MissionDetailsPopUpProps {
   className?: string
@@ -182,15 +183,14 @@ export const MissionDetailsPopUp: React.FC<MissionDetailsPopUpProps> = ({
       </section>
 
       <section className={styles.tableSection}>
-        <Table
-          header={{
-            labels: [
-              `${missionStatus === 'completed' ? 'SUMMARY' : 'ESTIMATES'}`,
-            ],
-          }}
-          rows={missionDetails.map(({ name, value }) => ({
-            values: [name, value],
-          }))}
+        <SummaryList
+          header={`${missionStatus === 'completed' ? 'SUMMARY' : 'ESTIMATES'}`}
+          values={missionDetails.map(({ name, value }, index) => (
+            <div key={`${name}${index}`}>
+              <span className="mr-1 font-medium">{name}</span>
+              <span>{value}</span>
+            </div>
+          ))}
         />
       </section>
 
