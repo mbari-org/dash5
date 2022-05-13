@@ -10,7 +10,12 @@
         "panel": "new",
         "group": "develop"
       },
-      "runOptions": { "runOn": "folderOpen" }
+      "runOptions": { "runOn": "folderOpen" },
+      "options": {
+        "statusbar": {
+          "label": "$(remote-explorer-documentation) Storybook"
+        }
+      }
     },
     {
       "label": "[react-ui]: Tailwind",
@@ -21,7 +26,12 @@
         "panel": "new",
         "group": "develop"
       },
-      "runOptions": { "runOn": "folderOpen" }
+      "runOptions": { "runOn": "folderOpen" },
+      "options": {
+        "statusbar": {
+          "label": "$(server-process) Tailwind"
+        }
+      }
     },
     {
       "label": "[react-ui]: Tests",
@@ -32,18 +42,27 @@
         "panel": "new",
         "group": "develop"
       },
-      "runOptions": { "runOn": "folderOpen" }
+      "runOptions": { "runOn": "folderOpen" },
+      "options": {
+        "statusbar": {
+          "label": "$(test-view-icon) Test"
+        }
+      }
     },
     {
       "label": "[project]: Lint",
       "type": "shell",
-      "command": "yarn esw --watch",
+      "command": "yarn esw",
       "presentation": {
         "reveal": "always",
         "panel": "new",
         "group": "root"
       },
-      "runOptions": { "runOn": "folderOpen" }
+      "options": {
+        "statusbar": {
+          "label": "$(test-view-icon) Lint"
+        }
+      }
     }
   ]
 }
