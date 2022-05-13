@@ -2,23 +2,28 @@
 
 ## Setup
 
-Simply install the project dependencies, run the bootstrap script to build the packages in this monorepo, and start the client workspace. See the specific README for each workspace for any additional setup that may be required.
+Getting up and going should be straightforward unless you're on windows. Simply install the project dependencies and start the client workspace. See the specific README for each workspace for any additional setup that may be required.
+
+You can confirm the package builds and tests verify quickly via turborepo:
 
 ```
 yarn install
 yarn build
-yarn workspace @mrari/lrauv-dash2 start
-```
-
-If you want to run tests across the entire monorepo you can run the following command from the project root:
-
-```
 yarn test
 ```
 
-### Autostart the UI Development Environment With VSCode Tasks
+You can install [NVM](https://github.com/nvm-sh/nvm) and the [Tasks extension](https://marketplace.visualstudio.com/items?itemName=actboy168.tasks) to gain access to a set of convenience commands in your VSCode task bar to start various packages and run tests:
 
-We have supplied some default tasks located in `.vscode/tasks.json`. You can load these in VSCode by hitting `cmd+shift+P` and searching / selecting `"Tasks: Manage Automated Tasks in Folder"`. Upon selecting this option just close and re-open this project in VSCode. Three terminal windows will appear automatically launching the storybook, jest, and tailwind under watch commands so that you can get straight into developing your project.
+![Task](screenshot-tasks.png)
+
+If you install this extension, you should see the following options in your status bar:
+
+- **Storybook**: `yarn workspace ui start`
+- **Tailwind**: `yarn workspace ui tailwind`
+- **UI Tests**: `yarn workspace @mbari/react-ui test:watch`
+- **Lint**: `yarn esw`
+- **Build**: `yarn test; yarn build`
+- **Run**: `yarn build; yarn workspace @mbari/lrauv-dash2 start`
 
 ### A Note on Monorepo Dependencies
 
@@ -38,8 +43,12 @@ A typescript based module that utilizes tailwind css and react storyboard to bui
 
 A common set of helper functions we may use in various packages within this monorepo.
 
+### @mbari/api-client
+
+An axios library containing typed api requests and responses from the tethysdash API. There is also react-query module for usage in the react client.
+
 ## Apps
 
-### lrauv-dash2
+### @mbari/lrauv-dash2
 
 This is the client side application for the second iteration of the LRAUV Dash application.
