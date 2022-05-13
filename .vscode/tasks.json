@@ -10,7 +10,12 @@
         "panel": "new",
         "group": "develop"
       },
-      "runOptions": { "runOn": "folderOpen" }
+      "runOptions": { "runOn": "folderOpen" },
+      "options": {
+        "statusbar": {
+          "label": "$(remote-explorer-documentation) Storybook"
+        }
+      }
     },
     {
       "label": "[react-ui]: Tailwind",
@@ -21,7 +26,12 @@
         "panel": "new",
         "group": "develop"
       },
-      "runOptions": { "runOn": "folderOpen" }
+      "runOptions": { "runOn": "folderOpen" },
+      "options": {
+        "statusbar": {
+          "label": "$(server-process) Tailwind"
+        }
+      }
     },
     {
       "label": "[react-ui]: Tests",
@@ -32,18 +42,73 @@
         "panel": "new",
         "group": "develop"
       },
-      "runOptions": { "runOn": "folderOpen" }
+      "runOptions": { "runOn": "folderOpen" },
+      "options": {
+        "statusbar": {
+          "label": "$(test-view-icon) UI Tests"
+        }
+      }
     },
+    // {
+    //   "label": "[client]: Tests",
+    //   "type": "shell",
+    //   "command": "yarn workspace @mbari/lrauv-dash2 test:watch",
+    //   "presentation": {
+    //     "reveal": "always",
+    //     "panel": "new",
+    //     "group": "dash2"
+    //   },
+    //   "runOptions": { "runOn": "folderOpen" },
+    //   "options": {
+    //     "statusbar": {
+    //       "label": "$(test-view-icon) Dash2 Tests"
+    //     }
+    //   }
+    // },
     {
       "label": "[project]: Lint",
       "type": "shell",
-      "command": "yarn esw --watch",
+      "command": "yarn lint",
       "presentation": {
         "reveal": "always",
         "panel": "new",
         "group": "root"
       },
-      "runOptions": { "runOn": "folderOpen" }
+      "options": {
+        "statusbar": {
+          "label": "$(test-view-icon) Lint"
+        }
+      }
+    },
+    {
+      "label": "[project]: Build",
+      "type": "shell",
+      "command": "yarn test; yarn build",
+      "presentation": {
+        "reveal": "always",
+        "panel": "new",
+        "group": "root"
+      },
+      "options": {
+        "statusbar": {
+          "label": "$(tools) Build"
+        }
+      }
+    },
+    {
+      "label": "[dash2]: Run",
+      "type": "shell",
+      "command": "yarn build && yarn workspace @mbari/lrauv-dash2 start",
+      "presentation": {
+        "reveal": "always",
+        "panel": "new",
+        "group": "dash2"
+      },
+      "options": {
+        "statusbar": {
+          "label": "$(run) Run"
+        }
+      }
     }
   ]
 }
