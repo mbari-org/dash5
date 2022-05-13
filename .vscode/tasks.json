@@ -98,7 +98,7 @@
     {
       "label": "[dash2]: Run",
       "type": "shell",
-      "command": "yarn build && yarn workspace @mbari/lrauv-dash2 start",
+      "command": "yarn build && yarn workspace @mbari/lrauv-dash2 dev",
       "presentation": {
         "reveal": "always",
         "panel": "new",
