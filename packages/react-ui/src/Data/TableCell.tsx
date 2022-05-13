@@ -10,7 +10,7 @@ export interface TableCellProps {
 
 const styles = {
   container:
-    'items-center border-t-2  border-solid border-stone-200 bg-white p-4 text-xl',
+    'items-center border-t-2  border-solid border-stone-200 bg-white py-2 px-4',
 }
 
 export const TableCell: React.FC<TableCellProps> = ({
