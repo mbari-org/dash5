@@ -1,7 +1,7 @@
 import React from 'react'
 import clsx from 'clsx'
 
-export interface TableCellProps {
+export interface TableRowProps {
   className?: string
   values: string[] | JSX.Element[]
   highlighted?: boolean
@@ -13,7 +13,7 @@ const styles = {
     'items-center border-t-2  border-solid border-stone-200 bg-white p-4 text-xl',
 }
 
-export const TableCell: React.FC<TableCellProps> = ({
+export const TableRow: React.FC<TableRowProps> = ({
   className,
   values,
   highlighted = false,

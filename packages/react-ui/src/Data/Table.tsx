@@ -1,12 +1,12 @@
 import React from 'react'
 import clsx from 'clsx'
 import { TableHeader, TableHeaderProps } from './TableHeader'
-import { TableCell, TableCellProps } from './TableCell'
+import { TableRow, TableRowProps } from './TableRow'
 
 export interface TableProps {
   className?: string
   style?: React.CSSProperties
-  rows: TableCellProps[]
+  rows: TableRowProps[]
   header: TableHeaderProps
   highlightedStyle?: string
 }
@@ -48,7 +48,7 @@ export const Table: React.FC<TableProps> = ({
       </thead>
       <tbody>
         {rows.map((row, index) => (
-          <TableCell
+          <TableRow
             key={`${row?.values[0]}${index}`}
             className={clsx(gridClassNames[colsInRow], styles.gridGap)}
             {...row}
