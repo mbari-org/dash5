@@ -1,12 +1,20 @@
-import React from 'react'
+import React, { useRef } from 'react'
 import { useCreateLogin } from '../User/useCreateLogin'
 import { AuthContext } from './AuthContext'
+import { getInstance } from '../../axios/getInstance'
 
-export const AuthProvider: React.FC = ({ children }) => {
+interface AuthProviderProps {
+  baseURL?: string
+}
+
+export const AuthProvider: React.FC<AuthProviderProps> = ({
+  baseURL,
+  children,
+}) => {
   const [token, setToken] = React.useState<string | undefined>()
   const [error, setError] = React.useState<string | undefined>()
-
-  const loginUser = useCreateLogin()
+  const instance = useRef(getInstance({ baseURL }))
+  const loginUser = useCreateLogin({ instance: instance.current })
   const login = React.useCallback(
     async (email: string, password: string) => {
       try {
