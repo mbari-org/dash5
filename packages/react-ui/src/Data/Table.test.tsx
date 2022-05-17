@@ -5,17 +5,30 @@ import { Table, TableProps } from './Table'
 
 const props: TableProps = {
   rows: [
-    { values: ['MissionTimeout', '2 hours'] },
-    { values: ['MaxDepth', '150 meters'], highlighted: true },
+    { cells: [{ label: 'MissionTimeout' }, { label: '2 hours' }] },
+    {
+      cells: [{ label: 'MaxDepth' }, { label: '150 meters' }],
+      highlighted: true,
+    },
   ],
   header: {
-    labels: ['SAFETY/COMMS', 'VALUES'],
+    cells: [
+      {
+        label: 'SAFETY/COMMS',
+      },
+      { label: 'VALUES' },
+    ],
   },
   highlightedStyle: 'text-teal-500',
 }
 
 const headerWithAccessory = {
-  labels: ['SAFETY/COMMS', 'VALUES'],
+  cells: [
+    {
+      label: 'SAFETY/COMMS',
+    },
+    { label: 'VALUES' },
+  ],
   accessory: <span className="text-orange-500 opacity-60">DVL is off</span>,
 }
 
@@ -26,7 +39,9 @@ test('should render the component', async () => {
 test('should display header labels', async () => {
   render(<Table {...props} />)
 
-  expect(screen.queryByText(`${props.header.labels[0]}`)).toBeInTheDocument()
+  expect(
+    screen.queryByText(`${props.header.cells[0].label}`)
+  ).toBeInTheDocument()
 })
 
 test('should display accessory header when provided', async () => {
@@ -36,19 +51,28 @@ test('should display accessory header when provided', async () => {
 })
 
 test('should style highlighted cells with provided highlighted styling', async () => {
-  render(<Table {...props} />)
-
-  expect(screen.queryByText(`${props.rows[1].values[0]}`)).toHaveClass(
-    'text-teal-500'
+  render(
+    <Table
+      {...props}
+      rows={[
+        {
+          cells: [{ label: 'MaxDepth' }, { label: '150 meters' }],
+          highlighted: true,
+        },
+      ]}
+    />
   )
+
+  const highlightedCell = screen.queryAllByTestId('table cell')[0]
+  expect(highlightedCell).toHaveClass('text-teal-500')
 })
 
 test('should style unhighlighted cells as a lighter color', async () => {
   render(<Table {...props} />)
 
-  expect(screen.queryByText(`${props.rows[0].values[0]}`)).toHaveClass(
-    'opacity-60'
-  )
+  const tableCell = screen.queryAllByTestId('table cell')[0]
+
+  expect(tableCell).toHaveClass('opacity-60')
 })
 
 test('should apply style with 2 grid columns if two values are provided for the content rows', async () => {
@@ -61,7 +85,16 @@ test('should apply style with 2 grid columns if two values are provided for the 
   render(
     <Table
       {...props}
-      rows={[{ values: ['Suspect', 'is', 'fleeing', 'the interview'] }]}
+      rows={[
+        {
+          cells: [
+            { label: 'Suspect' },
+            { label: 'is' },
+            { label: 'fleeing' },
+            { label: 'the interview' },
+          ],
+        },
+      ]}
     />
   )
 
@@ -71,5 +104,5 @@ test('should apply style with 2 grid columns if two values are provided for the 
 test('should apply no top border style to a stackable table instance', async () => {
   render(<Table {...props} stackable />)
 
-  expect(screen.queryByRole('table')).toHaveClass('border-t-0')
+  expect(screen.queryByTestId('table container')).toHaveClass('border-t-0')
 })
