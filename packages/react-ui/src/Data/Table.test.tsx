@@ -106,3 +106,61 @@ test('should apply no top border style to a stackable table instance', async () 
 
   expect(screen.queryByTestId('table container')).toHaveClass('border-t-0')
 })
+
+test('should display secondary label in table cell', async () => {
+  render(
+    <Table
+      {...props}
+      rows={[
+        {
+          cells: [
+            { label: 'MissionTimeout', secondary: 'Test secondary cell label' },
+            { label: '2 hours' },
+          ],
+        },
+      ]}
+    />
+  )
+
+  expect(screen.queryByText(/test secondary cell label/i)).toBeInTheDocument()
+})
+
+test('should display secondary label in table header', async () => {
+  render(
+    <Table
+      {...props}
+      header={{
+        cells: [
+          {
+            label: 'SAFETY/COMMS',
+            secondary: 'Test secondary header label',
+          },
+          { label: 'VALUES' },
+        ],
+      }}
+    />
+  )
+
+  expect(screen.queryByText(/test secondary header label/i)).toBeInTheDocument()
+})
+
+test('should display sort icon in header cell when sort function is provided', async () => {
+  render(
+    <Table
+      {...props}
+      header={{
+        cells: [
+          {
+            label: 'SAFETY/COMMS',
+            onSort: (col) => {
+              console.log(col)
+            },
+          },
+          { label: 'VALUES' },
+        ],
+      }}
+    />
+  )
+
+  expect(screen.queryByLabelText('sort icon')).toBeInTheDocument()
+})

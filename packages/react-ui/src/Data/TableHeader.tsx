@@ -40,7 +40,7 @@ export const TableHeader: React.FC<TableHeaderProps> = ({
           {onSort ? (
             <button onClick={() => onSort(`${index}`)}>
               <span className="mr-1 font-medium">{label}</span>
-              <FontAwesomeIcon icon={faSort as IconProp} />
+              <FontAwesomeIcon icon={faSort as IconProp} title="sort icon" />
             </button>
           ) : (
             <>
