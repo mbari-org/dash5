@@ -3,8 +3,10 @@ import { NextPage } from 'next'
 import Head from 'next/head'
 import { AsyncSubmitHandler } from '@sumocreations/forms'
 import { PrimaryToolbar, LoginModal, LoginFormValues } from '@mbari/react-ui'
+import { useAuthContext } from '@mbari/api-client'
 
 const Home: NextPage = () => {
+  const auth = useAuthContext()
   const [login, setLogin] = useState(false)
   const handleLoginClick = () => {
     setLogin(true)
@@ -14,6 +16,7 @@ const Home: NextPage = () => {
   }
   const handleSubmit: AsyncSubmitHandler<LoginFormValues> = async (values) => {
     console.log(values)
+    await auth.login(values.email, values.password)
     return undefined
   }
 
