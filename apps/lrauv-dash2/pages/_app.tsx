@@ -7,7 +7,7 @@ import { AuthProvider } from '@mbari/api-client'
 function MyApp({ Component, pageProps }: AppProps) {
   return (
     <QueryClientProvider client={queryClient}>
-      <AuthProvider>
+      <AuthProvider baseURL={process.env.NEXT_PUBLIC_BASE_URL}>
         <Component {...pageProps} />
       </AuthProvider>
     </QueryClientProvider>
