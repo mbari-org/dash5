@@ -74,6 +74,7 @@ export const Modal: React.FC<ModalProps & FooterProps> = ({
   form,
   loading,
 }) => {
+  const browserWindow = typeof window !== 'undefined' ? window : undefined
   const [state, setState] = useState<ModalDragState>(DEFAULT_STATE)
   const dialog = useRef<HTMLElement>(null)
 
@@ -120,7 +121,7 @@ export const Modal: React.FC<ModalProps & FooterProps> = ({
   )
   useEventListener({
     type: 'mousemove',
-    element: window,
+    element: browserWindow,
     listener: onMouseMove,
   })
 
@@ -136,7 +137,7 @@ export const Modal: React.FC<ModalProps & FooterProps> = ({
   )
   useEventListener({
     type: 'mouseup',
-    element: window,
+    element: browserWindow,
     listener: onMouseUp,
   })
 
