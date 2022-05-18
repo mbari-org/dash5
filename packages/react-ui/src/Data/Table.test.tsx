@@ -1,5 +1,5 @@
 import React from 'react'
-import { render, screen } from '@testing-library/react'
+import { fireEvent, render, screen } from '@testing-library/react'
 import '@testing-library/jest-dom'
 import { Table, TableProps } from './Table'
 
@@ -144,14 +144,14 @@ test('should display secondary label in table header', async () => {
   expect(screen.queryByText(/test secondary header label/i)).toBeInTheDocument()
 })
 
-test('should display sort icon in header cell when sort function is provided', async () => {
+test('should display sort icon on hover in header cell when sort function is provided', async () => {
   render(
     <Table
       {...props}
       header={{
         cells: [
           {
-            label: 'SAFETY/COMMS',
+            label: 'Test sort column',
             onSort: (col) => {
               console.log(col)
             },
@@ -162,5 +162,55 @@ test('should display sort icon in header cell when sort function is provided', a
     />
   )
 
+  const sortButton = screen.getByText(/test sort column/i)
+
+  fireEvent.mouseEnter(sortButton)
   expect(screen.queryByLabelText('sort icon')).toBeInTheDocument()
+
+  fireEvent.mouseLeave(sortButton)
+  expect(screen.queryByLabelText('sort icon')).not.toBeInTheDocument()
+})
+
+test('should display sort up icon in header cell when sort direction is ascending', async () => {
+  render(
+    <Table
+      {...props}
+      header={{
+        cells: [
+          {
+            label: 'Test sort column',
+            onSort: (col) => {
+              console.log(col)
+            },
+            sortDirection: 'asc',
+          },
+          { label: 'VALUES' },
+        ],
+      }}
+    />
+  )
+
+  expect(screen.queryByLabelText('sort up icon')).toBeInTheDocument()
+})
+
+test('should display sort up icon in header cell when sort direction is descending', async () => {
+  render(
+    <Table
+      {...props}
+      header={{
+        cells: [
+          {
+            label: 'Test sort column',
+            onSort: (col) => {
+              console.log(col)
+            },
+            sortDirection: 'desc',
+          },
+          { label: 'VALUES' },
+        ],
+      }}
+    />
+  )
+
+  expect(screen.queryByLabelText('sort down icon')).toBeInTheDocument()
 })

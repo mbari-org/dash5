@@ -8,8 +8,8 @@ export interface TableRowProps {
   cells: CellProps[]
   highlighted?: boolean
   highlightedStyle?: string
-  interactive?: boolean
-  onSelect?: () => void
+  scrollable?: boolean
+  onSelect?: (() => void) | null
 }
 
 export interface CellProps {
@@ -19,7 +19,7 @@ export interface CellProps {
 }
 
 const styles = {
-  container: 'items-center border-t-2 border-solid border-stone-200 bg-white',
+  container: 'items-center bg-white',
   button: 'h-full w-full text-left',
   cellPadding: 'py-2 px-4',
 }
@@ -29,7 +29,7 @@ export const TableRow: React.FC<TableRowProps> = ({
   cells,
   highlighted = false,
   highlightedStyle,
-  interactive,
+  scrollable,
   onSelect,
 }) => {
   return (
@@ -44,7 +44,7 @@ export const TableRow: React.FC<TableRowProps> = ({
               <TableCell
                 {...cell}
                 firstColumn={index === 0}
-                interactive={interactive}
+                scrollable={scrollable}
                 className={clsx(
                   highlighted && highlightedStyle,
                   !highlighted && 'opacity-60'
@@ -55,7 +55,7 @@ export const TableRow: React.FC<TableRowProps> = ({
             <TableCell
               {...cell}
               firstColumn={index === 0}
-              interactive={interactive}
+              scrollable={scrollable}
               className={clsx(
                 highlighted && highlightedStyle,
                 !highlighted && 'opacity-60',

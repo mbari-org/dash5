@@ -4,7 +4,7 @@ import { CellProps } from './TableRow'
 
 export interface TableCellProps extends CellProps {
   className?: string
-  interactive?: boolean
+  scrollable?: boolean
   firstColumn?: boolean
 }
 
@@ -13,7 +13,7 @@ export const TableCell: React.FC<TableCellProps> = ({
   label,
   secondary,
   icon,
-  interactive,
+  scrollable,
   firstColumn,
 }) => {
   return (
@@ -25,15 +25,15 @@ export const TableCell: React.FC<TableCellProps> = ({
       <li className="w-full">
         <div
           className={clsx(
-            !interactive && firstColumn && 'font-mono',
-            interactive && !firstColumn && 'text-sm',
-            firstColumn && (interactive ? 'font-medium' : 'font-semibold')
+            !scrollable && firstColumn && 'font-mono',
+            scrollable && !firstColumn && 'text-sm',
+            firstColumn && (scrollable ? 'font-medium' : 'font-semibold')
           )}
         >
           {label}
         </div>
         {secondary && (
-          <div className={clsx(interactive && 'text-sm')}>{secondary}</div>
+          <div className={clsx(scrollable && 'text-sm')}>{secondary}</div>
         )}
       </li>
     </ul>

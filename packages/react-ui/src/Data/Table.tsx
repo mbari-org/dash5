@@ -1,4 +1,4 @@
-import React from 'react'
+import React, { useState } from 'react'
 import clsx from 'clsx'
 import { TableHeader, TableHeaderProps } from './TableHeader'
 import { TableRow, TableRowProps } from './TableRow'
@@ -10,7 +10,7 @@ export interface TableProps {
   header: TableHeaderProps
   highlightedStyle?: string
   stackable?: boolean
-  interactive?: boolean
+  scrollable?: boolean
   onSelectRow?: (index: number) => void
 }
 
@@ -29,7 +29,6 @@ const gridClassNames = [
 const styles = {
   container: 'h-full border-2 border-solid border-stone-200',
   table: 'font-display w-full',
-  gridGap: 'grid gap-4',
 }
 
 export const Table: React.FC<TableProps> = ({
@@ -39,13 +38,16 @@ export const Table: React.FC<TableProps> = ({
   header,
   highlightedStyle,
   stackable,
-  interactive,
+  scrollable,
   onSelectRow,
 }) => {
   // dynamically calculate grid columns
   const colsInRow = rows[0]?.cells.length | 0
 
+  const [selected, setSelected] = useState<number | null>(null)
+
   const handleSelectRow = (index: number) => {
+    setSelected(index)
     onSelectRow?.(index)
   }
 
@@ -55,19 +57,20 @@ export const Table: React.FC<TableProps> = ({
       className={clsx(
         styles.container,
         className,
-        interactive && 'overflow-y-auto',
+        scrollable && 'overflow-y-auto',
         stackable && 'border-t-0'
       )}
     >
       <table className={clsx(styles.table)} style={style} role="table">
-        <thead>
+        <thead className="sticky top-0 left-0 z-10 bg-white/100">
           <TableHeader
             className={clsx(
+              'grid',
               gridClassNames[colsInRow],
-              styles.gridGap,
-              interactive ? 'bg-white' : 'bg-stone-100'
+              !onSelectRow && 'gap-4',
+              !scrollable && 'bg-stone-100'
             )}
-            interactive={interactive}
+            scrollable={scrollable}
             {...header}
           />
         </thead>
@@ -76,15 +79,18 @@ export const Table: React.FC<TableProps> = ({
             <TableRow
               key={`${row?.cells[0]}${index}`}
               className={clsx(
+                'grid',
                 gridClassNames[colsInRow],
-                styles.gridGap,
-                interactive && 'hover:bg-sky-50'
+                !onSelectRow && 'gap-4',
+                onSelectRow &&
+                  (selected === index ? 'bg-sky-200/70' : 'hover:bg-sky-50'),
+                index !== 0 && 'border-t-2 border-solid border-stone-200'
               )}
               {...row}
-              interactive={interactive}
+              scrollable={scrollable}
               highlightedStyle={highlightedStyle}
               aria-label="table row"
-              onSelect={() => handleSelectRow(index)}
+              onSelect={onSelectRow ? () => handleSelectRow(index) : null}
             />
           ))}
         </tbody>

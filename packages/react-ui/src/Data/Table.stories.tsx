@@ -222,7 +222,7 @@ CellWithIcon.parameters = {
 export const Sortable = Template.bind({})
 Sortable.args = {
   ...args,
-  interactive: true,
+  scrollable: true,
   onSelectRow: (index) => {
     console.log(index)
   },
@@ -230,6 +230,10 @@ Sortable.args = {
     cells: [
       {
         label: 'MISSION NAME',
+        sortDirection: 'desc',
+        onSort: (column) => {
+          console.log(column)
+        },
       },
       {
         label: 'ALL LRAUV',
@@ -327,7 +331,7 @@ Sortable.parameters = {
 export const Scrollable = ScrollTemplate.bind({})
 Scrollable.args = {
   ...args,
-  interactive: true,
+  scrollable: true,
   className: '',
   rows: [
     {
@@ -346,7 +350,7 @@ Scrollable.args = {
         {
           label: (
             <div className="flex items-center">
-              <select className="flex-grow rounded border-2 border-solid p-2">
+              <select className="flex-grow cursor-pointer rounded border-2 border-solid p-2">
                 <option>Set waypoint</option>
               </select>
               <div className="ml-2 rounded border-2 border-solid p-2">
@@ -373,7 +377,7 @@ Scrollable.args = {
         {
           label: (
             <div className="flex items-center">
-              <select className="flex-grow rounded border-2 border-solid p-2">
+              <select className="flex-grow cursor-pointer rounded border-2 border-solid p-2">
                 <option>Set waypoint</option>
               </select>
               <div className="ml-2 rounded border-2 border-solid p-2">
@@ -400,7 +404,7 @@ Scrollable.args = {
         {
           label: (
             <div className="flex items-center">
-              <select className="flex-grow rounded border-2 border-solid p-2">
+              <select className="flex-grow cursor-pointer rounded border-2 border-solid p-2">
                 <option>Set waypoint</option>
               </select>
               <div className="ml-2 rounded border-2 border-solid p-2">
@@ -427,7 +431,7 @@ Scrollable.args = {
         {
           label: (
             <div className="flex items-center">
-              <select className="flex-grow rounded border-2 border-solid p-2">
+              <select className="flex-grow cursor-pointer rounded border-2 border-solid p-2">
                 <option>Set waypoint</option>
               </select>
               <div className="ml-2 rounded border-2 border-solid p-2">
