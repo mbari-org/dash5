@@ -3,6 +3,7 @@ import { faSort, faSortDown, faSortUp } from '@fortawesome/pro-solid-svg-icons'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import clsx from 'clsx'
 import React, { useState } from 'react'
+import { swallow } from '@mbari/utils'
 
 export interface TableHeaderProps {
   className?: string
@@ -43,7 +44,9 @@ export const TableHeader: React.FC<TableHeaderProps> = ({
         >
           {onSort ? (
             <button
-              onClick={() => onSort(`${index}`, sortDirection === 'asc')}
+              onClick={swallow(() =>
+                onSort(`${index}`, sortDirection === 'asc')
+              )}
               onMouseEnter={() => {
                 setHoverSort(index)
               }}

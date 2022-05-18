@@ -21,6 +21,7 @@ export interface CellProps {
 const styles = {
   container: 'items-center bg-white',
   button: 'h-full w-full text-left',
+  cell: 'h-full w-full items-center',
   cellPadding: 'py-2 px-4',
 }
 
@@ -35,7 +36,7 @@ export const TableRow: React.FC<TableRowProps> = ({
   return (
     <tr className={clsx(styles.container, className)}>
       {cells.map((cell, index) => (
-        <td className={'h-full w-full'} key={`${cell.label}${index}`}>
+        <td className={styles.cell} key={`${cell.label}${index}`}>
           {onSelect ? (
             <button
               className={clsx(styles.button, styles.cellPadding)}

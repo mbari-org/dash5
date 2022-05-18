@@ -8,6 +8,10 @@ export interface TableCellProps extends CellProps {
   firstColumn?: boolean
 }
 
+const styles = {
+  container: 'flex h-full w-full items-center',
+}
+
 export const TableCell: React.FC<TableCellProps> = ({
   className,
   label,
@@ -17,10 +21,7 @@ export const TableCell: React.FC<TableCellProps> = ({
   firstColumn,
 }) => {
   return (
-    <ul
-      className={clsx('flex items-center', className)}
-      data-testid="table cell"
-    >
+    <ul className={clsx(styles.container, className)} data-testid="table cell">
       {icon && <li className="text-4xl">{icon}</li>}
       <li className="w-full">
         <div

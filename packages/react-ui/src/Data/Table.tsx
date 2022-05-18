@@ -29,6 +29,8 @@ const gridClassNames = [
 const styles = {
   container: 'h-full border-2 border-solid border-stone-200',
   table: 'font-display w-full',
+  header: 'sticky top-0 left-0 z-10 bg-white/100',
+  borderTop: 'border-t-2 border-solid border-stone-200',
 }
 
 export const Table: React.FC<TableProps> = ({
@@ -62,7 +64,7 @@ export const Table: React.FC<TableProps> = ({
       )}
     >
       <table className={clsx(styles.table)} style={style} role="table">
-        <thead className="sticky top-0 left-0 z-10 bg-white/100">
+        <thead className={styles.header}>
           <TableHeader
             className={clsx(
               'grid',
@@ -84,7 +86,7 @@ export const Table: React.FC<TableProps> = ({
                 !onSelectRow && 'gap-4',
                 onSelectRow &&
                   (selected === index ? 'bg-sky-200/70' : 'hover:bg-sky-50'),
-                index !== 0 && 'border-t-2 border-solid border-stone-200'
+                index !== 0 && styles.borderTop
               )}
               {...row}
               scrollable={scrollable}
