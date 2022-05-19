@@ -223,6 +223,7 @@ export const Sortable = Template.bind({})
 Sortable.args = {
   ...args,
   scrollable: true,
+  selectedIndex: 0,
   onSelectRow: (index) => {
     console.log(index)
   },

@@ -214,3 +214,21 @@ test('should display sort up icon in header cell when sort direction is descendi
 
   expect(screen.queryByLabelText('sort down icon')).toBeInTheDocument()
 })
+
+test('should style selected row with blue background', async () => {
+  render(
+    <Table
+      {...props}
+      onSelectRow={() => {
+        console.log('selected')
+      }}
+      selectedIndex={0}
+    />
+  )
+
+  const selectedRow = screen.queryAllByLabelText(/table row/i)[0]
+  const unselectedRow = screen.queryAllByLabelText(/table row/i)[1]
+
+  expect(selectedRow).toHaveClass('bg-sky-200/70')
+  expect(unselectedRow).not.toHaveClass('bg-sky-200/70')
+})
