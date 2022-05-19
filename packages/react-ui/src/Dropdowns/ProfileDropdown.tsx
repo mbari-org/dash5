@@ -20,16 +20,16 @@ export const ProfileDropdown: React.FC<ProfileDropdownProps> = ({
       {...dropdownProps}
       header={
         <ul className="flex">
-          <li className="pr-4">
+          <li>
             <Avatar
               name={profileName}
               color={'lightGray'}
               imageUrl={avatarUrl}
             />
           </li>
-          <li>
+          <li className="px-4">
             <div>{profileName}</div>
-            <div className="font-sans font-light opacity-60">
+            <div className="font-sans text-sm font-light opacity-60">
               <span>{emailAddress}</span>
               {profileRole && <span className="ml-1">({profileRole})</span>}
             </div>

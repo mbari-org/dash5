@@ -2,7 +2,7 @@ module.exports = {
   content: [
     './src/**/*.{js,jsx,ts,tsx}',
     './public/index.html',
-    '../client/src/**/*.{js,jsx,ts,tsx}',
+    '../../apps/lrauv-dash2/**/*.{js,jsx,ts,tsx}',
   ],
   darkMode: 'media',
   theme: {

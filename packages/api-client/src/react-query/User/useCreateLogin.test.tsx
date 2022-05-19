@@ -1,10 +1,11 @@
 import '@testing-library/jest-dom'
-import React from 'react'
+import React, { useState } from 'react'
 import { render, screen, waitFor, fireEvent } from '@testing-library/react'
 import { useCreateLogin } from './useCreateLogin'
 import { QueryClientProvider, QueryClient } from 'react-query'
 import { rest } from 'msw'
 import { setupServer } from 'msw/node'
+import axios from 'axios'
 
 const server = setupServer()
 
@@ -13,13 +14,27 @@ afterEach(() => server.resetHandlers())
 afterAll(() => server.close())
 
 const queryClient = new QueryClient()
-const mockResponse = { token: 'authentication-token' }
+const mockResponse = {
+  result: {
+    email: 'jim@sumocreations.com',
+    firstName: 'Jim',
+    lastName: 'Jeffers',
+    roles: ['operator'],
+    token:
+      'eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJmaXJzdE5hbWUiOiJKaW0iLCJsYXN0TmFtZSI6IkplZmZlcnMiLCJleHAiOjE2NTM3NzgzODYsImVtYWlsIjoiamltQHN1bW9jcmVhdGlvbnMuY29tIiwicm9sZXMiOlsib3BlcmF0b3IiXX0.iIE60rpDVtL56Kt9p_Zs4MFLaDj03ISiJ9TVjr44Q24',
+  },
+}
 
 let email: 'test@example.com'
 let password: 'password'
 
 const MockLogin: React.FC = () => {
-  const createLogin = useCreateLogin()
+  const [sessionToken, setSessionToken] = useState('')
+  const createLogin = useCreateLogin({
+    sessionToken,
+    setSessionToken,
+    instance: axios.create(),
+  })
   return (
     <button
       data-testid="button"
@@ -49,11 +64,11 @@ describe('useCreateLogin', () => {
     render(<MockComponent />)
     fireEvent.click(screen.getByTestId('button'))
     await waitFor(() => {
-      return screen.getByText(mockResponse.token)
+      return screen.getByText(mockResponse.result.token)
     })
 
-    expect(screen.queryByText(mockResponse.token)).toHaveTextContent(
-      mockResponse.token
+    expect(screen.queryByText(mockResponse.result.token)).toHaveTextContent(
+      mockResponse.result.token
     )
   })
 })

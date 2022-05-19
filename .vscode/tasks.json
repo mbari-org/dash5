@@ -10,7 +10,6 @@
         "panel": "new",
         "group": "develop"
       },
-      "runOptions": { "runOn": "folderOpen" },
       "options": {
         "statusbar": {
           "label": "$(remote-explorer-documentation) Storybook"
@@ -26,10 +25,9 @@
         "panel": "new",
         "group": "develop"
       },
-      "runOptions": { "runOn": "folderOpen" },
       "options": {
         "statusbar": {
-          "label": "$(server-process) Tailwind"
+          "label": "$(paintcan) Tailwind"
         }
       }
     },
@@ -42,29 +40,12 @@
         "panel": "new",
         "group": "develop"
       },
-      "runOptions": { "runOn": "folderOpen" },
       "options": {
         "statusbar": {
           "label": "$(test-view-icon) UI Tests"
         }
       }
     },
-    // {
-    //   "label": "[client]: Tests",
-    //   "type": "shell",
-    //   "command": "yarn workspace @mbari/lrauv-dash2 test:watch",
-    //   "presentation": {
-    //     "reveal": "always",
-    //     "panel": "new",
-    //     "group": "dash2"
-    //   },
-    //   "runOptions": { "runOn": "folderOpen" },
-    //   "options": {
-    //     "statusbar": {
-    //       "label": "$(test-view-icon) Dash2 Tests"
-    //     }
-    //   }
-    // },
     {
       "label": "[project]: Lint",
       "type": "shell",
@@ -98,7 +79,7 @@
     {
       "label": "[dash2]: Run",
       "type": "shell",
-      "command": "yarn build && yarn workspace @mbari/lrauv-dash2 start",
+      "command": "yarn build --filter=react-ui --filter=api-client && yarn workspace @mbari/lrauv-dash2 dev",
       "presentation": {
         "reveal": "always",
         "panel": "new",

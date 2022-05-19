@@ -9,7 +9,7 @@ import { faUser } from '@fortawesome/pro-solid-svg-icons'
 const styles = {
   bar: 'w-full flex flex-row bg-secondary-300 px-8 py-4',
   list: 'flex flex-row items-center align-center justify-between flex-grow',
-  item: 'flex my-auto self-center',
+  item: 'flex my-auto self-center relative',
   option: 'mr-2',
 }
 
@@ -24,7 +24,10 @@ export interface PrimaryToolbarProps {
   avatarUrl?: string
   avatarColor?: string
   onAvatarClick?: () => void
+  onLoginClick?: () => void
   signedIn?: boolean
+  secondaryDropdown?: JSX.Element | null
+  addItemDropdown?: JSX.Element | null
 }
 
 export const PrimaryToolbar: React.FC<PrimaryToolbarProps> = ({
@@ -38,6 +41,9 @@ export const PrimaryToolbar: React.FC<PrimaryToolbarProps> = ({
   avatarName,
   avatarColor = '#666',
   onAvatarClick: handleAvatarClick,
+  onLoginClick: handleLoginClick,
+  secondaryDropdown,
+  addItemDropdown,
 }) => {
   const handleOptionClick = (option: string) => (e: React.MouseEvent) => {
     e.preventDefault()
@@ -68,11 +74,17 @@ export const PrimaryToolbar: React.FC<PrimaryToolbarProps> = ({
               tooltip="Add Vehicle"
               ariaLabel="Add Vehicle"
             />
+            {addItemDropdown}
           </li>
         )}
-        <li className="my-auto ml-auto">
+        <li className="relative my-auto ml-auto">
           {!signedIn && (
-            <IconButton icon={faSignIn} tooltip="Login" ariaLabel="login" />
+            <IconButton
+              icon={faSignIn}
+              tooltip="Login"
+              ariaLabel="login"
+              onClick={handleLoginClick}
+            />
           )}
           {signedIn && !avatarName && (
             <IconButton
@@ -86,12 +98,14 @@ export const PrimaryToolbar: React.FC<PrimaryToolbarProps> = ({
               name={avatarName}
               color={avatarColor}
               imageUrl={avatarUrl}
+              onClick={handleAvatarClick}
             />
           )}
+          {secondaryDropdown}
         </li>
       </ul>
     </nav>
   )
 }
 
-PrimaryToolbar.displayName = 'Components.PrimaryToolbar'
+PrimaryToolbar.displayName = 'Toolbars.PrimaryToolbar'

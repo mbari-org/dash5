@@ -1,4 +1,4 @@
-import React, { useCallback, useState } from 'react'
+import React, { useState } from 'react'
 import { Controller, useForm } from 'react-hook-form'
 import { yupResolver } from '@hookform/resolvers/yup'
 import * as yup from 'yup'
@@ -9,7 +9,7 @@ import {
 } from '@sumocreations/forms'
 import { camelCase } from 'lodash'
 import { DateTime } from 'luxon'
-import { zones } from 'tzdata'
+import tzData from 'tzdata'
 import { TextField, Fields, ErrorList, SelectField, DateField } from '../Fields'
 import { Button } from '../Navigation'
 import { AbsoluteOverlay } from '../Indicators'
@@ -17,7 +17,7 @@ import { SelectOption } from '../Fields/Select'
 
 const luxonValidTimezones = [
   ...new Set(
-    Object.keys(zones)
+    Object.keys(tzData.zones)
       .filter((tz) => tz.includes('/') && DateTime.local().setZone(tz).isValid)
       .map((tz) => ({ id: tz, name: tz }))
   ),
