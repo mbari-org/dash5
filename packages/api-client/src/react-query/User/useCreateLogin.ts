@@ -1,18 +1,16 @@
 import { useMutation } from 'react-query'
 import { CreateLoginParams, createLogin } from '../../axios'
 import { AxiosInstance } from 'axios'
-import useSessionToken from './useSessionToken'
 
-export const useCreateLogin = (config?: {
+export const useCreateLogin = (config: {
   instance: AxiosInstance
-  sessionTokenIdentifier?: string
+  setSessionToken: (token: string) => void
+  sessionToken: string
 }) => {
-  const { setSessionToken } = useSessionToken(
-    config?.sessionTokenIdentifier ?? 'TETHYS_ACCESS_TOKEN'
-  )
+  const { setSessionToken, instance } = config
   const mutation = useMutation(
     (params: CreateLoginParams) => {
-      return createLogin(params, config)
+      return createLogin(params, { instance })
     },
     {
       onSettled: data => {

@@ -8,15 +8,17 @@ interface AuthProviderProps {
   baseURL?: string
   onSessionStart?: (profile: AuthContextProfile) => void
   onSessionEnd?: () => void
-  sessionTokenIdentifier?: string
+  setSessionToken: (token: string) => void
+  sessionToken: string
 }
 
 export const AuthProvider: React.FC<AuthProviderProps> = ({
   baseURL,
   children,
-  onSessionStart,
+  setSessionToken,
+  sessionToken,
   onSessionEnd,
-  sessionTokenIdentifier = 'TETHYS_ACCESS_TOKEN',
+  onSessionStart,
 }) => {
   // We have to track a lot of state related to the auth token.
   // If an initial token is supplied we'll want to refresh it
@@ -42,7 +44,8 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({
   const instance = useRef(getInstance({ baseURL }))
   const loginUser = useCreateLogin({
     instance: instance.current,
-    sessionTokenIdentifier,
+    sessionToken,
+    setSessionToken,
   })
 
   // We'll refresh any existing token via ReactQuery. The query will
@@ -53,7 +56,8 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({
   // initial token is supplied.
   const refreshedSession = useRefreshSessionToken({
     instance: instance.current,
-    sessionTokenIdentifier,
+    sessionToken,
+    setSessionToken,
   })
 
   // We'll update the current user state from the refreshed session

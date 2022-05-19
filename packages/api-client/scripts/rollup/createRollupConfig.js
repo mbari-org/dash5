@@ -16,11 +16,16 @@ export function createRollupConfig(options, callback) {
     output: {
       file: outputName,
       format: options.format,
-      name: 'utils',
+      name: 'api-client',
       sourcemap: true,
-      globals: { react: 'React' },
+      globals: {
+        axios: 'axios',
+        react: 'React',
+        'react-query': 'useQuery',
+      },
       exports: 'named',
     },
+    external: ['axios', 'react-query', 'react'],
     plugins: [
       external(),
       typescript({

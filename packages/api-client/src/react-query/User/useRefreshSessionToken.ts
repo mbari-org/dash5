@@ -1,15 +1,13 @@
 import { useQuery } from 'react-query'
 import { token } from '../../axios'
 import { AxiosInstance } from 'axios'
-import useSessionToken from './useSessionToken'
 
-export const useRefreshSessionToken = (config?: {
+export const useRefreshSessionToken = (config: {
   instance?: AxiosInstance
-  sessionTokenIdentifier?: string
+  setSessionToken: (token: string) => void
+  sessionToken: string
 }) => {
-  const { sessionToken, setSessionToken } = useSessionToken(
-    config?.sessionTokenIdentifier ?? 'TETHYS_ACCESS_TOKEN'
-  )
+  const { sessionToken, setSessionToken, instance } = config
   const query = useQuery(
     ['token'],
     () => {
@@ -17,7 +15,7 @@ export const useRefreshSessionToken = (config?: {
         headers: {
           Authorization: `Bearer ${sessionToken}`,
         },
-        instance: config?.instance,
+        instance,
       })
     },
     {

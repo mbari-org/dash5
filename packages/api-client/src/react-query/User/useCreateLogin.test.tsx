@@ -1,10 +1,11 @@
 import '@testing-library/jest-dom'
-import React from 'react'
+import React, { useState } from 'react'
 import { render, screen, waitFor, fireEvent } from '@testing-library/react'
 import { useCreateLogin } from './useCreateLogin'
 import { QueryClientProvider, QueryClient } from 'react-query'
 import { rest } from 'msw'
 import { setupServer } from 'msw/node'
+import axios from 'axios'
 
 const server = setupServer()
 
@@ -28,7 +29,12 @@ let email: 'test@example.com'
 let password: 'password'
 
 const MockLogin: React.FC = () => {
-  const createLogin = useCreateLogin()
+  const [sessionToken, setSessionToken] = useState('')
+  const createLogin = useCreateLogin({
+    sessionToken,
+    setSessionToken,
+    instance: axios.create(),
+  })
   return (
     <button
       data-testid="button"
