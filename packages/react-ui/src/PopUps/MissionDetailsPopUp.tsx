@@ -200,9 +200,14 @@ export const MissionDetailsPopUp: React.FC<MissionDetailsPopUpProps> = ({
             key={`${headerLabel}${index}`}
             className={clsx('flex-grow', styles.list)}
             highlightedStyle={styles.highlightedText}
-            header={{ labels: [`${headerLabel} (${values.length})`, 'VALUES'] }}
+            header={{
+              cells: [
+                { label: `${headerLabel} (${values.length})` },
+                { label: 'VALUES' },
+              ],
+            }}
             rows={values.map(({ name, value }) => ({
-              values: [name, value],
+              cells: [{ label: name }, { label: value }],
               highlighted: true,
             }))}
             stackable={index > 0}

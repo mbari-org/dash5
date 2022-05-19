@@ -1,15 +1,17 @@
-import React from 'react'
+import React, { useState } from 'react'
 import clsx from 'clsx'
 import { TableHeader, TableHeaderProps } from './TableHeader'
-import { TableCell, TableCellProps } from './TableCell'
+import { TableRow, TableRowProps } from './TableRow'
 
 export interface TableProps {
   className?: string
   style?: React.CSSProperties
-  rows: TableCellProps[]
+  rows: TableRowProps[]
   header: TableHeaderProps
   highlightedStyle?: string
   stackable?: boolean
+  scrollable?: boolean
+  onSelectRow?: (index: number) => void
 }
 
 const gridClassNames = [
@@ -25,8 +27,10 @@ const gridClassNames = [
 ]
 
 const styles = {
-  container: 'border-2 border-solid border-stone-200 font-display',
-  gridGap: 'grid gap-4',
+  container: 'h-full border-2 border-solid border-stone-200',
+  table: 'font-display w-full',
+  header: 'sticky top-0 left-0 z-10 bg-white/100',
+  borderTop: 'border-t-2 border-solid border-stone-200',
 }
 
 export const Table: React.FC<TableProps> = ({
@@ -36,34 +40,64 @@ export const Table: React.FC<TableProps> = ({
   header,
   highlightedStyle,
   stackable,
+  scrollable,
+  onSelectRow,
 }) => {
   // dynamically calculate grid columns
-  const colsInRow = rows[0]?.values.length | 0
+  const colsInRow = rows[0]?.cells.length | 0
+
+  const [selected, setSelected] = useState<number | null>(null)
+
+  const handleSelectRow = (index: number) => {
+    setSelected(index)
+    onSelectRow?.(index)
+  }
 
   return (
-    <table
-      className={clsx(styles.container, className, stackable && 'border-t-0')}
-      style={style}
-      role="table"
+    <article
+      data-testid="table container"
+      className={clsx(
+        styles.container,
+        className,
+        scrollable && 'overflow-y-auto',
+        stackable && 'border-t-0'
+      )}
     >
-      <thead>
-        <TableHeader
-          className={clsx(gridClassNames[colsInRow], styles.gridGap)}
-          {...header}
-        />
-      </thead>
-      <tbody>
-        {rows.map((row, index) => (
-          <TableCell
-            key={`${row?.values[0]}${index}`}
-            className={clsx(gridClassNames[colsInRow], styles.gridGap)}
-            {...row}
-            highlightedStyle={highlightedStyle}
-            aria-label="table row"
+      <table className={clsx(styles.table)} style={style} role="table">
+        <thead className={styles.header}>
+          <TableHeader
+            className={clsx(
+              'grid',
+              gridClassNames[colsInRow],
+              !onSelectRow && 'gap-4',
+              !scrollable && 'bg-stone-100'
+            )}
+            scrollable={scrollable}
+            {...header}
           />
-        ))}
-      </tbody>
-    </table>
+        </thead>
+        <tbody>
+          {rows.map((row, index) => (
+            <TableRow
+              key={`${row?.cells[0]}${index}`}
+              className={clsx(
+                'grid',
+                gridClassNames[colsInRow],
+                !onSelectRow && 'gap-4',
+                onSelectRow &&
+                  (selected === index ? 'bg-sky-200/70' : 'hover:bg-sky-50'),
+                index !== 0 && styles.borderTop
+              )}
+              {...row}
+              scrollable={scrollable}
+              highlightedStyle={highlightedStyle}
+              aria-label="table row"
+              onSelect={onSelectRow ? () => handleSelectRow(index) : null}
+            />
+          ))}
+        </tbody>
+      </table>
+    </article>
   )
 }
 

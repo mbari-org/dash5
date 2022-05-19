@@ -1,38 +1,42 @@
 import React from 'react'
 import clsx from 'clsx'
+import { CellProps } from './TableRow'
 
-export interface TableCellProps {
+export interface TableCellProps extends CellProps {
   className?: string
-  values: (string | JSX.Element)[]
-  highlighted?: boolean
-  highlightedStyle?: string
+  scrollable?: boolean
+  firstColumn?: boolean
 }
 
 const styles = {
-  container:
-    'items-center border-t-2  border-solid border-stone-200 bg-white py-2 px-4',
+  container: 'flex h-full w-full items-center',
 }
 
 export const TableCell: React.FC<TableCellProps> = ({
   className,
-  values,
-  highlighted = false,
-  highlightedStyle,
+  label,
+  secondary,
+  icon,
+  scrollable,
+  firstColumn,
 }) => {
   return (
-    <tr className={clsx(styles.container, className)}>
-      {values.map((value, index) => (
-        <td
+    <ul className={clsx(styles.container, className)} data-testid="table cell">
+      {icon && <li className="text-4xl">{icon}</li>}
+      <li className="w-full">
+        <div
           className={clsx(
-            highlighted && highlightedStyle,
-            !highlighted && 'opacity-60',
-            index === 0 && 'font-mono font-bold'
+            !scrollable && firstColumn && 'font-mono',
+            scrollable && !firstColumn && 'text-sm',
+            firstColumn && (scrollable ? 'font-medium' : 'font-semibold')
           )}
-          key={`${value}${index}`}
         >
-          {value}
-        </td>
-      ))}
-    </tr>
+          {label}
+        </div>
+        {secondary && (
+          <div className={clsx(scrollable && 'text-sm')}>{secondary}</div>
+        )}
+      </li>
+    </ul>
   )
 }
