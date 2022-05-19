@@ -34,7 +34,7 @@ export const TableRow: React.FC<TableRowProps> = ({
   onSelect,
 }) => {
   return (
-    <tr className={clsx(styles.container, className)}>
+    <tr className={clsx(styles.container, className)} aria-label={'table row'}>
       {cells.map((cell, index) => (
         <td className={styles.cell} key={`${cell.label}${index}`}>
           {onSelect ? (

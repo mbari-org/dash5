@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import React from 'react'
 import clsx from 'clsx'
 import { TableHeader, TableHeaderProps } from './TableHeader'
 import { TableRow, TableRowProps } from './TableRow'
@@ -11,6 +11,7 @@ export interface TableProps {
   highlightedStyle?: string
   stackable?: boolean
   scrollable?: boolean
+  selectedIndex?: number | null
   onSelectRow?: (index: number) => void
 }
 
@@ -42,14 +43,12 @@ export const Table: React.FC<TableProps> = ({
   stackable,
   scrollable,
   onSelectRow,
+  selectedIndex,
 }) => {
   // dynamically calculate grid columns
   const colsInRow = rows[0]?.cells.length | 0
 
-  const [selected, setSelected] = useState<number | null>(null)
-
   const handleSelectRow = (index: number) => {
-    setSelected(index)
     onSelectRow?.(index)
   }
 
@@ -85,13 +84,14 @@ export const Table: React.FC<TableProps> = ({
                 gridClassNames[colsInRow],
                 !onSelectRow && 'gap-4',
                 onSelectRow &&
-                  (selected === index ? 'bg-sky-200/70' : 'hover:bg-sky-50'),
+                  (selectedIndex === index
+                    ? 'bg-sky-200/70'
+                    : 'hover:bg-sky-50'),
                 index !== 0 && styles.borderTop
               )}
               {...row}
               scrollable={scrollable}
               highlightedStyle={highlightedStyle}
-              aria-label="table row"
               onSelect={onSelectRow ? () => handleSelectRow(index) : null}
             />
           ))}
