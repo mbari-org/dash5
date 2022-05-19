@@ -2,6 +2,7 @@ import React, { useState } from 'react'
 // also exported from '@storybook/react' if you can deal with breaking changes in 6.1
 import { Story, Meta } from '@storybook/react/types-6-0'
 import { PrimaryToolbar, PrimaryToolbarProps } from './PrimaryToolbar'
+import { ProfileDropdown } from '../Dropdowns'
 
 export default {
   title: 'Toolbars/PrimaryToolbar',
@@ -36,6 +37,36 @@ Standard.parameters = {
 
 export const SignedIn = Template.bind({})
 SignedIn.args = { ...args, signedIn: true, avatarName: 'Jane Appleseed' }
+SignedIn.parameters = {
+  design: {
+    type: 'figma',
+    url: 'https://www.figma.com/file/FtsKsOCBQ2YjTZlwezG6aI/MBARI-Components?node-id=1%3A335',
+  },
+}
+
+export const SignedInWithDropdown = Template.bind({})
+SignedInWithDropdown.args = {
+  ...args,
+  signedIn: true,
+  avatarName: 'Jane Appleseed',
+  secondaryDropdown: (
+    <>
+      <ProfileDropdown
+        className="top-100 absolute right-0 z-20 mt-2"
+        profileName="Jane Appleseed"
+        profileRole="Administrator"
+        emailAddress="admin@mbari.org"
+        options={[
+          {
+            label: 'Logout',
+            onSelect: () => undefined,
+          },
+        ]}
+      />
+      <button className="fixed top-0 left-0 z-10 h-screen w-screen bg-stone-100 opacity-50 active:bg-stone-200"></button>
+    </>
+  ),
+}
 SignedIn.parameters = {
   design: {
     type: 'figma',
