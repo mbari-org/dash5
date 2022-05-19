@@ -7,7 +7,11 @@ export interface CreateLoginParams {
 }
 
 export interface CreateLoginResponse {
-  token: string
+  token?: string
+  firstName?: string
+  lastName?: string
+  email?: string
+  roles?: string[]
 }
 
 export const createLogin = async (
@@ -21,5 +25,5 @@ export const createLogin = async (
   }
 
   const response = await instance.post(url, params, config)
-  return response.data as CreateLoginResponse
+  return (response.data?.result ?? {}) as CreateLoginResponse
 }
