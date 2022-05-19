@@ -1,10 +1,10 @@
 import useCookie from 'react-use-cookie'
 
-const useSessionToken = () => {
-  const [sessionToken, setSessionToken] = useCookie('TETHYS_ACCESS_TOKEN', '')
+const useSessionToken = (name: string) => {
+  const [sessionToken, setToken] = useCookie(name, '')
 
-  const setToken = (token: string) => {
-    setSessionToken(token, {
+  const setSessionToken = (token: string) => {
+    setToken(token, {
       days: 7,
       SameSite: 'Strict',
       Secure:
@@ -12,7 +12,7 @@ const useSessionToken = () => {
     })
   }
 
-  return [sessionToken, setToken]
+  return { sessionToken, setSessionToken }
 }
 
 export default useSessionToken
