@@ -71,6 +71,7 @@
     "humps": "^2.0.1",
     "react": "^17.0.2",
     "react-query": "^3.34.19",
+    "react-use-cookie": "^1.4.0",
     "resize-observer-polyfill": "^1.5.1"
   }
 }
