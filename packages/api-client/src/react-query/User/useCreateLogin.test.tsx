@@ -13,7 +13,16 @@ afterEach(() => server.resetHandlers())
 afterAll(() => server.close())
 
 const queryClient = new QueryClient()
-const mockResponse = { token: 'authentication-token' }
+const mockResponse = {
+  result: {
+    email: 'jim@sumocreations.com',
+    firstName: 'Jim',
+    lastName: 'Jeffers',
+    roles: ['operator'],
+    token:
+      'eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJmaXJzdE5hbWUiOiJKaW0iLCJsYXN0TmFtZSI6IkplZmZlcnMiLCJleHAiOjE2NTM3NzgzODYsImVtYWlsIjoiamltQHN1bW9jcmVhdGlvbnMuY29tIiwicm9sZXMiOlsib3BlcmF0b3IiXX0.iIE60rpDVtL56Kt9p_Zs4MFLaDj03ISiJ9TVjr44Q24',
+  },
+}
 
 let email: 'test@example.com'
 let password: 'password'
@@ -49,11 +58,11 @@ describe('useCreateLogin', () => {
     render(<MockComponent />)
     fireEvent.click(screen.getByTestId('button'))
     await waitFor(() => {
-      return screen.getByText(mockResponse.token)
+      return screen.getByText(mockResponse.result.token)
     })
 
-    expect(screen.queryByText(mockResponse.token)).toHaveTextContent(
-      mockResponse.token
+    expect(screen.queryByText(mockResponse.result.token)).toHaveTextContent(
+      mockResponse.result.token
     )
   })
 })
