@@ -5,14 +5,8 @@ import { useRefreshSessionToken } from './useRefreshSessionToken'
 import { QueryClientProvider, QueryClient } from 'react-query'
 import { rest } from 'msw'
 import { setupServer } from 'msw/node'
+import useCookie from 'react-use-cookie'
 
-const server = setupServer()
-
-beforeAll(() => server.listen())
-afterEach(() => server.resetHandlers())
-afterAll(() => server.close())
-
-const queryClient = new QueryClient()
 const mockResponse = {
   result: {
     email: 'jim@sumocreations.com',
@@ -24,10 +18,17 @@ const mockResponse = {
   },
 }
 
+jest.mock('react-use-cookie', () => jest.fn())
+const useCookieMock = useCookie as jest.Mock<any>
+
+const server = setupServer()
+
+beforeAll(() => server.listen())
+afterEach(() => server.resetHandlers())
+afterAll(() => server.close())
+
 const MockLogin: React.FC = () => {
-  const currentSession = useRefreshSessionToken({
-    authToken: mockResponse.result.token,
-  })
+  const currentSession = useRefreshSessionToken()
   return currentSession.isLoading ? null : (
     <div data-testid="result">
       {currentSession.data?.firstName ?? 'Not logged in'}
@@ -35,7 +36,9 @@ const MockLogin: React.FC = () => {
   )
 }
 
-const MockComponent: React.FC = () => (
+const MockComponent: React.FC<{ queryClient: QueryClient }> = ({
+  queryClient,
+}) => (
   <QueryClientProvider client={queryClient}>
     <MockLogin />
   </QueryClientProvider>
@@ -43,13 +46,14 @@ const MockComponent: React.FC = () => (
 
 describe('useRefreshSessionToken', () => {
   it('should render the logout button and auth token after the user authenticates', async () => {
+    useCookieMock.mockReturnValue(['test', (newToken: string) => newToken])
     server.use(
       rest.get('/user/token', (_req, res, ctx) => {
         return res(ctx.status(200), ctx.json(mockResponse))
       })
     )
 
-    render(<MockComponent />)
+    render(<MockComponent queryClient={new QueryClient()} />)
     await waitFor(() => {
       return screen.getByText(mockResponse.result.firstName)
     })
@@ -57,5 +61,23 @@ describe('useRefreshSessionToken', () => {
     expect(screen.queryByText(mockResponse.result.firstName)).toHaveTextContent(
       mockResponse.result.firstName
     )
+  })
+
+  it('should not render the logout button and auth token if the user is not able to authenticate', async () => {
+    useCookieMock.mockReturnValue(['', (newToken: string) => newToken])
+    server.use(
+      rest.get('/user/token', (_req, res, ctx) => {
+        return res(ctx.status(200), ctx.json(''))
+      })
+    )
+
+    render(<MockComponent queryClient={new QueryClient()} />)
+    await waitFor(() => {
+      return screen.getByText('Not logged in')
+    })
+
+    expect(
+      screen.queryByText(mockResponse.result.firstName)
+    ).not.toBeInTheDocument()
   })
 })

@@ -8,7 +8,7 @@ interface AuthProviderProps {
   baseURL?: string
   onSessionStart?: (profile: AuthContextProfile) => void
   onSessionEnd?: () => void
-  initialToken?: string
+  sessionTokenIdentifier?: string
 }
 
 export const AuthProvider: React.FC<AuthProviderProps> = ({
@@ -16,7 +16,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({
   children,
   onSessionStart,
   onSessionEnd,
-  initialToken = '',
+  sessionTokenIdentifier = 'TETHYS_ACCESS_TOKEN',
 }) => {
   // We have to track a lot of state related to the auth token.
   // If an initial token is supplied we'll want to refresh it
@@ -31,7 +31,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({
   const [currentUser, setCurrentUser] = React.useState<
     AuthContextProfile | undefined
   >()
-  const existingToken = currentUser?.token ?? initialToken
+  const existingToken = currentUser?.token
 
   // Store any errors resulting from login / token refresh attempts.
   // This error will be exposed by the AuthProvider.
@@ -40,7 +40,10 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({
   // Store a reference to an axios instance with a default config.
   // This is stored in a ref and is only expected to be set once.
   const instance = useRef(getInstance({ baseURL }))
-  const loginUser = useCreateLogin({ instance: instance.current })
+  const loginUser = useCreateLogin({
+    instance: instance.current,
+    sessionTokenIdentifier,
+  })
 
   // We'll refresh any existing token via ReactQuery. The query will
   // only execute if an authToken is present. Additionally, the stale
@@ -50,7 +53,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({
   // initial token is supplied.
   const refreshedSession = useRefreshSessionToken({
     instance: instance.current,
-    authToken: existingToken,
+    sessionTokenIdentifier,
   })
 
   // We'll update the current user state from the refreshed session
@@ -60,11 +63,9 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({
     if (
       !loggedOut &&
       refreshedSession.data?.token &&
-      refreshedSession.data?.token !== existingToken &&
-      lastInitialToken.current !== initialToken
+      refreshedSession.data?.token !== existingToken
     ) {
       setCurrentUser(refreshedSession.data)
-      lastInitialToken.current = initialToken
     }
   }, [refreshedSession.data?.token, lastInitialToken.current, existingToken])
 

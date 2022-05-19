@@ -6,6 +6,10 @@ import { useAuthContext } from './useAuthContext'
 import { QueryClientProvider, QueryClient, setLogger } from 'react-query'
 import { rest } from 'msw'
 import { setupServer } from 'msw/node'
+import useCookie from 'react-use-cookie'
+
+jest.mock('react-use-cookie', () => jest.fn())
+const useCookieMock = useCookie as jest.Mock<any>
 
 setLogger({
   log: console.log,
@@ -82,7 +86,12 @@ const MockComponent: React.FC<{ client: QueryClient }> = ({ client }) => (
 )
 
 describe('AuthProvider', () => {
-  beforeAll(() => server.listen())
+  beforeAll(() => {
+    server.listen()
+  })
+  beforeEach(() => {
+    useCookieMock.mockReturnValue(['', (newToken: string) => newToken])
+  })
   afterEach(() => server.resetHandlers())
   afterAll(() => server.close())
 
@@ -95,6 +104,17 @@ describe('AuthProvider', () => {
     expect(
       screen.queryByLabelText(/auth-content-error/i)
     ).not.toBeInTheDocument()
+  })
+
+  it('should render the logout button if the user is authenticated via cookie', async () => {
+    useCookieMock.mockReturnValue([
+      'this-is-a-fake-session-token',
+      (newToken: string) => newToken,
+    ])
+    const client = makeClient()
+    render(<MockComponent client={client} />)
+    await waitFor(() => screen.getByLabelText('auth-content-token'))
+    expect(screen.queryByLabelText(/auth-content-token/i)).toBeInTheDocument()
   })
 
   it('should not render the authenticated content if not authenticated', async () => {
