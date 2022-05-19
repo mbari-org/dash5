@@ -3,15 +3,43 @@ import React from 'react'
 import { AuthProvider } from './AuthProvider'
 import { render, screen, fireEvent, waitFor } from '@testing-library/react'
 import { useAuthContext } from './useAuthContext'
-import { QueryClientProvider, QueryClient } from 'react-query'
+import { QueryClientProvider, QueryClient, setLogger } from 'react-query'
 import { rest } from 'msw'
 import { setupServer } from 'msw/node'
 
-const queryClient = new QueryClient()
-const mockResponse = { token: 'authentication-token' }
+setLogger({
+  log: console.log,
+  warn: console.warn,
+  // ✅ no more errors on the console
+  error: () => {},
+})
+
+const makeClient = () =>
+  new QueryClient({
+    defaultOptions: {
+      queries: {
+        // ✅ turns retries off
+        retry: false,
+      },
+    },
+  })
+
+const mockResponse = {
+  result: {
+    email: 'jim@sumocreations.com',
+    firstName: 'Jim',
+    lastName: 'Jeffers',
+    roles: ['operator'],
+    token:
+      'eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJmaXJzdE5hbWUiOiJKaW0iLCJsYXN0TmFtZSI6IkplZmZlcnMiLCJleHAiOjE2NTM3NzgzODYsImVtYWlsIjoiamltQHN1bW9jcmVhdGlvbnMuY29tIiwicm9sZXMiOlsib3BlcmF0b3IiXX0.iIE60rpDVtL56Kt9p_Zs4MFLaDj03ISiJ9TVjr44Q24',
+  },
+}
 
 const server = setupServer(
   rest.post('/user/auth', (_req, res, ctx) => {
+    return res(ctx.status(200), ctx.json(mockResponse))
+  }),
+  rest.get('/user/token', (_req, res, ctx) => {
     return res(ctx.status(200), ctx.json(mockResponse))
   })
 )
@@ -45,8 +73,8 @@ const AuthContent: React.FC = () => {
   )
 }
 
-const MockComponent: React.FC = () => (
-  <QueryClientProvider client={queryClient}>
+const MockComponent: React.FC<{ client: QueryClient }> = ({ client }) => (
+  <QueryClientProvider client={client}>
     <AuthProvider>
       <AuthContent />
     </AuthProvider>
@@ -59,7 +87,8 @@ describe('AuthProvider', () => {
   afterAll(() => server.close())
 
   it('should render the login button if not authenticated', async () => {
-    render(<MockComponent />)
+    const client = makeClient()
+    render(<MockComponent client={client} />)
     expect(
       screen.getByLabelText(/auth-content-login-button/i)
     ).toBeInTheDocument()
@@ -69,7 +98,8 @@ describe('AuthProvider', () => {
   })
 
   it('should not render the authenticated content if not authenticated', async () => {
-    render(<MockComponent />)
+    const client = makeClient()
+    render(<MockComponent client={client} />)
     expect(
       screen.queryByLabelText(/auth-content-token/i)
     ).not.toBeInTheDocument()
@@ -79,12 +109,13 @@ describe('AuthProvider', () => {
   })
 
   it('should render the logout button and auth token after the user authenticates', async () => {
-    render(<MockComponent />)
+    const client = makeClient()
+    render(<MockComponent client={client} />)
     fireEvent.click(screen.getByText('login'))
 
     await waitFor(() => screen.getByLabelText('auth-content-token'))
     expect(screen.queryByLabelText(/auth-content-token/i)).toHaveTextContent(
-      mockResponse.token
+      mockResponse.result.token
     )
     expect(
       screen.getByLabelText(/auth-content-logout-button/i)
@@ -98,7 +129,8 @@ describe('AuthProvider', () => {
       })
     )
 
-    render(<MockComponent />)
+    const client = makeClient()
+    render(<MockComponent client={client} />)
     fireEvent.click(screen.getByText('login'))
 
     await waitFor(() => screen.getByLabelText('auth-content-error'))
@@ -117,7 +149,8 @@ describe('AuthProvider', () => {
       })
     )
 
-    render(<MockComponent />)
+    const client = makeClient()
+    render(<MockComponent client={client} />)
     fireEvent.click(screen.getByText('login'))
 
     await waitFor(() => screen.getByLabelText('auth-content-error'))
@@ -125,7 +158,8 @@ describe('AuthProvider', () => {
   })
 
   it('should clear an error if the user authenticates successfully after failure', async () => {
-    render(<MockComponent />)
+    const client = makeClient()
+    render(<MockComponent client={client} />)
 
     server.use(
       rest.post('/user/auth', (_req, res, ctx) => {
@@ -147,7 +181,8 @@ describe('AuthProvider', () => {
   })
 
   it('should logout the user if the user clicks the logout button after authenticating', async () => {
-    render(<MockComponent />)
+    const client = makeClient()
+    render(<MockComponent client={client} />)
     fireEvent.click(screen.getByText('login'))
 
     await waitFor(() => screen.getByLabelText('auth-content-logout-button'))
