@@ -1,12 +1,13 @@
+import { AxiosInstance } from 'axios'
 import React from 'react'
 
 export interface AuthContextProfile {
-  id: string
-  email: string
-  firstName: string
-  lastName: string
-  avatarUrl: string
-  roles: string[]
+  token?: string
+  email?: string
+  firstName?: string
+  lastName?: string
+  avatarUrl?: string
+  roles?: string[]
 }
 
 export interface AuthContextProviderProps {
@@ -17,6 +18,7 @@ export interface AuthContextProviderProps {
   login: (email: string, password: string) => void
   profile?: AuthContextProfile
   logout: () => void
+  axiosInstance?: AxiosInstance
 }
 
 const defaultContext: AuthContextProviderProps = {
