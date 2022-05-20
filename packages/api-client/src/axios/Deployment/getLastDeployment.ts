@@ -29,7 +29,7 @@ export interface GetLastDeploymentResponse {
   deploymentId: string
   vehicle: string
   path: string
-  name: string
+  name?: string
   startEvent?: DeploymentEvent
   recoverEvent?: DeploymentEvent
   launchEvent?: DeploymentEvent
@@ -38,6 +38,7 @@ export interface GetLastDeploymentResponse {
   // The lastEvent and active props are derived state and not part of the actual API response.
   lastEvent: string
   active: boolean
+  present: boolean
 }
 
 export const getLastDeployment = async (
@@ -57,7 +58,8 @@ export const getLastDeployment = async (
   const result = response.data?.result ?? {}
   return {
     ...result,
-    active: !result.endEvent,
+    active: result.name && !result.endEvent,
+    present: !!result.name,
     lastEvent: [
       result.endEvent,
       result.recoverEvent,

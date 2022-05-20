@@ -10,6 +10,7 @@ let params: GetLastDeploymentParams = {
 const mockResponse = {
   result: {
     active: false,
+    present: true,
     lastEvent: 1523223120000,
     deploymentId: 3000143,
     vehicleName: 'opah',
