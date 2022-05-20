@@ -4,7 +4,7 @@ import { PrimaryToolbar, ProfileDropdown } from '@mbari/react-ui'
 import useAuthenticatedRedirect from '../lib/useAuthenticatedRedirect'
 import { useAuthContext } from '@mbari/api-client'
 import { useState } from 'react'
-import VehicleDeploymentDropdown from './components/VehicleDeploymentDropdown'
+import VehicleDeploymentDropdown from '../components/VehicleDeploymentDropdown'
 
 const Dashboard: NextPage = () => {
   useAuthenticatedRedirect({

@@ -25,8 +25,10 @@ const LastDeploymentOption: React.FC<{ vehicleName: string }> = ({
   )
 }
 
-const VehicleDeploymentDropdown: React.FC<DropdownProps> = (props) => {
-  const vehicleNamesQuery = useSortedVehicleNames()
+const VehicleDeploymentDropdown: React.FC<Omit<DropdownProps, 'options'>> = (
+  props
+) => {
+  const vehicleNamesQuery = useSortedVehicleNames({ refresh: 'y' })
   const vehicleNames = vehicleNamesQuery.data ?? []
   return (
     <VehicleDropdown
