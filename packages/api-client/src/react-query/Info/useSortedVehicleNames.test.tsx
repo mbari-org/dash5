@@ -8,10 +8,13 @@ import { setupServer } from 'msw/node'
 import { MockProviders } from '../queryTestHelpers'
 
 const mockVehicleResponse = {
-  result: ['ahi', 'brizo', 'daphne'],
+  result: ['pontus', 'ahi', 'brizo', 'daphne'],
 }
 
 const mockDeploymentResponse = {
+  pontus: {
+    result: {},
+  },
   brizo: {
     result: {
       deploymentId: 3000388,
@@ -72,6 +75,7 @@ const server = setupServer(
       | 'ahi'
       | 'brizo'
       | 'daphne'
+      | 'pontus'
     return res(
       ctx.status(200),
       ctx.json(vehicle ? mockDeploymentResponse[vehicle] : {})
@@ -87,11 +91,15 @@ const MockVehicleList: React.FC = () => {
   const query = useSortedVehicleNames({
     refresh: 'y',
   })
-  return query.isLoading ? null : (
+  return (
     <>
-      <div data-testid="result0">{query.data?.[0]}</div>
-      <div data-testid="result1">{query.data?.[1]}</div>
-      <div data-testid="result2">{query.data?.[2]}</div>
+      {query.isLoading
+        ? null
+        : query.data?.map((name, i) => (
+            <div key={name} data-testid={`result${i}`}>
+              {query.data?.[i]}
+            </div>
+          ))}
     </>
   )
 }
@@ -116,5 +124,6 @@ describe('useVehicleNames', () => {
     expect(screen.getByTestId('result2')).toHaveTextContent(
       mockDeploymentResponse.ahi.result.vehicleName
     )
+    expect(screen.getByTestId('result3')).toHaveTextContent('pontus')
   })
 })

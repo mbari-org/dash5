@@ -16,7 +16,6 @@ export const useSortedVehicleNames = (params: GetVehicleNamesParams) => {
   const [loadingDeployments, setLoadingDeployments] = useState(false)
 
   const fetchSortedDeployments = useCallback(async () => {
-    console.log('fetchSortedDeployments')
     setLoadingDeployments(true)
     const to = new Date().toISOString()
     await Promise.all(
@@ -52,6 +51,9 @@ export const useSortedVehicleNames = (params: GetVehicleNamesParams) => {
       ? Object.keys(deployments).sort((a, b) => {
           const depA = deployments[a]
           const depB = deployments[b]
+          if (depA.present !== depB.present) {
+            return depA.present && !depB.present ? -1 : 1
+          }
           if (depA.active !== depB.active) {
             return depA.active && !depB.active ? -1 : 1
           }
@@ -62,7 +64,6 @@ export const useSortedVehicleNames = (params: GetVehicleNamesParams) => {
         })
       : vehicleNames.sort()
 
-  console.log('sortedVehicles', sortedVehicles)
   useEffect(() => {
     fetchSortedDeployments()
   }, [fetchSortedDeployments])
