@@ -17,7 +17,10 @@ const useTrackedVehicles = () => {
     })
   }
 
-  return { trackedVehicles: vehicleIds.split(SEPARATOR), setTrackedVehicles }
+  return {
+    trackedVehicles: vehicleIds.split(SEPARATOR).filter((s) => s.length),
+    setTrackedVehicles,
+  }
 }
 
 export default useTrackedVehicles
