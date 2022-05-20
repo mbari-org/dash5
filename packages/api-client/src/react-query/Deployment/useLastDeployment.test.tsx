@@ -2,10 +2,10 @@ import '@testing-library/jest-dom'
 import React from 'react'
 import { render, screen, waitFor } from '@testing-library/react'
 import { useLastDeployment } from './useLastDeployment'
-import { QueryClientProvider, QueryClient } from 'react-query'
+import { QueryClient } from 'react-query'
 import { rest } from 'msw'
 import { setupServer } from 'msw/node'
-import { AuthProvider } from '../AuthProvider'
+import { MockProviders } from '../queryTestHelpers'
 
 const mockResponse = {
   result: {
@@ -44,7 +44,7 @@ afterAll(() => server.close())
 
 const MockVehicleList: React.FC = () => {
   const query = useLastDeployment({
-    vehicleName: 'ahi',
+    vehicle: 'ahi',
     to: '2022-05-20T01:14:10.290Z',
   })
   return query.isLoading ? null : (
@@ -52,24 +52,12 @@ const MockVehicleList: React.FC = () => {
   )
 }
 
-const MockComponent: React.FC<{
-  queryClient: QueryClient
-  testToken?: string
-}> = ({ queryClient, testToken = '' }) => (
-  <QueryClientProvider client={queryClient}>
-    <AuthProvider setSessionToken={() => {}} sessionToken={testToken}>
-      <MockVehicleList />
-    </AuthProvider>
-  </QueryClientProvider>
-)
-
 describe('useLastDeployment', () => {
-  it('should render the vehicle name if the user is authenticated', async () => {
+  it('should render the vehicle name', async () => {
     render(
-      <MockComponent
-        queryClient={new QueryClient()}
-        testToken="this-is-a-test"
-      />
+      <MockProviders queryClient={new QueryClient()} testToken="this-is-a-test">
+        <MockVehicleList />
+      </MockProviders>
     )
     await waitFor(() => {
       return screen.getByText(mockResponse.result.name)
@@ -78,20 +66,5 @@ describe('useLastDeployment', () => {
     expect(screen.queryByText(mockResponse.result.name)).toHaveTextContent(
       mockResponse.result.name
     )
-  })
-
-  it('should not render the vehicle name if the user is not logged in', async () => {
-    server.use(
-      rest.get('/user/token', (_req, res, ctx) => {
-        return res(ctx.status(200), ctx.json(''))
-      })
-    )
-
-    render(<MockComponent queryClient={new QueryClient()} />)
-    await waitFor(() => {
-      return screen.getByText('Not logged in')
-    })
-
-    expect(screen.queryByText(mockResponse.result.name)).not.toBeInTheDocument()
   })
 })
