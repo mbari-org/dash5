@@ -10,6 +10,7 @@
     "lint": "next lint"
   },
   "dependencies": {
+    "@fortawesome/fontawesome-svg-core": "^6.1.1",
     "@mbari/api-client": "1.0.0",
     "@mbari/react-ui": "1.0.0",
     "next": "12.1.0",

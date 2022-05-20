@@ -1,4 +1,3 @@
-export * from './Behavior'
 export * from './Cells'
 export * from './Fields'
 export * from './Forms'
