@@ -3,7 +3,13 @@ import { getInstance } from '../getInstance'
 import { RequestConfig } from '../types'
 
 export interface GetLastDeploymentParams {
-  vehicleName: string
+  /**
+   * The name of the vehicle.
+   */
+  vehicle: string
+  /**
+   * An ISO 8601 formatted date string.
+   */
   to: string
 }
 
@@ -21,14 +27,18 @@ export interface DListResult {
 
 export interface GetLastDeploymentResponse {
   deploymentId: string
-  vehicleName: string
+  vehicle: string
   path: string
-  name: string
-  startEvent: DeploymentEvent
-  recoverEvent: DeploymentEvent
-  launchEvent: DeploymentEvent
-  endEvent: DeploymentEvent
+  name?: string
+  startEvent?: DeploymentEvent
+  recoverEvent?: DeploymentEvent
+  launchEvent?: DeploymentEvent
+  endEvent?: DeploymentEvent
   dlistResult: DListResult
+  // The lastEvent and active props are derived state and not part of the actual API response.
+  lastEvent: string
+  active: boolean
+  present: boolean
 }
 
 export const getLastDeployment = async (
@@ -45,5 +55,20 @@ export const getLastDeployment = async (
     `${url}?${new URLSearchParams({ ...params })}`,
     config
   )
-  return response.data?.result as GetLastDeploymentResponse
+  const result = response.data?.result ?? {}
+  return {
+    ...result,
+    active: result.name && !result.endEvent,
+    present: !!result.name,
+    lastEvent: [
+      result.endEvent,
+      result.recoverEvent,
+      result.launchEvent,
+      result.startEvent,
+    ]
+      .filter((i) => i)
+      .map((i) => i?.unixTime)
+      .sort()
+      .reverse()[0],
+  } as GetLastDeploymentResponse
 }

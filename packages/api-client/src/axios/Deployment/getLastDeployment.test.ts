@@ -3,12 +3,15 @@ import { setupServer } from 'msw/node'
 import { getLastDeployment, GetLastDeploymentParams } from './getLastDeployment'
 
 let params: GetLastDeploymentParams = {
-  vehicleName: 'example',
+  vehicle: 'opah',
   to: 'example',
 }
 
 const mockResponse = {
   result: {
+    active: false,
+    present: true,
+    lastEvent: 1523223120000,
     deploymentId: 3000143,
     vehicleName: 'opah',
     name: 'Opah 12 - Falkor Leg 2',

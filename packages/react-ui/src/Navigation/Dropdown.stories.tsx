@@ -85,6 +85,9 @@ const args: DropdownProps = {
 export const Standard = Template.bind({})
 Standard.args = args
 
+export const WithDismiss = Template.bind({})
+WithDismiss.args = { ...args, onDismiss: () => console.log('dismissed') }
+
 Standard.parameters = {
   design: {
     type: 'figma',

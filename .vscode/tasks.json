@@ -47,6 +47,21 @@
       }
     },
     {
+      "label": "[api-client]: Tests",
+      "type": "shell",
+      "command": "yarn workspace @mbari/api-client test:watch",
+      "presentation": {
+        "reveal": "always",
+        "panel": "new",
+        "group": "develop"
+      },
+      "options": {
+        "statusbar": {
+          "label": "$(test-view-icon) API Tests"
+        }
+      }
+    },
+    {
       "label": "[project]: Lint",
       "type": "shell",
       "command": "yarn lint",
