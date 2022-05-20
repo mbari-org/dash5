@@ -3,7 +3,13 @@ import { getInstance } from '../getInstance'
 import { RequestConfig } from '../types'
 
 export interface GetLastDeploymentParams {
+  /**
+   * The name of the vehicle.
+   */
   vehicleName: string
+  /**
+   * An ISO 8601 formatted date string.
+   */
   to: string
 }
 
