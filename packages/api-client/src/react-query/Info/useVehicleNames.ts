@@ -3,19 +3,16 @@ import { getVehicleNames, GetVehicleNamesParams } from '../../axios'
 import { useAuthContext } from '../AuthProvider'
 
 export const useVehicleNames = (params: GetVehicleNamesParams) => {
-  const { token, axiosInstance } = useAuthContext()
+  const { axiosInstance } = useAuthContext()
   const query = useQuery(
     ['info', 'vehicleNames', params],
     () => {
       return getVehicleNames(params, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
         instance: axiosInstance,
       })
     },
     {
-      enabled: (token?.length ?? 0) > 0,
+      staleTime: 30 * 1000,
     }
   )
   return query
