@@ -5,6 +5,7 @@ import {
   DropdownProps,
 } from '@mbari/react-ui'
 import { useSortedVehicleNames, useLastDeployment } from '@mbari/api-client'
+import useTrackedVehicles from '../lib/useTrackedVehicles'
 
 const LastDeploymentOption: React.FC<{ vehicleName: string }> = ({
   vehicleName,
@@ -28,17 +29,20 @@ const LastDeploymentOption: React.FC<{ vehicleName: string }> = ({
 const VehicleDeploymentDropdown: React.FC<Omit<DropdownProps, 'options'>> = (
   props
 ) => {
+  const { setTrackedVehicles, trackedVehicles } = useTrackedVehicles()
   const vehicleNamesQuery = useSortedVehicleNames({ refresh: 'y' })
   const vehicleNames = vehicleNamesQuery.data ?? []
   return (
     <VehicleDropdown
       {...props}
-      options={vehicleNames.map((name: string) => ({
-        label: <LastDeploymentOption vehicleName={name} key={name} />,
-        onSelect: () => {
-          console.log(name)
-        },
-      }))}
+      options={vehicleNames
+        .filter((n: string) => trackedVehicles.indexOf(n) < 0)
+        .map((name: string) => ({
+          label: <LastDeploymentOption vehicleName={name} key={name} />,
+          onSelect: () => {
+            setTrackedVehicles([...trackedVehicles, name])
+          },
+        }))}
     />
   )
 }

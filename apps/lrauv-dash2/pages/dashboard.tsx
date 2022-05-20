@@ -5,11 +5,14 @@ import useAuthenticatedRedirect from '../lib/useAuthenticatedRedirect'
 import { useAuthContext } from '@mbari/api-client'
 import { useState } from 'react'
 import VehicleDeploymentDropdown from '../components/VehicleDeploymentDropdown'
+import useTrackedVehicles from '../lib/useTrackedVehicles'
 
 const Dashboard: NextPage = () => {
+  const [currentOption, setCurrentOption] = useState<string | null>('Overview')
   useAuthenticatedRedirect({
     redirectTo: '/',
   })
+  const { trackedVehicles } = useTrackedVehicles()
 
   const { logout, profile } = useAuthContext()
   const profileName = `${profile?.firstName} ${profile?.lastName}`
@@ -37,8 +40,9 @@ const Dashboard: NextPage = () => {
         <link rel="icon" href="/favicon.ico" />
       </Head>
       <PrimaryToolbar
-        options={['Overview']}
-        currentOption="Overview"
+        options={['Overview', ...trackedVehicles]}
+        currentOption={currentOption ?? ''}
+        onSelectOption={setCurrentOption}
         avatarName={profileName}
         onAvatarClick={handleDropdown('profile')}
         onAddClick={handleDropdown('vehicle')}
