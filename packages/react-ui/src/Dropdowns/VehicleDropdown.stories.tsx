@@ -109,14 +109,7 @@ const args: DropdownProps = {
       },
     },
     {
-      label: (
-        <VehicleDropdownOption
-          name="pallas"
-          status="ended"
-          missionName="trunk"
-          lastEvent={current.plus({ years: 2.01 }).toISO()}
-        />
-      ),
+      label: <VehicleDropdownOption name="pallas" status="ended" />,
       onSelect: () => {
         console.log('pallas')
       },
@@ -127,6 +120,15 @@ const args: DropdownProps = {
 export const Standard = Template.bind({})
 Standard.args = args
 Standard.parameters = {
+  design: {
+    type: 'figma',
+    url: 'https://www.figma.com/file/FtsKsOCBQ2YjTZlwezG6aI/MBARI-Components?node-id=2305%3A541',
+  },
+}
+
+export const Scrollable = Template.bind({})
+Scrollable.args = { ...args, className: 'h-64', scrollable: true }
+Scrollable.parameters = {
   design: {
     type: 'figma',
     url: 'https://www.figma.com/file/FtsKsOCBQ2YjTZlwezG6aI/MBARI-Components?node-id=2305%3A541',
