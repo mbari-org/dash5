@@ -58,7 +58,6 @@ const MockVehicleList: React.FC = () => {
   const query = useVehicleNames({
     refresh: 'y',
   })
-  console.log(query)
   return query.isLoading ? null : (
     <div data-testid="result">{query.data?.[0] ?? 'Not logged in'}</div>
   )
