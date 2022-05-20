@@ -1,11 +1,18 @@
 import '@mbari/react-ui/dist/mbari-ui.css'
+import { config } from '@fortawesome/fontawesome-svg-core'
+import '@fortawesome/fontawesome-svg-core/styles.css'
 import { AppProps } from 'next/app'
 import { QueryClientProvider, QueryClient } from 'react-query'
-const queryClient = new QueryClient()
+
 import { AuthProvider } from '@mbari/api-client'
 import { ReactQueryDevtools } from 'react-query/devtools'
 import { Toaster } from 'react-hot-toast'
 import useSessionToken from '../lib/useSessionToken'
+
+// prevent font awesome from auto-adding styles.
+config.autoAddCss = false
+
+const queryClient = new QueryClient()
 
 function MyApp({ Component, pageProps }: AppProps) {
   const { sessionToken, setSessionToken } = useSessionToken(
