@@ -4,24 +4,28 @@ import { PrimaryToolbar, ProfileDropdown } from '@mbari/react-ui'
 import useAuthenticatedRedirect from '../lib/useAuthenticatedRedirect'
 import { useAuthContext } from '@mbari/api-client'
 import { useState } from 'react'
-import { swallow } from '@mbari/utils'
+import VehicleDeploymentDropdown from './components/VehicleDeploymentDropdown'
 
 const Dashboard: NextPage = () => {
   useAuthenticatedRedirect({
     redirectTo: '/',
   })
+
   const { logout, profile } = useAuthContext()
   const profileName = `${profile?.firstName} ${profile?.lastName}`
   const handleLogout = () => {
     logout()
   }
+
   const [dropdown, setDropdown] = useState(null as null | 'profile' | 'vehicle')
   const handleDropdown = (dropdown: 'profile' | 'vehicle') => () => {
     setDropdown(dropdown)
   }
-  const dismissDropdown = swallow(() => {
+
+  const dismissDropdown = () => {
     setDropdown(null)
-  })
+  }
+
   return (
     <div className="flex flex-col">
       <Head>
@@ -38,6 +42,16 @@ const Dashboard: NextPage = () => {
         avatarName={profileName}
         onAvatarClick={handleDropdown('profile')}
         onAddClick={handleDropdown('vehicle')}
+        addItemDropdown={
+          dropdown === 'vehicle' ? (
+            <VehicleDeploymentDropdown
+              onDismiss={dismissDropdown}
+              className="absolute left-0 z-20 mt-2 max-h-96 w-96"
+              style={{ top: '100%' }}
+              scrollable
+            />
+          ) : null
+        }
         secondaryDropdown={
           dropdown === 'profile' ? (
             <>
@@ -46,6 +60,7 @@ const Dashboard: NextPage = () => {
                 profileName={profileName}
                 emailAddress={profile?.email ?? ''}
                 profileRole={profile?.roles?.[0]}
+                onDismiss={dismissDropdown}
                 options={[
                   {
                     label: 'Logout',
@@ -53,10 +68,6 @@ const Dashboard: NextPage = () => {
                   },
                 ]}
               />
-              <button
-                className="fixed top-0 left-0 z-10 h-screen w-screen bg-stone-100 opacity-5 active:bg-stone-200"
-                onClick={dismissDropdown}
-              ></button>
             </>
           ) : null
         }
