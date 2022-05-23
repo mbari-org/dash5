@@ -49,7 +49,7 @@ export const MissionTable: React.FC<MissionTableProps> = ({
           label: description ? description : 'No description',
           secondary: `Run by ${ranBy} on ${ranOn} ${
             waypointCount ? `with ${waypointCount} waypoints` : ''
-          }${ranAt ? `at ${ranAt}` : ''}`,
+          }${waypointCount && ranAt ? ' ' : ''}${ranAt ? `at ${ranAt}` : ''}`,
         },
       ],
     })
