@@ -10,7 +10,7 @@ export default {
 } as Meta
 
 const Template: Story<PrimaryToolbarProps> = (args) => {
-  const options = ['Overview', 'Brizo', 'Aku', 'Pontus']
+  const options = ['Overview', 'brizo', 'aku', 'pontus']
   const [currentOption, setCurrentOption] = useState(options[0])
   return (
     <PrimaryToolbar

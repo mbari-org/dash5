@@ -51,6 +51,7 @@ const PrimaryToolbarOption: React.FC<{
       <Button
         appearance={selected ? 'primary' : 'transparent'}
         onClick={handleClick}
+        className="capitalize"
       >
         {option}
       </Button>
