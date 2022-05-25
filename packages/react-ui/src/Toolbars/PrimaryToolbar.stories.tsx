@@ -10,12 +10,10 @@ export default {
 } as Meta
 
 const Template: Story<PrimaryToolbarProps> = (args) => {
-  const options = ['Overview', 'brizo', 'aku', 'pontus']
-  const [currentOption, setCurrentOption] = useState(options[0])
+  const [currentOption, setCurrentOption] = useState(args.options?.[0])
   return (
     <PrimaryToolbar
       {...args}
-      options={options}
       currentOption={currentOption}
       onSelectOption={(option: string) => setCurrentOption(option)}
     />
@@ -24,6 +22,7 @@ const Template: Story<PrimaryToolbarProps> = (args) => {
 
 const args: PrimaryToolbarProps = {
   className: '',
+  options: ['Overview', 'brizo', 'aku', 'pontus'],
 }
 
 export const Standard = Template.bind({})
@@ -107,6 +106,42 @@ WithAddClick.args = {
   onAddClick: () => console.log('add'),
 }
 WithAddClick.parameters = {
+  design: {
+    type: 'figma',
+    url: 'https://www.figma.com/file/FtsKsOCBQ2YjTZlwezG6aI/MBARI-Components?node-id=1%3A335',
+  },
+}
+
+export const Overflow = Template.bind({})
+Overflow.args = {
+  ...args,
+  options: [
+    'Overview',
+    'brizo',
+    'aku',
+    'pontus',
+    'galene',
+    'pallas',
+    'aku',
+    'triton',
+    'ahi',
+    'daphne',
+    'opah',
+    'simulator',
+    'mesobot',
+    'proxima',
+    'stella',
+    'polaris',
+    'pyxis',
+    'makai',
+    'melia',
+    'galene',
+    'tethys',
+    'pontus',
+  ],
+  onAddClick: () => console.log('add'),
+}
+Overflow.parameters = {
   design: {
     type: 'figma',
     url: 'https://www.figma.com/file/FtsKsOCBQ2YjTZlwezG6aI/MBARI-Components?node-id=1%3A335',

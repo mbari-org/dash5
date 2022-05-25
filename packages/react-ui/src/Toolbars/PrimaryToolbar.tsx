@@ -1,4 +1,4 @@
-import React, { useRef, useState } from 'react'
+import React from 'react'
 import clsx from 'clsx'
 import { Logo } from './Logo'
 import { Button, IconButton } from '../Navigation'
@@ -8,7 +8,7 @@ import { faUser } from '@fortawesome/pro-solid-svg-icons'
 
 const styles = {
   bar: 'w-full flex flex-row bg-secondary-300 px-8 py-4',
-  list: 'flex flex-row items-center align-center justify-between flex-grow',
+  list: 'flex flex-row items-center align-center justify-between flex-grow w-full',
   item: 'flex my-auto self-center relative',
   option: 'mr-2',
 }
@@ -102,17 +102,23 @@ export const PrimaryToolbar: React.FC<PrimaryToolbarProps> = ({
         <li className={clsx(styles.item, 'mr-6')}>
           <Logo />
         </li>
-        {options?.map((option) => (
-          <PrimaryToolbarOption
-            key={option}
-            option={option}
-            selected={option === currentOption}
-            onClick={handleOptionClick(option)}
-            onRemove={canRemoveOption(option) ? handleRemoveOption : undefined}
-          />
-        ))}
+        <li className="flex flex-shrink overflow-x-auto">
+          <ul className="flex flex-row items-center">
+            {options?.map((option) => (
+              <PrimaryToolbarOption
+                key={option}
+                option={option}
+                selected={option === currentOption}
+                onClick={handleOptionClick(option)}
+                onRemove={
+                  canRemoveOption(option) ? handleRemoveOption : undefined
+                }
+              />
+            ))}
+          </ul>
+        </li>
         {handleAddClick && (
-          <li className={clsx(styles.item, styles.option)}>
+          <li className={clsx(styles.item, styles.option, 'flex-shrink-0')}>
             <IconButton
               onClick={handleAddClick}
               icon={faPlus}
@@ -122,7 +128,7 @@ export const PrimaryToolbar: React.FC<PrimaryToolbarProps> = ({
             {addItemDropdown}
           </li>
         )}
-        <li className="relative my-auto ml-auto">
+        <li className="relative my-auto ml-auto flex-shrink-0">
           {!signedIn && (
             <IconButton
               icon={faSignIn}
