@@ -3,12 +3,12 @@ import clsx from 'clsx'
 import { Logo } from './Logo'
 import { Button, IconButton } from '../Navigation'
 import { Avatar } from '../Navigation/Avatar'
-import { faPlus, faSignIn } from '@fortawesome/pro-regular-svg-icons'
+import { faPlus, faSignIn, faTimes } from '@fortawesome/pro-regular-svg-icons'
 import { faUser } from '@fortawesome/pro-solid-svg-icons'
 
 const styles = {
   bar: 'w-full flex flex-row bg-secondary-300 px-8 py-4',
-  list: 'flex flex-row items-center align-center justify-between flex-grow',
+  list: 'flex flex-row items-center align-center justify-between flex-grow w-full',
   item: 'flex my-auto self-center relative',
   option: 'mr-2',
 }
@@ -18,8 +18,10 @@ export interface PrimaryToolbarProps {
   style?: React.CSSProperties
   options?: string[]
   currentOption?: string
+  canRemoveOption?: (option: string) => boolean
   onAddClick?: () => void
   onSelectOption?: (option: string) => void
+  onRemoveOption?: (option: string) => void
   avatarName?: string
   avatarUrl?: string
   avatarColor?: string
@@ -30,12 +32,55 @@ export interface PrimaryToolbarProps {
   addItemDropdown?: JSX.Element | null
 }
 
+const PrimaryToolbarOption: React.FC<{
+  option: string
+  selected: boolean
+  onClick: React.MouseEventHandler<HTMLButtonElement>
+  onRemove?: (option: string) => void
+}> = ({ option, selected, onClick: handleClick, onRemove: handleRemove }) => {
+  return (
+    <li
+      className={clsx(
+        styles.item,
+        styles.option,
+        'rounded transition-all duration-500 ease-in-out',
+        selected && 'bg-primary-600',
+        selected && handleRemove && 'pr-6'
+      )}
+    >
+      <Button
+        appearance={selected ? 'primary' : 'transparent'}
+        onClick={handleClick}
+        className="capitalize"
+      >
+        {option}
+      </Button>
+      {handleRemove && (
+        <IconButton
+          size="text-md"
+          className={clsx(
+            selected
+              ? 'text-white opacity-100'
+              : 'pointer-events-none opacity-0',
+            'absolute right-0 my-auto transition-opacity duration-200 ease-out'
+          )}
+          icon={faTimes}
+          onClick={() => handleRemove(option)}
+          ariaLabel={`Remove ${option}`}
+          tooltip={`Remove ${option}`}
+        />
+      )}
+    </li>
+  )
+}
+
 export const PrimaryToolbar: React.FC<PrimaryToolbarProps> = ({
   className,
   options,
   currentOption,
   onAddClick: handleAddClick,
   onSelectOption: handleSelectOption,
+  onRemoveOption: handleRemoveOption,
   signedIn,
   avatarUrl,
   avatarName,
@@ -44,6 +89,7 @@ export const PrimaryToolbar: React.FC<PrimaryToolbarProps> = ({
   onLoginClick: handleLoginClick,
   secondaryDropdown,
   addItemDropdown,
+  canRemoveOption = () => true,
 }) => {
   const handleOptionClick = (option: string) => (e: React.MouseEvent) => {
     e.preventDefault()
@@ -56,18 +102,23 @@ export const PrimaryToolbar: React.FC<PrimaryToolbarProps> = ({
         <li className={clsx(styles.item, 'mr-6')}>
           <Logo />
         </li>
-        {options?.map((option) => (
-          <li key={option} className={clsx(styles.item, styles.option)}>
-            <Button
-              appearance={currentOption === option ? 'primary' : 'transparent'}
-              onClick={handleOptionClick(option)}
-            >
-              {option}
-            </Button>
-          </li>
-        ))}
+        <li className="flex flex-shrink overflow-x-auto">
+          <ul className="flex flex-row items-center">
+            {options?.map((option) => (
+              <PrimaryToolbarOption
+                key={option}
+                option={option}
+                selected={option === currentOption}
+                onClick={handleOptionClick(option)}
+                onRemove={
+                  canRemoveOption(option) ? handleRemoveOption : undefined
+                }
+              />
+            ))}
+          </ul>
+        </li>
         {handleAddClick && (
-          <li className={clsx(styles.item, styles.option)}>
+          <li className={clsx(styles.item, styles.option, 'flex-shrink-0')}>
             <IconButton
               onClick={handleAddClick}
               icon={faPlus}
@@ -77,7 +128,7 @@ export const PrimaryToolbar: React.FC<PrimaryToolbarProps> = ({
             {addItemDropdown}
           </li>
         )}
-        <li className="relative my-auto ml-auto">
+        <li className="relative my-auto ml-auto flex-shrink-0">
           {!signedIn && (
             <IconButton
               icon={faSignIn}
