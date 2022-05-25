@@ -54,6 +54,9 @@ const Layout: React.FC = ({ children }) => {
 
   const handleRemoveOption = (vehicle: string) => {
     setTrackedVehicles(trackedVehicles.filter((v) => v !== vehicle))
+    if ((router.query.name as string) === vehicle) {
+      router.push('/')
+    }
   }
 
   const canRemoveOption = (vehicle: string) => vehicle !== 'Overview'
