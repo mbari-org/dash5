@@ -112,3 +112,17 @@ WithAddClick.parameters = {
     url: 'https://www.figma.com/file/FtsKsOCBQ2YjTZlwezG6aI/MBARI-Components?node-id=1%3A335',
   },
 }
+
+export const WithRemoveClick = Template.bind({})
+WithRemoveClick.args = {
+  ...args,
+  signedIn: true,
+  onRemoveOption: (option: string) => console.log(`remove: ${option}`),
+  canRemoveOption: (option: string) => option !== 'Overview',
+}
+WithRemoveClick.parameters = {
+  design: {
+    type: 'figma',
+    url: 'https://www.figma.com/file/FtsKsOCBQ2YjTZlwezG6aI/MBARI-Components?node-id=1%3A335',
+  },
+}
