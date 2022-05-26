@@ -7,7 +7,7 @@ import { faMapMarkerAlt } from '@fortawesome/pro-regular-svg-icons'
 import { faMapMarker } from '@fortawesome/pro-solid-svg-icons'
 import { IconProp } from '@fortawesome/fontawesome-svg-core'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
-import { makeOrdinal } from '../../../utils/src/makeOrdinal'
+import { makeOrdinal } from '@mbari/utils'
 
 export interface WaypointsTableProps {
   className?: string

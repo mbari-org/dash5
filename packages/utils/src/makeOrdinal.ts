@@ -1,4 +1,4 @@
-export const makeOrdinal = (num: number) => {
+export const makeOrdinal = (num: number): string => {
   switch (num.toString().slice(-1)) {
     case '1':
       return `${num}st`
