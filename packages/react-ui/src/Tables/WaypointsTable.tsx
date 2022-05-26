@@ -30,7 +30,10 @@ const styles = {
 
 const NumberedMarker = (num: number) => {
   return (
-    <div className="relative mr-2 p-4">
+    <div
+      className="relative mr-2 p-4"
+      aria-label={`Number ${num} map marker icon`}
+    >
       <div className={styles.absoluteAndCentered}>
         <FontAwesomeIcon
           icon={faMapMarker as IconProp}
