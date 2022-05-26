@@ -16,7 +16,7 @@ const Layout: React.FC = ({ children }) => {
     if (!mounted) setMounted(true)
   }, [setMounted, mounted])
 
-  const { trackedVehicles } = useTrackedVehicles()
+  const { trackedVehicles, setTrackedVehicles } = useTrackedVehicles()
 
   const { logout, profile, authenticated } = useAuthContext()
   const profileName = `${profile?.firstName} ${profile?.lastName}`
@@ -52,6 +52,15 @@ const Layout: React.FC = ({ children }) => {
     }
   }
 
+  const handleRemoveOption = (vehicle: string) => {
+    setTrackedVehicles(trackedVehicles.filter((v) => v !== vehicle))
+    if ((router.query.name as string) === vehicle) {
+      router.push('/')
+    }
+  }
+
+  const canRemoveOption = (vehicle: string) => vehicle !== 'Overview'
+
   return (
     <div className="flex flex-col">
       <Head>
@@ -67,6 +76,8 @@ const Layout: React.FC = ({ children }) => {
           options={['Overview', ...trackedVehicles]}
           currentOption={(router.query.name as string) ?? 'Overview'}
           onSelectOption={handleSelectOption}
+          onRemoveOption={handleRemoveOption}
+          canRemoveOption={canRemoveOption}
           avatarName={profileName}
           onAvatarClick={handleDropdown('profile')}
           onAddClick={handleDropdown('vehicle')}

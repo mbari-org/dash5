@@ -3,7 +3,7 @@ import { config } from '@fortawesome/fontawesome-svg-core'
 import '@fortawesome/fontawesome-svg-core/styles.css'
 import { AppProps } from 'next/app'
 import { QueryClientProvider, QueryClient } from 'react-query'
-
+import { RecoilRoot } from 'recoil'
 import { AuthProvider } from '@mbari/api-client'
 import { ReactQueryDevtools } from 'react-query/devtools'
 import { Toaster } from 'react-hot-toast'
@@ -20,18 +20,20 @@ function MyApp({ Component, pageProps }: AppProps) {
   )
   const handleSessionEnd = () => setSessionToken('')
   return (
-    <QueryClientProvider client={queryClient}>
-      <AuthProvider
-        baseURL={process.env.NEXT_PUBLIC_BASE_URL}
-        sessionToken={sessionToken}
-        setSessionToken={setSessionToken}
-        onSessionEnd={handleSessionEnd}
-      >
-        <Component {...pageProps} />
-      </AuthProvider>
-      <Toaster />
-      <ReactQueryDevtools initialIsOpen={false} />
-    </QueryClientProvider>
+    <RecoilRoot>
+      <QueryClientProvider client={queryClient}>
+        <AuthProvider
+          baseURL={process.env.NEXT_PUBLIC_BASE_URL}
+          sessionToken={sessionToken}
+          setSessionToken={setSessionToken}
+          onSessionEnd={handleSessionEnd}
+        >
+          <Component {...pageProps} />
+        </AuthProvider>
+        <Toaster />
+        <ReactQueryDevtools initialIsOpen={false} />
+      </QueryClientProvider>
+    </RecoilRoot>
   )
 }
 
