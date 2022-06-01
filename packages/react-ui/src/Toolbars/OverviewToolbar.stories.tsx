@@ -150,3 +150,19 @@ Standard.parameters = {
     url: 'https://www.figma.com/file/FtsKsOCBQ2YjTZlwezG6aI/MBARI-Components?node-id=1294%3A494',
   },
 }
+
+export const Overview = Template.bind({})
+Overview.args = {
+  ...args,
+  deployment: 'Overview',
+  onClickDeployment: undefined,
+  onClickMissions: undefined,
+  onIcon1hover: undefined,
+  onIcon2hover: undefined,
+}
+Overview.parameters = {
+  design: {
+    type: 'figma',
+    url: 'https://www.figma.com/file/FtsKsOCBQ2YjTZlwezG6aI/MBARI-Components?node-id=1294%3A494',
+  },
+}
