@@ -8,15 +8,4 @@ const handleSubmit = async (values: ReassignmentFormValues) => {
   return undefined
 }
 
-test('should render the initial value', async () => {
-  render(
-    <ReassignmentForm
-      vehicles={[]}
-      pics={[]}
-      onCalls={[]}
-      onSubmit={handleSubmit}
-    />
-  )
-  expect(screen.getByDisplayValue('')).toBeInTheDocument()
-  expect(screen.getByDisplayValue('')).toBeInTheDocument()
-})
+test('should render the initial value', async () => {})
