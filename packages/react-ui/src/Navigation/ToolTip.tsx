@@ -29,7 +29,7 @@ export interface ToolTipProps {
 
 const style = {
   container:
-    'absolute flex m-0 p-0 transition duration-700 ease-in-out transform pointer-events-none z-20',
+    'absolute flex m-0 p-0 transition duration-700 ease-in-out transform pointer-events-none z-[500]',
   below: 'inset-x-0 mt-2 top-[100%] left-0',
   above: 'inset-x-0 mb-2 bottom-[100%] left-0',
   right: 'inset-y-0 left-[100%] ml-2',

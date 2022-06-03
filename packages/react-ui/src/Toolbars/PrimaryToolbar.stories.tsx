@@ -3,7 +3,7 @@ import React, { useState } from 'react'
 import { Story, Meta } from '@storybook/react/types-6-0'
 import { PrimaryToolbar, PrimaryToolbarProps } from './PrimaryToolbar'
 import { ProfileDropdown } from '../Dropdowns'
-
+import mbariLogo from '../assets/mbari-logo.png'
 export default {
   title: 'Toolbars/PrimaryToolbar',
   component: PrimaryToolbar,
@@ -51,7 +51,7 @@ SignedInWithDropdown.args = {
   secondaryDropdown: (
     <>
       <ProfileDropdown
-        className="top-100 absolute right-0 z-20 mt-2"
+        className="top-100 absolute right-0 z-[500] mt-2"
         profileName="Jane Appleseed"
         profileRole="Administrator"
         emailAddress="admin@mbari.org"
@@ -156,6 +156,18 @@ WithRemoveClick.args = {
   canRemoveOption: (option: string) => option !== 'Overview',
 }
 WithRemoveClick.parameters = {
+  design: {
+    type: 'figma',
+    url: 'https://www.figma.com/file/FtsKsOCBQ2YjTZlwezG6aI/MBARI-Components?node-id=1%3A335',
+  },
+}
+
+export const WithCustomLogo = Template.bind({})
+WithCustomLogo.args = {
+  ...args,
+  logo: <img src={mbariLogo} alt="MBARI" className="block h-10 w-auto" />,
+}
+WithCustomLogo.parameters = {
   design: {
     type: 'figma',
     url: 'https://www.figma.com/file/FtsKsOCBQ2YjTZlwezG6aI/MBARI-Components?node-id=1%3A335',

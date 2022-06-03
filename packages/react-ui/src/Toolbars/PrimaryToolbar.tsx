@@ -1,6 +1,6 @@
 import React from 'react'
 import clsx from 'clsx'
-import { Logo } from './Logo'
+import { Logo as DefaultLogo } from './Logo'
 import { Button, IconButton } from '../Navigation'
 import { Avatar } from '../Navigation/Avatar'
 import { faPlus, faSignIn, faTimes } from '@fortawesome/pro-regular-svg-icons'
@@ -11,6 +11,7 @@ const styles = {
   list: 'flex flex-row items-center align-center justify-between flex-grow w-full',
   item: 'flex my-auto self-center relative',
   option: 'mr-2',
+  logo: 'flex items-center h-8',
 }
 
 export interface PrimaryToolbarProps {
@@ -30,6 +31,7 @@ export interface PrimaryToolbarProps {
   signedIn?: boolean
   secondaryDropdown?: JSX.Element | null
   addItemDropdown?: JSX.Element | null
+  logo?: JSX.Element
 }
 
 const PrimaryToolbarOption: React.FC<{
@@ -90,6 +92,7 @@ export const PrimaryToolbar: React.FC<PrimaryToolbarProps> = ({
   secondaryDropdown,
   addItemDropdown,
   canRemoveOption = () => true,
+  logo,
 }) => {
   const handleOptionClick = (option: string) => (e: React.MouseEvent) => {
     e.preventDefault()
@@ -99,8 +102,8 @@ export const PrimaryToolbar: React.FC<PrimaryToolbarProps> = ({
   return (
     <nav className={clsx(styles.bar, className)}>
       <ul className={styles.list}>
-        <li className={clsx(styles.item, 'mr-6')}>
-          <Logo />
+        <li className={clsx(styles.item, styles.logo, 'mr-6')}>
+          {logo ?? <DefaultLogo />}
         </li>
         <li className="flex flex-shrink overflow-x-auto">
           <ul className="flex flex-row items-center">

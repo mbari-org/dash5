@@ -3,10 +3,12 @@ import Head from 'next/head'
 import { PrimaryToolbar, ProfileDropdown } from '@mbari/react-ui'
 import { useAuthContext } from '@mbari/api-client'
 import { useState } from 'react'
+import Image from 'next/image'
 import VehicleDeploymentDropdown from '../components/VehicleDeploymentDropdown'
 import useTrackedVehicles from '../lib/useTrackedVehicles'
 import { useRouter } from 'next/router'
 import { UserLogin } from './UserLogin'
+import logo from './mbari-logo.png'
 
 const Layout: React.FC = ({ children }) => {
   const [showLogin, setLogin] = useState(false)
@@ -62,7 +64,7 @@ const Layout: React.FC = ({ children }) => {
   const canRemoveOption = (vehicle: string) => vehicle !== 'Overview'
 
   return (
-    <div className="flex flex-col">
+    <div className="flex min-h-screen flex-col">
       <Head>
         <title>LRAUV Dash Client</title>
         <meta
@@ -85,17 +87,18 @@ const Layout: React.FC = ({ children }) => {
             dropdown === 'vehicle' ? (
               <VehicleDeploymentDropdown
                 onDismiss={dismissDropdown}
-                className="absolute left-0 z-20 mt-2 max-h-96 w-96"
+                className="absolute left-0 z-[500] mt-2 max-h-96 w-96"
                 style={{ top: '100%' }}
                 scrollable
               />
             ) : null
           }
+          logo={<Image src={logo} width={42} height={32} alt="MBARI" />}
           secondaryDropdown={
             dropdown === 'profile' && authenticated ? (
               <>
                 <ProfileDropdown
-                  className="top-100 absolute right-0 z-20 mt-2"
+                  className="top-100 absolute right-0 z-[500] mt-2"
                   profileName={profileName}
                   emailAddress={profile?.email ?? ''}
                   profileRole={profile?.roles?.[0]}
