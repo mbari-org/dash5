@@ -1,20 +1,31 @@
 import React from 'react'
-import clsx from 'clsx'
-import { styles } from '../Vehicle'
+import { VehicleProps } from '../Vehicle'
 
-export const ErrorLabel = () => {
+export interface ErrorLabelProps {
+  textCriticalError: VehicleProps['textCriticalError']
+  textCriticalTime: VehicleProps['textCriticalTime']
+}
+
+export const ErrorLabel: React.FC<ErrorLabelProps> = ({
+  textCriticalError,
+  textCriticalTime,
+}) => {
   return (
     <g>
       <text
-        aria-label="text_criticalerror"
+        name="text_criticalerror"
         transform="matrix(1 0 0 1 154.0 176)"
-        className={'fill-red-700'}
-      ></text>
+        className="st9 st30 st31"
+      >
+        {textCriticalError}
+      </text>
       <text
-        aria-label="text_criticaltime"
+        name="text_criticaltime"
         transform="matrix(1 0 0 1 156 183)"
-        className={clsx(styles.textGray, styles.text6px)}
-      ></text>
+        className="st12 st9 st13"
+      >
+        {textCriticalTime}
+      </text>
     </g>
   )
 }

@@ -1,26 +1,29 @@
 import React from 'react'
-import clsx from 'clsx'
-import { VehicleProps, styles } from '../Vehicle'
+import { VehicleProps } from '../Vehicle'
 
-export const ScheduleLabel: React.FC<{
-  scheduled: VehicleProps['scheduled']
-}> = ({ scheduled }) => {
+interface ScheduleLabelProps {
+  textScheduled: VehicleProps['textScheduled']
+  colorScheduled: VehicleProps['colorScheduled']
+}
+export const ScheduleLabel: React.FC<ScheduleLabelProps> = ({
+  textScheduled,
+  colorScheduled,
+}) => {
   return (
     <g>
       <circle
-        aria-label="schedule status"
-        className={styles.fillTeal}
-        stroke="none"
+        name="scheduleddefault"
+        className={colorScheduled}
         cx="415"
         cy="193.5"
         r="1.6"
       />
       <text
-        aria-label="mission schedule"
+        name="missionsched"
         transform="matrix(1 0 0 1 419.5 196)"
-        className={clsx(styles.text7px, styles.textGray)}
+        className="st12 st9 st13"
       >
-        SCHEDULED: {scheduled}
+        {textScheduled}
       </text>
     </g>
   )

@@ -20,76 +20,151 @@ import { Cart } from './vehicleAssets/Cart'
 import { Heading } from './vehicleAssets/Heading'
 import { ArriveInfo } from './vehicleAssets/ArriveInfo'
 import { ErrorLabel } from './vehicleAssets/ErrorLabel'
+import { Note } from './vehicleAssets/Note'
 
 export interface VehicleProps {
   className?: string
   style?: React.CSSProperties
   status: 'onMission' | 'recovered' | 'pluggedIn'
-  name: string
-  updated?: string
-  mission: string
-  scheduled?: string
-  headingDegrees?: string
-  dropWeight?: boolean
-  dropTime?: string
-  dvl?: boolean
-  hardwareLight?: boolean
-  softwareLight?: boolean
-  otherLight?: boolean
-  groundFault?: string
-  groundFaultTime?: string
+  textVehicle: string
+  textLastUpdate?: string
+  textMission: string
+  colorMissionDefault?: string
+  textArrow?: string
+  colorArrow?: string
+  colorDvl?: string
+  textDvlStatus?: string
   batteryVolts?: number
   batteryAmps?: number
   batteryAmpTime?: string
-  gpsTime?: string
-  satTime?: string
-  cellTime?: string
-  logStartTime?: string
-  nextComm?: string
-  timeout?: string
-}
-
-export const styles = {
-  container: '',
-  fillTeal: 'fill-teal-500',
-  fillOrange: 'fill-orange-400',
-  fillYellow: 'fill-yellow-300',
-  fillGreen: 'fill-green-600',
-  fillDarkGray: 'fill-neutral-500',
-  text6px: 'text-[6px]',
-  text7px: 'text-[7px]',
-  text9px: 'text-[9px]',
-  text11px: 'text-[11px]',
-  textGray: 'fill-neutral-500',
+  textGps?: string
+  colorGps?: string
+  textGpsAgo?: string
+  textSat?: string
+  textCommAgo?: string
+  colorSatComm?: string
+  textCell?: string
+  textCellAgo?: string
+  colorCell?: string
+  textNextComm?: string
+  colorNextComm?: string
+  textTimeout?: string
+  colorDirtbox?: string
+  colorWavecolor?: string
+  colorSmallCable?: string
+  colorBigCable?: string
+  textDroptime?: string
+  colorDrop?: string
+  colorGf?: string
+  textGf?: string
+  textGfTime?: string
+  textSpeed?: string
+  colorHw?: string
+  colorSw?: string
+  colorThrust?: string
+  colorBat1?: string
+  colorBat2?: string
+  colorBat3?: string
+  colorBat4?: string
+  colorBat5?: string
+  colorBat6?: string
+  colorBat7?: string
+  colorBat8?: string
+  textVolts?: string
+  textAmps?: string
+  textAmpAgo?: string
+  colorVolts?: string
+  colorAmps?: string
+  textScheduled?: string
+  colorScheduled?: string
+  colorCart?: string
+  colorCartCircle?: string
+  textThrustTime?: string
+  textReckonDistance?: string
+  textLogTime?: string
+  textLogAgo?: string
+  textArriveStation?: string
+  textStationDist?: string
+  textCurrentDist?: string
+  textCriticalError?: string
+  textCriticalTime?: string
+  ubatColor?: string
+  textNote?: string
+  textNoteTime?: string
+  colorFlow?: string
+  textFlow?: string
 }
 
 export const Vehicle: React.FC<VehicleProps> = ({
   className,
   style,
   status,
-  name,
-  updated,
-  mission,
-  scheduled,
-  headingDegrees,
-  dropWeight,
-  dropTime,
-  dvl,
-  hardwareLight,
-  softwareLight,
-  otherLight,
-  groundFault,
-  groundFaultTime,
-  batteryVolts,
-  batteryAmps,
-  batteryAmpTime,
-  gpsTime,
-  satTime,
-  cellTime,
-  logStartTime,
-  nextComm,
-  timeout,
+  textVehicle,
+  textLastUpdate,
+  textMission,
+  colorMissionDefault = 'st1',
+  textArrow,
+  colorArrow,
+  textThrustTime,
+  textReckonDistance,
+  colorDvl = 'st3',
+  textDvlStatus,
+  textGps,
+  colorGps = 'st3',
+  textGpsAgo,
+  textSat,
+  textCommAgo,
+  colorSatComm = 'st3',
+  textCell,
+  textCellAgo,
+  colorCell = 'st3',
+  textNextComm,
+  colorNextComm,
+  textTimeout,
+  colorDirtbox = 'st18',
+  colorWavecolor = 'st18',
+  colorSmallCable = 'st18',
+  colorBigCable = 'st18',
+  textDroptime,
+  colorDrop = 'st3',
+  colorGf = 'st3',
+  textGf,
+  textGfTime,
+  textSpeed,
+  colorHw = 'st3',
+  colorSw = 'st3',
+  colorThrust = 'st3',
+  colorBat1 = 'st3',
+  colorBat2 = 'st3',
+  colorBat3 = 'st3',
+  colorBat4 = 'st3',
+  colorBat5 = 'st3',
+  colorBat6 = 'st3',
+  colorBat7 = 'st3',
+  colorBat8 = 'st3',
+  textVolts,
+  textAmps,
+  textAmpAgo,
+  colorVolts = 'st3',
+  colorAmps = 'st3',
+  textScheduled,
+  colorScheduled = 'st1',
+  colorCart = 'st18',
+  colorCartCircle = 'st18',
+  textLogTime,
+  textLogAgo,
+  textArriveStation,
+  textCurrentDist,
+  textStationDist,
+  textCriticalError,
+  textCriticalTime,
+  ubatColor = 'st3',
+  textNote,
+  textNoteTime,
+  colorFlow = 'st3',
+  textFlow,
 }) => {
+  const isDocked = status === 'pluggedIn' || status === 'recovered'
   return (
     <div className={clsx('', className)} style={style}>
       <svg
@@ -102,177 +177,211 @@ export const Vehicle: React.FC<VehicleProps> = ({
         viewBox="120 155 534 176"
         xmlSpace="preserve"
       >
-        <Background status={status} />
+        <style type="text/css">{`
+	.st0{fill:#CFDEE2;}
+	.st1{fill:none;stroke:#000000; }
+	.st2{fill:#D4D2D2;stroke:#000000; }
+	.st3{fill:#FFFFFF;stroke:#000000; }
+	.st4{fill:#5AC1A4;stroke:#000000; } 
+	.st5{fill:#FFE850;stroke:#000000; } 
+	.st6{fill:#EF9D30;stroke:#000000; } 
+	.st7{fill:#FFFFFF;stroke:#000000;stroke-linecap:round; }
+	.st8{fill:#C6C4C4;stroke:#000000;stroke-linecap:round; }
+	.st9{font-family:HelveticaNeue, Helvetica, Arial, sans-serif;}
+	.st10{font-size:9px;}
+	.st11{fill:#6D6E6E;stroke:#000000; } 
+	.st12{fill:#606060;}  
+	.st13{font-size:7px;}
+	.st14{font-family:HelveticaNeue-Medium, Helvetica, Arial, sans-serif; }
+	.st15{font-size:11px;}
+	.st16{fill:#A2A0A0;} <!--
+	.st17{fill:#e3cfa7;} 
+	.st18{fill:none;stroke:none; } 
+	.st19{fill:#555555;stroke:#000000;stroke-miterlimit:10;}  color -->
+	.st20{fill:#e3cfa7;stroke:#000000;stroke-miterlimit:10;}  Circle color -->
+	.st21{fill:none;stroke:#46A247;stroke-width:4;stroke-miterlimit:10;} 
+	.st22{fill:none;stroke:#555555;stroke-width:9;stroke-linecap:round;stroke-miterlimit:10;} 
+	.st23{fill:none;stroke:#46A247;stroke-width:4;stroke-miterlimit:10;} 
+	.st24{font-size:6px;}
+	.st25{fill:#5AC1A4;stroke:none; } 
+	.st26{fill:#FFE850;stroke:none; } 
+	.st27{fill:#EF9D30;stroke:none; } 
+	.st28{fill:#333333; } 
+	.st30{font-size:8px;} 
+	.st31{fill:#B4372D;}
+	.stleak2{fill:#7DA6D8;} 
+	.stleak1{fill:#92c19b;} 
+	`}</style>
         <rect
           aria-label="backgroundbox"
           x="126.91"
           y="161.76"
-          fill="none"
-          className={'stroke-black'}
+          className="st3"
+          width="514.08"
+          height="156.08"
+        />
+        <Background
+          colorDirtbox={colorDirtbox}
+          colorWavecolor={colorWavecolor}
+        />
+        <rect
+          aria-label="backgroundboxborder"
+          x="126.91"
+          y="161.76"
+          className="st1"
           width="514.08"
           height="156.08"
         />
 
-        {status === 'pluggedIn' && <ChargingCable />}
+        <ChargingCable
+          colorSmallCable={colorSmallCable}
+          colorBigCable={colorBigCable}
+        />
 
         <AuvBody />
 
-        {/* todo: change color correctly to indicate status */}
-        {/* calculate times since last and display dynamically */}
-        <DropWeightIndicator dropWeight={dropWeight} dropTime={dropTime} />
+        <DropWeightIndicator
+          textDroptime={textDroptime}
+          colorDrop={colorDrop}
+          isDocked={isDocked}
+        />
 
-        {/* todo: change color correctly to indicate status */}
-        {/* calculate times since last and display dynamically */}
         <GroundFault
-          groundFault={groundFault}
-          groundFaultTime={groundFaultTime}
+          textGf={textGf}
+          colorGf={colorGf}
+          textGfTime={textGfTime}
+          isDocked={isDocked}
         />
 
-        {/* todo: change color of HW/SW/etc to indicate status */}
-        {/* todo: calculate speed and display dynamically; needs new props */}
+        {/* todo: change OT indicator color dynamically */}
         <Thruster
-          status={status}
-          hwLight={hardwareLight}
-          swLight={softwareLight}
-          otLight={otherLight}
+          textSpeed={textSpeed}
+          colorHw={colorHw}
+          colorSw={colorSw}
+          colorThrust={colorThrust}
+          isDocked={isDocked}
         />
 
-        {/* todo: correctly display charge amount */}
-        {/* todo: calculate time since last amps and display dynamically */}
         <Batteries
-          volts={batteryVolts}
-          amps={batteryAmps}
-          ampTime={batteryAmpTime}
+          isDocked={isDocked}
+          colorBat1={colorBat1}
+          colorBat2={colorBat2}
+          colorBat3={colorBat3}
+          colorBat4={colorBat4}
+          colorBat5={colorBat5}
+          colorBat6={colorBat6}
+          colorBat7={colorBat7}
+          colorBat8={colorBat8}
+          textVolts={textVolts}
+          textAmps={textAmps}
+          textAmpAgo={textAmpAgo}
+          colorVolts={colorVolts}
+          colorAmps={colorAmps}
         />
 
-        {/* update status indicator to change colors */}
-        {/* display date separately from label string? */}
-        <MissionLabel mission={mission} />
-
-        {/* update status indicator to change colors */}
-        {/* display date separately from label string? */}
-        <NextCommLabel nextComm={nextComm} />
-
-        {/* update status indicator to change colors */}
-        {/* display date separately from label string? */}
-        <TimeoutLabel timeout={timeout} />
-
-        {/* todo: change color of comms based on time */}
-        {/* todo: calculate time since last comms and display dynamically */}
-        <Comms satTime={satTime} cellTime={cellTime} />
-
-        {/* todo: calculate time since last gps and display dynamically */}
-        <Gps time={gpsTime} />
-
-        <DvlIndicator dvl={dvl} />
-
-        {/* todo: change cart coloring based on status? */}
-        {status !== 'onMission' && <Cart />}
-
-        {/* todo: dynamically calculate and display thrust over time */}
-        {/* todo: dynamically calculate and display reckoned details */}
-        <Heading headingDegrees={headingDegrees} />
-
-        {scheduled && <ScheduleLabel scheduled={scheduled} />}
-
-        {/* todo: calculate time since last log and display dynamically */}
-        <Log startTime={logStartTime} />
-
-        {/* todo: calculate and display updated field dynamically */}
-        <VehicleInfo name={name} updated={updated} />
-
-        {/* todo: change labels and time since last(?) dynamically; new props needed */}
-        <ArriveInfo />
-
-        {/* todo: change labels dynamically; new props needed */}
-        <ErrorLabel />
-
-        {/* <!-- future  */}
-        {/* <text
-          aria-label=""
-          transform="matrix(1 0 0 1 557.3993 228.8362)"
-          className="st9 st10"
-          fontSize="9px"
-        >
-          B&amp;T?
-        </text>
-        <circle
-          aria-label="BT2"
-          className="st3"
-          fill="#FFFFFF"
-          className={'stroke-black'}
-          cx="546.72"
-          cy="225.78"
-          r="4.07"
+        <MissionLabel
+          textMission={textMission}
+          colorMissionDefault={colorMissionDefault}
         />
-        <circle
-          aria-label="BT1"
-          className="st3"
-          fill="#FFFFFF"
-          className={'stroke-black'}
-          cx="535.99"
-          cy="225.78"
-          r="4.07"
-        /> */}
 
-        {/* <!-- OLD ARROW  */}
-        {/* <g aria-label="arrow right">
-          <rect
-            x="594.14"
-            y="256.24"
-            className="st16"
-            fill="#A2A0A0"
-            width="11.73"
-            height="7"
+        {textScheduled && (
+          <ScheduleLabel
+            textScheduled={textScheduled}
+            colorScheduled={colorScheduled}
           />
-          <g>
-            <polygon
-              className="st16"
-              fill="#A2A0A0"
-              points="618.22,259.74 600.81,266.86 604.94,259.74 600.81,252.63 		"
-            />
-          </g>
-        </g> */}
-        <text
-          aria-label="test_note"
-          transform="matrix(1 0 0 1 133 174)"
-          // className="st12 st9 st13"
-          fill="#606060"
-          fontSize="7px"
+        )}
+
+        {textNextComm && (
+          <NextCommLabel
+            textNextComm={textNextComm}
+            colorNextComm={colorNextComm}
+          />
+        )}
+
+        {/* todo: change timeout indicator color dynamically */}
+        {textTimeout && <TimeoutLabel textTimeout={textTimeout} />}
+
+        <Comms
+          textSat={textSat}
+          textCommAgo={textCommAgo}
+          colorSatComm={colorSatComm}
+          textCell={textCell}
+          textCellAgo={textCellAgo}
+          colorCell={colorCell}
+          isDocked={isDocked}
         />
-        <text
-          aria-label="test_notetime"
-          transform="matrix(1 0 0 1 134 180)"
-          // className="st12 st9 st24"
-          fill="#606060"
-          fontSize="6px"
+
+        <Gps
+          textGps={textGps}
+          textGpsAgo={textGpsAgo}
+          colorGps={colorGps}
+          isDocked={isDocked}
         />
+
+        <DvlIndicator
+          colorDvl={colorDvl}
+          textDvlStatus={textDvlStatus}
+          isDocked={isDocked}
+        />
+
+        <Cart colorCart={colorCart} colorCartCircle={colorCartCircle} />
+
+        {/* textArrow is used instead of textBearing for the bearing display due to the encoding of the degree symbol in the textBearing string */}
+        <Heading
+          textArrow={textArrow}
+          textThrustTime={textThrustTime}
+          textReckonDistance={textReckonDistance}
+          colorArrow={colorArrow}
+          isDocked={isDocked}
+        />
+
+        <Log
+          textLogTime={textLogTime}
+          textLogAgo={textLogAgo}
+          isDocked={isDocked}
+        />
+
+        <VehicleInfo
+          textVehicle={textVehicle}
+          textLastUpdate={textLastUpdate}
+        />
+
+        <ArriveInfo
+          textArriveStation={textArriveStation}
+          textCurrentDist={textCurrentDist}
+          textStationDist={textStationDist}
+          isDocked={isDocked}
+        />
+
+        <ErrorLabel
+          textCriticalError={textCriticalError}
+          textCriticalTime={textCriticalTime}
+        />
+
+        <Note textNote={textNote} textNoteTime={textNoteTime} />
 
         {/* <!--pontus specific but can be made invisible--> */}
         <circle
-          aria-label="UBAT"
-          // className="st3"
-          fill="#FFFFFF"
-          className={'stroke-black'}
+          name="UBAT"
+          className={ubatColor}
           cx="543.96"
           cy="246.8"
           r="4.07"
         />
         <circle
-          aria-label="flow"
-          // className="st3"
-          fill="#FFFFFF"
-          className={'stroke-black'}
+          name="flow"
+          className={colorFlow}
           cx="544.33"
           cy="259.45"
           r="4.07"
         />
         <text
-          aria-label="text_flowago"
+          name="text_flowago"
           transform="matrix(1 0 0 1 541.0 272.0)"
-          // className="st12 st9 st13"
-          className={clsx(styles.textGray, styles.text7px)}
-        ></text>
+          className="st12 st9 st13"
+        >
+          {textFlow}
+        </text>
       </svg>
     </div>
   )

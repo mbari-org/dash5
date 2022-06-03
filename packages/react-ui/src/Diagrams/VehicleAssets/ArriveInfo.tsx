@@ -1,33 +1,46 @@
 import React from 'react'
 import clsx from 'clsx'
-import { styles } from '../Vehicle'
+import { VehicleProps } from '../Vehicle'
 
-export const ArriveInfo = () => {
+export interface ArriveInfoProps {
+  textArriveStation: VehicleProps['textArriveStation']
+  textStationDist: VehicleProps['textStationDist']
+  textCurrentDist: VehicleProps['textCurrentDist']
+  isDocked?: boolean
+}
+export const ArriveInfo: React.FC<ArriveInfoProps> = ({
+  textArriveStation,
+  textCurrentDist,
+  textStationDist,
+  isDocked,
+}) => {
   return (
     <g>
       <text
-        aria-label="text_arrivestation"
+        name="text_arrivestation"
         transform="matrix(1 0 0 1 581 230)"
-        className={styles.text7px}
+        className="st9 st13"
       >
-        Arrived at WP
+        {textArriveStation}
       </text>
       <text
-        aria-label="text_stationdist"
+        name="text_stationdist"
         transform="matrix(1 0 0 1 582 238)"
-        className={clsx(styles.textGray, styles.text6px)}
+        className="st12 st9 st24"
       >
-        15h 21m ago
+        {textStationDist}
       </text>
       <text
-        aria-label="text_currentdist"
+        name="text_currentdist"
         transform="matrix(1 0 0 1 582 245)"
-        className={clsx(styles.textGray, styles.text6px)}
-      ></text>
+        className="st12 st9 st24"
+      >
+        {textCurrentDist}
+      </text>
       <text
-        aria-label="arrive_label"
+        name="arrive_label"
         transform="matrix(1 0 0 1 580 222)"
-        className={clsx(styles.textGray, styles.text6px)}
+        className={clsx(isDocked ? 'st18' : 'st12 st9 st24')}
       >
         Arrive Station
       </text>

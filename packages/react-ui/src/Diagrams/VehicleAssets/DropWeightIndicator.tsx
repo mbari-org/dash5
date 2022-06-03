@@ -1,43 +1,35 @@
 import React from 'react'
 import clsx from 'clsx'
-import { styles, VehicleProps } from '../Vehicle'
+import { VehicleProps } from '../Vehicle'
 
 interface DropWeightProps {
-  dropWeight: VehicleProps['dropWeight']
-  dropTime: VehicleProps['dropTime']
+  textDroptime: VehicleProps['textDroptime']
+  colorDrop: VehicleProps['colorDrop']
+  isDocked: boolean
 }
 export const DropWeightIndicator: React.FC<DropWeightProps> = ({
-  dropWeight,
-  dropTime,
+  textDroptime,
+  colorDrop,
+  isDocked,
 }) => {
   return (
     <>
       <rect
-        aria-label="drop"
         x="284.79"
         y="282.44"
-        className={clsx(
-          'stroke-black',
-          dropWeight ? styles.fillTeal : styles.fillOrange
-        )}
+        className={colorDrop}
         width="24.43"
         height="9.5"
       />
       <text
         transform="matrix(1 0 0 1 285 300)"
-        className={clsx(styles.text7px, styles.textGray)}
+        className={clsx(isDocked ? 'st18' : 'st12 st9 st13')}
       >
         DROP WEIGHT
       </text>
-      {dropTime && (
-        <text
-          aria-label="text_droptime"
-          transform="matrix(1 0 0 1 338 300)"
-          className={clsx(styles.text7px, styles.textGray)}
-        >
-          {dropTime}
-        </text>
-      )}
+      <text transform="matrix(1 0 0 1 338 300)" className="st12 st9 st13">
+        {textDroptime}
+      </text>
     </>
   )
 }

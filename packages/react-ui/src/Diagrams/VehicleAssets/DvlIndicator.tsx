@@ -1,30 +1,36 @@
 import React from 'react'
 import clsx from 'clsx'
-import { styles, VehicleProps } from '../Vehicle'
+import { VehicleProps } from '../Vehicle'
 
-export const DvlIndicator: React.FC<{ dvl: VehicleProps['dvl'] }> = ({
-  dvl,
+export interface DvlIndicatorProps {
+  colorDvl: VehicleProps['colorDvl']
+  textDvlStatus: VehicleProps['textDvlStatus']
+  isDocked?: boolean
+}
+
+export const DvlIndicator: React.FC<DvlIndicatorProps> = ({
+  colorDvl,
+  textDvlStatus,
+  isDocked,
 }) => {
   return (
     <>
       <polygon
-        aria-label="dvl"
-        className={clsx(
-          'stroke-black',
-          dvl ? styles.fillTeal : styles.fillYellow
-        )}
-        points="541.91,287.26 553.41,287.26 558.97,295.79 541.52,295.79 "
+        name="dvl"
+        className={colorDvl}
+        points="541.91,287.26 553.41,287.26 558.97,295.79 541.52,295.79"
       />
       <text
-        aria-label="text_dvlstatus"
+        name="text_dvlstatus"
         transform="matrix(1 0 0 1 542 304)"
-        className={clsx(styles.text7px, styles.textGray)}
+        className="st12 st9 st13"
       >
-        {dvl ? 'ON' : 'OFF'}
+        {textDvlStatus}
       </text>
+
       <text
         transform="matrix(1 0 0 1 540.0956 283.4494)"
-        className={styles.text9px}
+        className={clsx(isDocked ? 'st18' : 'st9 st10')}
       >
         DVL
       </text>

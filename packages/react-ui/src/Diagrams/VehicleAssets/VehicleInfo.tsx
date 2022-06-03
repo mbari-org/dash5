@@ -1,33 +1,31 @@
-import clsx from 'clsx'
 import React from 'react'
-import { styles, VehicleProps } from '../Vehicle'
+import { VehicleProps } from '../Vehicle'
 
 export interface VehicleInfoProps {
-  name: VehicleProps['name']
-  updated: VehicleProps['updated']
+  textVehicle: VehicleProps['textVehicle']
+  textLastUpdate: VehicleProps['textLastUpdate']
 }
-export const VehicleInfo: React.FC<VehicleInfoProps> = ({ name, updated }) => {
+export const VehicleInfo: React.FC<VehicleInfoProps> = ({
+  textVehicle,
+  textLastUpdate,
+}) => {
   return (
     <g>
       <text
-        aria-label="text_vehicle"
+        name="text_vehicle"
         transform="matrix(1 0 0 1 400 254.7336)"
-        className={styles.text11px}
+        className="st14 st15"
       >
-        {name}
+        {textVehicle}
       </text>
-
       <text
-        aria-label="text_lastupdate"
+        name="text_lastupdate"
         transform="matrix(1 0 0 1 406.0 280.0)"
-        className={styles.text11px}
+        className="st14 st15"
       >
-        {updated}
+        {textLastUpdate}
       </text>
-      <text
-        transform="matrix(1 0 0 1 404.0 268.0)"
-        className={clsx(styles.text7px, styles.textGray)}
-      >
+      <text transform="matrix(1 0 0 1 404.0 268.0)" className="st12 st9 st13">
         UPDATED:
       </text>
     </g>

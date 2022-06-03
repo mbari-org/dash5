@@ -1,30 +1,32 @@
 import React from 'react'
-import clsx from 'clsx'
-import { VehicleProps, styles } from '../Vehicle'
+import { VehicleProps } from '../Vehicle'
 
-export const NextCommLabel: React.FC<{
-  nextComm: VehicleProps['nextComm']
-}> = ({ nextComm }) => {
+export interface NextCommProps {
+  textNextComm: VehicleProps['textNextComm']
+  colorNextComm: VehicleProps['colorNextComm']
+}
+
+export const NextCommLabel: React.FC<NextCommProps> = ({
+  textNextComm,
+  colorNextComm,
+}) => {
   return (
     <g>
       <circle
-        aria-label="comm overdue status"
-        className={clsx('stroke-black', styles.fillTeal)}
+        name="commoverdue"
+        className={colorNextComm}
         cx="138.5"
         cy="295.5"
         r="2"
       />
       <text
-        aria-label="text_nextcomm"
+        name="text_nextcomm"
         transform="matrix(1 0 0 1 195 298.3899)"
-        className={styles.text9px}
+        className="st9 st10"
       >
-        {nextComm}
+        {textNextComm}
       </text>
-      <text
-        transform="matrix(1 0 0 1 143.5453 298.3899)"
-        className={styles.text9px}
-      >
+      <text transform="matrix(1 0 0 1 143.5453 298.3899)" className="st9 st10">
         NextComm:
       </text>
     </g>

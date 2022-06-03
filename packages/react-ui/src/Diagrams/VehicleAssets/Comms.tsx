@@ -1,71 +1,82 @@
 import clsx from 'clsx'
 import React from 'react'
-import { styles, VehicleProps } from '../Vehicle'
+import { VehicleProps } from '../Vehicle'
 
 export interface CommsProps {
-  satTime: VehicleProps['satTime']
-  cellTime: VehicleProps['cellTime']
+  textSat: VehicleProps['textSat']
+  textCell: VehicleProps['textCell']
+  textCommAgo: VehicleProps['textCommAgo']
+  textCellAgo: VehicleProps['textCellAgo']
+  colorSatComm: VehicleProps['colorSatComm']
+  colorCell: VehicleProps['colorCell']
+  isDocked: boolean
 }
-export const Comms: React.FC<CommsProps> = ({ satTime, cellTime }) => {
+export const Comms: React.FC<CommsProps> = ({
+  textSat,
+  textCell,
+  textCommAgo,
+  textCellAgo,
+  colorSatComm,
+  colorCell,
+  isDocked,
+}) => {
   return (
     <g>
       <rect
-        aria-label="satcomm"
+        name="satcomm"
         x="261.49"
         y="182.98"
-        className={clsx('stroke-black', styles.fillYellow)}
+        className={colorSatComm}
         width="24.43"
         height="11.5"
       />
       <rect
-        aria-label="cellcomm"
+        name="cell"
         x="260.15"
         y="212.24"
-        className={clsx('stroke-black', styles.fillYellow)}
+        className={colorCell}
         width="26.43"
         height="11.31"
       />
       <text
-        aria-label="text_sat"
+        name="text_sat"
         transform="matrix(1 0 0 1 262.2478 192.1254)"
-        className={styles.text9px}
+        className="st9 st10"
       >
-        {satTime}
+        {textSat}
       </text>
       <text
-        aria-label="text_cell"
+        name="text_cell"
         transform="matrix(1 0 0 1 262.2472 221.3249)"
-        className={styles.text9px}
+        className="st9 st10"
       >
-        {cellTime}
+        {textCell}
       </text>
       <text
         transform="matrix(1 0 0 1 289.4541 191.2224)"
-        className={styles.text9px}
+        className={clsx(isDocked ? 'st18' : 'st9 st10')}
       >
         Sat comms
       </text>
       <text
         transform="matrix(1 0 0 1 291.6499 221.6039)"
-        className={styles.text9px}
+        className={clsx(isDocked ? 'st18' : 'st9 st10')}
       >
         Cell comms
       </text>
       <text
-        aria-label="text_commago"
+        name="text_commago"
         transform="matrix(1 0 0 1 339.0 191.2224)"
-        fill="#606060"
-        className={clsx(styles.text7px, styles.textGray)}
+        className="st12 st9 st13"
       >
-        25m ago
+        {textCommAgo}
       </text>
       <text
-        aria-label="text_cellago"
+        name="text_cellago"
         transform="matrix(1 0 0 1 342.0 221.2224)"
-        fill="#606060"
-        className={clsx(styles.text7px, styles.textGray)}
+        className="st12 st9 st13"
       >
-        28m ago
+        {textCellAgo}
       </text>
     </g>
   )
