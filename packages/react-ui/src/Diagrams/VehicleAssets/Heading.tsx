@@ -38,11 +38,15 @@ export const Heading: React.FC<HeadingProps> = ({
           />
         </g>
       </g>
-      <text
-        name="text_bearing"
-        transform="matrix(1 0 0 1 596 262.3)"
-        className="st9 st13"
-      >{`${textArrow}°`}</text>
+      {textArrow && (
+        <text
+          name="text_bearing"
+          transform="matrix(1 0 0 1 596 262.3)"
+          className="st9 st13"
+        >
+          {`${textArrow}°`}
+        </text>
+      )}
       <text
         name="text_thrusttime"
         transform="matrix(1 0 0 1 592 276.3205)"

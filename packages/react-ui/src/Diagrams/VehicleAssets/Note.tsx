@@ -5,7 +5,6 @@ export interface NoteProps {
   textNote: VehicleProps['textNote']
   textNoteTime: VehicleProps['textNoteTime']
 }
-
 export const Note: React.FC<NoteProps> = ({ textNote, textNoteTime }) => {
   return (
     <g>
