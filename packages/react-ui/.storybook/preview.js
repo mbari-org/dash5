@@ -5,6 +5,7 @@ import { withTests } from '@storybook/addon-jest'
 
 import '../dist/mbari-ui.css'
 import results from '../.jest-test-results.json'
+import '../../../apps/lrauv-dash2/styles/vehicle.css'
 
 export const decorators = [
   withTests({
@@ -31,7 +32,7 @@ const Layout = ({ children }) => {
   )
 }
 
-addDecorator(Story => (
+addDecorator((Story) => (
   <UIProvider>
     <Layout>
       <link rel="preconnect" href="https://fonts.googleapis.com" />

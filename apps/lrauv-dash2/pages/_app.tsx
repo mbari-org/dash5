@@ -8,6 +8,7 @@ import { AuthProvider } from '@mbari/api-client'
 import { ReactQueryDevtools } from 'react-query/devtools'
 import { Toaster } from 'react-hot-toast'
 import useSessionToken from '../lib/useSessionToken'
+import '../styles/vehicle.css'
 
 // prevent font awesome from auto-adding styles.
 config.autoAddCss = false
