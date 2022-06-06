@@ -27,6 +27,7 @@ export const GroundFault: React.FC<GroundFaultProps> = ({
         <line className="st7" x1="471.24" y1="272.82" x2="479.49" y2="272.82" />
         <line className="st8" x1="472.57" y1="275.05" x2="478.16" y2="275.05" />
         <rect
+          data-testid="ground fault color"
           x="480"
           y="254.0"
           className={colorGf}

@@ -19,7 +19,13 @@ export const Thruster: React.FC<ThrusterProps> = ({
 }) => {
   return (
     <g>
-      <circle className={colorThrust} cx="175.51" cy="261.61" r="8.15" />
+      <circle
+        data-testid="thruster indicator"
+        className={colorThrust}
+        cx="175.51"
+        cy="261.61"
+        r="8.15"
+      />
       <text
         textAnchor="right"
         transform="matrix(1 0 0 1 245 254)"
@@ -51,7 +57,7 @@ export const Thruster: React.FC<ThrusterProps> = ({
         Thruster
       </text>
       <text
-        aria-label="text_speed"
+        aria-label="speed"
         transform="matrix(1 0 0 1 198.0612 270)"
         className="st12 st9 st13"
       >
@@ -59,7 +65,6 @@ export const Thruster: React.FC<ThrusterProps> = ({
         <title>Speed estimated from last two GPS fixes</title>
       </text>
       <text
-        aria-label="speeded_label"
         transform="matrix(1 0 0 1 199 275)"
         className={clsx(isDocked ? 'st18' : 'st12 st9 st24')}
       >

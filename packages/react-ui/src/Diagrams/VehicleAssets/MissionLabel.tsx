@@ -13,7 +13,7 @@ export const MissionLabel: React.FC<MissionProps> = ({
   return (
     <g>
       <circle
-        name="missiondefault"
+        data-testid="mission status indicator"
         className={colorMissionDefault}
         cx="415"
         cy="183"
@@ -22,7 +22,11 @@ export const MissionLabel: React.FC<MissionProps> = ({
       <text transform="matrix(1 0 0 1 419.0 186)" className="st9 st10">
         MISSION:
       </text>
-      <text transform="matrix(1 0 0 1 462.0 186)" className="st9 st10 st12">
+      <text
+        aria-label="mission name"
+        transform="matrix(1 0 0 1 462.0 186)"
+        className="st9 st10 st12"
+      >
         {textMission}
       </text>
     </g>

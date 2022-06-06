@@ -97,34 +97,34 @@ export const Batteries: React.FC<BatteryProps> = ({
         aria-label="amps"
         x="336.28"
         y="261.76"
-        className={colorVolts}
-        width="25.5"
-        height="10.5"
-      />
-      <rect
-        name="volts"
-        x="336.28"
-        y="249.85"
         className={colorAmps}
         width="25.5"
         height="10.5"
       />
+      <rect
+        aria-label="volts"
+        x="336.28"
+        y="249.85"
+        className={colorVolts}
+        width="25.5"
+        height="10.5"
+      />
       <text
-        name="text_volts"
+        aria-label="text_volts"
         transform="matrix(1 0 0 1 338.0 257.9931)"
         className="st9 st10"
       >
         {textVolts}
       </text>
       <text
-        name="text_amps"
+        aria-label="text_amps"
         transform="matrix(1 0 0 1 338.0 270.4917)"
         className="st9 st10"
       >
         {textAmps}
       </text>
       <text
-        name="text_ampago"
+        aria-label="text_ampago"
         transform="matrix(1 0 0 1 330.0 280.0)"
         className="st12 st9 st13"
       >

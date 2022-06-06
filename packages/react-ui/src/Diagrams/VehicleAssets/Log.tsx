@@ -16,14 +16,14 @@ export const Log: React.FC<LogProps> = ({
   return (
     <g>
       <text
-        name="text_logtime"
+        aria-label="log time"
         transform="matrix(1 0 0 1 185.0 221.6039)"
         className="st9 st10"
       >
         {textLogTime}
       </text>
       <text
-        name="text_logago"
+        aria-label="time since last log"
         transform="matrix(1 0 0 1 185.0 231.2224)"
         className="st12 st9 st13"
       >

@@ -19,7 +19,7 @@ export const Heading: React.FC<HeadingProps> = ({
   return (
     <>
       <g
-        name="arrow"
+        aria-label="arrow"
         transform={`rotate (-90,604.94,259.74), rotate(${
           textArrow ? textArrow : '90'
         },605,259.74)`}
@@ -33,14 +33,15 @@ export const Heading: React.FC<HeadingProps> = ({
         />
         <g>
           <polygon
+            data-testid="arrow head"
             className={colorArrow}
-            points="618.22,259.74 600.81,266.86 604.94,259.74 600.81,252.63       "
+            points="618.22,259.74 600.81,266.86 604.94,259.74 600.81,252.63"
           />
         </g>
       </g>
       {textArrow && (
         <text
-          name="text_bearing"
+          aria-label="bearing"
           transform="matrix(1 0 0 1 596 262.3)"
           className="st9 st13"
         >
@@ -48,7 +49,7 @@ export const Heading: React.FC<HeadingProps> = ({
         </text>
       )}
       <text
-        name="text_thrusttime"
+        aria-label="thrust time"
         transform="matrix(1 0 0 1 592 276.3205)"
         className="st9 st10"
       >
@@ -56,7 +57,7 @@ export const Heading: React.FC<HeadingProps> = ({
       </text>
 
       <text
-        name="reckoned_detail"
+        aria-label="reckoned detail"
         transform="matrix(1 0 0 1 592 294)"
         className="st12 st9 st24"
       >
@@ -64,7 +65,7 @@ export const Heading: React.FC<HeadingProps> = ({
       </text>
 
       <text
-        name="reckoned_label"
+        data-testid="reckoned_label"
         transform="matrix(1 0 0 1 592 287)"
         className={clsx(isDocked ? 'st18' : 'st12 st9 st24')}
       >

@@ -23,7 +23,7 @@ export const Comms: React.FC<CommsProps> = ({
   return (
     <g>
       <rect
-        name="satcomm"
+        data-testid="satcomm"
         x="261.49"
         y="182.98"
         className={colorSatComm}
@@ -31,7 +31,7 @@ export const Comms: React.FC<CommsProps> = ({
         height="11.5"
       />
       <rect
-        name="cell"
+        data-testid="cell"
         x="260.15"
         y="212.24"
         className={colorCell}
@@ -39,14 +39,14 @@ export const Comms: React.FC<CommsProps> = ({
         height="11.31"
       />
       <text
-        name="text_sat"
+        aria-label="text sat"
         transform="matrix(1 0 0 1 262.2478 192.1254)"
         className="st9 st10"
       >
         {textSat}
       </text>
       <text
-        name="text_cell"
+        aria-label="text cell"
         transform="matrix(1 0 0 1 262.2472 221.3249)"
         className="st9 st10"
       >

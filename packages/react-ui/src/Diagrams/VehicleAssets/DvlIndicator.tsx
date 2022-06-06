@@ -16,12 +16,12 @@ export const DvlIndicator: React.FC<DvlIndicatorProps> = ({
   return (
     <>
       <polygon
-        name="dvl"
+        aria-label="dvl indicator"
         className={colorDvl}
         points="541.91,287.26 553.41,287.26 558.97,295.79 541.52,295.79"
       />
       <text
-        name="text_dvlstatus"
+        aria-label="dvl status"
         transform="matrix(1 0 0 1 542 304)"
         className="st12 st9 st13"
       >

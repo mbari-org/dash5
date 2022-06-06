@@ -17,28 +17,28 @@ export const ArriveInfo: React.FC<ArriveInfoProps> = ({
   return (
     <g>
       <text
-        name="text_arrivestation"
+        data-testid="text_arrivestation"
         transform="matrix(1 0 0 1 581 230)"
         className="st9 st13"
       >
         {textArriveStation}
       </text>
       <text
-        name="text_stationdist"
+        data-testid="text_stationdist"
         transform="matrix(1 0 0 1 582 238)"
         className="st12 st9 st24"
       >
         {textStationDist}
       </text>
       <text
-        name="text_currentdist"
+        data-testid="text_currentdist"
         transform="matrix(1 0 0 1 582 245)"
         className="st12 st9 st24"
       >
         {textCurrentDist}
       </text>
       <text
-        name="arrive_label"
+        data-testid="arrive_label"
         transform="matrix(1 0 0 1 580 222)"
         className={clsx(isDocked ? 'st18' : 'st12 st9 st24')}
       >

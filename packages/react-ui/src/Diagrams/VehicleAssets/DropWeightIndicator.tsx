@@ -15,6 +15,7 @@ export const DropWeightIndicator: React.FC<DropWeightProps> = ({
   return (
     <>
       <rect
+        aria-label="drop weight indicator"
         x="284.79"
         y="282.44"
         className={colorDrop}

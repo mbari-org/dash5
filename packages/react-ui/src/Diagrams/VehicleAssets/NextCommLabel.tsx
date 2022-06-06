@@ -13,14 +13,14 @@ export const NextCommLabel: React.FC<NextCommProps> = ({
   return (
     <g>
       <circle
-        name="commoverdue"
+        data-testid="next comm indicator"
         className={colorNextComm}
         cx="138.5"
         cy="295.5"
         r="2"
       />
       <text
-        name="text_nextcomm"
+        aria-label="next comm"
         transform="matrix(1 0 0 1 195 298.3899)"
         className="st9 st10"
       >

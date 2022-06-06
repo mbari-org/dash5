@@ -17,7 +17,7 @@ export const Gps: React.FC<GpsProps> = ({
   return (
     <g>
       <rect
-        name="gps"
+        data-testid="gps color"
         x="407.76"
         y="221.71"
         className={colorGps}
@@ -31,14 +31,14 @@ export const Gps: React.FC<GpsProps> = ({
         Last GPS
       </text>
       <text
-        name="text_gpsago"
+        aria-label="time since last gps"
         transform="matrix(1 0 0 1 481 226.5)"
         className="st12 st9 st13"
       >
         {textGpsAgo}
       </text>
       <text
-        name="text_gps"
+        aria-label="last gps time"
         transform="matrix(1 0 0 1 410.1005 229.6799)"
         className="st9 st10"
       >

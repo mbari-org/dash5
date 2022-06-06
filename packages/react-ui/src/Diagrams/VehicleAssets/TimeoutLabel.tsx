@@ -7,9 +7,15 @@ export interface TimeoutLabelProps {
 export const TimeoutLabel: React.FC<TimeoutLabelProps> = ({ textTimeout }) => {
   return (
     <g>
-      <circle name="missionoverdue" className="st4" cx="138.5" cy="306" r="2" />
+      <circle
+        data-testid="missionoverdue"
+        className="st4"
+        cx="138.5"
+        cy="306"
+        r="2"
+      />
       <text
-        name="text_timeout"
+        aria-label="timeout"
         transform="matrix(1 0 0 1 195 309.1899)"
         className="st9 st10"
       >

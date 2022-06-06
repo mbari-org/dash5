@@ -12,14 +12,14 @@ export const VehicleInfo: React.FC<VehicleInfoProps> = ({
   return (
     <g>
       <text
-        name="text_vehicle"
+        aria-label="vehicle"
         transform="matrix(1 0 0 1 400 254.7336)"
         className="st14 st15"
       >
         {textVehicle}
       </text>
       <text
-        name="text_lastupdate"
+        aria-label="lastupdate"
         transform="matrix(1 0 0 1 406.0 280.0)"
         className="st14 st15"
       >
