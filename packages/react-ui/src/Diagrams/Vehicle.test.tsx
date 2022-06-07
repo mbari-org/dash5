@@ -291,6 +291,11 @@ test('should display timeout text when provided', async () => {
   expect(screen.queryByText(/17:47/i)).toBeInTheDocument()
 })
 
+test('should display timeout indicator color as provided color', async () => {
+  render(<Vehicle {...props} textTimeout="17:47" colorMissionAgo={'st5'} />)
+  expect(screen.queryByTestId(/missionoverdue/i)).toHaveClass('st5')
+})
+
 test('should display vehicle name', async () => {
   render(<Vehicle {...props} />)
   expect(screen.queryByText(props.textVehicle)).toBeInTheDocument()

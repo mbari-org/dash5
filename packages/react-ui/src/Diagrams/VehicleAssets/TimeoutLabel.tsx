@@ -3,13 +3,17 @@ import { VehicleProps } from '../Vehicle'
 
 export interface TimeoutLabelProps {
   textTimeout: VehicleProps['textTimeout']
+  colorMissionAgo: VehicleProps['colorMissionAgo']
 }
-export const TimeoutLabel: React.FC<TimeoutLabelProps> = ({ textTimeout }) => {
+export const TimeoutLabel: React.FC<TimeoutLabelProps> = ({
+  textTimeout,
+  colorMissionAgo,
+}) => {
   return (
     <g>
       <circle
         data-testid="missionoverdue"
-        className="st4"
+        className={colorMissionAgo}
         cx="138.5"
         cy="306"
         r="2"
