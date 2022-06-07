@@ -49,6 +49,7 @@ export interface VehicleProps {
   textNextComm?: string
   colorNextComm?: string
   textTimeout?: string
+  colorMissionAgo?: string
   colorDirtbox?: string
   colorWavecolor?: string
   colorSmallCable?: string
@@ -61,6 +62,7 @@ export interface VehicleProps {
   textSpeed?: string
   colorHw?: string
   colorSw?: string
+  colorOt?: string
   colorThrust?: string
   colorBat1?: string
   colorBat2?: string
@@ -121,6 +123,7 @@ export const Vehicle: React.FC<VehicleProps> = ({
   textNextComm,
   colorNextComm,
   textTimeout,
+  colorMissionAgo = 'st3',
   colorDirtbox = 'st18',
   colorWavecolor = 'st18',
   colorSmallCable = 'st18',
@@ -133,6 +136,7 @@ export const Vehicle: React.FC<VehicleProps> = ({
   textSpeed,
   colorHw = 'st3',
   colorSw = 'st3',
+  colorOt = 'st3',
   colorThrust = 'st3',
   colorBat1 = 'st3',
   colorBat2 = 'st3',
@@ -218,11 +222,11 @@ export const Vehicle: React.FC<VehicleProps> = ({
           isDocked={isDocked}
         />
 
-        {/* todo: change OT indicator color dynamically */}
         <Thruster
           textSpeed={textSpeed}
           colorHw={colorHw}
           colorSw={colorSw}
+          colorOt={colorOt}
           colorThrust={colorThrust}
           isDocked={isDocked}
         />
@@ -263,8 +267,12 @@ export const Vehicle: React.FC<VehicleProps> = ({
           />
         )}
 
-        {/* todo: change timeout indicator color dynamically */}
-        {textTimeout && <TimeoutLabel textTimeout={textTimeout} />}
+        {textTimeout && (
+          <TimeoutLabel
+            textTimeout={textTimeout}
+            colorMissionAgo={colorMissionAgo}
+          />
+        )}
 
         <Comms
           textSat={textSat}

@@ -6,6 +6,7 @@ interface ThrusterProps {
   textSpeed: VehicleProps['textSpeed']
   colorHw: VehicleProps['colorHw']
   colorSw: VehicleProps['colorSw']
+  colorOt: VehicleProps['colorOt']
   colorThrust: VehicleProps['colorThrust']
   isDocked?: boolean
 }
@@ -14,6 +15,7 @@ export const Thruster: React.FC<ThrusterProps> = ({
   textSpeed,
   colorHw,
   colorSw,
+  colorOt,
   colorThrust,
   isDocked,
 }) => {
@@ -49,7 +51,7 @@ export const Thruster: React.FC<ThrusterProps> = ({
       </text>
       <circle aria-label="HW" className={colorHw} cx="267" cy="251" r="4" />
       <circle aria-label="SW" className={colorSw} cx="267" cy="264" r="4" />
-      <circle aria-label="OT" className="st3" cx="267" cy="277" r="4" />
+      <circle aria-label="OT" className={colorOt} cx="267" cy="277" r="4" />
       <text
         transform="matrix(1 0 0 1 193.9667 260.552)"
         className={clsx(isDocked ? 'st18' : 'st9 st10')}
