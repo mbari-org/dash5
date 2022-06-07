@@ -23,6 +23,7 @@ const styles = {
   infoLabel: 'font-semibold mr-1',
   icon: 'pr-4 pt-2',
   button: 'p-4 text-left w-full',
+  noVehicle: 'pt-4 opacity-60',
 }
 
 export const VehicleCell: React.FC<VehicleCellProps> = ({
@@ -85,6 +86,11 @@ export const VehicleCell: React.FC<VehicleCellProps> = ({
                   </li>
                 )}
               </ul>
+              {!vehicle && (
+                <div className={styles.noVehicle}>
+                  Vehicle state feed not available
+                </div>
+              )}
             </div>
           </section>
         </div>

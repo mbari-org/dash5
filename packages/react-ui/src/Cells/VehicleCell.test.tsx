@@ -84,3 +84,11 @@ test('should display vehicle diagram when supplied', async () => {
 
   expect(screen.queryByLabelText(/vehicle diagram/i)).toBeInTheDocument()
 })
+
+test('should display notification when vehicle prop is not supplied', async () => {
+  render(<VehicleCell {...props} />)
+
+  expect(
+    screen.queryByText(/Vehicle state feed not available/i)
+  ).toBeInTheDocument()
+})
