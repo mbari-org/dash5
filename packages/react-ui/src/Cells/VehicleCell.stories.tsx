@@ -3,7 +3,6 @@ import React from 'react'
 import { Story, Meta } from '@storybook/react/types-6-0'
 import { VehicleCell, VehicleCellProps } from './VehicleCell'
 
-import subGraphic from '../assets/subGraphic.png'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { faSync } from '@fortawesome/pro-light-svg-icons'
 import { faCheck } from '@fortawesome/pro-regular-svg-icons'
@@ -46,7 +45,18 @@ const args: VehicleCellProps = {
 export const Running = Template.bind({})
 Running.args = {
   ...args,
-  graphic: subGraphic,
+  vehicle: {
+    textVehicle: 'DAPHNE',
+    status: 'pluggedIn',
+    textMission: 'PLUGGED IN 08:14 • 29Nov21',
+    colorDirtbox: 'st17',
+    colorSmallCable: 'st23',
+    colorBigCable: 'st22',
+    colorCart: 'st19',
+    colorCartCircle: 'st17',
+    textLastUpdate: '10:54',
+    colorArrow: 'st16',
+  },
   lastPosition: 'Tri_oid_2 36.797. -121847',
   lastSatellite: '15 minutes ago, next up in ~2.5 hours',
   lastCell: '2 days 3 hours ago',
