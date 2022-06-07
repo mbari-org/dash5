@@ -61,6 +61,7 @@ export interface VehicleProps {
   textSpeed?: string
   colorHw?: string
   colorSw?: string
+  colorOt?: string
   colorThrust?: string
   colorBat1?: string
   colorBat2?: string
@@ -133,6 +134,7 @@ export const Vehicle: React.FC<VehicleProps> = ({
   textSpeed,
   colorHw = 'st3',
   colorSw = 'st3',
+  colorOt = 'st3',
   colorThrust = 'st3',
   colorBat1 = 'st3',
   colorBat2 = 'st3',
@@ -223,6 +225,7 @@ export const Vehicle: React.FC<VehicleProps> = ({
           textSpeed={textSpeed}
           colorHw={colorHw}
           colorSw={colorSw}
+          colorOt={colorOt}
           colorThrust={colorThrust}
           isDocked={isDocked}
         />

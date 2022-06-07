@@ -281,6 +281,11 @@ test('should display SW indicator color as provided color', async () => {
   expect(screen.queryByLabelText('SW')).toHaveClass('st5')
 })
 
+test('should display OT indicator color as provided color', async () => {
+  render(<Vehicle {...props} colorOt={'st5'} />)
+  expect(screen.queryByLabelText('OT')).toHaveClass('st5')
+})
+
 test('should display timeout text when provided', async () => {
   render(<Vehicle {...props} textTimeout="17:47" />)
   expect(screen.queryByText(/17:47/i)).toBeInTheDocument()
