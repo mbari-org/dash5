@@ -170,7 +170,11 @@ export const Vehicle: React.FC<VehicleProps> = ({
 }) => {
   const isDocked = status === 'pluggedIn' || status === 'recovered'
   return (
-    <div className={clsx('', className)} style={style}>
+    <div
+      className={clsx('', className)}
+      style={style}
+      aria-label="vehicle diagram"
+    >
       <svg
         xmlns="http://www.w3.org/2000/svg"
         xmlnsXlink="http://www.w3.org/1999/xlink"

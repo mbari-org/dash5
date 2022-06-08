@@ -6,6 +6,7 @@ import { VehicleCell, VehicleCellProps } from './VehicleCell'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { faSync } from '@fortawesome/pro-light-svg-icons'
 import { IconProp } from '@fortawesome/fontawesome-svg-core'
+import { VehicleProps } from '../Diagrams'
 
 const syncIcon = (
   <FontAwesomeIcon icon={faSync as IconProp} className="text-xl" />
@@ -24,6 +25,19 @@ const props: VehicleCellProps = {
   lastCell: 'cell test',
   lastKnownGPS: 'gps test',
   lastCommunication: 'communication test',
+}
+
+const diagramProps: VehicleProps = {
+  textVehicle: 'DAPHNE',
+  status: 'pluggedIn',
+  textMission: 'PLUGGED IN 08:14 • 29Nov21',
+  colorDirtbox: 'st17',
+  colorSmallCable: 'st23',
+  colorBigCable: 'st22',
+  colorCart: 'st19',
+  colorCartCircle: 'st17',
+  textLastUpdate: '10:54',
+  colorArrow: 'st16',
 }
 
 test('should render the component', async () => {
@@ -63,4 +77,18 @@ test('should render last communication info when supplied', async () => {
   render(<VehicleCell {...props} />)
 
   expect(screen.getByText(/communication test/i)).toBeInTheDocument()
+})
+
+test('should display vehicle diagram when supplied', async () => {
+  render(<VehicleCell {...props} vehicle={diagramProps} />)
+
+  expect(screen.queryByLabelText(/vehicle diagram/i)).toBeInTheDocument()
+})
+
+test('should display notification when vehicle prop is not supplied', async () => {
+  render(<VehicleCell {...props} />)
+
+  expect(
+    screen.queryByText(/Vehicle state feed not available/i)
+  ).toBeInTheDocument()
 })
