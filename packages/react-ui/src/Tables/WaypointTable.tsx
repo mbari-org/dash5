@@ -9,7 +9,7 @@ import { IconProp } from '@fortawesome/fontawesome-svg-core'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { makeOrdinal } from '@mbari/utils'
 
-export interface WaypointsTableProps {
+export interface WaypointTableProps {
   className?: string
   style?: React.CSSProperties
   waypoints: Waypoint[]
@@ -47,7 +47,7 @@ const NumberedMarker = (num: number) => {
   )
 }
 
-export const WaypointsTable: React.FC<WaypointsTableProps> = ({
+export const WaypointTable: React.FC<WaypointTableProps> = ({
   className,
   style,
   waypoints,
@@ -113,4 +113,4 @@ export const WaypointsTable: React.FC<WaypointsTableProps> = ({
   )
 }
 
-WaypointsTable.displayName = 'Tables.WaypointsTable'
+WaypointTable.displayName = 'Tables.WaypointTable'
