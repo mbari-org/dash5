@@ -36,6 +36,11 @@ const vehicles: Vehicles = [
   },
 ]
 
+const pilots = [
+  { id: '1102', name: 'Carlos Rueda' },
+  { id: '1103', name: 'Karen Salemy' },
+]
+
 const Template: Story<ReassignmentModalProps> = (args) => {
   const [loading, setLoading] = useState(args.loading ?? false)
 
@@ -53,6 +58,8 @@ const Template: Story<ReassignmentModalProps> = (args) => {
 const args: ReassignmentModalProps = {
   vehicles,
   open: true,
+  pics: pilots,
+  onCalls: pilots,
   onSubmit: async (values: ReassignmentFormValues) => {
     await wait(1)
     console.log('Submitted', values)
@@ -62,3 +69,9 @@ const args: ReassignmentModalProps = {
 
 export const Standard = Template.bind({})
 Standard.args = args
+Standard.parameters = {
+  design: {
+    type: 'figma',
+    url: 'https://www.figma.com/file/FtsKsOCBQ2YjTZlwezG6aI/MBARI-Components?node-id=752%3A709',
+  },
+}

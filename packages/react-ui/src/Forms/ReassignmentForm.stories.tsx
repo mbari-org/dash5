@@ -36,6 +36,13 @@ const vehicles: Vehicles = [
   },
 ]
 
+const pilots = [
+  { id: '1102', name: 'Carlos Rueda' },
+  { id: '1103', name: 'Karen Salemy' },
+  { id: '1104', name: 'Brian Kieft' },
+  { id: '1105', name: 'Shannon Johnson' },
+]
+
 const Template: Story<ReassignmentFormProps> = (args) => {
   const [loading, setLoading] = useState(args.loading ?? false)
 
@@ -61,11 +68,17 @@ const args: ReassignmentFormProps = {
     return undefined
   },
   vehicles,
-  pics: [],
-  onCalls: [],
+  pics: pilots,
+  onCalls: pilots,
   disableOnCalls: false,
   disablePics: false,
 }
 
 export const Primary = Template.bind({})
 Primary.args = args
+Primary.parameters = {
+  design: {
+    type: 'figma',
+    url: 'https://www.figma.com/file/FtsKsOCBQ2YjTZlwezG6aI/MBARI-Components?node-id=752%3A709',
+  },
+}
