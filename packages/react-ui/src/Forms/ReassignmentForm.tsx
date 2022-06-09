@@ -14,9 +14,8 @@ import { camelCase } from 'lodash'
 import { Fields, ErrorList, SelectField } from '../Fields'
 import { Button } from '../Navigation'
 import { AbsoluteOverlay } from '../Indicators'
-import { truncate } from 'fs'
 
-type Common = {
+interface Common {
   id: string
   name: string
 }
@@ -29,7 +28,7 @@ type OnCall = Common
 
 export type OnCalls = OnCall[]
 
-type Vehicle = {
+interface Vehicle {
   vehicleId: number
   vehicleName: string
   pic: string
@@ -127,14 +126,14 @@ export const ReassignmentForm: React.FC<ReassignmentFormProps> = ({
               name="pic"
               render={({ field, fieldState: { error } }) => (
                 <SelectField
+                  {...field}
                   placeholder="Search"
                   label="Reassign PIC to:"
                   labelClassName={clsx('font-medium text-base', {
                     'text-gray-300': disablePics,
                   })}
                   options={pics}
-                  selfControllable
-                  {...field}
+                  onChange={undefined}
                   onSelect={field.onChange}
                   errorMessage={error?.message}
                   disabled={disablePics}
@@ -148,17 +147,18 @@ export const ReassignmentForm: React.FC<ReassignmentFormProps> = ({
               name="onCall"
               render={({ field, fieldState: { error } }) => (
                 <SelectField
+                  {...field}
                   placeholder="Search"
                   label="Reassign on-call to:"
                   labelClassName={clsx('font-medium text-base', {
                     'text-gray-300': disableOnCalls,
                   })}
                   options={onCalls}
-                  selfControllable
-                  {...field}
+                  onChange={undefined}
                   onSelect={field.onChange}
                   errorMessage={error?.message}
                   disabled={disableOnCalls}
+                  selfControllable
                 />
               )}
             />
