@@ -40,7 +40,7 @@ test('should display header labels', async () => {
   render(<Table {...props} />)
 
   expect(
-    screen.queryByText(`${props.header.cells[0].label}`)
+    screen.queryByText(`${props?.header?.cells[0]?.label}`)
   ).toBeInTheDocument()
 })
 

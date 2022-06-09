@@ -13,8 +13,8 @@ const props: WaypointTableProps = {
   onSelectOption: (id) => {
     console.log(id)
   },
-  onLocation: () => {
-    console.log('on location button clicked')
+  onFocusWaypoint: (index) => {
+    console.log(index)
   },
 }
 
@@ -37,4 +37,26 @@ test('should display the numbered waypoint map marker icon', async () => {
   expect(
     screen.queryByLabelText(/Number 1 map marker icon/i)
   ).toBeInTheDocument()
+})
+
+test('should display the map marker icon with opacity 60 when not in focus mode', async () => {
+  render(<WaypointTable {...props} />)
+  expect(screen.queryAllByTestId(/map marker icon/i)[0]).toHaveClass(
+    'opacity-60'
+  )
+})
+
+test('should display alternative focus mode view if focusWaypointIndex prop is provided', async () => {
+  render(<WaypointTable {...props} focusWaypointIndex={1} />)
+  expect(
+    screen.queryByText(/Place the location pin to set Lat2\/Lon2/i)
+  ).toBeInTheDocument()
+  expect(screen.queryByText(/Lat1/i)).not.toBeInTheDocument()
+})
+
+test('should display the numbered waypoint map marker icon in purple when in focus mode', async () => {
+  render(<WaypointTable {...props} focusWaypointIndex={1} />)
+  expect(screen.queryByTestId(/map marker icon/i)).toHaveClass(
+    'text-purple-700'
+  )
 })

@@ -7,7 +7,7 @@ export interface TableProps {
   className?: string
   style?: React.CSSProperties
   rows: TableRowProps[]
-  header: TableHeaderProps
+  header?: TableHeaderProps
   highlightedStyle?: string
   stackable?: boolean
   scrollable?: boolean
@@ -63,18 +63,20 @@ export const Table: React.FC<TableProps> = ({
       )}
     >
       <table className={clsx(styles.table)} style={style} role="table">
-        <thead className={styles.header}>
-          <TableHeader
-            className={clsx(
-              'grid',
-              gridClassNames[colsInRow],
-              !onSelectRow && 'gap-4',
-              !scrollable && 'bg-stone-100'
-            )}
-            scrollable={scrollable}
-            {...header}
-          />
-        </thead>
+        {header && (
+          <thead className={styles.header}>
+            <TableHeader
+              className={clsx(
+                'grid',
+                gridClassNames[colsInRow],
+                !onSelectRow && 'gap-4',
+                !scrollable && 'bg-stone-100'
+              )}
+              scrollable={scrollable}
+              {...header}
+            />
+          </thead>
+        )}
         <tbody>
           {rows.map((row, index) => (
             <TableRow

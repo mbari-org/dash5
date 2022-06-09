@@ -9,7 +9,9 @@ export default {
 } as Meta
 
 const Template: Story<WaypointTableProps> = (args) => (
-  <WaypointTable {...args} />
+  <div className="bg-stone-200 p-2">
+    <WaypointTable {...args} />
+  </div>
 )
 
 const args: WaypointTableProps = {
@@ -22,8 +24,8 @@ const args: WaypointTableProps = {
   onSelectOption: (id) => {
     console.log(id)
   },
-  onLocation: () => {
-    console.log('on location button clicked')
+  onFocusWaypoint: (index) => {
+    console.log(index)
   },
 }
 
@@ -33,5 +35,17 @@ Standard.parameters = {
   design: {
     type: 'figma',
     url: 'https://www.figma.com/file/FtsKsOCBQ2YjTZlwezG6aI/MBARI-Components?node-id=3622%3A640',
+  },
+}
+
+export const FocusMode = Template.bind({})
+FocusMode.args = {
+  ...args,
+  focusWaypointIndex: 1,
+  onDone: () => {
+    console.log('done')
+  },
+  onCancelFocus: (index) => {
+    console.log(index)
   },
 }
