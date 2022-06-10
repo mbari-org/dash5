@@ -19,6 +19,9 @@ const args: CellVirtualizerProps = {
   className: 'h-96 w-[438px]',
   count: 100,
   estimateSize: () => 100,
+  style: {
+    height: 800,
+  },
   cellAtIndex: (index: number) => (
     <div className="border-b border-stone-200">
       <VehicleCell
