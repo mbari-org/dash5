@@ -3,9 +3,35 @@ import { render, screen } from '@testing-library/react'
 import '@testing-library/jest-dom'
 import { ReassignmentModal } from './ReassignmentModal'
 
-test.todo('should have tests')
+describe('ReassignmentModal', () => {
+  test('should render the vehicles', async () => {
+    const onSubmit = jest.fn()
 
-// test('should render child content', async () => {
-//   render(<ReassignmentModal>Click Here</ReassignmentModal>)
-//   expect(screen.getByText(/Click Here/i)).toHaveTextContent('Click Here')
-// })
+    render(
+      <ReassignmentModal
+        open
+        onSubmit={onSubmit}
+        vehicles={[
+          {
+            vehicleId: 1,
+            vehicleName: 'Vehicle 1',
+            pic: 'Pic 1',
+            onCall: 'On Call 1',
+          },
+          {
+            vehicleId: 2,
+            vehicleName: 'Vehicle 2',
+            pic: 'Pic 2',
+            onCall: 'On Call 2',
+          },
+        ]}
+      />
+    )
+
+    expect(screen.getByText('Vehicle 1')).toBeInTheDocument()
+    expect(screen.getByText('Vehicle 2')).toBeInTheDocument()
+    expect(() => {
+      screen.getByText('Vehicle 3')
+    }).toThrow()
+  })
+})

@@ -38,7 +38,7 @@ interface Vehicle {
 export type Vehicles = Vehicle[]
 
 export type ReassignmentFormValues = {
-  vehicleName: string
+  vehicleName: string[]
   pic: string
   onCall: string
 }
@@ -58,6 +58,45 @@ export interface ReassignmentFormProps
   disableOnCalls?: boolean
   disablePics?: boolean
 }
+
+interface VehicleProps {
+  vehicleId: number
+  vehicleName: string
+  pic: string
+  onCall: string
+  register: UseFormRegister<ReassignmentFormValues>
+}
+
+const VehicleField: React.FC<VehicleProps> = ({
+  pic,
+  onCall,
+  register,
+  vehicleId,
+  vehicleName,
+}) => (
+  <ul className="grid grid-cols-3 grid-rows-1 items-center gap-2">
+    <li>
+      <label htmlFor={`${vehicleName}_${vehicleId}`} className="text-sm">
+        <input
+          type="checkbox"
+          id={`${vehicleName}_${vehicleId}`}
+          value={vehicleId}
+          data-testid={`input_${vehicleId}`}
+          {...register('vehicleName')}
+        />{' '}
+        <span className="ml-1 text-lg font-medium">{vehicleName}</span>
+      </label>
+    </li>
+    <li className="flex flex-wrap text-sm text-gray-500">
+      <p className="mr-2">PIC:</p>
+      <p>{pic}</p>
+    </li>
+    <li className="flex flex-wrap text-sm text-gray-500">
+      <p className="mr-2">On-call:</p>
+      <p>{onCall}</p>
+    </li>
+  </ul>
+)
 
 export const ReassignmentForm: React.FC<ReassignmentFormProps> = ({
   onSubmit: externalSubmitHandler,
@@ -109,7 +148,7 @@ export const ReassignmentForm: React.FC<ReassignmentFormProps> = ({
       <Fields register={register} errors={formErrors} grow className="pb-2">
         <div className="mb-4 flex w-full flex-col gap-2">
           {vehicles?.map(({ vehicleId, vehicleName, pic, onCall }) => (
-            <Vehicle
+            <VehicleField
               pic={pic}
               onCall={onCall}
               register={register}
@@ -175,43 +214,5 @@ export const ReassignmentForm: React.FC<ReassignmentFormProps> = ({
     </form>
   )
 }
-
-interface VehicleProps {
-  vehicleId: number
-  vehicleName: string
-  pic: string
-  onCall: string
-  register: UseFormRegister<ReassignmentFormValues>
-}
-
-const Vehicle: React.FC<VehicleProps> = ({
-  pic,
-  onCall,
-  register,
-  vehicleId,
-  vehicleName,
-}) => (
-  <div className="grid grid-cols-3 grid-rows-1 items-center gap-2">
-    <div>
-      <label htmlFor={`${vehicleName}_${vehicleId}`} className="text-sm">
-        <input
-          type="checkbox"
-          id={`${vehicleName}_${vehicleId}`}
-          value={vehicleId}
-          {...register('vehicleName')}
-        />{' '}
-        <span className="ml-1 text-lg font-medium">{vehicleName}</span>
-      </label>
-    </div>
-    <div className="flex flex-wrap text-sm text-gray-500">
-      <p className="mr-2">PIC:</p>
-      <p>{pic}</p>
-    </div>
-    <div className="flex flex-wrap text-sm text-gray-500">
-      <p className="mr-2">On-call:</p>
-      <p>{onCall}</p>
-    </div>
-  </div>
-)
 
 ReassignmentForm.displayName = 'Forms.ReassignmentForm'

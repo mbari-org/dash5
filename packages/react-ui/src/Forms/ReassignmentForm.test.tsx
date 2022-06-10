@@ -1,11 +1,36 @@
 import React from 'react'
-import { render, screen } from '@testing-library/react'
+import { render, screen, fireEvent, waitFor } from '@testing-library/react'
 import '@testing-library/jest-dom'
-import { ReassignmentForm, ReassignmentFormValues } from './ReassignmentForm'
+import { ReassignmentForm } from './ReassignmentForm'
 
-const handleSubmit = async (values: ReassignmentFormValues) => {
-  await new Promise((res) => setTimeout(res, 1000))
-  return undefined
-}
+describe('ReassignmentForm', () => {
+  test('should render the vehicles', async () => {
+    const onSubmit = jest.fn()
 
-test.todo('should render the initial value')
+    render(
+      <ReassignmentForm
+        onSubmit={onSubmit}
+        vehicles={[
+          {
+            vehicleId: 1,
+            vehicleName: 'Vehicle 1',
+            pic: 'Pic 1',
+            onCall: 'On Call 1',
+          },
+          {
+            vehicleId: 2,
+            vehicleName: 'Vehicle 2',
+            pic: 'Pic 2',
+            onCall: 'On Call 2',
+          },
+        ]}
+      />
+    )
+
+    expect(screen.getByText('Vehicle 1')).toBeInTheDocument()
+    expect(screen.getByText('Vehicle 2')).toBeInTheDocument()
+    expect(() => {
+      screen.getByText('Vehicle 3')
+    }).toThrow()
+  })
+})
