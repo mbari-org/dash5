@@ -49,6 +49,7 @@
     "@material-ui/pickers": "^3.3.10",
     "@mbari/utils": "^1.0.0",
     "@sumocreations/forms": "^1.0.2",
+    "@tanstack/react-virtual": "^3.0.0-beta.2",
     "clsx": "^1.1.1",
     "immutability-helper": "^3.1.1",
     "leaflet": "^1.8.0",
