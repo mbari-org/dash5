@@ -96,13 +96,13 @@ export const NewDeploymentForm: React.FC<NewDeploymentFormProps> = ({
           control={control}
           render={({ field, formState: { errors } }) => (
             <SelectField
-              placeholder="Select a git tag"
-              options={tags}
-              selfControllable
               {...field}
+              placeholder="Select a git tag"
               onChange={undefined}
               onSelect={field.onChange}
               errorMessage={errors?.gitTag?.message}
+              options={tags}
+              selfControllable
             />
           )}
         />
