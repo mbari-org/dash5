@@ -15,6 +15,13 @@ const Map = dynamic(
   }
 )
 
+const styles = {
+  content: 'flex flex-shrink flex-grow flex-row overflow-hidden',
+  primary: 'flex w-3/4 flex-shrink flex-grow flex-col',
+  mapContainer: 'flex flex-shrink flex-grow bg-blue-300',
+  secondary: 'flex w-[438px] flex-shrink-0 flex-col bg-slate-400',
+}
+
 const OverviewPage: NextPage = () => {
   const startTime = DateTime.utc().minus({ weeks: 1 }).toISO()
   const endTime = DateTime.utc().plus({ days: 4 }).toISO()
@@ -30,8 +37,8 @@ const OverviewPage: NextPage = () => {
         deployment="Overview"
         onClickPilot={() => undefined}
       />
-      <div className="flex flex-grow flex-row">
-        <section className="flex w-3/4 flex-grow flex-col">
+      <div className={styles.content}>
+        <section className={styles.primary}>
           <MissionProgressToolbar
             startTime={startTime}
             endTime={endTime}
@@ -39,11 +46,11 @@ const OverviewPage: NextPage = () => {
             ariaLabel="Mission Progress"
             className="bg-secondary-300/60"
           />
-          <div className="flex-grow bg-violet-400">
+          <div className={styles.mapContainer}>
             <Map className="h-full w-full" />
           </div>
         </section>
-        <section className="flex w-1/4 flex-col bg-slate-400"></section>
+        <section className={styles.secondary}></section>
       </div>
     </Layout>
   )
