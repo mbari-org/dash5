@@ -26,7 +26,7 @@ export interface WaypointProps {
 }
 
 const styles = {
-  iconButton: 'ml-2 h-fit w-fit border-2 border-black/40 px-2 py-1',
+  iconButton: 'ml-2 border-2 border-black/40 rounded-lg',
   absoluteAndCentered: 'absolute inset-0 flex justify-center',
   markerIconNumber: 'pt-1 text-base font-medium text-white',
 }
@@ -100,11 +100,12 @@ export const WaypointTable: React.FC<WaypointTableProps> = ({
                 icon={faMapMarkerAlt}
                 ariaLabel={'Map marker button'}
                 style={{
-                  borderRadius: '0.5rem',
+                  width: '2.5rem',
+                  height: '2.5rem',
                 }}
                 className={styles.iconButton}
                 size="text-2xl"
-                noPadding={true}
+                noPadding
                 onClick={handleFocusWaypoint}
               />
             </div>
@@ -131,6 +132,7 @@ export const WaypointTable: React.FC<WaypointTableProps> = ({
               rows={[
                 row(waypoints[focusWaypointIndex].options, focusWaypointIndex),
               ]}
+              scrollable
             />
           </li>
           <li className="flex justify-end py-2 pr-4">
