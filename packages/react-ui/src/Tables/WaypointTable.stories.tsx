@@ -41,7 +41,7 @@ Standard.parameters = {
 export const FocusMode = Template.bind({})
 FocusMode.args = {
   ...args,
-  focusWaypointIndex: 1,
+  focusWaypointIndex: 0,
   onDone: () => {
     console.log('done')
   },

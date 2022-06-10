@@ -120,7 +120,7 @@ export const WaypointTable: React.FC<WaypointTableProps> = ({
 
   return (
     <article className={clsx('bg-white p-2', className)} style={style}>
-      {focusWaypointIndex ? (
+      {typeof focusWaypointIndex === 'number' ? (
         <ul>
           <li className="py-2 pl-8 font-semibold">
             Place the location pin to set Lat{focusWaypointIndex + 1}/Lon
