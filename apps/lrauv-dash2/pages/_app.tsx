@@ -1,6 +1,7 @@
 import '@mbari/react-ui/dist/mbari-ui.css'
 import { config } from '@fortawesome/fontawesome-svg-core'
 import '@fortawesome/fontawesome-svg-core/styles.css'
+import 'leaflet/dist/leaflet.css'
 import { AppProps } from 'next/app'
 import { QueryClientProvider, QueryClient } from 'react-query'
 import { RecoilRoot } from 'recoil'

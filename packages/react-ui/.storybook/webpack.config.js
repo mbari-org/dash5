@@ -4,12 +4,26 @@ module.exports = async ({ config }) => {
    * non EcmaScript module (only default export is available)" error.
    */
   config.module.rules = [
+    ...config.module.rules,
     {
       test: /\.mjs$/,
       include: /node_modules/,
       type: 'javascript/auto',
     },
-    ...config.module.rules,
+    {
+      test: /\.(js|jsx)$/,
+      loader: require.resolve('babel-loader'),
+      exclude: (filename) => {
+        return /node_modules/.test(filename) && !/react-leaflet/.test(filename)
+      },
+      options: {
+        presets: ['@babel/preset-env', '@babel/preset-react'],
+        plugins: [
+          '@babel/plugin-proposal-nullish-coalescing-operator',
+          '@babel/plugin-proposal-optional-chaining',
+        ],
+      },
+    },
   ]
   return config
 }

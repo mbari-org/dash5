@@ -3,6 +3,7 @@ import { UIProvider } from '../src/UIProvider'
 import { addDecorator } from '@storybook/react'
 import { withTests } from '@storybook/addon-jest'
 
+import 'leaflet/dist/leaflet.css'
 import '../dist/mbari-ui.css'
 import results from '../.jest-test-results.json'
 import '../../../apps/lrauv-dash2/styles/vehicle.css'
