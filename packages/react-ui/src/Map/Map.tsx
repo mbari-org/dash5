@@ -9,7 +9,7 @@ export interface MapProps {
   zoom?: number
 }
 
-export const Map: React.FC<MapProps> = ({
+const Map: React.FC<MapProps> = ({
   className,
   style,
   center = [36.618264, -121.9017919],
@@ -53,3 +53,5 @@ export const Map: React.FC<MapProps> = ({
 }
 
 Map.displayName = 'Map.Map'
+
+export default Map

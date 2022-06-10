@@ -1,6 +1,6 @@
 import React from 'react'
 import { Story, Meta } from '@storybook/react'
-import { Map, MapProps } from './Map'
+import Map, { MapProps } from './Map'
 
 export default {
   title: 'Maps/Map',
