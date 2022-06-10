@@ -8,12 +8,9 @@ import dynamic from 'next/dynamic'
 // This is a tricky workaround to prevent leaflet from crashing next.js
 // SSR. If we don't do this, the leaflet map will be loaded server side
 // and throw a window error.
-const Map = dynamic(
-  () => import('@mbari/react-ui/dist/Map').then((r) => r.Map),
-  {
-    ssr: false,
-  }
-)
+const Map = dynamic(() => import('@mbari/react-ui/dist/Map/Map'), {
+  ssr: false,
+})
 
 const styles = {
   content: 'flex flex-shrink flex-grow flex-row overflow-hidden',
