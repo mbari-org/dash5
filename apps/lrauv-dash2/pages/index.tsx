@@ -5,7 +5,15 @@ import { DateTime } from 'luxon'
 import { useEffect, useRef } from 'react'
 import dynamic from 'next/dynamic'
 
-const Map = dynamic(() => import('../components/Map'), { ssr: false })
+// This is a tricky workaround to prevent leaflet from crashing next.js
+// SSR. If we don't do this, the leaflet map will be loaded server side
+// and throw a window error.
+const Map = dynamic(
+  () => import('@mbari/react-ui/dist/Map').then((r) => r.Map),
+  {
+    ssr: false,
+  }
+)
 
 const OverviewPage: NextPage = () => {
   const startTime = DateTime.utc().minus({ weeks: 1 }).toISO()

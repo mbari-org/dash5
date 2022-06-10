@@ -3292,18 +3292,6 @@
     clsx "^1.1.1"
     simple-scaffold "1.1.0-alpha.6"
 
-"@terraformer/arcgis@^2.1.0":
-  version "2.1.1"
-  resolved "https://registry.yarnpkg.com/@terraformer/arcgis/-/arcgis-2.1.1.tgz#ca362eb4f28cbe551dd611ea41644544779b803b"
-  integrity sha512-/METp7KZYdr/cpIBMHUSCihuxgUq8c1afpiIQPEMiaKR8Wc3ZRgU9BvezV02/0INDDpB6CKUj/XXXo8HNrctkQ==
-  dependencies:
-    "@terraformer/common" "^2.0.7"
-
-"@terraformer/common@^2.0.7":
-  version "2.0.7"
-  resolved "https://registry.yarnpkg.com/@terraformer/common/-/common-2.0.7.tgz#bec626f331b9f0cc3aefb16f9f88e2d3684107ff"
-  integrity sha512-8bl+/JT0Rw6FYe2H3FfJS8uQwgzGl+UHs+8JX0TQLHgA4sMDEwObbMwo0iP3FVONwPXrPHEpC5YH7Grve0cl9A==
-
 "@testing-library/dom@^8.0.0":
   version "8.11.3"
   resolved "https://registry.yarnpkg.com/@testing-library/dom/-/dom-8.11.3.tgz#38fd63cbfe14557021e88982d931e33fb7c1a808"
@@ -7318,14 +7306,6 @@ esrecurse@^4.1.0, esrecurse@^4.3.0:
   integrity sha512-KmfKL3b6G+RXvP8N1vr3Tq1kL/oCFgn2NYXEtqP8/L3pKapUA4G8cFVaoF3SU323CD4XypR/ffioHmkti6/Tag==
   dependencies:
     estraverse "^5.2.0"
-
-esri-leaflet@^3.0.8:
-  version "3.0.8"
-  resolved "https://registry.yarnpkg.com/esri-leaflet/-/esri-leaflet-3.0.8.tgz#040aae75226992521ca19abc7b837213e9a7512c"
-  integrity sha512-mLb4pRfDAbkG1YhuajD22erLXIAtrF1R32hmgmlJNI3t47n6KjTppCb8lViia0O7+GDORXFuJ9Lj9RkpsaKhSA==
-  dependencies:
-    "@terraformer/arcgis" "^2.1.0"
-    tiny-binary-search "^1.0.3"
 
 estraverse@^4.1.1:
   version "4.3.0"
@@ -13948,11 +13928,6 @@ timers-browserify@^2.0.4:
   integrity sha512-9phl76Cqm6FhSX9Xe1ZUAMLtm1BLkKj2Qd5ApyWkXzsMRaA7dgr81kf4wJmQf/hAvg8EEyJxDo3du/0KlhPiKQ==
   dependencies:
     setimmediate "^1.0.4"
-
-tiny-binary-search@^1.0.3:
-  version "1.0.3"
-  resolved "https://registry.yarnpkg.com/tiny-binary-search/-/tiny-binary-search-1.0.3.tgz#9d52e3d16dd1171eb74486caf704ba08c0c62186"
-  integrity sha512-STSHX/L5nI9WTLv6wrzJbAPbO7OIISX83KFBh2GVbX1Uz/vgZOU/ANn/8iV6t35yMTpoPzzO+3OQid3mifE0CA==
 
 tiny-warning@^1.0.2:
   version "1.0.3"
