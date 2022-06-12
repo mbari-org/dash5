@@ -59,8 +59,6 @@ export const CreateAccountForm: React.FC<CreateAccountFormProps> = ({
     mode: 'onBlur',
   })
 
-  console.log(formErrors)
-
   useDefaultValueListener<CreateAccountFormValues>(defaultValues, reset)
 
   const handleFormSubmit = handleSubmit(async (data) => {

@@ -15,7 +15,12 @@ export const CreateAccountModal: React.FC<CreateAccountModalProps> = ({
   ...modalProps
 }) => {
   return (
-    <Modal {...modalProps} title="Create account" form="createAccount">
+    <Modal
+      {...modalProps}
+      title="Create account"
+      confirmButtonText="Create Account"
+      form="createAccount"
+    >
       <CreateAccountForm onSubmit={onSubmit} id="createAccount" hideSubmit />
     </Modal>
   )
