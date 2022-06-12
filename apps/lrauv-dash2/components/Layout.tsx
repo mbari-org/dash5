@@ -64,7 +64,7 @@ const Layout: React.FC = ({ children }) => {
   const canRemoveOption = (vehicle: string) => vehicle !== 'Overview'
 
   return (
-    <div className="flex min-h-screen flex-col">
+    <div className="flex h-screen w-screen flex-col">
       <Head>
         <title>LRAUV Dash Client</title>
         <meta
