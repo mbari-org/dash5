@@ -3,9 +3,11 @@ import { render, screen } from '@testing-library/react'
 import '@testing-library/jest-dom'
 import { CreateAccountModal } from './CreateAccountModal'
 
-test.todo('should have tests')
+const props = {
+  onSubmit: jest.fn(),
+  open: true,
+}
 
-// test('should render child content', async () => {
-//   render(<CreateAccountModal>Click Here</CreateAccountModal>)
-//   expect(screen.getByText(/Click Here/i)).toHaveTextContent('Click Here')
-// })
+test('should render the component', async () => {
+  expect(() => render(<CreateAccountModal {...props} />)).not.toThrow()
+})
