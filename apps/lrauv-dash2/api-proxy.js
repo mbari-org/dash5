@@ -12,7 +12,7 @@ app.use(cors())
 app.use(bodyParser.urlencoded({ extended: false }))
 app.use(bodyParser.json()) // support json encoded bodies
 app.use(
-  '/TethysDash/api',
+  '',
   createProxyMiddleware({
     target: 'https://okeanids.mbari.org/',
     changeOrigin: true,
