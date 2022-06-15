@@ -36,11 +36,18 @@ const VehicleDeploymentDropdown: React.FC<Omit<DropdownProps, 'options'>> = (
     <VehicleDropdown
       {...props}
       options={vehicleNames
-        .filter((n: string) => trackedVehicles.indexOf(n) < 0)
-        .map((name: string) => ({
-          label: <LastDeploymentOption vehicleName={name} key={name} />,
+        .filter(
+          ({ vehicleName }) => trackedVehicles.indexOf(vehicleName ?? '') < 0
+        )
+        .map(({ vehicleName }) => ({
+          label: (
+            <LastDeploymentOption
+              vehicleName={vehicleName ?? ''}
+              key={vehicleName}
+            />
+          ),
           onSelect: () => {
-            setTrackedVehicles([...trackedVehicles, name])
+            setTrackedVehicles([...trackedVehicles, vehicleName ?? ''])
           },
         }))}
     />
