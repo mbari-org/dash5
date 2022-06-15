@@ -2,10 +2,12 @@ import React from 'react'
 import clsx from 'clsx'
 import { useVirtualizer } from '@tanstack/react-virtual'
 
+export type Virtualizer = ReturnType<typeof useVirtualizer>
+
 export interface CellVirtualizerProps {
   className?: string
   style?: React.CSSProperties
-  cellAtIndex: (index: number) => JSX.Element
+  cellAtIndex: (index: number, virtualizer: Virtualizer) => JSX.Element
   count: number
   estimateSize?: (index: number) => number
 }
@@ -57,7 +59,7 @@ export const CellVirtualizer: React.FC<CellVirtualizerProps> = ({
               transform: `translateY(${virtualItem.start}px)`,
             }}
           >
-            {cellAtIndex(virtualItem.index)}
+            {cellAtIndex(virtualItem.index, rowVirtualizer)}
           </div>
         ))}
       </div>
