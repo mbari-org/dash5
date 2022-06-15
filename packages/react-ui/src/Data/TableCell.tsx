@@ -23,11 +23,11 @@ export const TableCell: React.FC<TableCellProps> = ({
   return (
     <ul className={clsx(styles.container, className)} data-testid="table cell">
       {icon && <li className="text-4xl">{icon}</li>}
-      <li className="w-full">
+      <li className="h-full w-full">
         <div
           className={clsx(
             !scrollable && firstColumn && 'font-mono',
-            scrollable && !firstColumn && 'text-sm',
+            scrollable && !firstColumn && 'h-full text-sm',
             firstColumn && (scrollable ? 'font-medium' : 'font-semibold')
           )}
         >

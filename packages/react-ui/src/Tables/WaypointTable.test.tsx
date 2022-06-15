@@ -5,14 +5,12 @@ import { WaypointTable, WaypointTableProps } from './WaypointTable'
 
 const props: WaypointTableProps = {
   waypoints: Array(5).fill({
-    options: [
-      { id: '1', name: '25.0000° N, 71.0000° W' },
-      { id: '2', name: 'test option' },
-    ],
+    id: Math.floor(Math.random() * 100),
   }),
-  onSelectOption: (id) => {
-    console.log(id)
-  },
+  stations: [
+    { name: 'C1', lat: 36.797, long: -121.847 },
+    { name: 'C2', lat: 46.797, long: -141.847 },
+  ],
   onFocusWaypoint: (index) => {
     console.log(index)
   },
