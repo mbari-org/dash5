@@ -1,17 +1,17 @@
 import { useState, useCallback, useEffect } from 'react'
-import { useVehicleNames } from './useVehicleNames'
+import { useVehicles } from './useVehicles'
 import { useQueryClient } from 'react-query'
 import {
   getLastDeployment,
   GetLastDeploymentResponse,
-  GetVehicleNamesParams,
+  GetVehiclesParams,
 } from '../../axios'
 import { useAuthContext } from '../AuthProvider'
 
-export const useSortedVehicleNames = (params: GetVehicleNamesParams) => {
+export const useSortedVehicleNames = (params: GetVehiclesParams) => {
   const { axiosInstance } = useAuthContext()
-  const vehicleNamesQuery = useVehicleNames(params)
-  const vehicleNames = vehicleNamesQuery.data ?? []
+  const vehiclesQuery = useVehicles(params)
+  const vehicles = vehiclesQuery.data ?? []
   const queryClient = useQueryClient()
   const [loadingDeployments, setLoadingDeployments] = useState(false)
 
@@ -19,13 +19,13 @@ export const useSortedVehicleNames = (params: GetVehicleNamesParams) => {
     setLoadingDeployments(true)
     const to = new Date().toISOString()
     await Promise.all(
-      vehicleNames.map(
-        async (vehicle) =>
+      vehicles.map(
+        async ({ vehicleName }) =>
           await queryClient.fetchQuery(
-            ['deployment', 'last', vehicle],
+            ['deployment', 'last', vehicleName],
             () => {
               return getLastDeployment(
-                { vehicle, to },
+                { vehicle: vehicleName, to },
                 {
                   instance: axiosInstance,
                 }
@@ -38,7 +38,7 @@ export const useSortedVehicleNames = (params: GetVehicleNamesParams) => {
       )
     )
     setLoadingDeployments(false)
-  }, [vehicleNames, queryClient, axiosInstance, setLoadingDeployments])
+  }, [vehicles, queryClient, axiosInstance, setLoadingDeployments])
 
   const deploymentQueries = queryClient.getQueriesData(['deployment', 'last'])
   const deployments: { [key: string]: GetLastDeploymentResponse } =
@@ -62,14 +62,19 @@ export const useSortedVehicleNames = (params: GetVehicleNamesParams) => {
           }
           return 0
         })
-      : vehicleNames.sort()
+      : vehicles.map((v) => v.vehicleName).sort()
 
   useEffect(() => {
     fetchSortedDeployments()
   }, [fetchSortedDeployments])
 
   return {
-    data: sortedVehicles,
-    isLoading: vehicleNamesQuery.isLoading || loadingDeployments,
+    data: sortedVehicles
+      .map((vehicleName, position) => ({
+        ...vehicles.find((v) => v.vehicleName === vehicleName),
+        position,
+      }))
+      .sort((a, b) => a.position - b.position),
+    isLoading: vehiclesQuery.isLoading || loadingDeployments,
   }
 }
