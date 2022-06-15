@@ -1,7 +1,10 @@
 import React from 'react'
 import clsx from 'clsx'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
-import { faChevronDown } from '@fortawesome/pro-regular-svg-icons'
+import {
+  faChevronDown,
+  faChevronLeft,
+} from '@fortawesome/pro-regular-svg-icons'
 import { DateTime } from 'luxon'
 
 export interface VehicleHeaderProps {
@@ -16,7 +19,7 @@ export interface VehicleHeaderProps {
 }
 
 const styles = {
-  button: 'flex items-center border border-stone-200 p-2',
+  button: 'flex items-center p-2 w-full',
   container: 'bg-white flex w-full',
   label: 'text-gray-700 text-md underline',
   secondary: 'text-gray-500 text-md px-4',
@@ -55,7 +58,10 @@ export const VehicleHeader: React.FC<VehicleHeaderProps> = ({
             began {DateTime.fromSeconds(deployedAt).toRelative()}
           </span>
         ) : null}
-        <FontAwesomeIcon icon={faChevronDown} className={styles.icon} />
+        <FontAwesomeIcon
+          icon={open ? faChevronDown : faChevronLeft}
+          className={styles.icon}
+        />
       </button>
     </div>
   )
