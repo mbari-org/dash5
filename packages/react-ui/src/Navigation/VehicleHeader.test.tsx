@@ -36,19 +36,3 @@ test('should render the color', async () => {
     'background-color: rgb(0, 255, 0);'
   )
 })
-
-test('should not render a bottom border if open', async () => {
-  render(<VehicleHeader {...props} open />)
-  expect(screen.getByTestId(/vehicleHeaderButton/i)).toHaveAttribute(
-    'style',
-    'border-bottom: 0;'
-  )
-})
-
-test('should render a bottom border if closed', async () => {
-  render(<VehicleHeader {...props} open={false} />)
-  expect(screen.getByTestId(/vehicleHeaderButton/i)).not.toHaveAttribute(
-    'style',
-    'border-bottom: 0;'
-  )
-})
