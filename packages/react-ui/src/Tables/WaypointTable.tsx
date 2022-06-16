@@ -54,17 +54,30 @@ export const WaypointTable: React.FC<WaypointTableProps> = ({
   onCancelFocus,
   onDone,
 }) => {
-  // TODO: set selectedWaypoints using incoming waypoint station data
-  const [selectedWaypoints, setSelectedWaypoints] = useState<
-    (Station | undefined)[]
-  >([...Array(waypoints.length).fill(null)])
+  const initialWaypoints = waypoints.map((waypoint) =>
+    waypoint.station ? waypoint.station : null
+  )
+  const [selectedWaypoints, setSelectedWaypoints] =
+    useState<(Station | null | undefined)[]>(initialWaypoints)
+
+  const updateSelectedWaypoints = (
+    indexToChange: number,
+    selected: Station
+  ) => {
+    const updatedWaypoints: (Station | null | undefined)[] =
+      selectedWaypoints.map((waypoint, index) =>
+        index === indexToChange ? selected : waypoint
+      )
+
+    setSelectedWaypoints(updatedWaypoints)
+  }
 
   const handleCancel = () => {
     typeof focusWaypointIndex === 'number' &&
       onCancelFocus?.(focusWaypointIndex)
   }
 
-  const NumberedMarker = (num: number, isPurple?: boolean) => {
+  const NumberedMarker = (num: number, isActive?: boolean) => {
     return (
       <div
         className="relative mr-2 p-4"
@@ -74,7 +87,7 @@ export const WaypointTable: React.FC<WaypointTableProps> = ({
           <FontAwesomeIcon
             icon={faMapMarker as IconProp}
             data-testid="map marker icon"
-            className={clsx(isPurple ? 'text-purple-700' : 'opacity-60')}
+            className={clsx(isActive ? 'text-purple-700' : 'opacity-60')}
           />
         </div>
         <div className={styles.absoluteAndCentered}>
@@ -84,54 +97,45 @@ export const WaypointTable: React.FC<WaypointTableProps> = ({
     )
   }
 
-  const stationOptions: StationOption[] | undefined = stations?.map(
+  const selectOptions: StationOption[] | undefined = stations?.map(
     ({ name, lat, long }) => ({
       id: name,
       name: `${name} ${lat}, ${long}`,
     })
   )
 
-  const stationOptionsWithCustom: StationOption[] | undefined =
-    stationOptions && [{ id: 'Custom', name: 'Custom' }].concat(stationOptions)
+  const selectOptionsWithCustom: StationOption[] | undefined = (selectOptions &&
+    [{ id: 'Custom', name: 'Custom' }].concat(selectOptions)) || [
+    { id: 'Custom', name: 'Custom' },
+  ]
 
   const Row = (rowIndex: number) => {
-    const [isCustom, setIsCustom] = useState(false)
+    const [isCustom, setIsCustom] = useState(
+      selectedWaypoints[rowIndex]?.name === 'Custom'
+    )
     const handleFocusWaypoint = () => {
       onFocusWaypoint?.(rowIndex)
-    }
-
-    const updateSelectedWaypoints = (selected: Station) => {
-      const updatedWaypoints: (Station | undefined)[] = selectedWaypoints.map(
-        (waypoint, index) => (index === rowIndex ? selected : waypoint)
-      )
-
-      setSelectedWaypoints(updatedWaypoints)
     }
 
     const handleSelectStation = (id: string) => {
       const selectedStation = stations?.find(({ name }) => name === id)
 
-      if (selectedStation) updateSelectedWaypoints(selectedStation)
+      selectedStation && updateSelectedWaypoints(rowIndex, selectedStation)
     }
 
     const rowNumber = rowIndex + 1
 
+    const activeRow =
+      typeof focusWaypointIndex === 'number' ||
+      isCustom ||
+      !!selectedWaypoints[rowIndex]
+
     return {
       cells: [
         {
-          icon: NumberedMarker(
-            rowNumber,
-            // marker is purple if in focus mode or waypoint is set
-            typeof focusWaypointIndex === 'number' ||
-              isCustom ||
-              !!selectedWaypoints[rowIndex]
-          ),
+          icon: NumberedMarker(rowNumber, activeRow),
           label: (
-            <div
-              className={clsx(
-                (isCustom || !!selectedWaypoints[rowIndex]) && 'text-teal-600'
-              )}
-            >
+            <div className={clsx(activeRow && 'text-teal-600')}>
               Lat{rowNumber}/Lon{rowNumber}
             </div>
           ),
@@ -144,10 +148,11 @@ export const WaypointTable: React.FC<WaypointTableProps> = ({
         },
         {
           label: (
-            <div className="flex h-full w-full  items-center">
+            <div className="flex h-full w-full items-center">
               <div className="w-11/12">
                 {selectedWaypoints[rowIndex] || isCustom ? (
                   <WaypointField
+                    rowIndex={rowIndex}
                     stationName={selectedWaypoints[rowIndex]?.name}
                     lat={selectedWaypoints[rowIndex]?.lat}
                     long={selectedWaypoints[rowIndex]?.long}
@@ -161,7 +166,7 @@ export const WaypointTable: React.FC<WaypointTableProps> = ({
                   <Select
                     placeholder="Set waypoint"
                     name="waypoint selector"
-                    options={stationOptionsWithCustom}
+                    options={selectOptionsWithCustom}
                     onSelect={(id) =>
                       id === 'Custom'
                         ? setIsCustom(true)

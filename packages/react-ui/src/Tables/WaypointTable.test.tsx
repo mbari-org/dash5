@@ -58,3 +58,44 @@ test('should display the numbered waypoint map marker icon in purple when in foc
     'text-purple-700'
   )
 })
+
+test('should display a selected waypoint', async () => {
+  render(
+    <WaypointTable
+      {...props}
+      waypoints={[
+        { id: '1', station: { name: 'C1', lat: 36.797, long: -121.847 } },
+      ]}
+    />
+  )
+
+  expect(screen.queryByText(/C1/i)).toBeInTheDocument()
+})
+
+test('should display the numbered waypoint map marker icon in purple when a waypoint is selected', async () => {
+  render(
+    <WaypointTable
+      {...props}
+      waypoints={[
+        { id: '1', station: { name: 'C1', lat: 36.797, long: -121.847 } },
+      ]}
+    />
+  )
+
+  expect(screen.queryAllByTestId(/map marker icon/i)[0]).toHaveClass(
+    'text-purple-700'
+  )
+})
+
+test('should display +/- error warning if custom coordinate is out of range', async () => {
+  render(
+    <WaypointTable
+      {...props}
+      waypoints={[
+        { id: '2', station: { name: 'Custom', lat: -1, long: -122.376 } },
+      ]}
+    />
+  )
+
+  expect(screen.queryByText(/\+\/- error?/i)).toBeInTheDocument()
+})

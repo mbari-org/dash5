@@ -2,15 +2,16 @@ import clsx from 'clsx'
 import React, { useState } from 'react'
 import { Input } from '../Fields'
 import { Select } from '../Fields/Select'
-import { Station, WaypointTableProps } from './WaypointTable'
+import { Station, StationOption, WaypointTableProps } from './WaypointTable'
 
 export interface WaypointFieldProps {
+  rowIndex: number
   stationOptions?: WaypointTableProps['stations']
   stationName: string | undefined
   lat: number | undefined
   long: number | undefined
   handleSelect: (id: string) => void
-  handleUpdate: (customStation: Station) => void
+  handleUpdate: (rowIndex: number, customStation: Station) => void
   isCustom: boolean
   setIsCustom: (isCustom: boolean) => void
 }
@@ -18,12 +19,14 @@ export interface WaypointFieldProps {
 const styles = {
   ul: 'grid h-full grid-cols-3 gap-1',
   li: 'flex h-full w-full items-center',
-  setCoordinates: 'items-center border-[1px] border-stone-300 pl-1',
+  staticCoordinates:
+    'flex h-full w-full items-center bg-stone-300 pl-2 overflow-hidden',
   customContainer: 'flex h-full w-full flex-col',
   errorMessage: 'relative -top-2 h-2 text-xs text-red-600',
 }
 
 export const WaypointField: React.FC<WaypointFieldProps> = ({
+  rowIndex,
   stationName,
   lat,
   long,
@@ -33,41 +36,44 @@ export const WaypointField: React.FC<WaypointFieldProps> = ({
   isCustom,
   setIsCustom,
 }) => {
-  const [customLat, setCustomLat] = useState<string | undefined>('')
-  const [customLong, setCustomLong] = useState<string | undefined>('')
-  const [latError, setLatError] = useState<boolean>(false)
-  const [longError, setLongError] = useState<boolean>(false)
+  // TODO: real latError and longError error logic goes here
+  const latErrorCondition = (lat: number) =>
+    customLat && 30 > lat && lat > -37 ? true : false
 
-  const options = stationOptions?.map(({ name }) => ({ id: name, name }))
-  const optionsWithCustom =
-    options && [{ id: 'Custom', name: 'Custom' }].concat(options)
+  const longErrorCondition = (long: number) =>
+    customLong && 30 > long && long > -37 ? true : false
 
-  const updateCoordinateErrors = (lat: number, long: number) => {
-    if (customLat && 30 > lat && lat > -30) {
-      setLatError(true)
-    }
-    if (!customLat || 30 < lat || lat < -30) {
-      setLatError(false)
-    }
+  const [customLat, setCustomLat] = useState<string | undefined>(
+    isCustom && lat ? String(lat) : ''
+  )
+  const [customLong, setCustomLong] = useState<string | undefined>(
+    isCustom && long ? String(long) : ''
+  )
+  const [latError, setLatError] = useState<boolean>(
+    (isCustom && latErrorCondition(Number(lat))) || false
+  )
+  const [longError, setLongError] = useState<boolean>(
+    (isCustom && longErrorCondition(Number(long))) || false
+  )
 
-    if (customLong && 30 > long && long > -30) {
-      setLongError(true)
-    }
-    if (!customLong || 30 < long || long < -30) {
-      setLongError(false)
-    }
-  }
+  const options: StationOption[] | undefined = stationOptions?.map(
+    ({ name }) => ({ id: name, name })
+  )
+  const optionsWithCustom: StationOption[] | undefined = (options &&
+    [{ id: 'Custom', name: 'Custom' }].concat(options)) || [
+    { id: 'Custom', name: 'Custom' },
+  ]
 
+  // TODO: add bad input error handling
   const handleCustom = () => {
     const newLat = Number(customLat)
     const newLong = Number(customLong)
-    console.log(customLat)
 
-    // TODO: real latError and longError error logic goes here
-    updateCoordinateErrors(newLat, newLong)
+    setLatError(latErrorCondition(newLat))
+    setLongError(longErrorCondition(newLong))
 
     if (customLat && customLong) {
-      handleUpdate({
+      handleUpdate(rowIndex, {
         id: 'Custom',
         name: 'Custom',
         lat: newLat,
@@ -78,13 +84,7 @@ export const WaypointField: React.FC<WaypointFieldProps> = ({
 
   return (
     <ul className={styles.ul}>
-      <li
-        className={clsx(
-          styles.li,
-          !isCustom && styles.setCoordinates,
-          lat && !isCustom && 'bg-stone-300'
-        )}
-      >
+      <li className={styles.li}>
         {isCustom ? (
           <div className={styles.customContainer}>
             {latError && <div className={styles.errorMessage}>+/- error?</div>}
@@ -102,16 +102,10 @@ export const WaypointField: React.FC<WaypointFieldProps> = ({
             />
           </div>
         ) : (
-          <div className="pl-2">{lat}</div>
+          <div className={styles.staticCoordinates}>{lat}</div>
         )}
       </li>
-      <li
-        className={clsx(
-          styles.li,
-          !isCustom && styles.setCoordinates,
-          long && !isCustom && 'bg-stone-300'
-        )}
-      >
+      <li className={styles.li}>
         {isCustom ? (
           <div className={styles.customContainer}>
             {longError && <div className={styles.errorMessage}>+/- error?</div>}
@@ -129,7 +123,7 @@ export const WaypointField: React.FC<WaypointFieldProps> = ({
             />
           </div>
         ) : (
-          <span className="pl-2">{long}</span>
+          <div className={styles.staticCoordinates}>{long}</div>
         )}
       </li>
       <li className={clsx(styles.li)}>

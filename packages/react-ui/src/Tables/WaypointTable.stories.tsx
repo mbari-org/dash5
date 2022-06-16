@@ -51,6 +51,11 @@ FocusMode.args = {
 export const WaypointField = Template.bind({})
 WaypointField.args = {
   ...args,
+  waypoints: [
+    { id: '1', station: { name: 'C1', lat: 36.797, long: -121.847 } },
+    { id: '2', station: { name: 'Custom', lat: -36.691, long: -122.376 } },
+    { id: '3' },
+  ],
 }
 WaypointField.parameters = {
   design: {
