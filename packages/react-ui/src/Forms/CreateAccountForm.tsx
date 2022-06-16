@@ -1,4 +1,4 @@
-import React, { useEffect, useRef } from 'react'
+import React from 'react'
 import { useForm } from 'react-hook-form'
 import { yupResolver } from '@hookform/resolvers/yup'
 import * as yup from 'yup'
@@ -8,6 +8,7 @@ import {
   ErrorMap,
 } from '@sumocreations/forms'
 import { camelCase } from 'lodash'
+import { faEnvelope, faEyeSlash } from '@fortawesome/pro-regular-svg-icons'
 
 // Assumes we have some existing UI implementation for forms in our library. Replace as needed.
 import { TextField, Fields, ErrorList } from '../Fields'
@@ -73,60 +74,45 @@ export const CreateAccountForm: React.FC<CreateAccountFormProps> = ({
     }
   })
 
-  const field = useRef<HTMLInputElement>(null)
-
-  useEffect(() => {
-    field.current?.focus()
-  })
-
   return (
     <form onSubmit={handleFormSubmit} className="relative" id={id}>
-      <Fields
-        register={register}
-        errors={formErrors}
-        grow
-        className="grid w-full grid-cols-2 grid-rows-4 gap-x-2 gap-y-4 pb-2"
-      >
+      <Fields register={register} errors={formErrors} grow>
         <TextField
           name="email"
           label="Email"
-          ref={field}
-          className="w-full"
-          labelClassName="text-gray-500 font-medium"
-          materialDesign
+          placeholder="Email Address"
+          className="w-full opacity-60"
+          icon={faEnvelope}
         />
-        <div />
-        <TextField
-          name="firstName"
-          label="First Name:"
-          type="text"
-          className="w-full"
-          labelClassName="text-gray-500 font-medium"
-          materialDesign
-        />
-        <TextField
-          name="lastName"
-          label="Last Name:"
-          type="text"
-          className="w-full"
-          labelClassName="text-gray-500 font-medium"
-          materialDesign
-        />
+        <Fields nested grow>
+          <TextField
+            name="firstName"
+            label="First Name:"
+            className="w-full"
+            labelClassName="text-gray-500 font-medium"
+          />
+          <TextField
+            name="lastName"
+            label="Last Name:"
+            className="w-full"
+            labelClassName="text-gray-500 font-medium"
+          />
+        </Fields>
         <TextField
           name="password"
-          label="Password:"
+          label="Password"
+          placeholder="Password"
           type="password"
-          className="w-full"
-          labelClassName="text-gray-500 font-medium"
-          materialDesign
+          className="w-full opacity-60"
+          icon={faEyeSlash}
         />
         <TextField
           name="confirmPassword"
           label="Re-enter password:"
+          placeholder="Password"
           type="password"
-          className="w-full"
-          labelClassName="text-gray-500 font-medium"
-          materialDesign
+          className="w-full opacity-60"
+          icon={faEyeSlash}
         />
         <div className="flex flex-row items-center">
           <label htmlFor="requestOperator" className="mr-2 text-sm font-medium">
