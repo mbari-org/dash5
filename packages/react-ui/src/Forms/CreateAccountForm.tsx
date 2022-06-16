@@ -15,6 +15,10 @@ import { TextField, Fields, ErrorList } from '../Fields'
 import { Button } from '../Navigation'
 import { AbsoluteOverlay } from '../Indicators'
 
+const styles = {
+  label: 'text-gray-500 font-medium',
+}
+
 export type CreateAccountFormValues = {
   email?: string
   firstName?: string
@@ -81,21 +85,22 @@ export const CreateAccountForm: React.FC<CreateAccountFormProps> = ({
           name="email"
           label="Email"
           placeholder="Email Address"
-          className="w-full opacity-60"
+          labelClassName={styles.label}
           icon={faEnvelope}
+          grow
         />
-        <Fields nested grow>
+        <Fields nested>
           <TextField
             name="firstName"
             label="First Name:"
-            className="w-full"
-            labelClassName="text-gray-500 font-medium"
+            labelClassName={styles.label}
+            grow
           />
           <TextField
             name="lastName"
             label="Last Name:"
-            className="w-full"
-            labelClassName="text-gray-500 font-medium"
+            labelClassName={styles.label}
+            grow
           />
         </Fields>
         <TextField
@@ -103,16 +108,18 @@ export const CreateAccountForm: React.FC<CreateAccountFormProps> = ({
           label="Password"
           placeholder="Password"
           type="password"
-          className="w-full opacity-60"
+          labelClassName={styles.label}
           icon={faEyeSlash}
+          grow
         />
         <TextField
           name="confirmPassword"
           label="Re-enter password:"
           placeholder="Password"
           type="password"
-          className="w-full opacity-60"
+          labelClassName={styles.label}
           icon={faEyeSlash}
+          grow
         />
         <div className="flex flex-row items-center">
           <label htmlFor="requestOperator" className="mr-2 text-sm font-medium">
