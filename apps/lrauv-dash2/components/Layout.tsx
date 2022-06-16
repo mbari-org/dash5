@@ -87,7 +87,7 @@ const Layout: React.FC = ({ children }) => {
             dropdown === 'vehicle' ? (
               <VehicleDeploymentDropdown
                 onDismiss={dismissDropdown}
-                className="absolute left-0 z-[500] mt-2 max-h-96 w-96"
+                className="absolute left-0 z-[1001] mt-2 max-h-96 w-96"
                 style={{ top: '100%' }}
                 scrollable
               />
