@@ -79,6 +79,7 @@ export interface GetVehicleInfoResponse {
   color_missiondefault: string
   text_volts: string
   color_volts: string
+  not_found: boolean
 }
 
 export const getVehicleInfo = async (
@@ -91,11 +92,19 @@ export const getVehicleInfo = async (
     console.debug(`GET ${url}`)
   }
 
-  const response = await instance.get(
-    `${url}?${new URLSearchParams({
-      ts: params.ts ?? new Date().toISOString(),
-    })}`,
-    config
-  )
-  return response.data as GetVehicleInfoResponse
+  try {
+    const response = await instance.get(
+      `${url}?${new URLSearchParams({
+        ts: params.ts ?? new Date().toISOString(),
+      })}`,
+      config
+    )
+    return response.data as GetVehicleInfoResponse
+  } catch (e: unknown) {
+    if ((e as Error).message.indexOf('404')) {
+      return { not_found: true }
+    } else {
+      throw e
+    }
+  }
 }

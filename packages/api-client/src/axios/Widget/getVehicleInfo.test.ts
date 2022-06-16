@@ -109,4 +109,15 @@ describe('getVehicleInfo', () => {
       expect(error).toBeDefined()
     }
   })
+
+  it('should return an empty response on a 404 error', async () => {
+    server.use(
+      rest.get(`/widget/auv_${params.name}.json`, (_req, res, ctx) => {
+        return res.once(ctx.status(404))
+      })
+    )
+
+    const response = await getVehicleInfo(params)
+    expect(response).toEqual({ not_found: true })
+  })
 })
