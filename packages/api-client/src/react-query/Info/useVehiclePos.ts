@@ -9,14 +9,14 @@ export const useVehiclePos = (
 ) => {
   const { axiosInstance } = useAuthContext()
   const query = useQuery(
-    ['info', 'vehicleNames', params],
+    ['info', 'vehiclePos', params],
     () => {
       return getVPos(params, {
         instance: axiosInstance,
       })
     },
     {
-      staleTime: 30 * 1000,
+      staleTime: 5 * 60 * 1000,
       ...options,
     }
   )

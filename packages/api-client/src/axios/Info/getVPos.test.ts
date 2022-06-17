@@ -10,54 +10,56 @@ let params: GetVPosParams = {
 }
 
 const mockResponse = {
-  gpsFixes: [
-    {
-      eventId: 'string',
-      unixTime: 0,
-      isoTime: 'string',
-      latitude: 0,
-      longitude: 0,
-      component: 'string',
-      note: 'string',
-      text: 'string',
-    },
-  ],
-  argoReceives: [
-    {
-      eventId: 'string',
-      unixTime: 0,
-      isoTime: 'string',
-      latitude: 0,
-      longitude: 0,
-      component: 'string',
-      note: 'string',
-      text: 'string',
-    },
-  ],
-  emergencies: [
-    {
-      eventId: 'string',
-      unixTime: 0,
-      isoTime: 'string',
-      latitude: 0,
-      longitude: 0,
-      component: 'string',
-      note: 'string',
-      text: 'string',
-    },
-  ],
-  reachedWaypoints: [
-    {
-      eventId: 'string',
-      unixTime: 0,
-      isoTime: 'string',
-      latitude: 0,
-      longitude: 0,
-      component: 'string',
-      note: 'string',
-      text: 'string',
-    },
-  ],
+  result: {
+    gpsFixes: [
+      {
+        eventId: 'string',
+        unixTime: 0,
+        isoTime: 'string',
+        latitude: 0,
+        longitude: 0,
+        component: 'string',
+        note: 'string',
+        text: 'string',
+      },
+    ],
+    argoReceives: [
+      {
+        eventId: 'string',
+        unixTime: 0,
+        isoTime: 'string',
+        latitude: 0,
+        longitude: 0,
+        component: 'string',
+        note: 'string',
+        text: 'string',
+      },
+    ],
+    emergencies: [
+      {
+        eventId: 'string',
+        unixTime: 0,
+        isoTime: 'string',
+        latitude: 0,
+        longitude: 0,
+        component: 'string',
+        note: 'string',
+        text: 'string',
+      },
+    ],
+    reachedWaypoints: [
+      {
+        eventId: 'string',
+        unixTime: 0,
+        isoTime: 'string',
+        latitude: 0,
+        longitude: 0,
+        component: 'string',
+        note: 'string',
+        text: 'string',
+      },
+    ],
+  },
 }
 
 const server = setupServer(
@@ -73,7 +75,7 @@ afterAll(() => server.close())
 describe('getVPos', () => {
   it('should return the mocked value when successful', async () => {
     const response = await getVPos(params)
-    expect(response).toEqual(mockResponse)
+    expect(response).toEqual(mockResponse.result)
   })
 
   it('should throw when unsuccessful', async () => {

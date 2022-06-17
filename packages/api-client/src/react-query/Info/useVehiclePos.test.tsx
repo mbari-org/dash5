@@ -8,54 +8,56 @@ import { setupServer } from 'msw/node'
 import { MockProviders } from '../queryTestHelpers'
 
 const mockResponse = {
-  gpsFixes: [
-    {
-      eventId: 'string',
-      unixTime: 0,
-      isoTime: 'string',
-      latitude: 0,
-      longitude: 0,
-      component: 'string',
-      note: 'This is a GPS FIX',
-      text: 'string',
-    },
-  ],
-  argoReceives: [
-    {
-      eventId: 'string',
-      unixTime: 0,
-      isoTime: 'string',
-      latitude: 0,
-      longitude: 0,
-      component: 'string',
-      note: 'This is an ARGO RECEIVES',
-      text: 'string',
-    },
-  ],
-  emergencies: [
-    {
-      eventId: 'string',
-      unixTime: 0,
-      isoTime: 'string',
-      latitude: 0,
-      longitude: 0,
-      component: 'string',
-      note: 'This is an EMERGENCY',
-      text: 'string',
-    },
-  ],
-  reachedWaypoints: [
-    {
-      eventId: 'string',
-      unixTime: 0,
-      isoTime: 'string',
-      latitude: 0,
-      longitude: 0,
-      component: 'string',
-      note: 'This is a REACHED WAYPOINT',
-      text: 'string',
-    },
-  ],
+  result: {
+    gpsFixes: [
+      {
+        eventId: 'string',
+        unixTime: 0,
+        isoTime: 'string',
+        latitude: 0,
+        longitude: 0,
+        component: 'string',
+        note: 'This is a GPS FIX',
+        text: 'string',
+      },
+    ],
+    argoReceives: [
+      {
+        eventId: 'string',
+        unixTime: 0,
+        isoTime: 'string',
+        latitude: 0,
+        longitude: 0,
+        component: 'string',
+        note: 'This is an ARGO RECEIVES',
+        text: 'string',
+      },
+    ],
+    emergencies: [
+      {
+        eventId: 'string',
+        unixTime: 0,
+        isoTime: 'string',
+        latitude: 0,
+        longitude: 0,
+        component: 'string',
+        note: 'This is an EMERGENCY',
+        text: 'string',
+      },
+    ],
+    reachedWaypoints: [
+      {
+        eventId: 'string',
+        unixTime: 0,
+        isoTime: 'string',
+        latitude: 0,
+        longitude: 0,
+        component: 'string',
+        note: 'This is a REACHED WAYPOINT',
+        text: 'string',
+      },
+    ],
+  },
 }
 
 const server = setupServer(
@@ -99,11 +101,11 @@ describe('useVehiclePos', () => {
       </MockProviders>
     )
     await waitFor(() => {
-      return screen.getByText(mockResponse.gpsFixes[0].note)
+      return screen.getByText(mockResponse.result.gpsFixes[0].note)
     })
 
     expect(screen.getByTestId('gpsFix')).toHaveTextContent(
-      mockResponse.gpsFixes[0].note
+      mockResponse.result.gpsFixes[0].note
     )
   })
 
@@ -114,11 +116,11 @@ describe('useVehiclePos', () => {
       </MockProviders>
     )
     await waitFor(() => {
-      return screen.getByText(mockResponse.argoReceives[0].note)
+      return screen.getByText(mockResponse.result.argoReceives[0].note)
     })
 
     expect(screen.getByTestId('argoRecieves')).toHaveTextContent(
-      mockResponse.argoReceives[0].note
+      mockResponse.result.argoReceives[0].note
     )
   })
 
@@ -129,11 +131,11 @@ describe('useVehiclePos', () => {
       </MockProviders>
     )
     await waitFor(() => {
-      return screen.getByText(mockResponse.emergencies[0].note)
+      return screen.getByText(mockResponse.result.emergencies[0].note)
     })
 
     expect(screen.getByTestId('emergency')).toHaveTextContent(
-      mockResponse.emergencies[0].note
+      mockResponse.result.emergencies[0].note
     )
   })
 
@@ -144,11 +146,11 @@ describe('useVehiclePos', () => {
       </MockProviders>
     )
     await waitFor(() => {
-      return screen.getByText(mockResponse.reachedWaypoints[0].note)
+      return screen.getByText(mockResponse.result.reachedWaypoints[0].note)
     })
 
     expect(screen.getByTestId('reachedWaypoint')).toHaveTextContent(
-      mockResponse.reachedWaypoints[0].note
+      mockResponse.result.reachedWaypoints[0].note
     )
   })
 })

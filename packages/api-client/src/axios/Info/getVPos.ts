@@ -45,5 +45,5 @@ export const getVPos = async (
     })}`,
     config
   )
-  return response.data as GetVPosResponse
+  return response.data.result as GetVPosResponse
 }
