@@ -1,8 +1,12 @@
 import { useQuery } from 'react-query'
 import { getVehicleNames, GetVehicleNamesParams } from '../../axios'
 import { useAuthContext } from '../AuthProvider'
+import { SupportedQueryOptions } from '../types'
 
-export const useVehicleNames = (params: GetVehicleNamesParams) => {
+export const useVehicleNames = (
+  params: GetVehicleNamesParams,
+  options?: SupportedQueryOptions
+) => {
   const { axiosInstance } = useAuthContext()
   const query = useQuery(
     ['info', 'vehicleNames', params],
@@ -13,6 +17,7 @@ export const useVehicleNames = (params: GetVehicleNamesParams) => {
     },
     {
       staleTime: 30 * 1000,
+      ...options,
     }
   )
   return query

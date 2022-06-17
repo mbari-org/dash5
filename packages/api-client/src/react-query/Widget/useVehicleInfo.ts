@@ -2,6 +2,7 @@ import { AxiosInstance } from 'axios'
 import { useQuery } from 'react-query'
 import { getVehicleInfo, GetVehicleInfoParams } from '../../axios'
 import { useAuthContext } from '../AuthProvider'
+import { SupportedQueryOptions } from '../types'
 
 /**
  * This endpoint does not come from the tethys API, instead it is a placeholder for the formal API and
@@ -11,7 +12,8 @@ import { useAuthContext } from '../AuthProvider'
  */
 export const useVehicleInfo = (
   params: GetVehicleInfoParams,
-  instance?: AxiosInstance
+  instance?: AxiosInstance,
+  options?: SupportedQueryOptions
 ) => {
   const { axiosInstance } = useAuthContext()
   const query = useQuery(
@@ -23,6 +25,7 @@ export const useVehicleInfo = (
     },
     {
       staleTime: 60 * 1000,
+      ...options,
     }
   )
   return query
