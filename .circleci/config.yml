@@ -48,12 +48,13 @@ commands:
       - run: |
           yarn install --network-concurrency 1
       - save_cache:
+          key: v1-packages-{{ checksum "yarn.lock" }}
           paths:
             - node_modules
             - apps/lrauv-dash2/node_modules
             - packages/react-ui/node_modules
             - packages/utils/node_modules
-          key: v1-packages-{{ .Branch }}-{{ .Revision }}
+            - packages/api-client/node_modules
 
   restore-monorepo:
     steps:
@@ -67,7 +68,7 @@ commands:
       # Download pre-existing build from cache
       - restore_cache:
           keys:
-            - v1-packages-{{ .Branch }}-{{ .Revision }}
+            - v1-packages-{{ checksum "yarn.lock" }}
 
   build-monorepo:
     steps:
@@ -78,14 +79,16 @@ commands:
           paths:
             - apps/lrauv-dash2/.next
             - apps/lrauv-dash2/.turbo
-            - packages/react-ui/lib
+            - packages/react-ui/dist
             - packages/react-ui/.turbo
-            - packages/utils/lib
+            - packages/utils/dist
             - packages/utils/.turbo
+            - node_modules/.cache
           key: v1-builds-{{ .Branch }}-{{ .Revision }}
 
 jobs:
   build:
+    resource_class: large
     executor:
       name: node/default
       tag: '14.19.1'
@@ -95,26 +98,95 @@ jobs:
       - install-monorepo
       - build-monorepo
 
-  test:
+  lint:
+    resource_class: xlarge
+    parallelism: 1
     executor:
       name: node/default
       tag: '14.19.1'
     steps:
       - checkout
       - setup-environment
+      - restore-packages
       - restore-monorepo
       - install-monorepo
       - run:
-          command: yarn turbo run test
-          name: Run turbo repo tests
+          command: yarn lint
+          name: Run eslint across all projects.
 
-  deploy_ui:
+  test_ui:
+    resource_class: xlarge
+    parallelism: 1
     executor:
       name: node/default
       tag: '14.19.1'
     steps:
       - checkout
       - setup-environment
+      - restore-packages
+      - restore-monorepo
+      - install-monorepo
+      - run:
+          command: yarn turbo run test --filter=@mbari/react-ui
+          name: Run react-ui tests
+
+  test_api:
+    resource_class: large
+    parallelism: 1
+    executor:
+      name: node/default
+      tag: '14.19.1'
+    steps:
+      - checkout
+      - setup-environment
+      - restore-packages
+      - restore-monorepo
+      - install-monorepo
+      - run:
+          command: yarn turbo run test --filter=@mbari/api-client
+          name: Run turbo repo tests
+
+  test_utils:
+    resource_class: medium
+    parallelism: 1
+    executor:
+      name: node/default
+      tag: '14.19.1'
+    steps:
+      - checkout
+      - setup-environment
+      - restore-packages
+      - restore-monorepo
+      - install-monorepo
+      - run:
+          command: yarn turbo run test --filter=@mbari/utils
+          name: Run turbo repo tests
+
+  test_dash:
+    resource_class: medium
+    parallelism: 1
+    executor:
+      name: node/default
+      tag: '14.19.1'
+    steps:
+      - checkout
+      - setup-environment
+      - restore-packages
+      - restore-monorepo
+      - install-monorepo
+      - run:
+          command: yarn turbo run test --filter=lrauv-dash2
+          name: Run turbo repo tests
+
+  deploy_ui:
+    resource_class: xlarge
+    executor:
+      name: node/default
+      tag: '14.19.1'
+    steps:
+      - checkout
+      - setup-environment
+      - restore-packages
       - restore-monorepo
       - install-monorepo
       - aws-cli/setup:
@@ -123,25 +195,68 @@ jobs:
           aws-access-key-id: AWS_ACCESS_KEY_ID
           aws-region: AWS_ACCESS_DEFAULT_REGION
       - run:
-          command: yarn workspace react-ui build:storybook
+          command: yarn workspace @mbari/react-ui build:storybook
           name: build storybook
       - run:
           command: cd packages/react-ui && aws s3 cp build $CLIENT_S3_BUCKET_URL --recursive
           name: deploy
 
+  deploy_dash:
+    executor:
+      name: node/default
+      tag: '14.19.1'
+    steps:
+      - checkout
+      - setup-environment
+      - restore-packages
+      - restore-monorepo
+      - install-monorepo
+      - run: |
+          prodRun=""
+          if [[ ${CIRCLE_BRANCH} == "main" ]]; then
+            prodRun="--prod"
+          fi
+
+          npx vercel --token ${VERCEL_TOKEN} $prodRun
+
 workflows:
   build_and_deploy:
     jobs:
       - build
-      - test:
+      - test_utils:
+          requires:
+            - build
+      - lint:
+          requires:
+            - build
+      - test_dash:
+          requires:
+            - build
+      - test_ui:
+          requires:
+            - build
+      - test_api:
           requires:
             - build
       - deploy_ui:
           requires:
-            - test
+            - test_ui
           filters:
             branches:
               only:
                 - develop
                 - staging
                 - main
+      - deploy_dash:
+          requires:
+            - test_utils
+            - test_dash
+            - test_ui
+            - test_api
+            - lint
+          filters:
+            branches:
+              only:
+                - develop
+                - staging
+                - master

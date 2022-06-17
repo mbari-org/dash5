@@ -1,28 +1,15 @@
-import React, { useEffect, useRef, useState } from 'react'
-import { faCalendarAlt } from '@fortawesome/pro-regular-svg-icons'
-import { faArrowLeft, faArrowRight } from '@fortawesome/pro-solid-svg-icons'
-import { MiniCal, RangeDirection } from './MiniCal'
-import { Field } from './Field'
-import { Input, InputProps } from './Input'
-import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
-import { Overlay } from '../Overlay'
-import clsx from 'clsx'
+import React, { useCallback, useEffect, useRef, useState } from 'react'
+import { faClock } from '@fortawesome/pro-regular-svg-icons'
+import { Field, FieldProps, getErrorMessage } from './Field'
+import { Input } from './Input'
 import { DateTime } from 'luxon'
-import { IconProp } from '@fortawesome/fontawesome-svg-core'
+import { Calendar, ClockView } from '@material-ui/pickers'
 
-export interface DateFieldProps extends InputProps {
+export interface DateFieldInputProps {
   /**
    * An initial date to display
    */
-  initialDate?: DateTime
-  /**
-   * Indicates whether or not to align the calendar on the left of right side of the Text.
-   */
-  alignCalendar?: 'left' | 'right'
-  /**
-   * A date selected on this widget
-   */
-  dates?: DateTime[]
+  value?: string
   /**
    * The format the selected date should be rendered in. Defaults to "YYYY-MM-DD"
    */
@@ -30,7 +17,7 @@ export interface DateFieldProps extends InputProps {
   /**
    * A callback that renders when a date on the calendar has been selected.
    */
-  onDateChange?: (dates: DateTime[], direction?: RangeDirection) => void
+  onChange?: (value: string) => void
   /**
    * Disables the field from user interaction.
    */
@@ -40,204 +27,165 @@ export interface DateFieldProps extends InputProps {
    */
   placeholder?: string
   /**
-   * An optional form label to display.
+   * A timeZone to set on the date preview.
    */
-  label?: string
-  /**
-   * The name of the associated Text.
-   */
-  name: string
-  /**
-   * Indicates if the content of the field is required.
-   */
-  required?: boolean
-  /**
-   * Extend the class name to add your own styles to the rendered calendars.
-   */
-  className?: string
-  /**
-   * If true the field will allow the user to select two dates.
-   */
-  range?: boolean
-  /**
-   * Limit the direction of the range selection when applicable.
-   */
-  rangeDirection?: RangeDirection
-  /**
-   * An optional inline error message.
-   */
-  errorMessage?: string
+  timeZone?: string
 }
 
-export const SEPARATOR = ' to '
-
-const SELECTED_DATE_STYLE =
-  'text-white font-bold text-sm bg-indigo-600 rounded p-1'
+export type DateFieldProps = DateFieldInputProps & FieldProps
 
 export const DateField = React.forwardRef<HTMLInputElement, DateFieldProps>(
   (
     {
-      alignCalendar = 'left',
-      initialDate,
-      dates,
-      onDateChange: handleSelectedDate,
-      selectedDateFormat = 'MMMM d, yyyy',
       disabled,
       errorMessage,
       required,
       label,
       name,
-      placeholder,
       className,
-      range,
-      rangeDirection = 'both',
-      ...InputProps
+      errors,
+      value,
+      placeholder,
+      timeZone,
+      onChange: handleChange,
+      ...fieldProps
     },
     forwardedRef
   ) => {
-    const [trackedDates, setTrackedDates] = useState<DateTime[] | undefined>()
-    const [direction, setDirection] = useState<RangeDirection | undefined>()
-    const [focused, setFocus] = useState(false)
-    const buttonRef = useRef<HTMLButtonElement>(null)
+    const [calendarStyles, setCalendarStyles] = useState({ top: 0, left: 0 })
 
-    const start =
-      trackedDates?.[0] ?? dates?.[0] ?? initialDate ?? DateTime.utc()
-    const end = trackedDates?.[1] ?? dates?.[1] ?? initialDate ?? DateTime.utc()
-    const currentDirection =
-      (start.diff(end, 'days').days ?? 0) > 0 ? 'backward' : 'forward'
+    // Maintain a reference to the input element so we can focus it
+    const inputRef = useRef<HTMLInputElement | null>(null)
+    const determinedErrorMessage = getErrorMessage({
+      name,
+      errorMessage,
+      errors,
+    })
+
+    // Manage the current date value
+    const [lastDateFromValue, setLastDateFromValue] =
+      useState<undefined | string>()
+    const [selectedDate, setDateChange] = useState<DateTime | null>(null)
+    const handleDateChange = useCallback(
+      (date: DateTime | null) => {
+        setDateChange(date)
+        if (handleChange) {
+          handleChange(date?.toISO() ?? '')
+        }
+      },
+      [handleChange, setDateChange]
+    )
 
     useEffect(() => {
-      if (currentDirection !== direction) {
-        setDirection(currentDirection)
+      if (lastDateFromValue !== value) {
+        setLastDateFromValue(value)
+        const date = DateTime.fromISO(value ?? '')
+        if (!date.isValid) {
+          handleDateChange(null)
+        } else if (date.toISO() !== selectedDate?.toISO()) {
+          handleDateChange(date)
+        }
       }
-    }, [currentDirection, direction, setDirection, start, end])
+    }, [value, selectedDate, handleDateChange, lastDateFromValue])
 
-    const toggleFocus: React.MouseEventHandler<HTMLButtonElement> = (e) => {
-      e.preventDefault()
-      setFocus(!focused)
+    // Manage when to display the inline date/time picker.
+    const [focused, setFocus] = useState(false)
+    const [interacting, setInteracting] = useState(false)
+    const blurTimeout = useRef<ReturnType<typeof setTimeout> | null>(null)
+    const handleFocus = useCallback(
+      (newValue: boolean) => () => {
+        const domRect = inputRef.current?.getBoundingClientRect()
+
+        setCalendarStyles({
+          top: domRect?.bottom ?? 0,
+          left: domRect?.left ?? 0,
+        })
+
+        if (blurTimeout.current) {
+          clearTimeout(blurTimeout.current)
+        }
+        if (!newValue && interacting) {
+          return
+        }
+        blurTimeout.current = setTimeout(
+          () => {
+            setFocus(newValue)
+            if (newValue) inputRef?.current?.focus()
+          },
+          newValue ? 0 : 50
+        )
+      },
+      [setFocus, blurTimeout, interacting]
+    )
+    const handleInteraction = (newValue: boolean) => () => {
+      setInteracting(newValue)
+    }
+    const handleMouseUp = () => {
+      inputRef.current?.focus()
     }
 
-    const dismissAndHandleSelectedDate = (
-      dates: DateTime[],
-      direction?: RangeDirection
-    ) => {
-      setTrackedDates(dates)
-      handleSelectedDate?.(dates, direction)
-      setDirection(direction)
-      setFocus(false)
-    }
-    const textValue = dates
-      ?.map((date) => date.toFormat(selectedDateFormat))
-      .join(SEPARATOR)
-
-    const { x, y, height } = buttonRef.current?.getBoundingClientRect() ?? {}
-    const sortedDates = [...(dates ?? [])].sort()
     return (
       <>
         <Field
-          label={label}
-          errorMessage={errorMessage}
           name={name}
-          required={required}
           disabled={disabled}
+          required={required}
+          label={label}
           className={className}
+          errorMessage={determinedErrorMessage}
+          icon={faClock}
+          {...fieldProps}
         >
-          <button
-            className="relative flex flex-grow rounded border bg-white p-2 pl-4 pr-8"
-            onClick={toggleFocus}
-            type="button"
-            ref={buttonRef}
-          >
-            {(dates?.length ?? 0) > 0 ? (
-              <>
-                <p
-                  className={clsx(
-                    SELECTED_DATE_STYLE,
-                    direction === 'backward'
-                      ? 'bg-indigo-600'
-                      : 'bg-emerald-600'
-                  )}
-                >
-                  {sortedDates[0]?.toFormat(selectedDateFormat)}
-                </p>
-                {(dates?.length ?? 0) > 1 ? (
-                  <>
-                    <FontAwesomeIcon
-                      icon={
-                        (direction === 'backward'
-                          ? faArrowLeft
-                          : faArrowRight) as IconProp
-                      }
-                      className="my-auto mx-2"
-                    />
-                    <p
-                      className={clsx(
-                        SELECTED_DATE_STYLE,
-                        direction === 'forward'
-                          ? 'bg-indigo-600'
-                          : 'bg-emerald-600'
-                      )}
-                    >
-                      {sortedDates[1]?.toFormat(selectedDateFormat)}
-                    </p>
-                  </>
-                ) : null}
-              </>
-            ) : (
-              <p className="text-gray-400">
-                {placeholder ??
-                  clsx(
-                    'i.e. ',
-                    DateTime.utc().toFormat(selectedDateFormat),
-                    range && SEPARATOR,
-                    range &&
-                      DateTime.utc()
-                        .plus({ weeks: 1 })
-                        .toFormat(selectedDateFormat)
-                  )}
-              </p>
-            )}
-            <div className="absolute inset-y-0 right-0 flex text-stone-300">
-              <FontAwesomeIcon
-                icon={faCalendarAlt as IconProp}
-                className="my-auto mr-2 text-gray-500"
-              />
-            </div>
-          </button>
           <Input
-            {...InputProps}
+            ref={inputRef}
+            disabled={disabled}
             name={name}
-            type="hidden"
-            ref={forwardedRef}
-            value={textValue}
-            className={clsx(focused && 'ring-focus ring-4 ring-indigo-500')}
+            className="pl-8"
+            onFocus={handleFocus(true)}
+            onBlur={handleFocus(false)}
+            placeholder={placeholder}
+            value={
+              (timeZone
+                ? selectedDate?.setZone(timeZone)
+                : selectedDate
+              )?.toFormat('h:mm a, MMM, d yyyy') ?? ' '
+            }
+            onChange={() => {
+              return
+            }}
+            aria-label={'date picker'}
           />
-        </Field>
-        {focused ? (
-          <Overlay>
+          {focused && (
             <div
-              className={`fixed z-50 my-auto mt-1 flex-shrink-0 bg-white shadow transition-shadow duration-500 ease-in-out hover:shadow-lg`}
-              style={{
-                top: (y ?? 0) + (height ?? 0),
-                left: x,
-              }}
+              className="fixed z-50 mt-2 flex border border-stone-200 bg-white p-2 shadow-lg"
+              style={calendarStyles}
+              onMouseEnter={handleInteraction(true)}
+              onMouseLeave={handleInteraction(false)}
+              onMouseUp={handleMouseUp}
+              role="button"
+              tabIndex={0}
             >
-              <MiniCal
-                initialDate={initialDate}
-                selectedDates={dates}
-                onDateSelected={dismissAndHandleSelectedDate}
-                monthsToShow={range ? 2 : 1}
-                className="w-64"
-                range={range}
-                rangeDirection={rangeDirection}
-              />
+              <div className="relative w-1/2 flex-grow overflow-hidden px-2">
+                <Calendar
+                  date={selectedDate ?? DateTime.local()}
+                  onChange={handleDateChange}
+                  onMonthChange={handleDateChange}
+                />
+              </div>
+              <div className="relative w-1/2 flex-grow overflow-hidden px-2">
+                <ClockView
+                  date={selectedDate ?? DateTime.local()}
+                  type="hours"
+                  onHourChange={handleDateChange}
+                  onMinutesChange={handleDateChange}
+                  onSecondsChange={handleDateChange}
+                />
+              </div>
             </div>
-            <button
-              className="fixed top-0 left-0 z-40 h-screen w-screen bg-white opacity-25"
-              onClick={toggleFocus}
-            />
-          </Overlay>
-        ) : null}
+          )}
+          {/* This hidden input and forward ref maintains the actual value controlled by 'useForm' */}
+          <input type="hidden" name={name} ref={forwardedRef} />
+        </Field>
       </>
     )
   }

@@ -1,6 +1,5 @@
 import { IconDefinition } from '@fortawesome/fontawesome-common-types'
 import { IconProp } from '@fortawesome/fontawesome-svg-core'
-import { faAsterisk } from '@fortawesome/pro-solid-svg-icons'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import React from 'react'
 import clsx from 'clsx'
@@ -20,7 +19,8 @@ export interface FieldProps {
   grow?: boolean
   disabled?: boolean
   errors?: ErrorMap
-  searchField?: boolean
+  selfControllable?: boolean
+  hint?: string
 }
 
 export const getErrorMessage = ({
@@ -34,30 +34,28 @@ export const getErrorMessage = ({
 }) => errorMessage ?? (errors ?? {})[name]?.message
 
 const style = {
-  container: 'flex flex-col',
-  iconWrap: 'absolute inset-y-0 flex text-stone-300',
-  icon: 'm-auto text-stone-500',
+  container: 'flex flex-col font-display',
+  iconWrap: 'absolute inset-y-0 flex text-stone-300 left-0 ml-3',
+  icon: 'm-auto text-stone-700 text-sm w-4',
   fieldWrap: 'relative flex flex-grow flex-wrap',
   required: 'text-emerald-500 text-xs mx-2 my-auto',
+  label: 'flex text-sm pb-1',
 }
 
 const getGrowStyle = (grow?: boolean) => (grow ? 'flex-grow' : '')
 const getDisabledStyle = (disabled?: boolean) => (disabled ? 'opacity-75' : '')
-const getIconPositionIf = (searchField?: boolean) =>
-  searchField ? 'left-0 ml-3' : 'right-0 mr-3'
 
 export const Field: React.FC<FieldProps> = ({
   label,
   name,
   className,
   labelClassName,
-  required,
   icon,
   errorMessage,
   grow,
   children,
   disabled,
-  searchField,
+  hint,
 }) => (
   <div
     className={clsx(
@@ -67,21 +65,13 @@ export const Field: React.FC<FieldProps> = ({
       className
     )}
   >
-    <label htmlFor={name} className={clsx('flex', labelClassName)}>
-      {label}{' '}
-      {required && (
-        <FontAwesomeIcon
-          icon={faAsterisk as IconProp}
-          className={style.required}
-        />
-      )}
+    <label htmlFor={name} className={clsx(style.label, labelClassName)}>
+      {label}
     </label>
     <div className={style.fieldWrap}>
       {children}
       {icon ? (
-        <span
-          className={clsx([style.iconWrap, getIconPositionIf(searchField)])}
-        >
+        <span className={clsx(style.iconWrap)}>
           <FontAwesomeIcon icon={icon as IconProp} className={style.icon} />
         </span>
       ) : (
@@ -89,6 +79,7 @@ export const Field: React.FC<FieldProps> = ({
       )}
       {errorMessage ? <Error>{errorMessage}</Error> : null}
     </div>
+    {hint ? <p className="mt-1 text-sm text-stone-300">{hint}</p> : null}
   </div>
 )
 

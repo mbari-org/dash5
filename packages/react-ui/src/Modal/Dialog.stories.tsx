@@ -14,6 +14,7 @@ const Template: Story<DialogProps> = (args) => {
   const [open, setOpen] = useState(args.open)
   const handleClose = () => setOpen(false)
   const handleOpen = () => setOpen(true)
+  console.log(args)
   return (
     <>
       <Dialog
@@ -31,21 +32,29 @@ const Template: Story<DialogProps> = (args) => {
 
 export const Primary = Template.bind({})
 Primary.args = {
-  title: 'Delete Order?',
+  title: 'Abort Mission?',
   message:
-    'Are you sure you want to delete this order? You cannot undo this action.',
+    "Are you sure you want to abort your mission? There's no turning back now Jim.",
   open: true,
-  onConfirm: () => {},
-  onCancel: () => {},
+  onConfirm: () => {
+    console.log('event fired')
+  },
+  onCancel: () => {
+    console.log('event fired')
+  },
 }
 
 export const CustomLabels = Template.bind({})
 CustomLabels.args = {
   ...Primary.args,
-  confirmLabel: 'Yes, Please!',
-  cancelLabel: 'On second thought...',
-  onConfirm: () => {},
-  onCancel: () => {},
+  confirmButtonText: 'Yes, Please!',
+  cancelButtonText: 'On second thought...',
+  onConfirm: () => {
+    console.log('event fired')
+  },
+  onCancel: () => {
+    console.log('event fired')
+  },
 }
 
 export const ConfirmOnly = Template.bind({})
@@ -53,6 +62,16 @@ ConfirmOnly.args = {
   title: 'Documents Not Available',
   message: 'Sorry - you do not have access to the documents.',
   open: true,
-  confirmLabel: 'OK',
-  onConfirm: () => {},
+  confirmButtonText: 'OK',
+  onConfirm: () => {
+    console.log('event fired')
+  },
+  onCancel: null,
+}
+
+export const NoFooter = Template.bind({})
+NoFooter.args = {
+  ...Primary.args,
+  onCancel: null,
+  onConfirm: null,
 }

@@ -1,10 +1,15 @@
 import React from 'react'
 import { Field, FieldProps, getErrorMessage } from './Field'
 import { Input } from './Input'
+import clsx from 'clsx'
 
 export interface TextFieldInputProps {
   placeholder?: string
   disabled?: boolean
+  /**
+   * @description If true it applies material design styles
+   */
+  materialDesign?: boolean
   onChange?: React.ChangeEventHandler<HTMLInputElement>
   onFocus?: React.FocusEventHandler<HTMLInputElement>
   onBlur?: React.FocusEventHandler<HTMLInputElement>
@@ -15,15 +20,13 @@ export type TextFieldProps = TextFieldInputProps & FieldProps
 
 const hasError = (error?: string) => (error ?? '').length > 0
 
-const getPaddingForField = (hasIcon?: boolean, searchField?: boolean) =>
-  hasIcon ? (searchField ? 'pl-8' : 'pr-8') : ''
-
 export const TextField = React.forwardRef<HTMLInputElement, TextFieldProps>(
   (
     {
       name,
       placeholder,
       className,
+      materialDesign = false,
       style,
       disabled,
       errorMessage,
@@ -41,6 +44,12 @@ export const TextField = React.forwardRef<HTMLInputElement, TextFieldProps>(
       errors,
     })
     const hasIcon = typeof fieldProps.icon !== 'undefined'
+
+    const inputClasses = clsx({
+      'pl-9': hasIcon,
+      'border-0 border-b-2 rounded-none': materialDesign,
+    })
+
     return (
       <Field
         name={name}
@@ -55,7 +64,7 @@ export const TextField = React.forwardRef<HTMLInputElement, TextFieldProps>(
           disabled={disabled}
           error={hasError(determinedErrorMessage)}
           ref={forwardedRef}
-          className={getPaddingForField(hasIcon)}
+          className={inputClasses}
           onChange={onChange}
           onFocus={onFocus}
           onBlur={onBlur}
@@ -66,4 +75,4 @@ export const TextField = React.forwardRef<HTMLInputElement, TextFieldProps>(
   }
 )
 
-TextField.displayName = 'Form.TextField'
+TextField.displayName = 'Fields.TextField'

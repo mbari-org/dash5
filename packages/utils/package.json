@@ -13,8 +13,7 @@
       "require": "./dist/index.cjs.js"
     }
   },
-  "main": "dist/cjs/index.js",
-  "module": "dist/index.js",
+  "main": "dist/index.cjs.js",
   "private": true,
   "sideEffects": false,
   "scripts": {
@@ -45,18 +44,19 @@
     "@types/humps": "^2.0.0",
     "@types/node": "12.6.8",
     "@types/react": "16.8.23",
-    "jest": "26.6.0",
+    "jest": "27.5.1",
     "prettier": "^2.1.2",
-    "typescript": "^4.0.5",
     "rimraf": "^3.0.2",
     "rollup": "^2.66.1",
     "rollup-plugin-peer-deps-external": "^2.2.4",
     "rollup-plugin-sourcemaps": "^0.6.2",
     "rollup-plugin-terser": "^7.0.2",
-    "rollup-plugin-typescript2": "^0.31.1"
+    "rollup-plugin-typescript2": "^0.31.1",
+    "typescript": "^4.0.5"
   },
   "dependencies": {
     "clsx": "^1.1.1",
-    "humps": "^2.0.1"
+    "humps": "^2.0.1",
+    "resize-observer-polyfill": "^1.5.1"
   }
 }

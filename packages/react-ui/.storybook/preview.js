@@ -1,11 +1,12 @@
 import React from 'react'
-import { HTML5Backend } from 'react-dnd-html5-backend'
-import { DndProvider } from 'react-dnd'
+import { UIProvider } from '../src/UIProvider'
 import { addDecorator } from '@storybook/react'
 import { withTests } from '@storybook/addon-jest'
 
-import '../lib/mbari-ui.css'
+import 'leaflet/dist/leaflet.css'
+import '../dist/mbari-ui.css'
 import results from '../.jest-test-results.json'
+import '../../../apps/lrauv-dash2/styles/vehicle.css'
 
 export const decorators = [
   withTests({
@@ -33,15 +34,19 @@ const Layout = ({ children }) => {
 }
 
 addDecorator((Story) => (
-  <DndProvider backend={HTML5Backend}>
+  <UIProvider>
     <Layout>
       <link rel="preconnect" href="https://fonts.googleapis.com" />
       <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
       <link
-        href="https://fonts.googleapis.com/css2?family=Mulish:wght@200;400;600&display=swap"
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&display=swap"
+        rel="stylesheet"
+      />{' '}
+      <link
+        href="https://fonts.googleapis.com/css2?family=Inconsolata:wght@300;700&display=swap"
         rel="stylesheet"
       />{' '}
       <Story />
     </Layout>
-  </DndProvider>
+  </UIProvider>
 ))

@@ -1,0 +1,125 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "[react-ui]: Storybook",
+      "type": "shell",
+      "command": "yarn workspace @mbari/react-ui start",
+      "presentation": {
+        "reveal": "always",
+        "panel": "new",
+        "group": "develop"
+      },
+      "options": {
+        "statusbar": {
+          "label": "$(remote-explorer-documentation) Storybook"
+        }
+      }
+    },
+    {
+      "label": "[react-ui]: Tailwind",
+      "type": "shell",
+      "command": "yarn workspace @mbari/react-ui tailwind",
+      "presentation": {
+        "reveal": "always",
+        "panel": "new",
+        "group": "develop"
+      },
+      "options": {
+        "statusbar": {
+          "label": "$(paintcan) Tailwind"
+        }
+      }
+    },
+    {
+      "label": "[react-ui]: Tests",
+      "type": "shell",
+      "command": "yarn workspace @mbari/react-ui test:watch",
+      "presentation": {
+        "reveal": "always",
+        "panel": "new",
+        "group": "ui-tests"
+      },
+      "options": {
+        "statusbar": {
+          "label": "$(test-view-icon) UI Tests"
+        }
+      }
+    },
+    {
+      "label": "[api-client]: Tests",
+      "type": "shell",
+      "command": "yarn workspace @mbari/api-client test:watch",
+      "presentation": {
+        "reveal": "always",
+        "panel": "new",
+        "group": "api-tests"
+      },
+      "options": {
+        "statusbar": {
+          "label": "$(test-view-icon) API Tests"
+        }
+      }
+    },
+    {
+      "label": "[lrauv-dash2]: Tests",
+      "type": "shell",
+      "command": "yarn workspace @mbari/lrauv-dash2 test:watch",
+      "presentation": {
+        "reveal": "always",
+        "panel": "new",
+        "group": "dash2-tests"
+      },
+      "options": {
+        "statusbar": {
+          "label": "$(test-view-icon) Dash Tests"
+        }
+      }
+    },
+    {
+      "label": "[project]: Lint",
+      "type": "shell",
+      "command": "yarn lint",
+      "presentation": {
+        "reveal": "always",
+        "panel": "new",
+        "group": "root"
+      },
+      "options": {
+        "statusbar": {
+          "label": "$(test-view-icon) Lint"
+        }
+      }
+    },
+    {
+      "label": "[project]: Build",
+      "type": "shell",
+      "command": "yarn test; yarn build",
+      "presentation": {
+        "reveal": "always",
+        "panel": "new",
+        "group": "root"
+      },
+      "options": {
+        "statusbar": {
+          "label": "$(tools) Build"
+        }
+      }
+    },
+    {
+      "label": "[dash2]: Run",
+      "type": "shell",
+      "command": "yarn build --filter=react-ui --filter=api-client && yarn workspace @mbari/lrauv-dash2 dev",
+      "presentation": {
+        "reveal": "always",
+        "panel": "new",
+        "group": "dash2"
+      },
+      "options": {
+        "statusbar": {
+          "label": "$(run) Run"
+        }
+      }
+    }
+  ]
+}

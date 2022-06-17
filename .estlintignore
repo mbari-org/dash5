@@ -1,0 +1,6 @@
+build
+node_modules
+.github
+dist
+.git
+.lock

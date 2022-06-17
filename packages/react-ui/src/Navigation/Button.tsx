@@ -7,8 +7,7 @@ export type ButtonAppearance =
   | 'destructive'
   | 'primary'
   | 'secondary'
-  | 'accent'
-  | 'actionable'
+  | 'transparent'
   | 'custom'
   | 'link'
 
@@ -23,21 +22,22 @@ export interface ButtonProps {
   form?: string
 }
 
-const BUTTON_STYLES =
-  'rounded font-semibold text-sm text-center uppercase px-5 py-3 w-auto'
-const LINK_STYLES = 'flex font-semibold text-emerald-600 underline'
-const DISABLED_STYLES = 'opacity-50 cursor-not-allowed'
+const styles = {
+  button: 'rounded text-sm text-center px-4 py-2 w-auto font-display',
+  link: 'flex font-semibold text-emerald-600 underline',
+  disabled: 'opacity-50 cursor-not-allowed',
+}
 
 export const backgroundStyles = (appearance?: ButtonAppearance) => {
   switch (appearance) {
     case 'primary':
-      return 'bg-indigo-600 text-white'
+      return 'bg-primary-600 text-white'
     case 'secondary':
-      return 'bg-white border-2 border-indigo-600 text-indigo-600'
+      return 'bg-white border border-stone-400 text-stone-600'
     case 'destructive':
       return 'bg-red-600 text-white'
-    case 'accent':
-      return 'bg-emerald-600 text-white'
+    case 'transparent':
+      return 'bg-transparent hover:bg-primary-600/10 transition-colors duration-200'
     case 'custom':
     case 'link':
       return ''
@@ -63,7 +63,7 @@ const alignmentStyles = (alignment?: ButtonAlignment) => {
 
 export const Button: React.FC<ButtonProps> = ({
   align,
-  appearance,
+  appearance = 'primary',
   children,
   className,
   disabled,
@@ -82,11 +82,11 @@ export const Button: React.FC<ButtonProps> = ({
   return (
     <button
       className={clsx(
-        appearance === 'link' && LINK_STYLES,
-        !['custom', 'link'].includes(appearance ?? '') && BUTTON_STYLES,
+        appearance === 'link' && styles.link,
+        !['custom', 'link'].includes(appearance ?? '') && styles.button,
         backgroundStyles(appearance),
         alignmentStyles(align),
-        disabled && DISABLED_STYLES,
+        disabled && styles.disabled,
         className
       )}
       disabled={disabled}

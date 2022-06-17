@@ -4,7 +4,7 @@ import { Story, Meta } from '@storybook/react/types-6-0'
 import { Button, ButtonProps } from './Button'
 
 export default {
-  title: 'Form/Button',
+  title: 'Navigation/Button',
   component: Button,
 } as Meta
 
@@ -18,6 +18,10 @@ export const Default = Template.bind({})
 Default.args = {}
 Default.parameters = {
   jest: 'Button.test.tsx',
+  design: {
+    type: 'figma',
+    url: 'https://www.figma.com/file/FtsKsOCBQ2YjTZlwezG6aI/MBARI-Components?node-id=8%3A182',
+  },
 }
 
 export const Left = Template.bind({})
@@ -34,18 +38,27 @@ Stretch.args = { align: 'stretch' }
 
 export const Disabled = Template.bind({})
 Disabled.args = { disabled: true }
+Disabled.parameters = {
+  design: {
+    type: 'figma',
+    url: 'https://www.figma.com/file/FtsKsOCBQ2YjTZlwezG6aI/MBARI-Components?node-id=11%3A119',
+  },
+}
+
+export const Transparent = Template.bind({})
+Transparent.args = { appearance: 'transparent' }
 
 export const Destructive = Template.bind({})
 Destructive.args = { appearance: 'destructive' }
 
-export const Primary = Template.bind({})
-Primary.args = { appearance: 'primary' }
-
 export const Secondary = Template.bind({})
 Secondary.args = { appearance: 'secondary' }
-
-export const Accent = Template.bind({})
-Accent.args = { appearance: 'accent' }
+Secondary.parameters = {
+  design: {
+    type: 'figma',
+    url: 'https://www.figma.com/file/FtsKsOCBQ2YjTZlwezG6aI/MBARI-Components?node-id=11%3A121',
+  },
+}
 
 export const Link = Template.bind({})
 Link.args = { appearance: 'link' }
