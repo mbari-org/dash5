@@ -1,6 +1,7 @@
 import {
   useVehicleInfo,
   useLastDeployment,
+  useVehiclePos,
   useVehicles,
   GetVehicleInfoResponse,
 } from '@mbari/api-client'
@@ -19,6 +20,10 @@ import { DateTime } from 'luxon'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { faCheck, faSync } from '@fortawesome/pro-regular-svg-icons'
 
+const parsePos = (pos: string) => parseFloat(pos).toFixed(3)
+const calcPosition = (lat?: string, long?: string) =>
+  lat && long && [parsePos(lat), parsePos(long)].join(', ')
+
 const ConnectedVehicleCell: React.FC<{
   name: string
   color: string
@@ -27,11 +32,24 @@ const ConnectedVehicleCell: React.FC<{
   onToggle: (open: boolean, name: string) => void
 }> = ({ name, virtualizer, color, open, onToggle: externalHandleToggle }) => {
   const [isOpen, setIsOpen] = React.useState(open)
-  const lastDeployment = useLastDeployment({
-    vehicle: name,
-    to: new Date().toISOString(),
-  })
-  const { data, isLoading } = useVehicleInfo(
+  const lastDeployment = useLastDeployment(
+    {
+      vehicle: name,
+      to: new Date().toISOString(),
+    },
+    { staleTime: 5 * 60 * 1000 }
+  )
+  const { data: vehiclePosition, isLoading: positionLoading } = useVehiclePos(
+    {
+      vehicle: name,
+      from: lastDeployment?.data?.lastEvent,
+      limit: 10,
+    },
+    {
+      enabled: !!lastDeployment?.data?.lastEvent,
+    }
+  )
+  const { data: vehicleInfo, isLoading: vehicleInfoLoading } = useVehicleInfo(
     { name },
     axios.create({
       baseURL: '//localhost:3002',
@@ -39,13 +57,15 @@ const ConnectedVehicleCell: React.FC<{
     })
   )
 
+  const isLoading = positionLoading || vehicleInfoLoading
+
   const lastLoad = React.useRef(isLoading)
   useEffect(() => {
     if (lastLoad.current !== isLoading) {
       virtualizer.measure()
       lastLoad.current = isLoading
     }
-  }, [isLoading, data, virtualizer])
+  }, [isLoading, virtualizer])
 
   const handleToggle = () => {
     setIsOpen(!isOpen)
@@ -54,16 +74,19 @@ const ConnectedVehicleCell: React.FC<{
   }
 
   const vehicle =
-    data?.not_found || !data ? undefined : (data as GetVehicleInfoResponse)
+    vehicleInfo?.not_found || !vehicleInfo
+      ? undefined
+      : (vehicleInfo as GetVehicleInfoResponse)
 
-  const status = lastDeployment.data?.active
-    ? `Running ${lastDeployment.data?.launchEvent?.eventId}`
-    : 'Plugged in'
+  const status = lastDeployment.data?.recoverEvent
+    ? 'Plugged in'
+    : `Running ${lastDeployment.data?.launchEvent?.eventId}`
   const endDate = DateTime.fromMillis(
     lastDeployment.data?.endEvent?.unixTime ?? 0
   )
 
   const ended = lastDeployment.data?.endEvent?.eventId && true
+  const recovered = lastDeployment.data?.recoverEvent?.eventId && true
   const active = lastDeployment.data?.active
 
   return (
@@ -83,11 +106,15 @@ const ConnectedVehicleCell: React.FC<{
           headline={
             <div>
               <span className="font-semibold text-purple-600">{status}</span>{' '}
-              for 17 days 8 hours
+              {lastDeployment.data?.lastEvent
+                ? DateTime.fromMillis(
+                    lastDeployment.data?.lastEvent
+                  ).toRelative()
+                : ''}
             </div>
           }
           headline2={
-            lastDeployment.data?.endEvent?.eventId ? (
+            ended ? (
               <div>
                 Deployment{' '}
                 <span className="font-semibold text-purple-600">
@@ -98,14 +125,20 @@ const ConnectedVehicleCell: React.FC<{
             ) : undefined
           }
           icon={
-            ended ? (
-              <FontAwesomeIcon icon={faCheck} className="text-xl" />
+            recovered ? (
+              <PluggedInIcon />
             ) : active ? (
               <FontAwesomeIcon icon={faSync} className="text-xl" />
             ) : (
-              <PluggedInIcon />
+              <FontAwesomeIcon icon={faCheck} className="text-xl" />
             )
           }
+          lastPosition={calcPosition(
+            vehiclePosition?.gpsFixes?.[0]?.latitude,
+            vehiclePosition?.gpsFixes?.[0]?.longitude
+          )}
+          lastSatellite="5 minutes ago, likely on surface"
+          lastCell="3 seconds ago"
           vehicle={
             vehicle && {
               textAmpAgo: vehicle.text_ampago,
@@ -170,7 +203,9 @@ const ConnectedVehicleCell: React.FC<{
               colorMissionDefault: vehicle.color_missiondefault,
               textVolts: vehicle.text_volts,
               colorVolts: vehicle.color_volts,
-              status: lastDeployment.data?.active ? 'onMission' : 'recovered',
+              status: lastDeployment.data?.recoverEvent
+                ? 'pluggedIn'
+                : 'onMission',
               // colorCommAgo: 'st4',
               // textLeakago: '',
               // textFlowAgo: data.text_flowago,
