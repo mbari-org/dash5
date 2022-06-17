@@ -7,6 +7,7 @@ import { rest } from 'msw'
 import { setupServer } from 'msw/node'
 import { MockProviders } from '../queryTestHelpers'
 import axios from 'axios'
+import { GetVehicleInfoResponse } from '../../axios'
 
 const mockResponse = {
   text_ampago: '27m ago',
@@ -102,7 +103,8 @@ const MockVehicleList: React.FC = () => {
   )
   return query.isLoading ? null : (
     <div data-testid="result">
-      {query.data?.text_vehicle ?? 'No vehicle found'}
+      {(query.data as GetVehicleInfoResponse)?.text_vehicle ??
+        'No vehicle found'}
     </div>
   )
 }
