@@ -38,7 +38,7 @@
       "presentation": {
         "reveal": "always",
         "panel": "new",
-        "group": "develop"
+        "group": "ui-tests"
       },
       "options": {
         "statusbar": {
@@ -53,11 +53,26 @@
       "presentation": {
         "reveal": "always",
         "panel": "new",
-        "group": "develop"
+        "group": "api-tests"
       },
       "options": {
         "statusbar": {
           "label": "$(test-view-icon) API Tests"
+        }
+      }
+    },
+    {
+      "label": "[lrauv-dash2]: Tests",
+      "type": "shell",
+      "command": "yarn workspace @mbari/lrauv-dash2 test:watch",
+      "presentation": {
+        "reveal": "always",
+        "panel": "new",
+        "group": "dash2-tests"
+      },
+      "options": {
+        "statusbar": {
+          "label": "$(test-view-icon) Dash Tests"
         }
       }
     },
