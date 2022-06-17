@@ -36,7 +36,7 @@ export interface GetLastDeploymentResponse {
   endEvent?: DeploymentEvent
   dlistResult: DListResult
   // The lastEvent and active props are derived state and not part of the actual API response.
-  lastEvent: string
+  lastEvent: number
   active: boolean
   present: boolean
 }

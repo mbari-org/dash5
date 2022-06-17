@@ -25,6 +25,7 @@ export interface GetMissionStartedEventResponse {
   refId: number
   index: number
   component: string
+  text: string
 }
 
 export const getMissionStartedEvent = async (

@@ -26,7 +26,7 @@ const LastDeploymentOption: React.FC<{ vehicleName: string }> = ({
       name={vehicleName}
       status={lastDeployment.data?.active ? 'deployed' : 'ended'}
       missionName={lastDeployment.data?.name}
-      lastEvent={lastEvent && new Date(lastEvent).toISOString()}
+      lastEvent={lastEvent ? new Date(lastEvent).toISOString() : undefined}
     />
   )
 }

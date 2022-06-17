@@ -21,9 +21,9 @@ import { DateTime } from 'luxon'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { faCheck, faSync } from '@fortawesome/pro-regular-svg-icons'
 
-const parsePos = (pos: string) => parseFloat(pos).toFixed(3)
-const calcPosition = (lat?: string, long?: string) =>
-  lat && long && [parsePos(lat), parsePos(long)].join(', ')
+const parsePos = (pos: string | number) => parseFloat(`${pos}`).toFixed(3)
+const calcPosition = (lat?: number | string, long?: number | string) =>
+  lat && long ? [parsePos(lat), parsePos(long)].join(', ') : undefined
 
 const ConnectedVehicleCell: React.FC<{
   name: string
@@ -43,7 +43,7 @@ const ConnectedVehicleCell: React.FC<{
   const { data: vehiclePosition, isLoading: positionLoading } = useVehiclePos(
     {
       vehicle: name,
-      from: lastDeployment?.data?.lastEvent,
+      from: `${lastDeployment?.data?.lastEvent ?? new Date().toISOString()}`,
       limit: 10,
     },
     {
@@ -53,7 +53,7 @@ const ConnectedVehicleCell: React.FC<{
   const { data: vehicleInfo, isLoading: vehicleInfoLoading } = useVehicleInfo(
     { name },
     axios.create({
-      baseURL: '//localhost:3002',
+      baseURL: process.env.NEXT_API_HOST,
       timeout: 5000,
     })
   )
