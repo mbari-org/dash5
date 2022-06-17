@@ -20,8 +20,6 @@ export interface ModalViewProps {
 export type ModalProps = ModalViewProps & FooterProps
 export type ModalPropsWithoutTitle = Omit<ModalProps, 'title'>
 
-export type ModalPropsWithoutTitle = Omit<ModalProps, 'title'>
-
 interface Coordinate {
   x: number
   y: number
