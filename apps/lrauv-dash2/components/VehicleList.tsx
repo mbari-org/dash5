@@ -15,6 +15,9 @@ import { capitalize } from '@mbari/utils'
 import React, { useEffect } from 'react'
 import useTrackedVehicles from '../lib/useTrackedVehicles'
 import axios from 'axios'
+import { DateTime } from 'luxon'
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
+import { faCheck, faSync } from '@fortawesome/pro-regular-svg-icons'
 
 const ConnectedVehicleCell: React.FC<{
   name: string
@@ -53,6 +56,16 @@ const ConnectedVehicleCell: React.FC<{
   const vehicle =
     data?.not_found || !data ? undefined : (data as GetVehicleInfoResponse)
 
+  const status = lastDeployment.data?.active
+    ? `Running ${lastDeployment.data?.launchEvent?.eventId}`
+    : 'Plugged in'
+  const endDate = DateTime.fromMillis(
+    lastDeployment.data?.endEvent?.unixTime ?? 0
+  )
+
+  const ended = lastDeployment.data?.endEvent?.eventId && true
+  const active = lastDeployment.data?.active
+
   return (
     <>
       <VehicleHeader
@@ -69,24 +82,30 @@ const ConnectedVehicleCell: React.FC<{
         <VehicleCell
           headline={
             <div>
-              <span className="font-semibold text-purple-600">
-                {lastDeployment.data?.active
-                  ? `Running ${lastDeployment.data?.launchEvent?.eventId}`
-                  : 'Plugged in'}
-              </span>{' '}
+              <span className="font-semibold text-purple-600">{status}</span>{' '}
               for 17 days 8 hours
             </div>
           }
           headline2={
-            <div>
-              Deployment{' '}
-              <span className="font-semibold text-purple-600">
-                {lastDeployment.data?.name}
-              </span>{' '}
-              ended April 3, 2018
-            </div>
+            lastDeployment.data?.endEvent?.eventId ? (
+              <div>
+                Deployment{' '}
+                <span className="font-semibold text-purple-600">
+                  {lastDeployment.data?.name}
+                </span>{' '}
+                ended {endDate.toFormat('LLL dd, yyyy')}
+              </div>
+            ) : undefined
           }
-          icon={<PluggedInIcon />}
+          icon={
+            ended ? (
+              <FontAwesomeIcon icon={faCheck} className="text-xl" />
+            ) : active ? (
+              <FontAwesomeIcon icon={faSync} className="text-xl" />
+            ) : (
+              <PluggedInIcon />
+            )
+          }
           vehicle={
             vehicle && {
               textAmpAgo: vehicle.text_ampago,
