@@ -103,13 +103,19 @@ const ConnectedVehicleCell: React.FC<{
     <>
       <VehicleHeader
         name={capitalize(name)}
-        deployment={lastDeployment.data?.name ?? 'Not Deployed'}
+        deployment={
+          active ? lastDeployment.data?.name ?? 'loading' : 'Not Deployed'
+        }
         color={color}
-        deployedAt={Math.round(
-          (missionStartedEvent?.[0]?.unixTime ??
-            lastDeployment.data?.startEvent?.unixTime ??
-            0) / 1000
-        )}
+        deployedAt={
+          active
+            ? Math.round(
+                (missionStartedEvent?.[0]?.unixTime ??
+                  lastDeployment.data?.startEvent?.unixTime ??
+                  0) / 1000
+              )
+            : undefined
+        }
         onToggle={handleToggle}
         open={isOpen}
       />
@@ -149,8 +155,14 @@ const ConnectedVehicleCell: React.FC<{
             vehiclePosition?.gpsFixes?.[0]?.latitude,
             vehiclePosition?.gpsFixes?.[0]?.longitude
           )}
-          lastSatellite="5 minutes ago, likely on surface"
-          lastCell="3 seconds ago"
+          lastSatellite={
+            vehicle?.text_gpsago.length
+              ? `${vehicle.text_gpsago}, likely on surface`
+              : undefined
+          }
+          lastCell={
+            vehicle?.text_cellago.length ? `${vehicle.text_cellago}` : undefined
+          }
           vehicle={
             vehicle && {
               textAmpAgo: vehicle.text_ampago,
