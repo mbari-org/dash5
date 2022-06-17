@@ -64,7 +64,7 @@ const Layout: React.FC = ({ children }) => {
   const canRemoveOption = (vehicle: string) => vehicle !== 'Overview'
 
   return (
-    <div className="flex min-h-screen flex-col">
+    <div className="flex h-screen w-screen flex-col">
       <Head>
         <title>LRAUV Dash Client</title>
         <meta
@@ -87,7 +87,7 @@ const Layout: React.FC = ({ children }) => {
             dropdown === 'vehicle' ? (
               <VehicleDeploymentDropdown
                 onDismiss={dismissDropdown}
-                className="absolute left-0 z-[500] mt-2 max-h-96 w-96"
+                className="absolute left-0 z-[1001] mt-2 max-h-96 w-96"
                 style={{ top: '100%' }}
                 scrollable
               />

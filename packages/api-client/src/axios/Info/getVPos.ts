@@ -4,17 +4,28 @@ import { RequestConfig } from '../types'
 
 export interface GetVPosParams {
   vehicle: string
-  to: string
+  to?: string
   from: string
-  limit: number
+  limit?: number
+}
+
+export interface VPosDetail {
+  eventId: string
+  unixTime: number
+  isoTime: string
+  latitude: number
+  longitude: number
+  component: string
+  note: string
+  text: string
 }
 
 export interface GetVPosResponse {
   inputs: GetVPosParams
-  gpsFixes: object[]
-  argoReceives: object[]
-  emergencies: object[]
-  reachedWaypoints: object[]
+  gpsFixes: VPosDetail[]
+  argoReceives: VPosDetail[]
+  emergencies: VPosDetail[]
+  reachedWaypoints: VPosDetail[]
 }
 
 export const getVPos = async (
@@ -30,9 +41,9 @@ export const getVPos = async (
   const response = await instance.get(
     `${url}?${new URLSearchParams({
       ...params,
-      limit: params.limit.toString(),
+      limit: params.limit?.toString() ?? '1000',
     })}`,
     config
   )
-  return response.data as GetVPosResponse
+  return response.data.result as GetVPosResponse
 }

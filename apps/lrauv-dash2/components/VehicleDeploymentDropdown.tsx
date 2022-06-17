@@ -10,10 +10,15 @@ import useTrackedVehicles from '../lib/useTrackedVehicles'
 const LastDeploymentOption: React.FC<{ vehicleName: string }> = ({
   vehicleName,
 }) => {
-  const lastDeployment = useLastDeployment({
-    vehicle: vehicleName,
-    to: new Date().toISOString(),
-  })
+  const lastDeployment = useLastDeployment(
+    {
+      vehicle: vehicleName,
+      to: new Date().toISOString(),
+    },
+    {
+      enabled: vehicleName !== '',
+    }
+  )
 
   const lastEvent = lastDeployment.data?.lastEvent
   return lastDeployment.isLoading ? null : (
@@ -21,7 +26,7 @@ const LastDeploymentOption: React.FC<{ vehicleName: string }> = ({
       name={vehicleName}
       status={lastDeployment.data?.active ? 'deployed' : 'ended'}
       missionName={lastDeployment.data?.name}
-      lastEvent={lastEvent && new Date(lastEvent).toISOString()}
+      lastEvent={lastEvent ? new Date(lastEvent).toISOString() : undefined}
     />
   )
 }
@@ -36,11 +41,19 @@ const VehicleDeploymentDropdown: React.FC<Omit<DropdownProps, 'options'>> = (
     <VehicleDropdown
       {...props}
       options={vehicleNames
-        .filter((n: string) => trackedVehicles.indexOf(n) < 0)
-        .map((name: string) => ({
-          label: <LastDeploymentOption vehicleName={name} key={name} />,
+        .filter(
+          ({ vehicleName }) => trackedVehicles.indexOf(vehicleName ?? '') < 0
+        )
+        .filter(({ vehicleName }) => (vehicleName ?? '') !== '')
+        .map(({ vehicleName }) => ({
+          label: (
+            <LastDeploymentOption
+              vehicleName={vehicleName ?? ''}
+              key={vehicleName}
+            />
+          ),
           onSelect: () => {
-            setTrackedVehicles([...trackedVehicles, name])
+            setTrackedVehicles([...trackedVehicles, vehicleName ?? ''])
           },
         }))}
     />

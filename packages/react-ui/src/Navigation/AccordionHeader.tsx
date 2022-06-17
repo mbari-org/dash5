@@ -50,7 +50,7 @@ export const AccordionHeader: React.FC<AccordionHeaderProps> = ({
       )}
       aria-label={ariaLabel || ''}
     >
-      <button className={styles.textButton}>
+      <button className={styles.textButton} onClick={swallow(onExpand)}>
         <span className={clsx(open && 'font-semibold')}>{label}</span>{' '}
         <span className={clsx(styles.secondary, !open && 'opacity-60')}>
           {secondaryLabel}

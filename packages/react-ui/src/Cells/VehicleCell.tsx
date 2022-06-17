@@ -43,8 +43,10 @@ export const VehicleCell: React.FC<VehicleCellProps> = ({
   return (
     <article className={clsx(className, styles.container)} style={style}>
       <button className={styles.button} onClick={swallow(onSelect)}>
-        <div className="w-fit">
-          {vehicle && <Vehicle {...vehicle} />}
+        <div className="w-full">
+          {vehicle && (
+            <Vehicle {...vehicle} style={{ height: 'auto', width: '100%' }} />
+          )}
           <section className="flex">
             <div className={styles.icon}>{icon}</div>
             <div>

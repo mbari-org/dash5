@@ -1,22 +1,25 @@
 import { useQuery } from 'react-query'
-import { getVehicleNames, GetVehicleNamesParams } from '../../axios'
+import {
+  getMissionStartedEvent,
+  GetMissionStartedEventParams,
+} from '../../axios'
 import { useAuthContext } from '../AuthProvider'
 import { SupportedQueryOptions } from '../types'
 
-export const useVehicleNames = (
-  params: GetVehicleNamesParams,
+export const useMissionStartedEvent = (
+  params: GetMissionStartedEventParams,
   options?: SupportedQueryOptions
 ) => {
   const { axiosInstance } = useAuthContext()
   const query = useQuery(
-    ['info', 'vehicleNames', params],
+    ['event', 'missionStarted', params],
     () => {
-      return getVehicleNames(params, {
+      return getMissionStartedEvent(params, {
         instance: axiosInstance,
       })
     },
     {
-      staleTime: 30 * 1000,
+      staleTime: 5 * 60 * 1000,
       ...options,
     }
   )

@@ -8,11 +8,27 @@ import { setupServer } from 'msw/node'
 import { MockProviders } from '../queryTestHelpers'
 
 const mockVehicleResponse = {
-  result: ['pontus', 'ahi', 'brizo', 'daphne'],
+  result: [
+    { vehicleName: 'ahi', color: '#FF9900' },
+    { vehicleName: 'aku', color: '#CC33FF' },
+    { vehicleName: 'brizo', color: '#f4ba0c' },
+    { vehicleName: 'daphne', color: '#FF9900' },
+    { vehicleName: 'galene', color: '#CC33FF' },
+    { vehicleName: 'makai', color: '#FF0000' },
+    { vehicleName: 'melia', color: '#FF0000' },
+    { vehicleName: 'mesobot', color: '#FF0000' },
+    { vehicleName: 'opah', color: '#CC33FF' },
+    { vehicleName: 'polaris', color: '#FF0000' },
+    { vehicleName: 'pontus', color: '#BD9782' },
+    { vehicleName: 'sim', color: '#FF0000' },
+    { vehicleName: 'stella', color: '#FF0000' },
+    { vehicleName: 'tethys', color: '#CC33FF' },
+    { vehicleName: 'triton', color: '#f4ba0c' },
+  ],
 }
 
 const mockDeploymentResponse = {
-  pontus: {
+  aku: {
     result: {},
   },
   brizo: {
@@ -67,7 +83,7 @@ const mockDeploymentResponse = {
 }
 
 const server = setupServer(
-  rest.get('/info/vehicleNames', (_req, res, ctx) => {
+  rest.get('/info/vehicles', (_req, res, ctx) => {
     return res(ctx.status(200), ctx.json(mockVehicleResponse))
   }),
   rest.get('/deployments/last', (req, res, ctx) => {
@@ -75,7 +91,7 @@ const server = setupServer(
       | 'ahi'
       | 'brizo'
       | 'daphne'
-      | 'pontus'
+      | 'aku'
     return res(
       ctx.status(200),
       ctx.json(vehicle ? mockDeploymentResponse[vehicle] : {})
@@ -95,9 +111,9 @@ const MockVehicleList: React.FC = () => {
     <>
       {query.isLoading
         ? null
-        : query.data?.map((name, i) => (
-            <div key={name} data-testid={`result${i}`}>
-              {query.data?.[i]}
+        : query.data?.map((vehicle, i) => (
+            <div key={vehicle?.vehicleName} data-testid={`result${i}`}>
+              {query.data?.[i]?.vehicleName}
             </div>
           ))}
     </>
@@ -124,6 +140,6 @@ describe('useVehicleNames', () => {
     expect(screen.getByTestId('result2')).toHaveTextContent(
       mockDeploymentResponse.ahi.result.vehicleName
     )
-    expect(screen.getByTestId('result3')).toHaveTextContent('pontus')
+    expect(screen.getByTestId('result3')).toHaveTextContent('aku')
   })
 })

@@ -184,6 +184,7 @@ export const Vehicle: React.FC<VehicleProps> = ({
         y="0px"
         viewBox="120 155 534 176"
         xmlSpace="preserve"
+        style={style}
       >
         <rect
           aria-label="backgroundbox"

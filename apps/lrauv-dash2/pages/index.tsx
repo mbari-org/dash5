@@ -4,6 +4,7 @@ import Layout from '../components/Layout'
 import { DateTime } from 'luxon'
 import { useEffect, useRef } from 'react'
 import dynamic from 'next/dynamic'
+import VehicleList from '../components/VehicleList'
 
 // This is a tricky workaround to prevent leaflet from crashing next.js
 // SSR. If we don't do this, the leaflet map will be loaded server side
@@ -16,7 +17,8 @@ const styles = {
   content: 'flex flex-shrink flex-grow flex-row overflow-hidden',
   primary: 'flex w-3/4 flex-shrink flex-grow flex-col',
   mapContainer: 'flex flex-shrink flex-grow bg-blue-300',
-  secondary: 'flex w-[438px] flex-shrink-0 flex-col bg-slate-400',
+  secondary:
+    'flex w-[438px] flex-shrink-0 flex-col bg-white border-t-2 border-secondary-300/60',
 }
 
 const OverviewPage: NextPage = () => {
@@ -47,7 +49,9 @@ const OverviewPage: NextPage = () => {
             <Map className="h-full w-full" />
           </div>
         </section>
-        <section className={styles.secondary}></section>
+        <section className={styles.secondary}>
+          <VehicleList />
+        </section>
       </div>
     </Layout>
   )
