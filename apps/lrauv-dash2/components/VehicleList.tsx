@@ -3,6 +3,7 @@ import {
   useLastDeployment,
   useVehiclePos,
   useVehicles,
+  useMissionStartedEvent,
   GetVehicleInfoResponse,
 } from '@mbari/api-client'
 import {
@@ -56,7 +57,16 @@ const ConnectedVehicleCell: React.FC<{
       timeout: 5000,
     })
   )
+  const { data: missionStartedEvent } = useMissionStartedEvent(
+    {
+      vehicle: name,
+    },
+    {
+      enabled: !!name && !!lastDeployment?.data?.lastEvent,
+    }
+  )
 
+  const mission = missionStartedEvent?.[0]?.text.replace(/started mission/i, '')
   const isLoading = positionLoading || vehicleInfoLoading
 
   const lastLoad = React.useRef(isLoading)
@@ -80,7 +90,7 @@ const ConnectedVehicleCell: React.FC<{
 
   const status = lastDeployment.data?.recoverEvent
     ? 'Plugged in'
-    : `Running ${lastDeployment.data?.launchEvent?.eventId}`
+    : `Running ${mission ?? 'mission'}`
   const endDate = DateTime.fromMillis(
     lastDeployment.data?.endEvent?.unixTime ?? 0
   )
@@ -96,7 +106,9 @@ const ConnectedVehicleCell: React.FC<{
         deployment={lastDeployment.data?.name ?? 'Not Deployed'}
         color={color}
         deployedAt={Math.round(
-          (lastDeployment.data?.startEvent?.unixTime ?? 0) / 1000
+          (missionStartedEvent?.[0]?.unixTime ??
+            lastDeployment.data?.startEvent?.unixTime ??
+            0) / 1000
         )}
         onToggle={handleToggle}
         open={isOpen}
