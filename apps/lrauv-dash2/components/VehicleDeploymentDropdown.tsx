@@ -10,10 +10,15 @@ import useTrackedVehicles from '../lib/useTrackedVehicles'
 const LastDeploymentOption: React.FC<{ vehicleName: string }> = ({
   vehicleName,
 }) => {
-  const lastDeployment = useLastDeployment({
-    vehicle: vehicleName,
-    to: new Date().toISOString(),
-  })
+  const lastDeployment = useLastDeployment(
+    {
+      vehicle: vehicleName,
+      to: new Date().toISOString(),
+    },
+    {
+      enabled: vehicleName !== '',
+    }
+  )
 
   const lastEvent = lastDeployment.data?.lastEvent
   return lastDeployment.isLoading ? null : (
@@ -39,6 +44,7 @@ const VehicleDeploymentDropdown: React.FC<Omit<DropdownProps, 'options'>> = (
         .filter(
           ({ vehicleName }) => trackedVehicles.indexOf(vehicleName ?? '') < 0
         )
+        .filter(({ vehicleName }) => (vehicleName ?? '') !== '')
         .map(({ vehicleName }) => ({
           label: (
             <LastDeploymentOption
