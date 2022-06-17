@@ -10,11 +10,54 @@ let params: GetVPosParams = {
 }
 
 const mockResponse = {
-  inputs: params,
-  gpsFixes: [{ unknown: 'test' }],
-  argoReceives: [{ unknown: 'test' }],
-  emergencies: [{ unknown: 'test' }],
-  reachedWaypoints: [{ unknown: 'test' }],
+  gpsFixes: [
+    {
+      eventId: 'string',
+      unixTime: 0,
+      isoTime: 'string',
+      latitude: 0,
+      longitude: 0,
+      component: 'string',
+      note: 'string',
+      text: 'string',
+    },
+  ],
+  argoReceives: [
+    {
+      eventId: 'string',
+      unixTime: 0,
+      isoTime: 'string',
+      latitude: 0,
+      longitude: 0,
+      component: 'string',
+      note: 'string',
+      text: 'string',
+    },
+  ],
+  emergencies: [
+    {
+      eventId: 'string',
+      unixTime: 0,
+      isoTime: 'string',
+      latitude: 0,
+      longitude: 0,
+      component: 'string',
+      note: 'string',
+      text: 'string',
+    },
+  ],
+  reachedWaypoints: [
+    {
+      eventId: 'string',
+      unixTime: 0,
+      isoTime: 'string',
+      latitude: 0,
+      longitude: 0,
+      component: 'string',
+      note: 'string',
+      text: 'string',
+    },
+  ],
 }
 
 const server = setupServer(
@@ -28,7 +71,6 @@ afterEach(() => server.resetHandlers())
 afterAll(() => server.close())
 
 describe('getVPos', () => {
-  // TODO: Add tests for the actual API call
   it('should return the mocked value when successful', async () => {
     const response = await getVPos(params)
     expect(response).toEqual(mockResponse)
