@@ -19,12 +19,12 @@ export interface VehicleHeaderProps {
 }
 
 const styles = {
-  button: 'flex items-center p-2 w-full',
+  button: 'flex p-2 w-full text-left items-center',
   container: 'bg-white flex w-full',
-  label: 'text-gray-700 text-md underline',
-  secondary: 'text-gray-500 text-md px-4',
-  color: 'rounded-full h-6 w-6 my-auto mr-2',
-  icon: 'ml-auto my-auto mr-2',
+  label: 'text-gray-700 text-md underline truncate',
+  secondary: 'text-gray-500 text-sm italic mx-2 flex-shrink truncate',
+  color: 'rounded-full h-6 w-6 my-auto mr-2 flex-shrink-0',
+  icon: 'ml-auto my-auto flex-grow-0 mr-2 flex-shrink-0',
 }
 
 export const VehicleHeader: React.FC<VehicleHeaderProps> = ({

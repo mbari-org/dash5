@@ -30,3 +30,16 @@ Standard.parameters = {
     url: 'https://www.figma.com/file/FtsKsOCBQ2YjTZlwezG6aI/MBARI-Components?node-id=5399%3A613',
   },
 }
+
+export const Truncated = Template.bind({})
+Truncated.args = {
+  ...args,
+  name: 'Brizo',
+  deployment: 'Brizo 7 Ecohab w/ a Really Long Name that Will Be Truncated',
+}
+Truncated.parameters = {
+  design: {
+    type: 'figma',
+    url: 'https://www.figma.com/file/FtsKsOCBQ2YjTZlwezG6aI/MBARI-Components?node-id=5399%3A613',
+  },
+}
