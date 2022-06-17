@@ -51,7 +51,7 @@ const ConnectedVehicleCell: React.FC<{
   }
 
   const vehicle =
-    data?.not_found || !data ? null : (data as GetVehicleInfoResponse)
+    data?.not_found || !data ? undefined : (data as GetVehicleInfoResponse)
 
   return (
     <>
