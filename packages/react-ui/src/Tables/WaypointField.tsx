@@ -102,7 +102,7 @@ export const WaypointField: React.FC<WaypointFieldProps> = ({
             />
           </div>
         ) : (
-          <div className={styles.staticCoordinates}>{lat}</div>
+          <span className={styles.staticCoordinates}>{lat}</span>
         )}
       </li>
       <li className={styles.li}>
@@ -123,7 +123,7 @@ export const WaypointField: React.FC<WaypointFieldProps> = ({
             />
           </div>
         ) : (
-          <div className={styles.staticCoordinates}>{long}</div>
+          <span className={styles.staticCoordinates}>{long}</span>
         )}
       </li>
       <li className={clsx(styles.li)}>
