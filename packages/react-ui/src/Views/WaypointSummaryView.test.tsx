@@ -7,19 +7,31 @@ import {
 } from './WaypointSummaryView'
 
 const props: WaypointSummaryViewProps = {
-  waypoints: [],
-  estimatedDuration: 'example',
-  estimatedDistance: 'example',
-  estimatedBottomDepth: 'example',
+  waypoints: [
+    { name: 'C1', lat: 36.797, long: 127.847 },
+    { name: 'M1', lat: 36.797, long: 127.847 },
+    { name: 'Custom', lat: 36.797, long: 127.847 },
+  ],
+  vehicle: 'Brizo',
+  mission: 'sci2',
+  estimatedDistance: '7.2 km',
+  estimatedBottomDepth: '100-180 m',
+  estimatedDuration: '6hrs',
 }
-
-test.todo('should have tests')
 
 test('should render the component', async () => {
   expect(() => render(<WaypointSummaryView {...props} />)).not.toThrow()
 })
 
-// test('should render child content', async () => {
-//   render(<WaypointSummaryView>Click Here</WaypointSummaryView>)
-//   expect(screen.getByText(/Click Here/i)).toHaveTextContent('Click Here')
-// })
+test('should display the set up header', async () => {
+  render(<WaypointSummaryView {...props} />)
+
+  expect(screen.queryByText(/Brizo/gi)).toBeInTheDocument()
+  expect(screen.queryByText(props.mission)).toBeInTheDocument()
+})
+
+test('should display the summary header with the correct number of waypoints', async () => {
+  render(<WaypointSummaryView {...props} />)
+
+  expect(screen.queryByText('Summary of waypoints (3)')).toBeInTheDocument()
+})

@@ -8,6 +8,7 @@ export interface WaypointSummaryViewProps {
   style?: React.CSSProperties
   waypoints: Waypoint[]
   mission: string
+  vehicle: string
   estimatedDuration: string
   estimatedDistance: string
   estimatedBottomDepth: string
@@ -20,11 +21,20 @@ export interface Waypoint {
   long: number
 }
 
+const styles = {
+  container: 'bg-white p-4 font-display',
+  setupHeader: 'mb-4 font-medium',
+  summarySection: 'grid grid-cols-2 gap-4',
+  estimateItem: 'mr-1 font-medium',
+  tealText: 'text-teal-500',
+}
+
 export const WaypointSummaryView: React.FC<WaypointSummaryViewProps> = ({
   className,
   style,
   waypoints,
   mission,
+  vehicle,
   estimatedDuration,
   estimatedDistance,
   estimatedBottomDepth,
@@ -58,30 +68,27 @@ export const WaypointSummaryView: React.FC<WaypointSummaryViewProps> = ({
     []
 
   return (
-    <article
-      className={clsx('bg-white p-4 font-display', className)}
-      style={style}
-    >
-      <h1 className="mb-4 font-medium">
-        Set up to 7 waypoints for Brizo&apos;s{' '}
-        <span className="text-teal-500">{mission}</span> mission
+    <article className={clsx(styles.container, className)} style={style}>
+      <h1 className={styles.setupHeader}>
+        Set up to 7 waypoints for {vehicle}&apos;s{' '}
+        <span className={styles.tealText}>{mission}</span> mission
       </h1>
 
       <h3 className="my-2">Summary of waypoints ({waypoints?.length || 0})</h3>
-      <section className="grid grid-cols-2 gap-4">
+      <section className={styles.summarySection}>
         <SummaryList
           header={'ESTIMATES'}
           values={[
             <div key="distance">
-              <span className="mr-1 font-medium">Total Distance:</span>
+              <span className={styles.estimateItem}>Total Distance:</span>
               <span> {estimatedDistance}</span>
             </div>,
             <div key="bottomDepth">
-              <span className="mr-1 font-medium">Est. bottom depth:</span>
+              <span className={styles.estimateItem}>Est. bottom depth:</span>
               <span>{estimatedBottomDepth}</span>
             </div>,
             <div key="duration">
-              <span className="mr-1 font-medium">Est. duration:</span>
+              <span className={styles.estimateItem}>Est. duration:</span>
               <span>{estimatedDuration}</span>
             </div>,
           ]}
@@ -96,7 +103,7 @@ export const WaypointSummaryView: React.FC<WaypointSummaryViewProps> = ({
             ],
           }}
           rows={tableRows}
-          highlightedStyle="text-teal-500"
+          highlightedStyle={styles.tealText}
           scrollable
           grayHeader
         />

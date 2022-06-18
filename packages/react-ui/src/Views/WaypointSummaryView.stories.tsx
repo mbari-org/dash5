@@ -23,6 +23,7 @@ const args: WaypointSummaryViewProps = {
     { name: 'M1', lat: 36.797, long: 127.847 },
     { name: 'Custom', lat: 36.797, long: 127.847 },
   ],
+  vehicle: 'Brizo',
   mission: 'sci2',
   estimatedDistance: '7.2 km',
   estimatedBottomDepth: '100-180 m',
