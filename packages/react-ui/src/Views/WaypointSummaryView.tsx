@@ -8,6 +8,7 @@ export interface WaypointSummaryViewProps {
   style?: React.CSSProperties
   waypoints: Waypoint[]
   mission: string
+  maxWaypoints: number
   vehicle: string
   estimatedDuration: string
   estimatedDistance: string
@@ -34,6 +35,7 @@ export const WaypointSummaryView: React.FC<WaypointSummaryViewProps> = ({
   style,
   waypoints,
   mission,
+  maxWaypoints,
   vehicle,
   estimatedDuration,
   estimatedDistance,
@@ -70,7 +72,7 @@ export const WaypointSummaryView: React.FC<WaypointSummaryViewProps> = ({
   return (
     <article className={clsx(styles.container, className)} style={style}>
       <h1 className={styles.setupHeader}>
-        Set up to 7 waypoints for {vehicle}&apos;s{' '}
+        Set up to {maxWaypoints} waypoints for {vehicle}&apos;s{' '}
         <span className={styles.tealText}>{mission}</span> mission
       </h1>
 

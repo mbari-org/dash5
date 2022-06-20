@@ -12,6 +12,7 @@ const props: WaypointSummaryViewProps = {
     { name: 'M1', lat: 36.797, long: 127.847 },
     { name: 'Custom', lat: 36.797, long: 127.847 },
   ],
+  maxWaypoints: 7,
   vehicle: 'Brizo',
   mission: 'sci2',
   estimatedDistance: '7.2 km',
@@ -23,14 +24,15 @@ test('should render the component', async () => {
   expect(() => render(<WaypointSummaryView {...props} />)).not.toThrow()
 })
 
-test('should display the set up header', async () => {
+test('should display the set up header with correct maximum number of waypoints', async () => {
   render(<WaypointSummaryView {...props} />)
 
+  expect(screen.queryByText(/set up to 7 waypoints/gi)).toBeInTheDocument()
   expect(screen.queryByText(/Brizo/gi)).toBeInTheDocument()
   expect(screen.queryByText(props.mission)).toBeInTheDocument()
 })
 
-test('should display the summary header with the correct number of waypoints', async () => {
+test('should display the summary header with the correct number of existing waypoints', async () => {
   render(<WaypointSummaryView {...props} />)
 
   expect(screen.queryByText('Summary of waypoints (3)')).toBeInTheDocument()
