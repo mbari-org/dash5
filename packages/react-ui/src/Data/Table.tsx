@@ -8,6 +8,7 @@ export interface TableProps {
   style?: React.CSSProperties
   rows: TableRowProps[]
   header?: TableHeaderProps
+  grayHeader?: boolean
   highlightedStyle?: string
   stackable?: boolean
   scrollable?: boolean
@@ -39,6 +40,7 @@ export const Table: React.FC<TableProps> = ({
   style,
   rows,
   header,
+  grayHeader,
   highlightedStyle,
   stackable,
   scrollable,
@@ -70,7 +72,7 @@ export const Table: React.FC<TableProps> = ({
                 'grid',
                 gridClassNames[colsInRow],
                 !onSelectRow && 'gap-4',
-                !scrollable && 'bg-stone-100'
+                (!scrollable || grayHeader) && 'bg-stone-100'
               )}
               scrollable={scrollable}
               {...header}
