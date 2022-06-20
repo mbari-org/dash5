@@ -42,7 +42,7 @@ export const Input = React.forwardRef<HTMLInputElement, InputProps>(
     },
     forwardedRef
   ) => {
-    const controlledInputProps = value ? { value } : {}
+    const controlledInputProps = value || value === '' ? { value } : {}
     return (
       <input
         {...props}

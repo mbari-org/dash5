@@ -4,7 +4,7 @@
 
 .client__multi__select_container {
   .client__multi__select__control {
-    @apply border border-gray-300;
+    @apply border border-gray-300 h-full;
   }
 
   .client__multi__select__value-container {

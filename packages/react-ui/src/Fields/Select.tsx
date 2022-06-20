@@ -40,7 +40,7 @@ export const Select = React.forwardRef<any, SelectProps>(
       handleSelect?.(s?.id ?? null)
     }
     return (
-      <div className="flex w-full flex-grow">
+      <div className="flex h-full w-full flex-grow bg-yellow-300">
         <ReactSelect
           name={name}
           options={options}
