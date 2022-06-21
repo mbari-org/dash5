@@ -71,7 +71,7 @@ const args: CommandTableProps = {
       }`
     )
   },
-  selectedId: '1',
+  selectedId: '5',
 }
 
 export const Standard = Template.bind({})
