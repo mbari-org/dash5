@@ -52,7 +52,7 @@ export const CommandDetail: React.FC<CommandDetailProps> = ({
               onSelect={(id) => handleSelect(id || '')}
             />
           ) : (
-            <div className="flex h-full w-full items-center">
+            <section className="flex h-full w-full items-center">
               <label htmlFor="parameter checkbox">
                 <input
                   type="checkbox"
@@ -62,7 +62,7 @@ export const CommandDetail: React.FC<CommandDetailProps> = ({
                 />
                 <span className="ml-2">Yes</span>
               </label>
-            </div>
+            </section>
           ),
         },
       ],
