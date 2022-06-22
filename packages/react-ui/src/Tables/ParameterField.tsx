@@ -12,9 +12,9 @@ export interface ParameterFieldProps {
 const styles = {
   container: 'flex h-full w-full',
   inputLi: 'flex flex-grow rounded',
-  buttonLi: 'ml-2 h-full w-1/12 rounded border-2 border-stone-300/60',
-  button: 'h-full w-full bg-white p-2',
-  ruler: 'flex aspect-square h-full bg-white bg-cover',
+  buttonLi: 'ml-2 h-full aspect-square rounded border-2 border-stone-300/60',
+  button: 'h-full w-full bg-white p-1 justify-center flex',
+  ruler: 'aspect-square h-full bg-white bg-cover bg-center',
 }
 
 export const ParameterField: React.FC<ParameterFieldProps> = ({
