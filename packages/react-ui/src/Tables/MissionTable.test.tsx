@@ -38,12 +38,12 @@ test('should display category label', async () => {
 
 test('should display mission name label', async () => {
   render(<MissionTable {...props} />)
-  expect(screen.getByText(/Brizo/i)).toBeInTheDocument()
+  expect(screen.getByText(/test mission/i)).toBeInTheDocument()
 })
 
 test('should display vehicle label', async () => {
   render(<MissionTable {...props} />)
-  expect(screen.getByText(/test mission/i)).toBeInTheDocument()
+  expect(screen.getByText(/Brizo/i)).toBeInTheDocument()
 })
 
 test('should display No description label when description is not provided', async () => {

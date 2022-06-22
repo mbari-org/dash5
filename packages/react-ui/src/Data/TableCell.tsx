@@ -19,16 +19,19 @@ export const TableCell: React.FC<TableCellProps> = ({
   icon,
   scrollable,
   firstColumn,
+  highlighted,
 }) => {
   return (
     <ul className={clsx(styles.container, className)} data-testid="table cell">
       {icon && <li className="text-4xl">{icon}</li>}
-      <li className="h-full w-full">
+      <li className="flex h-full w-full flex-col justify-center">
         <div
           className={clsx(
-            !scrollable && firstColumn && 'font-mono',
-            scrollable && !firstColumn && 'h-full text-sm',
-            firstColumn && (scrollable ? 'font-medium' : 'font-semibold')
+            !scrollable && firstColumn && !highlighted && 'font-mono',
+            scrollable && !firstColumn && !highlighted && 'text-sm',
+            firstColumn &&
+              !highlighted &&
+              (scrollable ? 'font-medium' : 'font-semibold')
           )}
         >
           {label}
