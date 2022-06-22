@@ -53,7 +53,7 @@ const ConnectedVehicleCell: React.FC<{
   const { data: vehicleInfo, isLoading: vehicleInfoLoading } = useVehicleInfo(
     { name },
     axios.create({
-      baseURL: process.env.NEXT_API_HOST,
+      baseURL: process.env.NEXT_PUBLIC_API_HOST,
       timeout: 5000,
     })
   )
