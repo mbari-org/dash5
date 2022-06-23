@@ -4,7 +4,6 @@ import { useRouter } from 'next/router'
 
 import Layout from '../../components/Layout'
 import VehicleDiagram from '../../components/VehicleDiagram'
-import VehiclePath from '../../components/VehiclePath'
 import dynamic from 'next/dynamic'
 import { DateTime } from 'luxon'
 import { Tab, TabGroup } from '@mbari/react-ui'
@@ -25,6 +24,9 @@ const styles = {
 // SSR. If we don't do this, the leaflet map will be loaded server side
 // and throw a window error.
 const Map = dynamic(() => import('@mbari/react-ui/dist/Map/Map'), {
+  ssr: false,
+})
+const VehiclePath = dynamic(() => import('../../components/VehiclePath'), {
   ssr: false,
 })
 
@@ -59,7 +61,7 @@ const Vehicle: NextPage = () => {
           />
           <div className={styles.mapContainer}>
             <Map className="h-full w-full">
-              <VehiclePath name={name} />
+              <VehiclePath name={name as string} />
             </Map>
             <div className="absolute bottom-0 z-[1001] flex w-full flex-col">
               <TabGroup className="w-full px-8">
@@ -94,7 +96,7 @@ const Vehicle: NextPage = () => {
               >
                 {currentTab === 'vehicle' && (
                   <VehicleDiagram
-                    name={name}
+                    name={name as string}
                     className="m-auto flex h-full w-full max-w-[900px]"
                   />
                 )}
