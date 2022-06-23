@@ -32,7 +32,7 @@ const pathReducer: PathReducer = (state, action) => {
       return {}
     }
     default: {
-      throw new Error(`Unhandled action type: ${action.type}`)
+      throw new Error(`Unhandled action type: ${action}`)
     }
   }
 }
