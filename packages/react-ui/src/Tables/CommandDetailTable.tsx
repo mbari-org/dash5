@@ -17,7 +17,7 @@ export interface CommandParameter {
   options?: string[]
 }
 
-export const CommandDetail: React.FC<CommandDetailProps> = ({
+export const CommandDetailTable: React.FC<CommandDetailProps> = ({
   className,
   style,
   commands,
@@ -78,4 +78,4 @@ export const CommandDetail: React.FC<CommandDetailProps> = ({
   )
 }
 
-CommandDetail.displayName = 'Tables.CommandDetail'
+CommandDetailTable.displayName = 'Tables.CommandDetail'

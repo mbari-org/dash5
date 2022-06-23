@@ -1,15 +1,15 @@
 import React from 'react'
 // also exported from '@storybook/react' if you can deal with breaking changes in 6.1
 import { Story, Meta } from '@storybook/react/types-6-0'
-import { CommandDetail, CommandDetailProps } from './CommandDetail'
+import { CommandDetailTable, CommandDetailProps } from './CommandDetailTable'
 
 export default {
   title: 'Tables/CommandDetail',
-  component: CommandDetail,
+  component: CommandDetailTable,
 } as Meta
 
 const Template: Story<CommandDetailProps> = (args) => (
-  <CommandDetail {...args} />
+  <CommandDetailTable {...args} />
 )
 
 const args: CommandDetailProps = {
