@@ -16,14 +16,12 @@ const Template: Story<WaypointTableProps> = (args) => (
 
 const args: WaypointTableProps = {
   waypoints: Array(5).fill({
-    options: [
-      { id: '1', name: '25.0000° N, 71.0000° W' },
-      { id: '2', name: '37.0169° N, 122.0025° W' },
-    ],
+    id: Math.floor(Math.random() * 100),
   }),
-  onSelectOption: (id) => {
-    console.log(id)
-  },
+  stations: [
+    { name: 'C1', lat: 36.797, long: -121.847 },
+    { name: 'C2', lat: 46.797, long: -141.847 },
+  ],
   onFocusWaypoint: (index) => {
     console.log(index)
   },
@@ -47,5 +45,21 @@ FocusMode.args = {
   },
   onCancelFocus: (index) => {
     console.log(index)
+  },
+}
+
+export const WaypointField = Template.bind({})
+WaypointField.args = {
+  ...args,
+  waypoints: [
+    { id: '1', station: { name: 'C1', lat: 36.797, long: -121.847 } },
+    { id: '2', station: { name: 'Custom', lat: -36.691, long: -122.376 } },
+    { id: '3' },
+  ],
+}
+WaypointField.parameters = {
+  design: {
+    type: 'figma',
+    url: 'https://www.figma.com/file/FtsKsOCBQ2YjTZlwezG6aI/MBARI-Components?node-id=5251%3A599',
   },
 }

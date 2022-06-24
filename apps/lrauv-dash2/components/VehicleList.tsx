@@ -31,7 +31,15 @@ const ConnectedVehicleCell: React.FC<{
   virtualizer: Virtualizer
   open: boolean
   onToggle: (open: boolean, name: string) => void
-}> = ({ name, virtualizer, color, open, onToggle: externalHandleToggle }) => {
+  onSelect: () => void
+}> = ({
+  name,
+  virtualizer,
+  color,
+  open,
+  onToggle: externalHandleToggle,
+  onSelect: handleSelect,
+}) => {
   const [isOpen, setIsOpen] = React.useState(open)
   const lastDeployment = useLastDeployment(
     {
@@ -44,7 +52,6 @@ const ConnectedVehicleCell: React.FC<{
     {
       vehicle: name,
       from: `${lastDeployment?.data?.lastEvent ?? new Date().toISOString()}`,
-      limit: 10,
     },
     {
       enabled: !!lastDeployment?.data?.lastEvent,
@@ -53,7 +60,7 @@ const ConnectedVehicleCell: React.FC<{
   const { data: vehicleInfo, isLoading: vehicleInfoLoading } = useVehicleInfo(
     { name },
     axios.create({
-      baseURL: process.env.NEXT_API_HOST,
+      baseURL: process.env.NEXT_PUBLIC_API_HOST,
       timeout: 5000,
     })
   )
@@ -121,6 +128,7 @@ const ConnectedVehicleCell: React.FC<{
       />
       {isOpen && (
         <VehicleCell
+          onSelect={handleSelect}
           headline={
             <div>
               <span className="font-semibold text-purple-600">{status}</span>{' '}
@@ -246,7 +254,9 @@ const ConnectedVehicleCell: React.FC<{
   )
 }
 
-const VehicleList: React.FC = () => {
+const VehicleList: React.FC<{
+  onSelectVehicle?: (vehicle: string) => void
+}> = ({ onSelectVehicle: handleSelectVehicle }) => {
   const { trackedVehicles } = useTrackedVehicles()
   const vehicles = useVehicles({})
   const [accordionState, setAccordionState] = React.useState<{
@@ -264,6 +274,9 @@ const VehicleList: React.FC = () => {
     const color = vehicles.data?.find(
       (v) => v.vehicleName === trackedVehicles[index]
     )?.color
+    const handleSelect = () => {
+      handleSelectVehicle?.(trackedVehicles[index])
+    }
     return (
       <div className="border-b border-stone-400">
         <ConnectedVehicleCell
@@ -272,6 +285,7 @@ const VehicleList: React.FC = () => {
           color={color ?? '#ccc'}
           open={accordionState[trackedVehicles[index]] !== 'closed'}
           onToggle={handleToggle}
+          onSelect={handleSelect}
         />
       </div>
     )

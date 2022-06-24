@@ -16,6 +16,8 @@ export interface CellProps {
   label: string | JSX.Element
   secondary?: string | JSX.Element
   icon?: JSX.Element
+  highlighted?: boolean
+  highlightedStyle?: string
 }
 
 const styles = {
@@ -47,9 +49,11 @@ export const TableRow: React.FC<TableRowProps> = ({
                 firstColumn={index === 0}
                 scrollable={scrollable}
                 className={clsx(
-                  highlighted && highlightedStyle,
-                  !highlighted && 'opacity-60'
+                  cell.highlighted && cell.highlightedStyle,
+                  highlighted && !cell.highlighted && highlightedStyle,
+                  !highlighted && !cell.highlighted && 'opacity-60'
                 )}
+                highlighted={cell.highlighted}
               />
             </button>
           ) : (
@@ -58,8 +62,9 @@ export const TableRow: React.FC<TableRowProps> = ({
               firstColumn={index === 0}
               scrollable={scrollable}
               className={clsx(
-                highlighted && highlightedStyle,
-                !highlighted && 'opacity-60',
+                cell.highlighted && cell.highlightedStyle,
+                highlighted && !cell.highlighted && highlightedStyle,
+                !highlighted && !cell.highlighted && 'opacity-60',
                 styles.cellPadding
               )}
             />

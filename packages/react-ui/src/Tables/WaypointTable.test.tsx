@@ -5,14 +5,12 @@ import { WaypointTable, WaypointTableProps } from './WaypointTable'
 
 const props: WaypointTableProps = {
   waypoints: Array(5).fill({
-    options: [
-      { id: '1', name: '25.0000° N, 71.0000° W' },
-      { id: '2', name: 'test option' },
-    ],
+    id: Math.floor(Math.random() * 100),
   }),
-  onSelectOption: (id) => {
-    console.log(id)
-  },
+  stations: [
+    { name: 'C1', lat: 36.797, long: -121.847 },
+    { name: 'C2', lat: 46.797, long: -141.847 },
+  ],
   onFocusWaypoint: (index) => {
     console.log(index)
   },
@@ -59,4 +57,45 @@ test('should display the numbered waypoint map marker icon in purple when in foc
   expect(screen.queryByTestId(/map marker icon/i)).toHaveClass(
     'text-purple-700'
   )
+})
+
+test('should display a selected waypoint', async () => {
+  render(
+    <WaypointTable
+      {...props}
+      waypoints={[
+        { id: '1', station: { name: 'C1', lat: 36.797, long: -121.847 } },
+      ]}
+    />
+  )
+
+  expect(screen.queryByText(/C1/i)).toBeInTheDocument()
+})
+
+test('should display the numbered waypoint map marker icon in purple when a waypoint is selected', async () => {
+  render(
+    <WaypointTable
+      {...props}
+      waypoints={[
+        { id: '1', station: { name: 'C1', lat: 36.797, long: -121.847 } },
+      ]}
+    />
+  )
+
+  expect(screen.queryAllByTestId(/map marker icon/i)[0]).toHaveClass(
+    'text-purple-700'
+  )
+})
+
+test('should display +/- error warning if custom coordinate is out of range', async () => {
+  render(
+    <WaypointTable
+      {...props}
+      waypoints={[
+        { id: '2', station: { name: 'Custom', lat: -1, long: -122.376 } },
+      ]}
+    />
+  )
+
+  expect(screen.queryByText(/\+\/- error?/i)).toBeInTheDocument()
 })
