@@ -1,7 +1,16 @@
+import clsx from 'clsx'
 import React, { FC } from 'react'
 
-export const TabGroup: FC = ({ children }) => {
-  return <div className="flex flex-row">{children}</div>
+interface TabGroupProps {
+  style?: React.CSSProperties
+  className?: string
+}
+export const TabGroup: FC<TabGroupProps> = ({ children, className, style }) => {
+  return (
+    <div className={clsx('flex flex-row', className)} style={style}>
+      {children}
+    </div>
+  )
 }
 
 TabGroup.displayName = 'Navigation.TabGroup'
