@@ -72,7 +72,7 @@ export interface Sample {
 export interface SampleCollectionViewProps {
   className?: string
   samples: Sample[]
-  archived: string
+  archived: Sample
   vehicleName: string
 }
 
@@ -251,7 +251,7 @@ const ColorCodes: React.FC = () => (
 )
 
 interface StatsProps {
-  archived: string
+  archived: Sample
   goodSamplesCount: number
   failedSamplesCount: number
 }
@@ -261,13 +261,15 @@ const Stats: React.FC<StatsProps> = ({
   goodSamplesCount,
   failedSamplesCount,
 }) => {
-  const formatted = fromISO(archived).toFormat('ddLLLyy - hh:mm')
+  const formatted = fromISO(archived.timeCollected ?? '').toFormat(
+    'ddLLLyy - hh:mm'
+  )
 
   return (
     <>
-      <h3 className="mt-2 text-lg font-semibold">
+      <h3 className="mt-2 text-lg font-medium">
         <span className="uppercase">archived: </span>
-        {formatted}
+        {formatted} ({archived.quantity})
       </h3>
       <ul>
         <li className="font-medium capitalize">

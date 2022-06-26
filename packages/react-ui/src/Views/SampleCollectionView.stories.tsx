@@ -51,7 +51,11 @@ const args: SampleCollectionViewProps = {
       timeCollected: '2022-05-16',
     },
   ],
-  archived: '2021-08-19T11:48:00.000Z',
+  archived: {
+    status: 'good',
+    quantity: 231.33,
+    timeCollected: '2021-08-19T11:48:00.000Z',
+  },
   vehicleName: 'makai',
 }
 

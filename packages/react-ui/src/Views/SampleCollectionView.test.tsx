@@ -39,7 +39,11 @@ const samples: Sample[] = [
 
 const props: SampleCollectionViewProps = {
   samples,
-  archived: 'example',
+  archived: {
+    status: 'good',
+    quantity: 231.33,
+    timeCollected: '2021-08-19T11:48:00.000Z',
+  },
   vehicleName: 'makai',
 }
 
