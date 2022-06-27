@@ -1,11 +1,11 @@
 import React from 'react'
 // also exported from '@storybook/react' if you can deal with breaking changes in 6.1
 import { Story, Meta } from '@storybook/react/types-6-0'
-import { VehicleCommsCell } from '../Cells'
+import { VehicleCommsCell, VehicleInfoCell } from '../Cells'
 import { OverviewToolbar, OverviewToolbarProps } from './OverviewToolbar'
 import { faEye } from '@fortawesome/pro-light-svg-icons'
 import { IconDefinition } from '@fortawesome/fontawesome-svg-core'
-import { ConnectedIcon } from '../Icons'
+import { ConnectedIcon, UnderwaterIcon } from '../Icons'
 
 const commsIcon = (
   <svg
@@ -173,7 +173,18 @@ const args: OverviewToolbarProps = {
       }}
     />
   ),
-  onIcon2hover: () => <></>,
+  onIcon2hover: () => (
+    <VehicleInfoCell
+      icon={<UnderwaterIcon />}
+      headline="Likely underwater"
+      subtitle="Last confirmed on surface 47min ago"
+      lastCommsOverSat="Today at 14:08:36 (47m ago)"
+      estimate="Est. to surface in 15 mins at ~14:55"
+      onSelect={() => {
+        console.log('event fired')
+      }}
+    />
+  ),
   vehicleName: 'Brizo',
 }
 

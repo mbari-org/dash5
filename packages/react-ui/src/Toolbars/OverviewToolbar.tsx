@@ -72,16 +72,14 @@ export const OverviewToolbar: React.FC<OverviewToolbarProps> = ({
     setShowDeployments(!showDeployments)
   })
 
-  const newDeploymentOptions = handleNewDeployment
-    ? [
-        {
-          label: `New ${vehicleName} deployment`,
-          icon: faPlus as IconDefinition,
-          onSelect: handleNewDeployment,
-          disabled: true,
-        },
-      ]
-    : []
+  const newDeploymentOptions = [
+    {
+      label: `New ${vehicleName} deployment`,
+      icon: faPlus as IconDefinition,
+      onSelect: () => handleNewDeployment?.(),
+      disabled: !handleNewDeployment,
+    },
+  ]
   const deploymentOptions =
     deployments?.map((d) => ({
       label: d.name,
@@ -97,7 +95,7 @@ export const OverviewToolbar: React.FC<OverviewToolbarProps> = ({
     <article style={style} className={clsx(styles.container, className, '')}>
       <ul className={styles.leftWrapper}>
         <li className="relative">
-          {handleSelectDeployment && deployments ? (
+          {handleSelectDeployment || handleNewDeployment ? (
             <button
               onClick={handleToggle}
               className={styles.deployment}
@@ -114,7 +112,7 @@ export const OverviewToolbar: React.FC<OverviewToolbarProps> = ({
               </span>
             </button>
           ) : (
-            <h2 className={styles.deployment}>
+            <h2 className={styles.deployment} data-testid="deploymentHeadline">
               <span aria-label="deployment title" className={styles.title}>
                 {deployment}
               </span>
@@ -155,17 +153,20 @@ export const OverviewToolbar: React.FC<OverviewToolbarProps> = ({
           />
         </li>
         {onIcon1hover && supportIcon1 ? (
-          <li className="relative p-4" data-testid="icon1">
+          <li className="relative p-4">
             <button
               onMouseOver={toggleHover('icon1')}
               onFocus={toggleHover('icon1')}
               onMouseOut={toggleHover(null)}
               onBlur={toggleHover(null)}
+              data-testid="icon1"
             >
               {supportIcon1}
             </button>
             {hovering === 'icon1' && (
-              <div className={styles.popover}>{onIcon1hover()}</div>
+              <div className={styles.popover} data-testid="icon1detail">
+                {onIcon1hover()}
+              </div>
             )}
           </li>
         ) : null}
@@ -181,7 +182,9 @@ export const OverviewToolbar: React.FC<OverviewToolbarProps> = ({
               {supportIcon2}
             </button>
             {hovering === 'icon2' && (
-              <div className={styles.popover}>{onIcon2hover()}</div>
+              <div className={styles.popover} data-testid="icon2detail">
+                {onIcon2hover()}
+              </div>
             )}
           </li>
         ) : null}
