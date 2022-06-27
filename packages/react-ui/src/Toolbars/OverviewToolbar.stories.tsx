@@ -1,9 +1,11 @@
 import React from 'react'
 // also exported from '@storybook/react' if you can deal with breaking changes in 6.1
 import { Story, Meta } from '@storybook/react/types-6-0'
+import { VehicleCommsCell } from '../Cells'
 import { OverviewToolbar, OverviewToolbarProps } from './OverviewToolbar'
 import { faEye } from '@fortawesome/pro-light-svg-icons'
 import { IconDefinition } from '@fortawesome/fontawesome-svg-core'
+import { ConnectedIcon } from '../Icons'
 
 const commsIcon = (
   <svg
@@ -129,8 +131,29 @@ const args: OverviewToolbarProps = {
   open: false,
   supportIcon1: commsIcon,
   supportIcon2: statusIcon,
-  onClickDeployment: () => {
-    console.log('event fired')
+  deployments: [
+    {
+      id: '1',
+      name: 'Brizo 7 Ecohab',
+    },
+    {
+      id: '2',
+      name: 'Brizo 23 MBTS',
+    },
+    {
+      id: '2',
+      name: 'Brizo 114 MBTS',
+    },
+    {
+      id: '2',
+      name: 'Brizo 16 BioAC',
+    },
+  ],
+  onSelectNewDeployment() {
+    console.log('New deployment for Brizo')
+  },
+  onSelectDeployment(deployment) {
+    console.log(deployment)
   },
   onClickMissions: () => {
     console.log('event fired')
@@ -138,8 +161,20 @@ const args: OverviewToolbarProps = {
   onClickPilot: () => {
     console.log('event fired')
   },
-  onIcon1hover: () => <></>,
+  onIcon1hover: () => (
+    <VehicleCommsCell
+      icon={<ConnectedIcon />}
+      headline="Cell Comms: Connected"
+      host="lrauv-brizo-cell.shore.mbari.org"
+      lastPing="Today at 14:40:36 (3s ago)"
+      nextComms="14:55 (in 15m)"
+      onSelect={() => {
+        console.log('event fired')
+      }}
+    />
+  ),
   onIcon2hover: () => <></>,
+  vehicleName: 'Brizo',
 }
 
 export const Standard = Template.bind({})
@@ -155,7 +190,8 @@ export const Overview = Template.bind({})
 Overview.args = {
   ...args,
   deployment: 'Overview',
-  onClickDeployment: undefined,
+  onSelectDeployment: undefined,
+  onSelectNewDeployment: undefined,
   onClickMissions: undefined,
   onIcon1hover: undefined,
   onIcon2hover: undefined,

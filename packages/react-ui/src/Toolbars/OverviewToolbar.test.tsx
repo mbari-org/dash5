@@ -1,6 +1,7 @@
 import React from 'react'
 import { render, screen } from '@testing-library/react'
 import '@testing-library/jest-dom'
+import { VehicleCommsCell } from '../Cells'
 import { OverviewToolbar, OverviewToolbarProps } from './OverviewToolbar'
 import { faEye } from '@fortawesome/pro-light-svg-icons'
 import { IconDefinition } from '@fortawesome/fontawesome-svg-core'
@@ -10,9 +11,26 @@ const props: OverviewToolbarProps = {
   pilotInCharge: 'Tanner P. (you)',
   pilotOnCall: 'Brian K.',
   btnIcon: faEye as IconDefinition,
-  open: false,
-  onClickDeployment: () => {
-    console.log('event fired')
+  deployments: [
+    {
+      id: '1',
+      name: 'Brizo 7 Ecohab',
+    },
+    {
+      id: '2',
+      name: 'Brizo 23 MBTS',
+    },
+    {
+      id: '2',
+      name: 'Brizo 114 MBTS',
+    },
+    {
+      id: '2',
+      name: 'Brizo 16 BioAC',
+    },
+  ],
+  onSelectDeployment(deployment) {
+    console.log(deployment)
   },
   onClickMissions: () => {
     console.log('event fired')
@@ -20,7 +38,7 @@ const props: OverviewToolbarProps = {
   onClickPilot: () => {
     console.log('event fired')
   },
-  onIcon1hover: () => <></>,
+  onIcon1hover: () => <VehicleCommsCell />,
   onIcon2hover: () => <></>,
   supportIcon1: <></>,
   supportIcon2: <></>,
