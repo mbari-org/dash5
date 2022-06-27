@@ -100,8 +100,6 @@ export const BatteryMonitorPopup: React.FC<BatteryMonitorPopupProps> = ({
     ? suggestions.map((suggestion) => Row(suggestion))
     : []
 
-  console.log(suggestionRows)
-
   return (
     <Modal
       grayHeader
@@ -111,11 +109,13 @@ export const BatteryMonitorPopup: React.FC<BatteryMonitorPopupProps> = ({
         <ul>
           <li className="mb-2">Battery monitor: {batteryPercent}%</li>
           <li className=" opacity-60">
-            Battery remaining: {batteryRemaining.hours} hours (~
+            Battery remaining: {batteryRemaining.hours}{' '}
+            {batteryRemaining.hours === 1 ? 'hour' : 'hours'} (~
             {batteryRemaining.miles}mi)
           </li>
           <li className="mb-4 opacity-60">
-            Mission remaining: {missionRemaining.hours} hours (~
+            Mission remaining: {missionRemaining.hours}{' '}
+            {missionRemaining.hours === 1 ? 'hour' : 'hours'} (~
             {missionRemaining.miles}mi)
           </li>
         </ul>
@@ -125,7 +125,7 @@ export const BatteryMonitorPopup: React.FC<BatteryMonitorPopupProps> = ({
       open={open}
     >
       <section>
-        {/* eslint-disable-next-line -- remove this image tag and associated image asset when actual chart component is implemented */}
+        {/* eslint-disable-next-line -- remove this image tag, associated image asset, and mocked asset in test when actual chart component is implemented */}
         <img src={chart} alt="chart to be replaced" />
       </section>
       <section>
