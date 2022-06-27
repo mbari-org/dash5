@@ -11,6 +11,7 @@ export interface ModalViewProps {
   open: boolean
   zIndex?: string
   grayHeader?: boolean
+  fullWidthBody?: boolean
   onClose?: () => void
   draggable?: boolean
   onFocus?: () => void
@@ -52,7 +53,8 @@ const styles = {
   dragButton:
     'cursor-move flex flex-grow bg-opacity-50 hover:bg-stone-100 ml-1 my-1 rounded transition-colors duration-100 ease-out',
   closeButton: 'my-1 mr-2 text-stone-400',
-  modalBody: 'px-4 py-4 text-base font-normal overflow-auto mb-6',
+  modalBody: 'text-base font-normal overflow-auto',
+  bodyMarginAndPadding: 'mb-6 px-4 py-4',
   notDragging: 'shadow-xl border-stone-100',
   dragging: 'shadow-2xl border-stone-200',
 }
@@ -61,6 +63,7 @@ export const Modal: React.FC<ModalProps & FooterProps> = ({
   title,
   open,
   grayHeader,
+  fullWidthBody,
   onClose: handleOnClose,
   children,
   draggable,
@@ -184,7 +187,14 @@ export const Modal: React.FC<ModalProps & FooterProps> = ({
             />
           ) : null}
         </header>
-        <div className={styles.modalBody}>{children}</div>
+        <div
+          className={clsx(
+            styles.modalBody,
+            !fullWidthBody && styles.bodyMarginAndPadding
+          )}
+        >
+          {children}
+        </div>
         {(handleConfirm || handleCancel || form) && (
           <Footer
             onConfirm={handleConfirm}

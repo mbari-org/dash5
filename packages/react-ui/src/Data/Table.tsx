@@ -10,6 +10,7 @@ export interface TableProps {
   header?: TableHeaderProps
   grayHeader?: boolean
   highlightedStyle?: string
+  noBorder?: boolean
   stackable?: boolean
   scrollable?: boolean
   selectedIndex?: number | null
@@ -29,7 +30,8 @@ const gridClassNames = [
 ]
 
 const styles = {
-  container: 'h-full border-2 border-solid border-stone-200',
+  container: 'h-full',
+  containerBorder: 'border-2 border-solid border-stone-200',
   table: 'font-display w-full',
   header: 'sticky top-0 left-0 z-10 bg-white/100',
   borderTop: 'border-t-2 border-solid border-stone-200',
@@ -42,6 +44,7 @@ export const Table: React.FC<TableProps> = ({
   header,
   grayHeader,
   highlightedStyle,
+  noBorder,
   stackable,
   scrollable,
   onSelectRow,
@@ -59,6 +62,7 @@ export const Table: React.FC<TableProps> = ({
       data-testid="table container"
       className={clsx(
         styles.container,
+        !noBorder && styles.containerBorder,
         className,
         scrollable && 'overflow-y-auto',
         stackable && 'border-t-0'
