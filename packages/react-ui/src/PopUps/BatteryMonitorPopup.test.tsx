@@ -111,3 +111,9 @@ test('should description after more info button is clicked', async () => {
   fireEvent.click(moreInfo)
   expect(screen.queryByText(/this is a test description/i)).toBeInTheDocument()
 })
+
+test('should display no current suggestions headline if no suggestions are available', async () => {
+  render(<BatteryMonitorPopup {...props} suggestions={[]} />)
+
+  expect(screen.queryByText(/No current suggestions/i)).toBeInTheDocument()
+})

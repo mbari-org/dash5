@@ -96,9 +96,15 @@ export const BatteryMonitorPopup: React.FC<BatteryMonitorPopupProps> = ({
     }
   }
 
-  const suggestionRows = suggestions
+  const suggestionRows = suggestions?.length
     ? suggestions.map((suggestion) => Row(suggestion))
-    : []
+    : [
+        Row({
+          headline: 'No current suggestions',
+          improvement: '0',
+          description: 'No current suggestions',
+        }),
+      ]
 
   return (
     <Modal
