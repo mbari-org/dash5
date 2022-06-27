@@ -11,6 +11,7 @@ import { useState } from 'react'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { faChevronDown, faChevronUp } from '@fortawesome/pro-solid-svg-icons'
 import clsx from 'clsx'
+import { useLastDeployment } from '@mbari/api-client'
 
 const styles = {
   content: 'flex flex-shrink flex-grow flex-row overflow-hidden',
@@ -42,13 +43,25 @@ const Vehicle: NextPage = () => {
   const { name } = router.query
   const [drawer, setDrawer] = useState(false)
 
+  const [selectDeployment, setSelectDeployment] = useState(false)
+  const toggleDeployment = () => {
+    setSelectDeployment(!selectDeployment)
+  }
+  const { data, isLoading } = useLastDeployment(
+    {
+      vehicle: name as string,
+      to: new Date().toISOString(),
+    },
+    { staleTime: 5 * 60 * 1000, enabled: !!name }
+  )
   return (
     <Layout>
       <OverviewToolbar
         pilotInCharge="Shannon J."
         pilotOnCall="Bryan K."
-        deployment="Overview"
+        deployment={isLoading ? '...' : data?.name ?? 'Unknown'}
         onClickPilot={() => undefined}
+        onClickDeployment={toggleDeployment}
       />
       <div className={styles.content}>
         <section className={styles.primary}>
