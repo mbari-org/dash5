@@ -1,7 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react'
 import clsx from 'clsx'
 import { DateTime } from 'luxon'
-import { sortBy, reverse } from 'lodash'
 
 const { fromISO, max } = DateTime
 
@@ -83,11 +82,10 @@ export const SampleCollectionView: React.FC<SampleCollectionViewProps> = ({
   vehicleName,
 }) => {
   const { good, failed, latestSample } = getSamplesStats(samples)
-  const sortedSamples = reverse(sortBy(samples, ['quantity']))
 
   return (
     <div className={clsx('h-full w-full bg-gray-100 p-4', className)}>
-      <Samples samples={sortedSamples} />
+      <Samples samples={samples} />
       <div className="mx-3 my-2 flex flex-row">
         <div className="w-1/2">
           <LastSample latestSample={latestSample} vehicleName={vehicleName} />

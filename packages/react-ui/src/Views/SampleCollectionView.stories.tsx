@@ -12,7 +12,7 @@ export default {
   parameters: {
     design: {
       type: 'figma',
-      url: 'https://www.figma.com/file/FtsKsOCBQ2YjTZlwezG6aI/MBARI-Components?node-id=0%3A1',
+      url: 'https://www.figma.com/file/FtsKsOCBQ2YjTZlwezG6aI/MBARI-Components?node-id=5993%3A698',
     },
   },
 } as Meta
@@ -28,7 +28,7 @@ const args: SampleCollectionViewProps = {
       status: 'partial',
       modifier: 'redo',
       percentCompleted: 73,
-      quantity: 2309.13,
+      quantity: 230.13,
       timeCollected: '2022-05-25',
     },
     {
