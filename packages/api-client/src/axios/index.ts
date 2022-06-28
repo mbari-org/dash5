@@ -1,4 +1,5 @@
 export * from './Deployment/getLastDeployment'
+export * from './Deployment/getDeployments'
 export * from './User/createUser'
 export * from './User/createLogin'
 export * from './User/token'
