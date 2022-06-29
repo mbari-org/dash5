@@ -74,7 +74,7 @@ const Vehicle: NextPage = () => {
 
   const deployments =
     deploymentData?.map((dep) => ({
-      id: dep.deploymentId,
+      id: `${dep.deploymentId}`,
       name: dep.name,
     })) ?? []
 
@@ -92,8 +92,8 @@ const Vehicle: NextPage = () => {
           isLoading
             ? { name: '...', id: '0' }
             : {
-                name: selectedDeployment?.name ?? '...',
-                id: selectedDeployment?.deploymentId ?? '0',
+                name: (selectedDeployment?.name ?? '...') as string,
+                id: (selectedDeployment?.deploymentId as string) ?? '0',
                 unixTime: selectedDeployment?.startEvent?.unixTime,
               }
         }

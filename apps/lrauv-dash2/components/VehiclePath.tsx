@@ -39,7 +39,6 @@ const VehiclePath: React.FC<{
   const route = vehiclePosition?.gpsFixes.map(
     (g) => [g.latitude, g.longitude] as [number, number]
   )
-
   const fit = useRef<string | null | undefined>(null)
   const routeAsString = route?.flat().join()
   useEffect(() => {
