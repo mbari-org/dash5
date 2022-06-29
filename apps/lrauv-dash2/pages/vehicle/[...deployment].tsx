@@ -26,6 +26,7 @@ import { faChevronDown, faChevronUp } from '@fortawesome/pro-solid-svg-icons'
 import clsx from 'clsx'
 import Layout from '../../components/Layout'
 import VehicleDiagram from '../../components/VehicleDiagram'
+import useGlobalModalId from '../../lib/useGlobalModalId'
 
 const styles = {
   content: 'flex flex-shrink flex-grow flex-row overflow-hidden',
@@ -48,6 +49,7 @@ const VehiclePath = dynamic(() => import('../../components/VehiclePath'), {
 type AvailableTab = 'vehicle' | 'depth' | null
 
 const Vehicle: NextPage = () => {
+  const { setGlobalModalId } = useGlobalModalId()
   const router = useRouter()
   const [currentTab, setTab] = useState<AvailableTab>('vehicle')
   const toggleDrawer = () => setDrawer(!drawer)
@@ -105,6 +107,8 @@ const Vehicle: NextPage = () => {
     ? DateTime.utc().plus({ hours: 4 }).toMillis()
     : selectedDeployment?.lastEvent ?? 0
 
+  const handleClickPilot = () => setGlobalModalId('reassign')
+
   return (
     <Layout>
       <OverviewToolbar
@@ -120,7 +124,7 @@ const Vehicle: NextPage = () => {
                 unixTime: selectedDeployment?.startEvent?.unixTime,
               }
         }
-        onClickPilot={() => undefined}
+        onClickPilot={handleClickPilot}
         supportIcon1={<CommsIcon />}
         supportIcon2={<StatusIcon />}
         onSelectNewDeployment={() => undefined}

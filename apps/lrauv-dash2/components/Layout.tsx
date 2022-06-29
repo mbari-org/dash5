@@ -1,19 +1,26 @@
 import React, { useEffect } from 'react'
 import Head from 'next/head'
-import { PrimaryToolbar, ProfileDropdown } from '@mbari/react-ui'
+import {
+  PrimaryToolbar,
+  ProfileDropdown,
+  ReassignmentModal,
+} from '@mbari/react-ui'
 import { useAuthContext } from '@mbari/api-client'
 import { useState } from 'react'
 import Image from 'next/image'
 import VehicleDeploymentDropdown from '../components/VehicleDeploymentDropdown'
 import useTrackedVehicles from '../lib/useTrackedVehicles'
+import useGlobalModalId, { ModalId } from '../lib/useGlobalModalId'
 import { useRouter } from 'next/router'
 import { UserLogin } from './UserLogin'
 import logo from './mbari-logo.png'
+import { capitalize } from '@mbari/utils'
 
 const Layout: React.FC = ({ children }) => {
   const [showLogin, setLogin] = useState(false)
   const router = useRouter()
   const [mounted, setMounted] = useState(false)
+  const { globalModalId, setGlobalModalId } = useGlobalModalId()
   useEffect(() => {
     if (!mounted) setMounted(true)
   }, [setMounted, mounted])
@@ -36,8 +43,8 @@ const Layout: React.FC = ({ children }) => {
     setDropdown(null)
   }
 
-  const toggleLogin = (enabled: boolean) => () => {
-    setLogin(enabled)
+  const setModal = (id: ModalId) => () => {
+    setGlobalModalId(id)
   }
 
   useEffect(() => {
@@ -113,13 +120,35 @@ const Layout: React.FC = ({ children }) => {
               </>
             ) : null
           }
-          onLoginClick={toggleLogin(true)}
+          onLoginClick={setModal('login')}
           signedIn={authenticated}
         />
       )}
       {children}
-      {showLogin && !authenticated && (
-        <UserLogin onClose={toggleLogin(false)} />
+      {globalModalId === 'login' && !authenticated && (
+        <UserLogin onClose={setModal(null)} />
+      )}
+      {globalModalId === 'reassign' && !authenticated && (
+        <ReassignmentModal
+          onClose={setModal(null)}
+          vehicles={trackedVehicles.map((v) => ({
+            vehicleName: capitalize(v),
+            vehicleId: v,
+            pic: 'Shannon Johnson',
+            onCall: 'Brian Kieft',
+          }))}
+          pics={[
+            { name: 'Carlos Rueda', id: '1' },
+            { name: 'Karen Salemy', id: '2' },
+            { name: 'Brian Kieft', id: '3' },
+          ]}
+          onCalls={[
+            { name: 'Carlos Rueda', id: '1' },
+            { name: 'Karen Salemy', id: '2' },
+            { name: 'Shannon Johnson', id: '3' },
+          ]}
+          open
+        />
       )}
     </div>
   )
