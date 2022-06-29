@@ -1,4 +1,5 @@
 export * from './AuthProvider'
+export * from './Deployment/useDeployments'
 export * from './Deployment/useLastDeployment'
 export * from './Event/useMissionStartedEvent'
 export * from './Info/useVehicles'

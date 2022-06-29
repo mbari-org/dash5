@@ -1,29 +1,40 @@
-import React from 'react'
+import React, { useState } from 'react'
 import clsx from 'clsx'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import {
   faChevronDown,
   faClipboardList,
+  faPlus,
 } from '@fortawesome/pro-regular-svg-icons'
 import { IconDefinition, IconProp } from '@fortawesome/fontawesome-svg-core'
 import { AccessoryButton } from '../Navigation/AccessoryButton'
-import { swallow } from '@mbari/utils'
+import { capitalize, swallow } from '@mbari/utils'
+import { Dropdown } from '../Navigation'
+import { DateTime } from 'luxon'
 
+export interface DeploymentInfo {
+  id: string
+  name: string
+  unixTime?: number
+}
 export interface OverviewToolbarProps {
   className?: string
   style?: React.CSSProperties
-  deployment: string
+  vehicleName?: string
+  deployment?: DeploymentInfo
   pilotInCharge: string
   pilotOnCall?: string
   btnIcon?: IconDefinition
   supportIcon1?: JSX.Element
   supportIcon2?: JSX.Element
   open?: boolean
-  onClickDeployment?: (open: boolean) => void
+  onSelectNewDeployment?: () => void
   onClickMissions?: () => void
   onClickPilot: () => void
   onIcon1hover?: () => JSX.Element
   onIcon2hover?: () => JSX.Element
+  deployments?: DeploymentInfo[]
+  onSelectDeployment?: (deployment: DeploymentInfo) => void
 }
 
 const styles = {
@@ -34,33 +45,62 @@ const styles = {
   title: 'text-2xl font-semibold',
   interactive: 'cursor-pointer underline underline-offset-4',
   deployment: 'items-center py-4 pr-2',
+  popover: 'top-100 absolute right-0 min-w-[400px] z-[1001]',
+  dropdown:
+    'top-100 absolute left-0 z-[1001] min-w-[230px] max-h-[50vh] overflow-y-auto',
 }
+
+type HoverOption = 'icon1' | 'icon2' | null
 
 export const OverviewToolbar: React.FC<OverviewToolbarProps> = ({
   className,
   style,
   deployment,
+  vehicleName,
   pilotInCharge,
   pilotOnCall,
   btnIcon,
-  open,
   supportIcon1,
   supportIcon2,
-  onClickDeployment,
+  onSelectNewDeployment: handleNewDeployment,
+  onSelectDeployment: handleSelectDeployment,
+  deployments,
   onClickMissions,
   onClickPilot,
   onIcon1hover,
   onIcon2hover,
 }) => {
+  const [hovering, setHovering] = useState<HoverOption>(null)
+  const [showDeployments, setShowDeployments] = useState(false)
   const handleToggle = swallow(() => {
-    onClickDeployment?.(!open)
+    setShowDeployments(!showDeployments)
   })
 
+  const newDeploymentOptions = [
+    {
+      label: `New ${capitalize(vehicleName ?? '')} deployment`,
+      icon: faPlus as IconDefinition,
+      onSelect: () => handleNewDeployment?.(),
+      disabled: !handleNewDeployment,
+    },
+  ]
+  const deploymentOptions =
+    deployments?.map((d) => ({
+      label: d.name,
+      onSelect: () => {
+        handleSelectDeployment?.(d)
+        setShowDeployments(false)
+      },
+    })) ?? []
+
+  const toggleHover = (newHover: HoverOption) => () => {
+    setHovering(newHover)
+  }
   return (
     <article style={style} className={clsx(styles.container, className, '')}>
       <ul className={styles.leftWrapper}>
-        <li>
-          {onClickDeployment ? (
+        <li className="relative">
+          {handleSelectDeployment || handleNewDeployment ? (
             <button
               onClick={handleToggle}
               className={styles.deployment}
@@ -70,18 +110,37 @@ export const OverviewToolbar: React.FC<OverviewToolbarProps> = ({
                 aria-label="deployment title"
                 className={clsx(styles.title, styles.interactive)}
               >
-                {deployment}
+                {deployment?.name ?? '...'}
               </span>
               <span className={styles.chevron}>
                 <FontAwesomeIcon icon={faChevronDown as IconProp} />
               </span>
             </button>
           ) : (
-            <h2 className={styles.deployment}>
+            <h2 className={styles.deployment} data-testid="deploymentHeadline">
               <span aria-label="deployment title" className={styles.title}>
-                {deployment}
+                {deployment?.name ?? '...'}
               </span>
             </h2>
+          )}
+          {showDeployments && (
+            <Dropdown
+              options={[...newDeploymentOptions, ...deploymentOptions]}
+              className={styles.dropdown}
+              header={
+                <ul>
+                  {deployment?.unixTime && (
+                    <li>
+                      Started{' '}
+                      {DateTime.fromMillis(deployment.unixTime).toRelative()}
+                    </li>
+                  )}
+                  {deployment?.name && (
+                    <li className="font-medium">{deployment.name}</li>
+                  )}
+                </ul>
+              }
+            />
           )}
         </li>
         {onClickMissions ? (
@@ -106,21 +165,39 @@ export const OverviewToolbar: React.FC<OverviewToolbarProps> = ({
           />
         </li>
         {onIcon1hover && supportIcon1 ? (
-          <li className="p-4" data-testid="icon1">
-            <button onMouseOver={onIcon1hover} onFocus={onIcon1hover}>
+          <li className="relative p-4">
+            <button
+              onMouseOver={toggleHover('icon1')}
+              onFocus={toggleHover('icon1')}
+              onMouseOut={toggleHover(null)}
+              onBlur={toggleHover(null)}
+              data-testid="icon1"
+            >
               {supportIcon1}
             </button>
+            {hovering === 'icon1' && (
+              <div className={styles.popover} data-testid="icon1detail">
+                {onIcon1hover()}
+              </div>
+            )}
           </li>
         ) : null}
         {onIcon2hover && supportIcon2 ? (
-          <li>
+          <li className="relative">
             <button
-              onMouseOver={onIcon2hover}
-              onFocus={onIcon2hover}
+              onMouseOver={toggleHover('icon2')}
+              onFocus={toggleHover('icon2')}
               data-testid="icon2"
+              onMouseOut={toggleHover(null)}
+              onBlur={toggleHover(null)}
             >
               {supportIcon2}
             </button>
+            {hovering === 'icon2' && (
+              <div className={styles.popover} data-testid="icon2detail">
+                {onIcon2hover()}
+              </div>
+            )}
           </li>
         ) : null}
       </ul>

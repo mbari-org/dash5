@@ -86,3 +86,16 @@ HasEnded.parameters = {
     url: 'https://www.figma.com/file/FtsKsOCBQ2YjTZlwezG6aI/MBARI-Components?node-id=1%3A599',
   },
 }
+
+export const HasEndedLongAgo = Template.bind({})
+HasEndedLongAgo.args = {
+  ...args,
+  startTime: DateTime.local().minus({ months: 5, hours: 7 }).toISO(),
+  endTime: DateTime.local().minus({ months: 3, hours: 3 }).toISO(),
+}
+HasEnded.parameters = {
+  design: {
+    type: 'figma',
+    url: 'https://www.figma.com/file/FtsKsOCBQ2YjTZlwezG6aI/MBARI-Components?node-id=1%3A599',
+  },
+}

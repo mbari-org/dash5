@@ -3,6 +3,7 @@ import { getInstance } from '../getInstance'
 import { RequestConfig } from '../types'
 
 export interface GetVPosParams {
+  [key: string]: string | number | undefined
   vehicle: string
   to?: string
   from: string
@@ -40,7 +41,10 @@ export const getVPos = async (
 
   const response = await instance.get(
     `${url}?${new URLSearchParams({
-      ...params,
+      ...Object.keys(params).reduce(
+        (a, b) => (params[b] ? { ...a, [b]: params[b] } : a),
+        {}
+      ),
       limit: params.limit?.toString() ?? '1000',
     })}`,
     config

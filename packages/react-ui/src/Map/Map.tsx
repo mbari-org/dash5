@@ -7,6 +7,8 @@ export interface MapProps {
   style?: React.CSSProperties
   center?: [number, number]
   zoom?: number
+  minZoom?: number
+  maxZoom?: number
 }
 
 const Map: React.FC<MapProps> = ({
@@ -14,6 +16,8 @@ const Map: React.FC<MapProps> = ({
   style,
   center = [36.618264, -121.9017919],
   zoom = 13,
+  minZoom = 4,
+  maxZoom = 16,
   children,
 }) => {
   const mapRef = useRef<L.Map>(null)
@@ -26,6 +30,8 @@ const Map: React.FC<MapProps> = ({
       className={className}
       style={style}
       ref={mapRef}
+      minZoom={minZoom}
+      maxZoom={maxZoom}
     >
       <LayersControl position="topright">
         <LayersControl.BaseLayer name="ESRI Oceans/Labels" checked>
