@@ -37,7 +37,7 @@ afterAll(() => server.close())
 
 const DeploymentList: React.FC = () => {
   const query = useDeployments({
-    vehicleName: 'ahi',
+    vehicle: 'ahi',
   })
   return query.isLoading ? null : (
     <div data-testid="result">

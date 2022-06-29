@@ -9,7 +9,7 @@ export const useDeployments = (
 ) => {
   const { axiosInstance } = useAuthContext()
   const query = useQuery(
-    ['deployment', 'deployments', params.vehicleName, params.deploymentId],
+    ['deployment', 'deployments', params.vehicle, params.deploymentId],
     () => {
       return getDeployments(params, {
         instance: axiosInstance,

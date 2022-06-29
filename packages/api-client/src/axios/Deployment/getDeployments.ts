@@ -3,13 +3,13 @@ import { getInstance } from '../getInstance'
 import { RequestConfig } from '../types'
 import { DeploymentEvent, DListResult } from './getLastDeployment'
 export interface GetDeploymentsParams {
-  vehicleName?: string
+  vehicle?: string
   deploymentId?: string
 }
 
 export interface GetDeploymentsResponse {
   deploymentId: number
-  vehicleName: string
+  vehicle: string
   name: string
   path: string
   startEvent?: DeploymentEvent

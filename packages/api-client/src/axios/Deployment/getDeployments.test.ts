@@ -3,7 +3,7 @@ import { setupServer } from 'msw/node'
 import { getDeployments, GetDeploymentsParams } from './getDeployments'
 
 let params: GetDeploymentsParams = {
-  vehicleName: 'example',
+  vehicle: 'example',
 }
 
 const mockResponse = {
@@ -48,7 +48,7 @@ const server = setupServer(
       ctx.status(200),
       ctx.json({
         ...mockResponse,
-        vehicleName: req.url.searchParams.get('vehicleName'),
+        vehicleName: req.url.searchParams.get('vehicle'),
       })
     )
   })
