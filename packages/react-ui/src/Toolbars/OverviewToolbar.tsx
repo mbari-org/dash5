@@ -89,6 +89,7 @@ export const OverviewToolbar: React.FC<OverviewToolbarProps> = ({
       label: d.name,
       onSelect: () => {
         handleSelectDeployment?.(d)
+        setShowDeployments(false)
       },
     })) ?? []
 
