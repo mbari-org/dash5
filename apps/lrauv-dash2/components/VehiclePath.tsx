@@ -8,10 +8,12 @@ import {
 import { Polyline, useMap } from 'react-leaflet'
 import { useSharedPath } from './SharedPathContextProvider'
 
-const VehiclePath: React.FC<{ name: string; grouped?: boolean }> = ({
-  name,
-  grouped,
-}) => {
+const VehiclePath: React.FC<{
+  name: string
+  grouped?: boolean
+  from?: number
+  to?: number
+}> = ({ name, grouped, to, from }) => {
   const map = useMap()
   const { sharedPath, dispatch } = useSharedPath()
   const { data: vehicleData } = useVehicles({})
@@ -26,29 +28,34 @@ const VehiclePath: React.FC<{ name: string; grouped?: boolean }> = ({
     {
       vehicle: name as string,
       from: DateTime.fromMillis(
-        lastDeployment?.startEvent?.unixTime ?? 0
+        from ?? lastDeployment?.startEvent?.unixTime ?? 0
       ).toISO(),
+      to: to?.toString(),
     },
     {
-      enabled: !!lastDeployment?.startEvent?.unixTime,
+      enabled: !!from || !!lastDeployment?.startEvent?.unixTime,
     }
   )
   const route = vehiclePosition?.gpsFixes.map(
     (g) => [g.latitude, g.longitude] as [number, number]
   )
 
-  const fit = useRef<string | null>(null)
+  const fit = useRef<string | null | undefined>(null)
+  const routeAsString = route?.flat().join()
   useEffect(() => {
-    if (fit.current !== name && route) {
+    if (fit.current !== routeAsString && route) {
       if (!grouped) {
         dispatch({ type: 'clear' })
-        map.fitBounds(route)
+        if (route?.length) {
+          map.fitBounds(route)
+        }
       } else {
         dispatch({ type: 'append', coords: { [name]: route } })
       }
-      fit.current = name
+      fit.current = routeAsString
     }
-  }, [route, map, dispatch, name, grouped])
+  }, [route, map, dispatch, name, grouped, routeAsString])
+
   useEffect(() => {
     const coords = Object.values(sharedPath).flat()
     if (grouped && coords.length > 1) {

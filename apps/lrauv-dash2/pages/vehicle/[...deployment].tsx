@@ -115,7 +115,11 @@ const Vehicle: NextPage = () => {
           />
           <div className={styles.mapContainer}>
             <Map className="h-full w-full">
-              <VehiclePath name={vehicleName as string} />
+              <VehiclePath
+                name={vehicleName as string}
+                from={selectedDeployment?.startEvent?.unixTime}
+                to={selectedDeployment?.lastEvent}
+              />
             </Map>
             <div className="absolute bottom-0 z-[1001] flex w-full flex-col">
               <TabGroup className="w-full px-8">
