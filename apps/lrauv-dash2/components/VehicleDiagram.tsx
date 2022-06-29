@@ -17,7 +17,8 @@ const VehicleDiagram: React.FC<{
     axios.create({
       baseURL: process.env.NEXT_PUBLIC_API_HOST,
       timeout: 5000,
-    })
+    }),
+    { staleTime: 5 * 60 * 1000, enabled: !!name }
   )
 
   const lastDeployment = useLastDeployment(
