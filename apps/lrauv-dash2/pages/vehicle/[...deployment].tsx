@@ -9,8 +9,12 @@ import {
   CommsIcon,
   DeploymentInfo,
   StatusIcon,
+  UnderwaterIcon,
+  ConnectedIcon,
   MissionProgressToolbar,
   OverviewToolbar,
+  VehicleCommsCell,
+  VehicleInfoCell,
 } from '@mbari/react-ui'
 import {
   useLastDeployment,
@@ -122,6 +126,30 @@ const Vehicle: NextPage = () => {
         onSelectNewDeployment={() => undefined}
         deployments={deployments}
         onSelectDeployment={handleSelectDeployment}
+        onIcon1hover={() => (
+          <VehicleCommsCell
+            icon={<ConnectedIcon />}
+            headline="Cell Comms: Connected"
+            host="lrauv-brizo-cell.shore.mbari.org"
+            lastPing="Today at 14:40:36 (3s ago)"
+            nextComms="14:55 (in 15m)"
+            onSelect={() => {
+              console.log('event fired')
+            }}
+          />
+        )}
+        onIcon2hover={() => (
+          <VehicleInfoCell
+            icon={<UnderwaterIcon />}
+            headline="Likely underwater"
+            subtitle="Last confirmed on surface 47min ago"
+            lastCommsOverSat="Today at 14:08:36 (47m ago)"
+            estimate="Est. to surface in 15 mins at ~14:55"
+            onSelect={() => {
+              console.log('event fired')
+            }}
+          />
+        )}
       />
       <div className={styles.content}>
         <section className={styles.primary}>

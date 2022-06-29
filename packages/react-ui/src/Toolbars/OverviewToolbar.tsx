@@ -45,7 +45,7 @@ const styles = {
   title: 'text-2xl font-semibold',
   interactive: 'cursor-pointer underline underline-offset-4',
   deployment: 'items-center py-4 pr-2',
-  popover: 'top-100 absolute right-0 min-w-[400px]',
+  popover: 'top-100 absolute right-0 min-w-[400px] z-[1001]',
   dropdown:
     'top-100 absolute left-0 z-[1001] min-w-[230px] max-h-[50vh] overflow-y-auto',
 }
