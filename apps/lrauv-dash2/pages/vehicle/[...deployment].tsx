@@ -7,6 +7,7 @@ import {
   Tab,
   TabGroup,
   CommsIcon,
+  DeploymentInfo,
   StatusIcon,
   MissionProgressToolbar,
   OverviewToolbar,
@@ -44,54 +45,64 @@ const Vehicle: NextPage = () => {
   const endTime = DateTime.utc().plus({ days: 4 }).toISO()
   const [currentTab, setTab] = useState<AvailableTab>('vehicle')
   const toggleDrawer = () => setDrawer(!drawer)
-  const setCurrentTab = (tab: AvailableTab) => () => setTab(tab)
-  const { name } = router.query
-  const [drawer, setDrawer] = useState(false)
-
-  const [selectDeployment, setSelectDeployment] = useState(false)
-  const toggleDeployment = () => {
-    setSelectDeployment(!selectDeployment)
+  const setCurrentTab = (tab: AvailableTab) => () => {
+    setTab(tab)
+    setDrawer(true)
   }
+  const { deployment } = router.query
+  const params = (deployment ?? []) as string[]
+  const vehicleName = params[0]
+  const deploymentId = params[1]
+  const [drawer, setDrawer] = useState(false)
 
   const { data: lastDeployment, isLoading } = useLastDeployment(
     {
-      vehicle: name as string,
+      vehicle: vehicleName as string,
       to: new Date().toISOString(),
     },
-    { staleTime: 5 * 60 * 1000, enabled: !!name }
+    { staleTime: 5 * 60 * 1000, enabled: !!vehicleName && !deploymentId }
   )
   const { data: deploymentData } = useDeployments(
     {
-      vehicle: name as string,
+      vehicle: vehicleName as string,
     },
-    { staleTime: 5 * 60 * 1000, enabled: !!name }
+    { staleTime: 5 * 60 * 1000, enabled: !!vehicleName }
   )
+
+  const handleSelectDeployment = (selection: DeploymentInfo) =>
+    router.push(`/vehicle/${vehicleName}/${selection.id}`)
+
   const deployments =
     deploymentData?.map((dep) => ({
-      id: dep.id,
+      id: dep.deploymentId,
       name: dep.name,
     })) ?? []
+
+  const selectedDeployment = deploymentId
+    ? deploymentData?.find((dep) => `${dep.deploymentId}` === `${deploymentId}`)
+    : lastDeployment
+
   return (
     <Layout>
       <OverviewToolbar
-        vehicleName={name}
+        vehicleName={vehicleName}
         pilotInCharge="Shannon J."
         pilotOnCall="Bryan K."
         deployment={
           isLoading
             ? { name: '...', id: '0' }
             : {
-                name: lastDeployment?.name ?? '...',
-                id: lastDeployment?.deploymentId ?? '0',
-                unixTime: lastDeployment?.startEvent?.unixTime,
+                name: selectedDeployment?.name ?? '...',
+                id: selectedDeployment?.deploymentId ?? '0',
+                unixTime: selectedDeployment?.startEvent?.unixTime,
               }
         }
         onClickPilot={() => undefined}
-        onClickDeployment={toggleDeployment}
         supportIcon1={<CommsIcon />}
         supportIcon2={<StatusIcon />}
         onSelectNewDeployment={() => undefined}
         deployments={deployments}
+        onSelectDeployment={handleSelectDeployment}
       />
       <div className={styles.content}>
         <section className={styles.primary}>
@@ -104,7 +115,7 @@ const Vehicle: NextPage = () => {
           />
           <div className={styles.mapContainer}>
             <Map className="h-full w-full">
-              <VehiclePath name={name as string} />
+              <VehiclePath name={vehicleName as string} />
             </Map>
             <div className="absolute bottom-0 z-[1001] flex w-full flex-col">
               <TabGroup className="w-full px-8">
@@ -139,7 +150,7 @@ const Vehicle: NextPage = () => {
               >
                 {currentTab === 'vehicle' && (
                   <VehicleDiagram
-                    name={name as string}
+                    name={vehicleName as string}
                     className="m-auto flex h-full w-full max-w-[900px]"
                   />
                 )}

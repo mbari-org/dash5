@@ -76,7 +76,7 @@ const Layout: React.FC = ({ children }) => {
       {mounted && (
         <PrimaryToolbar
           options={['Overview', ...trackedVehicles]}
-          currentOption={(router.query.name as string) ?? 'Overview'}
+          currentOption={(router.query.deployment?.[0] as string) ?? 'Overview'}
           onSelectOption={handleSelectOption}
           onRemoveOption={handleRemoveOption}
           canRemoveOption={canRemoveOption}
