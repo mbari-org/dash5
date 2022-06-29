@@ -6,9 +6,14 @@ import { OverviewToolbar, OverviewToolbarProps } from './OverviewToolbar'
 import { faEye } from '@fortawesome/pro-light-svg-icons'
 import { IconDefinition } from '@fortawesome/fontawesome-svg-core'
 import { UnderwaterIcon, ConnectedIcon } from '../Icons'
+import { DateTime } from 'luxon'
 
 const props: OverviewToolbarProps = {
-  deployment: 'Brizo 7 EcoHab',
+  deployment: {
+    name: 'Brizo 7 EcoHab',
+    id: '1',
+    unixTime: DateTime.now().minus({ days: 3 }).toMillis(),
+  },
   pilotInCharge: 'Tanner P. (you)',
   pilotOnCall: 'Brian K.',
   btnIcon: faEye as IconDefinition,
@@ -75,7 +80,7 @@ test('should render deployment name to the screen', async () => {
   render(<OverviewToolbar {...props} />)
 
   expect(
-    screen.getByText(props.deployment ?? 'NO DEPLOYMENT SPECIFIED!')
+    screen.getByText(props.deployment?.name ?? 'NO DEPLOYMENT SPECIFIED!')
   ).toBeInTheDocument()
 })
 
@@ -90,7 +95,7 @@ test('should render the deployment dropdown when selecting the toggle', async ()
   render(<OverviewToolbar {...props} />)
 
   fireEvent.click(screen.getByTestId('deploymentToggle'))
-  expect(screen.getByText(/started 4/i)).toBeInTheDocument()
+  expect(screen.getByText(/3 days ago/i)).toBeInTheDocument()
   expect(screen.getByText(/new brizo/i)).not.toHaveClass('opacity-30')
 })
 
@@ -98,7 +103,7 @@ test('should disable the new deployment dropdown if no handler is present', asyn
   render(<OverviewToolbar {...props} onSelectNewDeployment={undefined} />)
 
   fireEvent.click(screen.getByTestId('deploymentToggle'))
-  expect(screen.getByText(/started 4/i)).toBeInTheDocument()
+  expect(screen.getByText(/3 days ago/i)).toBeInTheDocument()
   expect(screen.getByText(/new brizo/i)).toHaveClass('opacity-30')
 })
 

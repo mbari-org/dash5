@@ -8,18 +8,20 @@ import {
 } from '@fortawesome/pro-regular-svg-icons'
 import { IconDefinition, IconProp } from '@fortawesome/fontawesome-svg-core'
 import { AccessoryButton } from '../Navigation/AccessoryButton'
-import { swallow } from '@mbari/utils'
+import { capitalize, swallow } from '@mbari/utils'
 import { Dropdown } from '../Navigation'
+import { DateTime } from 'luxon'
 
 export interface DeploymentInfo {
   id: string
   name: string
+  unixTime?: number
 }
 export interface OverviewToolbarProps {
   className?: string
   style?: React.CSSProperties
   vehicleName?: string
-  deployment?: string
+  deployment?: DeploymentInfo
   pilotInCharge: string
   pilotOnCall?: string
   btnIcon?: IconDefinition
@@ -76,7 +78,7 @@ export const OverviewToolbar: React.FC<OverviewToolbarProps> = ({
 
   const newDeploymentOptions = [
     {
-      label: `New ${vehicleName} deployment`,
+      label: `New ${capitalize(vehicleName ?? '')} deployment`,
       icon: faPlus as IconDefinition,
       onSelect: () => handleNewDeployment?.(),
       disabled: !handleNewDeployment,
@@ -107,7 +109,7 @@ export const OverviewToolbar: React.FC<OverviewToolbarProps> = ({
                 aria-label="deployment title"
                 className={clsx(styles.title, styles.interactive)}
               >
-                {deployment}
+                {deployment?.name ?? '...'}
               </span>
               <span className={styles.chevron}>
                 <FontAwesomeIcon icon={faChevronDown as IconProp} />
@@ -116,18 +118,25 @@ export const OverviewToolbar: React.FC<OverviewToolbarProps> = ({
           ) : (
             <h2 className={styles.deployment} data-testid="deploymentHeadline">
               <span aria-label="deployment title" className={styles.title}>
-                {deployment}
+                {deployment?.name ?? '...'}
               </span>
             </h2>
           )}
           {showDeployments && (
             <Dropdown
               options={[...newDeploymentOptions, ...deploymentOptions]}
-              className="top-100 absolute left-0 z-[1001] min-w-[230px]"
+              className={styles.dropdown}
               header={
                 <ul>
-                  <li>Started 4+ days ago</li>
-                  <li className="font-medium">Brizo 7 EcoHab</li>
+                  {deployment?.unixTime && (
+                    <li>
+                      Started{' '}
+                      {DateTime.fromMillis(deployment.unixTime).toRelative()}
+                    </li>
+                  )}
+                  {deployment?.name && (
+                    <li className="font-medium">{deployment.name}</li>
+                  )}
                 </ul>
               }
             />

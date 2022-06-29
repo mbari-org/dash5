@@ -6,6 +6,7 @@ import { OverviewToolbar, OverviewToolbarProps } from './OverviewToolbar'
 import { faEye } from '@fortawesome/pro-light-svg-icons'
 import { IconDefinition } from '@fortawesome/fontawesome-svg-core'
 import { ConnectedIcon, UnderwaterIcon, CommsIcon, StatusIcon } from '../Icons'
+import { DateTime } from 'luxon'
 
 export default {
   title: 'Toolbars/OverviewToolbar',
@@ -20,7 +21,11 @@ const Template: Story<OverviewToolbarProps> = (args) => (
 
 const args: OverviewToolbarProps = {
   className: '',
-  deployment: 'Brizo 7 EcoHab',
+  deployment: {
+    name: 'Brizo 7 EcoHab',
+    id: '1',
+    unixTime: DateTime.now().minus({ days: 3 }).toMillis(),
+  },
   pilotInCharge: 'Tanner P. (you)',
   pilotOnCall: 'Brian K.',
   btnIcon: faEye as IconDefinition,
@@ -96,7 +101,7 @@ Standard.parameters = {
 export const Overview = Template.bind({})
 Overview.args = {
   ...args,
-  deployment: 'Overview',
+  deployment: { name: 'Overview', id: '0' },
   onSelectDeployment: undefined,
   onSelectNewDeployment: undefined,
   onClickMissions: undefined,
