@@ -121,7 +121,7 @@ export const OverviewToolbar: React.FC<OverviewToolbarProps> = ({
           {showDeployments && (
             <Dropdown
               options={[...newDeploymentOptions, ...deploymentOptions]}
-              className="top-100 absolute left-0 min-w-[230px]"
+              className="top-100 absolute left-0 z-[1001] min-w-[230px]"
               header={
                 <ul>
                   <li>Started 4+ days ago</li>
