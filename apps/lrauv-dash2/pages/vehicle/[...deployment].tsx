@@ -12,7 +12,11 @@ import {
   MissionProgressToolbar,
   OverviewToolbar,
 } from '@mbari/react-ui'
-import { useLastDeployment, useDeployments } from '@mbari/api-client'
+import {
+  useLastDeployment,
+  useDeployments,
+  useMissionStartedEvent,
+} from '@mbari/api-client'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { faChevronDown, faChevronUp } from '@fortawesome/pro-solid-svg-icons'
 import clsx from 'clsx'
@@ -41,8 +45,6 @@ type AvailableTab = 'vehicle' | 'depth' | null
 
 const Vehicle: NextPage = () => {
   const router = useRouter()
-  const startTime = DateTime.utc().minus({ weeks: 1 }).toISO()
-  const endTime = DateTime.utc().plus({ days: 4 }).toISO()
   const [currentTab, setTab] = useState<AvailableTab>('vehicle')
   const toggleDrawer = () => setDrawer(!drawer)
   const setCurrentTab = (tab: AvailableTab) => () => {
@@ -69,6 +71,15 @@ const Vehicle: NextPage = () => {
     { staleTime: 5 * 60 * 1000, enabled: !!vehicleName }
   )
 
+  const { data: missionStartedEvent } = useMissionStartedEvent(
+    {
+      vehicle: vehicleName as string,
+    },
+    {
+      enabled: !!vehicleName && !!lastDeployment?.lastEvent,
+    }
+  )
+
   const handleSelectDeployment = (selection: DeploymentInfo) =>
     router.push(`/vehicle/${vehicleName}/${selection.id}`)
 
@@ -81,6 +92,14 @@ const Vehicle: NextPage = () => {
   const selectedDeployment = deploymentId
     ? deploymentData?.find((dep) => `${dep.deploymentId}` === `${deploymentId}`)
     : lastDeployment
+
+  const startTime =
+    selectedDeployment?.active && missionStartedEvent?.[0]?.unixTime
+      ? missionStartedEvent?.[0]?.unixTime
+      : selectedDeployment?.startEvent?.unixTime ?? 0
+  const endTime = selectedDeployment?.active
+    ? DateTime.utc().plus({ hours: 4 }).toMillis()
+    : selectedDeployment?.lastEvent ?? 0
 
   return (
     <Layout>
@@ -107,18 +126,18 @@ const Vehicle: NextPage = () => {
       <div className={styles.content}>
         <section className={styles.primary}>
           <MissionProgressToolbar
-            startTime={startTime}
-            endTime={endTime}
+            startTime={DateTime.fromMillis(startTime).toISO()}
+            endTime={DateTime.fromMillis(endTime).toISO()}
             ticks={6}
             ariaLabel="Mission Progress"
             className="bg-secondary-300/60"
           />
           <div className={styles.mapContainer}>
-            <Map className="h-full w-full">
+            <Map className="h-full w-full" maxZoom={13}>
               <VehiclePath
                 name={vehicleName as string}
-                from={selectedDeployment?.startEvent?.unixTime}
-                to={selectedDeployment?.lastEvent}
+                from={startTime}
+                to={endTime}
               />
             </Map>
             <div className="absolute bottom-0 z-[1001] flex w-full flex-col">
