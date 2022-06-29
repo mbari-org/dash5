@@ -29,7 +29,7 @@ type OnCall = Common
 export type OnCalls = OnCall[]
 
 interface Vehicle {
-  vehicleId: number
+  vehicleId: string
   vehicleName: string
   pic: string
   onCall: string
@@ -60,7 +60,7 @@ export interface ReassignmentFormProps
 }
 
 interface VehicleProps {
-  vehicleId: number
+  vehicleId: string
   vehicleName: string
   pic: string
   onCall: string
