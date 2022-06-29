@@ -70,6 +70,8 @@ const Layout: React.FC = ({ children }) => {
 
   const canRemoveOption = (vehicle: string) => vehicle !== 'Overview'
 
+  const handleReassignmentSubmit = async () => undefined
+
   return (
     <div className="flex h-screen w-screen flex-col">
       <Head>
@@ -137,6 +139,7 @@ const Layout: React.FC = ({ children }) => {
             pic: 'Shannon Johnson',
             onCall: 'Brian Kieft',
           }))}
+          onSubmit={handleReassignmentSubmit}
           pics={[
             { name: 'Carlos Rueda', id: '1' },
             { name: 'Karen Salemy', id: '2' },
