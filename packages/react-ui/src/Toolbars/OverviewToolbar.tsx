@@ -44,6 +44,8 @@ const styles = {
   interactive: 'cursor-pointer underline underline-offset-4',
   deployment: 'items-center py-4 pr-2',
   popover: 'top-100 absolute right-0 min-w-[400px]',
+  dropdown:
+    'top-100 absolute left-0 z-[1001] min-w-[230px] max-h-[50vh] overflow-y-auto',
 }
 
 type HoverOption = 'icon1' | 'icon2' | null
