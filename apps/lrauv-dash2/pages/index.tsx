@@ -45,7 +45,7 @@ const OverviewPage: NextPage = () => {
       <OverviewToolbar
         pilotInCharge="Shannon J."
         pilotOnCall="Bryan K."
-        deployment="Overview"
+        deployment={{ name: 'Overview', id: '0' }}
         onClickPilot={() => undefined}
       />
       <div className={styles.content}>

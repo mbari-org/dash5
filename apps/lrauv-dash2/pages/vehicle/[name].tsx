@@ -1,17 +1,22 @@
-import { MissionProgressToolbar, OverviewToolbar } from '@mbari/react-ui'
+import { useState } from 'react'
 import { NextPage } from 'next'
 import { useRouter } from 'next/router'
-
-import Layout from '../../components/Layout'
-import VehicleDiagram from '../../components/VehicleDiagram'
 import dynamic from 'next/dynamic'
 import { DateTime } from 'luxon'
-import { Tab, TabGroup } from '@mbari/react-ui'
-import { useState } from 'react'
+import {
+  Tab,
+  TabGroup,
+  CommsIcon,
+  StatusIcon,
+  MissionProgressToolbar,
+  OverviewToolbar,
+} from '@mbari/react-ui'
+import { useLastDeployment, useDeployments } from '@mbari/api-client'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { faChevronDown, faChevronUp } from '@fortawesome/pro-solid-svg-icons'
 import clsx from 'clsx'
-import { useLastDeployment } from '@mbari/api-client'
+import Layout from '../../components/Layout'
+import VehicleDiagram from '../../components/VehicleDiagram'
 
 const styles = {
   content: 'flex flex-shrink flex-grow flex-row overflow-hidden',
@@ -47,21 +52,46 @@ const Vehicle: NextPage = () => {
   const toggleDeployment = () => {
     setSelectDeployment(!selectDeployment)
   }
-  const { data, isLoading } = useLastDeployment(
+
+  const { data: lastDeployment, isLoading } = useLastDeployment(
     {
       vehicle: name as string,
       to: new Date().toISOString(),
     },
     { staleTime: 5 * 60 * 1000, enabled: !!name }
   )
+  const { data: deploymentData } = useDeployments(
+    {
+      vehicle: name as string,
+    },
+    { staleTime: 5 * 60 * 1000, enabled: !!name }
+  )
+  const deployments =
+    deploymentData?.map((dep) => ({
+      id: dep.id,
+      name: dep.name,
+    })) ?? []
   return (
     <Layout>
       <OverviewToolbar
+        vehicleName={name}
         pilotInCharge="Shannon J."
         pilotOnCall="Bryan K."
-        deployment={isLoading ? '...' : data?.name ?? 'Unknown'}
+        deployment={
+          isLoading
+            ? { name: '...', id: '0' }
+            : {
+                name: lastDeployment?.name ?? '...',
+                id: lastDeployment?.deploymentId ?? '0',
+                unixTime: lastDeployment?.startEvent?.unixTime,
+              }
+        }
         onClickPilot={() => undefined}
         onClickDeployment={toggleDeployment}
+        supportIcon1={<CommsIcon />}
+        supportIcon2={<StatusIcon />}
+        onSelectNewDeployment={() => undefined}
+        deployments={deployments}
       />
       <div className={styles.content}>
         <section className={styles.primary}>
