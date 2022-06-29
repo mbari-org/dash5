@@ -15,6 +15,8 @@ import { useRouter } from 'next/router'
 import { UserLogin } from './UserLogin'
 import logo from './mbari-logo.png'
 import { capitalize } from '@mbari/utils'
+import UserCreateAccount from './UserCreateAccount'
+import UserForgotPassword from './UserForgotPassword'
 
 const Layout: React.FC = ({ children }) => {
   const [showLogin, setLogin] = useState(false)
@@ -129,6 +131,12 @@ const Layout: React.FC = ({ children }) => {
       {children}
       {globalModalId === 'login' && !authenticated && (
         <UserLogin onClose={setModal(null)} />
+      )}
+      {globalModalId === 'signup' && !authenticated && (
+        <UserCreateAccount onClose={setModal(null)} />
+      )}
+      {globalModalId === 'forgot' && !authenticated && (
+        <UserForgotPassword onClose={setModal(null)} />
       )}
       {globalModalId === 'reassign' && !authenticated && (
         <ReassignmentModal
