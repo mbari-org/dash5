@@ -17,19 +17,19 @@ export default {
 
 const vehicles: Vehicles = [
   {
-    vehicleId: 1200,
+    vehicleId: '1200',
     vehicleName: 'Brizo',
     pic: 'Shannon Johnson',
     onCall: 'Brian Kieft',
   },
   {
-    vehicleId: 1201,
+    vehicleId: '1201',
     vehicleName: 'Aku',
     pic: 'Shannon Johnson',
     onCall: 'Brian Kieft',
   },
   {
-    vehicleId: 1202,
+    vehicleId: '1202',
     vehicleName: 'Pontus',
     pic: 'Shannon Johnson',
     onCall: 'Brian Kieft',
