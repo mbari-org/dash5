@@ -1,31 +1,47 @@
 import React, { useEffect } from 'react'
 import toast from 'react-hot-toast'
-import { useAuthContext } from '@mbari/api-client'
+import { useResetPassword } from '@mbari/api-client'
 import { AsyncSubmitHandler } from '@sumocreations/forms'
 import { ForgotPasswordModal, ForgotPasswordFormValues } from '@mbari/react-ui'
 
 const UserForgotPassword: React.FC<{ onClose?: () => void }> = ({
   onClose: handleClose,
 }) => {
-  const { login, loading, error } = useAuthContext()
+  const {
+    mutate: resetPassword,
+    isLoading,
+    isError,
+    error,
+    isSuccess,
+    data,
+  } = useResetPassword({})
 
   const handleSubmit: AsyncSubmitHandler<ForgotPasswordFormValues> = async (
     values
   ) => {
-    await login(values.email, values.password)
+    await resetPassword(values)
     return undefined
   }
 
   useEffect(() => {
-    if (!loading && error) {
-      toast.error(error)
+    if (!isLoading && isError) {
+      toast.error(error?.message ?? 'Could not process your reset request.')
     }
-  }, [loading, error])
+  }, [isLoading, isError, error])
+
+  useEffect(() => {
+    if (!isLoading && isSuccess) {
+      toast.success(
+        data?.result.message ??
+          'A link to reset your password has been sent if an account with the specified email address exists.'
+      )
+    }
+  }, [isLoading, isSuccess, data])
 
   return (
     <ForgotPasswordModal
       onSubmit={handleSubmit}
-      loading={loading}
+      loading={isLoading}
       onClose={handleClose}
       open
     />
