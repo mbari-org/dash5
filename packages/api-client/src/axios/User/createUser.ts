@@ -10,6 +10,13 @@ export interface CreateUserParams {
   requestedRoles: string
 }
 
+export interface CreateUserResponse {
+  email: string
+  firstName: string
+  lastName: string
+  requestedRoles: string[]
+}
+
 export const createUser = async (
   params: CreateUserParams,
   { debug, instance = getInstance(), ...config }: RequestConfig = {}
@@ -20,5 +27,6 @@ export const createUser = async (
     console.debug(`POST ${url}`)
   }
 
-  return instance.post(url, { data: params }, config)
+  const response = await instance.post(url, { data: params }, config)
+  return response.data.result as CreateUserResponse
 }
