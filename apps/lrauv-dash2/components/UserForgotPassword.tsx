@@ -35,8 +35,9 @@ const UserForgotPassword: React.FC<{ onClose?: () => void }> = ({
         data?.result.message ??
           'A link to reset your password has been sent if an account with the specified email address exists.'
       )
+      handleClose?.()
     }
-  }, [isLoading, isSuccess, data])
+  }, [isLoading, isSuccess, data, handleClose])
 
   return (
     <ForgotPasswordModal
