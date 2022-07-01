@@ -1,7 +1,6 @@
 import { AxiosInstance } from 'axios'
 import { useQuery } from 'react-query'
 import { getInfo, GetInfoParams } from '../../axios'
-import { useTethysApiContext } from '../TethysApiProvider'
 import { SupportedQueryOptions } from '../types'
 
 export const useSiteConfig = (
@@ -9,12 +8,11 @@ export const useSiteConfig = (
   options?: SupportedQueryOptions,
   instance?: AxiosInstance
 ) => {
-  const { axiosInstance } = useTethysApiContext()
   const query = useQuery(
     ['info', 'config', params],
     () => {
       return getInfo(params, {
-        instance: instance ?? axiosInstance,
+        instance: instance,
       })
     },
     {
