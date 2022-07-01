@@ -1,4 +1,4 @@
-export * from './AuthProvider'
+export * from './TethysApiProvider'
 export * from './Deployment/useDeployments'
 export * from './Deployment/useLastDeployment'
 export * from './Event/useMissionStartedEvent'

@@ -1,13 +1,13 @@
 import { useQuery } from 'react-query'
 import { getVehicles, GetVehiclesParams } from '../../axios'
-import { useAuthContext } from '../AuthProvider'
+import { useTethysApiContext } from '../TethysApiProvider'
 import { SupportedQueryOptions } from '../types'
 
 export const useVehicles = (
   params: GetVehiclesParams,
   options?: SupportedQueryOptions
 ) => {
-  const { axiosInstance } = useAuthContext()
+  const { axiosInstance } = useTethysApiContext()
   const query = useQuery(
     ['info', 'vehicleNames', params],
     () => {

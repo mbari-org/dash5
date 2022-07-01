@@ -1,9 +1,9 @@
 import { useMutation } from 'react-query'
 import { resetPassword, ResetPasswordParams, RequestConfig } from '../../axios'
-import { useAuthContext } from '../AuthProvider'
+import { useTethysApiContext } from '../TethysApiProvider'
 
 export const useResetPassword = (config?: RequestConfig) => {
-  const { axiosInstance } = useAuthContext()
+  const { axiosInstance } = useTethysApiContext()
   const mutation = useMutation((params: ResetPasswordParams) => {
     return resetPassword(params, {
       ...(config ?? {}),

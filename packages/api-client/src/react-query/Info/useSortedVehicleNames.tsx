@@ -6,10 +6,10 @@ import {
   GetLastDeploymentResponse,
   GetVehiclesParams,
 } from '../../axios'
-import { useAuthContext } from '../AuthProvider'
+import { useTethysApiContext } from '../TethysApiProvider'
 
 export const useSortedVehicleNames = (params: GetVehiclesParams) => {
-  const { axiosInstance } = useAuthContext()
+  const { axiosInstance } = useTethysApiContext()
   const vehiclesQuery = useVehicles(params)
   const vehicles = vehiclesQuery.data ?? []
   const queryClient = useQueryClient()

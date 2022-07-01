@@ -1,6 +1,6 @@
 import React from 'react'
 import { QueryClient, QueryClientProvider } from 'react-query'
-import { AuthProvider } from './AuthProvider'
+import { TethysApiProvider } from './TethysApiProvider'
 
 export const mockAuthResponse = {
   result: {
@@ -18,8 +18,8 @@ export const MockProviders: React.FC<{
   testToken?: string
 }> = ({ queryClient, testToken = '', children }) => (
   <QueryClientProvider client={queryClient}>
-    <AuthProvider setSessionToken={() => {}} sessionToken={testToken}>
+    <TethysApiProvider setSessionToken={() => {}} sessionToken={testToken}>
       {children}
-    </AuthProvider>
+    </TethysApiProvider>
   </QueryClientProvider>
 )
