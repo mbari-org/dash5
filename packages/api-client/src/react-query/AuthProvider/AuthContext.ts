@@ -1,4 +1,5 @@
 import { AxiosInstance } from 'axios'
+import { GetInfoResponse } from '../../axios'
 import React from 'react'
 
 export interface AuthContextProfile {
@@ -19,6 +20,7 @@ export interface AuthContextProviderProps {
   profile?: AuthContextProfile
   logout: () => void
   axiosInstance?: AxiosInstance
+  siteConfig?: GetInfoResponse
 }
 
 const defaultContext: AuthContextProviderProps = {

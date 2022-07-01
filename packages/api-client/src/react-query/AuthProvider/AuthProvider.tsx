@@ -3,6 +3,7 @@ import { useCreateLogin } from '../User/useCreateLogin'
 import { useRefreshSessionToken } from '../User/useRefreshSessionToken'
 import { AuthContext, AuthContextProfile } from './AuthContext'
 import { getInstance } from '../../axios/getInstance'
+import { useSiteConfig } from '../Info/useSiteConfig'
 
 interface AuthProviderProps {
   baseURL?: string
@@ -60,6 +61,8 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({
     setSessionToken,
   })
 
+  const siteInfo = useSiteConfig({}, {}, instance.current)
+
   // We'll update the current user state from the refreshed session
   // response. The TethysDash API will return a user object that
   // is identical to the login response.
@@ -108,6 +111,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({
         profile: currentUser,
         loading: loginUser.isLoading,
         axiosInstance: instance.current,
+        siteConfig: siteInfo.data,
       }}
     >
       {children}
