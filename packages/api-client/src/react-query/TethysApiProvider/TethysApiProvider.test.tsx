@@ -1,8 +1,8 @@
 import '@testing-library/jest-dom'
 import React, { useState } from 'react'
-import { AuthProvider } from './AuthProvider'
+import { TethysApiProvider } from './TethysApiProvider'
 import { render, screen, fireEvent, waitFor } from '@testing-library/react'
-import { useAuthContext } from './useAuthContext'
+import { useTethysApiContext } from './useTethysApiContext'
 import { QueryClientProvider, QueryClient, setLogger } from 'react-query'
 import { rest } from 'msw'
 import { setupServer } from 'msw/node'
@@ -50,7 +50,7 @@ const server = setupServer(
 
 const AuthContent: React.FC = () => {
   const { authenticated, token, login, logout, error, siteConfig } =
-    useAuthContext()
+    useTethysApiContext()
   return authenticated ? (
     <>
       <div aria-label="auth-content-token">{token}</div>
@@ -86,17 +86,17 @@ const MockComponent: React.FC<{ client: QueryClient; testToken?: string }> = ({
   const [sessionToken, setSessionToken] = useState(testToken ?? '')
   return (
     <QueryClientProvider client={client}>
-      <AuthProvider
+      <TethysApiProvider
         sessionToken={sessionToken}
         setSessionToken={setSessionToken}
       >
         <AuthContent />
-      </AuthProvider>
+      </TethysApiProvider>
     </QueryClientProvider>
   )
 }
 
-describe('AuthProvider', () => {
+describe('TethysApiProvider', () => {
   beforeAll(() => {
     server.listen()
   })

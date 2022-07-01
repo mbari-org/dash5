@@ -1,19 +1,19 @@
 import React, { useEffect, useRef } from 'react'
 import { useCreateLogin } from '../User/useCreateLogin'
 import { useRefreshSessionToken } from '../User/useRefreshSessionToken'
-import { AuthContext, AuthContextProfile } from './AuthContext'
+import { TethysApiContext, TethysApiContextProfile } from './TethysApiContext'
 import { getInstance } from '../../axios/getInstance'
 import { useSiteConfig } from '../Info/useSiteConfig'
 
-interface AuthProviderProps {
+interface TethysApiProviderProps {
   baseURL?: string
-  onSessionStart?: (profile: AuthContextProfile) => void
+  onSessionStart?: (profile: TethysApiContextProfile) => void
   onSessionEnd?: () => void
   setSessionToken: (token: string) => void
   sessionToken: string
 }
 
-export const AuthProvider: React.FC<AuthProviderProps> = ({
+export const TethysApiProvider: React.FC<TethysApiProviderProps> = ({
   baseURL,
   children,
   setSessionToken,
@@ -32,12 +32,12 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({
   const lastInitialToken = useRef(null as string | null)
   const [loggedOut, setLoggedOut] = React.useState(false)
   const [currentUser, setCurrentUser] = React.useState<
-    AuthContextProfile | undefined
+    TethysApiContextProfile | undefined
   >()
   const existingToken = currentUser?.token
 
   // Store any errors resulting from login / token refresh attempts.
-  // This error will be exposed by the AuthProvider.
+  // This error will be exposed by the TethysApiProvider.
   const [error, setError] = React.useState<string | undefined>()
 
   // Store a reference to an axios instance with a default config.
@@ -76,7 +76,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({
     }
   }, [refreshedSession.data?.token, lastInitialToken.current, existingToken])
 
-  // This handler is available in the AuthContext for use in components
+  // This handler is available in theTethysApiContext for use in components
   const login = React.useCallback(
     async (email: string, password: string) => {
       try {
@@ -92,7 +92,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({
     [setCurrentUser, setError, loginUser]
   )
 
-  // This handler is available in the AuthContext for use in components
+  // This handler is available in theTethysApiContext for use in components
   const logout = React.useCallback(() => {
     setCurrentUser(undefined)
     setError(undefined)
@@ -101,7 +101,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({
   }, [setCurrentUser, setError])
 
   return (
-    <AuthContext.Provider
+    <TethysApiContext.Provider
       value={{
         login,
         token: currentUser?.token,
@@ -115,6 +115,6 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({
       }}
     >
       {children}
-    </AuthContext.Provider>
+    </TethysApiContext.Provider>
   )
 }

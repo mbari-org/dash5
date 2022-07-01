@@ -2,7 +2,7 @@ import { AxiosInstance } from 'axios'
 import { GetInfoResponse } from '../../axios'
 import React from 'react'
 
-export interface AuthContextProfile {
+export interface TethysApiContextProfile {
   token?: string
   email?: string
   firstName?: string
@@ -11,19 +11,19 @@ export interface AuthContextProfile {
   roles?: string[]
 }
 
-export interface AuthContextProviderProps {
+export interface TethysApiContextProviderProps {
   token?: string
   error?: string
   loading?: boolean
   authenticated?: boolean
   login: (email: string, password: string) => void
-  profile?: AuthContextProfile
+  profile?: TethysApiContextProfile
   logout: () => void
   axiosInstance?: AxiosInstance
   siteConfig?: GetInfoResponse
 }
 
-const defaultContext: AuthContextProviderProps = {
+const defaultContext: TethysApiContextProviderProps = {
   authenticated: false,
   loading: false,
   login: () => {
@@ -34,4 +34,4 @@ const defaultContext: AuthContextProviderProps = {
   },
 }
 
-export const AuthContext = React.createContext(defaultContext)
+export const TethysApiContext = React.createContext(defaultContext)
