@@ -5,7 +5,7 @@ import 'leaflet/dist/leaflet.css'
 import { AppProps } from 'next/app'
 import { QueryClientProvider, QueryClient } from 'react-query'
 import { RecoilRoot } from 'recoil'
-import { AuthProvider } from '@mbari/api-client'
+import { TethysApiProvider } from '@mbari/api-client'
 import { ReactQueryDevtools } from 'react-query/devtools'
 import { Toaster } from 'react-hot-toast'
 import useSessionToken from '../lib/useSessionToken'
@@ -24,14 +24,14 @@ function MyApp({ Component, pageProps }: AppProps) {
   return (
     <RecoilRoot>
       <QueryClientProvider client={queryClient}>
-        <AuthProvider
+        <TethysApiProvider
           baseURL={process.env.NEXT_PUBLIC_BASE_URL}
           sessionToken={sessionToken}
           setSessionToken={setSessionToken}
           onSessionEnd={handleSessionEnd}
         >
           <Component {...pageProps} />
-        </AuthProvider>
+        </TethysApiProvider>
         <Toaster />
         <ReactQueryDevtools initialIsOpen={false} />
       </QueryClientProvider>

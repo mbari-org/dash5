@@ -1,6 +1,6 @@
 import { useEffect } from 'react'
 import Router from 'next/router'
-import { useAuthContext } from '@mbari/api-client'
+import { useTethysApiContext } from '@mbari/api-client'
 
 /**
  * Adapted from official next.js example utilizing iron-session:
@@ -10,7 +10,7 @@ export default function useAuthenticatedRedirect({
   redirectTo = '',
   redirectIfAuthenticated = false,
 } = {}) {
-  const { authenticated, loading } = useAuthContext()
+  const { authenticated, loading } = useTethysApiContext()
 
   useEffect(() => {
     // if no redirect needed, just return (example: already on /dashboard)

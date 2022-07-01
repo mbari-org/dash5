@@ -5,7 +5,7 @@ import {
   ProfileDropdown,
   ReassignmentModal,
 } from '@mbari/react-ui'
-import { useAuthContext } from '@mbari/api-client'
+import { useTethysApiContext } from '@mbari/api-client'
 import { useState } from 'react'
 import Image from 'next/image'
 import VehicleDeploymentDropdown from '../components/VehicleDeploymentDropdown'
@@ -29,7 +29,7 @@ const Layout: React.FC = ({ children }) => {
 
   const { trackedVehicles, setTrackedVehicles } = useTrackedVehicles()
 
-  const { logout, profile, authenticated } = useAuthContext()
+  const { logout, profile, authenticated } = useTethysApiContext()
   const profileName = `${profile?.firstName} ${profile?.lastName}`
   const handleLogout = () => {
     dismissDropdown()
