@@ -25,14 +25,16 @@ const UserForgotPassword: React.FC<{ onClose?: () => void }> = ({
 
   useEffect(() => {
     if (!isLoading && isError) {
-      toast.error(error?.message ?? 'Could not process your reset request.')
+      toast.error(
+        (error as Error)?.message ?? 'Could not process your reset request.'
+      )
     }
   }, [isLoading, isError, error])
 
   useEffect(() => {
     if (!isLoading && isSuccess) {
       toast.success(
-        data?.result.message ??
+        data?.message ??
           'A link to reset your password has been sent if an account with the specified email address exists.'
       )
       handleClose?.()
