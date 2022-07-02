@@ -20,11 +20,11 @@ const styles = {
 }
 
 export type CreateAccountFormValues = {
-  email?: string
-  firstName?: string
-  lastName?: string
-  password?: string
-  confirmPassword?: string
+  email: string
+  firstName: string
+  lastName: string
+  password: string
+  confirmPassword: string
   requestOperator?: boolean
 }
 

@@ -1,13 +1,13 @@
 import { useQuery } from 'react-query'
 import { getVPos, GetVPosParams } from '../../axios'
-import { useAuthContext } from '../AuthProvider'
+import { useTethysApiContext } from '../TethysApiProvider'
 import { SupportedQueryOptions } from '../types'
 
 export const useVehiclePos = (
   params: GetVPosParams,
   options?: SupportedQueryOptions
 ) => {
-  const { axiosInstance } = useAuthContext()
+  const { axiosInstance } = useTethysApiContext()
   const query = useQuery(
     ['info', 'vehiclePos', params],
     () => {

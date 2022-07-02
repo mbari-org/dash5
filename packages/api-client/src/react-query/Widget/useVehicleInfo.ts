@@ -1,7 +1,7 @@
 import { AxiosInstance } from 'axios'
 import { useQuery } from 'react-query'
 import { getVehicleInfo, GetVehicleInfoParams } from '../../axios'
-import { useAuthContext } from '../AuthProvider'
+import { useTethysApiContext } from '../TethysApiProvider'
 import { SupportedQueryOptions } from '../types'
 
 /**
@@ -15,7 +15,7 @@ export const useVehicleInfo = (
   instance?: AxiosInstance,
   options?: SupportedQueryOptions
 ) => {
-  const { axiosInstance } = useAuthContext()
+  const { axiosInstance } = useTethysApiContext()
   const query = useQuery(
     ['widget', params.name],
     () => {

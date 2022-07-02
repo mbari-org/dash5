@@ -4,7 +4,7 @@ import { getInfo, GetInfoParams } from './getInfo'
 
 let params: GetInfoParams = {}
 
-const mockResponse = {
+export const mockResponse = {
   result: {
     vehicleNames: [
       'ahi',

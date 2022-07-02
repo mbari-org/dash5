@@ -21,5 +21,5 @@ export const resetPassword = async (
   }
 
   const response = await instance.post(url, params, config)
-  return response.data as ResetPasswordResponse
+  return response.data.result as ResetPasswordResponse
 }
