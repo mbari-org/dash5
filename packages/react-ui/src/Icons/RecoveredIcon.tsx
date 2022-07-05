@@ -4,17 +4,19 @@ import clsx from 'clsx'
 export interface RecoveredIconProps {
   className?: string
   style?: React.CSSProperties
+  large?: boolean
 }
 
 export const RecoveredIcon: React.FC<RecoveredIconProps> = ({
   className = 'fill-black stroke-black',
   style,
+  large,
 }) => {
   return (
     <div className={clsx('', className)} style={style}>
       <svg
-        width="54"
-        height="52"
+        width={large ? '54' : '31'}
+        height={large ? '52' : '33'}
         viewBox="0 0 54 52"
         xmlns="http://www.w3.org/2000/svg"
       >
