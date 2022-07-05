@@ -22,6 +22,7 @@ const UserCreateAccount: React.FC<{ onClose?: () => void }> = ({
 
   const handleSubmit: AsyncSubmitHandler<CreateAccountFormValues> = async ({
     requestOperator,
+    confirmPassword,
     ...values
   }) => {
     await createUser({
