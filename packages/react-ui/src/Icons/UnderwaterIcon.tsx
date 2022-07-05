@@ -13,7 +13,11 @@ export const UnderwaterIcon: React.FC<UnderwaterIconProps> = ({
   large,
 }) => {
   return (
-    <div className={clsx('', className)} style={style}>
+    <div
+      className={clsx('', className)}
+      style={style}
+      aria-label="vehicle underwater icon"
+    >
       <svg
         width={large ? '54' : '31'}
         height={large ? '44' : '25'}

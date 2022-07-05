@@ -13,7 +13,11 @@ export const RecoveredIcon: React.FC<RecoveredIconProps> = ({
   large,
 }) => {
   return (
-    <div className={clsx('', className)} style={style}>
+    <div
+      className={clsx('', className)}
+      style={style}
+      aria-label="vehicle recovered icon"
+    >
       <svg
         width={large ? '54' : '31'}
         height={large ? '52' : '33'}

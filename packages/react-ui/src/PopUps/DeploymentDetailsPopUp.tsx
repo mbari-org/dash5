@@ -77,10 +77,8 @@ export const DeploymentDetailsPopUp: React.FC<DeploymentDetailsPopUpProps> = ({
   const [deployment, setDeployment] = useState<DeploymentDetails>(
     initialDeploymentValues
   )
-
   const [editDates, setEditDates] = useState(false)
   const [editTags, setEditTags] = useState(false)
-
   const [isUTC, setIsUTC] = useState(true)
 
   const dateCell = (type: eventType) => {
@@ -123,6 +121,7 @@ export const DeploymentDetailsPopUp: React.FC<DeploymentDetailsPopUpProps> = ({
             <button
               className={styles.markTimeButton}
               onClick={swallow(() => onSetDeploymentEventToCurrentTime(type))}
+              aria-label={`mark ${type} time now button`}
             >
               Mark {type} time now
             </button>
@@ -173,7 +172,7 @@ export const DeploymentDetailsPopUp: React.FC<DeploymentDetailsPopUpProps> = ({
                 {queueSize} mission{queueSize !== 1 && 's'} in queue
               </li>
               <li className={styles.gitTag}>
-                <span className="mr-1">git tag:</span>
+                <span className="mr-2">git tag:</span>
                 <span className="font-mono text-lg">
                   {editTags ? (
                     <SelectField
@@ -216,6 +215,7 @@ export const DeploymentDetailsPopUp: React.FC<DeploymentDetailsPopUpProps> = ({
                   <ul className="flex items-center">
                     <li className={styles.timezoneSelector}>
                       <button
+                        aria-label="local time button"
                         className={clsx(
                           'mr-1',
                           !isUTC && styles.selectedTimezone
@@ -226,6 +226,7 @@ export const DeploymentDetailsPopUp: React.FC<DeploymentDetailsPopUpProps> = ({
                       </button>{' '}
                       /{' '}
                       <button
+                        aria-label="UTC time button"
                         className={clsx(
                           'ml-1',
                           isUTC && styles.selectedTimezone
