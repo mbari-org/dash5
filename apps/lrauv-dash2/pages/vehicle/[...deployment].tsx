@@ -26,6 +26,7 @@ import { faChevronDown, faChevronUp } from '@fortawesome/pro-solid-svg-icons'
 import clsx from 'clsx'
 import Layout from '../../components/Layout'
 import VehicleDiagram from '../../components/VehicleDiagram'
+import VehicleAccordion from '../../components/VehicleAccordion'
 import useGlobalModalId from '../../lib/useGlobalModalId'
 
 const styles = {
@@ -33,7 +34,7 @@ const styles = {
   primary: 'flex w-3/4 flex-shrink flex-grow flex-col',
   mapContainer: 'flex flex-shrink flex-col flex-grow bg-blue-300 relative',
   secondary:
-    'flex w-[438px] flex-shrink-0 flex-col bg-white border-t-2 border-secondary-300/60',
+    'flex w-[438px] flex-shrink-0 flex-col bg-white border-t-2 border-t-secondary-300/60 border-l border-l-slate-300',
 }
 
 // This is a tricky workaround to prevent leaflet from crashing next.js
@@ -214,9 +215,14 @@ const Vehicle: NextPage = () => {
           </div>
         </section>
         <section className={styles.secondary}>
-          <p className="m-2 rounded bg-yellow-100 p-4 text-orange-500">
-            [TODO]: Accordion Control for Vehicle Details
-          </p>
+          {selectedDeployment && (
+            <VehicleAccordion
+              vehicleName={vehicleName}
+              from={DateTime.fromMillis(
+                selectedDeployment?.startEvent.unixTime
+              ).toISO()}
+            />
+          )}
         </section>
       </div>
     </Layout>
