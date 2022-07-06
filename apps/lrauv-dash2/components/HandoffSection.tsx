@@ -1,4 +1,4 @@
-import { CellVirtualizer, Virtualizer } from '@mbari/react-ui'
+import { CellVirtualizer, HandoffCell, Virtualizer } from '@mbari/react-ui'
 import { useEvents } from '@mbari/api-client'
 
 interface HandoffSectionProps {
@@ -20,12 +20,22 @@ const HandoffSection: React.FC<HandoffSectionProps> = ({
   })
   const cellAtIndex = (index: number, _virtualizer: Virtualizer) => {
     const item = data?.[index]
-
+    const isPicNote = item.note === 'Signing in as PIC'
+    const previousPic = isPicNote
+      ? data?.find((d, i) => i > index && d.note === 'Signing in as PIC')
+      : undefined
     return (
-      <div className="border-b border-b-stone-200">
-        <p className="font-bold">{item.note}</p>
-        <p>{item.isoTime}</p>
-      </div>
+      <HandoffCell
+        date={item.isoTime}
+        note={
+          isPicNote
+            ? `${item.note} from ${previousPic?.user ?? 'previous PIC'}.`
+            : item.note
+        }
+        pilot={item.user}
+        pic={isPicNote}
+        className="border-b border-slate-200"
+      />
     )
   }
 
