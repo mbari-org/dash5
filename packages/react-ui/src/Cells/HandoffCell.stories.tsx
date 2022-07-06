@@ -22,7 +22,7 @@ const Template: Story<HandoffCellProps> = (args) => (
 )
 
 const args: HandoffCellProps = {
-  date: '2022-07-04T18:24:22.321Z',
+  date: '2022-07-01T18:24:22.321Z',
   note: 'Mostly looks good, but keep an eye out. Brizo had some compass problems...',
   pilot: 'Shannon Johnson',
   warning: false,

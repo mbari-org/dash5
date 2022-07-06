@@ -45,6 +45,13 @@ export const HandoffCell: React.FC<HandoffCellProps> = ({
   unread,
   selectable,
 }) => {
+  const parsedDate = DateTime.fromISO(date)
+  const displayDate =
+    Math.abs(parsedDate.diffNow('days').days) > 2
+      ? parsedDate.toFormat('MMM d, yyyy')
+      : parsedDate.toRelativeCalendar()
+  const time = parsedDate.toFormat('HH:mm:ss')
+
   return (
     <article
       className={clsx(
@@ -61,19 +68,14 @@ export const HandoffCell: React.FC<HandoffCellProps> = ({
           <span className={styles.picPilot}>{pilot}</span>{' '}
           <span className={styles.picNote}>{note}</span>
           <span className={styles.picDate}>
-            {DateTime.fromISO(date).toRelativeCalendar()} at{' '}
-            {DateTime.fromISO(date).toFormat('HH:mm:ss')}
+            {displayDate} at {time}
           </span>
         </p>
       ) : (
         <>
           <header className={clsx(styles.dateCol, !selectable && 'opacity-50')}>
-            <h3 className={styles.time}>
-              {DateTime.fromISO(date).toFormat('HH:mm:ss')}
-            </h3>
-            <h4 className={styles.date}>
-              {DateTime.fromISO(date).toRelativeCalendar()}
-            </h4>
+            <h3 className={styles.time}>{time}</h3>
+            <h4 className={styles.date}>{displayDate}</h4>
           </header>
           <div className={styles.noteCol}>
             <p className={clsx(styles.note, !selectable && 'opacity-50')}>
