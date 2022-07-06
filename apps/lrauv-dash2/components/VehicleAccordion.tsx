@@ -24,10 +24,9 @@ const VehicleAccordion: React.FC<VehicleAccordionProps> = ({
 }) => {
   const [section, setSection] = useState<VehicleAccordionSection>('handoff')
   const handleToggleForSection =
-    (currentSection: VehicleAccordionSection) => (open: boolean) => {
-      console.log('toggleSection', currentSection, open)
+    (currentSection: VehicleAccordionSection) => (open: boolean) =>
       setSection(open ? currentSection : null)
-    }
+
   return (
     <div className="flex h-full flex-col divide-y divide-solid divide-stone-200">
       <AccordionHeader
