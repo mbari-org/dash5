@@ -219,7 +219,7 @@ const Vehicle: NextPage = () => {
             <VehicleAccordion
               vehicleName={vehicleName}
               from={DateTime.fromMillis(
-                selectedDeployment?.startEvent.unixTime
+                selectedDeployment?.startEvent?.unixTime ?? 0
               ).toISO()}
             />
           )}

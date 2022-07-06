@@ -20,21 +20,21 @@ const HandoffSection: React.FC<HandoffSectionProps> = ({
     from,
     to,
   })
+
   const cellAtIndex = (index: number, _virtualizer: Virtualizer) => {
     const item = data?.[index]
-    const isPicNote = item.note === 'Signing in as PIC'
+    const isPicNote = item?.note === 'Signing in as PIC'
     const previousPic = isPicNote
       ? data?.find((d, i) => i > index && d.note === 'Signing in as PIC')
       : undefined
+    const displayNote = isPicNote
+      ? `${item?.note} from ${previousPic?.user ?? 'previous PIC'}.`
+      : item?.note
     return (
       <HandoffCell
-        date={item.isoTime}
-        note={
-          isPicNote
-            ? `${item.note} from ${previousPic?.user ?? 'previous PIC'}.`
-            : item.note
-        }
-        pilot={item.user}
+        date={item?.isoTime ?? ''}
+        note={displayNote ?? ''}
+        pilot={item?.user ?? ''}
         pic={isPicNote}
         className="border-b border-slate-200"
       />
