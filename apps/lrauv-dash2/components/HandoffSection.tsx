@@ -1,5 +1,7 @@
 import { CellVirtualizer, HandoffCell, Virtualizer } from '@mbari/react-ui'
 import { useEvents } from '@mbari/api-client'
+import { AccessoryButton } from '@mbari/react-ui'
+import { faPlus } from '@fortawesome/pro-regular-svg-icons'
 
 interface HandoffSectionProps {
   vehicleName: string
@@ -40,13 +42,18 @@ const HandoffSection: React.FC<HandoffSectionProps> = ({
   }
 
   return (
-    <div className="relative flex h-full flex-shrink flex-grow">
-      <CellVirtualizer
-        cellAtIndex={cellAtIndex}
-        count={data?.length ?? 0}
-        className="absolute inset-0 w-full"
-      />
-    </div>
+    <>
+      <header className="flex p-2">
+        <AccessoryButton icon={faPlus} label="Add Note" />
+      </header>
+      <div className="relative flex h-full flex-shrink flex-grow">
+        <CellVirtualizer
+          cellAtIndex={cellAtIndex}
+          count={data?.length ?? 0}
+          className="absolute inset-0 w-full"
+        />
+      </div>
+    </>
   )
 }
 
