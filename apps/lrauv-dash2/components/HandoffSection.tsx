@@ -2,6 +2,7 @@ import { CellVirtualizer, HandoffCell, Virtualizer } from '@mbari/react-ui'
 import { useEvents } from '@mbari/api-client'
 import { AccessoryButton } from '@mbari/react-ui'
 import { faPlus } from '@fortawesome/pro-regular-svg-icons'
+import useGlobalModalId from '../lib/useGlobalModalId'
 
 interface HandoffSectionProps {
   vehicleName: string
@@ -16,12 +17,18 @@ const HandoffSection: React.FC<HandoffSectionProps> = ({
   to,
   authenticated,
 }) => {
+  const { setGlobalModalId } = useGlobalModalId()
   const { data } = useEvents({
     vehicles: [vehicleName],
     eventTypes: ['note'],
     from,
     to,
   })
+
+  const handleAddNote = () => {
+    console.log('add note')
+    setGlobalModalId('sendNote')
+  }
 
   const cellAtIndex = (index: number, _virtualizer: Virtualizer) => {
     const item = data?.[index]
@@ -47,7 +54,11 @@ const HandoffSection: React.FC<HandoffSectionProps> = ({
     <>
       {authenticated && (
         <header className="flex p-2">
-          <AccessoryButton icon={faPlus} label="Add Note" />
+          <AccessoryButton
+            icon={faPlus}
+            label="Add Note"
+            onClick={handleAddNote}
+          />
         </header>
       )}
       <div className="relative flex h-full flex-shrink flex-grow">
