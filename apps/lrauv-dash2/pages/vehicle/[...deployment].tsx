@@ -221,9 +221,8 @@ const Vehicle: NextPage = () => {
             <VehicleAccordion
               authenticated={authenticated}
               vehicleName={vehicleName}
-              from={DateTime.fromMillis(
-                selectedDeployment?.startEvent?.unixTime ?? 0
-              ).toISO()}
+              from={DateTime.fromMillis(startTime).toISO()}
+              to={DateTime.fromMillis(endTime).toISO()}
             />
           )}
         </section>
