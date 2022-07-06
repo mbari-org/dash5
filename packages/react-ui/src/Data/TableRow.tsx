@@ -18,6 +18,8 @@ export interface CellProps {
   icon?: JSX.Element
   highlighted?: boolean
   highlightedStyle?: string
+  span?: number
+  fixedIconWidth?: boolean
 }
 
 const styles = {
@@ -26,6 +28,18 @@ const styles = {
   cell: 'h-full w-full items-center',
   cellPadding: 'py-2 px-4',
 }
+
+const colClassNames = [
+  'col-span-none',
+  'col-span-1',
+  'col-span-2',
+  'col-span-3',
+  'col-span-4',
+  'col-span-5',
+  'col-span-6',
+  'col-span-7',
+  'col-span-8',
+]
 
 export const TableRow: React.FC<TableRowProps> = ({
   className,
@@ -38,7 +52,10 @@ export const TableRow: React.FC<TableRowProps> = ({
   return (
     <tr className={clsx(styles.container, className)} aria-label={'table row'}>
       {cells.map((cell, index) => (
-        <td className={styles.cell} key={`${cell.label}${index}`}>
+        <td
+          className={clsx(styles.cell, cell.span && colClassNames[cell.span])}
+          key={`${cell.label}${index}`}
+        >
           {onSelect ? (
             <button
               className={clsx(styles.button, styles.cellPadding)}
