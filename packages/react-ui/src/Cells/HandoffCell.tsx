@@ -62,9 +62,10 @@ export const HandoffCell: React.FC<HandoffCellProps> = ({
         className
       )}
       style={style}
+      data-testid="handoffCell"
     >
       {pic ? (
-        <p>
+        <p data-testid="pic">
           <span className={styles.picPilot}>{pilot}</span>{' '}
           <span className={styles.picNote}>{note}</span>
           <span className={styles.picDate}>
