@@ -7,12 +7,14 @@ interface HandoffSectionProps {
   vehicleName: string
   from: string
   to?: string
+  authenticated?: boolean
 }
 
 const HandoffSection: React.FC<HandoffSectionProps> = ({
   vehicleName,
   from,
   to,
+  authenticated,
 }) => {
   const { data } = useEvents({
     vehicles: [vehicleName],
@@ -43,9 +45,11 @@ const HandoffSection: React.FC<HandoffSectionProps> = ({
 
   return (
     <>
-      <header className="flex p-2">
-        <AccessoryButton icon={faPlus} label="Add Note" />
-      </header>
+      {authenticated && (
+        <header className="flex p-2">
+          <AccessoryButton icon={faPlus} label="Add Note" />
+        </header>
+      )}
       <div className="relative flex h-full flex-shrink flex-grow">
         <CellVirtualizer
           cellAtIndex={cellAtIndex}

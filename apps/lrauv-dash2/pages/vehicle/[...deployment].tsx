@@ -20,6 +20,7 @@ import {
   useLastDeployment,
   useDeployments,
   useMissionStartedEvent,
+  useTethysApiContext,
 } from '@mbari/api-client'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { faChevronDown, faChevronUp } from '@fortawesome/pro-solid-svg-icons'
@@ -50,6 +51,7 @@ const VehiclePath = dynamic(() => import('../../components/VehiclePath'), {
 type AvailableTab = 'vehicle' | 'depth' | null
 
 const Vehicle: NextPage = () => {
+  const { authenticated } = useTethysApiContext()
   const { setGlobalModalId } = useGlobalModalId()
   const router = useRouter()
   const [currentTab, setTab] = useState<AvailableTab>('vehicle')
@@ -217,6 +219,7 @@ const Vehicle: NextPage = () => {
         <section className={styles.secondary}>
           {selectedDeployment && (
             <VehicleAccordion
+              authenticated={authenticated}
               vehicleName={vehicleName}
               from={DateTime.fromMillis(
                 selectedDeployment?.startEvent?.unixTime ?? 0
