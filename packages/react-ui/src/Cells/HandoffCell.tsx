@@ -1,6 +1,8 @@
 import React from 'react'
 import clsx from 'clsx'
 import { DateTime } from 'luxon'
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
+import { faTriangleExclamation } from '@fortawesome/pro-regular-svg-icons'
 
 export interface HandoffCellProps {
   className?: string
@@ -16,16 +18,20 @@ export interface HandoffCellProps {
 
 const styles = {
   time: '',
-  cell: 'grid grid-cols-3 p-4 text-sm',
+  cell: 'p-4 text-sm',
+  grid: 'grid grid-cols-3 gap-2',
   note: 'text-slate-600',
   date: 'capitalize text-slate-600',
-  warning: '',
   selectable: 'hover:bg-violet-100 cursor-pointer !border-l-violet-500',
   unselectable: 'hover:bg-slate-100 !border-l-slate-400',
   unread: 'border-l-4',
   pilot: 'not-italic',
   dateCol: 'col-span-1 my-auto flex flex-col',
   noteCol: 'col-span-2 flex flex-col',
+  warning: 'mr-auto mt-1 text-red-600',
+  picDate: 'block capitalize',
+  picPilot: 'text-slate-600 font-bold',
+  picNote: 'text-slate-600',
 }
 
 export const HandoffCell: React.FC<HandoffCellProps> = ({
@@ -44,25 +50,48 @@ export const HandoffCell: React.FC<HandoffCellProps> = ({
       className={clsx(
         styles.cell,
         selectable ? styles.selectable : styles.unselectable,
+        !pic && styles.grid,
         unread && styles.unread,
         className
       )}
       style={style}
     >
-      <header className={clsx(styles.dateCol, !selectable && 'opacity-50')}>
-        <h3 className={styles.time}>
-          {DateTime.fromISO(date).toFormat('HH:mm:ss')}
-        </h3>
-        <h4 className={styles.date}>
-          {DateTime.fromISO(date).toRelativeCalendar()}
-        </h4>
-      </header>
-      <div className={styles.noteCol}>
-        <p className={clsx(styles.note, !selectable && 'opacity-50')}>{note}</p>
-        <cite className={clsx(styles.pilot, !selectable && 'opacity-70')}>
-          {pilot}
-        </cite>
-      </div>
+      {pic ? (
+        <p>
+          <span className={styles.picPilot}>{pilot}</span>{' '}
+          <span className={styles.picNote}>{note}</span>
+          <span className={styles.picDate}>
+            {DateTime.fromISO(date).toRelativeCalendar()} at{' '}
+            {DateTime.fromISO(date).toFormat('HH:mm:ss')}
+          </span>
+        </p>
+      ) : (
+        <>
+          <header className={clsx(styles.dateCol, !selectable && 'opacity-50')}>
+            <h3 className={styles.time}>
+              {DateTime.fromISO(date).toFormat('HH:mm:ss')}
+            </h3>
+            <h4 className={styles.date}>
+              {DateTime.fromISO(date).toRelativeCalendar()}
+            </h4>
+          </header>
+          <div className={styles.noteCol}>
+            <p className={clsx(styles.note, !selectable && 'opacity-50')}>
+              {note}
+            </p>
+            <cite className={clsx(styles.pilot, !selectable && 'opacity-70')}>
+              {pilot}
+            </cite>
+            {warning && (
+              <FontAwesomeIcon
+                icon={faTriangleExclamation}
+                className={styles.warning}
+                size="lg"
+              />
+            )}
+          </div>
+        </>
+      )}
     </article>
   )
 }

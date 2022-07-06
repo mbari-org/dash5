@@ -49,7 +49,10 @@ StandardUnread.parameters = {
 }
 
 export const NonSelectable = Template.bind({})
-NonSelectable.args = { ...args, selectable: false }
+NonSelectable.args = {
+  ...args,
+  selectable: false,
+}
 NonSelectable.parameters = {
   design: {
     type: 'figma',
@@ -58,8 +61,42 @@ NonSelectable.parameters = {
 }
 
 export const NonSelectableUnread = Template.bind({})
-NonSelectableUnread.args = { ...args, selectable: false, unread: true }
+NonSelectableUnread.args = {
+  ...args,
+  selectable: false,
+  unread: true,
+}
 NonSelectableUnread.parameters = {
+  design: {
+    type: 'figma',
+    url: 'https://www.figma.com/file/FtsKsOCBQ2YjTZlwezG6aI/MBARI-Components?node-id=6410%3A771',
+  },
+}
+
+export const PicUnread = Template.bind({})
+PicUnread.args = {
+  ...args,
+  selectable: false,
+  unread: true,
+  pic: true,
+  note: 'took over PIC from Monique Messier.',
+}
+PicUnread.parameters = {
+  design: {
+    type: 'figma',
+    url: 'https://www.figma.com/file/FtsKsOCBQ2YjTZlwezG6aI/MBARI-Components?node-id=6410%3A771',
+  },
+}
+
+export const PicUnreadSelectable = Template.bind({})
+PicUnreadSelectable.args = {
+  ...args,
+  selectable: true,
+  unread: true,
+  pic: true,
+  note: 'took over PIC from Monique Messier.',
+}
+PicUnreadSelectable.parameters = {
   design: {
     type: 'figma',
     url: 'https://www.figma.com/file/FtsKsOCBQ2YjTZlwezG6aI/MBARI-Components?node-id=6410%3A771',
