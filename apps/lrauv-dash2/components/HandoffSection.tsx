@@ -41,7 +41,8 @@ const HandoffSection: React.FC<HandoffSectionProps> = ({
     const isOnCall = item?.note === ON_CALL_NOTE
     const previousSignin = isPicNote
       ? data?.find(
-          (d, i) => i > index && d.note === (isOnCall ? PIC_NOTE : ON_CALL_NOTE)
+          (d, i) =>
+            i > index && d.note === (!isOnCall ? PIC_NOTE : ON_CALL_NOTE)
         )
       : undefined
     const displayNote = isPicNote
