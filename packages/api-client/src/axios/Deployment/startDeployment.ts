@@ -1,7 +1,7 @@
 // Use scaffold axiosBase to generate the resources imported below.
 import { getInstance } from '../getInstance'
 import { RequestConfig } from '../types'
-
+import { filterBlankAttributes } from '@mbari/utils'
 export interface StartDeploymentParams {
   vehicle: string
   name: string
@@ -23,10 +23,19 @@ export const startDeployment = async (
 ) => {
   const url = '/deployments/start'
 
+  const completeUrl = `${url}?${new URLSearchParams(
+    filterBlankAttributes({
+      name: params.name,
+      vehicle: params.vehicle,
+      tag: params.tag,
+      date: params.date,
+    })
+  )}`
+
   if (debug) {
-    console.debug(`POST ${url}`)
+    console.debug(`POST ${completeUrl}`)
   }
 
-  const response = await instance.post(url, params, config)
+  const response = await instance.post(completeUrl, undefined, config)
   return response.data.result as StartDeploymentResponse
 }
