@@ -26,9 +26,13 @@ const props: DeploymentDetailsPopUpProps = {
   onSaveChanges: (savedDeployment) => {
     console.log(savedDeployment)
   },
+  onChangeGitTag: (gitTag) => {
+    console.log('updated tag', gitTag)
+  },
   onSetDeploymentEventToCurrentTime: (event) => {
     console.log(event)
   },
+  open: true,
 }
 
 test('should render the component', async () => {

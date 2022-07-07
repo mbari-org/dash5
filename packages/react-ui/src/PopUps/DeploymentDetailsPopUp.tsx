@@ -1,6 +1,6 @@
 import React, { useState } from 'react'
 import clsx from 'clsx'
-import { Modal } from '../Modal'
+import { Modal, ModalPropsWithoutTitle } from '../Modal'
 import { UnderwaterIcon } from '../Icons/UnderwaterIcon'
 import { RecoveredIcon } from '../Icons/RecoveredIcon'
 import { Table } from '../Data/Table'
@@ -24,9 +24,7 @@ interface DeploymentDetails {
   endDate?: string
 }
 
-export interface DeploymentDetailsPopUpProps extends DeploymentDetails {
-  className?: string
-  style?: React.CSSProperties
+export interface DeploymentDetailsPopUpConfig {
   complete?: boolean
   queueSize: number
   tagOptions?: SelectOption[]
@@ -34,8 +32,14 @@ export interface DeploymentDetailsPopUpProps extends DeploymentDetails {
   directoryListFilepath?: string
   onExpand?: () => void
   onSaveChanges: (details: DeploymentDetails) => void
+  onChangeGitTag: (gitTag: string) => void
   onSetDeploymentEventToCurrentTime: (event: eventType) => void
+  onClose?: () => void
 }
+
+export type DeploymentDetailsPopUpProps = DeploymentDetailsPopUpConfig &
+  DeploymentDetails &
+  ModalPropsWithoutTitle
 
 type eventType = 'start' | 'launch' | 'recovery' | 'end'
 
@@ -64,6 +68,8 @@ export const DeploymentDetailsPopUp: React.FC<DeploymentDetailsPopUpProps> = ({
   onExpand,
   onSaveChanges,
   onSetDeploymentEventToCurrentTime,
+  onChangeGitTag: handleChangeGitTag,
+  ...props
 }) => {
   const initialDeploymentValues = {
     name: name,
@@ -147,22 +153,24 @@ export const DeploymentDetailsPopUp: React.FC<DeploymentDetailsPopUpProps> = ({
   }
 
   const handleSelect = (newValue: string | null) => {
-    const updatedTagDeployment = {
-      ...deployment,
-      gitTag: newValue ?? undefined,
+    if (newValue) {
+      const updatedTagDeployment = {
+        ...deployment,
+        gitTag: newValue ?? undefined,
+      }
+      setDeployment(updatedTagDeployment)
+      handleChangeGitTag(newValue)
+      setEditTags(false)
     }
-    setDeployment(updatedTagDeployment)
-    onSaveChanges(updatedTagDeployment)
-    setEditTags(false)
   }
 
   return (
     <div className={clsx('', className)} style={style}>
       <Modal
+        {...props}
         onConfirm={editDates ? handleConfirm : null}
         onCancel={editDates ? () => setEditDates(false) : null}
         confirmButtonText="Save Changes"
-        onClose={() => console.log('something')}
         grayHeader
         title={
           <section className="ml-2 flex">
@@ -202,7 +210,6 @@ export const DeploymentDetailsPopUp: React.FC<DeploymentDetailsPopUpProps> = ({
             </ul>
           </section>
         }
-        open
       >
         <Table
           scrollable
@@ -320,7 +327,7 @@ export const DeploymentDetailsPopUp: React.FC<DeploymentDetailsPopUpProps> = ({
                       )}
                     </span>
                   </div>
-                  <div className="max-w-full text-xs">
+                  <div className="max-w-full truncate text-xs">
                     {directoryListFilepath}
                   </div>
                 </li>
@@ -329,7 +336,8 @@ export const DeploymentDetailsPopUp: React.FC<DeploymentDetailsPopUpProps> = ({
             </section>
           }
           values={logFiles ?? []}
-          className="mt-2 font-mono"
+          className="mt-2 overflow-auto font-mono"
+          style={{ maxHeight: 200 }}
         />
       </Modal>
     </div>
