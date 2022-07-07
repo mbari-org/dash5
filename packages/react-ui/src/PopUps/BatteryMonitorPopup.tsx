@@ -1,7 +1,7 @@
 import React, { useState } from 'react'
 import clsx from 'clsx'
 import { Modal } from '../Modal'
-import chart from '../assets/stand-in-chart.png'
+// import chart from '../assets/stand-in-chart.png'
 import { Table } from '../Data/Table'
 import { IconButton } from '../Navigation'
 import {
@@ -132,7 +132,7 @@ export const BatteryMonitorPopup: React.FC<BatteryMonitorPopupProps> = ({
     >
       <section>
         {/* eslint-disable-next-line -- remove this image tag, associated image asset, and mocked asset in test when actual chart component is implemented */}
-        <img src={chart} alt="chart to be replaced" />
+        {/* <img src={chart} alt="chart to be replaced" /> */}
       </section>
       <section>
         <Table
