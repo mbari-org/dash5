@@ -51,6 +51,7 @@ const VehiclePath = dynamic(() => import('../../components/VehiclePath'), {
 type AvailableTab = 'vehicle' | 'depth' | null
 
 const Vehicle: NextPage = () => {
+  const [drawer, setDrawer] = useState(true)
   const { authenticated } = useTethysApiContext()
   const { setGlobalModalId } = useGlobalModalId()
   const router = useRouter()
@@ -64,7 +65,6 @@ const Vehicle: NextPage = () => {
   const params = (deployment ?? []) as string[]
   const vehicleName = params[0]
   const deploymentId = params[1]
-  const [drawer, setDrawer] = useState(false)
 
   const { data: lastDeployment, isLoading } = useLastDeployment(
     {
@@ -111,8 +111,8 @@ const Vehicle: NextPage = () => {
     : selectedDeployment?.lastEvent ?? 0
 
   const handleClickPilot = () => setGlobalModalId('reassign')
-
   const handleNewDeployment = () => setGlobalModalId('newDeployment')
+  const handleEditDeployment = () => setGlobalModalId('editDeployment')
 
   return (
     <Layout>
@@ -134,6 +134,7 @@ const Vehicle: NextPage = () => {
         supportIcon2={<StatusIcon />}
         onSelectNewDeployment={handleNewDeployment}
         deployments={deployments}
+        onEditDeployment={handleEditDeployment}
         onSelectDeployment={handleSelectDeployment}
         onIcon1hover={() => (
           <VehicleCommsCell

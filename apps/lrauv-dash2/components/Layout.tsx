@@ -18,6 +18,7 @@ import { capitalize } from '@mbari/utils'
 import UserCreateAccount from './UserCreateAccount'
 import UserForgotPassword from './UserForgotPassword'
 import { NewDeployment } from './NewDeployment'
+import DeploymentDetails from './DeploymentDetails'
 import SendNote from './SendNote'
 
 const Layout: React.FC = ({ children }) => {
@@ -84,7 +85,6 @@ const Layout: React.FC = ({ children }) => {
           name="description"
           content="Manage and plan missions for various LRAUV"
         />
-        <link rel="icon" href="/favicon.ico" />
       </Head>
       {mounted && (
         <PrimaryToolbar
@@ -143,7 +143,7 @@ const Layout: React.FC = ({ children }) => {
       {globalModalId === 'newDeployment' && authenticated && (
         <NewDeployment onClose={setModal(null)} />
       )}
-      {globalModalId === 'reassign' && !authenticated && (
+      {globalModalId === 'reassign' && authenticated && (
         <ReassignmentModal
           onClose={setModal(null)}
           vehicles={trackedVehicles.map((v) => ({
@@ -168,6 +168,9 @@ const Layout: React.FC = ({ children }) => {
       )}
       {globalModalId === 'sendNote' && authenticated && (
         <SendNote onClose={setModal(null)} />
+      )}
+      {globalModalId === 'editDeployment' && authenticated && (
+        <DeploymentDetails onClose={setModal(null)} />
       )}
     </div>
   )
