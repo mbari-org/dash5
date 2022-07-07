@@ -4,12 +4,12 @@ import { useStartDeployment, useTags } from '@mbari/api-client'
 import { AsyncSubmitHandler } from '@sumocreations/forms'
 import { NewDeploymentFormValues, NewDeploymentModal } from '@mbari/react-ui'
 import { capitalize } from '@mbari/utils'
-import { useRouter } from 'next/router'
+import useCurrentVehicle from '../lib/useCurrentVehicle'
 
-export const NewDeployment: React.FC<{ onClose?: () => void }> = ({
-  onClose: handleClose,
-}) => {
-  const router = useRouter()
+export const NewDeployment: React.FC<{
+  onClose?: () => void
+}> = ({ onClose: handleClose }) => {
+  const vehicle = useCurrentVehicle()
   const {
     mutate: startDeployment,
     isLoading,
@@ -19,8 +19,6 @@ export const NewDeployment: React.FC<{ onClose?: () => void }> = ({
     data,
   } = useStartDeployment()
   const { data: tags } = useTags({ limit: 30 })
-  const vehicle = router.query.deployment?.[0] as string
-
   const handleSubmit: AsyncSubmitHandler<NewDeploymentFormValues> = async (
     values
   ) => {
