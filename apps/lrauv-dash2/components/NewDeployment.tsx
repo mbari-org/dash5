@@ -26,9 +26,9 @@ export const NewDeployment: React.FC<{ onClose?: () => void }> = ({
   ) => {
     await startDeployment({
       vehicle,
-      name: values.deploymentName,
-      tag: values.gitTag,
-      date: values.startTime,
+      name: values.deploymentName ?? '',
+      tag: values.gitTag ?? '',
+      date: values.startTime ?? '',
     })
     return undefined
   }
