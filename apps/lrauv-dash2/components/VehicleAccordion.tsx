@@ -16,6 +16,7 @@ export interface VehicleAccordionProps {
   from: string
   to?: string
   authenticated?: boolean
+  activeDeployment?: boolean
 }
 
 const VehicleAccordion: React.FC<VehicleAccordionProps> = ({
@@ -23,6 +24,7 @@ const VehicleAccordion: React.FC<VehicleAccordionProps> = ({
   to,
   vehicleName,
   authenticated,
+  activeDeployment,
 }) => {
   const [section, setSection] = useState<VehicleAccordionSection>('handoff')
   const handleToggleForSection =
@@ -44,6 +46,7 @@ const VehicleAccordion: React.FC<VehicleAccordionProps> = ({
           to={to}
           authenticated={authenticated}
           vehicleName={vehicleName}
+          activeDeployment={activeDeployment}
         />
       )}
       <AccordionHeader

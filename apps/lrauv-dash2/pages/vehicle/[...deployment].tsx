@@ -223,6 +223,7 @@ const Vehicle: NextPage = () => {
               vehicleName={vehicleName}
               from={DateTime.fromMillis(startTime).toISO()}
               to={DateTime.fromMillis(endTime).toISO()}
+              activeDeployment={selectedDeployment.active}
             />
           )}
         </section>

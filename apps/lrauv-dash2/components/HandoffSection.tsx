@@ -4,11 +4,15 @@ import { AccessoryButton } from '@mbari/react-ui'
 import { faPlus } from '@fortawesome/pro-regular-svg-icons'
 import useGlobalModalId from '../lib/useGlobalModalId'
 
+const PIC_NOTE = 'Signing in as PIC'
+const ON_CALL_NOTE = 'Signing in as On-Call'
+
 interface HandoffSectionProps {
   vehicleName: string
   from: string
   to?: string
   authenticated?: boolean
+  activeDeployment?: boolean
 }
 
 const HandoffSection: React.FC<HandoffSectionProps> = ({
@@ -16,6 +20,7 @@ const HandoffSection: React.FC<HandoffSectionProps> = ({
   from,
   to,
   authenticated,
+  activeDeployment,
 }) => {
   const { setGlobalModalId } = useGlobalModalId()
   const { data } = useEvents({
@@ -32,19 +37,22 @@ const HandoffSection: React.FC<HandoffSectionProps> = ({
 
   const cellAtIndex = (index: number, _virtualizer: Virtualizer) => {
     const item = data?.[index]
-    const isPicNote = item?.note === 'Signing in as PIC'
-    const previousPic = isPicNote
-      ? data?.find((d, i) => i > index && d.note === 'Signing in as PIC')
+    const isPicNote = item?.note === PIC_NOTE
+    const isOnCall = item?.note === ON_CALL_NOTE
+    const previousSignin = isPicNote
+      ? data?.find(
+          (d, i) => i > index && d.note === (isOnCall ? PIC_NOTE : ON_CALL_NOTE)
+        )
       : undefined
     const displayNote = isPicNote
-      ? `${item?.note} from ${previousPic?.user ?? 'previous PIC'}.`
+      ? `${item?.note} from ${previousSignin?.user ?? 'previous operator'}.`
       : item?.note
     return (
       <HandoffCell
         date={item?.isoTime ?? ''}
         note={displayNote ?? ''}
         pilot={item?.user ?? ''}
-        pic={isPicNote}
+        pic={isPicNote || isOnCall}
         className="border-b border-slate-200"
       />
     )
@@ -58,6 +66,7 @@ const HandoffSection: React.FC<HandoffSectionProps> = ({
             icon={faPlus}
             label="Add Note"
             onClick={handleAddNote}
+            disabled={!activeDeployment}
           />
         </header>
       )}
