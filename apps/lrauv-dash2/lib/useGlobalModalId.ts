@@ -6,6 +6,7 @@ export type ModalId =
   | 'forgot'
   | 'reassign'
   | 'newDeployment'
+  | 'sendNote'
   | null
 
 const globalModalState = atom<ModalId>({
