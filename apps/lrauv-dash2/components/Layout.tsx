@@ -17,6 +17,7 @@ import logo from './mbari-logo.png'
 import { capitalize } from '@mbari/utils'
 import UserCreateAccount from './UserCreateAccount'
 import UserForgotPassword from './UserForgotPassword'
+import { NewDeployment } from './NewDeployment'
 
 const Layout: React.FC = ({ children }) => {
   const [showLogin, setLogin] = useState(false)
@@ -137,6 +138,9 @@ const Layout: React.FC = ({ children }) => {
       )}
       {globalModalId === 'forgot' && !authenticated && (
         <UserForgotPassword onClose={setModal(null)} />
+      )}
+      {globalModalId === 'newDeployment' && authenticated && (
+        <NewDeployment onClose={setModal(null)} />
       )}
       {globalModalId === 'reassign' && !authenticated && (
         <ReassignmentModal

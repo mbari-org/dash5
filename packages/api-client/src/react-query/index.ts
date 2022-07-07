@@ -1,6 +1,7 @@
 export * from './TethysApiProvider'
 export * from './Deployment/useDeployments'
 export * from './Deployment/useLastDeployment'
+export * from './Deployment/useStartDeployment'
 export * from './Event/useEvents'
 export * from './Event/useMissionStartedEvent'
 export * from './Info/useSiteConfig'

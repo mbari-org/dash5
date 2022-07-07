@@ -110,6 +110,8 @@ const Vehicle: NextPage = () => {
 
   const handleClickPilot = () => setGlobalModalId('reassign')
 
+  const handleNewDeployment = () => setGlobalModalId('newDeployment')
+
   return (
     <Layout>
       <OverviewToolbar
@@ -128,7 +130,7 @@ const Vehicle: NextPage = () => {
         onClickPilot={handleClickPilot}
         supportIcon1={<CommsIcon />}
         supportIcon2={<StatusIcon />}
-        onSelectNewDeployment={() => undefined}
+        onSelectNewDeployment={handleNewDeployment}
         deployments={deployments}
         onSelectDeployment={handleSelectDeployment}
         onIcon1hover={() => (

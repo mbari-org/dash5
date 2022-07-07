@@ -1,6 +1,12 @@
 import { atom, useRecoilState } from 'recoil'
 
-export type ModalId = 'login' | 'signup' | 'forgot' | 'reassign' | null
+export type ModalId =
+  | 'login'
+  | 'signup'
+  | 'forgot'
+  | 'reassign'
+  | 'newDeployment'
+  | null
 
 const globalModalState = atom<ModalId>({
   key: 'globalModalState',
