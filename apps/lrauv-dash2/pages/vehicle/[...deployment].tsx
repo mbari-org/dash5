@@ -17,7 +17,6 @@ import {
   VehicleInfoCell,
 } from '@mbari/react-ui'
 import {
-  useLastDeployment,
   useDeployments,
   useMissionStartedEvent,
   useTethysApiContext,
@@ -45,6 +44,12 @@ const styles = {
 const Map = dynamic(() => import('@mbari/react-ui/dist/Map/Map'), {
   ssr: false,
 })
+const DepthChart = dynamic(
+  () => import('@mbari/react-ui/dist/Charts/DepthChart'),
+  {
+    ssr: false,
+  }
+)
 const VehiclePath = dynamic(() => import('../../components/VehiclePath'), {
   ssr: false,
 })
@@ -212,6 +217,21 @@ const Vehicle: NextPage = () => {
                     name={vehicleName as string}
                     className="m-auto flex h-full w-full max-w-[900px]"
                   />
+                )}
+                {currentTab === 'depth' && (
+                  <div className="h-full w-full overflow-hidden">
+                    <DepthChart
+                      data={new Array(60).fill('').map((_, i) => ({
+                        value: Math.random() * 200,
+                        timestamp: DateTime.now()
+                          .minus({ hours: 60 - i })
+                          .toMillis(),
+                      }))}
+                      name="Depth"
+                      title="Depth Chart"
+                      className="-mt-4 h-[340px] w-full"
+                    />
+                  </div>
                 )}
               </div>
             </div>
