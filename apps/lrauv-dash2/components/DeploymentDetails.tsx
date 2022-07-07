@@ -4,10 +4,12 @@ import {
   useUpdateDeployment,
   useAlterDeployment,
 } from '@mbari/api-client'
+import { useQueryClient } from 'react-query'
 import { DeploymentDetailsPopUp, EventType } from '@mbari/react-ui'
 import { DateTime } from 'luxon'
 import useCurrentDeployment from '../lib/useCurrentDeployment'
 import toast from 'react-hot-toast'
+import { DeploymentInfo } from '@mbari/react-ui'
 
 const useAlterDeploymentWithEffects = (onSuccess?: () => void) => {
   const {
@@ -36,6 +38,7 @@ const useAlterDeploymentWithEffects = (onSuccess?: () => void) => {
 const DeploymentDetails: React.FC<{
   onClose?: () => void
 }> = ({ onClose: handleClose }) => {
+  const queryClient = useQueryClient()
   const { deployment } = useCurrentDeployment()
   const { mutate: updateDeployment } = useUpdateDeployment()
   const alterDeployment = useAlterDeploymentWithEffects()
@@ -53,6 +56,21 @@ const DeploymentDetails: React.FC<{
     updateDeployment({
       deploymentId: deployment?.deploymentId,
       tag: gitTag,
+    })
+  }
+
+  const handleSaveDeployment = ({
+    startDate,
+    endDate,
+    launchDate,
+    recoverDate,
+  }: DeploymentInfo) => {
+    updateDeployment({
+      deploymentId: deployment?.deploymentId,
+      startDate,
+      endDate,
+      launchDate,
+      recoverDate,
     })
   }
 
@@ -92,6 +110,7 @@ const DeploymentDetails: React.FC<{
       recoverDate={getISODate(deployment?.recoverEvent?.unixTime)}
       endDate={getISODate(deployment?.endEvent?.unixTime)}
       onChangeGitTag={handleSaveGitTag}
+      onSaveChanges={handleSaveDeployment}
       onSetDeploymentEventToCurrentTime={handleSetDeploymentTime}
       open
     />

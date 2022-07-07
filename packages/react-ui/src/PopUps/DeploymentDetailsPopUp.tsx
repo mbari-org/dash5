@@ -104,6 +104,7 @@ export const DeploymentDetailsPopUp: React.FC<DeploymentDetailsPopUpProps> = ({
                 [deployKey as keyof DeploymentDetails]: newValue,
               })
             }
+            disabled={!deployment[deployKey as keyof DeploymentDetails]}
           />
         ),
         highlighted: true,
@@ -111,6 +112,13 @@ export const DeploymentDetailsPopUp: React.FC<DeploymentDetailsPopUpProps> = ({
       }
     }
     const deployLabel = deployment[deployKey as keyof DeploymentDetails] || ''
+    const handleSetCurrentTime = () => {
+      setDeployment({
+        ...deployment,
+        [`${type}Date`]: DateTime.now().toISO(),
+      })
+      onSetDeploymentEventToCurrentTime(type)
+    }
     return deployLabel
       ? {
           label: isUTC
@@ -126,7 +134,7 @@ export const DeploymentDetailsPopUp: React.FC<DeploymentDetailsPopUpProps> = ({
           label: (
             <button
               className={styles.markTimeButton}
-              onClick={swallow(() => onSetDeploymentEventToCurrentTime(type))}
+              onClick={swallow(handleSetCurrentTime)}
               aria-label={`mark ${type} time now button`}
             >
               Mark {type} time now
