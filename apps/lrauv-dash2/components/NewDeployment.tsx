@@ -1,6 +1,6 @@
 import React, { useEffect } from 'react'
 import toast from 'react-hot-toast'
-import { useStartDeployment } from '@mbari/api-client'
+import { useStartDeployment, useTags } from '@mbari/api-client'
 import { AsyncSubmitHandler } from '@sumocreations/forms'
 import { NewDeploymentFormValues, NewDeploymentModal } from '@mbari/react-ui'
 import { capitalize } from '@mbari/utils'
@@ -18,6 +18,7 @@ export const NewDeployment: React.FC<{ onClose?: () => void }> = ({
     error,
     data,
   } = useStartDeployment()
+  const { data: tags } = useTags({ limit: 30 })
   const vehicle = router.query.deployment?.[0] as string
 
   const handleSubmit: AsyncSubmitHandler<NewDeploymentFormValues> = async (
@@ -53,7 +54,7 @@ export const NewDeployment: React.FC<{ onClose?: () => void }> = ({
       loading={isLoading}
       onClose={handleClose}
       vehicleName={vehicle}
-      tags={[]}
+      tags={tags?.map(({ tag }) => ({ id: tag, name: tag })) ?? []}
       open
     />
   )
