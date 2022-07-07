@@ -26,9 +26,13 @@ const props: DeploymentDetailsPopUpProps = {
   onSaveChanges: (savedDeployment) => {
     console.log(savedDeployment)
   },
+  onChangeGitTag: (gitTag) => {
+    console.log('updated tag', gitTag)
+  },
   onSetDeploymentEventToCurrentTime: (event) => {
     console.log(event)
   },
+  open: true,
 }
 
 test('should render the component', async () => {
@@ -101,7 +105,7 @@ test('should display mark recovery time now button if a recovery time is not pro
   render(<DeploymentDetailsPopUp {...props} />)
 
   const markRecoveryTimeButton = screen.queryByLabelText(
-    /mark recovery time now button/i
+    /mark recover time now button/i
   )
 
   expect(markRecoveryTimeButton).toBeInTheDocument()

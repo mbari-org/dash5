@@ -8,14 +8,18 @@ import { getInstance } from '../getInstance'
 import { RequestConfig } from '../types'
 
 export interface AlterDeploymentParams {
-  deploymentId: string
+  deploymentId: number
   date: string
   note: string
-  deploymentType: string
+  deploymentType: 'launch' | 'recover' | 'end'
 }
 
 export interface AlterDeploymentResponse {
-  result: string
+  date: string
+  sentBy: string
+  vehicle: string
+  note: string
+  requestMessage: string
 }
 
 export const alterDeployment = async (
@@ -28,6 +32,8 @@ export const alterDeployment = async (
     console.debug(`POST ${url}`)
   }
 
-  const response = await instance.post(url, params, config)
-  return response.data as AlterDeploymentResponse
+  console.log('POSTING TO', url)
+
+  const response = await instance.post(url, undefined, { ...config, params })
+  return response.data.result as AlterDeploymentResponse
 }

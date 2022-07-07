@@ -1,6 +1,6 @@
 import React, { useState } from 'react'
 import clsx from 'clsx'
-import { Modal } from '../Modal'
+import { Modal, ModalPropsWithoutTitle } from '../Modal'
 import { UnderwaterIcon } from '../Icons/UnderwaterIcon'
 import { RecoveredIcon } from '../Icons/RecoveredIcon'
 import { Table } from '../Data/Table'
@@ -15,18 +15,18 @@ import { DateTime } from 'luxon'
 import { DateField, SelectField } from '../Fields'
 import { SelectOption } from '../Fields/Select'
 
-interface DeploymentDetails {
+export interface DeploymentDetails {
   name: string
   gitTag?: string
   startDate?: string
   launchDate?: string
-  recoveryDate?: string
+  recoverDate?: string
   endDate?: string
 }
 
-export interface DeploymentDetailsPopUpProps extends DeploymentDetails {
-  className?: string
-  style?: React.CSSProperties
+export type EventType = 'start' | 'launch' | 'recover' | 'end'
+
+export interface DeploymentDetailsPopUpConfig {
   complete?: boolean
   queueSize: number
   tagOptions?: SelectOption[]
@@ -34,10 +34,14 @@ export interface DeploymentDetailsPopUpProps extends DeploymentDetails {
   directoryListFilepath?: string
   onExpand?: () => void
   onSaveChanges: (details: DeploymentDetails) => void
-  onSetDeploymentEventToCurrentTime: (event: eventType) => void
+  onChangeGitTag: (gitTag: string) => void
+  onSetDeploymentEventToCurrentTime: (event: EventType) => void
+  onClose?: () => void
 }
 
-type eventType = 'start' | 'launch' | 'recovery' | 'end'
+export type DeploymentDetailsPopUpProps = DeploymentDetailsPopUpConfig &
+  DeploymentDetails &
+  ModalPropsWithoutTitle
 
 const styles = {
   markTimeButton: 'rounded border-2 border-stone-400/60 py-1 px-2 text-sm',
@@ -59,18 +63,20 @@ export const DeploymentDetailsPopUp: React.FC<DeploymentDetailsPopUpProps> = ({
   queueSize,
   startDate,
   launchDate,
-  recoveryDate,
+  recoverDate,
   endDate,
   onExpand,
   onSaveChanges,
   onSetDeploymentEventToCurrentTime,
+  onChangeGitTag: handleChangeGitTag,
+  ...props
 }) => {
   const initialDeploymentValues = {
     name: name,
     gitTag: gitTag || '',
     startDate: startDate || '',
     launchDate: launchDate || '',
-    recoveryDate: recoveryDate || '',
+    recoverDate: recoverDate || '',
     endDate: endDate || '',
   }
 
@@ -81,7 +87,7 @@ export const DeploymentDetailsPopUp: React.FC<DeploymentDetailsPopUpProps> = ({
   const [editTags, setEditTags] = useState(false)
   const [isUTC, setIsUTC] = useState(true)
 
-  const dateCell = (type: eventType) => {
+  const dateCell = (type: EventType) => {
     const deployKey = `${type}Date`
 
     if (editDates) {
@@ -98,6 +104,7 @@ export const DeploymentDetailsPopUp: React.FC<DeploymentDetailsPopUpProps> = ({
                 [deployKey as keyof DeploymentDetails]: newValue,
               })
             }
+            disabled={!deployment[deployKey as keyof DeploymentDetails]}
           />
         ),
         highlighted: true,
@@ -105,6 +112,13 @@ export const DeploymentDetailsPopUp: React.FC<DeploymentDetailsPopUpProps> = ({
       }
     }
     const deployLabel = deployment[deployKey as keyof DeploymentDetails] || ''
+    const handleSetCurrentTime = () => {
+      setDeployment({
+        ...deployment,
+        [`${type}Date`]: DateTime.now().toISO(),
+      })
+      onSetDeploymentEventToCurrentTime(type)
+    }
     return deployLabel
       ? {
           label: isUTC
@@ -120,7 +134,7 @@ export const DeploymentDetailsPopUp: React.FC<DeploymentDetailsPopUpProps> = ({
           label: (
             <button
               className={styles.markTimeButton}
-              onClick={swallow(() => onSetDeploymentEventToCurrentTime(type))}
+              onClick={swallow(handleSetCurrentTime)}
               aria-label={`mark ${type} time now button`}
             >
               Mark {type} time now
@@ -147,22 +161,24 @@ export const DeploymentDetailsPopUp: React.FC<DeploymentDetailsPopUpProps> = ({
   }
 
   const handleSelect = (newValue: string | null) => {
-    const updatedTagDeployment = {
-      ...deployment,
-      gitTag: newValue ?? undefined,
+    if (newValue) {
+      const updatedTagDeployment = {
+        ...deployment,
+        gitTag: newValue ?? undefined,
+      }
+      setDeployment(updatedTagDeployment)
+      handleChangeGitTag(newValue)
+      setEditTags(false)
     }
-    setDeployment(updatedTagDeployment)
-    onSaveChanges(updatedTagDeployment)
-    setEditTags(false)
   }
 
   return (
     <div className={clsx('', className)} style={style}>
       <Modal
+        {...props}
         onConfirm={editDates ? handleConfirm : null}
         onCancel={editDates ? () => setEditDates(false) : null}
         confirmButtonText="Save Changes"
-        onClose={() => console.log('something')}
         grayHeader
         title={
           <section className="ml-2 flex">
@@ -202,7 +218,6 @@ export const DeploymentDetailsPopUp: React.FC<DeploymentDetailsPopUpProps> = ({
             </ul>
           </section>
         }
-        open
       >
         <Table
           scrollable
@@ -284,7 +299,7 @@ export const DeploymentDetailsPopUp: React.FC<DeploymentDetailsPopUpProps> = ({
                   span: 2,
                   fixedIconWidth: true,
                 },
-                dateCell('recovery'),
+                dateCell('recover'),
               ],
             },
             {
@@ -320,7 +335,7 @@ export const DeploymentDetailsPopUp: React.FC<DeploymentDetailsPopUpProps> = ({
                       )}
                     </span>
                   </div>
-                  <div className="max-w-full text-xs">
+                  <div className="max-w-full truncate text-xs">
                     {directoryListFilepath}
                   </div>
                 </li>
@@ -329,7 +344,8 @@ export const DeploymentDetailsPopUp: React.FC<DeploymentDetailsPopUpProps> = ({
             </section>
           }
           values={logFiles ?? []}
-          className="mt-2 font-mono"
+          className="mt-2 overflow-auto font-mono"
+          style={{ maxHeight: 200 }}
         />
       </Modal>
     </div>

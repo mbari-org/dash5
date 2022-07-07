@@ -37,19 +37,21 @@ export const getDeployments = async (
     `${url}?${new URLSearchParams({ ...params })}`,
     config
   )
-  return response.data.result.map((result: GetDeploymentsResponse) => ({
-    ...result,
-    active: result.name && !result.endEvent,
-    present: !!result.name,
-    lastEvent: [
-      result.endEvent,
-      result.recoverEvent,
-      result.launchEvent,
-      result.startEvent,
-    ]
-      .filter((i) => i)
-      .map((i) => i?.unixTime)
-      .sort()
-      .reverse()[0],
-  })) as GetDeploymentsResponse[]
+  return [response.data.result]
+    .flat()
+    .map((result: GetDeploymentsResponse) => ({
+      ...result,
+      active: result.name && !result.endEvent,
+      present: !!result.name,
+      lastEvent: [
+        result.endEvent,
+        result.recoverEvent,
+        result.launchEvent,
+        result.startEvent,
+      ]
+        .filter((i) => i)
+        .map((i) => i?.unixTime)
+        .sort()
+        .reverse()[0],
+    })) as GetDeploymentsResponse[]
 }

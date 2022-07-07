@@ -6,6 +6,7 @@ export type ModalId =
   | 'forgot'
   | 'reassign'
   | 'newDeployment'
+  | 'editDeployment'
   | 'sendNote'
   | null
 

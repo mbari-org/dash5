@@ -11,6 +11,7 @@ import { AccessoryButton } from '../Navigation/AccessoryButton'
 import { capitalize, swallow } from '@mbari/utils'
 import { Dropdown } from '../Navigation'
 import { DateTime } from 'luxon'
+import { IconButton } from '../Navigation'
 
 export interface DeploymentInfo {
   id: string
@@ -29,7 +30,7 @@ export interface OverviewToolbarProps {
   supportIcon2?: JSX.Element
   open?: boolean
   onSelectNewDeployment?: () => void
-  onClickMissions?: () => void
+  onEditDeployment?: () => void
   onClickPilot: () => void
   onIcon1hover?: () => JSX.Element
   onIcon2hover?: () => JSX.Element
@@ -65,7 +66,7 @@ export const OverviewToolbar: React.FC<OverviewToolbarProps> = ({
   onSelectNewDeployment: handleNewDeployment,
   onSelectDeployment: handleSelectDeployment,
   deployments,
-  onClickMissions,
+  onEditDeployment,
   onClickPilot,
   onIcon1hover,
   onIcon2hover,
@@ -146,14 +147,15 @@ export const OverviewToolbar: React.FC<OverviewToolbarProps> = ({
             />
           )}
         </li>
-        {onClickMissions ? (
-          <li data-testid="missions">
-            <button className="p-2 text-2xl" onClick={swallow(onClickMissions)}>
-              <FontAwesomeIcon
-                icon={faClipboardList as IconProp}
-                title="checklist icon"
-              ></FontAwesomeIcon>
-            </button>
+        {onEditDeployment ? (
+          <li data-testid="deploymentDetails" className="ml-2">
+            <IconButton
+              icon={faClipboardList}
+              onClick={onEditDeployment}
+              ariaLabel="Deployment Details"
+              tooltip="Deployment Details"
+              size="text-2xl"
+            />
           </li>
         ) : null}
       </ul>

@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { NextPage } from 'next'
 import { useRouter } from 'next/router'
 import dynamic from 'next/dynamic'
@@ -29,6 +29,7 @@ import Layout from '../../components/Layout'
 import VehicleDiagram from '../../components/VehicleDiagram'
 import VehicleAccordion from '../../components/VehicleAccordion'
 import useGlobalModalId from '../../lib/useGlobalModalId'
+import useCurrentDeployment from '../../lib/useCurrentDeployment'
 
 const styles = {
   content: 'flex flex-shrink flex-grow flex-row overflow-hidden',
@@ -51,6 +52,7 @@ const VehiclePath = dynamic(() => import('../../components/VehiclePath'), {
 type AvailableTab = 'vehicle' | 'depth' | null
 
 const Vehicle: NextPage = () => {
+  const [drawer, setDrawer] = useState(true)
   const { authenticated } = useTethysApiContext()
   const { setGlobalModalId } = useGlobalModalId()
   const router = useRouter()
@@ -60,24 +62,18 @@ const Vehicle: NextPage = () => {
     setTab(tab)
     setDrawer(true)
   }
-  const { deployment } = router.query
-  const params = (deployment ?? []) as string[]
+  const params = (router.query?.deployment ?? []) as string[]
   const vehicleName = params[0]
   const deploymentId = params[1]
-  const [drawer, setDrawer] = useState(false)
 
-  const { data: lastDeployment, isLoading } = useLastDeployment(
-    {
-      vehicle: vehicleName as string,
-      to: new Date().toISOString(),
-    },
-    { staleTime: 5 * 60 * 1000, enabled: !!vehicleName && !deploymentId }
-  )
-  const { data: deploymentData } = useDeployments(
+  const { deployment, isLoading } = useCurrentDeployment()
+  const { data: deploymentsData } = useDeployments(
     {
       vehicle: vehicleName as string,
     },
-    { staleTime: 5 * 60 * 1000, enabled: !!vehicleName }
+    {
+      enabled: !!vehicleName,
+    }
   )
 
   const { data: missionStartedEvent } = useMissionStartedEvent(
@@ -85,34 +81,36 @@ const Vehicle: NextPage = () => {
       vehicle: vehicleName as string,
     },
     {
-      enabled: !!vehicleName && !!lastDeployment?.lastEvent,
+      enabled: !!vehicleName && !!deployment?.lastEvent,
     }
   )
+
+  useEffect(() => {
+    if (!!deployment?.deploymentId && !deploymentId) {
+      router.replace(`/vehicle/${vehicleName}/${deployment.deploymentId}`)
+    }
+  }, [deploymentId, deployment, vehicleName, router])
 
   const handleSelectDeployment = (selection: DeploymentInfo) =>
     router.push(`/vehicle/${vehicleName}/${selection.id}`)
 
   const deployments =
-    deploymentData?.map((dep) => ({
+    deploymentsData?.map((dep) => ({
       id: `${dep.deploymentId}`,
       name: dep.name,
     })) ?? []
 
-  const selectedDeployment = deploymentId
-    ? deploymentData?.find((dep) => `${dep.deploymentId}` === `${deploymentId}`)
-    : lastDeployment
-
   const startTime =
-    selectedDeployment?.active && missionStartedEvent?.[0]?.unixTime
+    deployment?.active && missionStartedEvent?.[0]?.unixTime
       ? missionStartedEvent?.[0]?.unixTime
-      : selectedDeployment?.startEvent?.unixTime ?? 0
-  const endTime = selectedDeployment?.active
+      : deployment?.startEvent?.unixTime ?? 0
+  const endTime = deployment?.active
     ? DateTime.utc().plus({ hours: 4 }).toMillis()
-    : selectedDeployment?.lastEvent ?? 0
+    : deployment?.lastEvent ?? 0
 
   const handleClickPilot = () => setGlobalModalId('reassign')
-
   const handleNewDeployment = () => setGlobalModalId('newDeployment')
+  const handleEditDeployment = () => setGlobalModalId('editDeployment')
 
   return (
     <Layout>
@@ -124,9 +122,9 @@ const Vehicle: NextPage = () => {
           isLoading
             ? { name: '...', id: '0' }
             : {
-                name: (selectedDeployment?.name ?? '...') as string,
-                id: (selectedDeployment?.deploymentId as string) ?? '0',
-                unixTime: selectedDeployment?.startEvent?.unixTime,
+                name: (deployment?.name ?? '...') as string,
+                id: (deployment?.deploymentId as string) ?? '0',
+                unixTime: deployment?.startEvent?.unixTime,
               }
         }
         onClickPilot={handleClickPilot}
@@ -134,6 +132,7 @@ const Vehicle: NextPage = () => {
         supportIcon2={<StatusIcon />}
         onSelectNewDeployment={handleNewDeployment}
         deployments={deployments}
+        onEditDeployment={handleEditDeployment}
         onSelectDeployment={handleSelectDeployment}
         onIcon1hover={() => (
           <VehicleCommsCell
@@ -219,13 +218,13 @@ const Vehicle: NextPage = () => {
           </div>
         </section>
         <section className={styles.secondary}>
-          {selectedDeployment && (
+          {deployment && (
             <VehicleAccordion
               authenticated={authenticated}
               vehicleName={vehicleName}
               from={DateTime.fromMillis(startTime).toISO()}
               to={DateTime.fromMillis(endTime).toISO()}
-              activeDeployment={selectedDeployment.active}
+              activeDeployment={deployment.active}
             />
           )}
         </section>
