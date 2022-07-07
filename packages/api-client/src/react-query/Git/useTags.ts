@@ -1,18 +1,18 @@
-import { AxiosInstance } from 'axios'
 import { useQuery } from 'react-query'
 import { tags, TagsParams } from '../../axios'
 import { SupportedQueryOptions } from '../types'
+import { useTethysApiContext } from '../TethysApiProvider'
 
 export const useTags = (
   params: TagsParams,
-  options?: SupportedQueryOptions,
-  instance?: AxiosInstance
+  options?: SupportedQueryOptions
 ) => {
+  const { axiosInstance } = useTethysApiContext()
   const query = useQuery(
     ['git', 'tags', params],
     () => {
       return tags(params, {
-        instance: instance,
+        instance: axiosInstance,
       })
     },
     {
