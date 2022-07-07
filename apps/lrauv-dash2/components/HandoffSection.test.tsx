@@ -73,13 +73,46 @@ describe('VehicleList', () => {
       </MockProviders>
     )
     await waitFor(() => {
-      screen.getByText(/Signing in as PIC from previous PIC./i)
+      screen.getByText(/Signing in as PIC from Shannon Johnson/i)
     })
     expect(
-      screen.getByText(/Signing in as PIC from previous PIC./i)
+      screen.queryByText(/Signing in as PIC from previous operator/i)
     ).toBeInTheDocument()
     expect(
-      screen.getByText(/Signing in as PIC from Shannon Johnson./i)
+      screen.getByText(/Signing in as PIC from Shannon Johnson/i)
     ).toBeInTheDocument()
+  })
+
+  test('should not render the add note button if not authenticated', async () => {
+    render(
+      <MockProviders queryClient={new QueryClient()}>
+        <HandoffSection vehicleName="pontus" from="" />
+      </MockProviders>
+    )
+    expect(screen.queryByText(/add note/i)).not.toBeInTheDocument()
+  })
+
+  test('should render the add note button if authenticated', async () => {
+    render(
+      <MockProviders queryClient={new QueryClient()}>
+        <HandoffSection
+          vehicleName="pontus"
+          from=""
+          authenticated
+          activeDeployment
+        />
+      </MockProviders>
+    )
+    expect(screen.getByText(/add note/i)).toBeInTheDocument()
+    expect(screen.getByText(/add note/i).closest('button')).not.toBeDisabled()
+  })
+
+  test('should disable the add note button if authenticated but viewing a past deployment', async () => {
+    render(
+      <MockProviders queryClient={new QueryClient()}>
+        <HandoffSection vehicleName="pontus" from="" authenticated />
+      </MockProviders>
+    )
+    expect(screen.getByText(/add note/i).closest('button')).toBeDisabled()
   })
 })

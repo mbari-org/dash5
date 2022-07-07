@@ -1,6 +1,7 @@
 export * from './Deployment/getLastDeployment'
 export * from './Deployment/getDeployments'
 export * from './Event/getEvents'
+export * from './Event/createNote'
 export * from './User/createUser'
 export * from './User/createLogin'
 export * from './User/token'

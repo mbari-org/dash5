@@ -17,6 +17,7 @@ import logo from './mbari-logo.png'
 import { capitalize } from '@mbari/utils'
 import UserCreateAccount from './UserCreateAccount'
 import UserForgotPassword from './UserForgotPassword'
+import SendNote from './SendNote'
 
 const Layout: React.FC = ({ children }) => {
   const [showLogin, setLogin] = useState(false)
@@ -160,6 +161,9 @@ const Layout: React.FC = ({ children }) => {
           ]}
           open
         />
+      )}
+      {globalModalId === 'sendNote' && authenticated && (
+        <SendNote onClose={setModal(null)} />
       )}
     </div>
   )
