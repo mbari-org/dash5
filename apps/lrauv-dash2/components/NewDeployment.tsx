@@ -23,7 +23,7 @@ export const NewDeployment: React.FC<{
     values
   ) => {
     await startDeployment({
-      vehicle,
+      vehicle: vehicle as string,
       name: values.deploymentName ?? '',
       tag: values.gitTag ?? '',
       date: values.startTime ?? '',
@@ -51,7 +51,7 @@ export const NewDeployment: React.FC<{
       onSubmit={handleSubmit}
       loading={isLoading}
       onClose={handleClose}
-      vehicleName={capitalize(vehicle)}
+      vehicleName={capitalize(vehicle ?? '')}
       tags={tags?.map(({ tag }) => ({ id: tag, name: tag })) ?? []}
       open
     />

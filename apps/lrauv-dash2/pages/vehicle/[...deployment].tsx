@@ -67,9 +67,14 @@ const Vehicle: NextPage = () => {
   const deploymentId = params[1]
 
   const { deployment, isLoading } = useCurrentDeployment()
-  const { data: deploymentsData } = useDeployments({
-    vehicleName,
-  })
+  const { data: deploymentsData } = useDeployments(
+    {
+      vehicle: vehicleName as string,
+    },
+    {
+      enabled: !!vehicleName,
+    }
+  )
 
   const { data: missionStartedEvent } = useMissionStartedEvent(
     {

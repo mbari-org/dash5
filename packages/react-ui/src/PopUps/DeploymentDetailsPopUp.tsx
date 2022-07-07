@@ -15,7 +15,7 @@ import { DateTime } from 'luxon'
 import { DateField, SelectField } from '../Fields'
 import { SelectOption } from '../Fields/Select'
 
-interface DeploymentDetails {
+export interface DeploymentDetails {
   name: string
   gitTag?: string
   startDate?: string

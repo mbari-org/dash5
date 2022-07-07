@@ -4,12 +4,14 @@ import {
   useUpdateDeployment,
   useAlterDeployment,
 } from '@mbari/api-client'
-import { useQueryClient } from 'react-query'
-import { DeploymentDetailsPopUp, EventType } from '@mbari/react-ui'
+import {
+  DeploymentDetailsPopUp,
+  EventType,
+  DeploymentDetails,
+} from '@mbari/react-ui'
 import { DateTime } from 'luxon'
 import useCurrentDeployment from '../lib/useCurrentDeployment'
 import toast from 'react-hot-toast'
-import { DeploymentInfo } from '@mbari/react-ui'
 
 const useAlterDeploymentWithEffects = (onSuccess?: () => void) => {
   const {
@@ -38,7 +40,6 @@ const useAlterDeploymentWithEffects = (onSuccess?: () => void) => {
 const DeploymentDetails: React.FC<{
   onClose?: () => void
 }> = ({ onClose: handleClose }) => {
-  const queryClient = useQueryClient()
   const { deployment } = useCurrentDeployment()
   const { mutate: updateDeployment } = useUpdateDeployment()
   const alterDeployment = useAlterDeploymentWithEffects()
@@ -51,12 +52,16 @@ const DeploymentDetails: React.FC<{
   const directoryIndex = contents?.findIndex(
     (line) => line.indexOf('set of logs') > -1
   )
-  const logFiles = contents?.filter((_, i) => i > directoryIndex)
+  const logFiles = directoryIndex
+    ? contents?.filter((_, i) => i > directoryIndex)
+    : []
   const handleSaveGitTag = (gitTag: string) => {
-    updateDeployment({
-      deploymentId: deployment?.deploymentId,
-      tag: gitTag,
-    })
+    if (deployment?.deploymentId) {
+      updateDeployment({
+        deploymentId: deployment.deploymentId as number,
+        tag: gitTag,
+      })
+    }
   }
 
   const handleSaveDeployment = ({
@@ -64,18 +69,20 @@ const DeploymentDetails: React.FC<{
     endDate,
     launchDate,
     recoverDate,
-  }: DeploymentInfo) => {
-    updateDeployment({
-      deploymentId: deployment?.deploymentId,
-      startDate,
-      endDate,
-      launchDate,
-      recoverDate,
-    })
+  }: DeploymentDetails) => {
+    if (deployment?.deploymentId) {
+      updateDeployment({
+        deploymentId: deployment.deploymentId as number,
+        startDate,
+        endDate,
+        launchDate,
+        recoverDate,
+      })
+    }
   }
 
   const handleSetDeploymentTime = (event: EventType) => {
-    let note = undefined
+    let note = ''
     switch (event) {
       case 'launch':
         note = 'Vehicle in water'
@@ -84,14 +91,16 @@ const DeploymentDetails: React.FC<{
         note = 'Vehicle recovered'
         break
       default:
-        note = undefined
+        note = ''
     }
-    alterDeployment({
-      deploymentId: deployment?.deploymentId,
-      date: DateTime.now().toISO(),
-      deploymentType: event as 'launch' | 'recover' | 'end',
-      note,
-    })
+    if (deployment?.deploymentId) {
+      alterDeployment({
+        deploymentId: deployment.deploymentId as number,
+        date: DateTime.now().toISO(),
+        deploymentType: event as 'launch' | 'recover' | 'end',
+        note,
+      })
+    }
   }
 
   return (
@@ -100,7 +109,6 @@ const DeploymentDetails: React.FC<{
       name={deployment?.name ?? ''}
       complete={!!deployment?.endEvent}
       tagOptions={tags?.map(({ tag }) => ({ id: tag, name: tag })) ?? []}
-      endTime={deployment?.endEvent?.unixTime ?? ''}
       queueSize={0}
       gitTag={deployment?.path ?? ''}
       logFiles={logFiles}
