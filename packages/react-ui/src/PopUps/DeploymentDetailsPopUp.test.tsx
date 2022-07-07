@@ -73,16 +73,6 @@ test('should display vehicle recovered icon when mission is completed', async ()
   expect(screen.queryByText(/Complete/i)).toBeInTheDocument()
 })
 
-test('should display mission start date in UTC as default when provided', async () => {
-  render(<DeploymentDetailsPopUp {...props} />)
-
-  const startDateInUTC = DateTime.fromJSDate(new Date(`${props.startDate}`))
-    .toUTC()
-    .toLocaleString(DateTime.DATETIME_FULL)
-
-  expect(screen.queryByText(`${startDateInUTC}`)).toBeInTheDocument()
-})
-
 test('should display mission start date in local time when selected', async () => {
   render(<DeploymentDetailsPopUp {...props} />)
 
@@ -124,7 +114,11 @@ test('should display number of log files', async () => {
   render(<DeploymentDetailsPopUp {...props} />)
 
   expect(
-    screen.queryByText(`DIRECTORY LIST (${props?.logFiles?.length} LOG FILES)`)
+    screen.queryByText(
+      `DIRECTORY LIST (${props?.logFiles?.length} LOG FILE${
+        props?.logFiles?.length !== 1 && 'S'
+      })`
+    )
   ).toBeInTheDocument()
 })
 
