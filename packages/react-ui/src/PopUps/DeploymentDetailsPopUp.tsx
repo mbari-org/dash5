@@ -20,9 +20,11 @@ interface DeploymentDetails {
   gitTag?: string
   startDate?: string
   launchDate?: string
-  recoveryDate?: string
+  recoverDate?: string
   endDate?: string
 }
+
+export type EventType = 'start' | 'launch' | 'recover' | 'end'
 
 export interface DeploymentDetailsPopUpConfig {
   complete?: boolean
@@ -33,15 +35,13 @@ export interface DeploymentDetailsPopUpConfig {
   onExpand?: () => void
   onSaveChanges: (details: DeploymentDetails) => void
   onChangeGitTag: (gitTag: string) => void
-  onSetDeploymentEventToCurrentTime: (event: eventType) => void
+  onSetDeploymentEventToCurrentTime: (event: EventType) => void
   onClose?: () => void
 }
 
 export type DeploymentDetailsPopUpProps = DeploymentDetailsPopUpConfig &
   DeploymentDetails &
   ModalPropsWithoutTitle
-
-type eventType = 'start' | 'launch' | 'recovery' | 'end'
 
 const styles = {
   markTimeButton: 'rounded border-2 border-stone-400/60 py-1 px-2 text-sm',
@@ -63,7 +63,7 @@ export const DeploymentDetailsPopUp: React.FC<DeploymentDetailsPopUpProps> = ({
   queueSize,
   startDate,
   launchDate,
-  recoveryDate,
+  recoverDate,
   endDate,
   onExpand,
   onSaveChanges,
@@ -76,7 +76,7 @@ export const DeploymentDetailsPopUp: React.FC<DeploymentDetailsPopUpProps> = ({
     gitTag: gitTag || '',
     startDate: startDate || '',
     launchDate: launchDate || '',
-    recoveryDate: recoveryDate || '',
+    recoverDate: recoverDate || '',
     endDate: endDate || '',
   }
 
@@ -87,7 +87,7 @@ export const DeploymentDetailsPopUp: React.FC<DeploymentDetailsPopUpProps> = ({
   const [editTags, setEditTags] = useState(false)
   const [isUTC, setIsUTC] = useState(true)
 
-  const dateCell = (type: eventType) => {
+  const dateCell = (type: EventType) => {
     const deployKey = `${type}Date`
 
     if (editDates) {
@@ -291,7 +291,7 @@ export const DeploymentDetailsPopUp: React.FC<DeploymentDetailsPopUpProps> = ({
                   span: 2,
                   fixedIconWidth: true,
                 },
-                dateCell('recovery'),
+                dateCell('recover'),
               ],
             },
             {

@@ -19,13 +19,12 @@ const useCurrentDeployment = () => {
     useDeployments(
       {
         vehicle: vehicle as string,
+        deploymentId,
       },
-      { staleTime: 5 * 60 * 1000, enabled: !!vehicle }
+      { staleTime: 5 * 60 * 1000, enabled: !!vehicle && !!deploymentId }
     )
 
-  const deployment = deploymentId
-    ? deploymentData?.find((d) => d.deploymentId.toString() === deploymentId)
-    : lastDeployment
+  const deployment = deploymentData?.[0] ?? lastDeployment
 
   return { vehicle, deployment, isLoading: isLoading || deploymentsLoading }
 }
