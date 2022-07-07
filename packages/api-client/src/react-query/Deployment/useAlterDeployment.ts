@@ -1,8 +1,9 @@
-import { useMutation } from 'react-query'
+import { useMutation, useQueryClient } from 'react-query'
 import { alterDeployment, AlterDeploymentParams } from '../../axios'
 import { useTethysApiContext } from '../TethysApiProvider'
 
 export const useAlterDeployment = () => {
+  const queryClient = useQueryClient()
   const { axiosInstance, token } = useTethysApiContext()
   const mutation = useMutation(
     (params: AlterDeploymentParams) => {
@@ -13,7 +14,11 @@ export const useAlterDeployment = () => {
     },
     {
       onSettled: (data) => {
-        console.log('altered deployment:', data)
+        queryClient.invalidateQueries([
+          'deployment',
+          'deployments',
+          data?.vehicle,
+        ])
       },
     }
   )
