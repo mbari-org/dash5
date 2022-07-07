@@ -80,7 +80,10 @@ export const OverviewToolbar: React.FC<OverviewToolbarProps> = ({
     {
       label: `New ${capitalize(vehicleName ?? '')} deployment`,
       icon: faPlus as IconDefinition,
-      onSelect: () => handleNewDeployment?.(),
+      onSelect: () => {
+        handleNewDeployment?.()
+        setShowDeployments(false)
+      },
       disabled: !handleNewDeployment,
     },
   ]
