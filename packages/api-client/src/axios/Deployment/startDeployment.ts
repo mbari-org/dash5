@@ -11,6 +11,10 @@ export interface StartDeploymentParams {
 
 export interface StartDeploymentResponse {
   result: string
+  date: string
+  sentBy: string
+  vehicle: string
+  requestMessage: string
 }
 
 export const startDeployment = async (
@@ -24,5 +28,5 @@ export const startDeployment = async (
   }
 
   const response = await instance.post(url, params, config)
-  return response.data as StartDeploymentResponse
+  return response.data.result as StartDeploymentResponse
 }
