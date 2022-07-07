@@ -36,6 +36,7 @@ export interface DeploymentDetailsPopUpProps extends DeploymentDetails {
   onExpand?: () => void
   onSaveChanges: (details: DeploymentDetails) => void
   onSetDeploymentEventToCurrentTime: (event: eventType) => void
+  onClose?: () => void
 }
 
 type eventType = 'start' | 'launch' | 'recovery' | 'end'
@@ -71,6 +72,7 @@ export const DeploymentDetailsPopUp: React.FC<DeploymentDetailsPopUpProps> = ({
   onExpand,
   onSaveChanges,
   onSetDeploymentEventToCurrentTime,
+  onClose,
 }) => {
   const initialDeploymentValues = {
     name: name,
@@ -196,7 +198,7 @@ export const DeploymentDetailsPopUp: React.FC<DeploymentDetailsPopUpProps> = ({
         onConfirm={isSelectDatesMode ? handleConfirm : null}
         onCancel={isSelectDatesMode ? handleCancel : null}
         confirmButtonText="Save Changes"
-        onClose={() => console.log('something')}
+        onClose={onClose}
         grayHeader
         title={
           <section className="ml-2 flex">
