@@ -56,7 +56,7 @@ const args: OverviewToolbarProps = {
   onSelectDeployment(deployment) {
     console.log(deployment)
   },
-  onClickMissions: () => {
+  onEditDeployment: () => {
     console.log('event fired')
   },
   onClickPilot: () => {
@@ -104,7 +104,7 @@ Overview.args = {
   deployment: { name: 'Overview', id: '0' },
   onSelectDeployment: undefined,
   onSelectNewDeployment: undefined,
-  onClickMissions: undefined,
+  onEditDeployment: undefined,
   onIcon1hover: undefined,
   onIcon2hover: undefined,
 }

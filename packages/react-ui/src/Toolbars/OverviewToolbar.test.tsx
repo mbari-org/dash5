@@ -42,7 +42,7 @@ const props: OverviewToolbarProps = {
   onSelectDeployment(deployment) {
     console.log(deployment)
   },
-  onClickMissions: () => {
+  onEditDeployment: () => {
     console.log('event fired')
   },
   onClickPilot: () => {
@@ -154,13 +154,13 @@ test('should render button labels', async () => {
 test('should render the mission button if the handler is present', async () => {
   render(<OverviewToolbar {...props} />)
 
-  expect(screen.getByTestId(/missions/i)).toBeInTheDocument()
+  expect(screen.getByTestId(/deploymentDetails/i)).toBeInTheDocument()
 })
 
 test('should not render the mission button if no handler is present', async () => {
-  render(<OverviewToolbar {...props} onClickMissions={undefined} />)
+  render(<OverviewToolbar {...props} onEditDeployment={undefined} />)
 
-  expect(screen.queryByTestId(/missions/i)).not.toBeInTheDocument()
+  expect(screen.queryByTestId(/deploymentDetails/i)).not.toBeInTheDocument()
 })
 
 test('should render the deployment toggle if the handler is present', async () => {
