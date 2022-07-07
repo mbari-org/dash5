@@ -53,7 +53,7 @@ export const NewDeployment: React.FC<{ onClose?: () => void }> = ({
       onSubmit={handleSubmit}
       loading={isLoading}
       onClose={handleClose}
-      vehicleName={vehicle}
+      vehicleName={capitalize(vehicle)}
       tags={tags?.map(({ tag }) => ({ id: tag, name: tag })) ?? []}
       open
     />
