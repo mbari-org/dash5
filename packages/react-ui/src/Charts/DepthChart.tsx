@@ -53,6 +53,9 @@ const DepthChart: React.FC<DepthChartProps> = ({
           yaxis: { title: yAxisLabel, autorange: 'reversed' },
           width: size.width,
           height: size.height,
+          margin: {
+            t: 0,
+          },
         }}
       />
     </div>

@@ -228,7 +228,6 @@ const Vehicle: NextPage = () => {
                           .toMillis(),
                       }))}
                       name="Depth"
-                      title="Depth Chart"
                       className="-mt-4 h-[340px] w-full"
                     />
                   </div>
