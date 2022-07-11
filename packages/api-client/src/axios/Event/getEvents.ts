@@ -52,6 +52,7 @@ export interface GetEventsResponse {
   text?: string
   name?: string
   fix?: GpsFix
+  data?: string
 }
 
 export const getEvents = async (
