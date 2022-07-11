@@ -1,6 +1,7 @@
 import { AccordionHeader } from '@mbari/react-ui'
 import { useState } from 'react'
 import HandoffSection from './HandoffSection'
+import ScienceDataSection from './ScienceDataSection'
 
 export type VehicleAccordionSection =
   | 'handoff'
@@ -56,6 +57,7 @@ const VehicleAccordion: React.FC<VehicleAccordionProps> = ({
         open={section === 'data'}
         className="flex flex-shrink-0"
       />
+      {section === 'data' && <ScienceDataSection />}
       <AccordionHeader
         label="Schedule"
         secondaryLabel="Profile Station running for 12 mins"
