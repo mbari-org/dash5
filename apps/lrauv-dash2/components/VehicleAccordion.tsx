@@ -1,6 +1,6 @@
 import { AccordionHeader } from '@mbari/react-ui'
 import { useState } from 'react'
-import { CommsSection } from './CommsSection'
+import CommsSection from './CommsSection'
 import HandoffSection from './HandoffSection'
 
 export type VehicleAccordionSection =

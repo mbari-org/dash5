@@ -1,5 +1,4 @@
 import React from 'react'
-import clsx from 'clsx'
 import { useEvents } from '@mbari/api-client'
 import { CellVirtualizer, Virtualizer, CommsCell } from '@mbari/react-ui'
 import { DateTime } from 'luxon'
@@ -12,7 +11,7 @@ export interface CommsSectionProps {
   to?: string
 }
 
-export const CommsSection: React.FC<CommsSectionProps> = ({
+const CommsSection: React.FC<CommsSectionProps> = ({
   vehicleName,
   from,
   to,
@@ -65,3 +64,5 @@ export const CommsSection: React.FC<CommsSectionProps> = ({
 }
 
 CommsSection.displayName = 'components.CommsSection'
+
+export default CommsSection
