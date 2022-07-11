@@ -9,7 +9,7 @@ export default {
 } as Meta
 
 const Template: Story<CommsCellProps> = (args) => (
-  <div className="bg-stone-200 p-2">
+  <div className="bg-stone-200 p-2" style={{ width: 438 }}>
     <CommsCell {...args} />
   </div>
 )
@@ -43,6 +43,25 @@ export const Scheduled = Template.bind({})
 Scheduled.args = {
   ...args,
   command: 'sched asap “set \nprofile_station.MaxDepth \n150 m; run”',
+  entry: 'Mission 1/2 12460795',
+  name: 'Shannon Johnson',
+  description: 'Ack. by Brizo',
+  time: '14:32',
+  isUpload: false,
+}
+
+Scheduled.parameters = {
+  design: {
+    type: 'figma',
+    url: 'https://www.figma.com/file/FtsKsOCBQ2YjTZlwezG6aI/MBARI-Components?node-id=297%3A1505',
+  },
+}
+
+export const LongScheduled = Template.bind({})
+LongScheduled.args = {
+  ...args,
+  command:
+    'sched asap "load Science/sci2.xml;set sci2.MissionTimeout 10 min;set sci2.NeedCommsTime 45 min;set sci2.Lat1 34.378 degree;set sci2.Lon1 -119.737 degree;set sci2.Speed -2 m/s;set sci2.YoYoMaxDepth 20 m;set sci2.MaxDepth 40 m" 2mg2x 1 2\nsched asap "set sci2.MinOffshore 1 km;run" 2mg2x 2 2',
   entry: 'Mission 1/2 12460795',
   name: 'Shannon Johnson',
   description: 'Ack. by Brizo',
