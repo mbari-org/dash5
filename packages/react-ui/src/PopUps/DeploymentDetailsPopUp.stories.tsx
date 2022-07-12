@@ -43,6 +43,7 @@ const args: DeploymentDetailsPopUpProps = {
   onSetDeploymentEventToCurrentTime: (event) => {
     console.log(event)
   },
+  onClose: () => console.log('closing'),
   open: true,
 }
 

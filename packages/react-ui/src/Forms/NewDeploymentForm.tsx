@@ -15,7 +15,7 @@ import { Button } from '../Navigation'
 import { AbsoluteOverlay } from '../Indicators'
 import { SelectOption } from '../Fields/Select'
 
-const luxonValidTimezones = [
+export const luxonValidTimezones = [
   ...new Set(
     Object.keys(tzData.zones)
       .filter((tz) => tz.includes('/') && DateTime.local().setZone(tz).isValid)

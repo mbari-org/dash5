@@ -9,11 +9,12 @@ import { faExpandArrows, faPen } from '@fortawesome/pro-regular-svg-icons'
 import { StartIcon } from '../Icons/StartIcon'
 import { EndIcon } from '../Icons/EndIcon'
 import { SummaryList } from '../Data/SummaryList'
-import { swallow } from '@mbari/utils'
+import { capitalize, capitalizeSnakeCase, swallow } from '@mbari/utils'
 import { IconButton } from '../Navigation'
 import { DateTime } from 'luxon'
 import { DateField, SelectField } from '../Fields'
 import { SelectOption } from '../Fields/Select'
+import { luxonValidTimezones } from '../Forms/NewDeploymentForm'
 
 export interface DeploymentDetails {
   name: string
@@ -36,18 +37,23 @@ export interface DeploymentDetailsPopUpConfig {
   onSaveChanges: (details: DeploymentDetails) => void
   onChangeGitTag: (gitTag: string) => void
   onSetDeploymentEventToCurrentTime: (event: EventType) => void
-  onClose?: () => void
 }
 
 export type DeploymentDetailsPopUpProps = DeploymentDetailsPopUpConfig &
   DeploymentDetails &
   ModalPropsWithoutTitle
 
+interface EventCell {
+  label: EventType
+  icon: JSX.Element
+  secondary?: string
+}
+
 const styles = {
   markTimeButton: 'rounded border-2 border-stone-400/60 py-1 px-2 text-sm',
   gitTag: 'my-4 flex items-center font-thin opacity-60',
   headerIcon: 'flex flex-col items-center justify-center opacity-40',
-  timezoneSelector: 'flex w-full justify-end text-indigo-600',
+  timezoneSelector: 'flex w-full justify-end text-indigo-600 items-center',
   selectedTimezone: 'underline underline-offset-2',
 }
 
@@ -68,6 +74,7 @@ export const DeploymentDetailsPopUp: React.FC<DeploymentDetailsPopUpProps> = ({
   onExpand,
   onSaveChanges,
   onSetDeploymentEventToCurrentTime,
+  onClose,
   onChangeGitTag: handleChangeGitTag,
   ...props
 }) => {
@@ -83,35 +90,39 @@ export const DeploymentDetailsPopUp: React.FC<DeploymentDetailsPopUpProps> = ({
   const [deployment, setDeployment] = useState<DeploymentDetails>(
     initialDeploymentValues
   )
-  const [editDates, setEditDates] = useState(false)
-  const [editTags, setEditTags] = useState(false)
-  const [isUTC, setIsUTC] = useState(true)
+  const [isSelectDateMode, setIsSelectDateMode] = useState(false)
+  const [isSelectTagMode, setIsSelectTagMode] = useState(false)
+  const [isSelectTimezoneMode, setIsSelectTimezoneMode] = useState(false)
+  const [isLocal, setIsLocal] = useState(true)
+  const [timezone, setTimezone] = useState<string | null>('')
 
   const dateCell = (type: EventType) => {
-    const deployKey = `${type}Date`
+    const eventDateLabel = `${type}Date`
 
-    if (editDates) {
+    if (isSelectDateMode) {
       return {
         label: (
           <DateField
-            name={deployKey}
-            timeZone={isUTC ? 'UTC' : undefined}
+            name={eventDateLabel}
+            timeZone={timezone && !isLocal ? timezone : undefined}
             className="text-sm"
-            value={deployment[deployKey as keyof DeploymentDetails]}
+            value={deployment[eventDateLabel as keyof DeploymentDetails]}
             onChange={(newValue: string) =>
               setDeployment({
                 ...deployment,
-                [deployKey as keyof DeploymentDetails]: newValue,
+                [eventDateLabel as keyof DeploymentDetails]: newValue,
               })
             }
-            disabled={!deployment[deployKey as keyof DeploymentDetails]}
+            disabled={!deployment[eventDateLabel as keyof DeploymentDetails]}
           />
         ),
         highlighted: true,
         span: 3,
       }
     }
-    const deployLabel = deployment[deployKey as keyof DeploymentDetails] || ''
+    const eventDate =
+      deployment[eventDateLabel as keyof DeploymentDetails] || ''
+
     const handleSetCurrentTime = () => {
       setDeployment({
         ...deployment,
@@ -119,15 +130,16 @@ export const DeploymentDetailsPopUp: React.FC<DeploymentDetailsPopUpProps> = ({
       })
       onSetDeploymentEventToCurrentTime(type)
     }
-    return deployLabel
+    return eventDate
       ? {
-          label: isUTC
-            ? DateTime.fromJSDate(new Date(deployLabel))
-                .toUTC()
-                .toLocaleString(DateTime.DATETIME_FULL)
-            : DateTime.fromJSDate(new Date(deployLabel)).toLocaleString(
-                DateTime.DATETIME_FULL
-              ),
+          label:
+            isLocal || !timezone
+              ? DateTime.fromJSDate(new Date(eventDate)).toLocaleString(
+                  DateTime.DATETIME_FULL
+                )
+              : DateTime.fromJSDate(new Date(eventDate))
+                  .setZone(timezone ?? undefined)
+                  .toLocaleString(DateTime.DATETIME_FULL),
           span: 3,
         }
       : {
@@ -145,8 +157,25 @@ export const DeploymentDetailsPopUp: React.FC<DeploymentDetailsPopUpProps> = ({
         }
   }
 
+  const eventCell = ({ label, icon, secondary }: EventCell) => ({
+    label: <span>{capitalize(label)}</span>,
+    secondary: secondary ? (
+      <span className="text-xs">{secondary}</span>
+    ) : undefined,
+    icon: icon,
+    span: 2,
+    fixedIconWidth: true,
+  })
+
+  const tableRows = (rows: EventCell[]) => {
+    return rows.map(({ label, icon, secondary }) => ({
+      cells: [eventCell({ label, icon, secondary }), dateCell(label)],
+    }))
+  }
+
   const handleConfirm = () => {
-    setEditDates(false)
+    setIsSelectDateMode(false)
+
     const nonEmptyKeys = Object.keys(deployment).filter(
       (key) => deployment[key as keyof DeploymentDetails] && key
     )
@@ -168,17 +197,23 @@ export const DeploymentDetailsPopUp: React.FC<DeploymentDetailsPopUpProps> = ({
       }
       setDeployment(updatedTagDeployment)
       handleChangeGitTag(newValue)
-      setEditTags(false)
+      setIsSelectTagMode(false)
     }
+  }
+
+  const handleCancel = () => {
+    setIsSelectDateMode(false)
+    setDeployment({ ...initialDeploymentValues, gitTag: deployment.gitTag })
   }
 
   return (
     <div className={clsx('', className)} style={style}>
       <Modal
         {...props}
-        onConfirm={editDates ? handleConfirm : null}
-        onCancel={editDates ? () => setEditDates(false) : null}
+        onConfirm={isSelectDateMode ? handleConfirm : null}
+        onCancel={isSelectDateMode ? handleCancel : null}
         confirmButtonText="Save Changes"
+        onClose={onClose}
         grayHeader
         title={
           <section className="ml-2 flex">
@@ -190,7 +225,7 @@ export const DeploymentDetailsPopUp: React.FC<DeploymentDetailsPopUpProps> = ({
               <li className={styles.gitTag}>
                 <span className="mr-2">git tag:</span>
                 <span className="font-mono text-lg">
-                  {editTags ? (
+                  {isSelectTagMode ? (
                     <SelectField
                       name="gitTag selector"
                       value={deployment.gitTag}
@@ -206,7 +241,7 @@ export const DeploymentDetailsPopUp: React.FC<DeploymentDetailsPopUpProps> = ({
                 <IconButton
                   icon={faPen}
                   ariaLabel="edit git tag button"
-                  onClick={() => setEditTags(true)}
+                  onClick={() => setIsSelectTagMode(true)}
                 />
               </li>
             </ul>
@@ -233,30 +268,55 @@ export const DeploymentDetailsPopUp: React.FC<DeploymentDetailsPopUpProps> = ({
                         aria-label="local time button"
                         className={clsx(
                           'mr-1',
-                          !isUTC && styles.selectedTimezone
+                          isLocal && styles.selectedTimezone
                         )}
-                        onClick={() => setIsUTC(false)}
+                        onClick={() => {
+                          setIsLocal(true)
+                          setIsSelectTimezoneMode(false)
+                        }}
                       >
                         Local time
-                      </button>{' '}
-                      /{' '}
-                      <button
-                        aria-label="UTC time button"
-                        className={clsx(
-                          'ml-1',
-                          isUTC && styles.selectedTimezone
-                        )}
-                        onClick={() => setIsUTC(true)}
-                      >
-                        UTC
                       </button>
+                      <span className="mx-1">/</span>
+                      {isSelectTimezoneMode ? (
+                        <SelectField
+                          name="timezone selector"
+                          options={luxonValidTimezones}
+                          className="w-1/2"
+                          placeholder="Local time"
+                          value={timezone ?? ''}
+                          onSelect={(id: string | null) => {
+                            setTimezone(id)
+                            setIsSelectTimezoneMode(false)
+                          }}
+                        />
+                      ) : (
+                        <button
+                          aria-label="UTC time button"
+                          className={clsx(
+                            'ml-1',
+                            !isLocal && styles.selectedTimezone
+                          )}
+                          onClick={() => {
+                            setIsSelectTimezoneMode(true)
+                            setIsLocal(false)
+                          }}
+                        >
+                          {timezone
+                            ? timezone
+                                .split('/')
+                                .map((w) => capitalizeSnakeCase(w))
+                                .join('/')
+                            : 'UTC'}
+                        </button>
+                      )}
                     </li>
-                    {!editDates && (
+                    {!isSelectDateMode && (
                       <li className="ml-4">
                         <IconButton
                           icon={faPen}
                           ariaLabel="edit dates button"
-                          onClick={() => setEditDates(true)}
+                          onClick={() => setIsSelectDateMode(true)}
                         />
                       </li>
                     )}
@@ -266,54 +326,20 @@ export const DeploymentDetailsPopUp: React.FC<DeploymentDetailsPopUpProps> = ({
               },
             ],
           }}
-          rows={[
+          rows={tableRows([
+            { label: 'start', icon: <StartIcon /> },
             {
-              cells: [
-                {
-                  label: <span>Start</span>,
-                  icon: <StartIcon />,
-                  span: 2,
-                  fixedIconWidth: true,
-                },
-                dateCell('start'),
-              ],
+              label: 'launch',
+              secondary: 'Vehicle in water',
+              icon: <UnderwaterIcon />,
             },
             {
-              cells: [
-                {
-                  label: <span>Launch</span>,
-                  secondary: <span className="text-xs">Vehicle in water</span>,
-                  icon: <UnderwaterIcon />,
-                  span: 2,
-                  fixedIconWidth: true,
-                },
-                dateCell('launch'),
-              ],
+              label: 'recover',
+              secondary: 'Vehicle recovered',
+              icon: <RecoveredIcon />,
             },
-            {
-              cells: [
-                {
-                  label: <span>Recovery</span>,
-                  secondary: <span className="text-xs">Vehicle recovered</span>,
-                  icon: <RecoveredIcon />,
-                  span: 2,
-                  fixedIconWidth: true,
-                },
-                dateCell('recover'),
-              ],
-            },
-            {
-              cells: [
-                {
-                  label: <span>End</span>,
-                  icon: <EndIcon />,
-                  span: 2,
-                  fixedIconWidth: true,
-                },
-                dateCell('end'),
-              ],
-            },
-          ]}
+            { label: 'end', icon: <EndIcon /> },
+          ])}
         />
         <SummaryList
           header={
@@ -322,7 +348,8 @@ export const DeploymentDetailsPopUp: React.FC<DeploymentDetailsPopUpProps> = ({
                 <li>
                   <div className="mb-1 flex w-full justify-between">
                     <span className="font-display">
-                      DIRECTORY LIST ({logFiles?.length ?? 0} LOG FILES)
+                      DIRECTORY LIST ({logFiles?.length ?? 0} LOG FILE
+                      {logFiles?.length !== 1 && 'S'})
                     </span>
                     <span>
                       {onExpand && (
