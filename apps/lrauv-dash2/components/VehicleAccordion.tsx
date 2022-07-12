@@ -1,5 +1,6 @@
 import { AccordionHeader } from '@mbari/react-ui'
 import { useState } from 'react'
+import CommsSection from './CommsSection'
 import HandoffSection from './HandoffSection'
 import ScienceDataSection from './ScienceDataSection'
 
@@ -74,6 +75,9 @@ const VehicleAccordion: React.FC<VehicleAccordionProps> = ({
         open={section === 'comms'}
         className="flex flex-shrink-0"
       />
+      {section === 'comms' && (
+        <CommsSection vehicleName={vehicleName} from={from} to={to} />
+      )}
       <AccordionHeader
         label="Log"
         secondaryLabel="started 4h 7m ago"

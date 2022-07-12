@@ -3,8 +3,9 @@ import clsx from 'clsx'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { faBuilding } from '@fortawesome/pro-regular-svg-icons'
 import { IconProp } from '@fortawesome/fontawesome-svg-core'
-import { swallow } from '@mbari/utils'
+import { swallow, truncate } from '@mbari/utils'
 import { AcknowledgeIcon } from '../Icons/AcknowledgeIcon'
+import { IconButton } from '../Navigation'
 
 export interface CommsCellProps {
   className?: string
@@ -21,12 +22,12 @@ export interface CommsCellProps {
 }
 
 const styles = {
-  container: 'flex items-center bg-white p-4 font-display',
-  detailsContainer: 'flex flex-grow flex-col pl-1',
-  command: 'whitespace-pre-line font-mono',
-  icon: 'px-6 text-2xl opacity-60',
-  description: 'flex flex-grow flex-col p-2 opacity-60',
-  buttonWrapper: 'flex w-full items-center text-left',
+  container: 'flex items-center bg-white p-4 font-display text-sm',
+  command: 'whitespace-pre-line font-mono truncate',
+  buttonWrapper: 'grid grid-cols-10 w-full items-center text-left',
+  detailsContainer: 'col-span-6 flex flex-grow flex-col pl-1',
+  icon: 'text-2xl opacity-60',
+  description: 'flex flex-grow flex-col p-2 opacity-60 col-span-3',
 }
 
 export const CommsCell: React.FC<CommsCellProps> = ({
@@ -46,7 +47,7 @@ export const CommsCell: React.FC<CommsCellProps> = ({
   const boldFontEntry = entry.slice(-3)
   return (
     <article style={style} className={clsx(styles.container, className)}>
-      <button className={styles.buttonWrapper}>
+      <button className={styles.buttonWrapper} onClick={swallow(onSelect)}>
         <ul className={styles.detailsContainer}>
           <li
             className={clsx(
@@ -55,7 +56,7 @@ export const CommsCell: React.FC<CommsCellProps> = ({
             )}
             aria-label="command text"
           >
-            {command}
+            {truncate(command, 68)}
           </li>
           <li aria-label="entry name and number">
             {regFontEntry}
