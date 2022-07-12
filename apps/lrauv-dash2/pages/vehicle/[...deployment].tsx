@@ -17,10 +17,10 @@ import {
   VehicleInfoCell,
 } from '@mbari/react-ui'
 import {
-  useLastDeployment,
   useDeployments,
   useMissionStartedEvent,
   useTethysApiContext,
+  useChartData,
 } from '@mbari/api-client'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { faChevronDown, faChevronUp } from '@fortawesome/pro-solid-svg-icons'
@@ -30,6 +30,7 @@ import VehicleDiagram from '../../components/VehicleDiagram'
 import VehicleAccordion from '../../components/VehicleAccordion'
 import useGlobalModalId from '../../lib/useGlobalModalId'
 import useCurrentDeployment from '../../lib/useCurrentDeployment'
+import { humanize } from '@mbari/utils'
 
 const styles = {
   content: 'flex flex-shrink flex-grow flex-row overflow-hidden',
@@ -45,6 +46,12 @@ const styles = {
 const Map = dynamic(() => import('@mbari/react-ui/dist/Map/Map'), {
   ssr: false,
 })
+const LineChart = dynamic(
+  () => import('@mbari/react-ui/dist/Charts/LineChart'),
+  {
+    ssr: false,
+  }
+)
 const VehiclePath = dynamic(() => import('../../components/VehiclePath'), {
   ssr: false,
 })
@@ -111,6 +118,25 @@ const Vehicle: NextPage = () => {
   const handleClickPilot = () => setGlobalModalId('reassign')
   const handleNewDeployment = () => setGlobalModalId('newDeployment')
   const handleEditDeployment = () => setGlobalModalId('editDeployment')
+
+  const {
+    data: chartData,
+    isLoading: chartLoading,
+    isError: chartError,
+    isIdle: chartIdle,
+  } = useChartData(
+    {
+      vehicle: vehicleName as string,
+      from: DateTime.fromMillis(startTime).toISO(),
+    },
+    {
+      enabled: currentTab === 'depth' && startTime > 0,
+    }
+  )
+
+  const depthData = chartData?.find((d) => d.name === 'depth')
+  const chartAvailable =
+    !!depthData && !chartLoading && !chartIdle && !chartError
 
   return (
     <Layout>
@@ -212,6 +238,34 @@ const Vehicle: NextPage = () => {
                     name={vehicleName as string}
                     className="m-auto flex h-full w-full max-w-[900px]"
                   />
+                )}
+                {currentTab === 'depth' && (
+                  <div className="flex h-full w-full overflow-hidden px-4">
+                    {chartAvailable && (
+                      <LineChart
+                        name={depthData?.name ?? ''}
+                        data={depthData?.values.map((v, i) => ({
+                          value: v,
+                          timestamp: depthData.times[i],
+                        }))}
+                        yAxisLabel={`${humanize(depthData?.name)} (${
+                          depthData?.units
+                        })`}
+                        inverted={depthData.name === 'depth'}
+                        className="h-[340px] w-full"
+                      />
+                    )}
+                    {chartLoading && (
+                      <p className="text-md m-auto font-bold">
+                        Loading Depth Data
+                      </p>
+                    )}
+                    {chartError && (
+                      <p className="text-md m-auto font-bold">
+                        Depth Data Could Not Be Loaded
+                      </p>
+                    )}
+                  </div>
                 )}
               </div>
             </div>

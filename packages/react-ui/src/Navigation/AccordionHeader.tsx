@@ -20,10 +20,10 @@ const styles = {
   container: 'flex font-display',
   open: 'bg-primary-600 text-white',
   closed: 'bg-white text-stone-800',
-  secondary: 'my-auto ml-3 text-sm italic',
+  secondary: 'my-auto ml-3 text-sm italic truncate flex-shrink',
   textButton: 'text-md flex flex-grow px-3 py-2',
-  expandButton: 'pl-6 pr-2',
-  chevronButton: 'pl-2 pr-4',
+  expandButton: 'pl-6 pr-2 flex-shrink-0',
+  chevronButton: 'pl-2 pr-4 flex-shrink-0',
 }
 
 export const AccordionHeader: React.FC<AccordionHeaderProps> = ({
@@ -51,7 +51,9 @@ export const AccordionHeader: React.FC<AccordionHeaderProps> = ({
       aria-label={ariaLabel || ''}
     >
       <button className={styles.textButton} onClick={handleToggle}>
-        <span className={clsx(open && 'font-semibold')}>{label}</span>{' '}
+        <span className={clsx('flex-shrink-0', open && 'font-semibold')}>
+          {label}
+        </span>{' '}
         <span className={clsx(styles.secondary, !open && 'opacity-60')}>
           {secondaryLabel}
         </span>

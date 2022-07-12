@@ -9,7 +9,7 @@ export default {
 } as Meta
 
 const Template: Story<AccordionHeaderProps> = (args) => (
-  <div className="bg-stone-100 p-2">
+  <div className="bg-stone-100 p-2" style={{ width: 438 }}>
     <AccordionHeader {...args} />
   </div>
 )
@@ -36,6 +36,8 @@ Standard.parameters = {
 export const WithExpand = Template.bind({})
 WithExpand.args = {
   ...args,
+  label: 'Comms Queue',
+  secondaryLabel: 'surfacing in ~20 min, no items in queue',
   onExpand: () => {
     console.log('event fired')
   },
