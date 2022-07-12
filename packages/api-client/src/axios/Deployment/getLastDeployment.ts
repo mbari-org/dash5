@@ -22,7 +22,8 @@ export interface DeploymentEvent {
 
 export interface DListResult {
   path: string
-  messages: string[]
+  contents?: string
+  messages?: string[]
 }
 
 export interface GetLastDeploymentResponse {

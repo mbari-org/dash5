@@ -1,35 +1,141 @@
 import React from 'react'
-import { render, screen } from '@testing-library/react'
+import { render, screen, fireEvent } from '@testing-library/react'
 import '@testing-library/jest-dom'
+import { VehicleCommsCell, VehicleInfoCell } from '../Cells'
 import { OverviewToolbar, OverviewToolbarProps } from './OverviewToolbar'
 import { faEye } from '@fortawesome/pro-light-svg-icons'
 import { IconDefinition } from '@fortawesome/fontawesome-svg-core'
+import { UnderwaterIcon, ConnectedIcon } from '../Icons'
+import { DateTime } from 'luxon'
 
 const props: OverviewToolbarProps = {
-  deployment: 'Brizo 7 EcoHab',
+  deployment: {
+    name: 'Brizo 7 EcoHab',
+    id: '1',
+    unixTime: DateTime.now().minus({ days: 3 }).toMillis(),
+  },
   pilotInCharge: 'Tanner P. (you)',
   pilotOnCall: 'Brian K.',
   btnIcon: faEye as IconDefinition,
-  open: false,
-  onClickDeployment: () => {
-    console.log('event fired')
+  vehicleName: 'Brizo',
+  deployments: [
+    {
+      id: '1',
+      name: 'Brizo 7 Ecohab',
+    },
+    {
+      id: '2',
+      name: 'Brizo 23 MBTS',
+    },
+    {
+      id: '2',
+      name: 'Brizo 114 MBTS',
+    },
+    {
+      id: '2',
+      name: 'Brizo 16 BioAC',
+    },
+  ],
+  onSelectNewDeployment() {
+    console.log('new deployment')
   },
-  onClickMissions: () => {
+  onSelectDeployment(deployment) {
+    console.log(deployment)
+  },
+  onEditDeployment: () => {
     console.log('event fired')
   },
   onClickPilot: () => {
     console.log('event fired')
   },
-  onIcon1hover: () => <></>,
-  onIcon2hover: () => <></>,
+  onIcon1hover: () => (
+    <VehicleCommsCell
+      icon={<ConnectedIcon />}
+      headline="Cell Comms: Connected"
+      host="lrauv-brizo-cell.shore.mbari.org"
+      lastPing="Today at 14:40:36 (3s ago)"
+      nextComms="14:55 (in 15m)"
+      onSelect={() => {
+        console.log('event fired')
+      }}
+    />
+  ),
+  onIcon2hover: () => (
+    <VehicleInfoCell
+      icon={<UnderwaterIcon />}
+      headline="Likely underwater"
+      subtitle="Last confirmed on surface 47min ago"
+      lastCommsOverSat="Today at 14:08:36 (47m ago)"
+      estimate="Est. to surface in 15 mins at ~14:55"
+      onSelect={() => {
+        console.log('event fired')
+      }}
+    />
+  ),
   supportIcon1: <></>,
   supportIcon2: <></>,
 }
 
-test('should render mission name to the screen', async () => {
+test('should render deployment name to the screen', async () => {
   render(<OverviewToolbar {...props} />)
 
-  expect(screen.getByText(props.deployment)).toBeInTheDocument()
+  expect(
+    screen.getByText(props.deployment?.name ?? 'NO DEPLOYMENT SPECIFIED!')
+  ).toBeInTheDocument()
+})
+
+test('should render deployment list toggle to the screen', async () => {
+  render(<OverviewToolbar {...props} />)
+
+  expect(screen.getByTestId('deploymentToggle')).toBeInTheDocument()
+  expect(screen.queryByTestId('deploymentHeadline')).not.toBeInTheDocument()
+})
+
+test('should render the deployment dropdown when selecting the toggle', async () => {
+  render(<OverviewToolbar {...props} />)
+
+  fireEvent.click(screen.getByTestId('deploymentToggle'))
+  expect(screen.getByText(/3 days ago/i)).toBeInTheDocument()
+  expect(screen.getByText(/new brizo/i)).not.toHaveClass('opacity-30')
+})
+
+test('should disable the new deployment dropdown if no handler is present', async () => {
+  render(<OverviewToolbar {...props} onSelectNewDeployment={undefined} />)
+
+  fireEvent.click(screen.getByTestId('deploymentToggle'))
+  expect(screen.getByText(/3 days ago/i)).toBeInTheDocument()
+  expect(screen.getByText(/new brizo/i)).toHaveClass('opacity-30')
+})
+
+test('should render the icon1 hover popup', async () => {
+  render(<OverviewToolbar {...props} onSelectNewDeployment={undefined} />)
+
+  fireEvent.mouseOver(screen.getByTestId('icon1'))
+  expect(screen.getByTestId(/icon1detail/i)).toBeInTheDocument()
+  fireEvent.mouseOut(screen.getByTestId('icon1'))
+  expect(screen.queryByText(/icon1detail/i)).not.toBeInTheDocument()
+})
+
+test('should render the icon2 hover popup', async () => {
+  render(<OverviewToolbar {...props} onSelectNewDeployment={undefined} />)
+
+  fireEvent.mouseOver(screen.getByTestId('icon2'))
+  expect(screen.getByTestId(/icon2detail/i)).toBeInTheDocument()
+  fireEvent.mouseOut(screen.getByTestId('icon2'))
+  expect(screen.queryByText(/icon2detail/i)).not.toBeInTheDocument()
+})
+
+test('should not render deployment list toggle to the screen if there are no deployments or handlers', async () => {
+  render(
+    <OverviewToolbar
+      {...props}
+      onSelectDeployment={undefined}
+      onSelectNewDeployment={undefined}
+    />
+  )
+
+  expect(screen.getByTestId('deploymentHeadline')).toBeInTheDocument()
+  expect(screen.queryByTestId('deploymentToggle')).not.toBeInTheDocument()
 })
 
 test('should render button labels', async () => {
@@ -48,13 +154,13 @@ test('should render button labels', async () => {
 test('should render the mission button if the handler is present', async () => {
   render(<OverviewToolbar {...props} />)
 
-  expect(screen.getByTestId(/missions/i)).toBeInTheDocument()
+  expect(screen.getByTestId(/deploymentDetails/i)).toBeInTheDocument()
 })
 
 test('should not render the mission button if no handler is present', async () => {
-  render(<OverviewToolbar {...props} onClickMissions={undefined} />)
+  render(<OverviewToolbar {...props} onEditDeployment={undefined} />)
 
-  expect(screen.queryByTestId(/missions/i)).not.toBeInTheDocument()
+  expect(screen.queryByTestId(/deploymentDetails/i)).not.toBeInTheDocument()
 })
 
 test('should render the deployment toggle if the handler is present', async () => {
@@ -64,7 +170,13 @@ test('should render the deployment toggle if the handler is present', async () =
 })
 
 test('should not render the deployment toggle if no handler is present', async () => {
-  render(<OverviewToolbar {...props} onClickDeployment={undefined} />)
+  render(
+    <OverviewToolbar
+      {...props}
+      onSelectDeployment={undefined}
+      onSelectNewDeployment={undefined}
+    />
+  )
 
   expect(screen.queryByTestId(/deploymenttoggle/i)).not.toBeInTheDocument()
 })

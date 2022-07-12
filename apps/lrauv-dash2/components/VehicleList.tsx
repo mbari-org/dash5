@@ -41,7 +41,7 @@ const ConnectedVehicleCell: React.FC<{
   onSelect: handleSelect,
 }) => {
   const [isOpen, setIsOpen] = React.useState(open)
-  const lastDeployment = useLastDeployment(
+  const { data: lastDeployment } = useLastDeployment(
     {
       vehicle: name,
       to: new Date().toISOString(),
@@ -51,10 +51,12 @@ const ConnectedVehicleCell: React.FC<{
   const { data: vehiclePosition, isLoading: positionLoading } = useVehiclePos(
     {
       vehicle: name,
-      from: `${lastDeployment?.data?.lastEvent ?? new Date().toISOString()}`,
+      from: lastDeployment?.lastEvent
+        ? DateTime.fromMillis(lastDeployment?.lastEvent).toISO()
+        : '',
     },
     {
-      enabled: !!lastDeployment?.data?.lastEvent,
+      enabled: !!lastDeployment?.lastEvent,
     }
   )
   const { data: vehicleInfo, isLoading: vehicleInfoLoading } = useVehicleInfo(
@@ -69,7 +71,7 @@ const ConnectedVehicleCell: React.FC<{
       vehicle: name,
     },
     {
-      enabled: !!name && !!lastDeployment?.data?.lastEvent,
+      enabled: !!name && !!lastDeployment?.lastEvent,
     }
   )
 
@@ -95,30 +97,26 @@ const ConnectedVehicleCell: React.FC<{
       ? undefined
       : (vehicleInfo as GetVehicleInfoResponse)
 
-  const status = lastDeployment.data?.recoverEvent
+  const status = lastDeployment?.recoverEvent
     ? 'Plugged in'
     : `Running ${mission ?? 'mission'}`
-  const endDate = DateTime.fromMillis(
-    lastDeployment.data?.endEvent?.unixTime ?? 0
-  )
+  const endDate = DateTime.fromMillis(lastDeployment?.endEvent?.unixTime ?? 0)
 
-  const ended = lastDeployment.data?.endEvent?.eventId && true
-  const recovered = lastDeployment.data?.recoverEvent?.eventId && true
-  const active = lastDeployment.data?.active
+  const ended = lastDeployment?.endEvent?.eventId && true
+  const recovered = lastDeployment?.recoverEvent?.eventId && true
+  const active = lastDeployment?.active
 
   return (
     <>
       <VehicleHeader
         name={capitalize(name)}
-        deployment={
-          active ? lastDeployment.data?.name ?? 'loading' : 'Not Deployed'
-        }
+        deployment={active ? lastDeployment?.name ?? 'loading' : 'Not Deployed'}
         color={color}
         deployedAt={
           active
             ? Math.round(
                 (missionStartedEvent?.[0]?.unixTime ??
-                  lastDeployment.data?.startEvent?.unixTime ??
+                  lastDeployment?.startEvent?.unixTime ??
                   0) / 1000
               )
             : undefined
@@ -132,10 +130,8 @@ const ConnectedVehicleCell: React.FC<{
           headline={
             <div>
               <span className="font-semibold text-purple-600">{status}</span>{' '}
-              {lastDeployment.data?.lastEvent
-                ? DateTime.fromMillis(
-                    lastDeployment.data?.lastEvent
-                  ).toRelative()
+              {lastDeployment?.lastEvent
+                ? DateTime.fromMillis(lastDeployment.lastEvent).toRelative()
                 : ''}
             </div>
           }
@@ -144,7 +140,7 @@ const ConnectedVehicleCell: React.FC<{
               <div>
                 Deployment{' '}
                 <span className="font-semibold text-purple-600">
-                  {lastDeployment.data?.name}
+                  {lastDeployment?.name}
                 </span>{' '}
                 ended {endDate.toFormat('LLL dd, yyyy')}
               </div>
@@ -235,9 +231,7 @@ const ConnectedVehicleCell: React.FC<{
               colorMissionDefault: vehicle.color_missiondefault,
               textVolts: vehicle.text_volts,
               colorVolts: vehicle.color_volts,
-              status: lastDeployment.data?.recoverEvent
-                ? 'pluggedIn'
-                : 'onMission',
+              status: lastDeployment?.recoverEvent ? 'pluggedIn' : 'onMission',
               // colorCommAgo: 'st4',
               // textLeakago: '',
               // textFlowAgo: data.text_flowago,

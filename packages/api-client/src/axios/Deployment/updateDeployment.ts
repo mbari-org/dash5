@@ -3,18 +3,22 @@ import { getInstance } from '../getInstance'
 import { RequestConfig } from '../types'
 
 export interface UpdateDeploymentParams {
-  startDate: string
-  launchDate: string
-  launchNote: string
-  recoverDate: string
-  recoverNote: string
-  endDate: string
-  name: string
-  tag: string
+  deploymentId: number
+  startDate?: string
+  launchDate?: string
+  launchNote?: string
+  recoverDate?: string
+  recoverNote?: string
+  endDate?: string
+  name?: string
+  tag?: string
 }
 
 export interface UpdateDeploymentResponse {
-  result: string
+  vehicle: string
+  deploymentId: number
+  startDate: string
+  sentBy: string
 }
 
 export const updateDeployment = async (
@@ -27,6 +31,6 @@ export const updateDeployment = async (
     console.debug(`PUT ${url}`)
   }
 
-  const response = await instance.put(url, params, config)
-  return response.data as UpdateDeploymentResponse
+  const response = await instance.put(url, undefined, { ...config, params })
+  return response.data.result as UpdateDeploymentResponse
 }

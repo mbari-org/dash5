@@ -132,10 +132,10 @@ export const ScheduleCell: React.FC<ScheduleCellProps> = ({
       </button>
       <IconButton
         icon={faEllipsisV}
-        ariaLabel={'More options'}
+        ariaLabel="More options"
         onClick={onSelectMore}
-        className={'my-auto'}
-        size={'text-2xl'}
+        className="my-auto"
+        size="text-2xl"
       />
     </article>
   )

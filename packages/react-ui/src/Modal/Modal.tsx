@@ -68,7 +68,7 @@ export const Modal: React.FC<ModalProps & FooterProps> = ({
   children,
   draggable,
   onFocus: handleFocus,
-  zIndex = 'z-[600]',
+  zIndex = 'z-[1002]',
   onCancel: handleCancel,
   onConfirm: handleConfirm,
   cancelButtonText,

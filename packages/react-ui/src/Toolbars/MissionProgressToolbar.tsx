@@ -43,6 +43,7 @@ export const MissionProgressToolbar: React.FC<MissionProgressToolbarProps> = ({
   const height = containerHeight || 20
   const width = containerWidth || 100
   const missionInProgress = progress > 0 && progress < 1
+  const useAbsolute = start.diffNow('days').days < -7
 
   const [hoverProgress, setHoverProgress] = useState(null as null | number)
   const handleMouseMove = useCallback(
@@ -90,7 +91,10 @@ export const MissionProgressToolbar: React.FC<MissionProgressToolbarProps> = ({
             {[...Array(totalSegments)].map((_, i) => {
               if (i < 1 || i === totalSegments) return null
               const x = (width / totalSegments) * i
-              const label = timeSinceStart(startTime, (duration * x) / width)
+              const additionalSeconds = (duration * x) / width
+              const label = useAbsolute
+                ? start.plus({ seconds: additionalSeconds }).toFormat('M/d')
+                : timeSinceStart(startTime, additionalSeconds)
               const tickId = `${ariaLabel}-tick-${i}-${label}`
 
               return (

@@ -27,7 +27,7 @@ const args: DeploymentDetailsPopUpProps = {
   ),
   logFiles: ['20211210T045230', '20211210T045231'],
   directoryListFilepath:
-    '/opt/brizodash/data/sim/missionlogs/2021/20211209_20211214.dlist',
+    '/opt/tethysdash/data/makai/missionlogs/2022/20220526_20220608.dlist',
   queueSize: 3,
   startDate: current.minus({ days: 5 }).toISO(),
   launchDate: current.toISO(),
@@ -37,10 +37,14 @@ const args: DeploymentDetailsPopUpProps = {
   onSaveChanges: (savedDeployment) => {
     console.log(savedDeployment)
   },
+  onChangeGitTag: (gitTag) => {
+    console.log('updated tag', gitTag)
+  },
   onSetDeploymentEventToCurrentTime: (event) => {
     console.log(event)
   },
   onClose: () => console.log('closing'),
+  open: true,
 }
 
 export const Standard = Template.bind({})

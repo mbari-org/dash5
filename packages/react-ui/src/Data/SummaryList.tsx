@@ -19,7 +19,7 @@ export const SummaryList: React.FC<SummaryListProps> = ({
       className={clsx('border-2 border-solid border-stone-200', className)}
       style={style}
     >
-      <li className="mb-2 border-b-2 border-solid border-stone-200 bg-stone-100 px-4 py-2 text-sm">
+      <li className="sticky top-0 left-0 z-10 mb-2 border-b-2 border-solid border-stone-200 bg-stone-100 px-4 py-2 text-sm">
         {header}
       </li>
       {values.map((value, index) => (
