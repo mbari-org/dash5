@@ -1,10 +1,10 @@
 import React from 'react'
 import { render } from '@testing-library/react'
 import '@testing-library/jest-dom'
-import DepthChart, { DepthChartProps } from './DepthChart'
+import LineChart, { LineChartProps } from './LineChart'
 import { DateTime } from 'luxon'
 
-const props: DepthChartProps = {
+const props: LineChartProps = {
   data: new Array(60).fill('').map((_, i) => ({
     value: Math.random() * 200,
     timestamp: DateTime.now()
@@ -20,5 +20,5 @@ const props: DepthChartProps = {
 }
 
 test('should render the component', async () => {
-  expect(() => render(<DepthChart {...props} />)).not.toThrow()
+  expect(() => render(<LineChart {...props} />)).not.toThrow()
 })

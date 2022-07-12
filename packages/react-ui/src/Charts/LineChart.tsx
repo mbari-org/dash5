@@ -9,29 +9,39 @@ export interface TimeSeriesDataPoint {
   timestamp: number
 }
 
-export interface DepthChartProps {
+export interface LineChartProps {
   className?: string
   style?: React.CSSProperties
   data?: TimeSeriesDataPoint[]
   name: string
-  title: string
+  title?: string
   color?: string
   xAxisLabel?: string
   yAxisLabel?: string
+  inverted?: boolean
 }
 
-const DepthChart: React.FC<DepthChartProps> = ({
+const LineChart: React.FC<LineChartProps> = ({
   className,
   style,
   data = [],
   name,
   title,
   color = '#17BECF',
-  xAxisLabel = 'Time',
-  yAxisLabel = 'Depth (m)',
+  yAxisLabel,
+  inverted,
 }) => {
   const container = useRef(null)
   const { size } = useResizeObserver({ element: container })
+
+  // React-Plotly.js doesn't support the 'modebar' property in it's typedefs, so we need to
+  // pass this in anonymously as any.
+  const modebarConfig: any = {
+    modebar: {
+      orientation: 'v',
+    },
+  }
+
   return (
     <div className={clsx('', className)} style={style} ref={container}>
       <Plot
@@ -48,20 +58,41 @@ const DepthChart: React.FC<DepthChartProps> = ({
           },
         ]}
         layout={{
-          title,
-          xaxis: { title: xAxisLabel },
-          yaxis: { title: yAxisLabel, autorange: 'reversed' },
+          title: {
+            text: title ? `<b>${title}</b>` : undefined,
+            font: {
+              family: 'Inter, sans-serif',
+              size: 14,
+              color: 'rgb(29, 78, 216)',
+            },
+            x: 0,
+          },
+          xaxis: {
+            tickangle: 0,
+          },
+          yaxis: {
+            title: yAxisLabel,
+            autorange: inverted ? 'reversed' : undefined,
+          },
           width: size.width,
           height: size.height,
           margin: {
-            t: 0,
+            t: title ? 28 : 0,
+            b: 40,
+            l: 50,
+            r: 30,
           },
+          showlegend: false,
+          ...modebarConfig,
+        }}
+        config={{
+          displaylogo: false,
         }}
       />
     </div>
   )
 }
 
-DepthChart.displayName = 'Charts.DepthChart'
+LineChart.displayName = 'Charts.LineChart'
 
-export default DepthChart
+export default LineChart
