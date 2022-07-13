@@ -2,6 +2,7 @@ import { AccordionHeader } from '@mbari/react-ui'
 import { useState } from 'react'
 import CommsSection from './CommsSection'
 import HandoffSection from './HandoffSection'
+import LogsSection from './LogsSection'
 import ScienceDataSection from './ScienceDataSection'
 
 export type VehicleAccordionSection =
@@ -85,6 +86,9 @@ const VehicleAccordion: React.FC<VehicleAccordionProps> = ({
         open={section === 'log'}
         className="flex flex-shrink-0"
       />
+      {section === 'log' && (
+        <LogsSection vehicleName={vehicleName} from={from} to={to} />
+      )}
       <AccordionHeader
         label="Docs"
         onToggle={handleToggleForSection('docs')}
