@@ -10,15 +10,15 @@ export interface LogCellProps {
   label: string
   time: string
   date: string
-  log: string
+  log: string | JSX.Element
   isUpload: boolean
   onSelect?: () => void
 }
 
 const styles = {
-  container: 'flex bg-white font-display',
-  details: 'ml-2 mr-4 p-4 flex flex-col text-left',
-  log: 'flex p-4 whitespace-pre-line text-left',
+  container: 'flex bg-white font-display text-sm',
+  details: 'flex flex-col text-left col-span-2',
+  log: 'flex whitespace-pre-line text-left',
 }
 
 export const LogCell: React.FC<LogCellProps> = ({
@@ -33,7 +33,10 @@ export const LogCell: React.FC<LogCellProps> = ({
 }) => {
   return (
     <article style={style} className={clsx(styles.container, className)}>
-      <button className="flex" onClick={swallow(handleSelect)}>
+      <button
+        className="grid flex-grow grid-cols-5 gap-2 p-4"
+        onClick={swallow(handleSelect)}
+      >
         <ul className={styles.details}>
           <li>{label}</li>
           <li className="flex flex-row">
@@ -49,7 +52,9 @@ export const LogCell: React.FC<LogCellProps> = ({
           </li>
         </ul>
 
-        <p className={styles.log}>{log}</p>
+        <div className="col-span-3 overflow-x-auto text-left">
+          {typeof log === 'string' ? <p className={styles.log}>{log}</p> : log}
+        </div>
       </button>
     </article>
   )
