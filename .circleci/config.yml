@@ -91,7 +91,7 @@ jobs:
     resource_class: large
     executor:
       name: node/default
-      tag: '14.19.1'
+      tag: '14.20.0'
     steps:
       - checkout
       - setup-environment
@@ -103,7 +103,7 @@ jobs:
     parallelism: 1
     executor:
       name: node/default
-      tag: '14.19.1'
+      tag: '14.20.0'
     steps:
       - checkout
       - setup-environment
@@ -119,7 +119,7 @@ jobs:
     parallelism: 1
     executor:
       name: node/default
-      tag: '14.19.1'
+      tag: '14.20.0'
     steps:
       - checkout
       - setup-environment
@@ -135,7 +135,7 @@ jobs:
     parallelism: 1
     executor:
       name: node/default
-      tag: '14.19.1'
+      tag: '14.20.0'
     steps:
       - checkout
       - setup-environment
@@ -151,7 +151,7 @@ jobs:
     parallelism: 1
     executor:
       name: node/default
-      tag: '14.19.1'
+      tag: '14.20.0'
     steps:
       - checkout
       - setup-environment
@@ -167,7 +167,7 @@ jobs:
     parallelism: 1
     executor:
       name: node/default
-      tag: '14.19.1'
+      tag: '14.20.0'
     steps:
       - checkout
       - setup-environment
@@ -182,7 +182,7 @@ jobs:
     resource_class: xlarge
     executor:
       name: node/default
-      tag: '14.19.1'
+      tag: '14.20.0'
     steps:
       - checkout
       - setup-environment
@@ -204,7 +204,7 @@ jobs:
   deploy_dash:
     executor:
       name: node/default
-      tag: '14.19.1'
+      tag: '14.20.0'
     steps:
       - checkout
       - setup-environment
