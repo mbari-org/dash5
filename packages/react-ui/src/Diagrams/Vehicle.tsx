@@ -85,6 +85,7 @@ export interface VehicleProps {
   textReckonDistance?: string
   textLogTime?: string
   textLogAgo?: string
+  textArriveLabel?: string
   textArriveStation?: string
   textStationDist?: string
   textCurrentDist?: string
@@ -157,6 +158,7 @@ export const Vehicle: React.FC<VehicleProps> = ({
   colorCartCircle = 'st18',
   textLogTime,
   textLogAgo,
+  textArriveLabel = 'Arrive Station',
   textArriveStation,
   textCurrentDist,
   textStationDist,
@@ -325,6 +327,7 @@ export const Vehicle: React.FC<VehicleProps> = ({
         />
 
         <ArriveInfo
+          textArriveLabel={textArriveLabel}
           textArriveStation={textArriveStation}
           textCurrentDist={textCurrentDist}
           textStationDist={textStationDist}

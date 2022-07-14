@@ -1,14 +1,19 @@
 import React from 'react'
 // also exported from '@storybook/react' if you can deal with breaking changes in 6.1
 import { Story, Meta } from '@storybook/react/types-6-0'
-import { Vehicle, VehicleProps } from './Vehicle'
+import { VehicleProps } from './Vehicle'
+import { FullWidthVehicleDiagram } from './FullWidthVehicleDiagram'
 
 export default {
-  title: 'Diagrams/Vehicle',
-  component: Vehicle,
+  title: 'Diagrams/FullWidthVehicleDiagram',
+  component: FullWidthVehicleDiagram,
 } as Meta
 
-const Template: Story<VehicleProps> = (args) => <Vehicle {...args} />
+const Template: Story<VehicleProps> = (args) => (
+  <div className="h-1/4 w-full bg-stone-200 p-2">
+    <FullWidthVehicleDiagram {...args} />
+  </div>
+)
 
 const args: VehicleProps = {
   textVehicle: 'BRIZO',
@@ -25,14 +30,13 @@ const args: VehicleProps = {
   colorSw: 'st3',
   colorThrust: 'st3',
   colorArrow: 'st16',
-  textArriveLabel: 'Arrive Station',
 }
 
 export const Deployed = Template.bind({})
 Deployed.args = {
   ...args,
   colorMissionDefault: 'st25',
-  textArrow: '15',
+  textArrow: '90',
   textThrustTime: '2.8km/hr',
   textReckonDistance: '3.3km in 1.0h',
   colorDvl: 'st4',
@@ -72,8 +76,9 @@ Deployed.args = {
   colorCell: 'st5',
   textLogTime: '13:31',
   textLogAgo: '1d 0h 6m ago',
-  textArriveStation: 'Arrived at WP',
-  textStationDist: '3h 33m ago',
+  textArriveLabel: 'NEXT WAYPOINT',
+  textArriveStation: 'in 10h 15min (eta 01:11)',
+  textStationDist: '~14.4km from last fix',
 }
 
 Deployed.parameters = {
@@ -88,7 +93,7 @@ Scheduled.args = {
   ...args,
   textVehicle: 'GALENE',
   colorMissionDefault: 'st25',
-  textArrow: '282',
+  textArrow: '226',
   textThrustTime: '1.4km/hr',
   textReckonDistance: '1.5km in 1.0h',
   textMission: 'sci2_backseat - 13:26 • 24May22',
@@ -135,9 +140,6 @@ Scheduled.args = {
   textCurrentDist: '2.4km from est.veh',
   textCriticalError: 'A critical error has occurred perhaps',
   textCriticalTime: 'Time of error: 11:11',
-  textFlow: 'flow text',
-  colorFlow: 'st4',
-  ubatColor: 'st5',
 }
 Scheduled.parameters = {
   design: {
