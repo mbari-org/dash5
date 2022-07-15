@@ -88,7 +88,6 @@ const ScienceDataSection: React.FC<{
     setGlobalModalId('esbSamples')
   })
 
-  console.log(isLoading, isError)
   return (
     <>
       <header className="flex p-2">
