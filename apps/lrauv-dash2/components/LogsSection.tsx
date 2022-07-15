@@ -1,8 +1,22 @@
-import React from 'react'
+import React, { useState } from 'react'
 import { useEvents, useTethysApiContext } from '@mbari/api-client'
-import { CellVirtualizer, Virtualizer, LogCell } from '@mbari/react-ui'
+import {
+  CellVirtualizer,
+  Virtualizer,
+  LogCell,
+  IconButton,
+  MultiSelectField,
+} from '@mbari/react-ui'
+import { MultiValue } from 'react-select'
 import { DateTime } from 'luxon'
-import formatEvent, { displayNameForEventType } from '../lib/formatEvent'
+import formatEvent, {
+  displayNameForEventType,
+  eventFilters,
+  isUploadEvent,
+} from '../lib/formatEvent'
+import { faSync } from '@fortawesome/pro-regular-svg-icons'
+import { SelectOption } from '@mbari/react-ui/dist/Fields/Select'
+import clsx from 'clsx'
 
 export interface LogsSectionProps {
   className?: string
@@ -14,10 +28,18 @@ export interface LogsSectionProps {
 
 const LogsSection: React.FC<LogsSectionProps> = ({ vehicleName, from, to }) => {
   const { siteConfig } = useTethysApiContext()
-  const { data } = useEvents({
+  const [filters, setFilters] = useState<MultiValue<SelectOption>>([])
+  const eventTypes = filters.length
+    ? filters
+        .map(({ id }) => eventFilters[id].eventTypes)
+        .flat()
+        .filter((k, i, a) => a.indexOf(k) === i)
+    : undefined
+  const { data, isLoading, isFetching, refetch } = useEvents({
     vehicles: [vehicleName],
     from,
     to,
+    eventTypes,
   })
 
   const cellAtIndex = (index: number, _virtualizer: Virtualizer) => {
@@ -40,7 +62,7 @@ const LogsSection: React.FC<LogsSectionProps> = ({ vehicleName, from, to }) => {
         onSelect={handleSelection}
         label={displayNameForEventType(item)}
         log={formatEvent(item, siteConfig?.appConfig.external.tethysdash ?? '')}
-        isUpload
+        isUpload={isUploadEvent(item)}
       />
     ) : (
       <span />
@@ -48,13 +70,47 @@ const LogsSection: React.FC<LogsSectionProps> = ({ vehicleName, from, to }) => {
   }
 
   return (
-    <div className="relative flex h-full flex-shrink flex-grow">
-      <CellVirtualizer
-        cellAtIndex={cellAtIndex}
-        count={data?.length ?? 0}
-        className="absolute inset-0 w-full"
-      />
-    </div>
+    <>
+      <header className="flex p-2">
+        <MultiSelectField
+          name="filters"
+          defaultValue={filters}
+          value={filters}
+          options={Object.keys(eventFilters).map((key) => ({
+            name: key,
+            id: key,
+          }))}
+          placeholder="Filter by event type"
+          onSelect={(selection) => {
+            console.log(selection)
+            setFilters(selection ?? [])
+          }}
+          className="my-auto mr-2"
+          grow
+        />
+        <IconButton
+          icon={faSync}
+          ariaLabel="reload"
+          tooltipAlignment="right"
+          tooltip="Reload"
+          className="my-auto"
+          disabled={isLoading || isFetching}
+          onClick={refetch}
+        />
+      </header>
+      <div
+        className={clsx(
+          'relative flex h-full flex-shrink flex-grow',
+          isLoading || (isFetching && 'opacity-50')
+        )}
+      >
+        <CellVirtualizer
+          cellAtIndex={cellAtIndex}
+          count={data?.length ?? 0}
+          className="absolute inset-0 w-full"
+        />
+      </div>
+    </>
   )
 }
 
