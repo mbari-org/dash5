@@ -45,7 +45,7 @@ export const Heading: React.FC<HeadingProps> = ({
           </g>
         </g>
       )}
-      {textArrow && (
+      {!isDocked && textArrow && (
         <text
           aria-label="bearing"
           transform={
