@@ -10,7 +10,7 @@ export default {
 } as Meta
 
 const Template: Story<VehicleProps> = (args) => (
-  <div className="h-1/4 w-full bg-stone-200 p-2">
+  <div className="h-[300px] w-full bg-stone-200 p-2">
     <FullWidthVehicleDiagram {...args} />
   </div>
 )

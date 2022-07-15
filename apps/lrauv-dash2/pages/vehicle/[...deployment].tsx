@@ -236,7 +236,7 @@ const Vehicle: NextPage = () => {
                 {currentTab === 'vehicle' && (
                   <VehicleDiagram
                     name={vehicleName as string}
-                    className="m-auto flex h-full w-full max-w-[900px]"
+                    className="m-auto flex h-full w-full"
                   />
                 )}
                 {currentTab === 'depth' && (

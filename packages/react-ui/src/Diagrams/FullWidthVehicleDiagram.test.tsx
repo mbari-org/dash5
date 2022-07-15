@@ -48,7 +48,13 @@ test('should display background wave when wavecolor is provided', async () => {
 })
 
 test('should display sandy ground background when dirt box color is provided', async () => {
-  render(<FullWidthVehicleDiagram {...props} colorDirtbox={'st17'} />)
+  render(
+    <FullWidthVehicleDiagram
+      {...props}
+      status="pluggedIn"
+      colorDirtbox="st17"
+    />
+  )
   // st17 class is dirtbox brown fill
   expect(screen.queryByTestId(/dirtbox/i)).toHaveClass('st17')
 })

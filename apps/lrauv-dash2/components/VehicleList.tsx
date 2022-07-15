@@ -177,7 +177,7 @@ const ConnectedVehicleCell: React.FC<{
               textSpeed: vehicle.text_speed,
               textDvlStatus: vehicle.text_dvlstatus,
               textStationDist: vehicle.text_stationdist,
-              textCommAgo: vehicle.color_commago,
+              textCommAgo: vehicle.text_commago,
               textNextComm: vehicle.text_nextcomm,
               textCriticalError: vehicle.text_criticalerror,
               textTimeout: vehicle.text_timeout,
