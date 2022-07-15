@@ -61,21 +61,25 @@ export const displayNameForEventType = (eventType: GetEventsResponse) =>
     return a
   }, '')
 
+export const isUploadEvent = (event: GetEventsResponse) =>
+  (event.eventType === 'sbdSend' && event.state === 2) ||
+  (event.eventType === 'sbdReceive' &&
+    event.state !== 2 &&
+    `${event.mtmsn}` !== '0')
+
 const formatEvent = (
   { eventType, ...event }: GetEventsResponse,
   dashUrl: string
 ): JSX.Element => {
-  const escape = (str: string) => str
-
   const fix = event.fix ? JSON.stringify(event.fix) : ''
-  const user = event.user ? escape(event.user) : 'unknown'
-  const note = event.note ? escape(event.note).split('\n') : ''
-  const data = event.data ? escape(event.data) : ''
-  const name = event.name ? escape(event.name) : ''
-  const path = event.path ? escape(event.path) : ''
-  const text = event.text ? escape(event.text).split('\n') : ''
-  const mtmsn = event.mtmsn ? escape(event.mtmsn) : ''
-  const momsn = event.momsn ? escape(event.momsn) : ''
+  const user = event.user ? event.user : 'unknown'
+  const note = event.note ? event.note.split('\n') : ''
+  const data = event.data ? event.data : ''
+  const name = event.name ? event.name : ''
+  const path = event.path ? event.path : ''
+  const text = event.text ? event.text.split('\n') : ''
+  const mtmsn = event.mtmsn ? event.mtmsn : ''
+  const momsn = event.momsn ? event.momsn : ''
   const url = `${dashUrl}/${event.vehicleName}/realtime/sbdlogs/${path}`
   const startedMission =
     eventType === 'logImportant' && event.text?.startsWith('Started mission ')
