@@ -253,7 +253,7 @@ const formatEvent = (
           <p>
             <span>
               Received{' '}
-              {event.state !== 2 && mtmsn !== '0' ? (
+              {event.state !== 2 && `${mtmsn}` !== '0' ? (
                 <span>(Vehicle ACK)</span>
               ) : (
                 ''
@@ -262,7 +262,7 @@ const formatEvent = (
             </span>
             {name && <span>name: {name},</span>}
           </p>
-          {(path?.length ?? 0) && event.dataLen > 0 ? (
+          {(path?.length ?? 0) && (event?.dataLen ?? 0) > 0 ? (
             <a
               href={url}
               target="_blank"

@@ -69,12 +69,15 @@ const LogsSection: React.FC<LogsSectionProps> = ({ vehicleName, from, to }) => {
     )
   }
 
+  const handleRefresh = () => {
+    refetch()
+  }
+
   return (
     <>
       <header className="flex p-2">
         <MultiSelectField
           name="filters"
-          defaultValue={filters}
           value={filters}
           options={Object.keys(eventFilters).map((key) => ({
             name: key,
@@ -95,7 +98,7 @@ const LogsSection: React.FC<LogsSectionProps> = ({ vehicleName, from, to }) => {
           tooltip="Reload"
           className="my-auto"
           disabled={isLoading || isFetching}
-          onClick={refetch}
+          onClick={handleRefresh}
         />
       </header>
       <div
