@@ -38,7 +38,10 @@ const VehicleDiagram: React.FC<{
       : (vehicleInfo as GetVehicleInfoResponse)
 
   return (
-    <div className={clsx(className, 'relative')} style={style}>
+    <div
+      className={clsx(className, 'relative flex overflow-hidden')}
+      style={style}
+    >
       {!vehicle ? (
         <div className="absolute inset-0 z-10 flex flex-col items-center justify-center">
           <div className="m-auto rounded border border-amber-300 bg-amber-200 p-4 text-amber-600 shadow-lg shadow-amber-800">
@@ -48,7 +51,7 @@ const VehicleDiagram: React.FC<{
         </div>
       ) : null}
       <FullWidthVehicleDiagram
-        className={clsx(className, !vehicle && 'opacity-40')}
+        className={clsx(className, !vehicle && 'opacity-40', 'min-h-[200px]')}
         textAmpAgo={vehicle?.text_ampago}
         textVehicle={vehicle?.text_vehicle ?? name}
         textCell={vehicle?.text_cell}
@@ -57,7 +60,8 @@ const VehicleDiagram: React.FC<{
         textSpeed={vehicle?.text_speed}
         textDvlStatus={vehicle?.text_dvlstatus}
         textStationDist={vehicle?.text_stationdist}
-        textCommAgo={vehicle?.color_commago}
+        textCommAgo={vehicle?.text_commago}
+        colorCommAgo={vehicle?.color_commago}
         textNextComm={vehicle?.text_nextcomm}
         textCriticalError={vehicle?.text_criticalerror}
         textTimeout={vehicle?.text_timeout}
@@ -78,7 +82,7 @@ const VehicleDiagram: React.FC<{
         colorGf={vehicle?.color_gf}
         textGf={vehicle?.text_gf}
         colorFlow={vehicle?.color_flow}
-        colorWavecolor={vehicle?.color_wavecolor}
+        colorWavecolor={'st0' ?? vehicle?.color_wavecolor}
         textAmps={vehicle?.text_amps}
         colorAmps={vehicle?.color_amps}
         colorDvl={vehicle?.color_dvl}
