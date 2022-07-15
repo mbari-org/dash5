@@ -8,6 +8,7 @@ import VehicleList from '../components/VehicleList'
 import useTrackedVehicles from '../lib/useTrackedVehicles'
 import { SharedPathContextProvider } from '../components/SharedPathContextProvider'
 import { useRouter } from 'next/router'
+import useGlobalModalId from '../lib/useGlobalModalId'
 
 // This is a tricky workaround to prevent leaflet from crashing next.js
 // SSR. If we don't do this, the leaflet map will be loaded server side
@@ -34,6 +35,7 @@ const OverviewPage: NextPage = () => {
   const startTime = DateTime.utc().minus({ weeks: 1 }).toISO()
   const endTime = DateTime.utc().plus({ days: 4 }).toISO()
   const mounted = useRef(false)
+  const { setGlobalModalId } = useGlobalModalId()
   useEffect(() => {
     mounted.current = true
   })
@@ -45,8 +47,8 @@ const OverviewPage: NextPage = () => {
       <OverviewToolbar
         pilotInCharge="Shannon J."
         pilotOnCall="Bryan K."
-        deployment="Overview"
-        onClickPilot={() => undefined}
+        deployment={{ name: 'Overview', id: '0' }}
+        onClickPilot={() => setGlobalModalId('reassign')}
       />
       <div className={styles.content}>
         <section className={styles.primary}>

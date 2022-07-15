@@ -7,7 +7,14 @@ let params: CreateNoteParams = {
   note: 'example',
 }
 
-const mockResponse = { value: 'some-value' }
+export const mockResponse = {
+  result: {
+    date: 'Nov 17, 2016 12:35:28 PM',
+    status: 'postNote request submitted',
+    vehicle: 'sim',
+  },
+}
+
 const server = setupServer(
   rest.post('/events/note', (_req, res, ctx) => {
     return res(ctx.status(200), ctx.json(mockResponse))
@@ -21,7 +28,7 @@ afterAll(() => server.close())
 describe('createNote', () => {
   it('should return the mocked value when successful', async () => {
     const response = await createNote(params)
-    expect(response).toEqual(mockResponse)
+    expect(response).toEqual(mockResponse.result)
   })
 
   it('should throw when unsuccessful', async () => {

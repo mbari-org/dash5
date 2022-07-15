@@ -35,7 +35,13 @@ const args: CreateAccountFormProps = {
     console.log('Submitted', values)
     return undefined
   },
-  defaultValues: { email: 'admin@example.com', password: '123456789' },
+  defaultValues: {
+    email: 'admin@example.com',
+    password: '123456789',
+    confirmPassword: '',
+    firstName: '',
+    lastName: '',
+  },
 }
 
 export const Primary = Template.bind({})

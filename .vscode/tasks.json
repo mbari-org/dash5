@@ -94,7 +94,7 @@
     {
       "label": "[project]: Build",
       "type": "shell",
-      "command": "yarn test; yarn build",
+      "command": "yarn build",
       "presentation": {
         "reveal": "always",
         "panel": "new",

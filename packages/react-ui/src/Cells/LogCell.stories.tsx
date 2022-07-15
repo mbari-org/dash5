@@ -34,3 +34,26 @@ Standard.parameters = {
     url: 'https://www.figma.com/file/FtsKsOCBQ2YjTZlwezG6aI/MBARI-Components?node-id=294%3A442',
   },
 }
+
+export const WithJSX = Template.bind({})
+WithJSX.args = {
+  ...args,
+  log: (
+    <div className="flex flex-col">
+      <p>
+        ACK command Id: {23456788}, index: 3{' '}
+        <span className="font-mono">
+          Received command id: 16317778, index: 0, configSet
+          PAR_Licor.loadAtStartup 1 bool persist;
+        </span>
+        , name: brizo_16341678.sbd, bytes: 40
+      </p>
+    </div>
+  ),
+}
+WithJSX.parameters = {
+  design: {
+    type: 'figma',
+    url: 'https://www.figma.com/file/FtsKsOCBQ2YjTZlwezG6aI/MBARI-Components?node-id=294%3A442',
+  },
+}

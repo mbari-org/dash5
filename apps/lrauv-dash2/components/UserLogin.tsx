@@ -1,17 +1,16 @@
 import React, { useEffect } from 'react'
 import toast from 'react-hot-toast'
-import { useAuthContext } from '@mbari/api-client'
+import { useTethysApiContext } from '@mbari/api-client'
 import { AsyncSubmitHandler } from '@sumocreations/forms'
 import { LoginModal, LoginFormValues } from '@mbari/react-ui'
+import useGlobalModalId from '../lib/useGlobalModalId'
 
 export const UserLogin: React.FC<{ onClose?: () => void }> = ({
   onClose: handleClose,
 }) => {
-  const { login, loading, error } = useAuthContext()
+  const { setGlobalModalId } = useGlobalModalId()
+  const { login, loading, error } = useTethysApiContext()
 
-  const handleForgotPass = () => {
-    console.log('Forgot password')
-  }
   const handleSubmit: AsyncSubmitHandler<LoginFormValues> = async (values) => {
     await login(values.email, values.password)
     return undefined
@@ -23,7 +22,8 @@ export const UserLogin: React.FC<{ onClose?: () => void }> = ({
     }
   }, [loading, error])
 
-  const handleCreateAccount = () => undefined
+  const handleCreateAccount = () => setGlobalModalId('signup')
+  const handleForgotPass = () => setGlobalModalId('forgot')
 
   return (
     <LoginModal

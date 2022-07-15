@@ -1,26 +1,38 @@
 import React, { useEffect } from 'react'
 import Head from 'next/head'
-import { PrimaryToolbar, ProfileDropdown } from '@mbari/react-ui'
-import { useAuthContext } from '@mbari/api-client'
+import {
+  PrimaryToolbar,
+  ProfileDropdown,
+  ReassignmentModal,
+} from '@mbari/react-ui'
+import { useTethysApiContext } from '@mbari/api-client'
 import { useState } from 'react'
 import Image from 'next/image'
 import VehicleDeploymentDropdown from '../components/VehicleDeploymentDropdown'
 import useTrackedVehicles from '../lib/useTrackedVehicles'
+import useGlobalModalId, { ModalId } from '../lib/useGlobalModalId'
 import { useRouter } from 'next/router'
 import { UserLogin } from './UserLogin'
 import logo from './mbari-logo.png'
+import { capitalize } from '@mbari/utils'
+import UserCreateAccount from './UserCreateAccount'
+import UserForgotPassword from './UserForgotPassword'
+import { NewDeployment } from './NewDeployment'
+import DeploymentDetails from './DeploymentDetails'
+import SendNote from './SendNote'
 
 const Layout: React.FC = ({ children }) => {
   const [showLogin, setLogin] = useState(false)
   const router = useRouter()
   const [mounted, setMounted] = useState(false)
+  const { globalModalId, setGlobalModalId } = useGlobalModalId()
   useEffect(() => {
     if (!mounted) setMounted(true)
   }, [setMounted, mounted])
 
   const { trackedVehicles, setTrackedVehicles } = useTrackedVehicles()
 
-  const { logout, profile, authenticated } = useAuthContext()
+  const { logout, profile, authenticated } = useTethysApiContext()
   const profileName = `${profile?.firstName} ${profile?.lastName}`
   const handleLogout = () => {
     dismissDropdown()
@@ -36,8 +48,8 @@ const Layout: React.FC = ({ children }) => {
     setDropdown(null)
   }
 
-  const toggleLogin = (enabled: boolean) => () => {
-    setLogin(enabled)
+  const setModal = (id: ModalId) => () => {
+    setGlobalModalId(id)
   }
 
   useEffect(() => {
@@ -63,6 +75,8 @@ const Layout: React.FC = ({ children }) => {
 
   const canRemoveOption = (vehicle: string) => vehicle !== 'Overview'
 
+  const handleReassignmentSubmit = async () => undefined
+
   return (
     <div className="flex h-screen w-screen flex-col">
       <Head>
@@ -71,12 +85,11 @@ const Layout: React.FC = ({ children }) => {
           name="description"
           content="Manage and plan missions for various LRAUV"
         />
-        <link rel="icon" href="/favicon.ico" />
       </Head>
       {mounted && (
         <PrimaryToolbar
           options={['Overview', ...trackedVehicles]}
-          currentOption={(router.query.name as string) ?? 'Overview'}
+          currentOption={(router.query.deployment?.[0] as string) ?? 'Overview'}
           onSelectOption={handleSelectOption}
           onRemoveOption={handleRemoveOption}
           canRemoveOption={canRemoveOption}
@@ -113,13 +126,51 @@ const Layout: React.FC = ({ children }) => {
               </>
             ) : null
           }
-          onLoginClick={toggleLogin(true)}
+          onLoginClick={setModal('login')}
           signedIn={authenticated}
         />
       )}
       {children}
-      {showLogin && !authenticated && (
-        <UserLogin onClose={toggleLogin(false)} />
+      {globalModalId === 'login' && !authenticated && (
+        <UserLogin onClose={setModal(null)} />
+      )}
+      {globalModalId === 'signup' && !authenticated && (
+        <UserCreateAccount onClose={setModal(null)} />
+      )}
+      {globalModalId === 'forgot' && !authenticated && (
+        <UserForgotPassword onClose={setModal(null)} />
+      )}
+      {globalModalId === 'newDeployment' && authenticated && (
+        <NewDeployment onClose={setModal(null)} />
+      )}
+      {globalModalId === 'reassign' && authenticated && (
+        <ReassignmentModal
+          onClose={setModal(null)}
+          vehicles={trackedVehicles.map((v) => ({
+            vehicleName: capitalize(v),
+            vehicleId: v,
+            pic: 'Shannon Johnson',
+            onCall: 'Brian Kieft',
+          }))}
+          onSubmit={handleReassignmentSubmit}
+          pics={[
+            { name: 'Carlos Rueda', id: '1' },
+            { name: 'Karen Salemy', id: '2' },
+            { name: 'Brian Kieft', id: '3' },
+          ]}
+          onCalls={[
+            { name: 'Carlos Rueda', id: '1' },
+            { name: 'Karen Salemy', id: '2' },
+            { name: 'Shannon Johnson', id: '3' },
+          ]}
+          open
+        />
+      )}
+      {globalModalId === 'sendNote' && authenticated && (
+        <SendNote onClose={setModal(null)} />
+      )}
+      {globalModalId === 'editDeployment' && authenticated && (
+        <DeploymentDetails onClose={setModal(null)} />
       )}
     </div>
   )

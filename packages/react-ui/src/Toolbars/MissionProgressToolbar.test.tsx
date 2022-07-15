@@ -39,6 +39,32 @@ test('should render 5 tick marks', async () => {
   ).toBeInTheDocument()
 })
 
+test('should render absolute dates when mission started longer than a week ago', async () => {
+  render(
+    <MissionProgressToolbar
+      {...props}
+      startTime="2021-09-13"
+      endTime="2021-10-02"
+    />
+  )
+  await waitFor(() => screen.getByLabelText(`${props.ariaLabel}-tick-1-9/16`))
+  expect(
+    screen.queryByLabelText(`${props.ariaLabel}-tick-1-9/16`)
+  ).toBeInTheDocument()
+  expect(
+    screen.queryByLabelText(`${props.ariaLabel}-tick-2-9/19`)
+  ).toBeInTheDocument()
+  expect(
+    screen.queryByLabelText(`${props.ariaLabel}-tick-3-9/22`)
+  ).toBeInTheDocument()
+  expect(
+    screen.queryByLabelText(`${props.ariaLabel}-tick-4-9/25`)
+  ).toBeInTheDocument()
+  expect(
+    screen.queryByLabelText(`${props.ariaLabel}-tick-5-9/28`)
+  ).toBeInTheDocument()
+})
+
 test('should render the launch and projected points', async () => {
   render(<MissionProgressToolbar {...props} />)
   expect(screen.queryByLabelText(/projected/i)).toBeInTheDocument()

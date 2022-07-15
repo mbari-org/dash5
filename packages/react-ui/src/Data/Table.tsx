@@ -10,10 +10,12 @@ export interface TableProps {
   header?: TableHeaderProps
   grayHeader?: boolean
   highlightedStyle?: string
+  noBorder?: boolean
   stackable?: boolean
   scrollable?: boolean
   selectedIndex?: number | null
   onSelectRow?: (index: number) => void
+  colInRow?: number
 }
 
 const gridClassNames = [
@@ -29,7 +31,7 @@ const gridClassNames = [
 ]
 
 const styles = {
-  container: 'h-full border-2 border-solid border-stone-200',
+  containerBorder: 'border-2 border-solid border-stone-200',
   table: 'font-display w-full',
   header: 'sticky top-0 left-0 z-10 bg-white/100',
   borderTop: 'border-t-2 border-solid border-stone-200',
@@ -42,13 +44,15 @@ export const Table: React.FC<TableProps> = ({
   header,
   grayHeader,
   highlightedStyle,
+  noBorder,
   stackable,
   scrollable,
   onSelectRow,
   selectedIndex,
+  colInRow,
 }) => {
-  // dynamically calculate grid columns
-  const colsInRow = rows[0]?.cells.length | 0
+  // dynamically calculate grid columns unless defined through associated prop
+  const colsInRow = colInRow ? colInRow : rows[0]?.cells.length | 0
 
   const handleSelectRow = (index: number) => {
     onSelectRow?.(index)
@@ -58,7 +62,7 @@ export const Table: React.FC<TableProps> = ({
     <article
       data-testid="table container"
       className={clsx(
-        styles.container,
+        !noBorder && styles.containerBorder,
         className,
         scrollable && 'overflow-y-auto',
         stackable && 'border-t-0'

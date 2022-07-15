@@ -17,12 +17,25 @@ export interface TableHeaderCell {
   secondary?: string | JSX.Element
   onSort?: (column: string, ascending?: boolean) => void
   sortDirection?: 'asc' | 'desc'
+  span?: number
 }
 
 const styles = {
   container: 'whitespace-nowrap border-b-2 border-solid border-stone-200',
   cell: 'flex flex-grow text-left font-sans text-sm font-normal items-center py-2 px-4 ',
 }
+
+const colClassNames = [
+  'col-span-none',
+  'col-span-1',
+  'col-span-2',
+  'col-span-3',
+  'col-span-4',
+  'col-span-5',
+  'col-span-6',
+  'col-span-7',
+  'col-span-8',
+]
 
 export const TableHeader: React.FC<TableHeaderProps> = ({
   className,
@@ -37,9 +50,13 @@ export const TableHeader: React.FC<TableHeaderProps> = ({
       className={clsx(styles.container, className)}
       data-testid="table header"
     >
-      {cells.map(({ label, secondary, onSort, sortDirection }, index) => (
+      {cells.map(({ label, secondary, onSort, sortDirection, span }, index) => (
         <th
-          className={clsx(styles.cell, scrollable && 'opacity-60')}
+          className={clsx(
+            styles.cell,
+            scrollable && 'opacity-60',
+            span && colClassNames[span]
+          )}
           key={`${label}${index}`}
         >
           {onSort ? (
@@ -54,7 +71,7 @@ export const TableHeader: React.FC<TableHeaderProps> = ({
                 setHoverSort(null)
               }}
             >
-              <span className="mr-1 font-medium">{label}</span>
+              <span className="mr-1 w-full font-medium">{label}</span>
               {sortDirection &&
                 (sortDirection === 'asc' ? (
                   <FontAwesomeIcon
@@ -75,7 +92,9 @@ export const TableHeader: React.FC<TableHeaderProps> = ({
             </button>
           ) : (
             <>
-              <span className={clsx(scrollable && 'font-medium')}>{label}</span>
+              <span className={clsx(scrollable && 'w-full font-medium')}>
+                {label}
+              </span>
             </>
           )}
           {secondary && (

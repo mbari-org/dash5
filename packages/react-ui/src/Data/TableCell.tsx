@@ -20,10 +20,13 @@ export const TableCell: React.FC<TableCellProps> = ({
   scrollable,
   firstColumn,
   highlighted,
+  fixedIconWidth,
 }) => {
   return (
     <ul className={clsx(styles.container, className)} data-testid="table cell">
-      {icon && <li className="text-4xl">{icon}</li>}
+      {icon && (
+        <li className={clsx('text-4xl', fixedIconWidth && 'w-2/5')}>{icon}</li>
+      )}
       <li className="flex h-full w-full flex-col justify-center">
         <div
           className={clsx(

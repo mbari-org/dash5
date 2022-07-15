@@ -6,7 +6,7 @@ let params: ResetPasswordParams = {
   email: 'example',
 }
 
-const mockResponse = { message: 'some-message' }
+const mockResponse = { result: { message: 'some-message' } }
 
 const server = setupServer(
   rest.post('/user/rpw', (_req, res, ctx) => {
@@ -21,7 +21,7 @@ afterAll(() => server.close())
 describe('resetPassword', () => {
   it('should return the mocked message when successful', async () => {
     const { message } = await resetPassword(params)
-    expect(message).toEqual(mockResponse.message)
+    expect(message).toEqual(mockResponse.result.message)
   })
 
   it('should throw when unsuccessful', async () => {

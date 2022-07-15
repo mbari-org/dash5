@@ -1,11 +1,12 @@
 import '@testing-library/jest-dom'
 import React, { useState } from 'react'
-import { AuthProvider } from './AuthProvider'
+import { TethysApiProvider } from './TethysApiProvider'
 import { render, screen, fireEvent, waitFor } from '@testing-library/react'
-import { useAuthContext } from './useAuthContext'
+import { useTethysApiContext } from './useTethysApiContext'
 import { QueryClientProvider, QueryClient, setLogger } from 'react-query'
 import { rest } from 'msw'
 import { setupServer } from 'msw/node'
+import { mockResponse as infoResponse } from '../../axios/Info/getInfo.test'
 
 setLogger({
   log: console.log,
@@ -41,11 +42,15 @@ const server = setupServer(
   }),
   rest.get('/user/token', (_req, res, ctx) => {
     return res(ctx.status(200), ctx.json(mockResponse))
+  }),
+  rest.get('/info', (_req, res, ctx) => {
+    return res(ctx.status(200), ctx.json(infoResponse))
   })
 )
 
 const AuthContent: React.FC = () => {
-  const { authenticated, token, login, logout, error } = useAuthContext()
+  const { authenticated, token, login, logout, error, siteConfig } =
+    useTethysApiContext()
   return authenticated ? (
     <>
       <div aria-label="auth-content-token">{token}</div>
@@ -60,6 +65,7 @@ const AuthContent: React.FC = () => {
     </>
   ) : (
     <>
+      <p>{siteConfig?.appConfig?.googleApiKey}</p>
       <button
         aria-label="auth-content-login-button"
         onClick={() => {
@@ -80,22 +86,33 @@ const MockComponent: React.FC<{ client: QueryClient; testToken?: string }> = ({
   const [sessionToken, setSessionToken] = useState(testToken ?? '')
   return (
     <QueryClientProvider client={client}>
-      <AuthProvider
+      <TethysApiProvider
         sessionToken={sessionToken}
         setSessionToken={setSessionToken}
       >
         <AuthContent />
-      </AuthProvider>
+      </TethysApiProvider>
     </QueryClientProvider>
   )
 }
 
-describe('AuthProvider', () => {
+describe('TethysApiProvider', () => {
   beforeAll(() => {
     server.listen()
   })
   afterEach(() => server.resetHandlers())
   afterAll(() => server.close())
+
+  it('should render an attribute from the general site configuration.', async () => {
+    const client = makeClient()
+    render(<MockComponent client={client} />)
+    await waitFor(() =>
+      screen.getByText(infoResponse.result.appConfig.googleApiKey)
+    )
+    expect(
+      screen.getByText(infoResponse.result.appConfig.googleApiKey)
+    ).toBeInTheDocument()
+  })
 
   it('should render the login button if not authenticated', async () => {
     const client = makeClient()

@@ -13,7 +13,16 @@ const selectOptions = [
   { name: 'Example B', id: 'B' },
 ]
 
-const Template: Story<SelectFieldProps> = (args) => <SelectField {...args} />
+const Template: Story<SelectFieldProps> = (args) => {
+  const [selected, setSelected] = React.useState<SelectFieldProps['value']>('')
+  return (
+    <SelectField
+      {...args}
+      onSelect={(s) => setSelected(s ?? undefined)}
+      value={selected}
+    />
+  )
+}
 
 export const Standard = Template.bind({})
 Standard.args = {

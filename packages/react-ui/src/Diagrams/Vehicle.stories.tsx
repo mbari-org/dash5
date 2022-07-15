@@ -25,6 +25,7 @@ const args: VehicleProps = {
   colorSw: 'st3',
   colorThrust: 'st3',
   colorArrow: 'st16',
+  textArriveLabel: 'Arrive Station',
 }
 
 export const Deployed = Template.bind({})

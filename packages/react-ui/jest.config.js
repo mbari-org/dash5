@@ -1,3 +1,4 @@
+/* eslint-disable */
 const path = require('path')
 const { lstatSync, readdirSync } = require('fs')
 
@@ -30,4 +31,5 @@ module.exports = {
       []
     ),
   ],
+  setupFiles: ['<rootDir>/jest.stub.js'],
 }

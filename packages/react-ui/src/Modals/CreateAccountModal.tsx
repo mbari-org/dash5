@@ -12,6 +12,7 @@ export interface CreateAccountModalProps extends ModalPropsWithoutTitle {
 
 export const CreateAccountModal: React.FC<CreateAccountModalProps> = ({
   onSubmit,
+  children,
   ...modalProps
 }) => {
   return (
@@ -22,6 +23,7 @@ export const CreateAccountModal: React.FC<CreateAccountModalProps> = ({
       form="createAccount"
     >
       <CreateAccountForm onSubmit={onSubmit} id="createAccount" hideSubmit />
+      {children}
     </Modal>
   )
 }

@@ -1,13 +1,13 @@
 import { useQuery } from 'react-query'
 import { getLastDeployment, GetLastDeploymentParams } from '../../axios'
-import { useAuthContext } from '../AuthProvider'
+import { useTethysApiContext } from '../TethysApiProvider'
 import { SupportedQueryOptions } from '../types'
 
 export const useLastDeployment = (
   params: GetLastDeploymentParams,
   options?: SupportedQueryOptions
 ) => {
-  const { axiosInstance } = useAuthContext()
+  const { axiosInstance } = useTethysApiContext()
   const query = useQuery(
     ['deployment', 'last', params.vehicle],
     () => {

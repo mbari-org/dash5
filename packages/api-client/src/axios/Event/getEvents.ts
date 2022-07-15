@@ -1,19 +1,64 @@
-// Use scaffold axiosBase to generate the resources imported below.
+import { filterBlankAttributes } from '@mbari/utils'
 import { getInstance } from '../getInstance'
 import { RequestConfig } from '../types'
 
+interface GpsFix {
+  latitude: number
+  longitude: number
+  date: string
+}
+
+export type EventType =
+  | 'argoReceive'
+  | 'command'
+  | 'dataProcessed'
+  | 'deploy'
+  | 'emergency'
+  | 'gpsFix'
+  | 'launch'
+  | 'logCritical'
+  | 'logFault'
+  | 'logImportant'
+  | 'logPath'
+  | 'note'
+  | 'patch'
+  | 'recover'
+  | 'run'
+  | 'sbdReceipt'
+  | 'sbdReceive'
+  | 'sbdSend'
+  | 'tracking'
+
 export interface GetEventsParams {
-  vehicles: string
+  vehicles: string[]
   from: string
-  to: string
-  eventTypes: string
-  limit: number
-  noteMatches: string
+  to?: string
+  eventTypes?: EventType[]
+  limit?: number
+  noteMatches?: string
   ascending?: 'y' | 'n'
 }
 
 export interface GetEventsResponse {
-  result: string
+  eventId: number
+  vehicleName: string
+  unixTime: number
+  isoTime: string
+  eventType: EventType
+  state?: number
+  user?: string
+  note?: string
+  component?: string
+  text?: string
+  name?: string
+  fix?: GpsFix
+  path?: string
+  data?: string
+  momsn?: number
+  mtmsn?: number
+  dataLen?: number
+  refId?: number
+  index?: number
 }
 
 export const getEvents = async (
@@ -27,11 +72,15 @@ export const getEvents = async (
   }
 
   const response = await instance.get(
-    `${url}?${new URLSearchParams({
-      ...params,
-      limit: params.limit.toString(),
-    })}`,
+    `${url}?${new URLSearchParams(
+      filterBlankAttributes({
+        ...params,
+        vehicles: params.vehicles.join(','),
+        eventTypes: params.eventTypes?.join(','),
+        limit: params.limit?.toString(),
+      })
+    )}`,
     config
   )
-  return response.data as GetEventsResponse
+  return response.data.result as GetEventsResponse[]
 }
