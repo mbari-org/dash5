@@ -10,6 +10,7 @@ import { faEnvelope } from '@fortawesome/pro-solid-svg-icons/faEnvelope'
 import { faPhone } from '@fortawesome/pro-solid-svg-icons/faPhone'
 import { faUserCircle } from '@fortawesome/pro-solid-svg-icons/faUserCircle'
 import { faLockAlt } from '@fortawesome/pro-solid-svg-icons/faLockAlt'
+import { SelectField } from './SelectField'
 
 export default {
   title: 'Fields/Fields',
@@ -35,6 +36,20 @@ const Template: Story<FieldsProps> = (args) => (
           className="w-1/2"
           icon={faUserCircle}
           grow
+        />
+        <SelectField
+          name="suffix"
+          label="Suffix"
+          options={[
+            {
+              id: 'Jr.',
+              name: 'Jr.',
+            },
+            {
+              id: 'Sr.',
+              name: 'Sr.',
+            },
+          ]}
         />
       </Fields>
       <TextField
