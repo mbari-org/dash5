@@ -61,6 +61,7 @@ export const useChartData = (
       } catch (e) {
         await axiosInstance?.post(
           `${siteConfig?.appConfig.external.tethysdash}/dash/reprocess`,
+          undefined,
           {
             headers: { Authorization: `Bearer ${token}` },
             params: reprocessParams,

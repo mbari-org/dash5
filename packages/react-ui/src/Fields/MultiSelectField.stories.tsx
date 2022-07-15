@@ -1,11 +1,13 @@
 import React from 'react'
 import { Story, Meta } from '@storybook/react'
 
-import { SelectField, SelectFieldProps } from './SelectField'
+import { MultiSelectField, MultiSelectFieldProps } from './MultiSelectField'
+import { MultiValue } from 'react-select'
+import { SelectOption } from './Select'
 
 export default {
-  title: 'Fields/SelectField',
-  component: SelectField,
+  title: 'Fields/MultiSelectField',
+  component: MultiSelectField,
 } as Meta
 
 const selectOptions = [
@@ -13,12 +15,14 @@ const selectOptions = [
   { name: 'Example B', id: 'B' },
 ]
 
-const Template: Story<SelectFieldProps> = (args) => {
-  const [selected, setSelected] = React.useState<SelectFieldProps['value']>('')
+const Template: Story<MultiSelectFieldProps> = (args) => {
+  const [selected, setSelected] = React.useState<MultiValue<SelectOption>>([])
   return (
-    <SelectField
+    <MultiSelectField
       {...args}
-      onSelect={(s) => setSelected(s ?? undefined)}
+      onSelect={(s) => {
+        setSelected(s ?? [])
+      }}
       value={selected}
     />
   )

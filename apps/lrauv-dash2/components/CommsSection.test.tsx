@@ -94,7 +94,7 @@ beforeAll(() => server.listen())
 afterEach(() => server.resetHandlers())
 afterAll(() => server.close())
 
-describe('VehicleList', () => {
+describe('CommsSection', () => {
   test('should render the component', async () => {
     expect(() =>
       render(
