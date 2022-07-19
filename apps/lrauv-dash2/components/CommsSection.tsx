@@ -1,6 +1,6 @@
 import React from 'react'
 import { useEvents } from '@mbari/api-client'
-import { CellVirtualizer, Virtualizer, CommsCell } from '@mbari/react-ui'
+import { AccordionCells, Virtualizer, CommsCell } from '@mbari/react-ui'
 import { DateTime } from 'luxon'
 
 export interface CommsSectionProps {
@@ -52,15 +52,7 @@ const CommsSection: React.FC<CommsSectionProps> = ({
     )
   }
 
-  return (
-    <div className="relative flex h-full flex-shrink flex-grow">
-      <CellVirtualizer
-        cellAtIndex={cellAtIndex}
-        count={data?.length ?? 0}
-        className="absolute inset-0 w-full"
-      />
-    </div>
-  )
+  return <AccordionCells cellAtIndex={cellAtIndex} count={data?.length} />
 }
 
 CommsSection.displayName = 'components.CommsSection'

@@ -1,6 +1,6 @@
 import { CellVirtualizer, HandoffCell, Virtualizer } from '@mbari/react-ui'
 import { useEvents } from '@mbari/api-client'
-import { AccessoryButton } from '@mbari/react-ui'
+import { AccessoryButton, AccordionCells } from '@mbari/react-ui'
 import { faPlus } from '@fortawesome/pro-regular-svg-icons'
 import useGlobalModalId from '../lib/useGlobalModalId'
 
@@ -71,13 +71,7 @@ const HandoffSection: React.FC<HandoffSectionProps> = ({
           />
         </header>
       )}
-      <div className="relative flex h-full flex-shrink flex-grow">
-        <CellVirtualizer
-          cellAtIndex={cellAtIndex}
-          count={data?.length ?? 0}
-          className="absolute inset-0 w-full"
-        />
-      </div>
+      <AccordionCells cellAtIndex={cellAtIndex} count={data?.length} />
     </>
   )
 }

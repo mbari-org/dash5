@@ -1,11 +1,11 @@
 import React, { useState } from 'react'
 import { useEvents, useTethysApiContext } from '@mbari/api-client'
 import {
-  CellVirtualizer,
   Virtualizer,
   LogCell,
   IconButton,
   MultiSelectField,
+  AccordionCells,
 } from '@mbari/react-ui'
 import { MultiValue } from 'react-select'
 import { DateTime } from 'luxon'
@@ -101,18 +101,7 @@ const LogsSection: React.FC<LogsSectionProps> = ({ vehicleName, from, to }) => {
           onClick={handleRefresh}
         />
       </header>
-      <div
-        className={clsx(
-          'relative flex h-full flex-shrink flex-grow',
-          isLoading || (isFetching && 'opacity-50')
-        )}
-      >
-        <CellVirtualizer
-          cellAtIndex={cellAtIndex}
-          count={data?.length ?? 0}
-          className="absolute inset-0 w-full"
-        />
-      </div>
+      <AccordionCells cellAtIndex={cellAtIndex} count={data?.length} />
     </>
   )
 }
