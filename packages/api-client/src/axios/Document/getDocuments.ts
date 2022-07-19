@@ -1,16 +1,39 @@
 // Use scaffold axiosBase to generate the resources imported below.
+import { filterBlankAttributes } from '@mbari/utils'
 import { getInstance } from '../getInstance'
 import { RequestConfig } from '../types'
 
+interface Revision {
+  docInstanceId?: number
+  unixTime?: number
+}
+
+interface Brief {
+  name?: string
+  deploymentId?: number
+}
+
+interface InstanceBrief extends Revision {
+  user?: string
+}
+
 export interface GetDocumentsParams {
   docId?: string
+  deploymentId?: string
 }
+
 export interface GetDocumentsResponse {
-  result: string
+  docId?: number
+  name?: string
+  docType?: string
+  latestRevision?: Revision
+  deploymentBriefs?: Brief[]
+  vehicleNames?: string[]
+  docInstanceBriefs?: InstanceBrief[]
 }
 
 export const getDocuments = async (
-  params: GetDocumentsParams = {},
+  params: GetDocumentsParams,
   { debug, instance = getInstance(), ...config }: RequestConfig = {}
 ) => {
   const url = '/documents'
@@ -20,8 +43,8 @@ export const getDocuments = async (
   }
 
   const response = await instance.get(
-    `${url}?${new URLSearchParams({ ...params })}`,
+    `${url}?${new URLSearchParams(filterBlankAttributes({ ...params }))}`,
     config
   )
-  return response.data as GetDocumentsResponse
+  return response.data.result as GetDocumentsResponse[]
 }
