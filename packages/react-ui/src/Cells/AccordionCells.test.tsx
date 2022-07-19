@@ -1,5 +1,5 @@
 import React from 'react'
-import { render, screen } from '@testing-library/react'
+import { render } from '@testing-library/react'
 import '@testing-library/jest-dom'
 import { AccordionCells, AccordionCellsProps } from './AccordionCells'
 import { Virtualizer } from '../Cells'
@@ -10,8 +10,6 @@ const props: AccordionCellsProps = {
   },
   count: 100,
 }
-
-test.todo('should have tests')
 
 test('should render the component', async () => {
   expect(() => render(<AccordionCells {...props} />)).not.toThrow()
