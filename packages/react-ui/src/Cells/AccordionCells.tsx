@@ -1,6 +1,6 @@
 import React from 'react'
 import clsx from 'clsx'
-import { CellVirtualizer, CellVirtualizerProps } from '../Cells'
+import { CellVirtualizer, CellVirtualizerProps } from './CellVirtualizer'
 
 export interface AccordionCellsProps {
   className?: string
