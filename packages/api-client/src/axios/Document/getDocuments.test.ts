@@ -7,7 +7,7 @@ let params: GetDocumentsParams = {
   deploymentId: '3000411',
 }
 
-const mockResponse = {
+export const mockResponse = {
   result: [
     {
       docId: 3000798,
