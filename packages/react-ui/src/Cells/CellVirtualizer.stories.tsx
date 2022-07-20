@@ -12,7 +12,7 @@ import { VehicleProps } from '../Diagrams'
 import { VehicleHeader } from '../Navigation'
 
 export default {
-  title: 'CellVirtualizer',
+  title: 'Cells/CellVirtualizer',
   component: CellVirtualizer,
 } as Meta
 

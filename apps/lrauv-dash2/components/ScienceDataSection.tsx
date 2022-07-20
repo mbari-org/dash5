@@ -1,9 +1,10 @@
 import { SelectField } from '@mbari/react-ui'
 import useGlobalModalId from '../lib/useGlobalModalId'
 import dynamic from 'next/dynamic'
-import { useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { capitalize, humanize, swallow } from '@mbari/utils'
 import { useChartData } from '@mbari/api-client'
+import { AccordionCells } from '@mbari/react-ui'
 
 const LineChart = dynamic(
   () => import('@mbari/react-ui/dist/Charts/LineChart'),
@@ -22,11 +23,27 @@ const ScienceCell: React.FC<{
   values?: number[]
   times?: number[]
 }> = ({ color, values, times, unit, name }) => {
+  const [ready, setReady] = useState(false)
+  const timeout = useRef<ReturnType<typeof setTimeout>>(null)
+  useEffect(() => {
+    if (!ready && !timeout.current) {
+      setTimeout(() => {
+        setReady(true)
+      }, 2000)
+    }
+    const currentTimeout = timeout.current
+    return () => {
+      if (currentTimeout) {
+        clearTimeout(currentTimeout)
+      }
+    }
+  }, [ready, timeout, setReady])
+
   const metric = `${capitalize(name)} (${unit})`
   return (
     <div className="h-[340px] w-full border-b border-b-slate-200 p-4">
       <div className="relative my-auto h-[320px]">
-        {values && times ? (
+        {values && times && ready ? (
           <LineChart
             data={values?.map((v, i) => ({
               timestamp: times?.[i],
@@ -125,8 +142,9 @@ const ScienceDataSection: React.FC<{
               <p>{(error as any)?.message}</p>
             </div>
           )}
-          {charts?.map((_, index) => cellAtIndex(index))}
+          <AccordionCells cellAtIndex={cellAtIndex} count={charts?.length} />
         </div>
+        <div className="absolute inset-x-0 bottom-0 z-10 h-2 bg-gradient-to-t from-stone-400/20" />
       </div>
     </>
   )
