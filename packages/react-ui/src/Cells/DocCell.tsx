@@ -15,7 +15,7 @@ export interface DocCellProps {
   time: string
   date: string
   label: string
-  missions: Mission[]
+  missions?: Mission[]
 }
 
 interface Mission {
@@ -26,7 +26,7 @@ interface Mission {
 const styles = {
   container: 'flex items-center bg-white font-display',
   accButton:
-    'font-semibold text-gray-700 flex border-gray-300 !w-full !text-left',
+    '!text-xs font-semibold text-gray-700 flex border-gray-300 !w-full !text-left',
   iconButton: 'absolute right-4 my-auto',
 }
 
@@ -42,11 +42,11 @@ export const DocCell: React.FC<DocCellProps> = ({
 }) => {
   return (
     <article className={clsx(styles.container, className)}>
-      <ul className="ml-2 p-4 text-gray-500">
+      <ul className="ml-2 p-4 text-sm text-gray-500">
         <li aria-label="time">{time}</li>
         <li aria-label="date">{date}</li>
       </ul>
-      <div className="p-4">
+      <div className="p-4 text-xs">
         <button
           className="font-light text-primary-600"
           onClick={swallow(onSelect)}
@@ -54,7 +54,7 @@ export const DocCell: React.FC<DocCellProps> = ({
           {label}
         </button>
         <ul className="grid grid-cols-2 gap-1">
-          {missions.map(({ name, id }) => (
+          {missions?.map(({ name, id }) => (
             <li key={id}>
               <AccessoryButton
                 className={styles.accButton}

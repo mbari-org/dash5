@@ -4,7 +4,7 @@ import { useTethysApiContext } from '../TethysApiProvider'
 import { SupportedQueryOptions } from '../types'
 
 export const useDocuments = (
-  params: GetDocumentsParams,
+  params?: GetDocumentsParams,
   options?: SupportedQueryOptions
 ) => {
   const { axiosInstance } = useTethysApiContext()

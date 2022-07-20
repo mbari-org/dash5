@@ -1,6 +1,7 @@
 import { AccordionHeader } from '@mbari/react-ui'
 import { useState } from 'react'
 import CommsSection from './CommsSection'
+import DocsSection from './DocsSection'
 import HandoffSection from './HandoffSection'
 import LogsSection from './LogsSection'
 import ScienceDataSection from './ScienceDataSection'
@@ -95,6 +96,7 @@ const VehicleAccordion: React.FC<VehicleAccordionProps> = ({
         open={section === 'docs'}
         className="flex flex-shrink-0"
       />
+      {section === 'docs' && <DocsSection authenticated={true} />}
     </div>
   )
 }
