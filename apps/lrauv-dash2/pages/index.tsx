@@ -44,12 +44,7 @@ const OverviewPage: NextPage = () => {
   }
   return (
     <Layout>
-      <OverviewToolbar
-        pilotInCharge="Shannon J."
-        pilotOnCall="Bryan K."
-        deployment={{ name: 'Overview', id: '0' }}
-        onClickPilot={() => setGlobalModalId('reassign')}
-      />
+      <OverviewToolbar deployment={{ name: 'Overview', id: '0' }} />
       <div className={styles.content}>
         <section className={styles.primary}>
           <MissionProgressToolbar
