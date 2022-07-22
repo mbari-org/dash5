@@ -1,13 +1,8 @@
-import {
-  AccordionCells,
-  DocCell,
-  SelectField,
-  Virtualizer,
-} from '@mbari/react-ui'
+import { AccordionCells, DocCell, SelectField } from '@mbari/react-ui'
 import { useDocuments } from '@mbari/api-client'
 import { DateTime } from 'luxon'
-import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { faPlus } from '@fortawesome/pro-regular-svg-icons'
+import { AccessoryButton } from '@mbari/react-ui'
 
 interface DocsSectionProps {
   authenticated?: boolean
@@ -24,7 +19,7 @@ const DocsSection: React.FC<DocsSectionProps> = ({
 }) => {
   const { data } = useDocuments()
 
-  const cellAtIndex = (index: number, _virtualizer: Virtualizer) => {
+  const cellAtIndex = (index: number) => {
     const item = data?.[index]
     const briefs = item?.deploymentBriefs?.map(({ deploymentId, name }) => ({
       id: deploymentId ? deploymentId.toString() : '',
@@ -44,6 +39,7 @@ const DocsSection: React.FC<DocsSectionProps> = ({
 
     return (
       <DocCell
+        className={'border-b border-slate-200'}
         label={item?.name ?? ''}
         missions={briefs?.length ? briefs : []}
         time={time}
@@ -61,9 +57,7 @@ const DocsSection: React.FC<DocsSectionProps> = ({
         <SelectField name="Filter"></SelectField>
         {authenticated && (
           <span className="flex flex-grow justify-end">
-            <button className="rounded border-[1px] border-black/80 px-2">
-              <FontAwesomeIcon icon={faPlus} /> Add Document
-            </button>
+            <AccessoryButton icon={faPlus} label={'Add Document'} />
           </span>
         )}
       </header>

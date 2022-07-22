@@ -9,7 +9,7 @@ export default {
 } as Meta
 
 const Template: Story<DocCellProps> = (args) => (
-  <div className="bg-stone-200 p-2">
+  <div className="w-[430px] bg-stone-200 p-2">
     <DocCell {...args} />
   </div>
 )
@@ -27,7 +27,7 @@ const args: DocCellProps = {
   },
   time: '16:29:32',
   date: 'Dec. 15, 2021',
-  label: 'Maintenance Log - Brizo',
+  label: 'Maintenance Log - 8430279410327430174037149070',
   missions: [{ name: 'Brizo 7 EcoHAB', id: '1' }],
 }
 
