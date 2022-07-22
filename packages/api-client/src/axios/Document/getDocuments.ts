@@ -9,8 +9,8 @@ interface Revision {
 }
 
 interface Brief {
-  name?: string
-  deploymentId?: number
+  name: string
+  deploymentId: number
 }
 
 interface InstanceBrief extends Revision {
@@ -33,7 +33,7 @@ export interface GetDocumentsResponse {
 }
 
 export const getDocuments = async (
-  params: GetDocumentsParams,
+  params?: GetDocumentsParams,
   { debug, instance = getInstance(), ...config }: RequestConfig = {}
 ) => {
   const url = '/documents'

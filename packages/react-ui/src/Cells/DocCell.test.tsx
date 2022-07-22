@@ -35,7 +35,7 @@ test('should render the date and time', async () => {
 test('should render the mission tag', async () => {
   render(<DocCell {...props} />)
 
-  expect(screen.getByText(props.missions[0].name)).toBeInTheDocument()
+  expect(screen.getByText(`${props?.missions?.[0].name}`)).toBeInTheDocument()
 })
 
 test('should render the more options button', async () => {
