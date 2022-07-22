@@ -96,7 +96,9 @@ const VehicleAccordion: React.FC<VehicleAccordionProps> = ({
         open={section === 'docs'}
         className="flex flex-shrink-0"
       />
-      {section === 'docs' && <DocsSection authenticated={authenticated} />}
+      {section === 'docs' && (
+        <DocsSection authenticated={authenticated} vehicleName={vehicleName} />
+      )}
     </div>
   )
 }

@@ -23,7 +23,8 @@ export const SelectField = React.forwardRef<
       disabled,
       errorMessage,
       errors,
-      ...filedProps
+      clearable,
+      ...fieldProps
     },
     ref
   ) => {
@@ -40,7 +41,7 @@ export const SelectField = React.forwardRef<
         className={className}
         style={style}
         errorMessage={determinedErrorMessage}
-        {...filedProps}
+        {...fieldProps}
       >
         <Select
           ref={ref}
@@ -52,6 +53,7 @@ export const SelectField = React.forwardRef<
           onSelect={handleSelect}
           onChange={handleChange}
           placeholder={placeholder}
+          clearable={clearable}
         />
       </Field>
     )
