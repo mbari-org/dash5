@@ -1,65 +1,13 @@
 import { useState } from 'react'
 import { AccordionCells, DocCell, SelectField } from '@mbari/react-ui'
-import {
-  useDeployments,
-  useDocuments,
-  GetDocumentsResponse,
-} from '@mbari/api-client'
+import { useDeployments, useDocuments } from '@mbari/api-client'
 import { DateTime } from 'luxon'
 import { faPlus } from '@fortawesome/pro-regular-svg-icons'
 import { AccessoryButton } from '@mbari/react-ui'
-
-type FilterType =
-  | 'This Vehicle'
-  | 'By Deployment'
-  | 'Unattached'
-  | 'Forms'
-  | 'Templates'
-  | 'All Documents'
-
-const FILTER_TYPES: FilterType[] = [
-  'This Vehicle',
-  'By Deployment',
-  'Unattached',
-  'Forms',
-  'Templates',
-  'All Documents',
-]
-
-const filterByType = (params: {
-  type: FilterType
-  doc: GetDocumentsResponse
-  deploymentId: string | null
-  vehicleName?: string
-}) => {
-  switch (params.type) {
-    case 'By Deployment':
-      if (params.deploymentId) {
-        const briefs = params.doc?.deploymentBriefs
-        const matches =
-          briefs?.filter(
-            (brief) => brief.deploymentId.toString() === params.deploymentId
-          ).length ?? 0
-        return matches > 0
-      }
-
-      return true
-    case 'This Vehicle':
-      return params.doc.vehicleNames?.includes(params.vehicleName ?? '')
-    case 'Unattached':
-      const hasBriefs = params.doc.deploymentBriefs?.length ?? 0
-      const hasVehicles = params.doc.vehicleNames?.length ?? 0
-      const isTemplate = params.doc.docType === 'TEMPLATE'
-      const isForm = params.doc.docType === 'FORM'
-      return !hasBriefs && !hasVehicles && !isTemplate && !isForm
-    case 'Forms':
-      return params.doc.docType === 'FORM'
-    case 'Templates':
-      return params.doc.docType === 'TEMPLATE'
-    default:
-      return true
-  }
-}
+import filterDocuments, {
+  DOCUMENT_FILTER_TYPES,
+  DocumentFilterType,
+} from '../lib/filterDocuments'
 
 interface DocsSectionProps {
   authenticated?: boolean
@@ -76,7 +24,8 @@ const DocsSection: React.FC<DocsSectionProps> = ({
   onSelectMore,
   vehicleName,
 }) => {
-  const [selectedType, setSelectedType] = useState<FilterType>('All Documents')
+  const [selectedType, setSelectedType] =
+    useState<DocumentFilterType>('All Documents')
   const [selectedDeployment, setSelectedDeployment] =
     useState<null | string>(null)
   const isFilteringDeployment = selectedType === 'By Deployment'
@@ -91,7 +40,7 @@ const DocsSection: React.FC<DocsSectionProps> = ({
     }
   )
   const data = documentData?.filter((doc) =>
-    filterByType({
+    filterDocuments({
       type: selectedType,
       doc,
       deploymentId: selectedDeployment,
@@ -137,11 +86,11 @@ const DocsSection: React.FC<DocsSectionProps> = ({
         <div className="flex flex-grow flex-col">
           <SelectField
             name="Filter"
-            options={FILTER_TYPES.map((name) => ({ name, id: name }))}
+            options={DOCUMENT_FILTER_TYPES.map((name) => ({ name, id: name }))}
             className="flex-grow"
             value={selectedType}
             onSelect={(id) =>
-              setSelectedType((id ?? 'All Documents') as FilterType)
+              setSelectedType((id ?? 'All Documents') as DocumentFilterType)
             }
           />
           {isFilteringDeployment && (
