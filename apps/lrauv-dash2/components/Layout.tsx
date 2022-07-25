@@ -20,6 +20,7 @@ import UserForgotPassword from './UserForgotPassword'
 import { NewDeployment } from './NewDeployment'
 import DeploymentDetails from './DeploymentDetails'
 import SendNote from './SendNote'
+import DocumentInstanceModal from './DocumentInstanceModal'
 
 const Layout: React.FC = ({ children }) => {
   const [showLogin, setLogin] = useState(false)
@@ -142,6 +143,9 @@ const Layout: React.FC = ({ children }) => {
       )}
       {globalModalId === 'newDeployment' && authenticated && (
         <NewDeployment onClose={setModal(null)} />
+      )}
+      {globalModalId === 'editDocument' && (
+        <DocumentInstanceModal onClose={setModal(null)} />
       )}
       {globalModalId === 'reassign' && authenticated && (
         <ReassignmentModal

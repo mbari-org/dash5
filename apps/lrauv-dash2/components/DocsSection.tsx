@@ -8,22 +8,21 @@ import filterDocuments, {
   DOCUMENT_FILTER_TYPES,
   DocumentFilterType,
 } from '../lib/filterDocuments'
+import useGlobalModalId from '../lib/useGlobalModalId'
+import useSelectedDocumentInstance from '../lib/useSelectedDocumentInstance'
+import { swallow } from '@mbari/utils'
 
 interface DocsSectionProps {
   authenticated?: boolean
   vehicleName: string
-  onSelect?: () => void
-  onSelectMore?: () => void
-  onSelectMission?: (id: string) => void
 }
 
 const DocsSection: React.FC<DocsSectionProps> = ({
   authenticated,
-  onSelect,
-  onSelectMission,
-  onSelectMore,
   vehicleName,
 }) => {
+  const { setGlobalModalId } = useGlobalModalId()
+  const { setSelectedDocumentInstance } = useSelectedDocumentInstance()
   const [selectedType, setSelectedType] =
     useState<DocumentFilterType>('All Documents')
   const [selectedDeployment, setSelectedDeployment] =
@@ -73,12 +72,23 @@ const DocsSection: React.FC<DocsSectionProps> = ({
         missions={briefs?.length ? briefs : []}
         time={time}
         date={date}
-        onSelectMission={() => onSelectMission}
-        onSelectMore={() => onSelectMore}
-        onSelect={() => onSelect}
+        onSelectMission={() => undefined}
+        onSelectMore={() => undefined}
+        onSelect={() => {
+          console.log('Selecting document: ', item?.name)
+          setGlobalModalId('editDocument')
+          setSelectedDocumentInstance(
+            item?.latestRevision?.docInstanceId?.toString() ?? null
+          )
+        }}
       />
     )
   }
+
+  const handleAddClick = swallow(() => {
+    setGlobalModalId('editDocument')
+    setSelectedDocumentInstance(null)
+  })
 
   return (
     <>
@@ -109,7 +119,11 @@ const DocsSection: React.FC<DocsSectionProps> = ({
         </div>
         {authenticated && (
           <div className="mb-auto flex pl-2">
-            <AccessoryButton icon={faPlus} label={'Add Document'} />
+            <AccessoryButton
+              icon={faPlus}
+              label={'Add Document'}
+              onClick={handleAddClick}
+            />
           </div>
         )}
       </header>

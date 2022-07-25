@@ -9,6 +9,7 @@ export type ModalId =
   | 'editDeployment'
   | 'sendNote'
   | 'esbSamples'
+  | 'editDocument'
   | null
 
 const globalModalState = atom<ModalId>({
