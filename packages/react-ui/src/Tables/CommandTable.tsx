@@ -1,5 +1,4 @@
 import React from 'react'
-import clsx from 'clsx'
 import { Table } from '../Data/Table'
 
 export interface CommandTableProps {
@@ -46,31 +45,31 @@ export const CommandTable: React.FC<CommandTableProps> = ({
     onSelectCommand?.(commands[index].id)
   }
   return (
-    <div className={clsx('', className)} style={style}>
-      <Table
-        grayHeader
-        scrollable
-        header={{
-          cells: [
-            {
-              label: 'COMMAND',
-              onSort: onSortColumn,
-            },
-            {
-              label: 'ALL LRAUV',
-              onSort: onSortColumn,
-              sortDirection: 'desc',
-            },
-            { label: 'DESCRIPTION' },
-          ],
-        }}
-        rows={commandRows}
-        onSelectRow={onSelectCommand && handleSelect}
-        selectedIndex={
-          selectedId ? commands.findIndex(({ id }) => id === selectedId) : null
-        }
-      />
-    </div>
+    <Table
+      className={className}
+      style={style}
+      grayHeader
+      scrollable
+      header={{
+        cells: [
+          {
+            label: 'COMMAND',
+            onSort: onSortColumn,
+          },
+          {
+            label: 'ALL LRAUV',
+            onSort: onSortColumn,
+            sortDirection: 'desc',
+          },
+          { label: 'DESCRIPTION' },
+        ],
+      }}
+      rows={commandRows}
+      onSelectRow={onSelectCommand && handleSelect}
+      selectedIndex={
+        selectedId ? commands.findIndex(({ id }) => id === selectedId) : null
+      }
+    />
   )
 }
 
