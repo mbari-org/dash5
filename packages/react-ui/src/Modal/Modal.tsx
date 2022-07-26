@@ -13,6 +13,7 @@ export interface ModalViewProps {
   grayHeader?: boolean
   fullWidthBody?: boolean
   extraWideModal?: boolean
+  bodyOverflowHidden?: boolean
   onClose?: () => void
   draggable?: boolean
   onFocus?: () => void
@@ -56,7 +57,7 @@ const styles = {
   dragButton:
     'cursor-move flex flex-grow bg-opacity-50 hover:bg-stone-100 ml-1 my-1 rounded transition-colors duration-100 ease-out',
   closeButton: 'my-1 mr-2 text-stone-400',
-  modalBody: 'text-base font-normal overflow-auto',
+  modalBody: 'text-base font-normal',
   bodyMarginAndPadding: 'mb-6 px-4 py-4',
   notDragging: 'shadow-xl border-stone-100',
   dragging: 'shadow-2xl border-stone-200',
@@ -68,6 +69,7 @@ export const Modal: React.FC<ModalProps & FooterProps> = ({
   grayHeader,
   fullWidthBody,
   extraWideModal,
+  bodyOverflowHidden,
   onClose: handleOnClose,
   children,
   draggable,
@@ -197,7 +199,8 @@ export const Modal: React.FC<ModalProps & FooterProps> = ({
         <div
           className={clsx(
             styles.modalBody,
-            !fullWidthBody && styles.bodyMarginAndPadding
+            !fullWidthBody && styles.bodyMarginAndPadding,
+            bodyOverflowHidden ? 'overflow-hidden' : 'overflow-auto'
           )}
         >
           {children}
