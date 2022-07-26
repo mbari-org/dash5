@@ -12,6 +12,7 @@ export interface ModalViewProps {
   zIndex?: string
   grayHeader?: boolean
   fullWidthBody?: boolean
+  extraWideModal?: boolean
   onClose?: () => void
   draggable?: boolean
   onFocus?: () => void
@@ -46,7 +47,9 @@ const styles = {
   overlay:
     'fixed inset-0 flex flex-col items-center justify-center w-screen h-screen pointer-events-none font-display',
   modal:
-    'flex flex-col bg-white w-full overflow-hidden md:max-h-3/4 md:max-w-md lg:max-w-lg rounded-md border m-auto pointer-events-auto transition-shadow transition-colors duration-300 ease-out relative',
+    'flex flex-col bg-white w-full overflow-hidden md:max-h-3/4 rounded-md border m-auto pointer-events-auto transition-shadow transition-colors duration-300 ease-out relative',
+  defaultModalWidth: 'md:max-w-md lg:max-w-lg',
+  extraWideModalWidth: 'md:max-w-3xl lg:max-w-5xl',
   header: 'flex justify-between bg-stone-100 rounded mt-0',
   title:
     'text-stone-900 font-medium text-md font-display mt-auto pt-6 px-4 w-full',
@@ -64,6 +67,7 @@ export const Modal: React.FC<ModalProps & FooterProps> = ({
   open,
   grayHeader,
   fullWidthBody,
+  extraWideModal,
   onClose: handleOnClose,
   children,
   draggable,
@@ -161,6 +165,9 @@ export const Modal: React.FC<ModalProps & FooterProps> = ({
       <section
         className={clsx(
           styles.modal,
+          extraWideModal
+            ? styles.extraWideModalWidth
+            : styles.defaultModalWidth,
           dragging ? styles.dragging : styles.notDragging
         )}
         ref={dialog}
