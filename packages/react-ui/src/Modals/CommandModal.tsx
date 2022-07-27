@@ -12,6 +12,7 @@ import {
   CommandTableProps,
 } from '../Tables/CommandTable'
 import { SelectOption } from '../Fields/Select'
+import { SortDirection } from '../Data/TableHeader'
 
 export interface CommandModalProps
   extends StepProgressProps,
@@ -34,7 +35,6 @@ export const CommandModal: React.FC<CommandModalProps> = ({
   commands,
   selectedId,
   recentCommands,
-  onSortColumn,
   onCancel,
   onSubmit,
   onMoreInfo,
@@ -46,6 +46,8 @@ export const CommandModal: React.FC<CommandModalProps> = ({
     useState<string | null | undefined>('')
   const [searchTerm, setSearchTerm] = useState('')
   const [filteredCommands, setFilteredCommands] = useState<Command[]>(commands)
+  const [sortColumn, setSortColumn] = useState<number | null | undefined>(null)
+  const [sortDirection, setSortDirection] = useState<SortDirection>(null)
 
   useEffect(() => {
     if (selectedRecentId) {
@@ -103,6 +105,41 @@ export const CommandModal: React.FC<CommandModalProps> = ({
     setSearchTerm(term)
   }
 
+  const sortByProperty = ({
+    a,
+    b,
+    sortProperty,
+    isAscending,
+    column,
+  }: {
+    a: Command
+    b: Command
+    sortProperty: keyof Command
+    isAscending?: boolean
+    column: number
+  }) => {
+    let elem1 = a[sortProperty] ?? ''
+    let elem2 = b[sortProperty] ?? ''
+    if (!isAscending) [elem1, elem2] = [elem2, elem1]
+    if (elem1 > elem2) return -1
+    if (elem1 < elem2) return 1
+    // sort commands as a secondary measure to sorting other columns (ie if sorting by vehicle, all commands for vehicle Brizo will be in alphabetical order)
+    if (column !== 0) return a.name < b.name ? -1 : 1
+    return -1
+  }
+
+  const handleSort = (column: number, isAscending?: boolean) => {
+    const sortableColumns: string[] = ['name', 'vehicle', 'description']
+    const sortProperty = sortableColumns[column] as keyof Command
+
+    const sortedColumn = [...filteredCommands].sort((a, b) =>
+      sortByProperty({ a, b, sortProperty, isAscending, column })
+    )
+    setSortColumn(column)
+    setSortDirection(isAscending ? 'desc' : 'asc')
+    setFilteredCommands(sortedColumn)
+  }
+
   return (
     <Modal
       className={className}
@@ -158,9 +195,11 @@ export const CommandModal: React.FC<CommandModalProps> = ({
             commands={filteredCommands}
             selectedId={selectedCommandId ? selectedCommandId : ''}
             onSelectCommand={setSelectedCommandId}
-            onSortColumn={onSortColumn}
+            onSortColumn={handleSort}
             // calculated max height provides responsive table size without clipping inside modal
             className="max-h-[calc(100%-40px)]"
+            activeSortColumn={sortColumn}
+            sortDirection={sortDirection}
           />
         </section>
       )}

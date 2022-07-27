@@ -15,10 +15,12 @@ export interface TableHeaderProps {
 export interface TableHeaderCell {
   label: string | JSX.Element
   secondary?: string | JSX.Element
-  onSort?: (column: string, ascending?: boolean) => void
-  sortDirection?: 'asc' | 'desc'
+  onSort?: (column: number, isAscending?: boolean) => void
+  sortDirection?: SortDirection
   span?: number
 }
+
+export type SortDirection = 'asc' | 'desc' | undefined | null
 
 const styles = {
   container: 'whitespace-nowrap border-b-2 border-solid border-stone-200',
@@ -61,9 +63,7 @@ export const TableHeader: React.FC<TableHeaderProps> = ({
         >
           {onSort ? (
             <button
-              onClick={swallow(() =>
-                onSort(`${index}`, sortDirection === 'asc')
-              )}
+              onClick={swallow(() => onSort(index, sortDirection === 'asc'))}
               onMouseEnter={() => {
                 setHoverSort(index)
               }}
