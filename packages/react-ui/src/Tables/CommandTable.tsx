@@ -1,5 +1,5 @@
-import React from 'react'
 import clsx from 'clsx'
+import React from 'react'
 import { Table } from '../Data/Table'
 
 export interface CommandTableProps {
@@ -14,7 +14,7 @@ export interface CommandTableProps {
 export interface Command {
   id: string
   name: string
-  description: string
+  description?: string
   vehicle: string
 }
 
@@ -28,7 +28,12 @@ export const CommandTable: React.FC<CommandTableProps> = ({
 }) => {
   const commandRows = commands.map(({ name, vehicle, description }) => ({
     cells: [
-      { label: name, highlighted: true, highlightedStyle: 'opacity-80' },
+      {
+        label: name,
+        highlighted: true,
+        highlightedStyle: 'opacity-80',
+        span: 2,
+      },
       {
         label: vehicle,
         highlighted: true,
@@ -38,6 +43,7 @@ export const CommandTable: React.FC<CommandTableProps> = ({
         label: description ? description : 'No description',
         highlighted: true,
         highlightedStyle: 'opacity-60',
+        span: 2,
       },
     ],
   }))
@@ -46,31 +52,33 @@ export const CommandTable: React.FC<CommandTableProps> = ({
     onSelectCommand?.(commands[index].id)
   }
   return (
-    <div className={clsx('', className)} style={style}>
-      <Table
-        grayHeader
-        scrollable
-        header={{
-          cells: [
-            {
-              label: 'COMMAND',
-              onSort: onSortColumn,
-            },
-            {
-              label: 'ALL LRAUV',
-              onSort: onSortColumn,
-              sortDirection: 'desc',
-            },
-            { label: 'DESCRIPTION' },
-          ],
-        }}
-        rows={commandRows}
-        onSelectRow={onSelectCommand && handleSelect}
-        selectedIndex={
-          selectedId ? commands.findIndex(({ id }) => id === selectedId) : null
-        }
-      />
-    </div>
+    <Table
+      className={clsx(className, '')}
+      style={style}
+      grayHeader
+      scrollable
+      header={{
+        cells: [
+          {
+            label: 'COMMAND',
+            onSort: onSortColumn,
+            span: 2,
+          },
+          {
+            label: 'ALL LRAUV',
+            onSort: onSortColumn,
+            sortDirection: 'desc',
+          },
+          { label: 'DESCRIPTION', span: 2 },
+        ],
+      }}
+      rows={commandRows}
+      onSelectRow={onSelectCommand && handleSelect}
+      selectedIndex={
+        selectedId ? commands.findIndex(({ id }) => id === selectedId) : null
+      }
+      colInRow={5}
+    />
   )
 }
 

@@ -65,9 +65,11 @@ export const Field: React.FC<FieldProps> = ({
       className
     )}
   >
-    <label htmlFor={name} className={clsx(style.label, labelClassName)}>
-      {label}
-    </label>
+    {label && (
+      <label htmlFor={name} className={clsx(style.label, labelClassName)}>
+        {label}
+      </label>
+    )}
     <div className={style.fieldWrap}>
       {children}
       {icon ? (
