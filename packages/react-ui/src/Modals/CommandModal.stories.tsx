@@ -100,6 +100,21 @@ const args: CommandModalProps = {
   steps: ['Command', 'Build', 'Schedule'],
   currentIndex: 0,
   vehicleName: 'Brizo',
+  recentCommands: [
+    {
+      id: '1',
+      name: 'restart logs',
+    },
+    {
+      id: '2',
+      name: 'stop',
+    },
+    {
+      id: '3',
+      name: 'schedule clear; schedule resume',
+    },
+  ],
+  onCancel: () => console.log('cancel'),
   ...commandTableArgs,
 }
 
