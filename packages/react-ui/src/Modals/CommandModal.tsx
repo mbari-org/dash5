@@ -126,7 +126,9 @@ export const CommandModal: React.FC<CommandModalProps> = ({
           <ul className="grid grid-cols-5 pb-2">
             <li className="col-span-2 self-center">
               Select a command for{' '}
-              <span className=" text-teal-500">{vehicleName}</span>
+              <span className="text-teal-500" data-testid="vehicle name">
+                {vehicleName}
+              </span>
               <IconButton
                 icon={faInfoCircle}
                 ariaLabel="More info"
