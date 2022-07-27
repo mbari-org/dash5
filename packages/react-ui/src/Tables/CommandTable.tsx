@@ -1,3 +1,4 @@
+import clsx from 'clsx'
 import React from 'react'
 import { Table } from '../Data/Table'
 
@@ -13,7 +14,7 @@ export interface CommandTableProps {
 export interface Command {
   id: string
   name: string
-  description: string
+  description?: string
   vehicle: string
 }
 
@@ -27,7 +28,12 @@ export const CommandTable: React.FC<CommandTableProps> = ({
 }) => {
   const commandRows = commands.map(({ name, vehicle, description }) => ({
     cells: [
-      { label: name, highlighted: true, highlightedStyle: 'opacity-80' },
+      {
+        label: name,
+        highlighted: true,
+        highlightedStyle: 'opacity-80',
+        span: 2,
+      },
       {
         label: vehicle,
         highlighted: true,
@@ -37,6 +43,7 @@ export const CommandTable: React.FC<CommandTableProps> = ({
         label: description ? description : 'No description',
         highlighted: true,
         highlightedStyle: 'opacity-60',
+        span: 2,
       },
     ],
   }))
@@ -46,7 +53,7 @@ export const CommandTable: React.FC<CommandTableProps> = ({
   }
   return (
     <Table
-      className={className}
+      className={clsx(className, '')}
       style={style}
       grayHeader
       scrollable
@@ -55,13 +62,14 @@ export const CommandTable: React.FC<CommandTableProps> = ({
           {
             label: 'COMMAND',
             onSort: onSortColumn,
+            span: 2,
           },
           {
             label: 'ALL LRAUV',
             onSort: onSortColumn,
             sortDirection: 'desc',
           },
-          { label: 'DESCRIPTION' },
+          { label: 'DESCRIPTION', span: 2 },
         ],
       }}
       rows={commandRows}
@@ -69,6 +77,7 @@ export const CommandTable: React.FC<CommandTableProps> = ({
       selectedIndex={
         selectedId ? commands.findIndex(({ id }) => id === selectedId) : null
       }
+      colInRow={5}
     />
   )
 }
