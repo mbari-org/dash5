@@ -8,7 +8,7 @@ export interface MissionTableProps {
   missions: Mission[]
   selectedId?: string
   onSelectMission?: (missionId: string) => void
-  onSortColumn?: (column: string, ascending?: boolean) => void
+  onSortColumn?: (column: number, ascending?: boolean) => void
 }
 
 export interface Mission {
@@ -72,7 +72,6 @@ export const MissionTable: React.FC<MissionTableProps> = ({
             {
               label: 'ALL LRAUV',
               onSort: onSortColumn,
-              sortDirection: 'desc',
             },
             { label: 'DESCRIPTION' },
           ],
