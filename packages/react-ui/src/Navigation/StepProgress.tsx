@@ -84,7 +84,7 @@ export const StepProgress: React.FC<StepProgressProps> = ({
             label={`${index + 1}. ${step}`}
             first={index === 0}
             last={index === steps.length - 1}
-            active={index <= currentIndex}
+            active={index === currentIndex}
           />
         ))}
       </ul>
