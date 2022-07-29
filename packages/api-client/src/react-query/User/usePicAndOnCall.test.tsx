@@ -18,30 +18,58 @@ beforeAll(() => server.listen())
 afterEach(() => server.resetHandlers())
 afterAll(() => server.close())
 
-const MockUser: React.FC = () => {
+const MockPic: React.FC<{ vehicleName: string | string[] }> = ({
+  vehicleName,
+}) => {
   const query = usePicAndOnCall({
-    vehicleName: 'daphne',
+    vehicleName,
   })
   return query.isLoading ? null : (
     <div>
-      <span data-testid="user">{query.data?.pic?.user ?? 'Loading'}</span>
+      {query.data?.map((result, index) => (
+        <div data-testid={`user${index}`} key={`${result.pic?.email}-${index}`}>
+          {result?.pic?.user}-{index}
+        </div>
+      ))}
     </div>
   )
 }
 
 describe('usePicAndOnCall', () => {
-  it('should render the user name', async () => {
+  it('should render the pic users when multiple vehicles are supplied', async () => {
     render(
       <MockProviders queryClient={new QueryClient()}>
-        <MockUser />
+        <MockPic vehicleName={['daphne', 'tethys', 'atlas']} />
       </MockProviders>
     )
     await waitFor(() => {
-      return screen.getByText(mockResponse.result.pic.user)
+      return screen.getByText(`${mockResponse.result.pic.user}-0`)
     })
 
-    expect(screen.getByTestId('user')).toHaveTextContent(
-      mockResponse.result.pic.user
+    expect(screen.getByTestId('user0')).toHaveTextContent(
+      `${mockResponse.result.pic.user}-0`
     )
+    expect(screen.getByTestId('user1')).toHaveTextContent(
+      `${mockResponse.result.pic.user}-1`
+    )
+    expect(screen.getByTestId('user2')).toHaveTextContent(
+      `${mockResponse.result.pic.user}-2`
+    )
+  })
+
+  it('should render pic user', async () => {
+    render(
+      <MockProviders queryClient={new QueryClient()}>
+        <MockPic vehicleName="daphne" />
+      </MockProviders>
+    )
+    await waitFor(() => {
+      return screen.getByText(`${mockResponse.result.pic.user}-0`)
+    })
+
+    expect(screen.getByTestId('user0')).toHaveTextContent(
+      `${mockResponse.result.pic.user}-0`
+    )
+    expect(screen.queryByTestId('user2')).not.toBeInTheDocument()
   })
 })
