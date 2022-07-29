@@ -13,6 +13,7 @@ import {
 } from '../Tables/CommandTable'
 import { SelectOption } from '../Fields/Select'
 import { SortDirection } from '../Data/TableHeader'
+import { sortByProperty } from '@mbari/utils'
 
 export interface CommandModalProps
   extends StepProgressProps,
@@ -62,7 +63,6 @@ export const CommandModal: React.FC<CommandModalProps> = ({
       const searchResults = commands.filter(({ name }) =>
         name.includes(searchTerm)
       )
-
       setFilteredCommands(searchResults)
     }
 
@@ -105,39 +105,20 @@ export const CommandModal: React.FC<CommandModalProps> = ({
     setSearchTerm(term)
   }
 
-  const sortByProperty = ({
-    a,
-    b,
-    sortProperty,
-    isAscending,
-    column,
-  }: {
-    a: Command
-    b: Command
-    sortProperty: keyof Command
-    isAscending?: boolean
-    column: number
-  }) => {
-    let elem1 = a[sortProperty] ?? ''
-    let elem2 = b[sortProperty] ?? ''
-    if (!isAscending) [elem1, elem2] = [elem2, elem1]
-    if (elem1 > elem2) return -1
-    if (elem1 < elem2) return 1
-    // sort commands as a secondary measure to sorting other columns (ie if sorting by vehicle, all commands for vehicle Brizo will be in alphabetical order)
-    if (column !== 0) return a.name < b.name ? -1 : 1
-    return -1
-  }
-
   const handleSort = (column: number, isAscending?: boolean) => {
     const sortableColumns: string[] = ['name', 'vehicle', 'description']
     const sortProperty = sortableColumns[column] as keyof Command
+    const updatedIsAscending = !isAscending
 
-    const sortedColumn = [...filteredCommands].sort((a, b) =>
-      sortByProperty({ a, b, sortProperty, isAscending, column })
-    )
+    const sortedCommands = sortByProperty({
+      arrOfObj: [...filteredCommands],
+      sortProperty,
+      secondarySort: 'name',
+      sortAscending: updatedIsAscending,
+    })
     setSortColumn(column)
-    setSortDirection(isAscending ? 'desc' : 'asc')
-    setFilteredCommands(sortedColumn)
+    setSortDirection(updatedIsAscending ? 'asc' : 'desc')
+    setFilteredCommands(sortedCommands as Command[])
   }
 
   return (
