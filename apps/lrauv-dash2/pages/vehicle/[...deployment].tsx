@@ -146,8 +146,8 @@ const Vehicle: NextPage = () => {
     <Layout>
       <OverviewToolbar
         vehicleName={vehicleName}
-        pilotInCharge={picAndOnCall?.pic?.user}
-        pilotOnCall={picAndOnCall?.onCall?.user}
+        pilotInCharge={picAndOnCall?.[0].pic?.user}
+        pilotOnCall={picAndOnCall?.[0].onCall?.user}
         deployment={
           isLoading
             ? { name: '...', id: '0' }

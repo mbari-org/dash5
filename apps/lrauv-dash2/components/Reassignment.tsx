@@ -3,7 +3,7 @@ import {
   useAssignPicAndOnCall,
   useUsersByRole,
 } from '@mbari/api-client'
-import { ReassignmentModal, ReassignmentFormProps } from '@mbari/react-ui'
+import { ReassignmentModal, ReassignmentModalProps } from '@mbari/react-ui'
 import useGlobalModalId from '../lib/useGlobalModalId'
 import { capitalize } from '@mbari/utils'
 
@@ -21,7 +21,7 @@ const Reassignment: React.FC<{ vehicleNames: string[] }> = ({
 
   const { mutate: assignPicAndOnCall, isLoading: loadingAssignPicAndOnCall } =
     useAssignPicAndOnCall()
-  const handleReassignmentSubmit: ReassignmentFormProps['onSubmit'] = async ({
+  const handleReassignmentSubmit: ReassignmentModalProps['onSubmit'] = async ({
     vehicleName: selectedVehicles,
     pic,
     onCall,
@@ -43,6 +43,7 @@ const Reassignment: React.FC<{ vehicleNames: string[] }> = ({
       })
     )
     handleClose()
+    return undefined
   }
 
   return (
