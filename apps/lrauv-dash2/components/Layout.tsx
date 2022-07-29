@@ -1,10 +1,6 @@
 import React, { useEffect } from 'react'
 import Head from 'next/head'
-import {
-  PrimaryToolbar,
-  ProfileDropdown,
-  ReassignmentModal,
-} from '@mbari/react-ui'
+import { PrimaryToolbar, ProfileDropdown } from '@mbari/react-ui'
 import { useTethysApiContext } from '@mbari/api-client'
 import { useState } from 'react'
 import Image from 'next/image'
@@ -14,11 +10,11 @@ import useGlobalModalId, { ModalId } from '../lib/useGlobalModalId'
 import { useRouter } from 'next/router'
 import { UserLogin } from './UserLogin'
 import logo from './mbari-logo.png'
-import { capitalize } from '@mbari/utils'
 import UserCreateAccount from './UserCreateAccount'
 import UserForgotPassword from './UserForgotPassword'
 import { NewDeployment } from './NewDeployment'
 import DeploymentDetails from './DeploymentDetails'
+import Reassignment from './Reassignment'
 import SendNote from './SendNote'
 
 const Layout: React.FC = ({ children }) => {
@@ -144,27 +140,7 @@ const Layout: React.FC = ({ children }) => {
         <NewDeployment onClose={setModal(null)} />
       )}
       {globalModalId === 'reassign' && authenticated && (
-        <ReassignmentModal
-          onClose={setModal(null)}
-          vehicles={trackedVehicles.map((v) => ({
-            vehicleName: capitalize(v),
-            vehicleId: v,
-            pic: 'Shannon Johnson',
-            onCall: 'Brian Kieft',
-          }))}
-          onSubmit={handleReassignmentSubmit}
-          pics={[
-            { name: 'Carlos Rueda', id: '1' },
-            { name: 'Karen Salemy', id: '2' },
-            { name: 'Brian Kieft', id: '3' },
-          ]}
-          onCalls={[
-            { name: 'Carlos Rueda', id: '1' },
-            { name: 'Karen Salemy', id: '2' },
-            { name: 'Shannon Johnson', id: '3' },
-          ]}
-          open
-        />
+        <Reassignment vehicleNames={trackedVehicles} />
       )}
       {globalModalId === 'sendNote' && authenticated && (
         <SendNote onClose={setModal(null)} />

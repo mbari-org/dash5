@@ -6,7 +6,7 @@ export interface AssignPicAndOnCallParams {
   vehicleName: string
   email?: string
   sign: 'in' | 'off'
-  subRole: 'pic' | 'onCall'
+  subRole: 'PIC' | 'On-Call'
 }
 
 export interface AssignPicAndOnCallResponse {
