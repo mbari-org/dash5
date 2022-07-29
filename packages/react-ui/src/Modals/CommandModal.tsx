@@ -12,6 +12,8 @@ import {
   CommandTableProps,
 } from '../Tables/CommandTable'
 import { SelectOption } from '../Fields/Select'
+import { SortDirection } from '../Data/TableHeader'
+import { sortByProperty } from '@mbari/utils'
 
 export interface CommandModalProps
   extends StepProgressProps,
@@ -34,7 +36,6 @@ export const CommandModal: React.FC<CommandModalProps> = ({
   commands,
   selectedId,
   recentCommands,
-  onSortColumn,
   onCancel,
   onSubmit,
   onMoreInfo,
@@ -46,6 +47,8 @@ export const CommandModal: React.FC<CommandModalProps> = ({
     useState<string | null | undefined>('')
   const [searchTerm, setSearchTerm] = useState('')
   const [filteredCommands, setFilteredCommands] = useState<Command[]>(commands)
+  const [sortColumn, setSortColumn] = useState<number | null | undefined>(null)
+  const [sortDirection, setSortDirection] = useState<SortDirection>(null)
 
   useEffect(() => {
     if (selectedRecentId) {
@@ -60,7 +63,6 @@ export const CommandModal: React.FC<CommandModalProps> = ({
       const searchResults = commands.filter(({ name }) =>
         name.includes(searchTerm)
       )
-
       setFilteredCommands(searchResults)
     }
 
@@ -101,6 +103,22 @@ export const CommandModal: React.FC<CommandModalProps> = ({
       setSelectedRecentId(null)
     }
     setSearchTerm(term)
+  }
+
+  const handleSort = (column: number, isAscending?: boolean) => {
+    const sortableColumns: string[] = ['name', 'vehicle', 'description']
+    const sortProperty = sortableColumns[column] as keyof Command
+    const updatedIsAscending = !isAscending
+
+    const sortedCommands = sortByProperty({
+      arrOfObj: [...filteredCommands],
+      sortProperty,
+      secondarySort: 'name',
+      sortAscending: updatedIsAscending,
+    })
+    setSortColumn(column)
+    setSortDirection(updatedIsAscending ? 'asc' : 'desc')
+    setFilteredCommands(sortedCommands as Command[])
   }
 
   return (
@@ -158,9 +176,11 @@ export const CommandModal: React.FC<CommandModalProps> = ({
             commands={filteredCommands}
             selectedId={selectedCommandId ? selectedCommandId : ''}
             onSelectCommand={setSelectedCommandId}
-            onSortColumn={onSortColumn}
+            onSortColumn={handleSort}
             // calculated max height provides responsive table size without clipping inside modal
             className="max-h-[calc(100%-40px)]"
+            activeSortColumn={sortColumn}
+            sortDirection={sortDirection}
           />
         </section>
       )}
