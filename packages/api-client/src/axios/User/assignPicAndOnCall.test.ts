@@ -8,7 +8,7 @@ import {
 export const params: AssignPicAndOnCallParams = {
   vehicleName: 'example',
   sign: 'in',
-  subRole: 'pic',
+  subRole: 'PIC',
 }
 
 export const mockResponse = {
