@@ -16,6 +16,8 @@ export interface ModalViewProps {
   draggable?: boolean
   onFocus?: () => void
   loading?: boolean
+  disableBodyScroll?: boolean
+  maximized?: boolean
 }
 
 export type ModalProps = ModalViewProps & FooterProps
@@ -43,17 +45,21 @@ const DEFAULT_STATE: ModalDragState = {
 }
 
 const styles = {
-  overlay:
-    'fixed inset-0 flex flex-col items-center justify-center w-screen h-screen pointer-events-none font-display',
+  overlay: 'fixed inset-0 w-screen h-screen font-display',
+  overlayToContainModalSize: 'flex flex-col items-center justify-center',
   modal:
-    'flex flex-col bg-white w-full overflow-hidden md:max-h-3/4 md:max-w-md lg:max-w-lg rounded-md border m-auto pointer-events-auto transition-shadow transition-colors duration-300 ease-out relative',
+    'flex flex-col bg-white w-full overflow-hidden rounded-md border m-auto pointer-events-auto transition-shadow transition-colors duration-300 ease-out relative my-12',
+  defaultModalWidth: 'md:max-w-md lg:max-w-lg',
+  maximizedModalWidth: 'md:max-w-[90%]',
+  defaultModalHeight: 'md:max-h-3/4',
   header: 'flex justify-between bg-stone-100 rounded mt-0',
   title:
     'text-stone-900 font-medium text-md font-display mt-auto pt-6 px-4 w-full',
   dragButton:
     'cursor-move flex flex-grow bg-opacity-50 hover:bg-stone-100 ml-1 my-1 rounded transition-colors duration-100 ease-out',
   closeButton: 'my-1 mr-2 text-stone-400',
-  modalBody: 'text-base font-normal overflow-auto',
+  modalBody: 'text-base font-normal',
+  modalScroll: 'overflow-auto',
   bodyMarginAndPadding: 'mb-6 px-4 py-4',
   notDragging: 'shadow-xl border-stone-100',
   dragging: 'shadow-2xl border-stone-200',
@@ -75,8 +81,10 @@ export const Modal: React.FC<ModalProps & FooterProps> = ({
   confirmButtonText,
   disableCancel,
   disableConfirm,
+  disableBodyScroll,
   form,
   loading,
+  maximized,
 }) => {
   const browserWindow = typeof window !== 'undefined' ? window : undefined
   const [state, setState] = useState<ModalDragState>(DEFAULT_STATE)
@@ -157,10 +165,19 @@ export const Modal: React.FC<ModalProps & FooterProps> = ({
   }
 
   return open ? (
-    <div className={clsx(styles.overlay, zIndex)}>
+    <div
+      className={clsx(
+        styles.overlay,
+        zIndex,
+        disableBodyScroll ? 'overflow-auto' : styles.overlayToContainModalSize
+      )}
+    >
       <section
         className={clsx(
           styles.modal,
+          maximized && styles.maximizedModalWidth,
+          !maximized && styles.defaultModalWidth,
+          !disableBodyScroll && styles.defaultModalHeight,
           dragging ? styles.dragging : styles.notDragging
         )}
         ref={dialog}
@@ -190,7 +207,8 @@ export const Modal: React.FC<ModalProps & FooterProps> = ({
         <div
           className={clsx(
             styles.modalBody,
-            !fullWidthBody && styles.bodyMarginAndPadding
+            !fullWidthBody && styles.bodyMarginAndPadding,
+            !disableBodyScroll && styles.modalScroll
           )}
         >
           {children}

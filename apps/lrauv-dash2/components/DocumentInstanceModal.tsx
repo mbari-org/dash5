@@ -19,14 +19,26 @@ const DocumentInstanceModal: React.FC<{ onClose?: () => void }> = ({
       enabled: !!selectedDocumentInstance,
     }
   )
+
+  // Quill parses the raw HTML string into a slightly processed format.
+  const [quillOriginalContent, setQuillOriginalContent] = useState('')
+  const handleChange = (value: string) => {
+    if (quillOriginalContent === '') {
+      setQuillOriginalContent(value)
+    }
+    setContent(value)
+  }
+
   const lastLoadedId = useRef<string | null>(null)
   useEffect(() => {
     if (
       lastLoadedId.current !== selectedDocumentInstance &&
-      data?.text !== null
+      data?.text !== null &&
+      !isLoading
     ) {
       lastLoadedId.current = selectedDocumentInstance
       setContent(data?.text ?? '')
+      setQuillOriginalContent('')
     }
   }, [data, isLoading, lastLoadedId, selectedDocumentInstance])
 
@@ -34,10 +46,30 @@ const DocumentInstanceModal: React.FC<{ onClose?: () => void }> = ({
     <Modal
       title={`Editing Instance: ${selectedDocumentInstance}`}
       onClose={onClose}
+      confirmButtonText="Save"
+      disableConfirm={!content || quillOriginalContent === content}
+      onConfirm={() => {
+        console.log('')
+      }}
+      maximized
+      disableBodyScroll
       open
     >
       {isLoading ? null : (
-        <ReactQuill theme="snow" value={content} onChange={setContent} />
+        <div
+          style={{
+            height: 'calc(100vh - 280px)',
+          }}
+        >
+          <ReactQuill
+            theme="snow"
+            value={content}
+            onChange={handleChange}
+            style={{
+              height: 'calc(100% - 10px)',
+            }}
+          />
+        </div>
       )}
     </Modal>
   )
