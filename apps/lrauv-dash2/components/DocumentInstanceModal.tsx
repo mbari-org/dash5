@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react'
 import dynamic from 'next/dynamic'
-import { Modal } from '@mbari/react-ui'
+import { Modal, Input } from '@mbari/react-ui'
 import useSelectedDocumentInstance from '../lib/useSelectedDocumentInstance'
 import { useDocumentInstance } from '@mbari/api-client'
 
@@ -20,6 +20,8 @@ const DocumentInstanceModal: React.FC<{ onClose?: () => void }> = ({
     }
   )
 
+  const [documentName, setDocumentName] = useState('')
+
   // Quill parses the raw HTML string into a slightly processed format.
   const [quillOriginalContent, setQuillOriginalContent] = useState('')
   const handleChange = (value: string) => {
@@ -38,13 +40,17 @@ const DocumentInstanceModal: React.FC<{ onClose?: () => void }> = ({
     ) {
       lastLoadedId.current = selectedDocumentInstance
       setContent(data?.text ?? '')
+      setDocumentName(data?.docName ?? '')
       setQuillOriginalContent('')
     }
   }, [data, isLoading, lastLoadedId, selectedDocumentInstance])
 
+  const handleNameChange: React.ChangeEventHandler<HTMLInputElement> = (e) =>
+    setDocumentName(e.target.value)
+
   return (
     <Modal
-      title={`Editing Instance: ${selectedDocumentInstance}`}
+      title={`Editing Document`}
       onClose={onClose}
       confirmButtonText="Save"
       disableConfirm={!content || quillOriginalContent === content}
@@ -56,20 +62,30 @@ const DocumentInstanceModal: React.FC<{ onClose?: () => void }> = ({
       open
     >
       {isLoading ? null : (
-        <div
-          style={{
-            height: 'calc(100vh - 280px)',
-          }}
-        >
-          <ReactQuill
-            theme="snow"
-            value={content}
-            onChange={handleChange}
+        <>
+          <div className="mb-2 flex">
+            <Input
+              name="documentName"
+              value={documentName}
+              className="flex-grow"
+              onChange={handleNameChange}
+            />
+          </div>
+          <div
             style={{
-              height: 'calc(100% - 10px)',
+              height: 'calc(100vh - 280px)',
             }}
-          />
-        </div>
+          >
+            <ReactQuill
+              theme="snow"
+              value={content}
+              onChange={handleChange}
+              style={{
+                height: 'calc(100% - 10px)',
+              }}
+            />
+          </div>
+        </>
       )}
     </Modal>
   )
