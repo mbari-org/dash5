@@ -2,7 +2,7 @@ import { rest } from 'msw'
 import { setupServer } from 'msw/node'
 import { getCommands } from './getCommands'
 
-const mockResponse = {
+export const mockResponse = {
   result: {
     commands: [
       {

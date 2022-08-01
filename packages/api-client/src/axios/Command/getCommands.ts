@@ -11,7 +11,7 @@ export interface GetCommandsResponse {
 interface ApiCommand {
   advanced: boolean
   description: string
-  keyword?: string
+  keyword: string
   syntaxList: Syntax[]
 }
 
