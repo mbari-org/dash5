@@ -38,5 +38,5 @@ export const getCommands = async ({
   }
 
   const response = await instance.get(url, config)
-  return response.data.result as GetCommandsResponse[]
+  return response.data.result as GetCommandsResponse
 }
