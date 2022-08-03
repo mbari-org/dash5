@@ -7,7 +7,7 @@ export interface GetModuleInfoResponse {
   behaviors: Component
   configUris: Module
   outputUris: Module
-  sensors: Component
+  sensors: Module
   settingUris: Module
   uris: Module
   uriStringSettings: Module
