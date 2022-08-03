@@ -192,6 +192,13 @@ export const mockResponse = {
           },
         ],
       },
+      CTD_Seabird: [
+        {
+          description:
+            'True if component should be loaded at start-up\n            ',
+          string: 'loadAtStartup',
+        },
+      ],
     },
   },
 }

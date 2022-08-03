@@ -7,10 +7,15 @@ export interface GetModuleInfoResponse {
   behaviors: Component
   configUris: Module
   outputUris: Module
-  sensors: Module
+  sensors: Component
   settingUris: Module
   uris: Module
   uriStringSettings: Module
+}
+
+interface Element {
+  string: string
+  description?: string
 }
 
 interface Component {
@@ -19,11 +24,6 @@ interface Component {
 
 interface Module {
   [key: string]: Component
-}
-
-interface Element {
-  string: string
-  description?: string
 }
 
 export const getModuleInfo = async ({
