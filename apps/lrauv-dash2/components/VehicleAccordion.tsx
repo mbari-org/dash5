@@ -21,6 +21,7 @@ export interface VehicleAccordionProps {
   to?: string
   authenticated?: boolean
   activeDeployment?: boolean
+  currentDeploymentId?: number
 }
 
 const VehicleAccordion: React.FC<VehicleAccordionProps> = ({
@@ -29,6 +30,7 @@ const VehicleAccordion: React.FC<VehicleAccordionProps> = ({
   vehicleName,
   authenticated,
   activeDeployment,
+  currentDeploymentId,
 }) => {
   const [section, setSection] = useState<VehicleAccordionSection>('handoff')
   const handleToggleForSection =
@@ -97,7 +99,11 @@ const VehicleAccordion: React.FC<VehicleAccordionProps> = ({
         className="flex flex-shrink-0"
       />
       {section === 'docs' && (
-        <DocsSection authenticated={authenticated} vehicleName={vehicleName} />
+        <DocsSection
+          authenticated={authenticated}
+          vehicleName={vehicleName}
+          currentDeploymentId={currentDeploymentId}
+        />
       )}
     </div>
   )

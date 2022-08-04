@@ -119,9 +119,9 @@ const Vehicle: NextPage = () => {
     ? DateTime.utc().plus({ hours: 4 }).toMillis()
     : deployment?.lastEvent ?? 0
 
-  const handleClickPilot = () => setGlobalModalId('reassign')
-  const handleNewDeployment = () => setGlobalModalId('newDeployment')
-  const handleEditDeployment = () => setGlobalModalId('editDeployment')
+  const handleClickPilot = () => setGlobalModalId({ id: 'reassign' })
+  const handleNewDeployment = () => setGlobalModalId({ id: 'newDeployment' })
+  const handleEditDeployment = () => setGlobalModalId({ id: 'editDeployment' })
 
   const {
     data: chartData,
@@ -283,6 +283,7 @@ const Vehicle: NextPage = () => {
               from={DateTime.fromMillis(startTime).toISO()}
               to={DateTime.fromMillis(endTime).toISO()}
               activeDeployment={deployment.active}
+              currentDeploymentId={deployment.deploymentId as number}
             />
           )}
         </section>

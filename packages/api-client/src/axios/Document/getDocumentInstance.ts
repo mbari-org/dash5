@@ -2,12 +2,26 @@
 import { getInstance } from '../getInstance'
 import { RequestConfig } from '../types'
 
+export interface DocInstanceBrief {
+  docInstanceId?: number
+  unixTime?: number
+  user?: string
+}
+
 export interface GetDocumentInstanceParams {
   docInstanceId: string
+  deploymentId?: string
 }
 
 export interface GetDocumentInstanceResponse {
-  result: string
+  docInstanceId: number
+  docId: number
+  docName: string
+  user: string
+  email: string
+  unixTime: number
+  text?: string
+  docInstanceBriefs?: DocInstanceBrief[]
 }
 
 export const getDocumentInstance = async (
@@ -20,9 +34,6 @@ export const getDocumentInstance = async (
     console.debug(`GET ${url}`)
   }
 
-  const response = await instance.get(
-    `${url}?${new URLSearchParams({ ...params })}`,
-    config
-  )
-  return response.data as GetDocumentInstanceResponse
+  const response = await instance.get(url, { ...config, params })
+  return response.data.result as GetDocumentInstanceResponse
 }
