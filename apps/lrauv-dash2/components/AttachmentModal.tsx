@@ -24,10 +24,18 @@ const AttachmentModal: React.FC<AttachmentModalProps> = (props) => {
 
   const handleAttachment = async () => {
     const promises = []
-    if (attachTo === 'vehicle' || attachTo === 'both') {
+    if (
+      (attachTo === 'vehicle' || attachTo === 'both') &&
+      docId &&
+      vehicleName
+    ) {
       promises.push(attachVehicle({ docId, vehicleName }))
     }
-    if (attachTo === 'deployment' || attachTo === 'both') {
+    if (
+      (attachTo === 'deployment' || attachTo === 'both') &&
+      deploymentId &&
+      docId
+    ) {
       promises.push(attachDeployment({ docId, deploymentId }))
     }
     await Promise.all(promises)

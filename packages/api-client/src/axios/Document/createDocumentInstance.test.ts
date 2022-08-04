@@ -6,7 +6,7 @@ import {
 } from './createDocumentInstance'
 
 let params: CreateDocumentInstanceParams = {
-  docId: 'example',
+  docId: 3000788,
   newName: 'example',
   text: 'example',
 }

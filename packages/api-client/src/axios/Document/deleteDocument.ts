@@ -3,7 +3,7 @@ import { getInstance } from '../getInstance'
 import { RequestConfig } from '../types'
 
 export interface DeleteDocumentParams {
-  docId: string
+  docId: number
 }
 
 export interface DeleteDocumentResponse {

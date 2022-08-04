@@ -1,4 +1,4 @@
-import { Dialog, ModalProps } from '@mbari/react-ui'
+import { Dialog, DialogProps } from '@mbari/react-ui'
 import { useQueryClient } from 'react-query'
 import {
   useDetachDocumentToVehicle,
@@ -7,7 +7,10 @@ import {
 import useGlobalModalId from '../lib/useGlobalModalId'
 import toast from 'react-hot-toast'
 
-export type DetachmentModalProps = Omit<ModalProps, 'title' | 'open'>
+export type DetachmentModalProps = Omit<
+  DialogProps,
+  'title' | 'open' | 'message'
+>
 
 const DetachmentModal: React.FC<DetachmentModalProps> = (props) => {
   const queryClient = useQueryClient()
@@ -28,10 +31,10 @@ const DetachmentModal: React.FC<DetachmentModalProps> = (props) => {
 
   const handleDetachment = async () => {
     const promises = []
-    if (attachmentType === 'vehicle') {
+    if (attachmentType === 'vehicle' && docId && vehicleName) {
       promises.push(detachVehicle({ docId, vehicleName }))
     }
-    if (attachmentType === 'deployment') {
+    if (attachmentType === 'deployment' && docId && deploymentId) {
       promises.push(detachDeployment({ docId, deploymentId }))
     }
     await Promise.all(promises)

@@ -58,7 +58,7 @@ const MockAlterAction: React.FC = () => {
   const { mutate, isLoading, data } = useCreateDocumentInstance()
   const handleClick = () => {
     mutate({
-      docId: '3000788',
+      docId: 3000788,
       text: '<div><h1>launch</h1></div>',
       newName: 'Vehicle in water.',
     })

@@ -3,7 +3,7 @@ import { getInstance } from '../getInstance'
 import { RequestConfig } from '../types'
 import { GetDocumentInstanceResponse } from './getDocumentInstance'
 export interface CreateDocumentInstanceParams {
-  docId: string
+  docId: number
   newName?: string
   text: string
 }

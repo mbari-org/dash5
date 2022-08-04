@@ -26,7 +26,7 @@ const MockAlterAction: React.FC = () => {
   const { mutate, isLoading, isSuccess } = useDeleteDocument()
   const handleClick = () => {
     mutate({
-      docId: '3000788',
+      docId: 3000788,
     })
   }
   return isLoading ? null : (

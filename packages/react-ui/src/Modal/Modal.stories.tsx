@@ -83,7 +83,7 @@ export const DisableBodyScroll = Template.bind({})
 DisableBodyScroll.args = {
   title: 'Scroll Me!',
   open: true,
-  disableBodyScroll: true,
+  bodyOverflowHidden: true,
 }
 DisableBodyScroll.parameters = {
   design: {

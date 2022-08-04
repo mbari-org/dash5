@@ -3,7 +3,7 @@ import { setupServer } from 'msw/node'
 import { deleteDocument, DeleteDocumentParams } from './deleteDocument'
 
 let params: DeleteDocumentParams = {
-  docId: 'example',
+  docId: 300292,
 }
 
 const mockResponse = undefined

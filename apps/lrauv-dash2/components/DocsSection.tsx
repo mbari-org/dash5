@@ -64,9 +64,11 @@ const DocsSection: React.FC<DocsSectionProps> = ({
   const closeMoreMenu = () => setSurrentMoreMenu(null)
   const openMoreMenu = (
     target: { docId: number; docInstanceId: number },
-    rect: DOMRect
+    rect?: DOMRect
   ) => {
-    setSurrentMoreMenu({ ...target, rect })
+    if (rect) {
+      setSurrentMoreMenu({ ...target, rect })
+    }
   }
   const handleAddClick = swallow(() => {
     setGlobalModalId({ id: 'editDocument' })
@@ -113,12 +115,12 @@ const DocsSection: React.FC<DocsSectionProps> = ({
       item?.deploymentBriefs?.map(({ deploymentId, name }) => ({
         id: deploymentId ? deploymentId.toString() : '',
         name: name ?? '',
-        type: 'deployment',
+        type: 'deployment' as Attachment['type'],
       })) ?? [],
       item?.vehicleNames?.map((vehicleName) => ({
         id: vehicleName,
         name: vehicleName,
-        type: 'vehicle',
+        type: 'vehicle' as Attachment['type'],
       })) ?? [],
     ].flat()
 
@@ -130,7 +132,7 @@ const DocsSection: React.FC<DocsSectionProps> = ({
           documentName: item?.name ?? '',
           vehicleName: attachment.name,
           deploymentName: attachment.name,
-          deploymentId: attachment.id,
+          deploymentId: attachment.id as number,
           attachmentType: attachment.type,
         },
       })
@@ -149,8 +151,8 @@ const DocsSection: React.FC<DocsSectionProps> = ({
         onSelectAttachment={handleRemoveAttachment}
         onMoreClick={openMoreMenu}
         onSelect={handleSelectDocument}
-        docId={item?.docId}
-        docInstanceId={item?.latestRevision?.docInstanceId}
+        docId={item?.docId as number}
+        docInstanceId={item?.latestRevision?.docInstanceId as number}
       />
     )
   }

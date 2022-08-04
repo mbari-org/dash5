@@ -76,7 +76,7 @@ const DocumentInstanceModal: React.FC<{ onClose?: () => void }> = ({
         return
       }
       await updateDocument({
-        docId: data?.docId,
+        docId: data?.docId as number,
         newName: documentName,
         text: content,
       })
@@ -107,7 +107,7 @@ const DocumentInstanceModal: React.FC<{ onClose?: () => void }> = ({
         isLoading || creatingDocument || updatingDocument || localStateLoading
       }
       maximized
-      disableBodyScroll
+      bodyOverflowHidden
       open
     >
       {isLoading ? null : (
