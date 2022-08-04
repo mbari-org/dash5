@@ -1,28 +1,36 @@
-import { useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { AccordionCells, DocCell, SelectField } from '@mbari/react-ui'
-import { useDeployments, useDocuments } from '@mbari/api-client'
+import {
+  useDeployments,
+  useDocuments,
+  useDeleteDocument,
+} from '@mbari/api-client'
 import { DateTime } from 'luxon'
 import { faPlus } from '@fortawesome/pro-regular-svg-icons'
-import { AccessoryButton } from '@mbari/react-ui'
+import { AccessoryButton, Dropdown, Attachment } from '@mbari/react-ui'
 import filterDocuments, {
   DOCUMENT_FILTER_TYPES,
   DocumentFilterType,
 } from '../lib/filterDocuments'
-import useGlobalModalId from '../lib/useGlobalModalId'
-import useSelectedDocumentInstance from '../lib/useSelectedDocumentInstance'
+import { useQueryClient } from 'react-query'
+import useGlobalModalId, { GlobalModalMetaData } from '../lib/useGlobalModalId'
 import { swallow } from '@mbari/utils'
+import toast from 'react-hot-toast'
 
 interface DocsSectionProps {
   authenticated?: boolean
   vehicleName: string
+  currentDeploymentId?: number
 }
 
 const DocsSection: React.FC<DocsSectionProps> = ({
   authenticated,
   vehicleName,
+  currentDeploymentId,
 }) => {
+  const menuRef = useRef<HTMLDivElement | null>(null)
+  const queryClient = useQueryClient()
   const { setGlobalModalId } = useGlobalModalId()
-  const { setSelectedDocumentInstance } = useSelectedDocumentInstance()
   const [selectedType, setSelectedType] =
     useState<DocumentFilterType>('All Documents')
   const [selectedDeployment, setSelectedDeployment] =
@@ -47,13 +55,49 @@ const DocsSection: React.FC<DocsSectionProps> = ({
     })
   )
 
+  const [currentMoreMenu, setSurrentMoreMenu] =
+    useState<{
+      docId: number
+      docInstanceId: number
+      rect: DOMRect
+    } | null>(null)
+  const closeMoreMenu = () => setSurrentMoreMenu(null)
+  const openMoreMenu = (
+    target: { docId: number; docInstanceId: number },
+    rect: DOMRect
+  ) => {
+    setSurrentMoreMenu({ ...target, rect })
+  }
+  const handleAddClick = swallow(() => {
+    setGlobalModalId({ id: 'editDocument' })
+  })
+
+  const { mutateAsync: deleteDocument } = useDeleteDocument()
+  const handleDelete = async () => {
+    if (currentMoreMenu?.docId) {
+      await deleteDocument({ docId: currentMoreMenu?.docId })
+      toast.success('Document deleted')
+      queryClient.invalidateQueries(['document', 'documents'])
+    }
+  }
+
+  const handleAttach = (meta?: GlobalModalMetaData) => {
+    console.log('handleAttach', meta)
+    setGlobalModalId({ id: 'attachDocument', meta })
+  }
+
+  const handleEdit = (docInstanceId?: number, duplicate?: boolean) => {
+    setGlobalModalId({
+      id: 'editDocument',
+      meta: {
+        docInstanceId,
+        duplicate,
+      },
+    })
+  }
+
   const cellAtIndex = (index: number) => {
     const item = data?.[index]
-    const briefs = item?.deploymentBriefs?.map(({ deploymentId, name }) => ({
-      id: deploymentId ? deploymentId.toString() : '',
-      name: name ?? '',
-    }))
-
     const unixTime = item?.latestRevision?.unixTime
     const time = unixTime
       ? DateTime.fromMillis(unixTime).toLocaleString(
@@ -65,30 +109,64 @@ const DocsSection: React.FC<DocsSectionProps> = ({
       ? DateTime.fromMillis(unixTime).toLocaleString(DateTime.DATE_FULL)
       : ''
 
+    const attachments = [
+      item?.deploymentBriefs?.map(({ deploymentId, name }) => ({
+        id: deploymentId ? deploymentId.toString() : '',
+        name: name ?? '',
+        type: 'deployment',
+      })) ?? [],
+      item?.vehicleNames?.map((vehicleName) => ({
+        id: vehicleName,
+        name: vehicleName,
+        type: 'vehicle',
+      })) ?? [],
+    ].flat()
+
+    const handleRemoveAttachment = (attachment: Attachment) =>
+      setGlobalModalId({
+        id: 'detachDocument',
+        meta: {
+          docId: item?.docId ?? 0,
+          documentName: item?.name ?? '',
+          vehicleName: attachment.name,
+          deploymentName: attachment.name,
+          deploymentId: attachment.id,
+          attachmentType: attachment.type,
+        },
+      })
+
+    const handleSelectDocument = () => {
+      handleEdit(item?.latestRevision?.docInstanceId)
+    }
+
     return (
       <DocCell
         className={'border-b border-slate-200'}
         label={item?.name ?? ''}
-        missions={briefs?.length ? briefs : []}
+        attachments={attachments}
         time={time}
         date={date}
-        onSelectMission={() => undefined}
-        onSelectMore={() => undefined}
-        onSelect={() => {
-          console.log('Selecting document: ', item?.name)
-          setGlobalModalId('editDocument')
-          setSelectedDocumentInstance(
-            item?.latestRevision?.docInstanceId?.toString() ?? null
-          )
-        }}
+        onSelectAttachment={handleRemoveAttachment}
+        onMoreClick={openMoreMenu}
+        onSelect={handleSelectDocument}
+        docId={item?.docId}
+        docInstanceId={item?.latestRevision?.docInstanceId}
       />
     )
   }
 
-  const handleAddClick = swallow(() => {
-    setGlobalModalId('editDocument')
-    setSelectedDocumentInstance(null)
-  })
+  useEffect(() => {
+    if (menuRef.current) {
+      const rect = menuRef.current.getBoundingClientRect()
+      if (typeof window !== 'undefined') {
+        if (rect.bottom > window.innerHeight) {
+          menuRef.current.style.transform = `translateY(${
+            window.innerHeight - rect.bottom
+          }px)`
+        }
+      }
+    }
+  }, [currentMoreMenu])
 
   return (
     <>
@@ -128,8 +206,68 @@ const DocsSection: React.FC<DocsSectionProps> = ({
         )}
       </header>
       <AccordionCells cellAtIndex={cellAtIndex} count={data?.length} />
+      {currentMoreMenu && (
+        <div
+          className="fixed mr-2 mb-2 min-w-[140px] whitespace-nowrap"
+          ref={menuRef}
+          style={{
+            top:
+              (currentMoreMenu?.rect?.top ?? 0) -
+              (menuRef.current?.offsetHeight ?? 0),
+            right:
+              typeof window !== 'undefined'
+                ? window.innerWidth - (currentMoreMenu?.rect?.right ?? 0)
+                : 0,
+            zIndex: 1001,
+          }}
+        >
+          <Dropdown
+            onDismiss={closeMoreMenu}
+            options={[
+              {
+                label: 'Edit',
+                onSelect: () => {
+                  handleEdit?.(currentMoreMenu?.docInstanceId)
+                  closeMoreMenu()
+                },
+              },
+              {
+                label: 'Attach to...',
+                onSelect: () => {
+                  handleAttach({
+                    docInstanceId: currentMoreMenu?.docInstanceId,
+                    docId: currentMoreMenu?.docId,
+                    deploymentId: currentDeploymentId,
+                    documentName: documentData?.find(
+                      ({ docId }) => docId === currentMoreMenu?.docId
+                    )?.name,
+                    vehicleName,
+                  })
+                  closeMoreMenu()
+                },
+              },
+              {
+                label: 'Duplicate',
+                onSelect: () => {
+                  handleEdit?.(currentMoreMenu?.docInstanceId, true)
+                  closeMoreMenu()
+                },
+              },
+              {
+                label: 'Delete',
+                onSelect: () => {
+                  handleDelete?.()
+                  closeMoreMenu()
+                },
+              },
+            ]}
+          />
+        </div>
+      )}
     </>
   )
 }
+
+DocsSection.displayName = 'Dash2.Components.DocsSection'
 
 export default DocsSection

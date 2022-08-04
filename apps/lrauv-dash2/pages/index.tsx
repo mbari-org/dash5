@@ -48,7 +48,7 @@ const OverviewPage: NextPage = () => {
         pilotInCharge="Shannon J."
         pilotOnCall="Bryan K."
         deployment={{ name: 'Overview', id: '0' }}
-        onClickPilot={() => setGlobalModalId('reassign')}
+        onClickPilot={() => setGlobalModalId({ id: 'reassign' })}
       />
       <div className={styles.content}>
         <section className={styles.primary}>
