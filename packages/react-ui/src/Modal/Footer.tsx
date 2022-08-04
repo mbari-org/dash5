@@ -6,8 +6,8 @@ import { swallow } from '@mbari/utils'
 export interface FooterProps {
   className?: string
   style?: React.CSSProperties
-  confirmButtonText?: string
-  cancelButtonText?: string
+  confirmButtonText?: string | JSX.Element
+  cancelButtonText?: string | JSX.Element
   form?: string
   onConfirm?: (() => void) | null
   onCancel?: (() => void) | null

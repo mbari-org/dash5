@@ -1,15 +1,14 @@
 // Use scaffold axiosBase to generate the resources imported below.
 import { getInstance } from '../getInstance'
 import { RequestConfig } from '../types'
+import { GetDocumentInstanceResponse } from './getDocumentInstance'
 
 export interface DetachDocumentToDeploymentParams {
-  docId: string
-  deploymentId: string
+  docId: number
+  deploymentId: number
 }
 
-export interface DetachDocumentToDeploymentResponse {
-  result: string
-}
+export type DetachDocumentToDeploymentResponse = GetDocumentInstanceResponse
 
 export const detachDocumentToDeployment = async (
   params: DetachDocumentToDeploymentParams,
@@ -21,9 +20,6 @@ export const detachDocumentToDeployment = async (
     console.debug(`DELETE ${url}`)
   }
 
-  const response = await instance.delete(
-    `${url}?${new URLSearchParams({ ...params })}`,
-    config
-  )
-  return response.data as DetachDocumentToDeploymentResponse
+  const response = await instance.delete(url, { ...config, params })
+  return response.data.result as DetachDocumentToDeploymentResponse
 }

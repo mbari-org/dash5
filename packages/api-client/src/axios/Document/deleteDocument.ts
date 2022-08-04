@@ -3,7 +3,7 @@ import { getInstance } from '../getInstance'
 import { RequestConfig } from '../types'
 
 export interface DeleteDocumentParams {
-  docId: string
+  docId: number
 }
 
 export interface DeleteDocumentResponse {
@@ -20,9 +20,6 @@ export const deleteDocument = async (
     console.debug(`DELETE ${url}`)
   }
 
-  const response = await instance.delete(
-    `${url}?${new URLSearchParams({ ...params })}`,
-    config
-  )
-  return response.data as DeleteDocumentResponse
+  await instance.delete(`${url}`, { params, ...config })
+  return undefined
 }

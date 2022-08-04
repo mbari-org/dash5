@@ -1,15 +1,14 @@
 // Use scaffold axiosBase to generate the resources imported below.
 import { getInstance } from '../getInstance'
 import { RequestConfig } from '../types'
+import { GetDocumentInstanceResponse } from './getDocumentInstance'
 
 export interface DetachDocumentToVehicleParams {
-  docId: string
+  docId: number
   vehicleName: string
 }
 
-export interface DetachDocumentToVehicleResponse {
-  result: string
-}
+export type DetachDocumentToVehicleResponse = GetDocumentInstanceResponse
 
 export const detachDocumentToVehicle = async (
   params: DetachDocumentToVehicleParams,
@@ -21,9 +20,6 @@ export const detachDocumentToVehicle = async (
     console.debug(`DELETE ${url}`)
   }
 
-  const response = await instance.delete(
-    `${url}?${new URLSearchParams({ ...params })}`,
-    config
-  )
-  return response.data as DetachDocumentToVehicleResponse
+  const response = await instance.delete(url, { ...config, params })
+  return response.data.result as DetachDocumentToVehicleResponse
 }

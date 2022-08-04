@@ -7,16 +7,18 @@ const props: DocCellProps = {
   onSelect: () => {
     console.log('event fired')
   },
-  onSelectMore: () => {
+  onMoreClick: () => {
     console.log('event fired')
   },
-  onSelectMission: (id) => {
-    console.log(id)
+  onSelectAttachment: (attachment) => {
+    console.log(attachment)
   },
+  docId: 3000798,
+  docInstanceId: 2003798,
   time: '16:29:32',
   date: 'Dec. 15, 2021',
   label: 'Maintenance Log - Brizo',
-  missions: [{ name: 'Gup S EcoHAB', id: '1' }],
+  attachments: [{ name: 'Gup S EcoHAB', id: '1', type: 'deployment' }],
 }
 
 test('should render the label', async () => {
@@ -35,7 +37,9 @@ test('should render the date and time', async () => {
 test('should render the mission tag', async () => {
   render(<DocCell {...props} />)
 
-  expect(screen.getByText(props.missions[0].name)).toBeInTheDocument()
+  expect(
+    screen.getByText(`${props?.attachments?.[0].name}`)
+  ).toBeInTheDocument()
 })
 
 test('should render the more options button', async () => {

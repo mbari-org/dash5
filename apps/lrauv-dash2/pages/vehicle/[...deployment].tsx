@@ -21,6 +21,7 @@ import {
   useMissionStartedEvent,
   useTethysApiContext,
   useChartData,
+  usePicAndOnCall,
 } from '@mbari/api-client'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { faChevronDown, faChevronUp } from '@fortawesome/pro-solid-svg-icons'
@@ -73,6 +74,9 @@ const Vehicle: NextPage = () => {
   const vehicleName = params[0]
   const deploymentId = params[1]
 
+  const { data: picAndOnCall, isLoading: loadingPic } = usePicAndOnCall({
+    vehicleName,
+  })
   const { deployment, isLoading } = useCurrentDeployment()
   const { data: deploymentsData } = useDeployments(
     {
@@ -115,9 +119,9 @@ const Vehicle: NextPage = () => {
     ? DateTime.utc().plus({ hours: 4 }).toMillis()
     : deployment?.lastEvent ?? 0
 
-  const handleClickPilot = () => setGlobalModalId('reassign')
-  const handleNewDeployment = () => setGlobalModalId('newDeployment')
-  const handleEditDeployment = () => setGlobalModalId('editDeployment')
+  const handleClickPilot = () => setGlobalModalId({ id: 'reassign' })
+  const handleNewDeployment = () => setGlobalModalId({ id: 'newDeployment' })
+  const handleEditDeployment = () => setGlobalModalId({ id: 'editDeployment' })
 
   const {
     data: chartData,
@@ -142,8 +146,8 @@ const Vehicle: NextPage = () => {
     <Layout>
       <OverviewToolbar
         vehicleName={vehicleName}
-        pilotInCharge="Shannon J."
-        pilotOnCall="Bryan K."
+        pilotInCharge={picAndOnCall?.[0].pic?.user}
+        pilotOnCall={picAndOnCall?.[0].onCall?.user}
         deployment={
           isLoading
             ? { name: '...', id: '0' }
@@ -153,7 +157,7 @@ const Vehicle: NextPage = () => {
                 unixTime: deployment?.startEvent?.unixTime,
               }
         }
-        onClickPilot={handleClickPilot}
+        onClickPilot={loadingPic ? undefined : handleClickPilot}
         supportIcon1={<CommsIcon />}
         supportIcon2={<StatusIcon />}
         onSelectNewDeployment={handleNewDeployment}
@@ -279,6 +283,7 @@ const Vehicle: NextPage = () => {
               from={DateTime.fromMillis(startTime).toISO()}
               to={DateTime.fromMillis(endTime).toISO()}
               activeDeployment={deployment.active}
+              currentDeploymentId={deployment.deploymentId as number}
             />
           )}
         </section>

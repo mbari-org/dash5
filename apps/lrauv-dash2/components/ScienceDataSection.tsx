@@ -102,7 +102,7 @@ const ScienceDataSection: React.FC<{
   }
 
   const handleEsbSamples = swallow(() => {
-    setGlobalModalId('esbSamples')
+    setGlobalModalId({ id: 'esbSamples' })
   })
 
   return (

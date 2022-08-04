@@ -1,9 +1,8 @@
-import React from 'react'
+import React, { useRef } from 'react'
 import clsx from 'clsx'
 import { IconDefinition } from '@fortawesome/fontawesome-svg-core'
-import { swallow } from '@mbari/utils'
+import { swallow, useOnClickOutside } from '@mbari/utils'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
-import DismissOverlay from './DismissOverlay'
 
 export interface DropdownProps {
   className?: string
@@ -35,11 +34,17 @@ export const Dropdown: React.FC<DropdownProps> = ({
   header,
   options,
   scrollable,
-  onDismiss: handleDismiss,
+  onDismiss: handleDismiss = () => undefined,
 }) => {
+  const ref = useRef<HTMLElement | null>(null)
+  useOnClickOutside(ref, handleDismiss)
   return (
     <>
-      <article style={style} className={clsx(styles.container, className)}>
+      <article
+        style={style}
+        className={clsx(styles.container, className)}
+        ref={ref}
+      >
         <ul className={clsx('w-full', scrollable && 'overflow-y-auto')}>
           {header && (
             <li className={clsx(styles.cellPadding, styles.sticky)}>
@@ -71,7 +76,6 @@ export const Dropdown: React.FC<DropdownProps> = ({
           ))}
         </ul>
       </article>
-      {handleDismiss && <DismissOverlay onClick={handleDismiss} />}
     </>
   )
 }

@@ -16,7 +16,6 @@ import formatEvent, {
 } from '../lib/formatEvent'
 import { faSync } from '@fortawesome/pro-regular-svg-icons'
 import { SelectOption } from '@mbari/react-ui/dist/Fields/Select'
-import clsx from 'clsx'
 
 export interface LogsSectionProps {
   className?: string

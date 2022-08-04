@@ -27,7 +27,11 @@ export const AccessoryButton: React.FC<AccessoryButtonProps> = ({
     <Button
       {...props}
       appearance="secondary"
-      className={clsx(className, 'flex', reverse && 'flex-row-reverse')}
+      className={clsx(
+        className,
+        'flex items-center',
+        reverse && 'flex-row-reverse'
+      )}
     >
       {icon && (
         <FontAwesomeIcon
@@ -36,7 +40,7 @@ export const AccessoryButton: React.FC<AccessoryButtonProps> = ({
           aria-label="supporting icon"
         />
       )}
-      <div className="flex-grow">
+      <div className="flex-shrink-0 flex-grow ">
         <span className={clsx(isActive && 'text-teal-500')}>{label}</span>
         {secondary && (
           <>

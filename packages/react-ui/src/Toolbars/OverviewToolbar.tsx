@@ -23,7 +23,7 @@ export interface OverviewToolbarProps {
   style?: React.CSSProperties
   vehicleName?: string
   deployment?: DeploymentInfo
-  pilotInCharge: string
+  pilotInCharge?: string
   pilotOnCall?: string
   btnIcon?: IconDefinition
   supportIcon1?: JSX.Element
@@ -31,7 +31,7 @@ export interface OverviewToolbarProps {
   open?: boolean
   onSelectNewDeployment?: () => void
   onEditDeployment?: () => void
-  onClickPilot: () => void
+  onClickPilot?: () => void
   onIcon1hover?: () => JSX.Element
   onIcon2hover?: () => JSX.Element
   deployments?: DeploymentInfo[]
@@ -160,15 +160,17 @@ export const OverviewToolbar: React.FC<OverviewToolbarProps> = ({
         ) : null}
       </ul>
       <ul className={styles.rightWrapper}>
-        <li className="pr-2">
-          <AccessoryButton
-            label={pilotInCharge}
-            secondary={pilotOnCall}
-            icon={btnIcon as IconProp}
-            onClick={swallow(onClickPilot)}
-            isActive={true}
-          />
-        </li>
+        {onClickPilot && (
+          <li className="pr-2">
+            <AccessoryButton
+              label={pilotInCharge ?? 'No PIC'}
+              secondary={pilotOnCall ?? 'No On Call'}
+              icon={btnIcon as IconProp}
+              onClick={swallow(onClickPilot)}
+              isActive={true}
+            />
+          </li>
+        )}
         {onIcon1hover && supportIcon1 ? (
           <li className="relative p-4">
             <button

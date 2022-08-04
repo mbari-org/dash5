@@ -9,26 +9,28 @@ export default {
 } as Meta
 
 const Template: Story<DocCellProps> = (args) => (
-  <div className="bg-stone-200 p-2">
+  <div className="w-[430px] bg-stone-200 p-2">
     <DocCell {...args} />
   </div>
 )
 
 const args: DocCellProps = {
   className: '',
-  onSelectMore: () => {
-    console.log('event fired')
-  },
   onSelect: () => {
     console.log('event fired')
   },
-  onSelectMission: (id) => {
-    console.log(`Selected mission ${id}`)
+  onSelectAttachment: (attachment) => {
+    console.log(`Selected attachment ${attachment}`)
   },
+  onMoreClick: (data, rect) => {
+    console.log('More Clicked', data, rect)
+  },
+  docId: 1,
+  docInstanceId: 100,
   time: '16:29:32',
   date: 'Dec. 15, 2021',
-  label: 'Maintenance Log - Brizo',
-  missions: [{ name: 'Brizo 7 EcoHAB', id: '1' }],
+  label: 'Maintenance Log - 8430279410327430174037149070',
+  attachments: [{ name: 'Brizo', id: 'Brizo', type: 'vehicle' }],
 }
 
 export const Standard = Template.bind({})
@@ -43,11 +45,11 @@ Standard.parameters = {
 export const MultipleTags = Template.bind({})
 MultipleTags.args = {
   ...args,
-  missions: [
-    { name: 'Brizo 7 EcoHAB', id: '1' },
-    { name: 'Gup S Narwhal', id: '2' },
-    { name: 'Gup C Sub', id: '3' },
-    { name: 'Gup X Special', id: '4' },
+  attachments: [
+    { name: 'Brizo 7 EcoHAB', id: 1, type: 'deployment' },
+    { name: 'Gup S Narwhal', id: 2, type: 'deployment' },
+    { name: 'Gup C Sub', id: 3, type: 'deployment' },
+    { name: 'Gup X Special', id: 4, type: 'deployment' },
   ],
 }
 MultipleTags.parameters = {

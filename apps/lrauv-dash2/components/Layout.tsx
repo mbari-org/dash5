@@ -1,25 +1,24 @@
 import React, { useEffect } from 'react'
 import Head from 'next/head'
-import {
-  PrimaryToolbar,
-  ProfileDropdown,
-  ReassignmentModal,
-} from '@mbari/react-ui'
+import { PrimaryToolbar, ProfileDropdown } from '@mbari/react-ui'
 import { useTethysApiContext } from '@mbari/api-client'
 import { useState } from 'react'
 import Image from 'next/image'
 import VehicleDeploymentDropdown from '../components/VehicleDeploymentDropdown'
 import useTrackedVehicles from '../lib/useTrackedVehicles'
-import useGlobalModalId, { ModalId } from '../lib/useGlobalModalId'
+import useGlobalModalId, { GlobalModalState } from '../lib/useGlobalModalId'
 import { useRouter } from 'next/router'
 import { UserLogin } from './UserLogin'
 import logo from './mbari-logo.png'
-import { capitalize } from '@mbari/utils'
 import UserCreateAccount from './UserCreateAccount'
 import UserForgotPassword from './UserForgotPassword'
 import { NewDeployment } from './NewDeployment'
 import DeploymentDetails from './DeploymentDetails'
+import Reassignment from './Reassignment'
 import SendNote from './SendNote'
+import DocumentInstanceModal from './DocumentInstanceModal'
+import AttachmentModal from './AttachmentModal'
+import DetachModal from './DetachModal'
 
 const Layout: React.FC = ({ children }) => {
   const [showLogin, setLogin] = useState(false)
@@ -48,8 +47,8 @@ const Layout: React.FC = ({ children }) => {
     setDropdown(null)
   }
 
-  const setModal = (id: ModalId) => () => {
-    setGlobalModalId(id)
+  const setModal = (newState: GlobalModalState | null) => () => {
+    setGlobalModalId(newState)
   }
 
   useEffect(() => {
@@ -74,8 +73,6 @@ const Layout: React.FC = ({ children }) => {
   }
 
   const canRemoveOption = (vehicle: string) => vehicle !== 'Overview'
-
-  const handleReassignmentSubmit = async () => undefined
 
   return (
     <div className="flex h-screen w-screen flex-col">
@@ -126,51 +123,40 @@ const Layout: React.FC = ({ children }) => {
               </>
             ) : null
           }
-          onLoginClick={setModal('login')}
+          onLoginClick={setModal({ id: 'login' })}
           signedIn={authenticated}
         />
       )}
       {children}
-      {globalModalId === 'login' && !authenticated && (
+      {globalModalId?.id === 'login' && !authenticated && (
         <UserLogin onClose={setModal(null)} />
       )}
-      {globalModalId === 'signup' && !authenticated && (
+      {globalModalId?.id === 'signup' && !authenticated && (
         <UserCreateAccount onClose={setModal(null)} />
       )}
-      {globalModalId === 'forgot' && !authenticated && (
+      {globalModalId?.id === 'forgot' && !authenticated && (
         <UserForgotPassword onClose={setModal(null)} />
       )}
-      {globalModalId === 'newDeployment' && authenticated && (
+      {globalModalId?.id === 'newDeployment' && authenticated && (
         <NewDeployment onClose={setModal(null)} />
       )}
-      {globalModalId === 'reassign' && authenticated && (
-        <ReassignmentModal
-          onClose={setModal(null)}
-          vehicles={trackedVehicles.map((v) => ({
-            vehicleName: capitalize(v),
-            vehicleId: v,
-            pic: 'Shannon Johnson',
-            onCall: 'Brian Kieft',
-          }))}
-          onSubmit={handleReassignmentSubmit}
-          pics={[
-            { name: 'Carlos Rueda', id: '1' },
-            { name: 'Karen Salemy', id: '2' },
-            { name: 'Brian Kieft', id: '3' },
-          ]}
-          onCalls={[
-            { name: 'Carlos Rueda', id: '1' },
-            { name: 'Karen Salemy', id: '2' },
-            { name: 'Shannon Johnson', id: '3' },
-          ]}
-          open
-        />
+      {globalModalId?.id === 'editDocument' && (
+        <DocumentInstanceModal onClose={setModal(null)} />
       )}
-      {globalModalId === 'sendNote' && authenticated && (
+      {globalModalId?.id === 'reassign' && authenticated && (
+        <Reassignment vehicleNames={trackedVehicles} />
+      )}
+      {globalModalId?.id === 'sendNote' && authenticated && (
         <SendNote onClose={setModal(null)} />
       )}
-      {globalModalId === 'editDeployment' && authenticated && (
+      {globalModalId?.id === 'editDeployment' && authenticated && (
         <DeploymentDetails onClose={setModal(null)} />
+      )}
+      {globalModalId?.id === 'attachDocument' && authenticated && (
+        <AttachmentModal onClose={setModal(null)} />
+      )}
+      {globalModalId?.id === 'detachDocument' && authenticated && (
+        <DetachModal onClose={setModal(null)} />
       )}
     </div>
   )

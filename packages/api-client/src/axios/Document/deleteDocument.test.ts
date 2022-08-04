@@ -3,10 +3,10 @@ import { setupServer } from 'msw/node'
 import { deleteDocument, DeleteDocumentParams } from './deleteDocument'
 
 let params: DeleteDocumentParams = {
-  docId: 'example',
+  docId: 300292,
 }
 
-const mockResponse = { value: 'some-value' }
+const mockResponse = undefined
 const server = setupServer(
   rest.delete('/documents', (_req, res, ctx) => {
     return res(ctx.status(200), ctx.json(mockResponse))
