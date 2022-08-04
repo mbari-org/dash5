@@ -138,7 +138,7 @@ test('should not render deployment list toggle to the screen if there are no dep
   expect(screen.queryByTestId('deploymentToggle')).not.toBeInTheDocument()
 })
 
-test('should render button labels', async () => {
+test('should render the pilot button labels', async () => {
   render(
     <OverviewToolbar
       {...props}
@@ -149,6 +149,20 @@ test('should render button labels', async () => {
 
   expect(screen.getByText(/first pilot/i)).toBeInTheDocument()
   expect(screen.getByText(/second pilot/i)).toBeInTheDocument()
+})
+
+test('should not render the pilot button labels if no click handler is provided for PIC', async () => {
+  render(
+    <OverviewToolbar
+      {...props}
+      onClickPilot={undefined}
+      pilotInCharge={'first pilot'}
+      pilotOnCall={'second pilot'}
+    />
+  )
+
+  expect(screen.queryByText(/first pilot/i)).not.toBeInTheDocument()
+  expect(screen.queryByText(/second pilot/i)).not.toBeInTheDocument()
 })
 
 test('should render the mission button if the handler is present', async () => {

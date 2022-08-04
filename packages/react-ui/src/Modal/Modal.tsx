@@ -12,11 +12,12 @@ export interface ModalViewProps {
   zIndex?: string
   grayHeader?: boolean
   fullWidthBody?: boolean
+  extraWideModal?: boolean
+  bodyOverflowHidden?: boolean
   onClose?: () => void
   draggable?: boolean
   onFocus?: () => void
   loading?: boolean
-  disableBodyScroll?: boolean
   maximized?: boolean
 }
 
@@ -49,9 +50,11 @@ const styles = {
   overlayToContainModalSize: 'flex flex-col items-center justify-center',
   modal:
     'flex flex-col bg-white w-full overflow-hidden rounded-md border m-auto pointer-events-auto transition-shadow transition-colors duration-300 ease-out relative my-12',
-  defaultModalWidth: 'md:max-w-md lg:max-w-lg',
-  maximizedModalWidth: 'md:max-w-[90%]',
   defaultModalHeight: 'md:max-h-3/4',
+  // 'flex flex-col bg-white w-full overflow-hidden md:max-h-3/4 rounded-md border m-auto pointer-events-auto transition-shadow transition-colors duration-300 ease-out relative',
+  defaultModalWidth: 'md:max-w-md lg:max-w-lg',
+  extraWideModalWidth: 'md:max-w-3xl lg:max-w-5xl',
+  maximizedModalWidth: 'md:max-w-[90%]',
   header: 'flex justify-between bg-stone-100 rounded mt-0',
   title:
     'text-stone-900 font-medium text-md font-display mt-auto pt-6 px-4 w-full',
@@ -70,6 +73,8 @@ export const Modal: React.FC<ModalProps & FooterProps> = ({
   open,
   grayHeader,
   fullWidthBody,
+  extraWideModal,
+  bodyOverflowHidden,
   onClose: handleOnClose,
   children,
   draggable,
@@ -81,7 +86,6 @@ export const Modal: React.FC<ModalProps & FooterProps> = ({
   confirmButtonText,
   disableCancel,
   disableConfirm,
-  disableBodyScroll,
   form,
   loading,
   maximized,
@@ -169,15 +173,16 @@ export const Modal: React.FC<ModalProps & FooterProps> = ({
       className={clsx(
         styles.overlay,
         zIndex,
-        disableBodyScroll ? 'overflow-auto' : styles.overlayToContainModalSize
+        !bodyOverflowHidden ? 'overflow-auto' : styles.overlayToContainModalSize
       )}
     >
       <section
         className={clsx(
           styles.modal,
           maximized && styles.maximizedModalWidth,
-          !maximized && styles.defaultModalWidth,
-          !disableBodyScroll && styles.defaultModalHeight,
+          !maximized && extraWideModal && styles.extraWideModalWidth,
+          !maximized && !extraWideModal && styles.defaultModalWidth,
+          !bodyOverflowHidden && styles.defaultModalHeight,
           dragging ? styles.dragging : styles.notDragging
         )}
         ref={dialog}
@@ -208,7 +213,7 @@ export const Modal: React.FC<ModalProps & FooterProps> = ({
           className={clsx(
             styles.modalBody,
             !fullWidthBody && styles.bodyMarginAndPadding,
-            !disableBodyScroll && styles.modalScroll
+            bodyOverflowHidden ? 'overflow-hidden' : 'overflow-auto'
           )}
         >
           {children}
