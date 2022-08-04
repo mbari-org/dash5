@@ -1,16 +1,21 @@
-import React, { useRef, useState } from 'react'
+import React, { useRef } from 'react'
 import clsx from 'clsx'
 import { swallow } from '@mbari/utils'
 import { faEllipsisV, faTimes } from '@fortawesome/pro-regular-svg-icons'
 import { IconProp } from '@fortawesome/fontawesome-svg-core'
 import { AccessoryButton } from '../Navigation/AccessoryButton'
-import { IconButton, Dropdown } from '../Navigation'
+import { IconButton } from '../Navigation'
 
+export interface Attachment {
+  id: number | string
+  name: string
+  type: 'vehicle' | 'deployment'
+}
 export interface DocCellProps {
   className?: string
   style?: React.CSSProperties
   onSelect: () => void
-  onSelectMission: (id: string) => void
+  onSelectAttachment: (attachment: Attachment) => void
   onMoreClick: (
     id: { docInstanceId: number; docId: number },
     rect?: DOMRect
@@ -18,14 +23,9 @@ export interface DocCellProps {
   time: string
   date: string
   label: string
-  missions?: Mission[]
+  attachments?: Attachment[]
   docInstanceId: number
   docId: number
-}
-
-interface Mission {
-  name: string
-  id: string
 }
 
 const styles = {
@@ -38,11 +38,11 @@ const styles = {
 export const DocCell: React.FC<DocCellProps> = ({
   className,
   onSelect,
-  onSelectMission,
+  onSelectAttachment,
   time,
   date,
   label,
-  missions,
+  attachments,
   onMoreClick,
   docInstanceId,
   docId,
@@ -78,13 +78,13 @@ export const DocCell: React.FC<DocCellProps> = ({
             {truncatedLabel}
           </button>
           <ul className="flex flex-col">
-            {missions?.map(({ name, id }) => (
-              <li key={id}>
+            {attachments?.map((attachment) => (
+              <li key={attachment.id}>
                 <AccessoryButton
                   className={styles.accButton}
-                  label={name}
+                  label={attachment.name}
                   icon={faTimes as IconProp}
-                  onClick={swallow(() => onSelectMission(id))}
+                  onClick={swallow(() => onSelectAttachment(attachment))}
                   reverse={true}
                 />
               </li>
