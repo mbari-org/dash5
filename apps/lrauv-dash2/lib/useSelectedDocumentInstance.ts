@@ -1,6 +1,9 @@
 import { atom, useRecoilState } from 'recoil'
 
-const selectedDocumentInstanceState = atom<string | null>({
+const selectedDocumentInstanceState = atom<{
+  docInstanceId?: number | null
+  duplicate?: boolean
+} | null>({
   key: 'selectedDocumentInstanceState',
   default: null,
 })

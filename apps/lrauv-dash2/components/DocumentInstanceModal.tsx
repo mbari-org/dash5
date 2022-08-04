@@ -2,7 +2,14 @@ import React, { useEffect, useRef, useState } from 'react'
 import dynamic from 'next/dynamic'
 import { Modal, Input } from '@mbari/react-ui'
 import useSelectedDocumentInstance from '../lib/useSelectedDocumentInstance'
-import { useDocumentInstance } from '@mbari/api-client'
+import {
+  useDocumentInstance,
+  useCreateDocument,
+  useCreateDocumentInstance,
+} from '@mbari/api-client'
+import { useQueryClient } from 'react-query'
+import toast from 'react-hot-toast'
+import { wait } from '@mbari/utils'
 
 const ReactQuill = dynamic(() => import('react-quill'), {
   ssr: false,
@@ -11,12 +18,21 @@ const ReactQuill = dynamic(() => import('react-quill'), {
 const DocumentInstanceModal: React.FC<{ onClose?: () => void }> = ({
   onClose,
 }) => {
+  const [localStateLoading, setLocalStateLoading] = useState(false)
+
+  const queryClient = useQueryClient()
   const { selectedDocumentInstance } = useSelectedDocumentInstance()
+  const { mutate: createDocument, isLoading: creatingDocument } =
+    useCreateDocument()
+  const { mutate: updateDocument, isLoading: updatingDocument } =
+    useCreateDocumentInstance()
   const [content, setContent] = useState('')
   const { data, isLoading } = useDocumentInstance(
-    { docInstanceId: selectedDocumentInstance ?? '0' },
     {
-      enabled: !!selectedDocumentInstance,
+      docInstanceId: selectedDocumentInstance?.docInstanceId?.toString() ?? '0',
+    },
+    {
+      enabled: !!selectedDocumentInstance?.docInstanceId,
     }
   )
 
@@ -31,16 +47,20 @@ const DocumentInstanceModal: React.FC<{ onClose?: () => void }> = ({
     setContent(value)
   }
 
-  const lastLoadedId = useRef<string | null>(null)
+  const lastLoadedId = useRef<number | null | undefined>(null)
   useEffect(() => {
     if (
       lastLoadedId.current !== selectedDocumentInstance &&
       data?.text !== null &&
       !isLoading
     ) {
-      lastLoadedId.current = selectedDocumentInstance
+      lastLoadedId.current = selectedDocumentInstance?.docInstanceId
       setContent(data?.text ?? '')
-      setDocumentName(data?.docName ?? '')
+      setDocumentName(
+        `${data?.docName ?? ''}${
+          selectedDocumentInstance?.duplicate ? ' (duplicate)' : ''
+        }`
+      )
       setQuillOriginalContent('')
     }
   }, [data, isLoading, lastLoadedId, selectedDocumentInstance])
@@ -48,15 +68,54 @@ const DocumentInstanceModal: React.FC<{ onClose?: () => void }> = ({
   const handleNameChange: React.ChangeEventHandler<HTMLInputElement> = (e) =>
     setDocumentName(e.target.value)
 
+  const handleConfirm = async () => {
+    setLocalStateLoading(true)
+    if (
+      !selectedDocumentInstance?.duplicate &&
+      selectedDocumentInstance?.docInstanceId
+    ) {
+      if (!data?.docId) {
+        toast.error('No document data present.')
+        return
+      }
+      await updateDocument({
+        docId: data?.docId,
+        newName: documentName,
+        text: content,
+      })
+    } else {
+      await createDocument({
+        docType: 'NORMAL',
+        name: documentName,
+        text: content,
+      })
+    }
+    await wait(2)
+    queryClient.invalidateQueries(['document', 'documents'])
+    toast.success('Document saved.')
+    setLocalStateLoading(false)
+    onClose?.()
+  }
+
   return (
     <Modal
-      title={`Editing Document`}
+      title={
+        selectedDocumentInstance?.docInstanceId &&
+        !selectedDocumentInstance?.duplicate
+          ? `Editing Document`
+          : 'New Document'
+      }
       onClose={onClose}
       confirmButtonText="Save"
-      disableConfirm={!content || quillOriginalContent === content}
-      onConfirm={() => {
-        console.log('')
-      }}
+      disableConfirm={
+        !content ||
+        (quillOriginalContent === content &&
+          !selectedDocumentInstance?.duplicate)
+      }
+      onConfirm={handleConfirm}
+      loading={
+        isLoading || creatingDocument || updatingDocument || localStateLoading
+      }
       maximized
       disableBodyScroll
       open
