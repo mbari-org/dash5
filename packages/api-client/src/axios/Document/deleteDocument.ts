@@ -20,9 +20,6 @@ export const deleteDocument = async (
     console.debug(`DELETE ${url}`)
   }
 
-  const response = await instance.delete(
-    `${url}?${new URLSearchParams({ ...params })}`,
-    config
-  )
-  return response.data as DeleteDocumentResponse
+  await instance.delete(`${url}`, { params, ...config })
+  return undefined
 }
