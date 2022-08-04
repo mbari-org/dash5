@@ -5,6 +5,8 @@ import DocsSection from './DocsSection'
 import HandoffSection from './HandoffSection'
 import LogsSection from './LogsSection'
 import ScienceDataSection from './ScienceDataSection'
+import { useEvents } from '@mbari/api-client'
+import { DateTime } from 'luxon'
 
 export type VehicleAccordionSection =
   | 'handoff'
@@ -32,6 +34,23 @@ const VehicleAccordion: React.FC<VehicleAccordionProps> = ({
   activeDeployment,
   currentDeploymentId,
 }) => {
+  const {
+    data: relatedLogs,
+    isLoading: logsLoading,
+    isFetching,
+    refetch,
+  } = useEvents({
+    vehicles: [vehicleName],
+    from,
+    to,
+  })
+  const earliestLog = relatedLogs?.[(relatedLogs?.length ?? 0) - 1].isoTime
+  const logsSummary = logsLoading
+    ? 'loading...'
+    : earliestLog
+    ? `started ${DateTime.fromISO(earliestLog).toRelative()}`
+    : 'no logs yet'
+
   const [section, setSection] = useState<VehicleAccordionSection>('handoff')
   const handleToggleForSection =
     (currentSection: VehicleAccordionSection) => (open: boolean) =>
@@ -41,7 +60,7 @@ const VehicleAccordion: React.FC<VehicleAccordionProps> = ({
     <div className="flex h-full flex-col divide-y divide-solid divide-stone-200">
       <AccordionHeader
         label="Handoff / On Call"
-        secondaryLabel="Tanner P. (you) / Brian K."
+        secondaryLabel={activeDeployment ? 'Tanner P. (you) / Brian K.' : ''}
         onToggle={handleToggleForSection('handoff')}
         open={section === 'handoff'}
         className="flex flex-shrink-0"
@@ -57,7 +76,7 @@ const VehicleAccordion: React.FC<VehicleAccordionProps> = ({
       )}
       <AccordionHeader
         label="Science and vehicle data"
-        secondaryLabel="Updated 2 mins ago"
+        secondaryLabel={activeDeployment ? 'Updated 2 mins ago' : ''}
         onToggle={handleToggleForSection('data')}
         open={section === 'data'}
         className="flex flex-shrink-0"
@@ -67,14 +86,18 @@ const VehicleAccordion: React.FC<VehicleAccordionProps> = ({
       )}
       <AccordionHeader
         label="Schedule"
-        secondaryLabel="Profile Station running for 12 mins"
+        secondaryLabel={
+          activeDeployment ? 'Profile Station running for 12 mins' : ''
+        }
         onToggle={handleToggleForSection('schedule')}
         open={section === 'schedule'}
         className="flex flex-shrink-0"
       />
       <AccordionHeader
         label="Comms Queue"
-        secondaryLabel="surfacing in ~20 min, no items in queue"
+        secondaryLabel={
+          activeDeployment ? 'surfacing in ~20 min, no items in queue' : ''
+        }
         onToggle={handleToggleForSection('comms')}
         open={section === 'comms'}
         className="flex flex-shrink-0"
@@ -84,7 +107,7 @@ const VehicleAccordion: React.FC<VehicleAccordionProps> = ({
       )}
       <AccordionHeader
         label="Log"
-        secondaryLabel="started 4h 7m ago"
+        secondaryLabel={activeDeployment ? logsSummary : ''}
         onToggle={handleToggleForSection('log')}
         open={section === 'log'}
         className="flex flex-shrink-0"
