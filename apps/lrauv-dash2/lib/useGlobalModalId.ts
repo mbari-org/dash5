@@ -10,9 +10,27 @@ export type ModalId =
   | 'sendNote'
   | 'esbSamples'
   | 'editDocument'
+  | 'attachDocument'
+  | 'detachDocument'
   | null
 
-const globalModalState = atom<ModalId>({
+export interface GlobalModalMetaData {
+  docId?: number | null
+  docInstanceId?: number | null
+  deploymentId?: number | null
+  vehicleName?: string | null
+  deploymentName?: string | null
+  documentName?: string | null
+  duplicate?: boolean
+  attachmentType?: 'deployment' | 'vehicle'
+}
+
+export interface GlobalModalState {
+  id: ModalId
+  meta?: GlobalModalMetaData
+}
+
+const globalModalState = atom<GlobalModalState | null>({
   key: 'globalModalState',
   default: null,
 })

@@ -21,6 +21,8 @@ import { NewDeployment } from './NewDeployment'
 import DeploymentDetails from './DeploymentDetails'
 import SendNote from './SendNote'
 import DocumentInstanceModal from './DocumentInstanceModal'
+import AttachmentModal from './AttachmentModal'
+import DetachModal from './DetachModal'
 
 const Layout: React.FC = ({ children }) => {
   const [showLogin, setLogin] = useState(false)
@@ -132,22 +134,22 @@ const Layout: React.FC = ({ children }) => {
         />
       )}
       {children}
-      {globalModalId === 'login' && !authenticated && (
+      {globalModalId?.id === 'login' && !authenticated && (
         <UserLogin onClose={setModal(null)} />
       )}
-      {globalModalId === 'signup' && !authenticated && (
+      {globalModalId?.id === 'signup' && !authenticated && (
         <UserCreateAccount onClose={setModal(null)} />
       )}
-      {globalModalId === 'forgot' && !authenticated && (
+      {globalModalId?.id === 'forgot' && !authenticated && (
         <UserForgotPassword onClose={setModal(null)} />
       )}
-      {globalModalId === 'newDeployment' && authenticated && (
+      {globalModalId?.id === 'newDeployment' && authenticated && (
         <NewDeployment onClose={setModal(null)} />
       )}
-      {globalModalId === 'editDocument' && (
+      {globalModalId?.id === 'editDocument' && (
         <DocumentInstanceModal onClose={setModal(null)} />
       )}
-      {globalModalId === 'reassign' && authenticated && (
+      {globalModalId?.id === 'reassign' && authenticated && (
         <ReassignmentModal
           onClose={setModal(null)}
           vehicles={trackedVehicles.map((v) => ({
@@ -170,11 +172,17 @@ const Layout: React.FC = ({ children }) => {
           open
         />
       )}
-      {globalModalId === 'sendNote' && authenticated && (
+      {globalModalId?.id === 'sendNote' && authenticated && (
         <SendNote onClose={setModal(null)} />
       )}
-      {globalModalId === 'editDeployment' && authenticated && (
+      {globalModalId?.id === 'editDeployment' && authenticated && (
         <DeploymentDetails onClose={setModal(null)} />
+      )}
+      {globalModalId?.id === 'attachDocument' && authenticated && (
+        <AttachmentModal onClose={setModal(null)} />
+      )}
+      {globalModalId?.id === 'detachDocument' && authenticated && (
+        <DetachModal onClose={setModal(null)} />
       )}
     </div>
   )

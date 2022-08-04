@@ -32,7 +32,7 @@ const HandoffSection: React.FC<HandoffSectionProps> = ({
 
   const handleAddNote = () => {
     console.log('add note')
-    setGlobalModalId('sendNote')
+    setGlobalModalId({ id: 'sendNote' })
   }
 
   const cellAtIndex = (index: number, _virtualizer: Virtualizer) => {

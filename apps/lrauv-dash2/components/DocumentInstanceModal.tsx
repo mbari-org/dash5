@@ -1,7 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react'
 import dynamic from 'next/dynamic'
 import { Modal, Input } from '@mbari/react-ui'
-import useSelectedDocumentInstance from '../lib/useSelectedDocumentInstance'
+import useGlobalModalId from '../lib/useGlobalModalId'
 import {
   useDocumentInstance,
   useCreateDocument,
@@ -18,10 +18,12 @@ const ReactQuill = dynamic(() => import('react-quill'), {
 const DocumentInstanceModal: React.FC<{ onClose?: () => void }> = ({
   onClose,
 }) => {
-  const [localStateLoading, setLocalStateLoading] = useState(false)
+  const { globalModalId } = useGlobalModalId()
+  const docInstanceId = globalModalId?.meta?.docInstanceId
+  const duplicate = globalModalId?.meta?.duplicate
 
+  const [localStateLoading, setLocalStateLoading] = useState(false)
   const queryClient = useQueryClient()
-  const { selectedDocumentInstance } = useSelectedDocumentInstance()
   const { mutate: createDocument, isLoading: creatingDocument } =
     useCreateDocument()
   const { mutate: updateDocument, isLoading: updatingDocument } =
@@ -29,10 +31,10 @@ const DocumentInstanceModal: React.FC<{ onClose?: () => void }> = ({
   const [content, setContent] = useState('')
   const { data, isLoading } = useDocumentInstance(
     {
-      docInstanceId: selectedDocumentInstance?.docInstanceId?.toString() ?? '0',
+      docInstanceId: docInstanceId?.toString() ?? '0',
     },
     {
-      enabled: !!selectedDocumentInstance?.docInstanceId,
+      enabled: !!docInstanceId,
     }
   )
 
@@ -50,30 +52,25 @@ const DocumentInstanceModal: React.FC<{ onClose?: () => void }> = ({
   const lastLoadedId = useRef<number | null | undefined>(null)
   useEffect(() => {
     if (
-      lastLoadedId.current !== selectedDocumentInstance &&
+      lastLoadedId.current !== docInstanceId &&
       data?.text !== null &&
       !isLoading
     ) {
-      lastLoadedId.current = selectedDocumentInstance?.docInstanceId
+      lastLoadedId.current = docInstanceId
       setContent(data?.text ?? '')
       setDocumentName(
-        `${data?.docName ?? ''}${
-          selectedDocumentInstance?.duplicate ? ' (duplicate)' : ''
-        }`
+        `${data?.docName ?? ''}${duplicate ? ' (duplicate)' : ''}`
       )
       setQuillOriginalContent('')
     }
-  }, [data, isLoading, lastLoadedId, selectedDocumentInstance])
+  }, [data, isLoading, lastLoadedId, duplicate, docInstanceId])
 
   const handleNameChange: React.ChangeEventHandler<HTMLInputElement> = (e) =>
     setDocumentName(e.target.value)
 
   const handleConfirm = async () => {
     setLocalStateLoading(true)
-    if (
-      !selectedDocumentInstance?.duplicate &&
-      selectedDocumentInstance?.docInstanceId
-    ) {
+    if (!duplicate && docInstanceId) {
       if (!data?.docId) {
         toast.error('No document data present.')
         return
@@ -99,18 +96,11 @@ const DocumentInstanceModal: React.FC<{ onClose?: () => void }> = ({
 
   return (
     <Modal
-      title={
-        selectedDocumentInstance?.docInstanceId &&
-        !selectedDocumentInstance?.duplicate
-          ? `Editing Document`
-          : 'New Document'
-      }
+      title={docInstanceId && !duplicate ? `Editing Document` : 'New Document'}
       onClose={onClose}
       confirmButtonText="Save"
       disableConfirm={
-        !content ||
-        (quillOriginalContent === content &&
-          !selectedDocumentInstance?.duplicate)
+        !content || (quillOriginalContent === content && !duplicate)
       }
       onConfirm={handleConfirm}
       loading={
