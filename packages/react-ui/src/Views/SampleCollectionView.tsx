@@ -123,7 +123,9 @@ const ColorCode: React.FC<ColorCodeProps> = ({
       }
     )}
   >
-    <p className="text-lg tracking-tight">{children}</p>
+    <p className="my-auto rounded-lg bg-white/75 py-1 px-2 text-sm tracking-tight">
+      {children}
+    </p>
   </li>
 )
 
