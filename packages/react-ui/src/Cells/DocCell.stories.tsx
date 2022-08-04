@@ -16,15 +16,17 @@ const Template: Story<DocCellProps> = (args) => (
 
 const args: DocCellProps = {
   className: '',
-  onSelectMore: () => {
-    console.log('event fired')
-  },
   onSelect: () => {
     console.log('event fired')
   },
   onSelectMission: (id) => {
     console.log(`Selected mission ${id}`)
   },
+  onMoreClick: (data, rect) => {
+    console.log('More Clicked', data, rect)
+  },
+  docId: 1,
+  docInstanceId: 100,
   time: '16:29:32',
   date: 'Dec. 15, 2021',
   label: 'Maintenance Log - 8430279410327430174037149070',

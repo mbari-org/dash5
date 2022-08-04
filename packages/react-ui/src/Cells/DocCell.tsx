@@ -1,21 +1,26 @@
-import React from 'react'
+import React, { useRef, useState } from 'react'
 import clsx from 'clsx'
 import { swallow } from '@mbari/utils'
 import { faEllipsisV, faTimes } from '@fortawesome/pro-regular-svg-icons'
 import { IconProp } from '@fortawesome/fontawesome-svg-core'
 import { AccessoryButton } from '../Navigation/AccessoryButton'
-import { IconButton } from '../Navigation'
+import { IconButton, Dropdown } from '../Navigation'
 
 export interface DocCellProps {
   className?: string
   style?: React.CSSProperties
   onSelect: () => void
-  onSelectMore: () => void
   onSelectMission: (id: string) => void
+  onMoreClick: (
+    id: { docInstanceId: number; docId: number },
+    rect?: DOMRect
+  ) => void
   time: string
   date: string
   label: string
   missions?: Mission[]
+  docInstanceId: number
+  docId: number
 }
 
 interface Mission {
@@ -27,19 +32,22 @@ const styles = {
   container: 'grid grid-cols-9 gap-2 bg-white font-display flex-grow',
   accButton:
     'text-sm font-semibold text-gray-700 flex border-gray-300 !text-left mb-1',
-  iconButton: 'mt-2',
+  iconButton: 'mt-2 relative',
 }
 
 export const DocCell: React.FC<DocCellProps> = ({
   className,
   onSelect,
   onSelectMission,
-  onSelectMore,
   time,
   date,
   label,
   missions,
+  onMoreClick,
+  docInstanceId,
+  docId,
 }) => {
+  const moreButtonRef = useRef<HTMLDivElement | null>(null)
   const labelAsArray = label.split(' ')
   const truncatedLabel = labelAsArray
     .filter((word, i) => {
@@ -47,6 +55,13 @@ export const DocCell: React.FC<DocCellProps> = ({
       if (labelAsArray[2] === '-' && i === 3) return word
     })
     .join(' ')
+
+  const handleMoreClick = () => {
+    onMoreClick(
+      { docInstanceId, docId },
+      moreButtonRef.current?.getBoundingClientRect()
+    )
+  }
 
   return (
     <div className={clsx('flex bg-white p-2 pr-0', className)}>
@@ -77,13 +92,14 @@ export const DocCell: React.FC<DocCellProps> = ({
           </ul>
         </div>
       </article>
-      <IconButton
-        icon={faEllipsisV}
-        ariaLabel={'More options'}
-        onClick={onSelectMore}
-        className={styles.iconButton}
-        size={'text-2xl'}
-      />
+      <div className={styles.iconButton} ref={moreButtonRef}>
+        <IconButton
+          icon={faEllipsisV}
+          ariaLabel={'More options'}
+          onClick={handleMoreClick}
+          size={'text-2xl'}
+        />
+      </div>
     </div>
   )
 }
