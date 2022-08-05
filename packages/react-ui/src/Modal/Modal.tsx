@@ -83,6 +83,7 @@ export const Modal: React.FC<ModalProps & FooterProps> = ({
   disableConfirm,
   form,
   loading,
+  extraButtons,
 }) => {
   const browserWindow = typeof window !== 'undefined' ? window : undefined
   const [state, setState] = useState<ModalDragState>(DEFAULT_STATE)
@@ -214,6 +215,7 @@ export const Modal: React.FC<ModalProps & FooterProps> = ({
             disableCancel={disableCancel}
             disableConfirm={disableConfirm}
             form={form}
+            extraButtons={extraButtons}
           />
         )}
       </section>
