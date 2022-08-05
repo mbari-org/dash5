@@ -4,7 +4,7 @@ import '@testing-library/jest-dom'
 import { ScheduleCell, ScheduleCellProps } from './ScheduleCell'
 
 const props: ScheduleCellProps = {
-  status: 'scheduled',
+  status: 'pending',
   label: 'scheduled event',
   ariaLabel: 'cell container',
   secondary: 'breakfast of champions',
@@ -48,8 +48,8 @@ test('should have white background when scheduled', async () => {
   expect(screen.getByLabelText(/cell container/i)).toHaveClass('bg-white')
 })
 
-test('should have teal label when executed', async () => {
-  render(<ScheduleCell {...props} status={'executed'} />)
+test('should have teal label when completed', async () => {
+  render(<ScheduleCell {...props} status={'completed'} />)
 
   expect(screen.getByText(props.label)).toHaveClass('text-teal-600')
 })

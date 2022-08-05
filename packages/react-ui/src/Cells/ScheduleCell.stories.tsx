@@ -16,7 +16,7 @@ const Template: Story<ScheduleCellProps> = (args) => (
 
 const args: ScheduleCellProps = {
   className: '',
-  status: 'scheduled',
+  status: 'pending',
   label: 'ESP sample at depth',
   secondary: 'Deeper sample',
   name: 'Reiko Michisaki',
@@ -61,7 +61,7 @@ Running.parameters = {
 export const Ended = Template.bind({})
 Ended.args = {
   ...args,
-  status: 'ended',
+  status: 'cancelled',
   secondary: 'Per YZ shallow sample',
   description: 'Ended at 10:22',
   description2: '3 hours ago',
@@ -77,7 +77,7 @@ Ended.parameters = {
 export const Executed = Template.bind({})
 Executed.args = {
   ...args,
-  status: 'executed',
+  status: 'completed',
   label: 'resume',
   secondary: 'fixed it',
   description: 'Executed at 11:32',

@@ -15,7 +15,7 @@ import { IconButton } from '../Navigation'
 export interface ScheduleCellProps {
   className?: string
   style?: React.CSSProperties
-  status: 'scheduled' | 'running' | 'ended' | 'executed' | 'paused'
+  status: 'pending' | 'running' | 'cancelled' | 'completed' | 'paused'
   label: string
   ariaLabel?: string
   secondary: string
@@ -28,7 +28,7 @@ export interface ScheduleCellProps {
 }
 
 const styles = {
-  container: 'flex font-display items-center',
+  container: 'flex font-display items-center text-sm',
   icon: 'flex px-4',
   detailsContainer: 'flex flex-grow flex-col p-4',
   text: 'text-stone-500 opacity-90',
@@ -39,10 +39,10 @@ const styles = {
 }
 
 const icons: { [key: string]: IconProp } = {
-  scheduled: faClock as IconProp,
+  pending: faClock as IconProp,
   running: faSync as IconProp,
-  ended: faTimes as IconProp,
-  executed: faCheck as IconProp,
+  cancelled: faTimes as IconProp,
+  completed: faCheck as IconProp,
   paused: faClock as IconProp,
 }
 
@@ -66,7 +66,7 @@ export const ScheduleCell: React.FC<ScheduleCellProps> = ({
   })()
 
   const isOpen = (() => {
-    return status === 'scheduled' || status === 'running' || status === 'paused'
+    return status === 'pending' || status === 'running' || status === 'paused'
   })()
 
   const iconColor = (() => {
@@ -77,7 +77,7 @@ export const ScheduleCell: React.FC<ScheduleCellProps> = ({
 
   const labelColor = (() => {
     if (status === 'paused') return 'text-orange-400'
-    if (status === 'executed') return 'text-teal-600'
+    if (status === 'completed') return 'text-teal-600'
     return 'text-primary-600'
   })()
 
@@ -100,7 +100,7 @@ export const ScheduleCell: React.FC<ScheduleCellProps> = ({
         <ul className={styles.detailsContainer}>
           <li
             className={clsx(
-              'flex',
+              'flex truncate',
               labelColor,
               isOpen ? styles.open : styles.closed
             )}
@@ -109,13 +109,18 @@ export const ScheduleCell: React.FC<ScheduleCellProps> = ({
           </li>
           <li
             className={clsx(
-              'flex italic',
+              'flex truncate italic',
               isOpen ? styles.text : styles.textLight
             )}
           >
             {secondary}
           </li>
-          <li className={clsx('flex', isOpen ? styles.text : styles.textLight)}>
+          <li
+            className={clsx(
+              'flex truncate',
+              isOpen ? styles.text : styles.textLight
+            )}
+          >
             {name}
           </li>
         </ul>
@@ -125,9 +130,9 @@ export const ScheduleCell: React.FC<ScheduleCellProps> = ({
             isOpen ? styles.text : styles.textLight
           )}
         >
-          <li className="flex">{description}</li>
-          {description2 && <li className="flex">{description2}</li>}
-          {description3 && <li className="flex">{description3}</li>}
+          <li className="flex truncate">{description}</li>
+          {description2 && <li className="flex truncate">{description2}</li>}
+          {description3 && <li className="flex truncate">{description3}</li>}
         </ul>
       </button>
       <IconButton
