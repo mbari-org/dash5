@@ -22,8 +22,8 @@ export const UserLogin: React.FC<{ onClose?: () => void }> = ({
     }
   }, [loading, error])
 
-  const handleCreateAccount = () => setGlobalModalId('signup')
-  const handleForgotPass = () => setGlobalModalId('forgot')
+  const handleCreateAccount = () => setGlobalModalId({ id: 'signup' })
+  const handleForgotPass = () => setGlobalModalId({ id: 'forgot' })
 
   return (
     <LoginModal

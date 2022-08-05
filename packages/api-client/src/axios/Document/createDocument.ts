@@ -1,16 +1,15 @@
 // Use scaffold axiosBase to generate the resources imported below.
 import { getInstance } from '../getInstance'
+import { GetDocumentInstanceResponse } from './getDocumentInstance'
 import { RequestConfig } from '../types'
 
 export interface CreateDocumentParams {
   name: string
-  docType: string
+  docType: 'NORMAL' | 'FORM' | 'TEMPLATE'
   text: string
 }
 
-export interface CreateDocumentResponse {
-  result: string
-}
+export type CreateDocumentResponse = GetDocumentInstanceResponse
 
 export const createDocument = async (
   params: CreateDocumentParams,
@@ -23,5 +22,5 @@ export const createDocument = async (
   }
 
   const response = await instance.post(url, params, config)
-  return response.data as CreateDocumentResponse
+  return response.data.result as CreateDocumentResponse
 }
