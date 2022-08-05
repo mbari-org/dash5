@@ -7,6 +7,7 @@ import LogsSection from './LogsSection'
 import ScienceDataSection from './ScienceDataSection'
 import { useEvents } from '@mbari/api-client'
 import { DateTime } from 'luxon'
+import { ScheduleSection } from './ScheduleSection'
 
 export type VehicleAccordionSection =
   | 'handoff'
@@ -93,6 +94,12 @@ const VehicleAccordion: React.FC<VehicleAccordionProps> = ({
         open={section === 'schedule'}
         className="flex flex-shrink-0"
       />
+      {section === 'schedule' && (
+        <ScheduleSection
+          currentDeploymentId={currentDeploymentId}
+          vehicleName={vehicleName}
+        />
+      )}
       <AccordionHeader
         label="Comms Queue"
         secondaryLabel={
