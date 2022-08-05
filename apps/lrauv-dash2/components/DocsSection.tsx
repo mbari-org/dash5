@@ -37,7 +37,7 @@ const DocsSection: React.FC<DocsSectionProps> = ({
     useState<null | string>(null)
   const isFilteringDeployment = selectedType === 'By Deployment'
 
-  const { data: documentData } = useDocuments()
+  const { data: documentData, isLoading, isFetching } = useDocuments()
   const { data: deploymentData } = useDeployments(
     {
       vehicle: vehicleName,
@@ -207,7 +207,11 @@ const DocsSection: React.FC<DocsSectionProps> = ({
           </div>
         )}
       </header>
-      <AccordionCells cellAtIndex={cellAtIndex} count={data?.length} />
+      <AccordionCells
+        cellAtIndex={cellAtIndex}
+        count={data?.length}
+        loading={isLoading || isFetching}
+      />
       {currentMoreMenu && (
         <div
           className="fixed mr-2 mb-2 min-w-[140px] whitespace-nowrap"

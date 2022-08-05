@@ -1,4 +1,4 @@
-import { SelectField } from '@mbari/react-ui'
+import { SelectField, AbsoluteOverlay } from '@mbari/react-ui'
 import useGlobalModalId from '../lib/useGlobalModalId'
 import dynamic from 'next/dynamic'
 import { useEffect, useRef, useState } from 'react'
@@ -56,7 +56,7 @@ const ScienceCell: React.FC<{
             inverted={name === 'depth'}
           />
         ) : (
-          <div>Loading...</div>
+          <AbsoluteOverlay />
         )}
       </div>
     </div>
@@ -72,6 +72,7 @@ const ScienceDataSection: React.FC<{
   const {
     data: chartData,
     isLoading,
+    isFetching,
     isError,
     error,
   } = useChartData({
@@ -142,7 +143,11 @@ const ScienceDataSection: React.FC<{
               <p>{(error as any)?.message}</p>
             </div>
           )}
-          <AccordionCells cellAtIndex={cellAtIndex} count={charts?.length} />
+          <AccordionCells
+            cellAtIndex={cellAtIndex}
+            count={charts?.length}
+            loading={isLoading || isFetching}
+          />
         </div>
         <div className="absolute inset-x-0 bottom-0 z-10 h-2 bg-gradient-to-t from-stone-400/20" />
       </div>

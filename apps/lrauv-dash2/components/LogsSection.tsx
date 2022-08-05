@@ -34,6 +34,7 @@ const LogsSection: React.FC<LogsSectionProps> = ({ vehicleName, from, to }) => {
         .flat()
         .filter((k, i, a) => a.indexOf(k) === i)
     : undefined
+
   const { data, isLoading, isFetching, refetch } = useEvents({
     vehicles: [vehicleName],
     from,
@@ -100,7 +101,11 @@ const LogsSection: React.FC<LogsSectionProps> = ({ vehicleName, from, to }) => {
           onClick={handleRefresh}
         />
       </header>
-      <AccordionCells cellAtIndex={cellAtIndex} count={data?.length} />
+      <AccordionCells
+        cellAtIndex={cellAtIndex}
+        count={data?.length}
+        loading={isLoading || isFetching}
+      />
     </>
   )
 }
