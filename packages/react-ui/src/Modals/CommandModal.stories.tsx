@@ -3,13 +3,33 @@ import React from 'react'
 import { Story, Meta } from '@storybook/react/types-6-0'
 import { CommandModal, CommandModalProps } from './CommandModal'
 import { CommandTableProps } from '../Tables/CommandTable'
+import { ScheduleCommandFormValues } from '../Forms/ScheduleCommandForm'
+import { wait } from '@mbari/utils'
 
 export default {
   title: 'Modals/CommandModal',
   component: CommandModal,
 } as Meta
 
-const Template: Story<CommandModalProps> = (args) => <CommandModal {...args} />
+const Template: Story<CommandModalProps> = (args) => {
+  const onSubmit: (values: ScheduleCommandFormValues) => Promise<undefined> =
+    async (values: ScheduleCommandFormValues) => {
+      console.log('submitting')
+      await wait(1)
+      console.log('Submitted', values)
+      return undefined
+    }
+  const onAlt: (values: ScheduleCommandFormValues) => Promise<undefined> =
+    async (values: ScheduleCommandFormValues) => {
+      console.log('alt submitting')
+      await wait(1)
+      console.log('Alt submitted', values)
+      return undefined
+    }
+  return (
+    <CommandModal {...args} onSubmit={onSubmit} onAltAddressSubmit={onAlt} />
+  )
+}
 
 const commandTableArgs: CommandTableProps = {
   commands: [
@@ -96,7 +116,7 @@ const commandTableArgs: CommandTableProps = {
   selectedId: '5',
 }
 
-const args: CommandModalProps = {
+const args: Omit<CommandModalProps, 'onSubmit'> = {
   steps: ['Command', 'Build', 'Schedule'],
   currentIndex: 0,
   vehicleName: 'Brizo',
@@ -118,12 +138,32 @@ const args: CommandModalProps = {
   ...commandTableArgs,
 }
 
-export const Standard = Template.bind({})
-Standard.args = args
+export const Command = Template.bind({})
+Command.args = args
 
-Standard.parameters = {
+Command.parameters = {
   design: {
     type: 'figma',
     url: 'https://www.figma.com/file/FtsKsOCBQ2YjTZlwezG6aI/MBARI-Components?node-id=6574%3A889',
+  },
+}
+
+export const Build = Template.bind({})
+Build.args = { ...args, currentIndex: 1 }
+
+Build.parameters = {
+  design: {
+    type: 'figma',
+    url: 'https://www.figma.com/file/FtsKsOCBQ2YjTZlwezG6aI/MBARI-Components?node-id=6574%3A1034',
+  },
+}
+
+export const Schedule = Template.bind({})
+Schedule.args = { ...args, currentIndex: 2 }
+
+Schedule.parameters = {
+  design: {
+    type: 'figma',
+    url: 'https://www.figma.com/file/FtsKsOCBQ2YjTZlwezG6aI/MBARI-Components?node-id=6863%3A944',
   },
 }

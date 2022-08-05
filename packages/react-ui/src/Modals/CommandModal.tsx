@@ -14,6 +14,12 @@ import {
 import { SelectOption } from '../Fields/Select'
 import { SortDirection } from '../Data/TableHeader'
 import { sortByProperty } from '@mbari/utils'
+import {
+  ScheduleCommandForm,
+  ScheduleCommandFormValues,
+} from '../Forms/ScheduleCommandForm'
+import { AsyncSubmitHandler } from '@sumocreations/forms'
+import { ExtraButton } from '../Modal/Footer'
 
 export interface CommandModalProps
   extends StepProgressProps,
@@ -23,7 +29,8 @@ export interface CommandModalProps
   vehicleName: string
   recentCommands?: SelectOption[]
   onCancel?: () => void
-  onSubmit?: () => void
+  onSubmit: AsyncSubmitHandler<ScheduleCommandFormValues>
+  onAltAddressSubmit?: AsyncSubmitHandler<ScheduleCommandFormValues>
   onMoreInfo?: () => void
 }
 
@@ -38,6 +45,7 @@ export const CommandModal: React.FC<CommandModalProps> = ({
   recentCommands,
   onCancel,
   onSubmit,
+  onAltAddressSubmit,
   onMoreInfo,
 }) => {
   const [currentStep, setCurrentStep] = useState(currentIndex)
@@ -73,7 +81,7 @@ export const CommandModal: React.FC<CommandModalProps> = ({
 
   const isLastStep = currentStep === steps.length - 1
   const confirmButtonText = isLastStep ? (
-    'Submit'
+    `Schedule ${vehicleName}`
   ) : (
     <div>
       <span className="pr-2">Next</span>{' '}
@@ -81,11 +89,15 @@ export const CommandModal: React.FC<CommandModalProps> = ({
     </div>
   )
 
-  const handleConfirm = () => {
-    if (isLastStep) return onSubmit
-
+  const handleNext = () => {
     if (selectedCommandId) {
       return setCurrentStep(currentStep + 1)
+    }
+  }
+
+  const handlePrevious = () => {
+    if (currentStep > 0) {
+      return setCurrentStep(currentStep - 1)
     }
   }
 
@@ -105,6 +117,11 @@ export const CommandModal: React.FC<CommandModalProps> = ({
     setSearchTerm(term)
   }
 
+  const getCommandNameById = (id: string) => {
+    const selectedCommand = commands.find((command) => command.id === id)
+    return selectedCommand?.name
+  }
+
   const handleSort = (column: number, isAscending?: boolean) => {
     const sortableColumns: string[] = ['name', 'vehicle', 'description']
     const sortProperty = sortableColumns[column] as keyof Command
@@ -121,6 +138,26 @@ export const CommandModal: React.FC<CommandModalProps> = ({
     setFilteredCommands(sortedCommands as Command[])
   }
 
+  const extraButtons = () => {
+    if (currentStep === 0) return []
+
+    const backButton: ExtraButton = {
+      buttonText: 'Back',
+      appearance: 'secondary',
+      onClick: handlePrevious,
+    }
+    const altAddressButton: ExtraButton = {
+      buttonText: 'Submit to alternative address',
+      appearance: 'secondary',
+      type: 'submit',
+      form: 'scheduleCommandForm',
+    }
+
+    return isLastStep && onAltAddressSubmit
+      ? [backButton, altAddressButton]
+      : [backButton]
+  }
+
   return (
     <Modal
       className={className}
@@ -132,11 +169,13 @@ export const CommandModal: React.FC<CommandModalProps> = ({
           className="w-3/4"
         />
       }
-      onConfirm={handleConfirm}
+      onConfirm={isLastStep ? null : handleNext}
       onCancel={onCancel}
       confirmButtonText={confirmButtonText}
+      extraButtons={extraButtons()}
       extraWideModal
       bodyOverflowHidden
+      form={isLastStep ? 'scheduleCommandForm' : undefined}
       open
     >
       {currentStep === 0 && (
@@ -184,10 +223,18 @@ export const CommandModal: React.FC<CommandModalProps> = ({
           />
         </section>
       )}
-      {currentStep !== 0 && (
+      {currentStep === 1 && (
         <p className="mt-4 text-[50px] text-stone-400/80">
           Placeholder for future steps
         </p>
+      )}
+      {currentStep === 2 && selectedCommandId && (
+        <ScheduleCommandForm
+          vehicleName={vehicleName}
+          command={getCommandNameById(selectedCommandId) ?? ''}
+          onSubmit={onSubmit}
+          id="scheduleCommandForm"
+        />
       )}
     </Modal>
   )
