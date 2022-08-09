@@ -169,4 +169,4 @@ export const ScheduleCommandForm = React.forwardRef<
   }
 )
 
-ScheduleCommandForm.displayName = 'Forms/ScheduleCommandForm'
+ScheduleCommandForm.displayName = 'Forms.ScheduleCommandForm'
