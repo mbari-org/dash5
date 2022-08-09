@@ -1,4 +1,5 @@
 export * from './TethysApiProvider'
+export * from './Command/useCreateCommand'
 export * from './Deployment/useDeployments'
 export * from './Deployment/useLastDeployment'
 export * from './Deployment/useStartDeployment'
