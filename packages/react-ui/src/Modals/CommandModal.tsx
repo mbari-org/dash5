@@ -184,7 +184,7 @@ export const CommandModal: React.FC<CommandModalProps> = ({
         <StepProgress
           steps={steps}
           currentIndex={currentStep}
-          className="h-12 w-[512px]"
+          className="h-[52px] w-[512px]"
         />
       }
       onConfirm={isLastStep ? null : handleNext}
