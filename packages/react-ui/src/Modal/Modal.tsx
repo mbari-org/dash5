@@ -88,6 +88,7 @@ export const Modal: React.FC<ModalProps & FooterProps> = ({
   disableConfirm,
   form,
   loading,
+  extraButtons,
   maximized,
 }) => {
   const browserWindow = typeof window !== 'undefined' ? window : undefined
@@ -227,6 +228,7 @@ export const Modal: React.FC<ModalProps & FooterProps> = ({
             disableCancel={disableCancel}
             disableConfirm={disableConfirm}
             form={form}
+            extraButtons={extraButtons}
           />
         )}
       </section>

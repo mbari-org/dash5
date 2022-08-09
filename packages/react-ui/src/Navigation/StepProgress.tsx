@@ -12,8 +12,7 @@ export interface StepProgressProps {
 const styles = {
   container: 'bg-white p-2 font-display overflow-x-auto',
   step: 'flex flex-grow flex-shrink-0 relative',
-  label:
-    'sm:text-sm md:text-md lg:text-lg xl:text-xl flex justify-center py-2 px-4',
+  label: 'sm:text-sm md:text-md lg:text-md flex justify-center py-2 px-4',
   active: 'fill-primary-600 text-white',
   inactive: 'fill-stone-200 text-stone-500 opacity-90',
 }
