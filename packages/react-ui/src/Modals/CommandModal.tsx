@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from 'react'
+import React, { useCallback, useEffect, useRef, useState } from 'react'
 import { Modal } from '../Modal/Modal'
 import { StepProgress, StepProgressProps } from '../Navigation/StepProgress'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
@@ -139,6 +139,7 @@ export const CommandModal: React.FC<CommandModalProps> = ({
     setFilteredCommands(sortedCommands as Command[])
   }
 
+  const [shouldUseAltAddress, setShouldUseAltAddress] = useState(false)
   const extraButtons = () => {
     if (currentStep === 0) return []
 
@@ -153,8 +154,7 @@ export const CommandModal: React.FC<CommandModalProps> = ({
       type: 'submit',
       onClick: () => {
         if (submitButtonRef.current) {
-          // TODO: Implement the alternate actions effect on state prior to submitting form.
-          console.log('Should submit to alternative address via ref...')
+          setShouldUseAltAddress(true)
           submitButtonRef.current.click()
         }
       },
@@ -164,6 +164,17 @@ export const CommandModal: React.FC<CommandModalProps> = ({
       ? [backButton, altAddressButton]
       : [backButton]
   }
+
+  const handleScheduleSubmit: CommandModalProps['onSubmit'] = useCallback(
+    async (values) => {
+      if (shouldUseAltAddress) {
+        setShouldUseAltAddress(false)
+        return await onAltAddressSubmit?.(values)
+      }
+      return onSubmit(values)
+    },
+    [shouldUseAltAddress, onAltAddressSubmit, onSubmit]
+  )
 
   return (
     <Modal
@@ -239,7 +250,7 @@ export const CommandModal: React.FC<CommandModalProps> = ({
         <ScheduleCommandForm
           vehicleName={vehicleName}
           command={getCommandNameById(selectedCommandId) ?? ''}
-          onSubmit={onSubmit}
+          onSubmit={handleScheduleSubmit}
           id="scheduleCommandForm"
           ref={submitButtonRef}
         />
