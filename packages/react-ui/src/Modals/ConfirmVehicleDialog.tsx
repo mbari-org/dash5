@@ -34,7 +34,7 @@ export const ConfirmVehicleDialog: React.FC<ConfirmVehicleDialogProps> = ({
   const title = (
     <div>
       This {mission ? 'mission' : 'command'} should be scheduled for{' '}
-      <span className="text-teal-500">
+      <span className="text-teal-500" data-testid="currentVehicle">
         {isCorrectVehicle ? vehicle : differentVehicle ?? vehicle}
       </span>
       . Is that right?
@@ -60,6 +60,7 @@ export const ConfirmVehicleDialog: React.FC<ConfirmVehicleDialogProps> = ({
           type="radio"
           name="vehicle"
           id="default"
+          data-testid="default"
           onChange={() => setIsCorrectVehicle(true)}
           checked={isCorrectVehicle}
         />
@@ -73,6 +74,7 @@ export const ConfirmVehicleDialog: React.FC<ConfirmVehicleDialogProps> = ({
           type="radio"
           name="vehicle"
           id="selected"
+          data-testid="selected"
           onChange={() => setIsCorrectVehicle(false)}
           checked={!isCorrectVehicle}
         />
