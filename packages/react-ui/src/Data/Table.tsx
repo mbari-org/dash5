@@ -53,6 +53,7 @@ export const Table: React.FC<TableProps> = ({
 }) => {
   // dynamically calculate grid columns unless defined through associated prop
   const colsInRow = colInRow ? colInRow : rows[0]?.cells.length | 0
+  const colsInHeader = colsInRow ? colsInRow : header?.cells.length ?? 0
 
   const handleSelectRow = (index: number) => {
     onSelectRow?.(index)
@@ -74,7 +75,7 @@ export const Table: React.FC<TableProps> = ({
             <TableHeader
               className={clsx(
                 'grid',
-                gridClassNames[colsInRow],
+                gridClassNames[colsInHeader],
                 !onSelectRow && 'gap-4',
                 (!scrollable || grayHeader) && 'bg-stone-100'
               )}
