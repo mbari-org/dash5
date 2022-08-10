@@ -1,6 +1,6 @@
 import React from 'react'
 import clsx from 'clsx'
-import { Button } from '../Navigation'
+import { Button, ButtonProps } from '../Navigation'
 import { swallow } from '@mbari/utils'
 
 export interface FooterProps {
@@ -8,11 +8,16 @@ export interface FooterProps {
   style?: React.CSSProperties
   confirmButtonText?: string | JSX.Element
   cancelButtonText?: string | JSX.Element
+  extraButtons?: ExtraButton[]
   form?: string
   onConfirm?: (() => void) | null
   onCancel?: (() => void) | null
   disableCancel?: boolean
   disableConfirm?: boolean
+}
+
+export interface ExtraButton extends ButtonProps {
+  buttonText: string
 }
 
 const styles = {
@@ -26,6 +31,7 @@ export const Footer: React.FC<FooterProps> = ({
   className,
   confirmButtonText = 'Confirm',
   cancelButtonText = 'Cancel',
+  extraButtons,
   onCancel: handleCancel,
   onConfirm: handleConfirm,
   disableCancel,
@@ -37,6 +43,19 @@ export const Footer: React.FC<FooterProps> = ({
       <ol className={styles.list}>
         {(handleConfirm || form) && (
           <li className={clsx(styles.item, 'ml-auto')}>
+            {extraButtons?.length
+              ? extraButtons.map((button, index) => {
+                  return (
+                    <Button
+                      key={`${index}${button.buttonText}`}
+                      {...button}
+                      className="mr-2 h-full"
+                    >
+                      {button.buttonText}
+                    </Button>
+                  )
+                })
+              : null}
             <Button
               appearance="primary"
               onClick={handleConfirm ? swallow(handleConfirm) : undefined}

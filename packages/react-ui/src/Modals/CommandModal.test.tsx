@@ -2,6 +2,7 @@ import React from 'react'
 import { render, screen } from '@testing-library/react'
 import '@testing-library/jest-dom'
 import { CommandModal, CommandModalProps } from './CommandModal'
+import { ScheduleCommandFormValues } from '../Forms/ScheduleCommandForm'
 
 const props: CommandModalProps = {
   steps: ['Command', 'Build', 'Schedule'],
@@ -61,6 +62,10 @@ const props: CommandModalProps = {
       }`
     )
   },
+  onSubmit: async (values: ScheduleCommandFormValues) => {
+    console.log(values)
+    return undefined
+  },
   selectedId: '5',
 }
 
@@ -93,6 +98,7 @@ test('should display progress bar steps', async () => {
   expect(screen.queryAllByText(stepLabels[2])[0]).toBeInTheDocument()
 })
 
+// Step 1 tests
 test('should display recent commands placeholder text', async () => {
   render(<CommandModal {...props} />)
   expect(screen.queryByText(/recent commands/i)).toBeInTheDocument()
@@ -101,4 +107,44 @@ test('should display recent commands placeholder text', async () => {
 test('should display search commands placeholder text', async () => {
   render(<CommandModal {...props} />)
   expect(screen.queryByPlaceholderText(/search commands/i)).toBeInTheDocument()
+})
+
+// Step 3 tests
+test('should render command', () => {
+  render(<CommandModal {...props} currentIndex={2} />)
+
+  const selectedCommand =
+    props?.commands?.find((command) => command?.id === props?.selectedId)
+      ?.name ?? ''
+
+  if (selectedCommand) {
+    expect(screen.getByText(selectedCommand)).toBeInTheDocument()
+  } else {
+    console.log('invalid selected id')
+    expect(true).toBe(false)
+  }
+})
+
+test('should render vehicle name', () => {
+  render(<CommandModal {...props} currentIndex={2} />)
+
+  expect(screen.getByText(props.vehicleName)).toBeInTheDocument()
+})
+
+test('should render extra buttons and correct button text', () => {
+  render(
+    <CommandModal
+      {...props}
+      currentIndex={2}
+      onAltAddressSubmit={props.onSubmit}
+    />
+  )
+
+  expect(screen.getByRole('button', { name: 'Back' })).toBeInTheDocument()
+  expect(
+    screen.getByRole('button', { name: 'Submit to alternative address' })
+  ).toBeInTheDocument()
+  expect(
+    screen.getByRole('button', { name: `Schedule ${props.vehicleName}` })
+  ).toBeInTheDocument()
 })

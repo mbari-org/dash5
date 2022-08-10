@@ -2,13 +2,14 @@
 import { getInstance } from '../getInstance'
 import { RequestConfig } from '../types'
 
+import { GetEventsResponse } from '../Event/getEvents'
+
 export interface GetRecentCommandsParams {
   vehicleName: string
+  limit?: number
 }
 
-export interface GetRecentCommandsResponse {
-  result: string
-}
+export type GetRecentCommandsResponse = GetEventsResponse[]
 
 export const getRecentCommands = async (
   params: GetRecentCommandsParams,
@@ -20,9 +21,6 @@ export const getRecentCommands = async (
     console.debug(`GET ${url}`)
   }
 
-  const response = await instance.get(
-    `${url}?${new URLSearchParams({ ...params })}`,
-    config
-  )
-  return response.data as GetRecentCommandsResponse
+  const response = await instance.get(url, { ...config, params })
+  return response.data.result as GetRecentCommandsResponse
 }

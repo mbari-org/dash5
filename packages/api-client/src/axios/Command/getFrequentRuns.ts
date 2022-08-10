@@ -4,11 +4,10 @@ import { RequestConfig } from '../types'
 
 export interface GetFrequentRunsParams {
   vehicle: string
+  limit?: number
 }
 
-export interface GetFrequentRunsResponse {
-  result: string
-}
+export type GetFrequentRunsResponse = string[]
 
 export const getFrequentRuns = async (
   params: GetFrequentRunsParams,
@@ -20,9 +19,6 @@ export const getFrequentRuns = async (
     console.debug(`GET ${url}`)
   }
 
-  const response = await instance.get(
-    `${url}?${new URLSearchParams({ ...params })}`,
-    config
-  )
-  return response.data as GetFrequentRunsResponse
+  const response = await instance.get(url, { ...config, params })
+  return response.data.result as GetFrequentRunsResponse
 }

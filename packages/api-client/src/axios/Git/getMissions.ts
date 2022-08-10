@@ -2,23 +2,26 @@
 import { getInstance } from '../getInstance'
 import { RequestConfig } from '../types'
 
-export interface GetFrequentCommandsParams {
-  vehicleName: string
-  limit?: number
+export interface GetMissionsParams {
+  subDir?: string
+  tag?: string
 }
 
-export type GetFrequentCommandsResponse = string[]
+export interface GetMissionsResponse {
+  tag: string
+  filenames: string[]
+}
 
-export const getFrequentCommands = async (
-  params: GetFrequentCommandsParams,
+export const getMissions = async (
+  params: GetMissionsParams,
   { debug, instance = getInstance(), ...config }: RequestConfig = {}
 ) => {
-  const url = '/commands/frequent'
+  const url = '/git/missions'
 
   if (debug) {
     console.debug(`GET ${url}`)
   }
 
   const response = await instance.get(url, { ...config, params })
-  return response.data.result as GetFrequentCommandsResponse
+  return response.data.result as GetMissionsResponse
 }
