@@ -1,0 +1,126 @@
+import React, { useEffect, useState } from 'react'
+import { SelectOption } from '../../Fields/Select'
+import { Mission, MissionTable } from '../../Tables/MissionTable'
+import { Input, SelectField } from '../../Fields'
+import { sortByProperty } from '@mbari/utils'
+import { SortDirection } from 'react-ui/src/Data/TableHeader'
+
+export interface MissionStepProps {
+  vehicleName: string
+  missions: Mission[]
+  selectedId?: string | null
+  onSelect: (id?: string | null) => void
+  recentRuns?: SelectOption[]
+}
+
+export const MissionStep: React.FC<MissionStepProps> = ({
+  vehicleName,
+  missions,
+  selectedId,
+  onSelect,
+  recentRuns,
+}) => {
+  const [selectedRecentId, setSelectedRecentId] =
+    useState<string | null | undefined>('')
+  const [searchTerm, setSearchTerm] = useState('')
+  const [filteredMissions, setFilteredMissions] = useState<Mission[]>(missions)
+  const [searchMissions, setSearchMissions] = useState<Mission[]>([])
+  const [sortColumn, setSortColumn] = useState<number | null | undefined>(null)
+  const [sortDirection, setSortDirection] = useState<SortDirection>(null)
+
+  useEffect(() => {
+    setSearchTerm('')
+    const selectedCategory = recentRuns?.find(
+      (run) => run.id === selectedRecentId
+    )?.name
+
+    const filteredByRecent = missions.filter(({ category }) =>
+      category.includes(selectedCategory ?? '')
+    )
+
+    console.log(filteredByRecent)
+    setFilteredMissions(filteredByRecent.length ? filteredByRecent : [])
+  }, [selectedRecentId, recentRuns, missions])
+
+  useEffect(() => {
+    if (searchTerm) {
+      const lowerCaseTerm = searchTerm.toLowerCase()
+      const searchResults = filteredMissions.filter((mission) =>
+        Object.values(mission).join(' ').toLowerCase().includes(lowerCaseTerm)
+      )
+      setSearchMissions(searchResults)
+    }
+
+    if (!searchTerm) setSearchMissions([])
+  }, [searchTerm, filteredMissions])
+
+  const handleSelectRecent = (id: string | null) => {
+    if (!id) {
+      onSelect(null)
+    }
+    setSearchTerm('')
+    setSelectedRecentId(id)
+  }
+
+  const handleSearch = (term: string) => {
+    if (selectedId) {
+      onSelect(null)
+    }
+    setSearchTerm(term)
+  }
+
+  const handleSort = (column: number, isAscending?: boolean) => {
+    const sortableColumns: string[] = ['category', 'vehicle', 'description']
+    const sortProperty = sortableColumns[column] as keyof Mission
+    const updatedIsAscending = !isAscending
+
+    const sortedMissions = sortByProperty({
+      arrOfObj: [...filteredMissions],
+      sortProperty,
+      secondarySort: 'category',
+      sortAscending: updatedIsAscending,
+    })
+    setSortColumn(column)
+    setSortDirection(updatedIsAscending ? 'asc' : 'desc')
+    setFilteredMissions(sortedMissions as Mission[])
+  }
+
+  return (
+    <article className="h-full">
+      <ul className="grid grid-cols-5 pb-2">
+        <li className="col-span-2 self-center">
+          Select a command for{' '}
+          <span className="text-teal-500" data-testid="vehicle name">
+            {vehicleName}
+          </span>
+        </li>
+        <li className="col-span-3 flex items-center">
+          <SelectField
+            name="Recent runs"
+            placeholder="Recent Runs"
+            options={recentRuns}
+            value={selectedRecentId ? selectedRecentId : undefined}
+            onSelect={(id) => handleSelectRecent(id)}
+            clearable
+          />
+          <Input
+            name="Search missions field"
+            placeholder="Search Missions"
+            className="ml-2 h-full flex-grow"
+            value={searchTerm}
+            onChange={(e) => handleSearch(e.target.value)}
+          />
+        </li>
+      </ul>
+      <MissionTable
+        className="max-h-[calc(100%-40px)]"
+        missions={searchMissions.length ? searchMissions : filteredMissions}
+        selectedId={selectedId ? selectedId : ''}
+        onSelectMission={onSelect}
+        onSortColumn={handleSort}
+        sortColumn={sortColumn}
+        sortDirection={sortDirection}
+      />
+    </article>
+  )
+}
