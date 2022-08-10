@@ -2,7 +2,7 @@ import { filterBlankAttributes } from '@mbari/utils'
 import { getInstance } from '../getInstance'
 import { RequestConfig } from '../types'
 
-interface GpsFix {
+export interface GpsFix {
   latitude: number
   longitude: number
   date: string

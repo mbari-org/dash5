@@ -1,11 +1,11 @@
+import '@testing-library/jest-dom'
+import React from 'react'
+import { render, screen, waitFor } from '@testing-library/react'
+import { useScript } from './useScript'
+import { QueryClient } from 'react-query'
 import { rest } from 'msw'
 import { setupServer } from 'msw/node'
-import { getScript, GetScriptParams } from './getScript'
-
-let params: GetScriptParams = {
-  gitRef: '2022-07-19',
-  path: 'Missions/Science/sci2.xml',
-}
+import { MockProviders } from '../queryTestHelpers'
 
 const mockResponse = {
   result: {
@@ -337,13 +337,11 @@ const mockResponse = {
 }
 
 const server = setupServer(
-  rest.get('/commands/script', (_, res, ctx) => {
-    return res(
-      ctx.status(200),
-      ctx.json({
-        ...mockResponse,
-      })
-    )
+  rest.get('/commands/script', (_req, res, ctx) => {
+    return res(ctx.status(200), ctx.json(mockResponse))
+  }),
+  rest.get('/info', (_req, res, ctx) => {
+    return res(ctx.status(200), ctx.json({}))
   })
 )
 
@@ -351,23 +349,31 @@ beforeAll(() => server.listen())
 afterEach(() => server.resetHandlers())
 afterAll(() => server.close())
 
-describe('getScript', () => {
-  it('should return the mocked result/params when successful', async () => {
-    const result = await getScript(params)
-    expect(result).toEqual(mockResponse.result)
+const MockBurn: React.FC = () => {
+  const query = useScript({
+    path: '/commands/script',
+    gitRef: '2022-01-01',
   })
 
-  it('should throw when unsuccessful', async () => {
-    server.use(
-      rest.get('/commands/script', (_req, res, ctx) => {
-        return res.once(ctx.status(500))
-      })
-    )
+  return query.isLoading ? null : (
+    <div>
+      <span data-testid="keyword">{query.data?.id ?? 'Loading'}</span>
+    </div>
+  )
+}
 
-    try {
-      await getScript(params)
-    } catch (error) {
-      expect(error).toBeDefined()
-    }
+describe('useScript', () => {
+  it('should display the id of the mission script', async () => {
+    render(
+      <MockProviders queryClient={new QueryClient()}>
+        <MockBurn />
+      </MockProviders>
+    )
+    const keyword = mockResponse.result.id
+    await waitFor(() => {
+      return screen.getByText(keyword)
+    })
+
+    expect(screen.getByTestId('keyword')).toHaveTextContent(keyword)
   })
 })
