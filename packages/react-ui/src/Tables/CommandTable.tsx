@@ -67,7 +67,7 @@ export const CommandTable: React.FC<CommandTableProps> = ({
       { label: 'DESCRIPTION', span: 2, onSort: onSortColumn },
     ],
     activeSortColumn,
-    sortDirection,
+    activeSortDirection: sortDirection,
   }
 
   const handleSelect = (index: number) => {

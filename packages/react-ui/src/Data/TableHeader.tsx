@@ -11,7 +11,7 @@ export interface TableHeaderProps {
   accessory?: string | JSX.Element
   scrollable?: boolean
   activeSortColumn?: number | null
-  sortDirection?: SortDirection
+  activeSortDirection?: SortDirection
 }
 
 export interface TableHeaderCell {
@@ -47,12 +47,14 @@ export const TableHeader: React.FC<TableHeaderProps> = ({
   accessory,
   scrollable,
   activeSortColumn,
-  sortDirection,
+  activeSortDirection,
 }) => {
   const [hoverSort, setHoverSort] = useState<number | null>(null)
 
   const sortedCells = cells.map((cell, index) =>
-    index === activeSortColumn ? { ...cell, sortDirection } : cell
+    index === activeSortColumn
+      ? { ...cell, sortDirection: activeSortDirection }
+      : cell
   )
 
   return (
