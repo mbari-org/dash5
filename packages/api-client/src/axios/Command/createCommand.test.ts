@@ -11,7 +11,19 @@ let params: CreateCommandParams = {
   schedDate: 'example',
 }
 
-const mockResponse = { value: 'some-value' }
+const mockResponse = {
+  result: {
+    sentBy: 'jim@sumocreations.com',
+    vehicle: 'sim',
+    commandText:
+      'configSet Express linearApproximation acoustic_receive_time ampere_hour persist',
+    commandNote: 'Just a test for the SIM to preview the API response.',
+    schedDate: 'asap',
+    runCommand: false,
+    schedId: 'ppaw',
+  },
+}
+
 const server = setupServer(
   rest.post('/commands', (_req, res, ctx) => {
     return res(ctx.status(200), ctx.json(mockResponse))
@@ -25,12 +37,12 @@ afterAll(() => server.close())
 describe('createCommand', () => {
   it('should return the mocked value when successful', async () => {
     const response = await createCommand(params)
-    expect(response).toEqual(mockResponse)
+    expect(response).toEqual(mockResponse.result)
   })
 
   it('should throw when unsuccessful', async () => {
     server.use(
-      rest.post('/commands/preview', (_req, res, ctx) => {
+      rest.post('/commands', (_req, res, ctx) => {
         return res.once(ctx.status(500))
       })
     )
