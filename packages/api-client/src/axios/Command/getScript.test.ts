@@ -3,9 +3,8 @@ import { setupServer } from 'msw/node'
 import { getScript, GetScriptParams } from './getScript'
 
 let params: GetScriptParams = {
-  deploymentPath: '/opt/example',
+  gitRef: '2022-07-19',
   path: 'Missions/Science/sci2.xml',
-  deploymentId: 'exampleID',
 }
 
 const mockResponse = {

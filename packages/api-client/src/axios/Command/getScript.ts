@@ -3,9 +3,8 @@ import { getInstance } from '../getInstance'
 import { RequestConfig } from '../types'
 
 export interface GetScriptParams {
-  deploymentPath: string
+  gitRef: string
   path: string
-  deploymentId: string
 }
 
 export interface latLonNamePair {
