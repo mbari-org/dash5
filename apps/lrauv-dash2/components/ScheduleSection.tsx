@@ -1,5 +1,5 @@
 import React from 'react'
-import { useMissions } from '@mbari/api-client'
+import { useMissionSchedule } from '@mbari/api-client'
 import { AccordionCells, ScheduleCell } from '@mbari/react-ui'
 import { DateTime } from 'luxon'
 
@@ -14,7 +14,7 @@ export interface ScheduleSectionProps {
 export const ScheduleSection: React.FC<ScheduleSectionProps> = ({
   currentDeploymentId,
 }) => {
-  const { data: missions } = useMissions({
+  const { data: missions } = useMissionSchedule({
     deploymentId: currentDeploymentId,
   })
   const cellAtIndex = (index: number) => {

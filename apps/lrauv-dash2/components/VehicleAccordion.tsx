@@ -35,17 +35,12 @@ const VehicleAccordion: React.FC<VehicleAccordionProps> = ({
   activeDeployment,
   currentDeploymentId,
 }) => {
-  const {
-    data: relatedLogs,
-    isLoading: logsLoading,
-    isFetching,
-    refetch,
-  } = useEvents({
+  const { data: relatedLogs, isLoading: logsLoading } = useEvents({
     vehicles: [vehicleName],
     from,
     to,
   })
-  const earliestLog = relatedLogs?.[(relatedLogs?.length ?? 0) - 1].isoTime
+  const earliestLog = relatedLogs?.[(relatedLogs?.length ?? 0) - 1]?.isoTime
   const logsSummary = logsLoading
     ? 'loading...'
     : earliestLog

@@ -1,17 +1,17 @@
 import { useQuery } from 'react-query'
-import { getMissions, GetMissionsParams } from '../../axios'
+import { getMissionSchedule, GetMissionScheduleParams } from '../../axios'
 import { useTethysApiContext } from '../TethysApiProvider'
 import { SupportedQueryOptions } from '../types'
 
-export const useMissions = (
-  params: GetMissionsParams,
+export const useMissionSchedule = (
+  params: GetMissionScheduleParams,
   options?: SupportedQueryOptions
 ) => {
   const { axiosInstance } = useTethysApiContext()
   const query = useQuery(
-    ['mission', 'missions', params],
+    ['mission', 'missions', 'schedule', params],
     () => {
-      return getMissions(params, {
+      return getMissionSchedule(params, {
         instance: axiosInstance,
       })
     },
