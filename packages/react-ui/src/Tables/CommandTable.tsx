@@ -53,24 +53,22 @@ export const CommandTable: React.FC<CommandTableProps> = ({
     ],
   }))
 
-  const headerCells = [
-    {
-      label: 'COMMAND',
-      onSort: onSortColumn,
-      span: 2,
-    },
-    {
-      label: 'ALL LRAUV',
-      onSort: onSortColumn,
-    },
-    { label: 'DESCRIPTION', span: 2, onSort: onSortColumn },
-  ]
-
-  const sortedHeaderCells = headerCells.map((cell, index) =>
-    index === activeSortColumn ? { ...cell, sortDirection } : cell
-  )
-
-  const header = { cells: sortedHeaderCells }
+  const header = {
+    cells: [
+      {
+        label: 'COMMAND',
+        onSort: onSortColumn,
+        span: 2,
+      },
+      {
+        label: 'ALL LRAUV',
+        onSort: onSortColumn,
+      },
+      { label: 'DESCRIPTION', span: 2, onSort: onSortColumn },
+    ],
+    activeSortColumn,
+    sortDirection,
+  }
 
   const handleSelect = (index: number) => {
     onSelectCommand?.(commands[index].id)
