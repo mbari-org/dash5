@@ -137,16 +137,16 @@ export const ScheduleSection: React.FC<ScheduleSectionProps> = ({
         className="border-b border-stone-200"
         description={
           mission?.endUnixTime
-            ? `Ended ${DateTime.fromMillis(mission.endUnixTime).toFormat(
+            ? `Ended ${DateTime.fromMillis(mission.endUnixTime ?? 0).toFormat(
                 'h:mm'
               )}`
-            : `Started ${DateTime.fromMillis(mission.unixTime).toFormat(
+            : `Started ${DateTime.fromMillis(mission.unixTime ?? 0).toFormat(
                 'h:mm'
               )}`
         }
         description2={
           DateTime.fromMillis(
-            mission.endUnixTime ?? mission.unixTime
+            mission.endUnixTime ?? mission.unixTime ?? 0
           ).toRelative() ?? ''
         }
         onSelect={() => undefined}
