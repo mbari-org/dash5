@@ -41,18 +41,41 @@ export const ScheduleSection: React.FC<ScheduleSectionProps> = ({
   const toggleSchedule = () =>
     setScheduleStatus(scheduleStatus === 'paused' ? 'running' : 'paused')
 
+  const scheduledTypes = ['pending', 'running']
   const staticHeaderCellOffset = 2
   const indexOfPastSchedule =
-    (missions?.findIndex((v) => !['pending', 'running'].includes(v.status)) ??
-      0) + staticHeaderCellOffset
+    (missions?.findIndex((v) => !scheduledTypes.includes(v.status)) ?? 0) +
+    staticHeaderCellOffset
   const hasPastSchedule = indexOfPastSchedule > 1
   const staticFilterCellOffset = hasPastSchedule ? 1 : 0
-  const totalCellCount =
-    (missions?.length ?? 0) + staticFilterCellOffset + staticHeaderCellOffset
 
   const handleScheduleSearch = (e: React.ChangeEvent<HTMLInputElement>) => {
     setScheduleSearch(e.target.value)
   }
+
+  const scheduledCells = missions?.filter((v) =>
+    scheduledTypes.includes(v.status)
+  )
+  const historicCells = missions
+    ?.filter((v) => !scheduledTypes.includes(v.status))
+    .filter(
+      (v) =>
+        !scheduleFilter ||
+        scheduleFilter === 'all' ||
+        v.status === scheduleFilter
+    )
+    .filter(
+      (v) =>
+        !scheduleSearch ||
+        scheduleSearch.length < 1 ||
+        `${v.eventName}${v.note}${v.user}`
+          .toLowerCase()
+          .includes(scheduleSearch.toLowerCase())
+    )
+
+  const results = [scheduledCells, historicCells].flat()
+  const totalCellCount =
+    results.length + staticFilterCellOffset + staticHeaderCellOffset
 
   const cellAtIndex = (index: number) => {
     if (index === 0) {
@@ -120,7 +143,7 @@ export const ScheduleSection: React.FC<ScheduleSectionProps> = ({
     }
     const indexOffset =
       index < (indexOfPastSchedule ?? missions?.length ?? 0) ? -2 : -3
-    const mission = missions?.[index + indexOffset]
+    const mission = results[index + indexOffset]
     return mission ? (
       <ScheduleCell
         label={mission.eventName}
