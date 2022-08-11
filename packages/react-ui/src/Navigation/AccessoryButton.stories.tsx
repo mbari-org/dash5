@@ -29,3 +29,12 @@ Standard.parameters = {
     url: 'https://www.figma.com/file/FtsKsOCBQ2YjTZlwezG6aI/MBARI-Components?node-id=2%3A126',
   },
 }
+
+export const Tight = Template.bind({})
+Tight.args = { ...args, tight: true }
+Tight.parameters = {
+  design: {
+    type: 'figma',
+    url: 'https://www.figma.com/file/FtsKsOCBQ2YjTZlwezG6aI/MBARI-Components?node-id=2%3A126',
+  },
+}
