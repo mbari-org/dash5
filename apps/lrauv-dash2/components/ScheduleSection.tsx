@@ -125,12 +125,14 @@ export const ScheduleSection: React.FC<ScheduleSectionProps> = ({
       <ScheduleCell
         label={mission.eventName}
         secondary={mission.note}
-        status={mission.status === 'running' ? scheduleStatus : mission.status}
+        status={
+          (mission.status === 'running' ? scheduleStatus : mission.status) ??
+          'pending'
+        }
         name={mission.user ?? 'Unknown'}
         scheduleStatus={
-          ['pending', 'running'].includes(mission.status)
-            ? scheduleStatus
-            : undefined
+          (['pending', 'running'].includes(mission.status) && scheduleStatus) ||
+          undefined
         }
         className="border-b border-stone-200"
         description={

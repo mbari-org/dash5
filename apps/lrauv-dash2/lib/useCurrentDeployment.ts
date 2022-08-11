@@ -5,7 +5,7 @@ import useCurrentVehicle from './useCurrentVehicle'
 const useCurrentDeployment = () => {
   const router = useRouter()
   const vehicle = useCurrentVehicle()
-  const deploymentId = router.query.deployment?.[1]
+  const deploymentId = parseInt(router.query.deployment?.[1] ?? '0', 2)
 
   const { data: lastDeployment, isLoading } = useLastDeployment(
     {
