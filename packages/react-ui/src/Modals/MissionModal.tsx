@@ -61,7 +61,6 @@ export const MissionModal: React.FC<MissionModalProps> = ({
   }
 
   const handleSelect = (id?: string | null) => {
-    console.log(id)
     setSelectedMissionId(id)
   }
 

@@ -38,7 +38,6 @@ export const MissionStep: React.FC<MissionStepProps> = ({
       category.includes(selectedCategory ?? '')
     )
 
-    console.log(filteredByRecent)
     setFilteredMissions(filteredByRecent.length ? filteredByRecent : [])
   }, [selectedRecentId, recentRuns, missions])
 
