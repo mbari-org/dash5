@@ -1,8 +1,8 @@
 import React from 'react'
 import { useMissionSchedule } from '@mbari/api-client'
-import { AccordionCells, ScheduleCell } from '@mbari/react-ui'
+import { AccessoryButton, AccordionCells, ScheduleCell } from '@mbari/react-ui'
 import { DateTime } from 'luxon'
-
+import { faPlus } from '@fortawesome/pro-regular-svg-icons'
 export interface ScheduleSectionProps {
   className?: string
   style?: React.CSSProperties
@@ -18,13 +18,26 @@ export const ScheduleSection: React.FC<ScheduleSectionProps> = ({
     deploymentId: currentDeploymentId,
   })
   const cellAtIndex = (index: number) => {
-    const mission = missions?.[index]
+    if (index === 0) {
+      return (
+        <div className="flex py-2 px-4 text-sm">
+          <p className="flex-grow text-xs">
+            Brizo is scheduled until
+            <br /> tomorrow at ~06:30
+          </p>
+          <AccessoryButton label="Mission" icon={faPlus} className="mx-2" />
+          <AccessoryButton label="Command" icon={faPlus} />
+        </div>
+      )
+    }
+    const mission = missions?.[index - 1]
     return mission ? (
       <ScheduleCell
         label={mission.eventName}
         secondary={mission.note}
         status={mission.status}
         name={mission.user}
+        className="border-b border-gray-200"
         description={
           mission?.endUnixTime
             ? `Ended ${DateTime.fromMillis(mission.endUnixTime).toFormat(
