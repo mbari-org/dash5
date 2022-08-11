@@ -7,6 +7,7 @@ import {
   faEllipsisV,
   faCheck,
   faTimes,
+  faPauseCircle,
 } from '@fortawesome/pro-regular-svg-icons'
 import { faSync } from '@fortawesome/pro-light-svg-icons'
 import { IconProp } from '@fortawesome/fontawesome-svg-core'
@@ -16,6 +17,7 @@ export interface ScheduleCellProps {
   className?: string
   style?: React.CSSProperties
   status: 'pending' | 'running' | 'cancelled' | 'completed' | 'paused'
+  scheduleStatus?: 'paused' | 'running'
   label: string
   ariaLabel?: string
   secondary: string
@@ -43,7 +45,13 @@ const icons: { [key: string]: IconProp } = {
   running: faSync as IconProp,
   cancelled: faTimes as IconProp,
   completed: faCheck as IconProp,
-  paused: faClock as IconProp,
+  paused: faPauseCircle as IconProp,
+}
+
+export const ScheduleCellBackgrounds = {
+  running: 'bg-violet-50 hover:bg-violet-100',
+  paused: 'bg-orange-50 hover:bg-orange-100',
+  default: 'bg-white hover:bg-stone-50',
 }
 
 export const ScheduleCell: React.FC<ScheduleCellProps> = ({
@@ -58,11 +66,12 @@ export const ScheduleCell: React.FC<ScheduleCellProps> = ({
   description3,
   onSelect,
   onSelectMore,
+  scheduleStatus,
 }) => {
   const backgroundColor = (() => {
-    if (status === 'running') return 'bg-violet-100'
-    if (status === 'paused') return 'bg-orange-100'
-    return 'bg-white'
+    if (scheduleStatus === 'running') return ScheduleCellBackgrounds.running
+    if (scheduleStatus === 'paused') return ScheduleCellBackgrounds.paused
+    return ScheduleCellBackgrounds.default
   })()
 
   const isOpen = (() => {
@@ -70,13 +79,13 @@ export const ScheduleCell: React.FC<ScheduleCellProps> = ({
   })()
 
   const iconColor = (() => {
-    if (status === 'running') return 'black'
-    if (status === 'paused') return 'text-orange-400'
+    if (scheduleStatus === 'running') return 'black'
+    if (scheduleStatus === 'paused') return 'text-orange-400'
     return styles.text
   })()
 
   const labelColor = (() => {
-    if (status === 'paused') return 'text-orange-400'
+    if (scheduleStatus === 'paused') return 'text-orange-400'
     if (status === 'completed') return 'text-teal-600'
     return 'text-primary-600'
   })()
@@ -87,7 +96,7 @@ export const ScheduleCell: React.FC<ScheduleCellProps> = ({
       aria-label={ariaLabel || ''}
     >
       <button
-        className="flex flex-grow items-center"
+        className="grid flex-grow grid-cols-9 items-center"
         onClick={swallow(onSelect)}
       >
         <div className={styles.icon}>
@@ -97,7 +106,7 @@ export const ScheduleCell: React.FC<ScheduleCellProps> = ({
             className={clsx(iconColor, 'text-xl')}
           />
         </div>
-        <ul className={styles.detailsContainer}>
+        <ul className={clsx(styles.detailsContainer, 'col-span-4')}>
           <li
             className={clsx(
               'flex truncate',
@@ -127,7 +136,8 @@ export const ScheduleCell: React.FC<ScheduleCellProps> = ({
         <ul
           className={clsx(
             styles.descriptionContainer,
-            isOpen ? styles.text : styles.textLight
+            isOpen ? styles.text : styles.textLight,
+            'col-span-4'
           )}
         >
           <li className="flex truncate">{description}</li>
@@ -135,13 +145,15 @@ export const ScheduleCell: React.FC<ScheduleCellProps> = ({
           {description3 && <li className="flex truncate">{description3}</li>}
         </ul>
       </button>
-      <IconButton
-        icon={faEllipsisV}
-        ariaLabel="More options"
-        onClick={onSelectMore}
-        className="my-auto"
-        size="text-2xl"
-      />
+      <div className="flex">
+        <IconButton
+          icon={faEllipsisV}
+          ariaLabel="More options"
+          onClick={onSelectMore}
+          className="my-auto"
+          size="text-2xl"
+        />
+      </div>
     </article>
   )
 }

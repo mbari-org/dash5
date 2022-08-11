@@ -32,6 +32,7 @@ const args: ScheduleCellProps = {
 export const Scheduled = Template.bind({})
 Scheduled.args = {
   ...args,
+  scheduleStatus: 'paused',
   description2: '23:00-00:59',
 }
 Scheduled.parameters = {
@@ -50,6 +51,7 @@ Running.args = {
   description: 'Started at 14:30',
   description2: 'Running for 12min',
   description3: 'Ending ~22:59',
+  scheduleStatus: 'running',
 }
 Running.parameters = {
   design: {
@@ -94,6 +96,7 @@ export const Paused = Template.bind({})
 Paused.args = {
   ...args,
   status: 'paused',
+  scheduleStatus: 'paused',
   description: 'Paused',
   description2: 'Est. runtime 1h 59m',
 }
