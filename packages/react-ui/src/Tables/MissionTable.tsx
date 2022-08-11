@@ -1,6 +1,7 @@
 import React from 'react'
 import clsx from 'clsx'
 import { Table } from '../Data/Table'
+import { SortDirection } from '../Data/TableHeader'
 
 export interface MissionTableProps {
   className?: string
@@ -9,6 +10,8 @@ export interface MissionTableProps {
   selectedId?: string
   onSelectMission?: (missionId: string) => void
   onSortColumn?: (column: number, ascending?: boolean) => void
+  sortColumn?: number | null
+  sortDirection?: SortDirection
 }
 
 export interface Mission {
@@ -30,6 +33,8 @@ export const MissionTable: React.FC<MissionTableProps> = ({
   selectedId,
   onSelectMission,
   onSortColumn,
+  sortColumn,
+  sortDirection,
 }) => {
   const missionRows = missions.map(
     ({
@@ -55,34 +60,38 @@ export const MissionTable: React.FC<MissionTableProps> = ({
     })
   )
 
+  const header = {
+    cells: [
+      {
+        label: 'MISSION NAME',
+        onSort: onSortColumn,
+      },
+      {
+        label: 'ALL LRAUV',
+        onSort: onSortColumn,
+      },
+      { label: 'DESCRIPTION', onSort: onSortColumn },
+    ],
+    activeSortColumn: sortColumn,
+    activeSortDirection: sortDirection,
+  }
+
   const handleSelect = (index: number) => {
     onSelectMission?.(missions[index].id)
   }
 
   return (
-    <div className={clsx('', className)} style={style}>
-      <Table
-        scrollable
-        header={{
-          cells: [
-            {
-              label: 'MISSION NAME',
-              onSort: onSortColumn,
-            },
-            {
-              label: 'ALL LRAUV',
-              onSort: onSortColumn,
-            },
-            { label: 'DESCRIPTION' },
-          ],
-        }}
-        rows={missionRows}
-        onSelectRow={onSelectMission && handleSelect}
-        selectedIndex={
-          selectedId ? missions.findIndex(({ id }) => id === selectedId) : null
-        }
-      />
-    </div>
+    <Table
+      className={clsx('', className)}
+      style={style}
+      scrollable
+      header={header}
+      rows={missionRows}
+      onSelectRow={onSelectMission && handleSelect}
+      selectedIndex={
+        selectedId ? missions.findIndex(({ id }) => id === selectedId) : null
+      }
+    />
   )
 }
 

@@ -10,6 +10,8 @@ export interface TableHeaderProps {
   cells: TableHeaderCell[]
   accessory?: string | JSX.Element
   scrollable?: boolean
+  activeSortColumn?: number | null
+  activeSortDirection?: SortDirection
 }
 
 export interface TableHeaderCell {
@@ -44,70 +46,83 @@ export const TableHeader: React.FC<TableHeaderProps> = ({
   cells,
   accessory,
   scrollable,
+  activeSortColumn,
+  activeSortDirection,
 }) => {
   const [hoverSort, setHoverSort] = useState<number | null>(null)
+
+  const sortedCells = cells.map((cell, index) =>
+    index === activeSortColumn
+      ? { ...cell, sortDirection: activeSortDirection }
+      : cell
+  )
 
   return (
     <tr
       className={clsx(styles.container, className)}
       data-testid="table header"
     >
-      {cells.map(({ label, secondary, onSort, sortDirection, span }, index) => (
-        <th
-          className={clsx(
-            styles.cell,
-            scrollable && 'opacity-60',
-            span && colClassNames[span]
-          )}
-          key={`${label}${index}`}
-        >
-          {onSort ? (
-            <button
-              onClick={swallow(() => onSort(index, sortDirection === 'asc'))}
-              onMouseEnter={() => {
-                setHoverSort(index)
-              }}
-              onMouseLeave={() => {
-                setHoverSort(null)
-              }}
-            >
-              <span className="mr-1 w-full font-medium">{label}</span>
-              {sortDirection &&
-                (sortDirection === 'asc' ? (
+      {sortedCells.map(
+        ({ label, secondary, onSort, sortDirection, span }, index) => (
+          <th
+            className={clsx(
+              styles.cell,
+              scrollable && 'opacity-60',
+              span && colClassNames[span]
+            )}
+            key={`${label}${index}`}
+          >
+            {onSort ? (
+              <button
+                onClick={swallow(() => onSort(index, sortDirection === 'asc'))}
+                onMouseEnter={() => {
+                  setHoverSort(index)
+                }}
+                onMouseLeave={() => {
+                  setHoverSort(null)
+                }}
+              >
+                <span className="mr-1 w-full font-medium">{label}</span>
+                {sortDirection &&
+                  (sortDirection === 'asc' ? (
+                    <FontAwesomeIcon
+                      icon={faSortUp as IconProp}
+                      title="sort up icon"
+                      className="relative top-0.5"
+                    />
+                  ) : (
+                    <FontAwesomeIcon
+                      icon={faSortDown as IconProp}
+                      title="sort down icon"
+                      className="relative bottom-0.5"
+                    />
+                  ))}
+                {index === hoverSort && !sortDirection && (
                   <FontAwesomeIcon
-                    icon={faSortUp as IconProp}
-                    title="sort up icon"
-                    className="relative top-0.5"
+                    icon={faSort as IconProp}
+                    title="sort icon"
                   />
-                ) : (
-                  <FontAwesomeIcon
-                    icon={faSortDown as IconProp}
-                    title="sort down icon"
-                    className="relative bottom-0.5"
-                  />
-                ))}
-              {index === hoverSort && !sortDirection && (
-                <FontAwesomeIcon icon={faSort as IconProp} title="sort icon" />
-              )}
-            </button>
-          ) : (
-            <>
-              <span className={clsx(scrollable && 'w-full font-medium')}>
-                {label}
-              </span>
-            </>
-          )}
-          {secondary && (
-            <span className="ml-2 text-xs italic">{secondary}</span>
-          )}
-          {index === cells.length - 1 && accessory && (
-            <>
-              <span className="flex w-8 flex-grow" />
-              {accessory}
-            </>
-          )}
-        </th>
-      ))}
+                )}
+              </button>
+            ) : (
+              <>
+                <span className={clsx(scrollable && 'w-full font-medium')}>
+                  {label}
+                </span>
+              </>
+            )}
+            {secondary && (
+              <span className="ml-2 text-xs italic">{secondary}</span>
+            )}
+            {index === cells.length - 1 && accessory && (
+              <>
+                <span className="flex w-8 flex-grow" />
+                {accessory}
+              </>
+            )}
+          </th>
+        )
+      )}
     </tr>
   )
 }

@@ -62,6 +62,7 @@ export const CommandModal: React.FC<CommandModalProps> = ({
   useEffect(() => {
     if (selectedRecentId) {
       setSearchTerm('')
+      setSortDirection(null)
       const filteredByRecent = commands.filter(
         ({ id }) => id === selectedRecentId
       )
@@ -69,6 +70,7 @@ export const CommandModal: React.FC<CommandModalProps> = ({
     }
 
     if (searchTerm) {
+      setSortDirection(null)
       const searchResults = commands.filter(({ name }) =>
         name.includes(searchTerm)
       )
