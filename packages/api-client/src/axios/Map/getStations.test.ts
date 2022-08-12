@@ -2,7 +2,7 @@ import { rest } from 'msw'
 import { setupServer } from 'msw/node'
 import { getStations } from './getStations'
 
-const mockResponse = [
+export const mockResponse = [
   {
     name: 'Sand_Island: SI-1',
     geojson: {
