@@ -206,6 +206,48 @@ export const ScheduleSection: React.FC<ScheduleSectionProps> = ({
     )
   }
 
+  const handleDuplicate = ({
+    eventId,
+    commandType,
+  }: {
+    eventId: number
+    commandType: string
+  }) => {
+    console.log('should duplicate:', eventId, commandType)
+  }
+
+  const handleDelete = ({
+    eventId,
+    commandType,
+  }: {
+    eventId: number
+    commandType: string
+  }) => {
+    console.log('should delete:', eventId, commandType)
+  }
+
+  const handleDownload = ({
+    eventId,
+    commandType,
+  }: {
+    eventId: number
+    commandType: string
+  }) => {
+    console.log('should download:', eventId, commandType)
+  }
+
+  const handleMoveInQueue = ({
+    eventId,
+    commandType,
+    direction,
+  }: {
+    eventId: number
+    commandType: string
+    direction: 'up' | 'down'
+  }) => {
+    console.log('should move in queue:', eventId, commandType)
+  }
+
   return (
     <>
       <AccordionCells cellAtIndex={cellAtIndex} count={totalCellCount} />
@@ -228,19 +270,61 @@ export const ScheduleSection: React.FC<ScheduleSectionProps> = ({
             onDismiss={closeMoreMenu}
             options={[
               {
-                label: 'Edit',
+                label: `Use for new ${currentMoreMenu.commandType}`,
                 onSelect: () => {
-                  handleEdit?.(currentMoreMenu?.docInstanceId)
+                  handleDuplicate({
+                    eventId: currentMoreMenu?.eventId as number,
+                    commandType: currentMoreMenu?.commandType as string,
+                  })
                   closeMoreMenu()
                 },
               },
               {
-                label: 'Delete',
+                label: 'Delete from Queue',
                 onSelect: () => {
-                  handleDelete?.()
+                  handleDelete({
+                    eventId: currentMoreMenu?.eventId as number,
+                    commandType: currentMoreMenu?.commandType as string,
+                  })
                   closeMoreMenu()
                 },
               },
+              {
+                label: 'Download SBDs',
+                onSelect: () => {
+                  handleDownload({
+                    eventId: currentMoreMenu?.eventId as number,
+                    commandType: currentMoreMenu?.commandType as string,
+                  })
+                  closeMoreMenu()
+                },
+              },
+              ...[
+                {
+                  label: 'Move Up',
+                  onSelect: () => {
+                    handleMoveInQueue({
+                      eventId: currentMoreMenu?.eventId as number,
+                      commandType: currentMoreMenu?.commandType as string,
+                      direction: 'up',
+                    })
+                    closeMoreMenu()
+                  },
+                },
+                {
+                  label: 'Move Down',
+                  onSelect: () => {
+                    handleMoveInQueue({
+                      eventId: currentMoreMenu?.eventId as number,
+                      commandType: currentMoreMenu?.commandType as string,
+                      direction: 'down',
+                    })
+                    closeMoreMenu()
+                  },
+                },
+              ].filter(() =>
+                ['running', 'pending'].includes(currentMoreMenu.status)
+              ),
             ]}
           />
         </div>
