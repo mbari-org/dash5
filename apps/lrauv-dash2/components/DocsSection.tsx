@@ -55,19 +55,19 @@ const DocsSection: React.FC<DocsSectionProps> = ({
     })
   )
 
-  const [currentMoreMenu, setSurrentMoreMenu] =
+  const [currentMoreMenu, setCurrentMoreMenu] =
     useState<{
       docId: number
       docInstanceId: number
       rect: DOMRect
     } | null>(null)
-  const closeMoreMenu = () => setSurrentMoreMenu(null)
+  const closeMoreMenu = () => setCurrentMoreMenu(null)
   const openMoreMenu = (
     target: { docId: number; docInstanceId: number },
     rect?: DOMRect
   ) => {
     if (rect) {
-      setSurrentMoreMenu({ ...target, rect })
+      setCurrentMoreMenu({ ...target, rect })
     }
   }
   const handleAddClick = swallow(() => {

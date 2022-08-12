@@ -1,4 +1,4 @@
-import React from 'react'
+import React, { useRef } from 'react'
 import clsx from 'clsx'
 import { swallow } from '@mbari/utils'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
@@ -13,20 +13,36 @@ import { faSync } from '@fortawesome/pro-light-svg-icons'
 import { IconProp } from '@fortawesome/fontawesome-svg-core'
 import { IconButton } from '../Navigation'
 
+export type ScheduleCellStatus =
+  | 'pending'
+  | 'running'
+  | 'cancelled'
+  | 'completed'
+  | 'paused'
+export type ScheduledCommandType = 'command' | 'mission'
 export interface ScheduleCellProps {
   className?: string
   style?: React.CSSProperties
-  status: 'pending' | 'running' | 'cancelled' | 'completed' | 'paused'
+  status: ScheduleCellStatus
   scheduleStatus?: 'paused' | 'running'
   label: string
   ariaLabel?: string
   secondary: string
   name: string
+  eventId: number
+  commandType: ScheduledCommandType
   description: string
   description2?: string
   description3?: string
   onSelect: () => void
-  onSelectMore: () => void
+  onMoreClick: (
+    id: {
+      eventId?: number
+      commandType: ScheduledCommandType
+      status: ScheduleCellStatus
+    },
+    rect?: DOMRect
+  ) => void
 }
 
 const styles = {
@@ -64,10 +80,14 @@ export const ScheduleCell: React.FC<ScheduleCellProps> = ({
   description,
   description2,
   description3,
+  eventId,
+  commandType,
   onSelect,
-  onSelectMore,
+  onMoreClick,
   scheduleStatus,
 }) => {
+  const moreButtonRef = useRef<HTMLDivElement | null>(null)
+
   const backgroundColor = (() => {
     if (scheduleStatus === 'running') return ScheduleCellBackgrounds.running
     if (scheduleStatus === 'paused') return ScheduleCellBackgrounds.paused
@@ -89,6 +109,13 @@ export const ScheduleCell: React.FC<ScheduleCellProps> = ({
     if (status === 'completed') return 'text-teal-600'
     return 'text-primary-600'
   })()
+
+  const handleMoreClick = () => {
+    onMoreClick(
+      { eventId, commandType, status },
+      moreButtonRef.current?.getBoundingClientRect()
+    )
+  }
 
   return (
     <article
@@ -145,11 +172,11 @@ export const ScheduleCell: React.FC<ScheduleCellProps> = ({
           {description3 && <li className="flex truncate">{description3}</li>}
         </ul>
       </button>
-      <div className="flex">
+      <div className="flex" ref={moreButtonRef}>
         <IconButton
           icon={faEllipsisV}
           ariaLabel="More options"
-          onClick={onSelectMore}
+          onClick={handleMoreClick}
           className="my-auto"
           size="text-2xl"
         />

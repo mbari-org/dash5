@@ -24,9 +24,11 @@ const args: ScheduleCellProps = {
   onSelect: () => {
     console.log('event fired')
   },
-  onSelectMore: () => {
+  onMoreClick: () => {
     console.log('event fired')
   },
+  eventId: 123,
+  commandType: 'mission',
 }
 
 export const Scheduled = Template.bind({})

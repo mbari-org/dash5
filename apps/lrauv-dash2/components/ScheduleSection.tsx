@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import React, { useState, useRef } from 'react'
 import { useMissionSchedule } from '@mbari/api-client'
 import {
   AccessoryButton,
@@ -6,12 +6,14 @@ import {
   ScheduleCell,
   ScheduleCellProps,
   ScheduleCellBackgrounds,
+  Input,
+  Dropdown,
+  ScheduleCellStatus,
 } from '@mbari/react-ui'
 import { DateTime } from 'luxon'
 import { faPlus } from '@fortawesome/pro-regular-svg-icons'
 import clsx from 'clsx'
 import { Select } from '@mbari/react-ui/dist/Fields/Select'
-import { Input } from '@mbari/react-ui'
 
 export interface ScheduleSectionProps {
   className?: string
@@ -78,6 +80,24 @@ export const ScheduleSection: React.FC<ScheduleSectionProps> = ({
   const results = [scheduledCells, historicCells].flat()
   const totalCellCount =
     results.length + staticFilterCellOffset + staticHeaderCellOffset
+
+  const menuRef = useRef<HTMLDivElement | null>(null)
+  const [currentMoreMenu, setCurrentMoreMenu] =
+    useState<{
+      eventId?: number
+      commandType: 'mission' | 'command'
+      status: ScheduleCellStatus
+      rect: DOMRect
+    } | null>(null)
+  const closeMoreMenu = () => setCurrentMoreMenu(null)
+  const openMoreMenu: ScheduleCellProps['onMoreClick'] = (
+    target,
+    rect?: DOMRect
+  ) => {
+    if (rect) {
+      setCurrentMoreMenu({ ...target, rect })
+    }
+  }
 
   const cellAtIndex = (index: number) => {
     if (index === 0 && activeDeployment) {
@@ -177,7 +197,9 @@ export const ScheduleSection: React.FC<ScheduleSectionProps> = ({
           ).toRelative() ?? ''
         }
         onSelect={() => undefined}
-        onSelectMore={() => undefined}
+        onMoreClick={openMoreMenu}
+        eventId={mission.eventId}
+        commandType={mission.commandType}
       />
     ) : (
       <p>No Data</p>
@@ -187,6 +209,42 @@ export const ScheduleSection: React.FC<ScheduleSectionProps> = ({
   return (
     <>
       <AccordionCells cellAtIndex={cellAtIndex} count={totalCellCount} />
+      {currentMoreMenu && (
+        <div
+          className="fixed mr-2 mb-2 min-w-[140px] whitespace-nowrap"
+          ref={menuRef}
+          style={{
+            top:
+              (currentMoreMenu?.rect?.top ?? 0) -
+              (menuRef.current?.offsetHeight ?? 0),
+            right:
+              typeof window !== 'undefined'
+                ? window.innerWidth - (currentMoreMenu?.rect?.right ?? 0)
+                : 0,
+            zIndex: 1001,
+          }}
+        >
+          <Dropdown
+            onDismiss={closeMoreMenu}
+            options={[
+              {
+                label: 'Edit',
+                onSelect: () => {
+                  handleEdit?.(currentMoreMenu?.docInstanceId)
+                  closeMoreMenu()
+                },
+              },
+              {
+                label: 'Delete',
+                onSelect: () => {
+                  handleDelete?.()
+                  closeMoreMenu()
+                },
+              },
+            ]}
+          />
+        </div>
+      )}
     </>
   )
 }
