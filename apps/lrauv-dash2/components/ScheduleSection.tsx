@@ -19,10 +19,12 @@ export interface ScheduleSectionProps {
   authenticated?: boolean
   vehicleName: string
   currentDeploymentId?: number
+  activeDeployment?: boolean
 }
 
 export const ScheduleSection: React.FC<ScheduleSectionProps> = ({
   currentDeploymentId,
+  activeDeployment,
 }) => {
   const [scheduleStatus, setScheduleStatus] =
     useState<ScheduleCellProps['scheduleStatus'] | null>('running')
@@ -42,11 +44,11 @@ export const ScheduleSection: React.FC<ScheduleSectionProps> = ({
     setScheduleStatus(scheduleStatus === 'paused' ? 'running' : 'paused')
 
   const scheduledTypes = ['pending', 'running']
-  const staticHeaderCellOffset = 2
+  const staticHeaderCellOffset = activeDeployment ? 2 : 0
   const indexOfPastSchedule =
     (missions?.findIndex((v) => !scheduledTypes.includes(v.status)) ?? 0) +
     staticHeaderCellOffset
-  const hasPastSchedule = indexOfPastSchedule > 1
+  const hasPastSchedule = indexOfPastSchedule > -1
   const staticFilterCellOffset = hasPastSchedule ? 1 : 0
 
   const handleScheduleSearch = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -78,7 +80,7 @@ export const ScheduleSection: React.FC<ScheduleSectionProps> = ({
     results.length + staticFilterCellOffset + staticHeaderCellOffset
 
   const cellAtIndex = (index: number) => {
-    if (index === 0) {
+    if (index === 0 && activeDeployment) {
       return (
         <div className="flex border-b border-stone-200 py-2 px-4 text-sm">
           <p className="flex-grow text-xs">
@@ -95,7 +97,7 @@ export const ScheduleSection: React.FC<ScheduleSectionProps> = ({
         </div>
       )
     }
-    if (index === 1) {
+    if (index === 1 && activeDeployment) {
       return (
         <div
           className={clsx(
@@ -142,7 +144,9 @@ export const ScheduleSection: React.FC<ScheduleSectionProps> = ({
       )
     }
     const indexOffset =
-      index < (indexOfPastSchedule ?? missions?.length ?? 0) ? -2 : -3
+      index < (indexOfPastSchedule ?? results?.length ?? 0)
+        ? -staticHeaderCellOffset
+        : -staticHeaderCellOffset - staticFilterCellOffset
     const mission = results[index + indexOffset]
     return mission ? (
       <ScheduleCell
