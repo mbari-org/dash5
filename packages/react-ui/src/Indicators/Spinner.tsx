@@ -17,7 +17,7 @@ export interface SpinnerProps {
 
 export const Spinner: React.FC<SpinnerProps> = ({ className, size = '1x' }) => (
   <p className={clsx(className, 'flex flex-shrink flex-grow-0')}>
-    <span className="m-auto animate-spin">
+    <span className="m-auto block animate-spin">
       <FontAwesomeIcon icon={faSpinnerThird as IconProp} size={size} />
     </span>
   </p>

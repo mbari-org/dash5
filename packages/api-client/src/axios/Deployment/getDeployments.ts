@@ -4,7 +4,7 @@ import { RequestConfig } from '../types'
 import { DeploymentEvent, DListResult } from './getLastDeployment'
 export interface GetDeploymentsParams {
   vehicle?: string
-  deploymentId?: string
+  deploymentId?: number
 }
 
 export interface GetDeploymentsResponse {
@@ -33,10 +33,7 @@ export const getDeployments = async (
     console.debug(`GET ${url}`)
   }
 
-  const response = await instance.get(
-    `${url}?${new URLSearchParams({ ...params })}`,
-    config
-  )
+  const response = await instance.get(url, { ...config, params })
   return [response.data.result]
     .flat()
     .map((result: GetDeploymentsResponse) => ({

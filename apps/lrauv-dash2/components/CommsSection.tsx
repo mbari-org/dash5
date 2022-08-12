@@ -16,7 +16,7 @@ const CommsSection: React.FC<CommsSectionProps> = ({
   from,
   to,
 }) => {
-  const { data } = useEvents({
+  const { data, isLoading, isFetching } = useEvents({
     vehicles: [vehicleName],
     eventTypes: ['command', 'run'],
     from,
@@ -40,7 +40,7 @@ const CommsSection: React.FC<CommsSectionProps> = ({
       <CommsCell
         className="border-b border-slate-200"
         isScheduled={isScheduled}
-        isUpload={false}
+        isUpload={true}
         command={item?.data ?? item?.text ?? ''}
         entry={`Mission ${item?.eventId}`}
         name={item?.user ?? ''}
@@ -52,7 +52,13 @@ const CommsSection: React.FC<CommsSectionProps> = ({
     )
   }
 
-  return <AccordionCells cellAtIndex={cellAtIndex} count={data?.length} />
+  return (
+    <AccordionCells
+      cellAtIndex={cellAtIndex}
+      count={data?.length}
+      loading={isLoading || isFetching}
+    />
+  )
 }
 
 CommsSection.displayName = 'components.CommsSection'

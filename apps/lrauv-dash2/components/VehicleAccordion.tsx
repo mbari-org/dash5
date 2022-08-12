@@ -7,6 +7,7 @@ import LogsSection from './LogsSection'
 import ScienceDataSection from './ScienceDataSection'
 import { useEvents } from '@mbari/api-client'
 import { DateTime } from 'luxon'
+import { ScheduleSection } from './ScheduleSection'
 
 export type VehicleAccordionSection =
   | 'handoff'
@@ -34,17 +35,12 @@ const VehicleAccordion: React.FC<VehicleAccordionProps> = ({
   activeDeployment,
   currentDeploymentId,
 }) => {
-  const {
-    data: relatedLogs,
-    isLoading: logsLoading,
-    isFetching,
-    refetch,
-  } = useEvents({
+  const { data: relatedLogs, isLoading: logsLoading } = useEvents({
     vehicles: [vehicleName],
     from,
     to,
   })
-  const earliestLog = relatedLogs?.[(relatedLogs?.length ?? 0) - 1].isoTime
+  const earliestLog = relatedLogs?.[(relatedLogs?.length ?? 0) - 1]?.isoTime
   const logsSummary = logsLoading
     ? 'loading...'
     : earliestLog
@@ -93,6 +89,13 @@ const VehicleAccordion: React.FC<VehicleAccordionProps> = ({
         open={section === 'schedule'}
         className="flex flex-shrink-0"
       />
+      {section === 'schedule' && (
+        <ScheduleSection
+          currentDeploymentId={currentDeploymentId}
+          vehicleName={vehicleName}
+          activeDeployment={activeDeployment}
+        />
+      )}
       <AccordionHeader
         label="Comms Queue"
         secondaryLabel={

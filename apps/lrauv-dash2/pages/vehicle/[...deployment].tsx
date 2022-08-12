@@ -116,7 +116,7 @@ const Vehicle: NextPage = () => {
       ? missionStartedEvent?.[0]?.unixTime
       : deployment?.startEvent?.unixTime ?? 0
   const endTime = deployment?.active
-    ? DateTime.utc().plus({ hours: 4 }).toMillis()
+    ? DateTime.utc().plus({ hours: 4 }).endOf('day').toMillis()
     : deployment?.lastEvent ?? 0
 
   const handleClickPilot = () => setGlobalModalId({ id: 'reassign' })

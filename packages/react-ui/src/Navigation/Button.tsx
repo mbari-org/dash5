@@ -20,10 +20,13 @@ export interface ButtonProps {
   disabled?: boolean
   onClick?: React.MouseEventHandler<HTMLButtonElement>
   form?: string
+  tight?: boolean
 }
 
 const styles = {
-  button: 'rounded text-sm text-center px-4 py-2 w-auto font-display',
+  button: 'rounded text-sm text-center w-auto font-display',
+  normal: 'px-4 py-2',
+  tight: 'px-2 py-1',
   link: 'flex font-semibold text-emerald-600 underline',
   disabled: 'opacity-50 cursor-not-allowed',
 }
@@ -71,6 +74,7 @@ export const Button: React.FC<ButtonProps> = ({
   onClick,
   form,
   type = 'button',
+  tight,
 }) => {
   const [focus, setFocus] = useState(false)
   const [hover, setHover] = useState(false)
@@ -87,6 +91,7 @@ export const Button: React.FC<ButtonProps> = ({
         backgroundStyles(appearance),
         alignmentStyles(align),
         disabled && styles.disabled,
+        tight ? styles.tight : styles.normal,
         className
       )}
       disabled={disabled}

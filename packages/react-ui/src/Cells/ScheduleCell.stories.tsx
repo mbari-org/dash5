@@ -16,7 +16,7 @@ const Template: Story<ScheduleCellProps> = (args) => (
 
 const args: ScheduleCellProps = {
   className: '',
-  status: 'scheduled',
+  status: 'pending',
   label: 'ESP sample at depth',
   secondary: 'Deeper sample',
   name: 'Reiko Michisaki',
@@ -24,14 +24,17 @@ const args: ScheduleCellProps = {
   onSelect: () => {
     console.log('event fired')
   },
-  onSelectMore: () => {
+  onMoreClick: () => {
     console.log('event fired')
   },
+  eventId: 123,
+  commandType: 'mission',
 }
 
 export const Scheduled = Template.bind({})
 Scheduled.args = {
   ...args,
+  scheduleStatus: 'paused',
   description2: '23:00-00:59',
 }
 Scheduled.parameters = {
@@ -50,6 +53,7 @@ Running.args = {
   description: 'Started at 14:30',
   description2: 'Running for 12min',
   description3: 'Ending ~22:59',
+  scheduleStatus: 'running',
 }
 Running.parameters = {
   design: {
@@ -61,7 +65,7 @@ Running.parameters = {
 export const Ended = Template.bind({})
 Ended.args = {
   ...args,
-  status: 'ended',
+  status: 'cancelled',
   secondary: 'Per YZ shallow sample',
   description: 'Ended at 10:22',
   description2: '3 hours ago',
@@ -77,7 +81,7 @@ Ended.parameters = {
 export const Executed = Template.bind({})
 Executed.args = {
   ...args,
-  status: 'executed',
+  status: 'completed',
   label: 'resume',
   secondary: 'fixed it',
   description: 'Executed at 11:32',
@@ -94,6 +98,7 @@ export const Paused = Template.bind({})
 Paused.args = {
   ...args,
   status: 'paused',
+  scheduleStatus: 'paused',
   description: 'Paused',
   description2: 'Est. runtime 1h 59m',
 }
