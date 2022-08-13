@@ -8,19 +8,19 @@ export interface GetCommandsResponse {
   decimationTypes: string[]
 }
 
-interface ApiCommand {
+export interface ApiCommand {
   advanced: boolean
   description: string
   keyword: string
   syntaxList: Syntax[]
 }
 
-interface Syntax {
+export interface Syntax {
   argList: Arg[]
   help: string
 }
 
-interface Arg {
+export interface Arg {
   argType: string
   keyword?: string
   required?: string

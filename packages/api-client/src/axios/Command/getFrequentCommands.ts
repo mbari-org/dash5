@@ -4,11 +4,10 @@ import { RequestConfig } from '../types'
 
 export interface GetFrequentCommandsParams {
   vehicleName: string
+  limit?: number
 }
 
-export interface GetFrequentCommandsResponse {
-  result: string
-}
+export type GetFrequentCommandsResponse = string[]
 
 export const getFrequentCommands = async (
   params: GetFrequentCommandsParams,
@@ -20,9 +19,6 @@ export const getFrequentCommands = async (
     console.debug(`GET ${url}`)
   }
 
-  const response = await instance.get(
-    `${url}?${new URLSearchParams({ ...params })}`,
-    config
-  )
-  return response.data as GetFrequentCommandsResponse
+  const response = await instance.get(url, { ...config, params })
+  return response.data.result as GetFrequentCommandsResponse
 }

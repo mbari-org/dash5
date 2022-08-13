@@ -1,4 +1,4 @@
-import React from 'react'
+import React, { useRef } from 'react'
 import clsx from 'clsx'
 import { swallow } from '@mbari/utils'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
@@ -7,28 +7,46 @@ import {
   faEllipsisV,
   faCheck,
   faTimes,
+  faPauseCircle,
 } from '@fortawesome/pro-regular-svg-icons'
 import { faSync } from '@fortawesome/pro-light-svg-icons'
 import { IconProp } from '@fortawesome/fontawesome-svg-core'
 import { IconButton } from '../Navigation'
 
+export type ScheduleCellStatus =
+  | 'pending'
+  | 'running'
+  | 'cancelled'
+  | 'completed'
+  | 'paused'
+export type ScheduledCommandType = 'command' | 'mission'
 export interface ScheduleCellProps {
   className?: string
   style?: React.CSSProperties
-  status: 'scheduled' | 'running' | 'ended' | 'executed' | 'paused'
+  status: ScheduleCellStatus
+  scheduleStatus?: 'paused' | 'running'
   label: string
   ariaLabel?: string
   secondary: string
   name: string
+  eventId: number
+  commandType: ScheduledCommandType
   description: string
   description2?: string
   description3?: string
   onSelect: () => void
-  onSelectMore: () => void
+  onMoreClick: (
+    id: {
+      eventId?: number
+      commandType: ScheduledCommandType
+      status: ScheduleCellStatus
+    },
+    rect?: DOMRect
+  ) => void
 }
 
 const styles = {
-  container: 'flex font-display items-center',
+  container: 'flex font-display items-center text-sm',
   icon: 'flex px-4',
   detailsContainer: 'flex flex-grow flex-col p-4',
   text: 'text-stone-500 opacity-90',
@@ -39,11 +57,17 @@ const styles = {
 }
 
 const icons: { [key: string]: IconProp } = {
-  scheduled: faClock as IconProp,
+  pending: faClock as IconProp,
   running: faSync as IconProp,
-  ended: faTimes as IconProp,
-  executed: faCheck as IconProp,
-  paused: faClock as IconProp,
+  cancelled: faTimes as IconProp,
+  completed: faCheck as IconProp,
+  paused: faPauseCircle as IconProp,
+}
+
+export const ScheduleCellBackgrounds = {
+  running: 'bg-violet-50 hover:bg-violet-100',
+  paused: 'bg-orange-50 hover:bg-orange-100',
+  default: 'bg-white hover:bg-stone-50',
 }
 
 export const ScheduleCell: React.FC<ScheduleCellProps> = ({
@@ -56,30 +80,42 @@ export const ScheduleCell: React.FC<ScheduleCellProps> = ({
   description,
   description2,
   description3,
+  eventId,
+  commandType,
   onSelect,
-  onSelectMore,
+  onMoreClick,
+  scheduleStatus,
 }) => {
+  const moreButtonRef = useRef<HTMLDivElement | null>(null)
+
   const backgroundColor = (() => {
-    if (status === 'running') return 'bg-violet-100'
-    if (status === 'paused') return 'bg-orange-100'
-    return 'bg-white'
+    if (scheduleStatus === 'running') return ScheduleCellBackgrounds.running
+    if (scheduleStatus === 'paused') return ScheduleCellBackgrounds.paused
+    return ScheduleCellBackgrounds.default
   })()
 
   const isOpen = (() => {
-    return status === 'scheduled' || status === 'running' || status === 'paused'
+    return status === 'pending' || status === 'running' || status === 'paused'
   })()
 
   const iconColor = (() => {
-    if (status === 'running') return 'black'
-    if (status === 'paused') return 'text-orange-400'
+    if (scheduleStatus === 'running') return 'black'
+    if (scheduleStatus === 'paused') return 'text-orange-400'
     return styles.text
   })()
 
   const labelColor = (() => {
-    if (status === 'paused') return 'text-orange-400'
-    if (status === 'executed') return 'text-teal-600'
+    if (scheduleStatus === 'paused') return 'text-orange-400'
+    if (status === 'completed') return 'text-teal-600'
     return 'text-primary-600'
   })()
+
+  const handleMoreClick = () => {
+    onMoreClick(
+      { eventId, commandType, status },
+      moreButtonRef.current?.getBoundingClientRect()
+    )
+  }
 
   return (
     <article
@@ -87,7 +123,7 @@ export const ScheduleCell: React.FC<ScheduleCellProps> = ({
       aria-label={ariaLabel || ''}
     >
       <button
-        className="flex flex-grow items-center"
+        className="grid flex-grow grid-cols-9 items-center"
         onClick={swallow(onSelect)}
       >
         <div className={styles.icon}>
@@ -97,10 +133,10 @@ export const ScheduleCell: React.FC<ScheduleCellProps> = ({
             className={clsx(iconColor, 'text-xl')}
           />
         </div>
-        <ul className={styles.detailsContainer}>
+        <ul className={clsx(styles.detailsContainer, 'col-span-4')}>
           <li
             className={clsx(
-              'flex',
+              'flex truncate',
               labelColor,
               isOpen ? styles.open : styles.closed
             )}
@@ -109,34 +145,42 @@ export const ScheduleCell: React.FC<ScheduleCellProps> = ({
           </li>
           <li
             className={clsx(
-              'flex italic',
+              'flex truncate italic',
               isOpen ? styles.text : styles.textLight
             )}
           >
             {secondary}
           </li>
-          <li className={clsx('flex', isOpen ? styles.text : styles.textLight)}>
+          <li
+            className={clsx(
+              'flex truncate',
+              isOpen ? styles.text : styles.textLight
+            )}
+          >
             {name}
           </li>
         </ul>
         <ul
           className={clsx(
             styles.descriptionContainer,
-            isOpen ? styles.text : styles.textLight
+            isOpen ? styles.text : styles.textLight,
+            'col-span-4'
           )}
         >
-          <li className="flex">{description}</li>
-          {description2 && <li className="flex">{description2}</li>}
-          {description3 && <li className="flex">{description3}</li>}
+          <li className="flex truncate">{description}</li>
+          {description2 && <li className="flex truncate">{description2}</li>}
+          {description3 && <li className="flex truncate">{description3}</li>}
         </ul>
       </button>
-      <IconButton
-        icon={faEllipsisV}
-        ariaLabel="More options"
-        onClick={onSelectMore}
-        className="my-auto"
-        size="text-2xl"
-      />
+      <div className="flex" ref={moreButtonRef}>
+        <IconButton
+          icon={faEllipsisV}
+          ariaLabel="More options"
+          onClick={handleMoreClick}
+          className="my-auto"
+          size="text-2xl"
+        />
+      </div>
     </article>
   )
 }

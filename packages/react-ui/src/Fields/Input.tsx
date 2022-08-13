@@ -19,7 +19,7 @@ export interface InputProps {
 
 const style = {
   input:
-    'font-body border rounded p-2 flex flex-grow max-w-full focus:outline-none focus:border-green-300',
+    'font-body border rounded px-2 py-1 flex flex-grow max-w-full focus:outline-none focus:border-green-300',
 }
 
 export const Input = React.forwardRef<HTMLInputElement, InputProps>(

@@ -4,7 +4,7 @@ import { Modal, ModalProps } from './Modal'
 export interface DialogProps extends ModalProps {
   cancelButtonText?: string
   confirmButtonText?: string
-  message: string
+  message: string | JSX.Element
   onCancel?: (() => void) | null
   onConfirm?: (() => void) | null
 }
@@ -16,7 +16,7 @@ export const Dialog: React.FC<DialogProps> = ({
 }) => {
   return (
     <Modal {...modalProps}>
-      <p className="text-md">{message}</p>
+      <section className="text-md">{message}</section>
     </Modal>
   )
 }

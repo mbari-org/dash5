@@ -23,7 +23,7 @@ const HandoffSection: React.FC<HandoffSectionProps> = ({
   activeDeployment,
 }) => {
   const { setGlobalModalId } = useGlobalModalId()
-  const { data } = useEvents({
+  const { data, isLoading, isFetching } = useEvents({
     vehicles: [vehicleName],
     eventTypes: ['note'],
     from,
@@ -71,7 +71,11 @@ const HandoffSection: React.FC<HandoffSectionProps> = ({
           />
         </header>
       )}
-      <AccordionCells cellAtIndex={cellAtIndex} count={data?.length} />
+      <AccordionCells
+        cellAtIndex={cellAtIndex}
+        count={data?.length}
+        loading={isLoading || isFetching}
+      />
     </>
   )
 }

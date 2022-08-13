@@ -21,7 +21,11 @@ const args: AccordionCellsProps = {
     return <div className="border-b border-stone-100 p-2">Cell {index}</div>
   },
   count: 100,
+  loading: false,
 }
 
 export const Standard = Template.bind({})
 Standard.args = args
+
+export const Loading = Template.bind({})
+Loading.args = { ...args, loading: true }
