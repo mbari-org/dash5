@@ -7,7 +7,7 @@ import { faMapMarkerAlt } from '@fortawesome/pro-regular-svg-icons'
 import { faMapMarker } from '@fortawesome/pro-solid-svg-icons'
 import { IconProp } from '@fortawesome/fontawesome-svg-core'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
-import { makeOrdinal, swallow } from '@mbari/utils'
+import { swallow } from '@mbari/utils'
 import { WaypointField } from './WaypointField'
 
 export interface WaypointTableProps {
@@ -16,26 +16,32 @@ export interface WaypointTableProps {
   waypoints: WaypointProps[]
   stations?: Station[]
   focusWaypointIndex?: number
+  grayHeader?: boolean
   onFocusWaypoint?: (index: number) => void
   onCancelFocus?: (index: number) => void
   onDone?: () => void
-}
-
-export interface WaypointProps {
-  id?: string
-  station?: Station
+  onUpdate?: (updatedWaypoints: WaypointProps[]) => void
 }
 
 export interface Station {
   id?: string
   name: string
-  lat: number
-  long: number
+  lat: string
+  lon: string
 }
 
 export interface StationOption {
   id: string
   name: string
+}
+
+export interface WaypointProps {
+  latName: string
+  lonName: string
+  stationName?: string
+  description?: string
+  lat?: string
+  lon?: string
 }
 
 const styles = {
@@ -50,25 +56,37 @@ export const WaypointTable: React.FC<WaypointTableProps> = ({
   waypoints,
   stations,
   focusWaypointIndex,
+  grayHeader,
   onFocusWaypoint,
   onCancelFocus,
   onDone,
+  onUpdate,
 }) => {
   const initialWaypoints = waypoints.map((waypoint) =>
-    waypoint.station ? waypoint.station : null
+    (waypoint.lat || waypoint.lon) && !waypoint.stationName
+      ? { ...waypoint, stationName: 'Custom' }
+      : waypoint
   )
+
   const [selectedWaypoints, setSelectedWaypoints] =
-    useState<(Station | null | undefined)[]>(initialWaypoints)
+    useState<WaypointProps[]>(initialWaypoints)
 
   const updateSelectedWaypoints = (
     indexToChange: number,
     selected: Station
   ) => {
-    const updatedWaypoints: (Station | null | undefined)[] =
-      selectedWaypoints.map((waypoint, index) =>
-        index === indexToChange ? selected : waypoint
-      )
+    const waypointToUpdate: WaypointProps = {
+      ...waypoints[indexToChange],
+      stationName: selected.name,
+      lat: selected.lat,
+      lon: selected.lon,
+    }
 
+    const updatedWaypoints: WaypointProps[] = selectedWaypoints.map(
+      (waypoint, index) =>
+        index === indexToChange ? waypointToUpdate : waypoint
+    )
+    onUpdate?.(updatedWaypoints)
     setSelectedWaypoints(updatedWaypoints)
   }
 
@@ -98,9 +116,9 @@ export const WaypointTable: React.FC<WaypointTableProps> = ({
   }
 
   const selectOptions: StationOption[] | undefined = stations?.map(
-    ({ name, lat, long }) => ({
+    ({ name, lat, lon }) => ({
       id: name,
-      name: `${name} ${lat}, ${long}`,
+      name: `${name} ${lat}, ${lon}`,
     })
   )
 
@@ -110,8 +128,9 @@ export const WaypointTable: React.FC<WaypointTableProps> = ({
   ]
 
   const Row = (rowIndex: number) => {
+    const { latName, lonName, description } = waypoints[rowIndex]
     const [isCustom, setIsCustom] = useState(
-      selectedWaypoints[rowIndex]?.name === 'Custom'
+      selectedWaypoints[rowIndex]?.stationName === 'Custom'
     )
     const handleFocusWaypoint = () => {
       onFocusWaypoint?.(rowIndex)
@@ -127,8 +146,7 @@ export const WaypointTable: React.FC<WaypointTableProps> = ({
 
     const activeRow =
       typeof focusWaypointIndex === 'number' ||
-      isCustom ||
-      !!selectedWaypoints[rowIndex]
+      !!selectedWaypoints[rowIndex]?.stationName
 
     return {
       cells: [
@@ -136,13 +154,12 @@ export const WaypointTable: React.FC<WaypointTableProps> = ({
           icon: NumberedMarker(rowNumber, activeRow),
           label: (
             <div className={clsx(activeRow && 'text-teal-600')}>
-              Lat{rowNumber}/Lon{rowNumber}
+              {latName}/{lonName}
             </div>
           ),
           secondary: (
             <div className="truncate">
-              Latitude of {makeOrdinal(rowNumber)} waypoint. If NaN, waypoint
-              will be skipped/Longitude
+              {description ?? 'No description provided.'}
             </div>
           ),
         },
@@ -153,9 +170,9 @@ export const WaypointTable: React.FC<WaypointTableProps> = ({
                 {selectedWaypoints[rowIndex] || isCustom ? (
                   <WaypointField
                     rowIndex={rowIndex}
-                    stationName={selectedWaypoints[rowIndex]?.name}
+                    stationName={selectedWaypoints[rowIndex]?.stationName}
                     lat={selectedWaypoints[rowIndex]?.lat}
-                    long={selectedWaypoints[rowIndex]?.long}
+                    lon={selectedWaypoints[rowIndex]?.lon}
                     stationOptions={stations}
                     handleSelect={handleSelectStation}
                     handleUpdate={updateSelectedWaypoints}
@@ -235,6 +252,7 @@ export const WaypointTable: React.FC<WaypointTableProps> = ({
           }}
           rows={waypointRows}
           scrollable
+          grayHeader={grayHeader}
         />
       )}
     </article>
