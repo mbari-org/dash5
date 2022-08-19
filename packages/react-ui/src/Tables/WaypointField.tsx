@@ -1,5 +1,5 @@
 import clsx from 'clsx'
-import React, { useState } from 'react'
+import React, { useEffect, useState } from 'react'
 import { Input } from '../Fields'
 import { Select } from '../Fields/Select'
 import { Station, StationOption, WaypointTableProps } from './WaypointTable'
@@ -36,6 +36,26 @@ export const WaypointField: React.FC<WaypointFieldProps> = ({
   isCustom,
   setIsCustom,
 }) => {
+  const [initialLat, setInitialLat] = useState(lat)
+  const [initialLon, setInitialLon] = useState(lon)
+  const [customLat, setCustomLat] = useState<string | undefined>(
+    isCustom && lat ? lat : ''
+  )
+  const [customLon, setCustomLon] = useState<string | undefined>(
+    isCustom && lon ? lon : ''
+  )
+
+  useEffect(() => {
+    if (initialLat !== lat && isCustom) {
+      setCustomLat(lat)
+      setInitialLat(lat)
+    }
+    if (initialLon !== lon && isCustom) {
+      setCustomLon(lon)
+      setInitialLon(lon)
+    }
+  }, [lat, initialLat, lon, initialLon, isCustom])
+
   // TODO: real latError and longError error logic goes here
   const latErrorCondition = (lat: number) =>
     customLat && 30 > lat && lat > -37 ? true : false
@@ -43,12 +63,6 @@ export const WaypointField: React.FC<WaypointFieldProps> = ({
   const lonErrorCondition = (lon: number) =>
     customLon && 30 > lon && lon > -37 ? true : false
 
-  const [customLat, setCustomLat] = useState<string | undefined>(
-    isCustom && lat ? lat : ''
-  )
-  const [customLon, setCustomLon] = useState<string | undefined>(
-    isCustom && lon ? lon : ''
-  )
   const [latError, setLatError] = useState<boolean>(
     (isCustom && latErrorCondition(Number(lat))) || false
   )
@@ -60,8 +74,12 @@ export const WaypointField: React.FC<WaypointFieldProps> = ({
     ({ name }) => ({ id: name, name })
   )
   const optionsWithCustom: StationOption[] | undefined = (options &&
-    [{ id: 'Custom', name: 'Custom' }].concat(options)) || [
+    [
+      { id: 'Custom', name: 'Custom' },
+      { id: 'NaN', name: 'NaN' },
+    ].concat(options)) || [
     { id: 'Custom', name: 'Custom' },
+    { id: 'NaN', name: 'NaN' },
   ]
 
   // TODO: add bad input error handling

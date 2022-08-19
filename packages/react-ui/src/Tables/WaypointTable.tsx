@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import React, { useEffect, useState } from 'react'
 import clsx from 'clsx'
 import { Table } from '../Data/Table'
 import { Select } from '../Fields/Select'
@@ -62,14 +62,17 @@ export const WaypointTable: React.FC<WaypointTableProps> = ({
   onDone,
   onUpdate,
 }) => {
-  const initialWaypoints = waypoints.map((waypoint) =>
-    (waypoint.lat || waypoint.lon) && !waypoint.stationName
-      ? { ...waypoint, stationName: 'Custom' }
-      : waypoint
-  )
-
+  const [initialWaypoints, setInitialWaypoints] =
+    useState<WaypointProps[]>(waypoints)
   const [selectedWaypoints, setSelectedWaypoints] =
-    useState<WaypointProps[]>(initialWaypoints)
+    useState<WaypointProps[]>(waypoints)
+
+  useEffect(() => {
+    if (initialWaypoints !== waypoints) {
+      setSelectedWaypoints(waypoints)
+      setInitialWaypoints(waypoints)
+    }
+  }, [waypoints, selectedWaypoints, initialWaypoints])
 
   const updateSelectedWaypoints = (
     indexToChange: number,
@@ -123,20 +126,36 @@ export const WaypointTable: React.FC<WaypointTableProps> = ({
   )
 
   const selectOptionsWithCustom: StationOption[] | undefined = (selectOptions &&
-    [{ id: 'Custom', name: 'Custom' }].concat(selectOptions)) || [
+    [
+      { id: 'Custom', name: 'Custom' },
+      { id: 'NaN', name: 'NaN' },
+    ].concat(selectOptions)) || [
     { id: 'Custom', name: 'Custom' },
+    { id: 'NaN', name: 'NaN' },
   ]
 
   const Row = (rowIndex: number) => {
+    const { stationName, lat, lon } = selectedWaypoints[rowIndex]
     const { latName, lonName, description } = waypoints[rowIndex]
     const [isCustom, setIsCustom] = useState(
-      selectedWaypoints[rowIndex]?.stationName === 'Custom'
+      stationName === 'Custom' || lat === 'NaN' || lon === 'NaN'
     )
+    if ((lat === 'NaN' || lon === 'NaN') && !isCustom) {
+      setIsCustom(true)
+    }
     const handleFocusWaypoint = () => {
       onFocusWaypoint?.(rowIndex)
     }
 
     const handleSelectStation = (id: string) => {
+      if (id === 'NaN') {
+        updateSelectedWaypoints(rowIndex, {
+          name: 'Custom',
+          lat: 'NaN',
+          lon: 'NaN',
+        })
+        return
+      }
       const selectedStation = stations?.find(({ name }) => name === id)
 
       selectedStation && updateSelectedWaypoints(rowIndex, selectedStation)
@@ -167,7 +186,9 @@ export const WaypointTable: React.FC<WaypointTableProps> = ({
           label: (
             <div className="flex h-full w-full items-center">
               <div className="w-11/12">
-                {selectedWaypoints[rowIndex] || isCustom ? (
+                {selectedWaypoints[rowIndex].lat ||
+                selectedWaypoints[rowIndex].lon ||
+                isCustom ? (
                   <WaypointField
                     rowIndex={rowIndex}
                     stationName={selectedWaypoints[rowIndex]?.stationName}
