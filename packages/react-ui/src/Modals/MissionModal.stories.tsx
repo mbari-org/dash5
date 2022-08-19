@@ -3,6 +3,8 @@ import React from 'react'
 import { Story, Meta } from '@storybook/react/types-6-0'
 import { MissionModal, MissionModalProps } from './MissionModal'
 import { MissionTableProps } from '../Tables/MissionTable'
+import { WaypointTableProps } from '../Tables/WaypointTable'
+import { makeOrdinal } from '@mbari/utils'
 
 export default {
   title: 'Modals/MissionModal',
@@ -96,6 +98,38 @@ const missionTableArgs: MissionTableProps = {
   },
 }
 
+const waypointTableArgs: WaypointTableProps = {
+  waypoints: Array(5)
+    .fill(0)
+    .map((_, index) => ({
+      latName: `Lat${index + 1}`,
+      lonName: `Lon${index + 1}`,
+      lat: '',
+      lon: '',
+      description: `Latitude of ${makeOrdinal(
+        index + 1
+      )} waypoint. If NaN, waypoint
+      will be skipped/Longitude of ${makeOrdinal(index + 1)} waypoint.`,
+    }))
+    .concat([
+      {
+        latName: 'Lat6',
+        lonName: 'Lon6',
+        lat: '33.333',
+        lon: '-141.111',
+        description:
+          'Latitude of 6th waypoint. If NaN, waypoint will be skipped/Longitude of 6th waypoint.',
+      },
+    ]),
+  stations: [
+    { name: 'C1', lat: '36.797', lon: '-121.847' },
+    { name: 'C2', lat: '46.797', lon: '-141.847' },
+  ],
+  onFocusWaypoint: (index) => {
+    console.log(index)
+  },
+}
+
 const args = {
   currentIndex: 0,
   vehicleName: 'Brizo',
@@ -136,12 +170,23 @@ const args = {
   onCancel: () => console.log('cancel'),
   onSchedule: () => console.log('scheduled'),
   ...missionTableArgs,
+  ...waypointTableArgs,
 }
 
 export const Mission = Template.bind({})
 Mission.args = args
 
 Mission.parameters = {
+  design: {
+    type: 'figma',
+    url: 'https://www.figma.com/file/FtsKsOCBQ2YjTZlwezG6aI/MBARI-Components?node-id=6574%3A889',
+  },
+}
+
+export const Waypoint = Template.bind({})
+Waypoint.args = { ...args, currentIndex: 1, selectedId: '1' }
+
+Waypoint.parameters = {
   design: {
     type: 'figma',
     url: 'https://www.figma.com/file/FtsKsOCBQ2YjTZlwezG6aI/MBARI-Components?node-id=6574%3A889',

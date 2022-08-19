@@ -62,6 +62,21 @@ const props: MissionModalProps = {
 
   onCancel: () => console.log('cancel'),
   onSchedule: () => console.log('scheduled'),
+  waypoints: Array(5)
+    .fill(0)
+    .map((_, index) => ({
+      latName: `Lat${index + 1}`,
+      lonName: `Lon${index + 1}`,
+      description: `Latitude of some waypoint. If NaN, waypoint
+      will be skipped/Longitude of some waypoint.`,
+    })),
+  stations: [
+    { name: 'C1', lat: '36.797', lon: '-121.847' },
+    { name: 'C2', lat: '46.797', lon: '-141.847' },
+  ],
+  onFocusWaypoint: (index) => {
+    console.log(index)
+  },
 }
 
 test('should render the component', async () => {
