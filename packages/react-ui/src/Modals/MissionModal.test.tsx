@@ -24,8 +24,9 @@ const props: MissionModalProps = {
   missions: [
     {
       id: '1',
-      category: 'Science: sci2',
-      name: 'Test mission',
+      category: 'Science',
+      name: 'sci2',
+      task: 'Test mission',
       description:
         "Vehicle yo-yo's to the specified waypoints, with science turned on.",
       vehicle: 'Brizo',
@@ -35,8 +36,9 @@ const props: MissionModalProps = {
     },
     {
       id: '2',
-      category: 'Maintenance: sci2',
-      name: 'Mission 2',
+      category: 'Maintenance',
+      name: 'sci2',
+      task: 'Mission 2',
       description:
         "Vehicle yo-yo's to the specified waypoints, with science turned on.",
       vehicle: 'Tethys',
@@ -46,8 +48,9 @@ const props: MissionModalProps = {
     },
     {
       id: '3',
-      category: 'Science: profile_station',
-      name: 'Profile station at C1 for the night',
+      category: 'Science',
+      name: 'profile_station',
+      task: 'Profile station at C1 for the night',
       description:
         'This mission yoyos in a circle around a specified location.',
       vehicle: 'Tethys',
@@ -66,14 +69,16 @@ test('should render the component', async () => {
 })
 
 // Step 1 tests
-test('should display mission names', async () => {
+test('should display mission tasks', async () => {
   render(<MissionModal {...props} />)
-  expect(screen.queryByText(props.missions[0].name)).toBeInTheDocument()
+  expect(screen.queryByText(props.missions[0].task)).toBeInTheDocument()
 })
 
-test('should display mission categoriess', async () => {
+test('should display mission category and name labels', async () => {
   render(<MissionModal {...props} />)
-  expect(screen.queryByText(props.missions[0].category)).toBeInTheDocument()
+  const { category, name } = props.missions[0]
+
+  expect(screen.getByText(`${category}: ${name}`)).toBeInTheDocument()
 })
 
 test('should display mission descriptions', async () => {

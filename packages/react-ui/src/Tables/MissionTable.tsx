@@ -18,6 +18,7 @@ export interface Mission {
   id: string
   category: string
   name: string
+  task: string
   description?: string
   vehicle: string
   ranBy: string
@@ -40,6 +41,7 @@ export const MissionTable: React.FC<MissionTableProps> = ({
     ({
       category,
       name,
+      task,
       description,
       vehicle,
       ranBy,
@@ -48,7 +50,7 @@ export const MissionTable: React.FC<MissionTableProps> = ({
       waypointCount,
     }) => ({
       cells: [
-        { label: category, secondary: name },
+        { label: `${category}: ${name}`, secondary: task },
         { label: vehicle },
         {
           label: description ? description : 'No description',
