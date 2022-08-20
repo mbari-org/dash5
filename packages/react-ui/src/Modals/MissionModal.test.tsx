@@ -62,14 +62,22 @@ const props: MissionModalProps = {
 
   onCancel: () => console.log('cancel'),
   onSchedule: () => console.log('scheduled'),
-  waypoints: Array(5)
-    .fill(0)
-    .map((_, index) => ({
-      latName: `Lat${index + 1}`,
-      lonName: `Lon${index + 1}`,
-      description: `Latitude of some waypoint. If NaN, waypoint
-      will be skipped/Longitude of some waypoint.`,
-    })),
+  waypoints: [
+    {
+      latName: 'Lat1',
+      lonName: 'Lon1',
+      lat: '33.333',
+      lon: '-141.111',
+      description:
+        'Latitude of 1st waypoint. If NaN, waypoint will be skipped/Longitude of 1st waypoint.',
+    },
+    {
+      latName: 'Lat2',
+      lonName: 'Lon2',
+      description:
+        'Latitude of 2nd waypoint. If NaN, waypoint will be skipped/Longitude of 2nd waypoint.',
+    },
+  ],
   stations: [
     { name: 'C1', lat: '36.797', lon: '-121.847' },
     { name: 'C2', lat: '46.797', lon: '-141.847' },
@@ -83,7 +91,7 @@ test('should render the component', async () => {
   expect(() => render(<MissionModal {...props} />)).not.toThrow()
 })
 
-// Step 1 tests
+// Mission: Step 1 tests
 test('should display mission tasks', async () => {
   render(<MissionModal {...props} />)
   expect(screen.queryByText(props.missions[0].task)).toBeInTheDocument()
@@ -106,4 +114,30 @@ test('should display mission descriptions', async () => {
 test('should display vehicle name in teal', async () => {
   render(<MissionModal {...props} />)
   expect(screen.queryByTestId(/vehicle name/i)).toHaveClass('text-teal-500')
+})
+
+// Waypoints: Step 2 tests
+test('should display mission name in teal', async () => {
+  render(<MissionModal {...props} currentIndex={1} />)
+  expect(screen.queryByTestId(/mission name/i)).toHaveClass('text-teal-500')
+})
+
+test('should display number of available waypoint to set up and vehicle name', async () => {
+  render(<MissionModal {...props} currentIndex={1} />)
+  expect(
+    screen.queryByText(/Set up to 2 waypoints for Brizo\'s/i)
+  ).toBeInTheDocument()
+})
+
+test('should display stat labels', async () => {
+  render(<MissionModal {...props} currentIndex={1} />)
+  expect(screen.queryByText(/total distance/i)).toBeInTheDocument()
+  expect(screen.queryByText(/est. bottom depth/i)).toBeInTheDocument()
+  expect(screen.queryByText(/est. duration/i)).toBeInTheDocument()
+})
+
+test('should display NaN all and Reset all buttons', async () => {
+  render(<MissionModal {...props} currentIndex={1} />)
+  expect(screen.queryByText(/NaN all/i)).toBeInTheDocument()
+  expect(screen.queryByText(/Reset all/i)).toBeInTheDocument()
 })

@@ -47,7 +47,7 @@ export const WaypointStep: React.FC<WaypointStepProps> = ({
         <li className="flex-grow self-center">
           Set up to {waypointCount} waypoint{waypointCount !== 1 && 's'} for{' '}
           {vehicleName}&apos;s{' '}
-          <span className="text-teal-500" data-testid="vehicle name">
+          <span className="text-teal-500" data-testid="mission name">
             {mission}
           </span>{' '}
           mission
@@ -83,7 +83,7 @@ export const WaypointStep: React.FC<WaypointStepProps> = ({
         <li className={styles.stats}>
           Est. bottom depth: {bottomDepth ?? '---'}
         </li>
-        <li className={styles.stats}>Est duration: {duration ?? '---'}</li>
+        <li className={styles.stats}>Est. duration: {duration ?? '---'}</li>
       </ul>
     </article>
   )
