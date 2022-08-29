@@ -7,8 +7,9 @@ const props: MissionTableProps = {
   missions: [
     {
       id: '1',
-      category: 'Science: sci2',
-      name: 'Test mission',
+      category: 'Science',
+      name: 'sci2',
+      task: 'Test mission',
       vehicle: 'Brizo',
       ranBy: 'Jordan Caress',
       ranOn: 'Dec. 10, 2021',
@@ -29,14 +30,14 @@ test('should display header labels', async () => {
   expect(screen.getByText(/Mission Name/i)).toBeInTheDocument()
 })
 
-test('should display category label', async () => {
+test('should display category and name labels', async () => {
   render(<MissionTable {...props} />)
-  const categoryLabel = props.missions[0].category
+  const { category, name } = props.missions[0]
 
-  expect(screen.getByText(categoryLabel)).toBeInTheDocument()
+  expect(screen.getByText(`${category}: ${name}`)).toBeInTheDocument()
 })
 
-test('should display mission name label', async () => {
+test('should display mission task label', async () => {
   render(<MissionTable {...props} />)
   expect(screen.getByText(/test mission/i)).toBeInTheDocument()
 })
