@@ -9,6 +9,7 @@ import { MissionStep } from './MissionModalSteps/MissionStep'
 import { WaypointProps, WaypointTableProps } from '../Tables/WaypointTable'
 import { WaypointStep } from './MissionModalSteps/WaypointStep'
 import { ExtraButton } from '../Modal/Footer'
+import { WaypointSummary } from './MissionModalSteps/WaypointSummary'
 
 export interface MissionModalProps
   extends Omit<StepProgressProps, 'steps'>,
@@ -56,6 +57,8 @@ export const MissionModal: React.FC<MissionModalProps> = ({
   const [selectedMissionId, setSelectedMissionId] =
     useState<string | null | undefined>(selectedId)
 
+  const [isWaypointSummary, setIsWaypointSummary] = useState(false)
+
   const initialWaypoints = waypoints.map((waypoint) =>
     (waypoint.lat || waypoint.lon) && !waypoint.stationName
       ? { ...waypoint, stationName: 'Custom' }
@@ -80,9 +83,23 @@ export const MissionModal: React.FC<MissionModalProps> = ({
   )
 
   const handleNext = () => {
+    if (currentIndex === 1 && !isWaypointSummary) {
+      setIsWaypointSummary(true)
+      return
+    }
+
+    if (currentIndex === 1 && isWaypointSummary) {
+      setIsWaypointSummary(false)
+    }
+
     return setCurrentStep(currentStep + 1)
   }
   const handlePrevious = () => {
+    if (isWaypointSummary) {
+      setIsWaypointSummary(false)
+      return
+    }
+
     if (currentStep > 0) {
       return setCurrentStep(currentStep - 1)
     }
@@ -158,7 +175,16 @@ export const MissionModal: React.FC<MissionModalProps> = ({
           />
         )
       case 1:
-        return (
+        return isWaypointSummary ? (
+          <WaypointSummary
+            waypoints={updatedWaypoints}
+            vehicleName={vehicleName}
+            totalDistance={totalDistance}
+            bottomDepth={bottomDepth}
+            duration={duration}
+            mission={getMissionName()}
+          />
+        ) : (
           <WaypointStep
             waypoints={updatedWaypoints}
             stations={stations}

@@ -133,6 +133,9 @@ const waypointTableArgs: WaypointTableProps = {
 const args = {
   currentIndex: 0,
   vehicleName: 'Brizo',
+  totalDistance: '7.2km',
+  bottomDepth: '100-180m',
+  duration: '6hrs',
   recentRuns: [
     {
       id: '1',
