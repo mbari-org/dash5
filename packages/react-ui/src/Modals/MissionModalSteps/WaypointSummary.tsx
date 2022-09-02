@@ -23,13 +23,13 @@ export const WaypointSummary: React.FC<WaypointSummaryProps> = ({
 }) => {
   const waypointCount = waypoints.length ?? 0
 
-  const unskippedWaypoints = waypoints.filter(
+  const plottedWaypoints = waypoints.filter(
     ({ lat, lon }) => lat !== 'NaN' || lon !== 'NaN'
   )
 
-  const unskippedWaypointCount = unskippedWaypoints.length ?? 0
+  const plottedWaypointCount = plottedWaypoints.length ?? 0
 
-  const waypointRows = unskippedWaypoints.map(
+  const waypointRows = plottedWaypoints.map(
     ({ latName, lonName, stationName, lat, lon }) => ({
       cells: [
         {
@@ -63,7 +63,7 @@ export const WaypointSummary: React.FC<WaypointSummaryProps> = ({
           mission
         </li>
         <li className="flex items-center">
-          Summary of Waypoints ({unskippedWaypointCount})
+          Summary of Waypoints ({plottedWaypointCount})
         </li>
       </ul>
       <ul className="grid grid-cols-2 gap-2">
