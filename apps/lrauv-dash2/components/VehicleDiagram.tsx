@@ -103,7 +103,7 @@ const VehicleDiagram: React.FC<{
         textVolts={vehicle?.text_volts}
         colorVolts={vehicle?.color_volts}
         status={
-          vehicle?.text_mission?.indexOf('PLUGGED') >= 0
+          (vehicle?.text_mission?.indexOf('PLUGGED') ?? -1) >= 0
             ? 'pluggedIn'
             : 'onMission'
         }
