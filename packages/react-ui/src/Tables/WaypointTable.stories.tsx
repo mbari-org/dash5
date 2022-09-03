@@ -10,7 +10,13 @@ export default {
 } as Meta
 
 const Template: Story<WaypointTableProps> = (args) => (
-  <div className="bg-stone-200 p-2">
+  <div className="h-[320px] bg-stone-200 p-2">
+    <WaypointTable {...args} className="h-full" />
+  </div>
+)
+
+const AltTemplate: Story<WaypointTableProps> = (args) => (
+  <div className=" bg-stone-200 p-2">
     <WaypointTable {...args} />
   </div>
 )
@@ -44,7 +50,7 @@ Standard.parameters = {
   },
 }
 
-export const FocusMode = Template.bind({})
+export const FocusMode = AltTemplate.bind({})
 FocusMode.args = {
   ...args,
   focusWaypointIndex: 0,
@@ -56,7 +62,7 @@ FocusMode.args = {
   },
 }
 
-export const WaypointField = Template.bind({})
+export const WaypointField = AltTemplate.bind({})
 WaypointField.args = {
   ...args,
   waypoints: Array(3)
