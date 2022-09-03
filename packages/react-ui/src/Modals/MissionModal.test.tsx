@@ -1,5 +1,5 @@
 import React from 'react'
-import { render, screen } from '@testing-library/react'
+import { fireEvent, render, screen } from '@testing-library/react'
 import '@testing-library/jest-dom'
 import { MissionModal, MissionModalProps } from './MissionModal'
 
@@ -74,6 +74,8 @@ const props: MissionModalProps = {
     {
       latName: 'Lat2',
       lonName: 'Lon2',
+      lat: 'NaN',
+      lon: 'NaN',
       description:
         'Latitude of 2nd waypoint. If NaN, waypoint will be skipped/Longitude of 2nd waypoint.',
     },
@@ -140,4 +142,12 @@ test('should display NaN all and Reset all buttons', async () => {
   render(<MissionModal {...props} currentIndex={1} />)
   expect(screen.queryByText(/NaN all/i)).toBeInTheDocument()
   expect(screen.queryByText(/Reset all/i)).toBeInTheDocument()
+})
+
+test('should display Waypoint Summary when Next button is clicked after selecting waypoints', async () => {
+  render(<MissionModal {...props} currentIndex={1} />)
+  const nextButton = screen.getByRole('button', { name: 'Next' })
+  fireEvent.click(nextButton)
+
+  expect(screen.queryByText(/Summary of Waypoints/i)).toBeInTheDocument()
 })

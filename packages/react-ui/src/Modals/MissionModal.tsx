@@ -9,6 +9,7 @@ import { MissionStep } from './MissionModalSteps/MissionStep'
 import { WaypointProps, WaypointTableProps } from '../Tables/WaypointTable'
 import { WaypointStep } from './MissionModalSteps/WaypointStep'
 import { ExtraButton } from '../Modal/Footer'
+import { WaypointSummary } from './MissionModalSteps/WaypointSummary'
 
 export interface MissionModalProps
   extends Omit<StepProgressProps, 'steps'>,
@@ -56,6 +57,9 @@ export const MissionModal: React.FC<MissionModalProps> = ({
   const [selectedMissionId, setSelectedMissionId] =
     useState<string | null | undefined>(selectedId)
 
+  const [showSummary, setShowSummary] = useState(false)
+  const summarySteps = [1]
+
   const initialWaypoints = waypoints.map((waypoint) =>
     (waypoint.lat || waypoint.lon) && !waypoint.stationName
       ? { ...waypoint, stationName: 'Custom' }
@@ -65,7 +69,7 @@ export const MissionModal: React.FC<MissionModalProps> = ({
   const [updatedWaypoints, setUpdatedWaypoints] =
     useState<WaypointProps[]>(initialWaypoints)
 
-  const handleUpdate = (newWaypoints: WaypointProps[]) => {
+  const handleWaypointsUpdate = (newWaypoints: WaypointProps[]) => {
     setUpdatedWaypoints(newWaypoints)
   }
 
@@ -80,9 +84,23 @@ export const MissionModal: React.FC<MissionModalProps> = ({
   )
 
   const handleNext = () => {
+    // Next button triggers an interstitial summary screen instead of moving to the next step if the step has one
+    if (summarySteps.includes(currentStep) && !showSummary) {
+      setShowSummary(true)
+      return
+    }
+    // showSummary flag is set back to false until next summary screen needs to be triggered
+    showSummary && setShowSummary(false)
+
     return setCurrentStep(currentStep + 1)
   }
   const handlePrevious = () => {
+    // if the user is on a summary screen the Previous button will trigger the step associated with the summary, instead of moving back to the previous step (ie step 2 summary goes back to step 2 form, instead of back to step 1)
+    if (showSummary) {
+      setShowSummary(false)
+      return
+    }
+
     if (currentStep > 0) {
       return setCurrentStep(currentStep - 1)
     }
@@ -158,7 +176,16 @@ export const MissionModal: React.FC<MissionModalProps> = ({
           />
         )
       case 1:
-        return (
+        return showSummary ? (
+          <WaypointSummary
+            waypoints={updatedWaypoints}
+            vehicleName={vehicleName}
+            totalDistance={totalDistance}
+            bottomDepth={bottomDepth}
+            duration={duration}
+            mission={getMissionName()}
+          />
+        ) : (
           <WaypointStep
             waypoints={updatedWaypoints}
             stations={stations}
@@ -168,7 +195,7 @@ export const MissionModal: React.FC<MissionModalProps> = ({
             duration={duration}
             mission={getMissionName()}
             onRefreshStats={onRefreshStats}
-            onUpdate={handleUpdate}
+            onUpdate={handleWaypointsUpdate}
             onNaNall={handleNaNwaypoints}
             onResetAll={handleResetWaypoints}
           />
