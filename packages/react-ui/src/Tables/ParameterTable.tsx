@@ -5,18 +5,21 @@ import { ParameterField } from './ParameterField'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { faInfoCircle } from '@fortawesome/pro-regular-svg-icons'
 import { IconProp } from '@fortawesome/fontawesome-svg-core'
+import { makeValueUnitString } from '@mbari/utils'
 
 export interface ParameterTableProps {
   className?: string
   style?: React.CSSProperties
-  parameters: Parameter[]
-  onVerifyValue: (value: string) => string
+  parameters: ParameterProps[]
+  onParamUpdate: (name: string, newOverrideValue: string) => void
+  onVerifyValue?: (value: string) => string
 }
 
-interface Parameter {
+export interface ParameterProps {
   name: string
-  description: string
-  defaultValue: string
+  description?: string
+  value: string
+  unit?: string
   dvlOff?: boolean
   overrideValue?: string
 }
@@ -25,10 +28,15 @@ export const ParameterTable: React.FC<ParameterTableProps> = ({
   className,
   style,
   parameters,
+  onParamUpdate,
   onVerifyValue,
 }) => {
   const ParameterRows = parameters.map(
-    ({ name, description, defaultValue, overrideValue, dvlOff }) => {
+    ({ name, description, value, unit, overrideValue, dvlOff }) => {
+      const handleOverride = (newValue: string) => {
+        onParamUpdate(name, newValue)
+      }
+
       return {
         cells: [
           {
@@ -47,12 +55,15 @@ export const ParameterTable: React.FC<ParameterTableProps> = ({
             secondary: (
               <span className="text-stone-600/60 ">{description}</span>
             ),
+            span: 2,
             highlighted: true, // removes scrollable table styles on this cell
           },
           {
             label: (
               <div>
-                <span className="text-stone-600/60">{defaultValue}</span>
+                <span className="text-stone-600/60">
+                  {makeValueUnitString(value, unit)}
+                </span>
                 {dvlOff && (
                   <span className="ml-4 text-orange-500/80">
                     DVL is off
@@ -70,10 +81,12 @@ export const ParameterTable: React.FC<ParameterTableProps> = ({
           {
             label: (
               <ParameterField
-                customValue={overrideValue}
+                overrideValue={overrideValue}
+                onOverride={handleOverride}
                 onVerifyValue={onVerifyValue}
               />
             ),
+            span: 2,
             highlighted: true,
             highlightedStyle: 'text-base text-teal-600',
           },
@@ -83,24 +96,26 @@ export const ParameterTable: React.FC<ParameterTableProps> = ({
   )
 
   return (
-    <div className={clsx('', className)} style={style}>
-      <Table
-        scrollable
-        grayHeader
-        header={{
-          cells: [
-            {
-              label: 'PARAMETER',
-            },
-            {
-              label: 'DEFAULT VALUE',
-            },
-            { label: 'OVERRIDE VALUE' },
-          ],
-        }}
-        rows={ParameterRows}
-      />
-    </div>
+    <Table
+      className={className}
+      style={style}
+      scrollable
+      grayHeader
+      colInRow={5}
+      header={{
+        cells: [
+          {
+            label: 'PARAMETER',
+            span: 2,
+          },
+          {
+            label: 'DEFAULT VALUE',
+          },
+          { label: 'OVERRIDE VALUE', span: 2 },
+        ],
+      }}
+      rows={ParameterRows}
+    />
   )
 }
 
