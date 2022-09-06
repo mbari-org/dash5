@@ -21,16 +21,19 @@ const props: ParameterTableProps = {
       name: 'Repeat',
       description:
         'Number of times the vehicle should try to cycle through waypoints',
-      defaultValue: '1 count',
-      overrideValue: '2 counts',
+      value: '1',
+      unit: 'count',
+      overrideValue: '2',
     },
     {
       name: 'Speed',
       description: 'Speed while performing the YoYo behavior',
-      defaultValue: '1 meter_per_second',
+      value: '1',
+      unit: 'meter_per_second',
       dvlOff: true,
     },
   ],
+  onParamUpdate: (value) => console.log(value),
   onVerifyValue: (value) => value,
 }
 
@@ -46,14 +49,16 @@ test('should display parameter name', async () => {
 test('should display parameter description', async () => {
   render(<ParameterTable {...props} />)
   expect(
-    screen.queryByText(props.parameters[0].description)
+    screen.queryByText(`${props.parameters[0].description}`)
   ).toBeInTheDocument()
 })
 
 test("should display the parameter's default value", async () => {
   render(<ParameterTable {...props} />)
   expect(
-    screen.queryByText(props.parameters[0].defaultValue)
+    screen.queryByText(
+      `${props.parameters[0].value} ${props.parameters[0].unit}`
+    )
   ).toBeInTheDocument()
 })
 

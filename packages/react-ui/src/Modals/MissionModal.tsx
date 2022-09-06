@@ -10,6 +10,8 @@ import { WaypointProps, WaypointTableProps } from '../Tables/WaypointTable'
 import { WaypointStep } from './MissionModalSteps/WaypointStep'
 import { ExtraButton } from '../Modal/Footer'
 import { WaypointSummary } from './MissionModalSteps/WaypointSummary'
+import { ParameterStep } from './MissionModalSteps/ParameterStep'
+import { ParameterProps } from '../Tables/ParameterTable'
 
 export interface MissionModalProps
   extends Omit<StepProgressProps, 'steps'>,
@@ -22,9 +24,11 @@ export interface MissionModalProps
   totalDistance?: string
   bottomDepth?: string
   duration?: string
+  parameters: ParameterProps[]
   onRefreshStats?: () => void
   onSchedule?: () => void
   onCancel?: () => void
+  onVerifyParameter?: (param: string) => string
 }
 
 export const MissionModal: React.FC<MissionModalProps> = ({
@@ -40,9 +44,11 @@ export const MissionModal: React.FC<MissionModalProps> = ({
   totalDistance,
   bottomDepth,
   duration,
+  parameters,
   onRefreshStats,
   onSchedule,
   onCancel,
+  onVerifyParameter,
 }) => {
   const steps = [
     'Mission',
@@ -71,6 +77,18 @@ export const MissionModal: React.FC<MissionModalProps> = ({
 
   const handleWaypointsUpdate = (newWaypoints: WaypointProps[]) => {
     setUpdatedWaypoints(newWaypoints)
+  }
+
+  const [updatedParameters, setUpdatedParameters] =
+    useState<ParameterProps[]>(parameters)
+
+  const handleParamUpdate = (name: string, newOverrideValue: string) => {
+    const newParameters = updatedParameters.map((param) =>
+      param.name === name
+        ? { ...param, overrideValue: newOverrideValue }
+        : param
+    )
+    setUpdatedParameters(newParameters)
   }
 
   const isLastStep = currentStep === steps.length - 1
@@ -198,6 +216,17 @@ export const MissionModal: React.FC<MissionModalProps> = ({
             onUpdate={handleWaypointsUpdate}
             onNaNall={handleNaNwaypoints}
             onResetAll={handleResetWaypoints}
+          />
+        )
+
+      case 2:
+        return (
+          <ParameterStep
+            vehicleName={vehicleName}
+            mission={getMissionName()}
+            parameters={updatedParameters || []}
+            onVerifyValue={onVerifyParameter}
+            onParamUpdate={handleParamUpdate}
           />
         )
 

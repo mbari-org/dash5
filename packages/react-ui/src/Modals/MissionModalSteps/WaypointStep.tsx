@@ -63,12 +63,13 @@ export const WaypointStep: React.FC<WaypointStepProps> = ({
         </li>
       </ul>
       <WaypointTable
+        className="max-h-[calc(100%-80px)]"
         waypoints={waypoints}
         stations={stations}
         onUpdate={onUpdate}
         grayHeader
       />
-      <ul className="mr-4 flex items-center justify-end">
+      <ul className="mr-4 mt-2 flex items-center justify-end">
         <li className="rounded border-2 border-stone-300/60">
           <IconButton
             icon={faSync}

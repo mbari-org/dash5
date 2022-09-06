@@ -236,9 +236,9 @@ export const WaypointTable: React.FC<WaypointTableProps> = ({
   })
 
   return (
-    <article className={clsx('bg-white p-2', className)} style={style}>
+    <>
       {typeof focusWaypointIndex === 'number' ? (
-        <ul>
+        <ul className="bg-white p-2">
           <li className="py-2 pl-8 font-semibold">
             Place the location pin to set Lat{focusWaypointIndex + 1}/Lon
             {focusWaypointIndex + 1}
@@ -262,6 +262,8 @@ export const WaypointTable: React.FC<WaypointTableProps> = ({
         </ul>
       ) : (
         <Table
+          className={className}
+          style={style}
           header={{
             cells: [
               { label: 'WAYPOINTS' },
@@ -276,7 +278,7 @@ export const WaypointTable: React.FC<WaypointTableProps> = ({
           grayHeader={grayHeader}
         />
       )}
-    </article>
+    </>
   )
 }
 

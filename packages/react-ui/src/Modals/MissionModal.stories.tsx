@@ -5,6 +5,7 @@ import { MissionModal, MissionModalProps } from './MissionModal'
 import { MissionTableProps } from '../Tables/MissionTable'
 import { WaypointTableProps } from '../Tables/WaypointTable'
 import { makeOrdinal } from '@mbari/utils'
+import { ParameterProps } from '../Tables/ParameterTable'
 
 export default {
   title: 'Modals/MissionModal',
@@ -130,6 +131,70 @@ const waypointTableArgs: WaypointTableProps = {
   },
 }
 
+const parameters: ParameterProps[] = [
+  {
+    description: '\n        Maximum duration of mission\n    ',
+    name: 'MissionTimeout',
+    unit: 'hour',
+    value: '24',
+  },
+  {
+    description:
+      '\n        Transit surface communications. Elapsed time after previous surface\n        comms when vehicle will begin to ascend for additional surface\n        communications\n    ',
+    name: 'NeedCommsTime',
+    unit: 'minute',
+    value: '45',
+    overrideValue: '35',
+  },
+  {
+    description:
+      '\n        Number of times to repeat the waypoint trajectory. NOTE: When setting\n        the LapRepeat > 1 and running WPs in a loop, omit last/return waypoint\n        by setting LatX/LonX to NaN.\n    ',
+    name: 'LapRepeat',
+    unit: 'count',
+    value: '1',
+  },
+  {
+    description:
+      '\n        Waypoint number to start the the waypoint trajectory with. The mission\n        will start with the specified waypoint and cycle through all the\n        subsequent waypoints.\n    ',
+    name: 'StartWaypoint',
+    unit: 'count',
+    value: '1',
+    overrideValue: '2',
+  },
+  {
+    description:
+      '\n        Minimum YoYo depth while transiting to waypoint.\n    ',
+    name: 'TransitYoYoMinDepth',
+    unit: 'meter',
+    value: '5',
+  },
+  {
+    description:
+      '\n        Maximum YoYo depth while while transiting to waypoint.\n    ',
+    name: 'TransitYoYoMaxDepth',
+    unit: 'meter',
+    value: '50',
+  },
+  {
+    description: '\n        Turns on peak detection of Cholorphyll.\n    ',
+    name: 'PeakDetectChlActive',
+    value: 'False',
+  },
+  {
+    description:
+      '\n        If greater than zero, report a peak every window. If NaN or zero, this\n        variable is ignored.\n    ',
+    name: 'TimeWindowPeakReport',
+    unit: 'minute',
+    value: 'NaN',
+  },
+  {
+    description:
+      '\n        Turns on reporting of the highest peak value of chlorophyll on yo-yo\n        profiles in a horizontal sliding window (of length\n        numProfilesSlidingwindow)\n    ',
+    name: 'HighestChlPeakReportActive',
+    value: 'False',
+  },
+]
+
 const args = {
   currentIndex: 0,
   vehicleName: 'Brizo',
@@ -172,6 +237,7 @@ const args = {
   ],
   onCancel: () => console.log('cancel'),
   onSchedule: () => console.log('scheduled'),
+  parameters: parameters,
   ...missionTableArgs,
   ...waypointTableArgs,
 }
@@ -190,6 +256,16 @@ export const Waypoint = Template.bind({})
 Waypoint.args = { ...args, currentIndex: 1, selectedId: '1' }
 
 Waypoint.parameters = {
+  design: {
+    type: 'figma',
+    url: 'https://www.figma.com/file/FtsKsOCBQ2YjTZlwezG6aI/MBARI-Components?node-id=6574%3A889',
+  },
+}
+
+export const Parameter = Template.bind({})
+Parameter.args = { ...args, currentIndex: 2, selectedId: '1' }
+
+Parameter.parameters = {
   design: {
     type: 'figma',
     url: 'https://www.figma.com/file/FtsKsOCBQ2YjTZlwezG6aI/MBARI-Components?node-id=6574%3A889',
