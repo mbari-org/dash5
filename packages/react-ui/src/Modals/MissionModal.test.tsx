@@ -3,6 +3,18 @@ import { fireEvent, render, screen } from '@testing-library/react'
 import '@testing-library/jest-dom'
 import { MissionModal, MissionModalProps } from './MissionModal'
 
+jest.mock('../assets/ruler-dark.png', () => {
+  return {
+    default: 'fake.png',
+  }
+})
+
+jest.mock('../assets/ruler-light.png', () => {
+  return {
+    default: 'fake.png',
+  }
+})
+
 const props: MissionModalProps = {
   currentIndex: 0,
   vehicleName: 'Brizo',
@@ -87,6 +99,69 @@ const props: MissionModalProps = {
   onFocusWaypoint: (index) => {
     console.log(index)
   },
+  parameters: [
+    {
+      description: '\n        Maximum duration of mission\n    ',
+      name: 'MissionTimeout',
+      unit: 'hour',
+      value: '24',
+    },
+    {
+      description:
+        '\n        Transit surface communications. Elapsed time after previous surface\n        comms when vehicle will begin to ascend for additional surface\n        communications\n    ',
+      name: 'NeedCommsTime',
+      unit: 'minute',
+      value: '45',
+      overrideValue: '35',
+    },
+    {
+      description:
+        '\n        Number of times to repeat the waypoint trajectory. NOTE: When setting\n        the LapRepeat > 1 and running WPs in a loop, omit last/return waypoint\n        by setting LatX/LonX to NaN.\n    ',
+      name: 'LapRepeat',
+      unit: 'count',
+      value: '1',
+    },
+    {
+      description:
+        '\n        Waypoint number to start the the waypoint trajectory with. The mission\n        will start with the specified waypoint and cycle through all the\n        subsequent waypoints.\n    ',
+      name: 'StartWaypoint',
+      unit: 'count',
+      value: '1',
+      overrideValue: '2',
+    },
+    {
+      description:
+        '\n        Minimum YoYo depth while transiting to waypoint.\n    ',
+      name: 'TransitYoYoMinDepth',
+      unit: 'meter',
+      value: '5',
+    },
+    {
+      description:
+        '\n        Maximum YoYo depth while while transiting to waypoint.\n    ',
+      name: 'TransitYoYoMaxDepth',
+      unit: 'meter',
+      value: '50',
+    },
+    {
+      description: '\n        Turns on peak detection of Cholorphyll.\n    ',
+      name: 'PeakDetectChlActive',
+      value: 'False',
+    },
+    {
+      description:
+        '\n        If greater than zero, report a peak every window. If NaN or zero, this\n        variable is ignored.\n    ',
+      name: 'TimeWindowPeakReport',
+      unit: 'minute',
+      value: 'NaN',
+    },
+    {
+      description:
+        '\n        Turns on reporting of the highest peak value of chlorophyll on yo-yo\n        profiles in a horizontal sliding window (of length\n        numProfilesSlidingwindow)\n    ',
+      name: 'HighestChlPeakReportActive',
+      value: 'False',
+    },
+  ],
 }
 
 test('should render the component', async () => {
@@ -150,4 +225,25 @@ test('should display Waypoint Summary when Next button is clicked after selectin
   fireEvent.click(nextButton)
 
   expect(screen.queryByText(/Summary of Waypoints/i)).toBeInTheDocument()
+})
+
+// Parameters: Step 3 tests
+test('should display parameter names', async () => {
+  render(<MissionModal {...props} currentIndex={2} />)
+  expect(screen.queryByText(props.parameters[0].name)).toBeInTheDocument()
+})
+
+test('should display parameter descriptions', async () => {
+  render(<MissionModal {...props} currentIndex={2} />)
+  const descriptWithBreaks = props.parameters[0]?.description
+  const descript = descriptWithBreaks?.replace('\n', '').trim()
+
+  expect(screen.queryByText(`${descript}`)).toBeInTheDocument()
+})
+
+test('should display default values', async () => {
+  render(<MissionModal {...props} currentIndex={2} />)
+  // test assumes value !== 1 and adds 's' to unit
+  const defaultValue = `${props.parameters[0].value} ${props.parameters[0]?.unit}s`
+  expect(screen.queryByText(defaultValue)).toBeInTheDocument()
 })
