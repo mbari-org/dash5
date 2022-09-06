@@ -59,15 +59,12 @@ export const ParameterStep: React.FC<ParameterStepProps> = ({
     switch (id) {
       case 'Contains Overrides':
         setFilteredParameters(overrideSort)
-        console.log(filteredParameters)
         return
       case 'No Overrides':
         setFilteredParameters(noOverrideSort)
-        console.log(filteredParameters)
         return
       default:
         setFilteredParameters(originalOrder)
-        console.log(filteredParameters)
         return
     }
   }
