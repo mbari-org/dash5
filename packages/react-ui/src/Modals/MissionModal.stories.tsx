@@ -195,6 +195,50 @@ const parameters: ParameterProps[] = [
   },
 ]
 
+const safetyParams: ParameterProps[] = [
+  {
+    description: '\n        Maximum duration of mission\n    ',
+    name: 'MissionTimeout',
+    unit: 'hour',
+    value: '2',
+  },
+  {
+    description: '\n        Maximum allowable depth during the mission\n    ',
+    name: 'MaxDepth',
+    unit: 'meter',
+    value: '200',
+  },
+  {
+    description:
+      '\n        Minimum allowable altitude during the mission\n    ',
+    name: 'MinAltitude',
+    unit: 'meter',
+    value: '200',
+  },
+  {
+    description: '\n        Minimum distance from shore to maintain\n    ',
+    name: 'MinOffshore',
+    unit: 'meter',
+    value: '2000',
+  },
+]
+
+const commsParams: ParameterProps[] = [
+  {
+    description: '\n        How often to surface for communications\n    ',
+    name: 'NeedCommsTime',
+    unit: 'minute',
+    value: '60',
+  },
+  {
+    description:
+      '\n        Elapsed time after most recent surfacing when vehicle will\n        begin to ascend to the surface again. The timing is actually...\n',
+    name: 'DiveInterval',
+    unit: 'hour',
+    value: '3',
+  },
+]
+
 const args = {
   currentIndex: 0,
   vehicleName: 'Brizo',
@@ -237,7 +281,9 @@ const args = {
   ],
   onCancel: () => console.log('cancel'),
   onSchedule: () => console.log('scheduled'),
-  parameters: parameters,
+  parameters,
+  safetyParams,
+  commsParams,
   ...missionTableArgs,
   ...waypointTableArgs,
 }
@@ -266,6 +312,16 @@ export const Parameter = Template.bind({})
 Parameter.args = { ...args, currentIndex: 2, selectedId: '1' }
 
 Parameter.parameters = {
+  design: {
+    type: 'figma',
+    url: 'https://www.figma.com/file/FtsKsOCBQ2YjTZlwezG6aI/MBARI-Components?node-id=6574%3A889',
+  },
+}
+
+export const SafetyComms = Template.bind({})
+SafetyComms.args = { ...args, currentIndex: 3, selectedId: '1' }
+
+SafetyComms.parameters = {
   design: {
     type: 'figma',
     url: 'https://www.figma.com/file/FtsKsOCBQ2YjTZlwezG6aI/MBARI-Components?node-id=6574%3A889',

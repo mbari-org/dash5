@@ -121,45 +121,34 @@ const props: MissionModalProps = {
       unit: 'count',
       value: '1',
     },
+  ],
+  commsParams: [
     {
-      description:
-        '\n        Waypoint number to start the the waypoint trajectory with. The mission\n        will start with the specified waypoint and cycle through all the\n        subsequent waypoints.\n    ',
-      name: 'StartWaypoint',
-      unit: 'count',
-      value: '1',
-      overrideValue: '2',
-    },
-    {
-      description:
-        '\n        Minimum YoYo depth while transiting to waypoint.\n    ',
-      name: 'TransitYoYoMinDepth',
-      unit: 'meter',
-      value: '5',
-    },
-    {
-      description:
-        '\n        Maximum YoYo depth while while transiting to waypoint.\n    ',
-      name: 'TransitYoYoMaxDepth',
-      unit: 'meter',
-      value: '50',
-    },
-    {
-      description: '\n        Turns on peak detection of Cholorphyll.\n    ',
-      name: 'PeakDetectChlActive',
-      value: 'False',
-    },
-    {
-      description:
-        '\n        If greater than zero, report a peak every window. If NaN or zero, this\n        variable is ignored.\n    ',
-      name: 'TimeWindowPeakReport',
+      description: '\n        How often to surface for communications\n    ',
+      name: 'NeedCommsTime',
       unit: 'minute',
-      value: 'NaN',
+      value: '60',
     },
     {
       description:
-        '\n        Turns on reporting of the highest peak value of chlorophyll on yo-yo\n        profiles in a horizontal sliding window (of length\n        numProfilesSlidingwindow)\n    ',
-      name: 'HighestChlPeakReportActive',
-      value: 'False',
+        '\n        Elapsed time after most recent surfacing when vehicle will\n        begin to ascend to the surface again. The timing is actually...\n',
+      name: 'DiveInterval',
+      unit: 'hour',
+      value: '3',
+    },
+  ],
+  safetyParams: [
+    {
+      description: '\n        Maximum duration of mission\n    ',
+      name: 'MissionTimeout',
+      unit: 'hour',
+      value: '2',
+    },
+    {
+      description: '\n        Maximum allowable depth during the mission\n    ',
+      name: 'MaxDepth',
+      unit: 'meter',
+      value: '200',
     },
   ],
 }
@@ -254,4 +243,29 @@ test('should display Parameters Summary when Next button is clicked after select
   fireEvent.click(nextButton)
 
   expect(screen.queryByText(/Summary of overrides/i)).toBeInTheDocument()
+})
+
+// Safety and Comms Parameters: Step 4 tests
+test('should display safety parameter names', async () => {
+  render(<MissionModal {...props} currentIndex={3} />)
+  expect(screen.queryByText(props.safetyParams[0].name)).toBeInTheDocument()
+})
+
+test('should display comms parameter names', async () => {
+  render(<MissionModal {...props} currentIndex={3} />)
+  expect(screen.queryByText(props.commsParams[0].name)).toBeInTheDocument()
+})
+
+test('should display safety parameter default values', async () => {
+  render(<MissionModal {...props} currentIndex={3} />)
+  // test assumes value !== 1 and adds 's' to unit
+  const defaultValue = `${props.safetyParams[0].value} ${props.safetyParams[0]?.unit}s`
+  expect(screen.queryByText(defaultValue)).toBeInTheDocument()
+})
+
+test('should display comms parameter default values', async () => {
+  render(<MissionModal {...props} currentIndex={3} />)
+  // test assumes value !== 1 and adds 's' to unit
+  const defaultValue = `${props.commsParams[0].value} ${props.commsParams[0]?.unit}s`
+  expect(screen.queryByText(defaultValue)).toBeInTheDocument()
 })
