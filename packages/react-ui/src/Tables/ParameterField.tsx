@@ -24,7 +24,7 @@ export const ParameterField: React.FC<ParameterFieldProps> = ({
   onOverride,
   onVerifyValue,
 }) => {
-  const [inputValue, setInputValue] = useState(overrideValue)
+  const [inputValue, setInputValue] = useState(overrideValue ?? '')
 
   const handleOverride = (newValue: string) => {
     onOverride(newValue)
