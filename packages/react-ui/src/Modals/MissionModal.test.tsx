@@ -247,3 +247,11 @@ test('should display default values', async () => {
   const defaultValue = `${props.parameters[0].value} ${props.parameters[0]?.unit}s`
   expect(screen.queryByText(defaultValue)).toBeInTheDocument()
 })
+
+test('should display Parameters Summary when Next button is clicked after selecting parameterss', async () => {
+  render(<MissionModal {...props} currentIndex={2} />)
+  const nextButton = screen.getByRole('button', { name: 'Next' })
+  fireEvent.click(nextButton)
+
+  expect(screen.queryByText(/Summary of overrides/i)).toBeInTheDocument()
+})

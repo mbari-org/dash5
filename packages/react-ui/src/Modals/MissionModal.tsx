@@ -12,6 +12,7 @@ import { ExtraButton } from '../Modal/Footer'
 import { WaypointSummary } from './MissionModalSteps/WaypointSummary'
 import { ParameterStep } from './MissionModalSteps/ParameterStep'
 import { ParameterProps } from '../Tables/ParameterTable'
+import { ParameterSummary } from './MissionModalSteps/ParameterSummary'
 
 export interface MissionModalProps
   extends Omit<StepProgressProps, 'steps'>,
@@ -64,7 +65,7 @@ export const MissionModal: React.FC<MissionModalProps> = ({
     useState<string | null | undefined>(selectedId)
 
   const [showSummary, setShowSummary] = useState(false)
-  const summarySteps = [1]
+  const summarySteps = [1, 2]
 
   const initialWaypoints = waypoints.map((waypoint) =>
     (waypoint.lat || waypoint.lon) && !waypoint.stationName
@@ -220,10 +221,26 @@ export const MissionModal: React.FC<MissionModalProps> = ({
         )
 
       case 2:
-        return (
+        return showSummary ? (
+          <ParameterSummary
+            vehicleName={vehicleName}
+            mission={getMissionName()}
+            parameters={
+              updatedParameters.filter((param) => param.overrideValue) || []
+            }
+            totalDistance={totalDistance}
+            bottomDepth={bottomDepth}
+            duration={duration}
+            onVerifyValue={onVerifyParameter}
+            onParamUpdate={handleParamUpdate}
+          />
+        ) : (
           <ParameterStep
             vehicleName={vehicleName}
             mission={getMissionName()}
+            totalDistance={totalDistance}
+            bottomDepth={bottomDepth}
+            duration={duration}
             parameters={updatedParameters || []}
             onVerifyValue={onVerifyParameter}
             onParamUpdate={handleParamUpdate}
