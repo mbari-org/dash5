@@ -11,6 +11,7 @@ export interface ParameterTableProps {
   className?: string
   style?: React.CSSProperties
   parameters: ParameterProps[]
+  altHeaderLabel?: string
   onParamUpdate: (name: string, newOverrideValue: string) => void
   onVerifyValue?: (value: string) => string
 }
@@ -28,6 +29,7 @@ export const ParameterTable: React.FC<ParameterTableProps> = ({
   className,
   style,
   parameters,
+  altHeaderLabel,
   onParamUpdate,
   onVerifyValue,
 }) => {
@@ -105,7 +107,7 @@ export const ParameterTable: React.FC<ParameterTableProps> = ({
       header={{
         cells: [
           {
-            label: 'PARAMETER',
+            label: altHeaderLabel ?? 'PARAMETER',
             span: 2,
           },
           {
