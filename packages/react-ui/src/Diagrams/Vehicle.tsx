@@ -20,6 +20,7 @@ import { Cart } from './VehicleAssets/Cart'
 import { Heading } from './VehicleAssets/Heading'
 import { ArriveInfo } from './VehicleAssets/ArriveInfo'
 import { ErrorLabel } from './VehicleAssets/ErrorLabel'
+import { Leak } from './VehicleAssets/Leak'
 import { Note } from './VehicleAssets/Note'
 
 export interface VehicleProps {
@@ -96,6 +97,9 @@ export interface VehicleProps {
   textNoteTime?: string
   colorFlow?: string
   textFlow?: string
+  colorLeak?: string
+  textLeak?: string
+  textLeakAgo?: string
 }
 
 export const Vehicle: React.FC<VehicleProps> = ({
@@ -156,6 +160,9 @@ export const Vehicle: React.FC<VehicleProps> = ({
   colorScheduled = 'st1',
   colorCart = 'st18',
   colorCartCircle = 'st18',
+  colorLeak = 'st18',
+  textLeak,
+  textLeakAgo,
   textLogTime,
   textLogAgo,
   textArriveLabel = 'Arrive Station',
@@ -340,6 +347,12 @@ export const Vehicle: React.FC<VehicleProps> = ({
         />
 
         <Note textNote={textNote} textNoteTime={textNoteTime} />
+
+        <Leak
+          textLeak={textLeak}
+          textLeakAgo={textLeakAgo}
+          colorLeak={colorLeak}
+        />
 
         {/* <!--pontus specific but can be made invisible--> */}
         <circle

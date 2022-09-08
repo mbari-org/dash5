@@ -17,6 +17,7 @@ import { VehicleProps } from './Vehicle'
 import { useResizeObserver } from '@mbari/utils'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { faArrowUp } from '@fortawesome/pro-light-svg-icons'
+import { Leak } from './VehicleAssets/Leak'
 
 interface FullWidthVehicleDiagramProps extends VehicleProps {
   vehicleWidth?: number
@@ -66,6 +67,9 @@ export const FullWidthVehicleDiagram: React.FC<FullWidthVehicleDiagramProps> =
     colorBat6 = 'st3',
     colorBat7 = 'st3',
     colorBat8 = 'st3',
+    colorLeak = 'st18',
+    textLeak,
+    textLeakAgo,
     textVolts,
     textAmps,
     textAmpAgo,
@@ -224,6 +228,11 @@ export const FullWidthVehicleDiagram: React.FC<FullWidthVehicleDiagramProps> =
             />
 
             <Note textNote={textNote} textNoteTime={textNoteTime} />
+            <Leak
+              textLeak={textLeak}
+              textLeakAgo={textLeakAgo}
+              colorLeak={colorLeak}
+            />
           </g>
         </svg>
         <svg
