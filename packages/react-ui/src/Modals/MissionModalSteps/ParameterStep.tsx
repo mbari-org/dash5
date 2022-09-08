@@ -2,8 +2,9 @@ import React, { useEffect, useState } from 'react'
 import { SelectOption } from '../../Fields/Select'
 import { Input, SelectField } from '../../Fields'
 import { ParameterTable, ParameterProps } from '../../Tables/ParameterTable'
+import { StatDisplay, StatProps } from './StatDisplay'
 
-export interface ParameterStepProps {
+export interface ParameterStepProps extends StatProps {
   vehicleName: string
   mission: string
   parameters: ParameterProps[]
@@ -15,6 +16,9 @@ export const ParameterStep: React.FC<ParameterStepProps> = ({
   vehicleName,
   mission,
   parameters,
+  totalDistance,
+  bottomDepth,
+  duration,
   onVerifyValue,
   onParamUpdate,
 }) => {
@@ -118,10 +122,15 @@ export const ParameterStep: React.FC<ParameterStepProps> = ({
       </section>
 
       <ParameterTable
-        className="max-h-[calc(100%-110px)]"
+        className="max-h-[calc(100%-140px)]"
         parameters={filteredParameters}
         onParamUpdate={onParamUpdate}
         onVerifyValue={onVerifyValue}
+      />
+      <StatDisplay
+        totalDistance={totalDistance}
+        bottomDepth={bottomDepth}
+        duration={duration}
       />
     </article>
   )

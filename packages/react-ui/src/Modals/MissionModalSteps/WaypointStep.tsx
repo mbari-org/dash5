@@ -1,13 +1,12 @@
-import { faSync } from '@fortawesome/pro-solid-svg-icons'
 import clsx from 'clsx'
 import React from 'react'
-import { IconButton } from '../../Navigation/IconButton'
 
 import {
   WaypointProps,
   WaypointTable,
   WaypointTableProps,
 } from '../../Tables/WaypointTable'
+import { StatDisplay } from './StatDisplay'
 
 export interface WaypointStepProps extends WaypointTableProps {
   vehicleName: string
@@ -23,7 +22,6 @@ export interface WaypointStepProps extends WaypointTableProps {
 
 const styles = {
   resetButtons: 'text-purple-500 w-fit mr-4',
-  stats: 'text-stone-400 ml-4',
 }
 
 export const WaypointStep: React.FC<WaypointStepProps> = ({
@@ -69,23 +67,12 @@ export const WaypointStep: React.FC<WaypointStepProps> = ({
         onUpdate={onUpdate}
         grayHeader
       />
-      <ul className="mr-4 mt-2 flex items-center justify-end">
-        <li className="rounded border-2 border-stone-300/60">
-          <IconButton
-            icon={faSync}
-            ariaLabel="refresh stats"
-            size="text-2xl"
-            onClick={onRefreshStats}
-          />
-        </li>
-        <li className={styles.stats}>
-          Total distance: {totalDistance ?? '---'}
-        </li>
-        <li className={styles.stats}>
-          Est. bottom depth: {bottomDepth ?? '---'}
-        </li>
-        <li className={styles.stats}>Est. duration: {duration ?? '---'}</li>
-      </ul>
+      <StatDisplay
+        totalDistance={totalDistance}
+        bottomDepth={bottomDepth}
+        duration={duration}
+        onRefreshStats={onRefreshStats}
+      />
     </article>
   )
 }
