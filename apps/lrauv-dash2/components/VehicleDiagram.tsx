@@ -107,6 +107,9 @@ const VehicleDiagram: React.FC<{
             ? 'pluggedIn'
             : 'onMission'
         }
+        colorLeak={vehicle?.color_leak}
+        textLeakAgo={vehicle?.text_leakago}
+        textLeak={vehicle?.text_leak}
       />
     </div>
   )
