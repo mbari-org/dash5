@@ -161,7 +161,7 @@ export const SafetyCommsStep: React.FC<SafetyCommsProps> = ({
 
       <section className="h-[calc(90%-50px)]">
         <ParameterTable
-          className="mb-4 max-h-[calc(50%-30px)]"
+          className="mb-4 max-h-[calc(50%-30px)] min-h-[100px]"
           altHeaderLabel="SAFETY PARAMETERS"
           parameters={filteredSafetyParams}
           onParamUpdate={onSafetyUpdate}
@@ -169,7 +169,7 @@ export const SafetyCommsStep: React.FC<SafetyCommsProps> = ({
         />
 
         <ParameterTable
-          className="max-h-[calc(50%-30px)]"
+          className="max-h-[calc(50%-30px)] min-h-[100px]"
           altHeaderLabel="COMMS PARAMETERS"
           parameters={filteredCommsParams}
           onParamUpdate={onCommsUpdate}
