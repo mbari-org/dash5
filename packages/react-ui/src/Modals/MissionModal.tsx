@@ -13,6 +13,7 @@ import { WaypointSummary } from './MissionModalSteps/WaypointSummary'
 import { ParameterStep } from './MissionModalSteps/ParameterStep'
 import { ParameterProps } from '../Tables/ParameterTable'
 import { ParameterSummary } from './MissionModalSteps/ParameterSummary'
+import { SafetyCommsStep } from './MissionModalSteps/SafetyCommsStep'
 
 export interface MissionModalProps
   extends Omit<StepProgressProps, 'steps'>,
@@ -26,6 +27,8 @@ export interface MissionModalProps
   bottomDepth?: string
   duration?: string
   parameters: ParameterProps[]
+  safetyParams: ParameterProps[]
+  commsParams: ParameterProps[]
   onRefreshStats?: () => void
   onSchedule?: () => void
   onCancel?: () => void
@@ -46,6 +49,8 @@ export const MissionModal: React.FC<MissionModalProps> = ({
   bottomDepth,
   duration,
   parameters,
+  safetyParams,
+  commsParams,
   onRefreshStats,
   onSchedule,
   onCancel,
@@ -82,14 +87,48 @@ export const MissionModal: React.FC<MissionModalProps> = ({
 
   const [updatedParameters, setUpdatedParameters] =
     useState<ParameterProps[]>(parameters)
+  const [updatedSafetyParams, setUpdatedSafetyParams] =
+    useState<ParameterProps[]>(safetyParams)
+  const [updatedCommsParams, setUpdatedCommsParams] =
+    useState<ParameterProps[]>(commsParams)
 
-  const handleParamUpdate = (name: string, newOverrideValue: string) => {
-    const newParameters = updatedParameters.map((param) =>
+  const updateParams = (
+    params: ParameterProps[],
+    name: string,
+    newOverrideValue: string
+  ) => {
+    return params.map((param) =>
       param.name === name
         ? { ...param, overrideValue: newOverrideValue }
         : param
     )
+  }
+
+  const handleParamUpdate = (name: string, newOverrideValue: string) => {
+    const newParameters = updateParams(
+      updatedParameters,
+      name,
+      newOverrideValue
+    )
     setUpdatedParameters(newParameters)
+  }
+
+  const handleSafetyUpdate = (name: string, newOverrideValue: string) => {
+    const newSafetyParams = updateParams(
+      updatedSafetyParams,
+      name,
+      newOverrideValue
+    )
+    setUpdatedSafetyParams(newSafetyParams)
+  }
+
+  const handleCommsUpdate = (name: string, newOverrideValue: string) => {
+    const newCommsParams = updateParams(
+      updatedCommsParams,
+      name,
+      newOverrideValue
+    )
+    setUpdatedCommsParams(newCommsParams)
   }
 
   const isLastStep = currentStep === steps.length - 1
@@ -244,6 +283,21 @@ export const MissionModal: React.FC<MissionModalProps> = ({
             parameters={updatedParameters || []}
             onVerifyValue={onVerifyParameter}
             onParamUpdate={handleParamUpdate}
+          />
+        )
+
+      case 3:
+        return (
+          <SafetyCommsStep
+            vehicleName={vehicleName}
+            safetyParams={updatedSafetyParams}
+            commsParams={updatedCommsParams}
+            mission={getMissionName()}
+            totalDistance={totalDistance}
+            bottomDepth={bottomDepth}
+            duration={duration}
+            onSafetyUpdate={handleSafetyUpdate}
+            onCommsUpdate={handleCommsUpdate}
           />
         )
 
