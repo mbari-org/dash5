@@ -14,6 +14,7 @@ import { ParameterStep } from './MissionModalSteps/ParameterStep'
 import { ParameterProps } from '../Tables/ParameterTable'
 import { ParameterSummary } from './MissionModalSteps/ParameterSummary'
 import { SafetyCommsStep } from './MissionModalSteps/SafetyCommsStep'
+import { ReviewStep } from './MissionModalSteps/ReviewStep'
 
 export interface MissionModalProps
   extends Omit<StepProgressProps, 'steps'>,
@@ -298,6 +299,18 @@ export const MissionModal: React.FC<MissionModalProps> = ({
             duration={duration}
             onSafetyUpdate={handleSafetyUpdate}
             onCommsUpdate={handleCommsUpdate}
+          />
+        )
+
+      case 4:
+        return (
+          <ReviewStep
+            parameters={updatedParameters || []}
+            safetyCommsParams={updatedSafetyParams.concat(updatedCommsParams)}
+            waypoints={updatedWaypoints}
+            totalDistance={totalDistance}
+            bottomDepth={bottomDepth}
+            duration={duration}
           />
         )
 

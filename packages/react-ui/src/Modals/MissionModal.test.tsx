@@ -109,17 +109,10 @@ const props: MissionModalProps = {
     {
       description:
         '\n        Transit surface communications. Elapsed time after previous surface\n        comms when vehicle will begin to ascend for additional surface\n        communications\n    ',
-      name: 'NeedCommsTime',
+      name: 'SurfaceComms',
       unit: 'minute',
       value: '45',
       overrideValue: '35',
-    },
-    {
-      description:
-        '\n        Number of times to repeat the waypoint trajectory. NOTE: When setting\n        the LapRepeat > 1 and running WPs in a loop, omit last/return waypoint\n        by setting LatX/LonX to NaN.\n    ',
-      name: 'LapRepeat',
-      unit: 'count',
-      value: '1',
     },
   ],
   commsParams: [
@@ -140,7 +133,7 @@ const props: MissionModalProps = {
   safetyParams: [
     {
       description: '\n        Maximum duration of mission\n    ',
-      name: 'MissionTimeout',
+      name: 'MaxDuration',
       unit: 'hour',
       value: '2',
     },
@@ -268,4 +261,42 @@ test('should display comms parameter default values', async () => {
   // test assumes value !== 1 and adds 's' to unit
   const defaultValue = `${props.commsParams[0].value} ${props.commsParams[0]?.unit}s`
   expect(screen.queryByText(defaultValue)).toBeInTheDocument()
+})
+
+// Review: Step 4 tests
+test('should display review mission summary', async () => {
+  render(<MissionModal {...props} currentIndex={4} />)
+  expect(
+    screen.queryByText('Review mission summary: 1 waypoint and 1 override')
+  ).toBeInTheDocument()
+})
+
+test('should display safety parameters', async () => {
+  render(<MissionModal {...props} currentIndex={4} />)
+  expect(screen.queryByText(props.safetyParams[0].name)).toBeInTheDocument()
+})
+
+test('should display comms parameters', async () => {
+  render(<MissionModal {...props} currentIndex={4} />)
+  expect(screen.queryByText(props.commsParams[0].name)).toBeInTheDocument()
+})
+
+test('should display only mission parameters with overrides', async () => {
+  render(<MissionModal {...props} currentIndex={4} />)
+  expect(screen.queryByText(props.parameters[1].name)).toBeInTheDocument()
+  expect(screen.queryByText(props.parameters[0].name)).not.toBeInTheDocument()
+})
+
+test('should display only plotted waypoints (i.e. ones that do not have NaN as a value)', async () => {
+  render(<MissionModal {...props} currentIndex={4} />)
+  expect(
+    screen.queryByText(
+      `${props.waypoints[0].latName}/${props.waypoints[0].lonName}`
+    )
+  ).toBeInTheDocument()
+  expect(
+    screen.queryByText(
+      `${props.waypoints[1].latName}/${props.waypoints[1].lonName}`
+    )
+  ).not.toBeInTheDocument()
 })

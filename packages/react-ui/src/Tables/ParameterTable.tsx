@@ -57,7 +57,7 @@ export const ParameterTable: React.FC<ParameterTableProps> = ({
             secondary: (
               <span className="text-stone-600/60 ">{description}</span>
             ),
-            span: 2,
+            span: 3,
             highlighted: true, // removes scrollable table styles on this cell
           },
           {
@@ -77,6 +77,7 @@ export const ParameterTable: React.FC<ParameterTableProps> = ({
                 )}
               </div>
             ),
+            span: 2,
             highlighted: true,
             highlightedStyle: 'text-base',
           },
@@ -88,7 +89,7 @@ export const ParameterTable: React.FC<ParameterTableProps> = ({
                 onVerifyValue={onVerifyValue}
               />
             ),
-            span: 2,
+            span: 3,
             highlighted: true,
             highlightedStyle: 'text-base text-teal-600',
           },
@@ -103,17 +104,18 @@ export const ParameterTable: React.FC<ParameterTableProps> = ({
       style={style}
       scrollable
       grayHeader
-      colInRow={5}
+      colInRow={8}
       header={{
         cells: [
           {
             label: altHeaderLabel ?? 'PARAMETER',
-            span: 2,
+            span: 3,
           },
           {
             label: 'DEFAULT VALUE',
+            span: 2,
           },
-          { label: 'OVERRIDE VALUE', span: 2 },
+          { label: 'OVERRIDE VALUE', span: 3 },
         ],
       }}
       rows={ParameterRows}

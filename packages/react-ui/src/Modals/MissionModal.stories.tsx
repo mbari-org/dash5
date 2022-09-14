@@ -137,6 +137,7 @@ const parameters: ParameterProps[] = [
     name: 'MissionTimeout',
     unit: 'hour',
     value: '24',
+    dvlOff: true,
   },
   {
     description:
@@ -201,6 +202,7 @@ const safetyParams: ParameterProps[] = [
     name: 'MissionTimeout',
     unit: 'hour',
     value: '2',
+    dvlOff: true,
   },
   {
     description: '\n        Maximum allowable depth during the mission\n    ',
@@ -322,6 +324,36 @@ export const SafetyComms = Template.bind({})
 SafetyComms.args = { ...args, currentIndex: 3, selectedId: '1' }
 
 SafetyComms.parameters = {
+  design: {
+    type: 'figma',
+    url: 'https://www.figma.com/file/FtsKsOCBQ2YjTZlwezG6aI/MBARI-Components?node-id=6574%3A889',
+  },
+}
+
+const reviewWaypoints = Array(3)
+  .fill(0)
+  .map((_, index) => ({
+    latName: `Lat${index + 1}`,
+    lonName: `Lon${index + 1}`,
+    lat: `${33.333 + index}`,
+    lon: `${-141.111 + index}`,
+    stationName: `C${index + 1}`,
+    description: `Latitude of ${makeOrdinal(
+      index + 1
+    )} waypoint. If NaN, waypoint
+will be skipped/Longitude of ${makeOrdinal(index + 1)} waypoint.`,
+  }))
+
+export const Review = Template.bind({})
+Review.args = {
+  ...args,
+  currentIndex: 4,
+  selectedId: '1',
+  waypoints: reviewWaypoints,
+  commsParams: commsParams.map((param) => ({ ...param, overrideValue: '3' })),
+}
+
+Review.parameters = {
   design: {
     type: 'figma',
     url: 'https://www.figma.com/file/FtsKsOCBQ2YjTZlwezG6aI/MBARI-Components?node-id=6574%3A889',
