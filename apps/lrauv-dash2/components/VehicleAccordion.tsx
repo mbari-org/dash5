@@ -42,7 +42,7 @@ const VehicleAccordion: React.FC<VehicleAccordionProps> = ({
   })
   const { data: deploymentCommandStatus } = useDeploymentCommandStatus(
     {
-      deploymentId: currentDeploymentId,
+      deploymentId: currentDeploymentId ?? 0,
     },
     {
       enabled: !!currentDeploymentId,
@@ -50,7 +50,7 @@ const VehicleAccordion: React.FC<VehicleAccordionProps> = ({
   )
   const currentMission = deploymentCommandStatus?.commandStatuses
     ?.filter((s) => s.event.eventType === 'run')
-    ?.sort((a, b) => a.event.isoTime - b.event.isoTime)?.[0]
+    ?.sort((a, b) => a.event.unixTime - b.event.unixTime)?.[0]
 
   const earliestLog = relatedLogs?.[(relatedLogs?.length ?? 0) - 1]?.isoTime
   const logsSummary = logsLoading
@@ -97,7 +97,7 @@ const VehicleAccordion: React.FC<VehicleAccordionProps> = ({
         secondaryLabel={
           activeDeployment && currentMission
             ? `${
-                parseMissionCommand(currentMission.event.data).name ?? ''
+                parseMissionCommand(currentMission.event.data ?? '').name ?? ''
               } running for ${DateTime.fromMillis(
                 currentMission.event.unixTime ?? 0
               ).toRelative()}`
