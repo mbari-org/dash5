@@ -72,7 +72,7 @@ const Vehicle: NextPage = () => {
   }
   const params = (router.query?.deployment ?? []) as string[]
   const vehicleName = params[0]
-  const deploymentId = params[1]
+  const deploymentId = parseInt(params[1] ?? '0', 10)
 
   const { data: picAndOnCall, isLoading: loadingPic } = usePicAndOnCall({
     vehicleName,
