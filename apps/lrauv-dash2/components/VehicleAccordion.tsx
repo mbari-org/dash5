@@ -9,9 +9,10 @@ import {
   useEvents,
   usePicAndOnCall,
   useTethysApiContext,
+  useDeploymentCommandStatus,
 } from '@mbari/api-client'
 import { DateTime } from 'luxon'
-import { ScheduleSection } from './ScheduleSection'
+import { parseMissionCommand, ScheduleSection } from './ScheduleSection'
 
 export type VehicleAccordionSection =
   | 'handoff'
@@ -50,6 +51,18 @@ const VehicleAccordion: React.FC<VehicleAccordionProps> = ({
     from,
     to,
   })
+  const { data: deploymentCommandStatus } = useDeploymentCommandStatus(
+    {
+      deploymentId: currentDeploymentId ?? 0,
+    },
+    {
+      enabled: !!currentDeploymentId,
+    }
+  )
+  const currentMission = deploymentCommandStatus?.commandStatuses
+    ?.filter((s) => s.event.eventType === 'run')
+    ?.sort((a, b) => a.event.unixTime - b.event.unixTime)?.[0]
+
   const earliestLog = relatedLogs?.[(relatedLogs?.length ?? 0) - 1]?.isoTime
   const logsSummary = logsLoading
     ? 'loading...'
@@ -107,7 +120,13 @@ const VehicleAccordion: React.FC<VehicleAccordionProps> = ({
       <AccordionHeader
         label="Schedule"
         secondaryLabel={
-          activeDeployment ? 'Profile Station running for 12 mins' : ''
+          activeDeployment && currentMission
+            ? `${
+                parseMissionCommand(currentMission.event.data ?? '').name ?? ''
+              } running for ${DateTime.fromMillis(
+                currentMission.event.unixTime ?? 0
+              ).toRelative()}`
+            : ''
         }
         onToggle={handleToggleForSection('schedule')}
         open={section === 'schedule'}

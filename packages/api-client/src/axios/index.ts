@@ -1,4 +1,5 @@
 export * from './Deployment/getLastDeployment'
+export * from './Deployment/getCommandStatus'
 export * from './Deployment/getDeployments'
 export * from './Deployment/startDeployment'
 export * from './Deployment/alterDeployment'
