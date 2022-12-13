@@ -5,7 +5,12 @@ import DocsSection from './DocsSection'
 import HandoffSection from './HandoffSection'
 import LogsSection from './LogsSection'
 import ScienceDataSection from './ScienceDataSection'
-import { useEvents, useDeploymentCommandStatus } from '@mbari/api-client'
+import {
+  useEvents,
+  usePicAndOnCall,
+  useTethysApiContext,
+  useDeploymentCommandStatus,
+} from '@mbari/api-client'
 import { DateTime } from 'luxon'
 import { parseMissionCommand, ScheduleSection } from './ScheduleSection'
 
@@ -26,6 +31,12 @@ export interface VehicleAccordionProps {
   activeDeployment?: boolean
   currentDeploymentId?: number
 }
+
+const shortenName = (name: string) =>
+  name
+    .split(' ')
+    .reduce((acc, curr, idx) => `${acc} ${idx > 0 ? curr[0] : curr}.`, '')
+    .trim()
 
 const VehicleAccordion: React.FC<VehicleAccordionProps> = ({
   from,
@@ -63,12 +74,26 @@ const VehicleAccordion: React.FC<VehicleAccordionProps> = ({
   const handleToggleForSection =
     (currentSection: VehicleAccordionSection) => (open: boolean) =>
       setSection(open ? currentSection : null)
+  const { data: picAndOnCall, isLoading: loadingPic } = usePicAndOnCall({
+    vehicleName,
+  })
+  const { profile } = useTethysApiContext()
+  const profileName = `${profile?.firstName} ${profile?.lastName}`
+  const pic = picAndOnCall?.[0].pic?.user
+  const onCall = picAndOnCall?.[0].onCall?.user
+  const handoffLabel = loadingPic
+    ? '...'
+    : `${shortenName(pic ?? 'Unassigned')}${
+        pic === profileName ? ' (you)' : ''
+      } / ${shortenName(onCall ?? 'Unassigned')}${
+        onCall === profileName ? ' (you)' : ''
+      }`
 
   return (
     <div className="flex h-full flex-col divide-y divide-solid divide-stone-200">
       <AccordionHeader
         label="Handoff / On Call"
-        secondaryLabel={activeDeployment ? 'Tanner P. (you) / Brian K.' : ''}
+        secondaryLabel={activeDeployment ? handoffLabel : ''}
         onToggle={handleToggleForSection('handoff')}
         open={section === 'handoff'}
         className="flex flex-shrink-0"

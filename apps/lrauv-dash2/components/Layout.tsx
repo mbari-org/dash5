@@ -74,6 +74,9 @@ const Layout: React.FC = ({ children }) => {
 
   const canRemoveOption = (vehicle: string) => vehicle !== 'Overview'
 
+  const requireAuthentication = (modalJsx: React.ReactNode) =>
+    authenticated ? modalJsx : <UserLogin onClose={setModal(null)} />
+
   return (
     <div className="flex h-screen w-screen flex-col">
       <Head>
@@ -137,27 +140,21 @@ const Layout: React.FC = ({ children }) => {
       {globalModalId?.id === 'forgot' && !authenticated && (
         <UserForgotPassword onClose={setModal(null)} />
       )}
-      {globalModalId?.id === 'newDeployment' && authenticated && (
-        <NewDeployment onClose={setModal(null)} />
-      )}
+      {globalModalId?.id === 'newDeployment' &&
+        requireAuthentication(<NewDeployment onClose={setModal(null)} />)}
       {globalModalId?.id === 'editDocument' && (
         <DocumentInstanceModal onClose={setModal(null)} />
       )}
-      {globalModalId?.id === 'reassign' && authenticated && (
-        <Reassignment vehicleNames={trackedVehicles} />
-      )}
-      {globalModalId?.id === 'sendNote' && authenticated && (
-        <SendNote onClose={setModal(null)} />
-      )}
-      {globalModalId?.id === 'editDeployment' && authenticated && (
-        <DeploymentDetails onClose={setModal(null)} />
-      )}
-      {globalModalId?.id === 'attachDocument' && authenticated && (
-        <AttachmentModal onClose={setModal(null)} />
-      )}
-      {globalModalId?.id === 'detachDocument' && authenticated && (
-        <DetachModal onClose={setModal(null)} />
-      )}
+      {globalModalId?.id === 'reassign' &&
+        requireAuthentication(<Reassignment vehicleNames={trackedVehicles} />)}
+      {globalModalId?.id === 'sendNote' &&
+        requireAuthentication(<SendNote onClose={setModal(null)} />)}
+      {globalModalId?.id === 'editDeployment' &&
+        requireAuthentication(<DeploymentDetails onClose={setModal(null)} />)}
+      {globalModalId?.id === 'attachDocument' &&
+        requireAuthentication(<AttachmentModal onClose={setModal(null)} />)}
+      {globalModalId?.id === 'detachDocument' &&
+        requireAuthentication(<DetachModal onClose={setModal(null)} />)}
     </div>
   )
 }
