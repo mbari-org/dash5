@@ -29,6 +29,7 @@ export interface DListResult {
 export interface GetLastDeploymentResponse {
   deploymentId: string
   vehicle: string
+  vehicleName?: string
   path: string
   name?: string
   startEvent?: DeploymentEvent
