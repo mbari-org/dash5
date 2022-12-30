@@ -15,6 +15,7 @@ import clsx from 'clsx'
 import { Select } from '@mbari/react-ui/dist/Fields/Select'
 import { useDeploymentCommandStatus } from '@mbari/api-client'
 import { capitalize } from '@mbari/utils'
+import useGlobalModalId from '../lib/useGlobalModalId'
 
 export interface ScheduleSectionProps {
   className?: string
@@ -41,8 +42,10 @@ export const ScheduleSection: React.FC<ScheduleSectionProps> = ({
   currentDeploymentId,
   activeDeployment,
 }) => {
-  const [scheduleStatus, setScheduleStatus] =
-    useState<ScheduleCellProps['scheduleStatus'] | null>('running')
+  const { setGlobalModalId, globalModalId } = useGlobalModalId()
+  const [scheduleStatus, setScheduleStatus] = useState<
+    ScheduleCellProps['scheduleStatus'] | null
+  >('running')
   const [scheduleFilter, setScheduleFilter] = useState<string>('')
   const [scheduleSearch, setScheduleSearch] = useState<string>('')
 
@@ -100,13 +103,12 @@ export const ScheduleSection: React.FC<ScheduleSectionProps> = ({
     results.length + staticFilterCellOffset + staticHeaderCellOffset
 
   const menuRef = useRef<HTMLDivElement | null>(null)
-  const [currentMoreMenu, setCurrentMoreMenu] =
-    useState<{
-      eventId?: number
-      commandType: 'mission' | 'command'
-      status: ScheduleCellStatus
-      rect: DOMRect
-    } | null>(null)
+  const [currentMoreMenu, setCurrentMoreMenu] = useState<{
+    eventId?: number
+    commandType: 'mission' | 'command'
+    status: ScheduleCellStatus
+    rect: DOMRect
+  } | null>(null)
   const closeMoreMenu = () => setCurrentMoreMenu(null)
   const openMoreMenu: ScheduleCellProps['onMoreClick'] = (
     target,
@@ -129,6 +131,9 @@ export const ScheduleSection: React.FC<ScheduleSectionProps> = ({
             label="Mission"
             icon={faPlus}
             className="mx-2"
+            onClick={() => {
+              setGlobalModalId({ id: 'newMission' })
+            }}
             tight
           />
           <AccessoryButton label="Command" icon={faPlus} tight />
