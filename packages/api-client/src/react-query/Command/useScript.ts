@@ -7,11 +7,14 @@ export const useScript = (
   params: GetScriptParams,
   options?: SupportedQueryOptions
 ) => {
-  const { axiosInstance } = useTethysApiContext()
+  const { axiosInstance, token } = useTethysApiContext()
   const query = useQuery(
     ['commands', 'script', params],
     () => {
-      return getScript(params, { instance: axiosInstance })
+      return getScript(params, {
+        instance: axiosInstance,
+        headers: { Authorization: `Bearer ${token}` },
+      })
     },
     {
       staleTime: 60 * 1000,
