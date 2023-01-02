@@ -18,7 +18,7 @@ jest.mock('../assets/ruler-light.png', () => {
 const props: MissionModalProps = {
   currentIndex: 0,
   vehicleName: 'Brizo',
-  recentRuns: [
+  missionFilters: [
     {
       id: '1',
       name: 'Behavior',
@@ -153,7 +153,7 @@ test('should render the component', async () => {
 // Mission: Step 1 tests
 test('should display mission tasks', async () => {
   render(<MissionModal {...props} />)
-  expect(screen.queryByText(props.missions[0].task)).toBeInTheDocument()
+  expect(screen.queryByText(props.missions[0].task ?? '')).toBeInTheDocument()
 })
 
 test('should display mission category and name labels', async () => {

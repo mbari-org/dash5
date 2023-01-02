@@ -4,81 +4,17 @@ import {
   ParameterProps,
   WaypointTableProps,
 } from '@mbari/react-ui'
-import { makeOrdinal } from '@mbari/utils'
+import { capitalize, capitalizeEach, makeOrdinal } from '@mbari/utils'
+import { useMissionList, useRecentRuns } from '@mbari/api-client'
+import { useRouter } from 'next/router'
+import { DateTime } from 'luxon'
+import useTrackedVehicles from '../lib/useTrackedVehicles'
 
 export interface MissionModalProps {
   onClose: () => void
+  className?: string
+  style?: React.CSSProperties
 }
-
-const missions: MissionTableProps['missions'] = [
-  {
-    id: '1',
-    category: 'Science',
-    name: 'sci2',
-    task: 'Test mission',
-    description:
-      "Vehicle yo-yo's to the specified waypoints, with science turned on.",
-    vehicle: 'Brizo',
-    ranBy: 'Jordan Caress',
-    ranOn: 'Dec. 10, 2021',
-    waypointCount: 2,
-  },
-  {
-    id: '2',
-    category: 'Science',
-    name: 'sci2',
-
-    task: 'Test mission',
-    description:
-      "Vehicle yo-yo's to the specified waypoints, with science turned on.",
-    vehicle: 'Tethys',
-    ranBy: 'Joost Daniels',
-    ranOn: 'Dec. 10, 2021',
-    waypointCount: 4,
-  },
-  {
-    id: '3',
-    category: 'Science',
-    name: 'profile_station',
-    task: 'Profile station at C1 for the night',
-    description: 'This mission yoyos in a circle around a specified location.',
-    vehicle: 'Tethys',
-    ranBy: 'Ben Ranaan',
-    ranOn: 'Dec. 10, 2021',
-    ranAt: 'C1',
-  },
-  {
-    id: '4',
-    category: 'Science',
-    name: 'sci2',
-    task: 'more okeanids testing',
-    description:
-      "Vehicle yo-yo's to the specified waypoints, with science turned on.",
-    vehicle: 'Tethys',
-    ranBy: 'Carlos Rueda',
-    ranOn: 'Aug. 27, 2021',
-    waypointCount: 2,
-  },
-  {
-    id: '5',
-    category: 'Science',
-    name: 'esp_sample_at_depth',
-    task: 'sending final doublet sampling mission',
-    description: 'This mission takes ESP samples at the designated depth.',
-    vehicle: 'Brizo',
-    ranBy: 'Greg Doucette',
-    ranOn: 'Aug. 16, 2021',
-  },
-  {
-    id: '6',
-    category: 'Maintenance',
-    name: 'ballast_and_trim',
-    task: 'running B&T until next sampling',
-    vehicle: 'Brizo',
-    ranBy: 'Greg Doucette',
-    ranOn: 'Aug. 16, 2021',
-  },
-]
 
 const waypoints: WaypointTableProps['waypoints'] = Array(5)
   .fill(0)
@@ -222,50 +158,88 @@ const commsParams: ParameterProps[] = [
   },
 ]
 
-const recentRuns = [
-  {
-    id: '1',
-    name: 'Behavior',
-  },
-  {
-    id: '2',
-    name: 'Demo',
-  },
-  {
-    id: '3',
-    name: 'Engineering',
-  },
-  {
-    id: '4',
-    name: 'Insert',
-  },
-  {
-    id: '5',
-    name: 'Maintenance',
-  },
-  {
-    id: '6',
-    name: 'Regression',
-  },
-  {
-    id: '7',
-    name: 'Science',
-  },
-  {
-    id: '8',
-    name: 'Transport',
-  },
-]
+const parseMissionPath = (mission?: string) => {
+  const path = mission?.split('/') ?? ''
+  const category = path?.length > 1 ? path[0] : ''
+  const name = (path?.length === 1 ? path[0] : path[1]).split('.')[0]
+  return { category, name }
+}
 
 const MissionModal: React.FC<MissionModalProps> = ({ onClose }) => {
+  const router = useRouter()
+  const params = (router.query?.deployment ?? []) as string[]
+  const vehicleName = params[0]
+  const { trackedVehicles: vehicles } = useTrackedVehicles()
+  const { data: missionData } = useMissionList()
+  const { data: recentRunsData } = useRecentRuns(
+    {
+      vehicles,
+      from: DateTime.now().minus({ days: 60 }).toISODate(),
+    },
+    { enabled: !!vehicleName }
+  )
+
+  const missionFilters = [
+    {
+      id: 'Recent Runs',
+      name: 'Recent Runs',
+    },
+    ...(missionData?.list
+      ?.map((mission) => {
+        const { category } = parseMissionPath(mission.path)
+        return {
+          id: category,
+          name: category === '' ? 'Default' : category,
+        }
+      })
+      .filter(
+        (mission, index, self) =>
+          self.findIndex((m) => m.id === mission.id) === index
+      ) ?? []),
+  ]
+
+  const recentRuns: MissionTableProps['missions'] =
+    recentRunsData
+      ?.map(({ mission, vehicleName: vehicle, isoTime, user }) => {
+        const { category, name } = parseMissionPath(mission)
+        return {
+          id: mission,
+          category,
+          name,
+          description: mission,
+          vehicle,
+          ranOn: capitalize(DateTime.fromISO(isoTime).toFormat('MMM. d yyyy')),
+          ranBy: capitalizeEach(user ?? ''),
+          recentRun: true,
+        }
+      })
+      .filter(
+        (mission, index, s) => s.findIndex((m) => m.id === mission.id) === index
+      ) ?? []
+
+  const missions: MissionTableProps['missions'] = [
+    ...recentRuns,
+    ...(missionData?.list?.map((mission) => {
+      const { category, name } = parseMissionPath(mission.path)
+      return {
+        id: mission.path,
+        category,
+        name,
+        task: '',
+        description: mission.description,
+        vehicle: vehicleName,
+      }
+    }) ?? []),
+  ]
+
   return (
     <MissionModalView
       currentIndex={0}
-      vehicleName="Brizo"
+      vehicleName={capitalize(vehicleName)}
       bottomDepth="100-180m"
       totalDistance="7.2km"
       duration="6hrs"
-      recentRuns={recentRuns}
+      missionFilters={missionFilters}
       parameters={parameters}
       safetyParams={safetyParams}
       commsParams={commsParams}
@@ -277,7 +251,7 @@ const MissionModal: React.FC<MissionModalProps> = ({ onClose }) => {
         console.log('schedule')
         onClose()
       }}
-      missions={missions}
+      missions={missions ?? []}
       onSelectMission={(id) => {
         console.log(`id: ${id}`)
       }}

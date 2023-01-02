@@ -2,6 +2,7 @@ import React from 'react'
 import clsx from 'clsx'
 import { Table } from '../Data/Table'
 import { SortDirection } from '../Data/TableHeader'
+import { capitalize } from '@mbari/utils'
 
 export interface MissionTableProps {
   className?: string
@@ -18,13 +19,14 @@ export interface Mission {
   id: string
   category: string
   name: string
-  task: string
+  task?: string
   description?: string
-  vehicle: string
-  ranBy: string
-  ranOn: string
+  vehicle?: string
+  ranBy?: string
+  ranOn?: string
   ranAt?: string
   waypointCount?: number
+  recentRun?: boolean
 }
 
 export const MissionTable: React.FC<MissionTableProps> = ({
@@ -43,20 +45,32 @@ export const MissionTable: React.FC<MissionTableProps> = ({
       name,
       task,
       description,
-      vehicle,
       ranBy,
       ranOn,
       ranAt,
       waypointCount,
+      vehicle,
     }) => ({
       cells: [
-        { label: `${category}: ${name}`, secondary: task },
-        { label: vehicle },
+        {
+          label: category ? `${category}: ${name}` : `${name}`,
+          secondary: task,
+        },
+        {
+          label: capitalize(vehicle ?? 'Current Vehicle'),
+        },
         {
           label: description ? description : 'No description',
-          secondary: `Run by ${ranBy} on ${ranOn} ${
-            waypointCount ? `with ${waypointCount} waypoints` : ''
-          }${waypointCount && ranAt ? ' ' : ''}${ranAt ? `at ${ranAt}` : ''}`,
+          secondary: capitalize(
+            `${(ranBy && `Last ran by ${ranBy}`) ?? ''} 
+            ${(ranOn && `on ${ranOn}.`) ?? ''} 
+            ${(ranAt && `Location ran at: ${ranAt}.`) ?? ''}
+            ${
+              (waypointCount &&
+                `This mission has ${waypointCount} waypoints`) ??
+              ''
+            }`
+          ),
         },
       ],
     })
@@ -69,7 +83,7 @@ export const MissionTable: React.FC<MissionTableProps> = ({
         onSort: onSortColumn,
       },
       {
-        label: 'ALL LRAUV',
+        label: 'VEHICLE',
         onSort: onSortColumn,
       },
       { label: 'DESCRIPTION', onSort: onSortColumn },

@@ -10,7 +10,7 @@ export interface MissionStepProps {
   missions: Mission[]
   selectedId?: string | null
   onSelect: (id?: string | null) => void
-  recentRuns?: SelectOption[]
+  missionFilters?: SelectOption[]
 }
 
 export const MissionStep: React.FC<MissionStepProps> = ({
@@ -18,10 +18,11 @@ export const MissionStep: React.FC<MissionStepProps> = ({
   missions,
   selectedId,
   onSelect,
-  recentRuns,
+  missionFilters,
 }) => {
-  const [selectedRecentId, setSelectedRecentId] =
-    useState<string | null | undefined>('')
+  const [selectedRecentId, setSelectedRecentId] = useState<
+    string | null | undefined
+  >('Recent Runs')
   const [searchTerm, setSearchTerm] = useState('')
   const [filteredMissions, setFilteredMissions] = useState<Mission[]>(missions)
   const [searchMissions, setSearchMissions] = useState<Mission[]>([])
@@ -30,16 +31,19 @@ export const MissionStep: React.FC<MissionStepProps> = ({
 
   useEffect(() => {
     setSearchTerm('')
-    const selectedCategory = recentRuns?.find(
+    const selectedCategory = missionFilters?.find(
       (run) => run.id === selectedRecentId
     )?.name
 
-    const filteredByRecent = missions.filter(({ category }) =>
-      category.includes(selectedCategory ?? '')
-    )
+    const filteredByRecent = missions.filter(({ category, recentRun }) => {
+      if (selectedCategory?.match(/recent runs/i)) return recentRun
+      if (selectedCategory?.match(/default/i))
+        return category.length < 1 && !recentRun
+      return category.includes(selectedCategory ?? '')
+    })
 
     setFilteredMissions(filteredByRecent.length ? filteredByRecent : [])
-  }, [selectedRecentId, recentRuns, missions])
+  }, [selectedRecentId, missionFilters, missions])
 
   useEffect(() => {
     if (searchTerm) {
@@ -75,7 +79,7 @@ export const MissionStep: React.FC<MissionStepProps> = ({
 
     const sortedMissions = sortByProperty({
       arrOfObj: [...filteredMissions],
-      sortProperty,
+      sortProperty: sortProperty === 'category' ? 'id' : sortProperty,
       secondarySort: 'category',
       sortAscending: updatedIsAscending,
     })
@@ -97,10 +101,10 @@ export const MissionStep: React.FC<MissionStepProps> = ({
           <SelectField
             name="Recent runs"
             placeholder="Recent Runs"
-            options={recentRuns}
+            options={missionFilters}
             value={selectedRecentId ? selectedRecentId : undefined}
             onSelect={(id) => handleSelectRecent(id)}
-            clearable
+            className="flex-grow"
           />
           <Input
             name="Search missions field"

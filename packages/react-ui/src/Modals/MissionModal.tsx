@@ -23,7 +23,7 @@ export interface MissionModalProps
   className?: string
   style?: React.CSSProperties
   vehicleName: string
-  recentRuns?: SelectOption[]
+  missionFilters?: SelectOption[]
   totalDistance?: string
   bottomDepth?: string
   duration?: string
@@ -42,7 +42,7 @@ export const MissionModal: React.FC<MissionModalProps> = ({
   currentIndex,
   vehicleName,
   missions,
-  recentRuns,
+  missionFilters,
   selectedId,
   waypoints,
   stations,
@@ -67,8 +67,9 @@ export const MissionModal: React.FC<MissionModalProps> = ({
   ]
 
   const [currentStep, setCurrentStep] = useState(currentIndex)
-  const [selectedMissionId, setSelectedMissionId] =
-    useState<string | null | undefined>(selectedId)
+  const [selectedMissionId, setSelectedMissionId] = useState<
+    string | null | undefined
+  >(selectedId)
 
   const [showSummary, setShowSummary] = useState(false)
   const summarySteps = [1, 2]
@@ -230,7 +231,7 @@ export const MissionModal: React.FC<MissionModalProps> = ({
             vehicleName={vehicleName}
             missions={missions}
             selectedId={selectedMissionId}
-            recentRuns={recentRuns}
+            missionFilters={missionFilters}
             onSelect={handleSelect}
           />
         )
