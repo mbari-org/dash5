@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import React, { useEffect, useState } from 'react'
 import { Modal } from '../Modal/Modal'
 import { StepProgress, StepProgressProps } from '../Navigation/StepProgress'
 import { SelectOption } from '../Fields/Select'
@@ -78,14 +78,22 @@ export const MissionModal: React.FC<MissionModalProps> = ({
   const [showSummary, setShowSummary] = useState(false)
   const summarySteps = [1, 2]
 
+  const [defaultWaypoints, setDefaultWaypoints] = useState<string>(
+    JSON.stringify(waypoints)
+  )
+  const [updatedWaypoints, setUpdatedWaypoints] = useState<WaypointProps[]>([])
   const initialWaypoints = waypoints.map((waypoint) =>
     (waypoint.lat || waypoint.lon) && !waypoint.stationName
       ? { ...waypoint, stationName: 'Custom' }
       : waypoint
   )
+  useEffect(() => {
+    if (defaultWaypoints !== JSON.stringify(waypoints)) {
+      setDefaultWaypoints(JSON.stringify(waypoints))
 
-  const [updatedWaypoints, setUpdatedWaypoints] =
-    useState<WaypointProps[]>(initialWaypoints)
+      setUpdatedWaypoints(initialWaypoints)
+    }
+  }, [waypoints, defaultWaypoints, setDefaultWaypoints, setUpdatedWaypoints])
 
   const handleWaypointsUpdate = (newWaypoints: WaypointProps[]) => {
     setUpdatedWaypoints(newWaypoints)

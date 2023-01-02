@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import {
   MissionModal as MissionModalView,
   MissionTableProps,
@@ -5,7 +6,7 @@ import {
   WaypointTableProps,
 } from '@mbari/react-ui'
 import { capitalize, capitalizeEach, makeOrdinal } from '@mbari/utils'
-import { useMissionList, useRecentRuns } from '@mbari/api-client'
+import { useMissionList, useRecentRuns, useScript } from '@mbari/api-client'
 import { useRouter } from 'next/router'
 import { DateTime } from 'luxon'
 import useTrackedVehicles from '../lib/useTrackedVehicles'
@@ -15,29 +16,6 @@ export interface MissionModalProps {
   className?: string
   style?: React.CSSProperties
 }
-
-const waypoints: WaypointTableProps['waypoints'] = Array(5)
-  .fill(0)
-  .map((_, index) => ({
-    latName: `Lat${index + 1}`,
-    lonName: `Lon${index + 1}`,
-    lat: '',
-    lon: '',
-    description: `Latitude of ${makeOrdinal(
-      index + 1
-    )} waypoint. If NaN, waypoint
-        will be skipped/Longitude of ${makeOrdinal(index + 1)} waypoint.`,
-  }))
-  .concat([
-    {
-      latName: 'Lat6',
-      lonName: 'Lon6',
-      lat: '33.333',
-      lon: '-141.111',
-      description:
-        'Latitude of 6th waypoint. If NaN, waypoint will be skipped/Longitude of 6th waypoint.',
-    },
-  ])
 
 const stations: WaypointTableProps['stations'] = [
   { name: 'C1', lat: '36.797', lon: '-121.847' },
@@ -179,7 +157,7 @@ const MissionModal: React.FC<MissionModalProps> = ({ onClose }) => {
     { enabled: !!vehicleName }
   )
 
-  const missionFilters = [
+  const missionCategories = [
     {
       id: 'Recent Runs',
       name: 'Recent Runs',
@@ -232,6 +210,35 @@ const MissionModal: React.FC<MissionModalProps> = ({ onClose }) => {
     }) ?? []),
   ]
 
+  const [selectedMission, setSelectedMission] = useState<string | undefined>()
+  const { data: selectedMissionData } = useScript(
+    {
+      path: selectedMission as string,
+      gitRef: missionData?.gitRef ?? 'master',
+    },
+    { enabled: !!selectedMission }
+  )
+
+  const waypoints: WaypointTableProps['waypoints'] =
+    selectedMissionData?.latLonNamePairs?.map(({ latName, lonName }, index) => {
+      const latArg = selectedMissionData.scriptArgs.find(
+        (arg) => arg.name === latName
+      )
+      const lonArg = selectedMissionData.scriptArgs.find(
+        (arg) => arg.name === lonName
+      )
+      return {
+        latName,
+        lonName,
+        lat: latArg?.value,
+        lon: lonArg?.value,
+        description:
+          latArg?.description ??
+          `Latitude of ${makeOrdinal(index + 1)} waypoint. If NaN, waypoint
+        will be skipped/Longitude of ${makeOrdinal(index + 1)} waypoint.`,
+      }
+    }) ?? []
+
   return (
     <MissionModalView
       currentIndex={0}
@@ -239,7 +246,7 @@ const MissionModal: React.FC<MissionModalProps> = ({ onClose }) => {
       bottomDepth="100-180m"
       totalDistance="7.2km"
       duration="6hrs"
-      missionFilters={missionFilters}
+      missionCategories={missionCategories}
       parameters={parameters}
       safetyParams={safetyParams}
       commsParams={commsParams}
@@ -252,9 +259,7 @@ const MissionModal: React.FC<MissionModalProps> = ({ onClose }) => {
         onClose()
       }}
       missions={missions ?? []}
-      onSelectMission={(id) => {
-        console.log(`id: ${id}`)
-      }}
+      onSelectMission={setSelectedMission}
       onSortColumn={(col, asc) => {
         console.log(
           `Clicked column number ${col}, which is sorted ${
