@@ -61,16 +61,14 @@ export const MissionTable: React.FC<MissionTableProps> = ({
         },
         {
           label: description ? description : 'No description',
-          secondary: capitalize(
-            `${(ranBy && `Last ran by ${ranBy}`) ?? ''} 
+          secondary: `${(ranBy && `Last ran by ${ranBy}`) ?? ''} 
             ${(ranOn && `on ${ranOn}.`) ?? ''} 
             ${(ranAt && `Location ran at: ${ranAt}.`) ?? ''}
             ${
               (waypointCount &&
                 `This mission has ${waypointCount} waypoints`) ??
               ''
-            }`
-          ),
+            }`,
         },
       ],
     })
