@@ -23,7 +23,7 @@ export interface MissionModalProps
   className?: string
   style?: React.CSSProperties
   vehicleName: string
-  missionFilters?: SelectOption[]
+  missionCategories?: SelectOption[]
   totalDistance?: string
   bottomDepth?: string
   duration?: string
@@ -42,7 +42,7 @@ export const MissionModal: React.FC<MissionModalProps> = ({
   currentIndex,
   vehicleName,
   missions,
-  missionFilters,
+  missionCategories,
   selectedId,
   waypoints,
   stations,
@@ -56,6 +56,7 @@ export const MissionModal: React.FC<MissionModalProps> = ({
   onSchedule,
   onCancel,
   onVerifyParameter,
+  onSelectMission,
 }) => {
   const steps = [
     'Mission',
@@ -67,6 +68,9 @@ export const MissionModal: React.FC<MissionModalProps> = ({
   ]
 
   const [currentStep, setCurrentStep] = useState(currentIndex)
+  const [selectedMissionCategory, setSelectedMissionCategory] = useState<
+    string | undefined
+  >('Recent Runs')
   const [selectedMissionId, setSelectedMissionId] = useState<
     string | null | undefined
   >(selectedId)
@@ -172,6 +176,13 @@ export const MissionModal: React.FC<MissionModalProps> = ({
 
   const handleSelect = (id?: string | null) => {
     setSelectedMissionId(id)
+    if (id) {
+      onSelectMission?.(id)
+    }
+  }
+
+  const handleSelectCategory = (category?: string) => {
+    selectedMissionCategory !== category && setSelectedMissionCategory(category)
   }
 
   const getMissionName = () => {
@@ -231,8 +242,10 @@ export const MissionModal: React.FC<MissionModalProps> = ({
             vehicleName={vehicleName}
             missions={missions}
             selectedId={selectedMissionId}
-            missionFilters={missionFilters}
+            missionCategories={missionCategories}
             onSelect={handleSelect}
+            onSelectCategory={handleSelectCategory}
+            selectedCategory={selectedMissionCategory}
           />
         )
       case 1:
