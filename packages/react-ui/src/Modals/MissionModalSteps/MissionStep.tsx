@@ -31,10 +31,6 @@ export const MissionStep: React.FC<MissionStepProps> = ({
   const [sortDirection, setSortDirection] = useState<SortDirection>(null)
 
   useEffect(() => {
-    // const selectedCategory = missionCategories?.find(
-    //   (run) => run.id === selectedCategory
-    // )?.name
-
     const filteredByRecent = missions.filter(({ category, recentRun }) => {
       if (selectedCategory?.match(/recent runs/i)) return recentRun
       if (selectedCategory?.match(/default/i))
