@@ -39,6 +39,7 @@ export const MissionTable: React.FC<MissionTableProps> = ({
   sortColumn,
   sortDirection,
 }) => {
+  const shouldShowVehicleColumn = missions.some((p) => p.recentRun)
   const missionRows = missions.map(
     ({
       category,
@@ -56,9 +57,11 @@ export const MissionTable: React.FC<MissionTableProps> = ({
           label: category ? `${category}: ${name}` : `${name}`,
           secondary: task,
         },
-        {
-          label: capitalize(vehicle ?? 'Current Vehicle'),
-        },
+        shouldShowVehicleColumn
+          ? {
+              label: capitalize(vehicle ?? 'Current Vehicle'),
+            }
+          : null,
         {
           label: description ? description : 'No description',
           secondary: `${(ranBy && `Last ran by ${ranBy}`) ?? ''} 
@@ -70,7 +73,7 @@ export const MissionTable: React.FC<MissionTableProps> = ({
               ''
             }`,
         },
-      ],
+      ].filter((i) => i),
     })
   )
 
@@ -80,12 +83,14 @@ export const MissionTable: React.FC<MissionTableProps> = ({
         label: 'MISSION NAME',
         onSort: onSortColumn,
       },
-      {
-        label: 'VEHICLE',
-        onSort: onSortColumn,
-      },
+      shouldShowVehicleColumn
+        ? {
+            label: 'VEHICLE',
+            onSort: onSortColumn,
+          }
+        : null,
       { label: 'DESCRIPTION', onSort: onSortColumn },
-    ],
+    ].filter((i) => i),
     activeSortColumn: sortColumn,
     activeSortDirection: sortDirection,
   }
