@@ -6,7 +6,12 @@ import {
   WaypointTableProps,
 } from '@mbari/react-ui'
 import { capitalize, capitalizeEach, makeOrdinal } from '@mbari/utils'
-import { useMissionList, useRecentRuns, useScript } from '@mbari/api-client'
+import {
+  useMissionList,
+  useRecentRuns,
+  useScript,
+  useStations,
+} from '@mbari/api-client'
 import { useRouter } from 'next/router'
 import { DateTime } from 'luxon'
 import useTrackedVehicles from '../lib/useTrackedVehicles'
@@ -16,11 +21,6 @@ export interface MissionModalProps {
   className?: string
   style?: React.CSSProperties
 }
-
-const stations: WaypointTableProps['stations'] = [
-  { name: 'C1', lat: '36.797', lon: '-121.847' },
-  { name: 'C2', lat: '46.797', lon: '-141.847' },
-]
 
 const onFocusWaypoint: WaypointTableProps['onFocusWaypoint'] = (index) => {
   console.log(index)
@@ -239,13 +239,21 @@ const MissionModal: React.FC<MissionModalProps> = ({ onClose }) => {
       }
     }) ?? []
 
+  const { data: stationsData } = useStations({ enabled: waypoints.length > 0 })
+  const stations: WaypointTableProps['stations'] =
+    stationsData?.map(({ name, geojson }) => ({
+      name,
+      lat: geojson.geometry.coordinates[0],
+      lon: geojson.geometry.coordinates[1],
+    })) ?? []
   return (
     <MissionModalView
+      style={{ maxHeight: '80vh' }}
       currentIndex={0}
       vehicleName={capitalize(vehicleName)}
-      bottomDepth="100-180m"
-      totalDistance="7.2km"
-      duration="6hrs"
+      bottomDepth="n/a"
+      totalDistance="n/a"
+      duration="n/a"
       missionCategories={missionCategories}
       parameters={parameters}
       safetyParams={safetyParams}
@@ -260,13 +268,6 @@ const MissionModal: React.FC<MissionModalProps> = ({ onClose }) => {
       }}
       missions={missions ?? []}
       onSelectMission={setSelectedMission}
-      onSortColumn={(col, asc) => {
-        console.log(
-          `Clicked column number ${col}, which is sorted ${
-            asc ? 'ascending' : 'descending'
-          }`
-        )
-      }}
       waypoints={waypoints}
       stations={stations}
       onFocusWaypoint={onFocusWaypoint}

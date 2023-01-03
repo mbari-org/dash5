@@ -56,12 +56,11 @@ export const WaypointField: React.FC<WaypointFieldProps> = ({
     }
   }, [lat, initialLat, lon, initialLon, isCustom])
 
-  // TODO: real latError and longError error logic goes here
   const latErrorCondition = (lat: number) =>
-    customLat && 30 > lat && lat > -37 ? true : false
+    customLat && !(isFinite(lat) && Math.abs(lat) <= 90) ? true : false
 
   const lonErrorCondition = (lon: number) =>
-    customLon && 30 > lon && lon > -37 ? true : false
+    customLon && !(isFinite(lon) && Math.abs(lon) <= 180) ? true : false
 
   const [latError, setLatError] = useState<boolean>(
     (isCustom && latErrorCondition(Number(lat))) || false

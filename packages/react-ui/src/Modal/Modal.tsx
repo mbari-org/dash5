@@ -19,6 +19,8 @@ export interface ModalViewProps {
   onFocus?: () => void
   loading?: boolean
   maximized?: boolean
+  className?: string
+  style?: React.CSSProperties
 }
 
 export type ModalProps = ModalViewProps & FooterProps
@@ -90,6 +92,8 @@ export const Modal: React.FC<ModalProps & FooterProps> = ({
   loading,
   extraButtons,
   maximized,
+  className,
+  style,
 }) => {
   const browserWindow = typeof window !== 'undefined' ? window : undefined
   const [state, setState] = useState<ModalDragState>(DEFAULT_STATE)
@@ -184,8 +188,10 @@ export const Modal: React.FC<ModalProps & FooterProps> = ({
           !maximized && extraWideModal && styles.extraWideModalWidth,
           !maximized && !extraWideModal && styles.defaultModalWidth,
           !bodyOverflowHidden && styles.defaultModalHeight,
-          dragging ? styles.dragging : styles.notDragging
+          dragging ? styles.dragging : styles.notDragging,
+          className
         )}
+        style={style}
         ref={dialog}
       >
         {loading && <LoadingOverlay />}

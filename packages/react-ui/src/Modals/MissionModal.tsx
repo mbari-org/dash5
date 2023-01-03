@@ -163,8 +163,14 @@ export const MissionModal: React.FC<MissionModalProps> = ({
     }
     // showSummary flag is set back to false until next summary screen needs to be triggered
     showSummary && setShowSummary(false)
-
-    return setCurrentStep(currentStep + 1)
+    const nextStep = currentStep + 1
+    if (
+      steps[nextStep].match(/waypoint/i) &&
+      JSON.parse(defaultWaypoints).length === 0
+    ) {
+      return setCurrentStep(nextStep + 1)
+    }
+    return setCurrentStep(nextStep)
   }
   const handlePrevious = () => {
     // if the user is on a summary screen the Previous button will trigger the step associated with the summary, instead of moving back to the previous step (ie step 2 summary goes back to step 2 form, instead of back to step 1)
@@ -173,8 +179,16 @@ export const MissionModal: React.FC<MissionModalProps> = ({
       return
     }
 
+    const prevStep = currentStep - 1
+    if (
+      steps[prevStep].match(/waypoint/i) &&
+      JSON.parse(defaultWaypoints).length === 0
+    ) {
+      return setCurrentStep(prevStep - 1)
+    }
+
     if (currentStep > 0) {
-      return setCurrentStep(currentStep - 1)
+      return setCurrentStep(prevStep)
     }
   }
 
@@ -341,6 +355,7 @@ export const MissionModal: React.FC<MissionModalProps> = ({
     }
   }
 
+  console.log('Mission modal classname...', className)
   return (
     <Modal
       className={className}

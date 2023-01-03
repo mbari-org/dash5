@@ -61,7 +61,7 @@ export const WaypointStep: React.FC<WaypointStepProps> = ({
         </li>
       </ul>
       <WaypointTable
-        className="max-h-[calc(100%-80px)]"
+        className="max-h-[calc(100%-20px)]"
         waypoints={waypoints}
         stations={stations}
         onUpdate={onUpdate}
