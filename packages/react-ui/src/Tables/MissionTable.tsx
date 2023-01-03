@@ -1,6 +1,6 @@
 import React from 'react'
 import clsx from 'clsx'
-import { Table } from '../Data/Table'
+import { Table, TableProps } from '../Data/Table'
 import { SortDirection } from '../Data/TableHeader'
 import { capitalize } from '@mbari/utils'
 
@@ -75,7 +75,7 @@ export const MissionTable: React.FC<MissionTableProps> = ({
         },
       ].filter((i) => i),
     })
-  )
+  ) as TableProps['rows']
 
   const header = {
     cells: [
@@ -93,7 +93,7 @@ export const MissionTable: React.FC<MissionTableProps> = ({
     ].filter((i) => i),
     activeSortColumn: sortColumn,
     activeSortDirection: sortDirection,
-  }
+  } as TableProps['header']
 
   const handleSelect = (index: number) => {
     onSelectMission?.(missions[index].id)

@@ -133,8 +133,8 @@ const MissionModal: React.FC<MissionModalProps> = ({ onClose }) => {
   const stations: WaypointTableProps['stations'] =
     stationsData?.map(({ name, geojson }) => ({
       name,
-      lat: geojson.geometry.coordinates[0],
-      lon: geojson.geometry.coordinates[1],
+      lat: `${geojson.geometry.coordinates[0]}`,
+      lon: `${geojson.geometry.coordinates[1]}`,
     })) ?? []
 
   const reservedParams: string[] = [
@@ -161,11 +161,11 @@ const MissionModal: React.FC<MissionModalProps> = ({ onClose }) => {
       })) ?? []
 
   const commsParams =
-    selectedMissionData?.inserts.find(({ id }) => id.match(/comms/i))
+    selectedMissionData?.inserts?.find(({ id }) => id.match(/comms/i))
       ?.scriptArgs ?? []
 
   const safetyParams =
-    selectedMissionData?.inserts.find(({ id }) => id.match(/envelope/i))
+    selectedMissionData?.inserts?.find(({ id }) => id.match(/envelope/i))
       ?.scriptArgs ?? []
 
   return (

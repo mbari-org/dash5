@@ -11,6 +11,7 @@ export interface GetStationsResponse {
 export interface GeoJSON {
   type: string
   properties: GeoProperties
+  geometry: Geometry
 }
 
 export interface GeoProperties {
