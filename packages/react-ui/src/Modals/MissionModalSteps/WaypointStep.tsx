@@ -36,6 +36,7 @@ export const WaypointStep: React.FC<WaypointStepProps> = ({
   onUpdate,
   onNaNall,
   onResetAll,
+  onFocusWaypoint,
 }) => {
   const waypointCount = waypoints.length ?? 0
 
@@ -65,6 +66,7 @@ export const WaypointStep: React.FC<WaypointStepProps> = ({
         waypoints={waypoints}
         stations={stations}
         onUpdate={onUpdate}
+        onFocusWaypoint={onFocusWaypoint}
         grayHeader
       />
       <StatDisplay
