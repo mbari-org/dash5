@@ -21,6 +21,8 @@ export interface ModalViewProps {
   maximized?: boolean
   className?: string
   style?: React.CSSProperties
+  snapTo?: 'top-right' | 'bottom-right' | 'top-left' | 'bottom-left'
+  allowPointerEventsOnChildren?: boolean
 }
 
 export type ModalProps = ModalViewProps & FooterProps
@@ -50,8 +52,14 @@ const DEFAULT_STATE: ModalDragState = {
 const styles = {
   overlay: 'fixed inset-0 w-screen h-screen font-display',
   overlayToContainModalSize: 'flex flex-col items-center justify-center',
+  allowPointerEventsOnChildren: 'pointer-events-none',
   modal:
-    'flex flex-col bg-white w-full overflow-hidden rounded-md border m-auto pointer-events-auto transition-shadow transition-colors duration-300 ease-out relative my-12',
+    'flex flex-col bg-white w-full overflow-hidden rounded-md border pointer-events-auto transition-shadow transition-colors duration-300 ease-out relative my-12',
+  snapToCenter: 'm-auto',
+  snapToTopLeft: 'mt-0 mr-0 mb-auto mr-auto',
+  snapToTopRight: 'mt-0 mr-0 mb-auto ml-auto',
+  snapToBottomLeft: 'mb-0 mr-0 mt-auto mr-auto',
+  snapToBottomRight: 'mb-0 mr-0 mt-auto ml-auto',
   defaultModalHeight: 'md:max-h-3/4',
   // 'flex flex-col bg-white w-full overflow-hidden md:max-h-3/4 rounded-md border m-auto pointer-events-auto transition-shadow transition-colors duration-300 ease-out relative',
   defaultModalWidth: 'md:max-w-md lg:max-w-lg',
@@ -94,6 +102,8 @@ export const Modal: React.FC<ModalProps & FooterProps> = ({
   maximized,
   className,
   style,
+  snapTo,
+  allowPointerEventsOnChildren,
 }) => {
   const browserWindow = typeof window !== 'undefined' ? window : undefined
   const [state, setState] = useState<ModalDragState>(DEFAULT_STATE)
@@ -178,7 +188,10 @@ export const Modal: React.FC<ModalProps & FooterProps> = ({
       className={clsx(
         styles.overlay,
         zIndex,
-        !bodyOverflowHidden ? 'overflow-auto' : styles.overlayToContainModalSize
+        !bodyOverflowHidden
+          ? 'overflow-auto'
+          : styles.overlayToContainModalSize,
+        allowPointerEventsOnChildren && styles.allowPointerEventsOnChildren
       )}
     >
       <section
@@ -189,6 +202,11 @@ export const Modal: React.FC<ModalProps & FooterProps> = ({
           !maximized && !extraWideModal && styles.defaultModalWidth,
           !bodyOverflowHidden && styles.defaultModalHeight,
           dragging ? styles.dragging : styles.notDragging,
+          snapTo === 'top-right' && styles.snapToTopRight,
+          snapTo === 'top-left' && styles.snapToTopLeft,
+          snapTo === 'bottom-right' && styles.snapToBottomRight,
+          snapTo === 'bottom-left' && styles.snapToBottomLeft,
+          !snapTo && styles.snapToCenter,
           className
         )}
         style={style}
