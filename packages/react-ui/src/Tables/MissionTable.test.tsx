@@ -42,9 +42,19 @@ test('should display mission task label', async () => {
   expect(screen.getByText(/test mission/i)).toBeInTheDocument()
 })
 
-test('should display vehicle label', async () => {
-  render(<MissionTable {...props} />)
+test('should display the vehicle label if a recent run is present', async () => {
+  render(
+    <MissionTable
+      {...props}
+      missions={[{ ...props.missions[0], recentRun: true }]}
+    />
+  )
   expect(screen.getByText(/Brizo/i)).toBeInTheDocument()
+})
+
+test('should not display the vehicle label', async () => {
+  render(<MissionTable {...props} />)
+  expect(screen.queryByText(/Brizo/i)).not.toBeInTheDocument()
 })
 
 test('should display No description label when description is not provided', async () => {
@@ -64,9 +74,8 @@ test('should display description label when description is provided', async () =
 
 test('should display run details including pilot and run date', async () => {
   render(<MissionTable {...props} />)
-  const runDetails = `Run by ${props.missions[0].ranBy} on ${props.missions[0].ranOn}`
-
-  expect(screen.getByText(runDetails)).toBeInTheDocument()
+  expect(screen.getByText(/Jordan Caress./i)).toBeInTheDocument()
+  expect(screen.getByText(/on Dec. 10, 2021./i)).toBeInTheDocument()
 })
 
 test('should display run details including number of waypoints when provided', async () => {
@@ -76,9 +85,7 @@ test('should display run details including number of waypoints when provided', a
       missions={[{ ...props.missions[0], waypointCount: 2 }]}
     />
   )
-  const runDetails = `Run by ${props.missions[0].ranBy} on ${props.missions[0].ranOn} with 2 waypoints`
-
-  expect(screen.getByText(runDetails)).toBeInTheDocument()
+  expect(screen.getByText(/This mission has 2 waypoints/i)).toBeInTheDocument()
 })
 
 test('should display run details including number run location when provided', async () => {
@@ -88,7 +95,5 @@ test('should display run details including number run location when provided', a
       missions={[{ ...props.missions[0], ranAt: 'test location' }]}
     />
   )
-  const runDetails = `Run by ${props.missions[0].ranBy} on ${props.missions[0].ranOn} at test location`
-
-  expect(screen.getByText(runDetails)).toBeInTheDocument()
+  expect(screen.getByText(/Last ran by Jordan Caress/i)).toBeInTheDocument()
 })

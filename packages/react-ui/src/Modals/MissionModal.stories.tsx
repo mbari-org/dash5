@@ -247,7 +247,7 @@ const args = {
   totalDistance: '7.2km',
   bottomDepth: '100-180m',
   duration: '6hrs',
-  recentRuns: [
+  missionFilters: [
     {
       id: '1',
       name: 'Behavior',

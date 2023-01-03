@@ -52,8 +52,8 @@ export const WaypointSummary: React.FC<WaypointSummaryProps> = ({
   )
 
   return (
-    <article className="">
-      <ul className="mx-4 flex flex-col pb-2">
+    <article className="flex max-h-full flex-col overflow-hidden">
+      <ul className="mx-4 flex flex-shrink-0 flex-col pb-2">
         <li className="mb-4">
           Set up to {waypointCount} waypoint
           {waypointCount !== 1 && 's'} for {vehicleName}&apos;s{' '}
@@ -66,7 +66,7 @@ export const WaypointSummary: React.FC<WaypointSummaryProps> = ({
           Summary of Waypoints ({plottedWaypointCount})
         </li>
       </ul>
-      <ul className="grid grid-cols-2 gap-2">
+      <ul className="grid max-h-full flex-shrink grid-cols-2 gap-2 overflow-hidden">
         <li>
           <SummaryList
             header={'ESTIMATES'}
@@ -86,8 +86,9 @@ export const WaypointSummary: React.FC<WaypointSummaryProps> = ({
             ]}
           />
         </li>
-        <li>
+        <li className="max-h-full overflow-hidden">
           <Table
+            className="max-h-[calc(100%-80px)] overflow-auto"
             header={{
               cells: [
                 {

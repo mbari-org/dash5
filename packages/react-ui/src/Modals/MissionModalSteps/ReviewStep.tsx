@@ -199,7 +199,7 @@ export const ReviewStep: React.FC<ReviewProps> = ({
             rows={
               missionParamRows.length
                 ? missionParamRows
-                : [{ cells: [{ label: '' }, { label: '' }] }]
+                : [{ cells: [{ label: 'No overrides' }, { label: '' }] }]
             }
             highlightedStyle={'text-teal-500'}
           />

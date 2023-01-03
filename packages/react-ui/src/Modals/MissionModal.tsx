@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import React, { useEffect, useState } from 'react'
 import { Modal } from '../Modal/Modal'
 import { StepProgress, StepProgressProps } from '../Navigation/StepProgress'
 import { SelectOption } from '../Fields/Select'
@@ -23,7 +23,7 @@ export interface MissionModalProps
   className?: string
   style?: React.CSSProperties
   vehicleName: string
-  recentRuns?: SelectOption[]
+  missionCategories?: SelectOption[]
   totalDistance?: string
   bottomDepth?: string
   duration?: string
@@ -42,7 +42,7 @@ export const MissionModal: React.FC<MissionModalProps> = ({
   currentIndex,
   vehicleName,
   missions,
-  recentRuns,
+  missionCategories,
   selectedId,
   waypoints,
   stations,
@@ -56,6 +56,7 @@ export const MissionModal: React.FC<MissionModalProps> = ({
   onSchedule,
   onCancel,
   onVerifyParameter,
+  onSelectMission,
 }) => {
   const steps = [
     'Mission',
@@ -67,31 +68,60 @@ export const MissionModal: React.FC<MissionModalProps> = ({
   ]
 
   const [currentStep, setCurrentStep] = useState(currentIndex)
-  const [selectedMissionId, setSelectedMissionId] =
-    useState<string | null | undefined>(selectedId)
+  const [selectedMissionCategory, setSelectedMissionCategory] = useState<
+    string | undefined
+  >('Recent Runs')
+  const [selectedMissionId, setSelectedMissionId] = useState<
+    string | null | undefined
+  >(selectedId)
 
   const [showSummary, setShowSummary] = useState(false)
   const summarySteps = [1, 2]
 
+  const [defaultWaypoints, setDefaultWaypoints] = useState<string>(
+    JSON.stringify(waypoints)
+  )
+  const [updatedWaypoints, setUpdatedWaypoints] =
+    useState<WaypointProps[]>(waypoints)
   const initialWaypoints = waypoints.map((waypoint) =>
     (waypoint.lat || waypoint.lon) && !waypoint.stationName
       ? { ...waypoint, stationName: 'Custom' }
       : waypoint
   )
-
-  const [updatedWaypoints, setUpdatedWaypoints] =
-    useState<WaypointProps[]>(initialWaypoints)
+  useEffect(() => {
+    if (defaultWaypoints !== JSON.stringify(waypoints)) {
+      setDefaultWaypoints(JSON.stringify(waypoints))
+      setUpdatedWaypoints(initialWaypoints)
+    }
+  }, [waypoints, defaultWaypoints, setDefaultWaypoints, setUpdatedWaypoints])
 
   const handleWaypointsUpdate = (newWaypoints: WaypointProps[]) => {
     setUpdatedWaypoints(newWaypoints)
   }
 
+  const [defaultParameters, setDefaultParameters] = useState<string>(
+    JSON.stringify(parameters)
+  )
   const [updatedParameters, setUpdatedParameters] =
     useState<ParameterProps[]>(parameters)
   const [updatedSafetyParams, setUpdatedSafetyParams] =
     useState<ParameterProps[]>(safetyParams)
   const [updatedCommsParams, setUpdatedCommsParams] =
     useState<ParameterProps[]>(commsParams)
+  useEffect(() => {
+    const paramString = JSON.stringify(parameters)
+    if (defaultParameters !== paramString) {
+      setDefaultParameters(paramString)
+      setUpdatedParameters(parameters)
+      setUpdatedSafetyParams(safetyParams)
+      setUpdatedCommsParams(commsParams)
+    }
+  }, [
+    parameters,
+    defaultParameters,
+    setDefaultParameters,
+    setUpdatedParameters,
+  ])
 
   const updateParams = (
     params: ParameterProps[],
@@ -143,15 +173,29 @@ export const MissionModal: React.FC<MissionModalProps> = ({
   )
 
   const handleNext = () => {
+    const showStep1Summary = currentStep === 1
+    const showStep2Summary =
+      currentStep === 2 &&
+      updatedParameters.some((param) => param.overrideValue)
     // Next button triggers an interstitial summary screen instead of moving to the next step if the step has one
-    if (summarySteps.includes(currentStep) && !showSummary) {
+    if (
+      !showSummary &&
+      summarySteps.includes(currentStep) &&
+      (showStep1Summary || showStep2Summary)
+    ) {
       setShowSummary(true)
       return
     }
     // showSummary flag is set back to false until next summary screen needs to be triggered
     showSummary && setShowSummary(false)
-
-    return setCurrentStep(currentStep + 1)
+    const nextStep = currentStep + 1
+    if (
+      steps[nextStep].match(/waypoint/i) &&
+      JSON.parse(defaultWaypoints).length === 0
+    ) {
+      return setCurrentStep(nextStep + 1)
+    }
+    return setCurrentStep(nextStep)
   }
   const handlePrevious = () => {
     // if the user is on a summary screen the Previous button will trigger the step associated with the summary, instead of moving back to the previous step (ie step 2 summary goes back to step 2 form, instead of back to step 1)
@@ -160,8 +204,16 @@ export const MissionModal: React.FC<MissionModalProps> = ({
       return
     }
 
+    const prevStep = currentStep - 1
+    if (
+      steps[prevStep].match(/waypoint/i) &&
+      JSON.parse(defaultWaypoints).length === 0
+    ) {
+      return setCurrentStep(prevStep - 1)
+    }
+
     if (currentStep > 0) {
-      return setCurrentStep(currentStep - 1)
+      return setCurrentStep(prevStep)
     }
   }
 
@@ -171,6 +223,13 @@ export const MissionModal: React.FC<MissionModalProps> = ({
 
   const handleSelect = (id?: string | null) => {
     setSelectedMissionId(id)
+    if (id) {
+      onSelectMission?.(id)
+    }
+  }
+
+  const handleSelectCategory = (category?: string) => {
+    selectedMissionCategory !== category && setSelectedMissionCategory(category)
   }
 
   const getMissionName = () => {
@@ -222,6 +281,15 @@ export const MissionModal: React.FC<MissionModalProps> = ({
     setUpdatedWaypoints(initialWaypoints)
   }
 
+  const [focusedWaypointIndex, setFocusedWaypointIndex] = useState<
+    number | null
+  >(null)
+  const handleFocusWaypoint: WaypointTableProps['onFocusWaypoint'] = (
+    index
+  ) => {
+    setFocusedWaypointIndex(index)
+  }
+
   const currentModalBody = () => {
     switch (currentStep) {
       case 0:
@@ -230,8 +298,10 @@ export const MissionModal: React.FC<MissionModalProps> = ({
             vehicleName={vehicleName}
             missions={missions}
             selectedId={selectedMissionId}
-            recentRuns={recentRuns}
+            missionCategories={missionCategories}
             onSelect={handleSelect}
+            onSelectCategory={handleSelectCategory}
+            selectedCategory={selectedMissionCategory}
           />
         )
       case 1:
@@ -257,6 +327,7 @@ export const MissionModal: React.FC<MissionModalProps> = ({
             onUpdate={handleWaypointsUpdate}
             onNaNall={handleNaNwaypoints}
             onResetAll={handleResetWaypoints}
+            onFocusWaypoint={handleFocusWaypoint}
           />
         )
 
@@ -335,8 +406,10 @@ export const MissionModal: React.FC<MissionModalProps> = ({
       onCancel={onCancel}
       confirmButtonText={confirmButtonText}
       extraButtons={extraButtons()}
+      snapTo="top-right"
       extraWideModal
       bodyOverflowHidden
+      allowPointerEventsOnChildren
       open
     >
       {currentModalBody()}

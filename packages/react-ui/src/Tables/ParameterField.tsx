@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react'
 import { Input } from '../Fields'
-import rulerDark from '../assets/ruler-dark.png'
-import rulerLight from '../assets/ruler-light.png'
+import rulerDark from '@mbari/react-ui/assets/ruler-dark.png'
+import rulerLight from '@mbari/react-ui/assets/ruler-light.png'
 import { ParameterTableProps } from './ParameterTable'
 
 export interface ParameterFieldProps {

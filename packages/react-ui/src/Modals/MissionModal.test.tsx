@@ -18,10 +18,10 @@ jest.mock('../assets/ruler-light.png', () => {
 const props: MissionModalProps = {
   currentIndex: 0,
   vehicleName: 'Brizo',
-  recentRuns: [
+  missionCategories: [
     {
-      id: '1',
-      name: 'Behavior',
+      id: 'Recent Runs',
+      name: 'Recent Runs',
     },
     {
       id: '2',
@@ -45,6 +45,7 @@ const props: MissionModalProps = {
       ranBy: 'Jordan Caress',
       ranOn: 'Dec. 10, 2021',
       waypointCount: 2,
+      recentRun: true,
     },
     {
       id: '2',
@@ -52,11 +53,12 @@ const props: MissionModalProps = {
       name: 'sci2',
       task: 'Mission 2',
       description:
-        "Vehicle yo-yo's to the specified waypoints, with science turned on.",
+        "Another mission where a vehicle yo-yo's to the specified waypoints, with science turned on.",
       vehicle: 'Tethys',
       ranBy: 'Joost Daniels',
       ranOn: 'Dec. 10, 2021',
       waypointCount: 4,
+      recentRun: true,
     },
     {
       id: '3',
@@ -153,21 +155,27 @@ test('should render the component', async () => {
 // Mission: Step 1 tests
 test('should display mission tasks', async () => {
   render(<MissionModal {...props} />)
-  expect(screen.queryByText(props.missions[0].task)).toBeInTheDocument()
+  expect(screen.queryByText(props.missions[0].task ?? '')).toBeInTheDocument()
 })
 
 test('should display mission category and name labels', async () => {
   render(<MissionModal {...props} />)
   const { category, name } = props.missions[0]
-
-  expect(screen.getByText(`${category}: ${name}`)).toBeInTheDocument()
+  expect(screen.queryByText(`${category}: ${name}`)).toBeInTheDocument()
 })
 
 test('should display mission descriptions', async () => {
   render(<MissionModal {...props} />)
   expect(
-    screen.queryByText(`${props.missions[2].description}`)
+    screen.queryByText(`${props.missions[0].description}`)
   ).toBeInTheDocument()
+})
+
+test('should not display missions that do not match the current category filter', async () => {
+  render(<MissionModal {...props} />)
+  expect(
+    screen.queryByText(`${props.missions[2].description}`)
+  ).not.toBeInTheDocument()
 })
 
 test('should display vehicle name in teal', async () => {

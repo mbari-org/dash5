@@ -1,6 +1,7 @@
 export * from './ConfirmStopModal'
 export * from './NewDeploymentModal'
 export * from './LoginModal'
+export * from './MissionModal'
 export * from './SendNoteModal'
 export * from './ReassignmentModal'
 export * from './CreateAccountModal'

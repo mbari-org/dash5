@@ -27,7 +27,7 @@ export const TableCell: React.FC<TableCellProps> = ({
       {icon && (
         <li className={clsx('text-4xl', fixedIconWidth && 'w-2/5')}>{icon}</li>
       )}
-      <li className="flex h-full w-full flex-col justify-center">
+      <li className="flex h-full w-full flex-col">
         <div
           className={clsx(
             !scrollable && firstColumn && !highlighted && 'font-mono',

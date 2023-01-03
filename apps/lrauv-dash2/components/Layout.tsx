@@ -19,6 +19,7 @@ import SendNote from './SendNote'
 import DocumentInstanceModal from './DocumentInstanceModal'
 import AttachmentModal from './AttachmentModal'
 import DetachModal from './DetachModal'
+import MissionModal from './MissionModal'
 
 const Layout: React.FC = ({ children }) => {
   const [showLogin, setLogin] = useState(false)
@@ -155,6 +156,8 @@ const Layout: React.FC = ({ children }) => {
         requireAuthentication(<AttachmentModal onClose={setModal(null)} />)}
       {globalModalId?.id === 'detachDocument' &&
         requireAuthentication(<DetachModal onClose={setModal(null)} />)}
+      {globalModalId?.id === 'newMission' &&
+        requireAuthentication(<MissionModal onClose={setModal(null)} />)}
     </div>
   )
 }

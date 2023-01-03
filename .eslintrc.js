@@ -1,54 +1,10 @@
 module.exports = {
   root: true,
-  env: {
-    browser: true,
-    es6: true,
-  },
-  extends: [
-    'plugin:@typescript-eslint/recommended',
-    'plugin:react/recommended',
-    'plugin:react-hooks/recommended',
-    'plugin:prettier/recommended',
-    'plugin:jsx-a11y/strict',
-    'next/core-web-vitals',
-  ],
-  parser: '@typescript-eslint/parser',
-  parserOptions: {
-    ecmaFeatures: {
-      jsx: true,
-    },
-    ecmaVersion: 2018,
-    sourceType: 'module',
-  },
-  plugins: ['react', 'jsx-a11y', '@typescript-eslint'],
-  rules: {
-    'react-hooks/exhaustive-deps': 'error',
-    'no-var': 'error',
-    'brace-style': 'error',
-    'prefer-template': 'error',
-    radix: 'error',
-    'space-before-blocks': 'error',
-    'import/prefer-default-export': 'off',
-    'react/prop-types': 'off',
-  },
+  // This tells ESLint to load the config from the package `eslint-config-custom`
+  extends: ['custom'],
   settings: {
-    react: {
-      version: 'detect',
+    next: {
+      rootDir: ['apps/*/'],
     },
   },
-  overrides: [
-    {
-      files: [
-        '**/*.test.js',
-        '**/*.test.jsx',
-        '**/*.test.tsx',
-        '**/*.spec.js',
-        '**/*.spec.jsx',
-        '**/*.spec.tsx',
-      ],
-      env: {
-        jest: true,
-      },
-    },
-  ],
 }

@@ -116,7 +116,7 @@ test('should display +/- error warning if custom coordinate is out of range', as
         {
           latName: `Lat1`,
           lonName: `Lon1`,
-          lat: '-1',
+          lat: '-180',
           lon: '-122.222',
           stationName: 'Custom',
         },
