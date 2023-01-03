@@ -81,7 +81,8 @@ export const MissionModal: React.FC<MissionModalProps> = ({
   const [defaultWaypoints, setDefaultWaypoints] = useState<string>(
     JSON.stringify(waypoints)
   )
-  const [updatedWaypoints, setUpdatedWaypoints] = useState<WaypointProps[]>([])
+  const [updatedWaypoints, setUpdatedWaypoints] =
+    useState<WaypointProps[]>(waypoints)
   const initialWaypoints = waypoints.map((waypoint) =>
     (waypoint.lat || waypoint.lon) && !waypoint.stationName
       ? { ...waypoint, stationName: 'Custom' }
@@ -90,7 +91,6 @@ export const MissionModal: React.FC<MissionModalProps> = ({
   useEffect(() => {
     if (defaultWaypoints !== JSON.stringify(waypoints)) {
       setDefaultWaypoints(JSON.stringify(waypoints))
-
       setUpdatedWaypoints(initialWaypoints)
     }
   }, [waypoints, defaultWaypoints, setDefaultWaypoints, setUpdatedWaypoints])

@@ -42,9 +42,19 @@ test('should display mission task label', async () => {
   expect(screen.getByText(/test mission/i)).toBeInTheDocument()
 })
 
-test('should display vehicle label', async () => {
-  render(<MissionTable {...props} />)
+test('should display the vehicle label if a recent run is present', async () => {
+  render(
+    <MissionTable
+      {...props}
+      missions={[{ ...props.missions[0], recentRun: true }]}
+    />
+  )
   expect(screen.getByText(/Brizo/i)).toBeInTheDocument()
+})
+
+test('should not display the vehicle label', async () => {
+  render(<MissionTable {...props} />)
+  expect(screen.queryByText(/Brizo/i)).not.toBeInTheDocument()
 })
 
 test('should display No description label when description is not provided', async () => {
