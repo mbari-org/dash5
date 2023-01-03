@@ -99,12 +99,29 @@ export const MissionModal: React.FC<MissionModalProps> = ({
     setUpdatedWaypoints(newWaypoints)
   }
 
+  const [defaultParameters, setDefaultParameters] = useState<string>(
+    JSON.stringify(parameters)
+  )
   const [updatedParameters, setUpdatedParameters] =
     useState<ParameterProps[]>(parameters)
   const [updatedSafetyParams, setUpdatedSafetyParams] =
     useState<ParameterProps[]>(safetyParams)
   const [updatedCommsParams, setUpdatedCommsParams] =
     useState<ParameterProps[]>(commsParams)
+  useEffect(() => {
+    const paramString = JSON.stringify(parameters)
+    if (defaultParameters !== paramString) {
+      setDefaultParameters(paramString)
+      setUpdatedParameters(parameters)
+      setUpdatedSafetyParams(safetyParams)
+      setUpdatedCommsParams(commsParams)
+    }
+  }, [
+    parameters,
+    defaultParameters,
+    setDefaultParameters,
+    setUpdatedParameters,
+  ])
 
   const updateParams = (
     params: ParameterProps[],
@@ -156,8 +173,16 @@ export const MissionModal: React.FC<MissionModalProps> = ({
   )
 
   const handleNext = () => {
+    const showStep1Summary = currentStep === 1
+    const showStep2Summary =
+      currentStep === 2 &&
+      updatedParameters.some((param) => param.overrideValue)
     // Next button triggers an interstitial summary screen instead of moving to the next step if the step has one
-    if (summarySteps.includes(currentStep) && !showSummary) {
+    if (
+      !showSummary &&
+      summarySteps.includes(currentStep) &&
+      (showStep1Summary || showStep2Summary)
+    ) {
       setShowSummary(true)
       return
     }
@@ -256,6 +281,15 @@ export const MissionModal: React.FC<MissionModalProps> = ({
     setUpdatedWaypoints(initialWaypoints)
   }
 
+  const [focusedWaypointIndex, setFocusedWaypointIndex] = useState<
+    number | null
+  >(null)
+  const handleFocusWaypoint: WaypointTableProps['onFocusWaypoint'] = (
+    index
+  ) => {
+    setFocusedWaypointIndex(index)
+  }
+
   const currentModalBody = () => {
     switch (currentStep) {
       case 0:
@@ -293,6 +327,7 @@ export const MissionModal: React.FC<MissionModalProps> = ({
             onUpdate={handleWaypointsUpdate}
             onNaNall={handleNaNwaypoints}
             onResetAll={handleResetWaypoints}
+            onFocusWaypoint={handleFocusWaypoint}
           />
         )
 
@@ -355,7 +390,6 @@ export const MissionModal: React.FC<MissionModalProps> = ({
     }
   }
 
-  console.log('Mission modal classname...', className)
   return (
     <Modal
       className={className}

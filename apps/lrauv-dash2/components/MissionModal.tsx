@@ -26,116 +26,6 @@ const onFocusWaypoint: WaypointTableProps['onFocusWaypoint'] = (index) => {
   console.log(index)
 }
 
-const parameters: ParameterProps[] = [
-  {
-    description: '\n        Maximum duration of mission\n    ',
-    name: 'MissionTimeout',
-    unit: 'hour',
-    value: '24',
-    dvlOff: true,
-  },
-  {
-    description:
-      '\n        Transit surface communications. Elapsed time after previous surface\n        comms when vehicle will begin to ascend for additional surface\n        communications\n    ',
-    name: 'NeedCommsTime',
-    unit: 'minute',
-    value: '45',
-    overrideValue: '35',
-  },
-  {
-    description:
-      '\n        Number of times to repeat the waypoint trajectory. NOTE: When setting\n        the LapRepeat > 1 and running WPs in a loop, omit last/return waypoint\n        by setting LatX/LonX to NaN.\n    ',
-    name: 'LapRepeat',
-    unit: 'count',
-    value: '1',
-  },
-  {
-    description:
-      '\n        Waypoint number to start the the waypoint trajectory with. The mission\n        will start with the specified waypoint and cycle through all the\n        subsequent waypoints.\n    ',
-    name: 'StartWaypoint',
-    unit: 'count',
-    value: '1',
-    overrideValue: '2',
-  },
-  {
-    description:
-      '\n        Minimum YoYo depth while transiting to waypoint.\n    ',
-    name: 'TransitYoYoMinDepth',
-    unit: 'meter',
-    value: '5',
-  },
-  {
-    description:
-      '\n        Maximum YoYo depth while while transiting to waypoint.\n    ',
-    name: 'TransitYoYoMaxDepth',
-    unit: 'meter',
-    value: '50',
-  },
-  {
-    description: '\n        Turns on peak detection of Cholorphyll.\n    ',
-    name: 'PeakDetectChlActive',
-    value: 'False',
-  },
-  {
-    description:
-      '\n        If greater than zero, report a peak every window. If NaN or zero, this\n        variable is ignored.\n    ',
-    name: 'TimeWindowPeakReport',
-    unit: 'minute',
-    value: 'NaN',
-  },
-  {
-    description:
-      '\n        Turns on reporting of the highest peak value of chlorophyll on yo-yo\n        profiles in a horizontal sliding window (of length\n        numProfilesSlidingwindow)\n    ',
-    name: 'HighestChlPeakReportActive',
-    value: 'False',
-  },
-]
-
-const safetyParams: ParameterProps[] = [
-  {
-    description: '\n        Maximum duration of mission\n    ',
-    name: 'MissionTimeout',
-    unit: 'hour',
-    value: '2',
-    dvlOff: true,
-  },
-  {
-    description: '\n        Maximum allowable depth during the mission\n    ',
-    name: 'MaxDepth',
-    unit: 'meter',
-    value: '200',
-  },
-  {
-    description:
-      '\n        Minimum allowable altitude during the mission\n    ',
-    name: 'MinAltitude',
-    unit: 'meter',
-    value: '200',
-  },
-  {
-    description: '\n        Minimum distance from shore to maintain\n    ',
-    name: 'MinOffshore',
-    unit: 'meter',
-    value: '2000',
-  },
-]
-
-const commsParams: ParameterProps[] = [
-  {
-    description: '\n        How often to surface for communications\n    ',
-    name: 'NeedCommsTime',
-    unit: 'minute',
-    value: '60',
-  },
-  {
-    description:
-      '\n        Elapsed time after most recent surfacing when vehicle will\n        begin to ascend to the surface again. The timing is actually...\n',
-    name: 'DiveInterval',
-    unit: 'hour',
-    value: '3',
-  },
-]
-
 const parseMissionPath = (mission?: string) => {
   const path = mission?.split('/') ?? ''
   const category = path?.length > 1 ? path[0] : ''
@@ -246,6 +136,38 @@ const MissionModal: React.FC<MissionModalProps> = ({ onClose }) => {
       lat: geojson.geometry.coordinates[0],
       lon: geojson.geometry.coordinates[1],
     })) ?? []
+
+  const reservedParams: string[] = [
+    selectedMissionData?.inserts
+      ?.filter(({ id }) =>
+        [/comms/i, /standard envelope/i].some((r) => r.test(id))
+      )
+      .map(({ scriptArgs }) => scriptArgs.map((arg) => arg.name)) ?? [],
+    selectedMissionData?.latLonNamePairs?.map(({ latName, lonName }) => [
+      latName,
+      lonName,
+    ]) ?? [],
+  ]
+    .flat(2)
+    .filter((i) => i)
+  const parameters: ParameterProps[] =
+    selectedMissionData?.scriptArgs
+      .filter(({ name }) => !reservedParams.includes(name))
+      .map((arg) => ({
+        description: arg.description ?? '',
+        name: arg.name,
+        unit: arg.unit,
+        value: arg.value,
+      })) ?? []
+
+  const commsParams =
+    selectedMissionData?.inserts.find(({ id }) => id.match(/comms/i))
+      ?.scriptArgs ?? []
+
+  const safetyParams =
+    selectedMissionData?.inserts.find(({ id }) => id.match(/envelope/i))
+      ?.scriptArgs ?? []
+
   return (
     <MissionModalView
       style={{ maxHeight: '80vh' }}
