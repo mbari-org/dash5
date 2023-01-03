@@ -31,12 +31,19 @@ export const MissionStep: React.FC<MissionStepProps> = ({
   const [sortDirection, setSortDirection] = useState<SortDirection>(null)
 
   useEffect(() => {
-    const filteredByRecent = missions.filter(({ category, recentRun }) => {
-      if (selectedCategory?.match(/recent runs/i)) return recentRun
-      if (selectedCategory?.match(/default/i))
-        return category.length < 1 && !recentRun
-      return category.includes(selectedCategory ?? '') && !recentRun
-    })
+    const filteredByRecent = missions.filter(
+      ({ category, recentRun, frequentRun }) => {
+        if (selectedCategory?.match(/recent runs/i)) return recentRun
+        if (selectedCategory?.match(/frequent runs/i)) return frequentRun
+        if (selectedCategory?.match(/default/i))
+          return category.length < 1 && !recentRun
+        return (
+          category.includes(selectedCategory ?? '') &&
+          !recentRun &&
+          !frequentRun
+        )
+      }
+    )
 
     setFilteredMissions(filteredByRecent.length ? filteredByRecent : [])
   }, [selectedCategory, missionCategories, missions])

@@ -5,8 +5,15 @@ import {
   ParameterProps,
   WaypointTableProps,
 } from '@mbari/react-ui'
-import { capitalize, capitalizeEach, makeOrdinal } from '@mbari/utils'
 import {
+  capitalize,
+  capitalizeEach,
+  makeOrdinal,
+  sortByProperty,
+} from '@mbari/utils'
+import {
+  MissionListItem,
+  useFrequentRuns,
   useMissionList,
   useRecentRuns,
   useScript,
@@ -33,37 +40,66 @@ const parseMissionPath = (mission?: string) => {
   return { category, name }
 }
 
+const convertMissionDataToListItem =
+  (vehicleName: string) => (mission: MissionListItem) => {
+    const { category, name } = parseMissionPath(mission.path)
+    return {
+      id: mission.path,
+      category,
+      name,
+      task: '',
+      description: mission.description,
+      vehicle: vehicleName,
+    }
+  }
+
 const MissionModal: React.FC<MissionModalProps> = ({ onClose }) => {
   const router = useRouter()
   const params = (router.query?.deployment ?? []) as string[]
   const vehicleName = params[0]
   const { trackedVehicles: vehicles } = useTrackedVehicles()
   const { data: missionData } = useMissionList()
+  const { data: frequentRunsData } = useFrequentRuns(
+    {
+      vehicle: vehicleName,
+    },
+    { enabled: !!vehicleName }
+  )
   const { data: recentRunsData } = useRecentRuns(
     {
       vehicles,
       from: DateTime.now().minus({ days: 60 }).toISODate(),
     },
-    { enabled: !!vehicleName }
+    { enabled: !!vehicles }
   )
+
+  console.log(frequentRunsData)
 
   const missionCategories = [
     {
       id: 'Recent Runs',
       name: 'Recent Runs',
     },
-    ...(missionData?.list
-      ?.map((mission) => {
-        const { category } = parseMissionPath(mission.path)
-        return {
-          id: category,
-          name: category === '' ? 'Default' : category,
-        }
-      })
-      .filter(
-        (mission, index, self) =>
-          self.findIndex((m) => m.id === mission.id) === index
-      ) ?? []),
+    {
+      id: 'Frequent Runs',
+      name: 'Frequent Runs',
+    },
+    ...sortByProperty({
+      sortProperty: 'name',
+      arrOfObj:
+        missionData?.list
+          ?.map((mission) => {
+            const { category } = parseMissionPath(mission.path)
+            return {
+              id: category,
+              name: category === '' ? 'Default' : category,
+            }
+          })
+          .filter(
+            (mission, index, self) =>
+              self.findIndex((m) => m.id === mission.id) === index
+          ) ?? [],
+    }),
   ]
 
   const recentRuns: MissionTableProps['missions'] =
@@ -85,19 +121,26 @@ const MissionModal: React.FC<MissionModalProps> = ({ onClose }) => {
         (mission, index, s) => s.findIndex((m) => m.id === mission.id) === index
       ) ?? []
 
+  const frequentRuns: MissionTableProps['missions'] =
+    (frequentRunsData
+      ?.map((d) => {
+        const relatedMission = missionData?.list?.find(
+          ({ path }) => path === d?.mission
+        )
+        return (
+          relatedMission && {
+            ...convertMissionDataToListItem(vehicleName)(relatedMission),
+            frequentRun: true,
+          }
+        )
+      })
+      .filter((i) => i) as MissionTableProps['missions']) ?? []
+
   const missions: MissionTableProps['missions'] = [
     ...recentRuns,
-    ...(missionData?.list?.map((mission) => {
-      const { category, name } = parseMissionPath(mission.path)
-      return {
-        id: mission.path,
-        category,
-        name,
-        task: '',
-        description: mission.description,
-        vehicle: vehicleName,
-      }
-    }) ?? []),
+    ...frequentRuns,
+    ...(missionData?.list?.map(convertMissionDataToListItem(vehicleName)) ??
+      []),
   ]
 
   const [selectedMission, setSelectedMission] = useState<string | undefined>()
@@ -150,6 +193,7 @@ const MissionModal: React.FC<MissionModalProps> = ({ onClose }) => {
   ]
     .flat(2)
     .filter((i) => i)
+
   const parameters: ParameterProps[] =
     selectedMissionData?.scriptArgs
       .filter(({ name }) => !reservedParams.includes(name))
