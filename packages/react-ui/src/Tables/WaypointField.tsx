@@ -16,6 +16,8 @@ export interface WaypointFieldProps {
   setIsCustom: (isCustom: boolean) => void
 }
 
+const NAN = 'NaN'
+
 const styles = {
   ul: 'grid h-full grid-cols-3 gap-1',
   li: 'flex h-full w-full items-center',
@@ -56,11 +58,15 @@ export const WaypointField: React.FC<WaypointFieldProps> = ({
     }
   }, [lat, initialLat, lon, initialLon, isCustom])
 
-  const latErrorCondition = (lat: number) =>
-    customLat && !(isFinite(lat) && Math.abs(lat) <= 90) ? true : false
+  const latErrorCondition = (val: number) =>
+    customLat && !lat?.match(/nan/i) && !(isFinite(val) && Math.abs(val) <= 90)
+      ? true
+      : false
 
-  const lonErrorCondition = (lon: number) =>
-    customLon && !(isFinite(lon) && Math.abs(lon) <= 180) ? true : false
+  const lonErrorCondition = (num: number) =>
+    customLon && !lon?.match(/nan/i) && !(isFinite(num) && Math.abs(num) <= 180)
+      ? true
+      : false
 
   const [latError, setLatError] = useState<boolean>(
     (isCustom && latErrorCondition(Number(lat))) || false
@@ -75,10 +81,10 @@ export const WaypointField: React.FC<WaypointFieldProps> = ({
   const optionsWithCustom: StationOption[] | undefined = (options &&
     [
       { id: 'Custom', name: 'Custom' },
-      { id: 'NaN', name: 'NaN' },
+      { id: NAN, name: NAN },
     ].concat(options)) || [
     { id: 'Custom', name: 'Custom' },
-    { id: 'NaN', name: 'NaN' },
+    { id: NAN, name: NAN },
   ]
 
   // TODO: add bad input error handling
