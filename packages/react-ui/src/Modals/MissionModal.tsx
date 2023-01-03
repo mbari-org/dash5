@@ -372,8 +372,10 @@ export const MissionModal: React.FC<MissionModalProps> = ({
       onCancel={onCancel}
       confirmButtonText={confirmButtonText}
       extraButtons={extraButtons()}
+      snapTo="top-right"
       extraWideModal
       bodyOverflowHidden
+      allowPointerEventsOnChildren
       open
     >
       {currentModalBody()}
