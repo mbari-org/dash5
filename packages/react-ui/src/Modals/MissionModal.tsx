@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react'
+import React, { useState } from 'react'
 import { Modal } from '../Modal/Modal'
 import { StepProgress, StepProgressProps } from '../Navigation/StepProgress'
 import { SelectOption } from '../Fields/Select'
@@ -6,7 +6,7 @@ import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { faChevronDoubleRight } from '@fortawesome/pro-solid-svg-icons'
 import { MissionTableProps } from '../Tables/MissionTable'
 import { MissionStep } from './MissionModalSteps/MissionStep'
-import { WaypointProps, WaypointTableProps } from '../Tables/WaypointTable'
+import { WaypointTableProps } from '../Tables/WaypointTable'
 import { WaypointStep } from './MissionModalSteps/WaypointStep'
 import { ExtraButton } from '../Modal/Footer'
 import { WaypointSummary } from './MissionModalSteps/WaypointSummary'
@@ -17,7 +17,11 @@ import { SafetyCommsStep } from './MissionModalSteps/SafetyCommsStep'
 import { ReviewStep } from './MissionModalSteps/ReviewStep'
 import { ScheduleOption, ScheduleStep } from './MissionModalSteps/ScheduleStep'
 import { AlternativeAddressStep } from './MissionModalSteps/AlternativeAddressStep'
-import { ConfirmVehicleStep } from './MissionModalSteps/ConfirmVehicleStep'
+import makeWaypointOverrides from './MissionModalSteps/helpers/makeWaypointOverrides'
+import useManagedWaypoints from './MissionModalSteps/hooks/useManagedWaypoints'
+import useManagedParameters from './MissionModalSteps/hooks/useManagedParameters'
+import useMissionModalSteps from './MissionModalSteps/hooks/useMissionModalSteps'
+import { ConfirmVehicleDialog } from './ConfirmVehicleDialog'
 
 export interface MissionModalProps
   extends Omit<StepProgressProps, 'steps'>,
@@ -36,9 +40,7 @@ export interface MissionModalProps
   onRefreshStats?: () => void
   onSchedule?: (args: {
     selectedMissionId: string
-    plottedWaypoints: WaypointProps[]
-    overriddenMissionParams: ParameterProps[]
-    overriddenSafetyParams: ParameterProps[]
+    parameterOverrides: ParameterProps[]
     alternateAddress?: string | null
     specifiedTime?: string | null
     notes?: string | null
@@ -51,16 +53,6 @@ export interface MissionModalProps
   alternativeAddresses?: string[]
   vehicles?: string[]
 }
-
-const steps = [
-  'Mission',
-  'Waypoints',
-  'Parameters',
-  'Safety & Comms',
-  'Review',
-  'Schedule',
-  'Confirm',
-]
 
 export const MissionModal: React.FC<MissionModalProps> = ({
   className,
@@ -86,100 +78,53 @@ export const MissionModal: React.FC<MissionModalProps> = ({
   alternativeAddresses,
   vehicles,
 }) => {
-  const [currentStep, setCurrentStep] = useState(currentIndex)
   const [selectedMissionCategory, setSelectedMissionCategory] = useState<
     string | undefined
   >('Recent Runs')
   const [selectedMissionId, setSelectedMissionId] = useState<
     string | null | undefined
   >(selectedId)
-
-  const [showSummary, setShowSummary] = useState(false)
-  const summarySteps = [steps.indexOf('Waypoints'), steps.indexOf('Parameters')]
-
-  const [defaultWaypoints, setDefaultWaypoints] = useState<string>(
-    JSON.stringify(waypoints)
+  const [confirmedVehicle, setConfirmedVehicle] = useState<string | null>(null)
+  const [showAlternateAddress, setShowAlternateAddress] = useState(false)
+  const [alternateAddress, setAlternateAddress] = useState<string | null>(null)
+  const [scheduleOption, setScheduleOption] = useState<ScheduleOption | null>(
+    null
   )
-  const [updatedWaypoints, setUpdatedWaypoints] =
-    useState<WaypointProps[]>(waypoints)
-  const initialWaypoints = waypoints.map((waypoint) =>
-    (waypoint.lat || waypoint.lon) && !waypoint.stationName
-      ? { ...waypoint, stationName: 'Custom' }
-      : waypoint
-  )
-  useEffect(() => {
-    if (defaultWaypoints !== JSON.stringify(waypoints)) {
-      setDefaultWaypoints(JSON.stringify(waypoints))
-      setUpdatedWaypoints(initialWaypoints)
-    }
-  }, [waypoints, defaultWaypoints, setDefaultWaypoints, setUpdatedWaypoints])
+  const [customScheduleId, setCustomScheduleId] = useState<string | null>(null)
+  const [notes, setNotes] = useState<string | null>(null)
+  const [specifiedTime, setSpecifiedTime] = useState<string | null>(null)
 
-  const handleWaypointsUpdate = (newWaypoints: WaypointProps[]) => {
-    setUpdatedWaypoints(newWaypoints)
-  }
+  const {
+    handleParamUpdate,
+    handleCommsUpdate,
+    handleSafetyUpdate,
+    updatedCommsParams,
+    updatedSafetyParams,
+    updatedParameters,
+    overriddenMissionParams,
+    safetyCommsParams,
+    overrideCount,
+  } = useManagedParameters({ parameters, safetyParams, commsParams })
 
-  const [defaultParameters, setDefaultParameters] = useState<string>(
-    JSON.stringify(parameters)
-  )
-  const [updatedParameters, setUpdatedParameters] =
-    useState<ParameterProps[]>(parameters)
-  const [updatedSafetyParams, setUpdatedSafetyParams] =
-    useState<ParameterProps[]>(safetyParams)
-  const [updatedCommsParams, setUpdatedCommsParams] =
-    useState<ParameterProps[]>(commsParams)
-  useEffect(() => {
-    const paramString = JSON.stringify(parameters)
-    if (defaultParameters !== paramString) {
-      setDefaultParameters(paramString)
-      setUpdatedParameters(parameters)
-      setUpdatedSafetyParams(safetyParams)
-      setUpdatedCommsParams(commsParams)
-    }
-  }, [
-    parameters,
-    defaultParameters,
-    setDefaultParameters,
-    setUpdatedParameters,
-  ])
-
-  const updateParams = (
-    params: ParameterProps[],
-    name: string,
-    newOverrideValue: string
-  ) => {
-    return params.map((param) =>
-      param.name === name
-        ? { ...param, overrideValue: newOverrideValue }
-        : param
-    )
-  }
-
-  const handleParamUpdate = (name: string, newOverrideValue: string) => {
-    const newParameters = updateParams(
+  const { steps, currentStep, handleNext, handlePrevious, showSummary } =
+    useMissionModalSteps({
+      initialIndex: currentIndex,
+      waypoints,
+      defaultParameters: parameters,
       updatedParameters,
-      name,
-      newOverrideValue
-    )
-    setUpdatedParameters(newParameters)
-  }
+      safetyParams,
+      commsParams,
+    })
 
-  const handleSafetyUpdate = (name: string, newOverrideValue: string) => {
-    const newSafetyParams = updateParams(
-      updatedSafetyParams,
-      name,
-      newOverrideValue
-    )
-    setUpdatedSafetyParams(newSafetyParams)
-  }
-
-  const handleCommsUpdate = (name: string, newOverrideValue: string) => {
-    const newCommsParams = updateParams(
-      updatedCommsParams,
-      name,
-      newOverrideValue
-    )
-    setUpdatedCommsParams(newCommsParams)
-  }
+  const {
+    handleNaNwaypoints,
+    handleResetWaypoints,
+    handleWaypointsUpdate,
+    updatedWaypoints,
+    handleFocusWaypoint,
+    plottedWaypointCount,
+    plottedWaypoints,
+  } = useManagedWaypoints(waypoints)
 
   const isLastStep = currentStep === steps.length - 1
   const confirmButtonText = isLastStep ? (
@@ -190,77 +135,6 @@ export const MissionModal: React.FC<MissionModalProps> = ({
       <FontAwesomeIcon icon={faChevronDoubleRight} />
     </div>
   )
-
-  const handleNext = () => {
-    const showStep1Summary = currentStep === 1
-    const showStep2Summary =
-      currentStep === 2 &&
-      updatedParameters.some((param) => param.overrideValue)
-    // Next button triggers an interstitial summary screen instead of moving to the next step if the step has one
-    if (
-      !showSummary &&
-      summarySteps.includes(currentStep) &&
-      (showStep1Summary || showStep2Summary)
-    ) {
-      setShowSummary(true)
-      return
-    }
-    // showSummary flag is set back to false until next summary screen needs to be triggered
-    showSummary && setShowSummary(false)
-    let nextStep = currentStep + 1
-    if (
-      steps[nextStep].match(/waypoint/i) &&
-      JSON.parse(defaultWaypoints).length === 0
-    ) {
-      nextStep = nextStep + 1
-    }
-    if (
-      steps[nextStep].match(/parameters/i) &&
-      JSON.parse(defaultParameters).length === 0
-    ) {
-      nextStep = nextStep + 1
-    }
-    if (
-      steps[nextStep].match(/safety/i) &&
-      safetyParams.length === 0 &&
-      commsParams.length === 0
-    ) {
-      nextStep = nextStep + 1
-    }
-    return setCurrentStep(nextStep)
-  }
-  const handlePrevious = () => {
-    // if the user is on a summary screen the Previous button will trigger the step associated with the summary, instead of moving back to the previous step (ie step 2 summary goes back to step 2 form, instead of back to step 1)
-    if (showSummary) {
-      setShowSummary(false)
-      return
-    }
-
-    let prevStep = currentStep - 1
-    if (
-      steps[prevStep].match(/safety/i) &&
-      safetyParams.length === 0 &&
-      commsParams.length === 0
-    ) {
-      prevStep = prevStep - 1
-    }
-    if (
-      steps[prevStep].match(/parameters/i) &&
-      JSON.parse(defaultParameters).length === 0
-    ) {
-      prevStep = prevStep - 1
-    }
-    if (
-      steps[prevStep].match(/waypoint/i) &&
-      JSON.parse(defaultWaypoints).length === 0
-    ) {
-      prevStep = prevStep - 1
-    }
-
-    if (prevStep >= 0) {
-      return setCurrentStep(prevStep)
-    }
-  }
 
   const handleSelect = (id?: string | null) => {
     setSelectedMissionId(id)
@@ -273,13 +147,9 @@ export const MissionModal: React.FC<MissionModalProps> = ({
     selectedMissionCategory !== category && setSelectedMissionCategory(category)
   }
 
-  const getMissionName = () => {
-    const selectedMission = missions.find(({ id }) => id === selectedMissionId)
+  const missionName =
+    missions.find(({ id }) => id === selectedMissionId)?.name ?? ''
 
-    return selectedMission?.name ?? ''
-  }
-
-  const [showAlternateAddress, setShowAlternateAddress] = useState(false)
   const handleAlternateAddress = () => {
     setShowAlternateAddress(true)
   }
@@ -335,48 +205,6 @@ export const MissionModal: React.FC<MissionModalProps> = ({
     }
   }
 
-  const handleNaNwaypoints = () => {
-    const allNaNwaypoints = updatedWaypoints.map((waypoint) => ({
-      ...waypoint,
-      lat: 'NaN',
-      lon: 'NaN',
-      stationName: 'Custom',
-    }))
-    setUpdatedWaypoints(allNaNwaypoints)
-  }
-  const handleResetWaypoints = () => {
-    setUpdatedWaypoints(initialWaypoints)
-  }
-
-  const [focusedWaypointIndex, setFocusedWaypointIndex] = useState<
-    number | null
-  >(null)
-  const handleFocusWaypoint: WaypointTableProps['onFocusWaypoint'] = (
-    index
-  ) => {
-    setFocusedWaypointIndex(index)
-  }
-
-  const plottedWaypoints = waypoints.filter(
-    ({ lat, lon }) => lat !== 'NaN' || lon !== 'NaN'
-  )
-  const safetyCommsParams = updatedSafetyParams.concat(updatedCommsParams)
-  const overriddenMissionParams = updatedParameters.filter(
-    (param) => param.overrideValue
-  )
-  const plottedWaypointCount = plottedWaypoints.length ?? 0
-  const overrideCount =
-    safetyCommsParams.filter((param) => param.overrideValue)?.length +
-      overriddenMissionParams?.length ?? 0
-
-  const [alternateAddress, setAlternateAddress] = useState<string | null>(null)
-  const [scheduleOption, setScheduleOption] = useState<ScheduleOption | null>(
-    null
-  )
-  const [customScheduleId, setCustomScheduleId] = useState<string | null>(null)
-  const [notes, setNotes] = useState<string | null>(null)
-  const [specifiedTime, setSpecifiedTime] = useState<string | null>(null)
-
   const currentModalBody = () => {
     switch (currentStep) {
       case steps.indexOf('Mission'):
@@ -399,7 +227,7 @@ export const MissionModal: React.FC<MissionModalProps> = ({
             totalDistance={totalDistance}
             bottomDepth={bottomDepth}
             duration={duration}
-            mission={getMissionName()}
+            mission={missionName}
           />
         ) : (
           <WaypointStep
@@ -409,7 +237,7 @@ export const MissionModal: React.FC<MissionModalProps> = ({
             totalDistance={totalDistance}
             bottomDepth={bottomDepth}
             duration={duration}
-            mission={getMissionName()}
+            mission={missionName}
             onRefreshStats={onRefreshStats}
             onUpdate={handleWaypointsUpdate}
             onNaNall={handleNaNwaypoints}
@@ -422,7 +250,7 @@ export const MissionModal: React.FC<MissionModalProps> = ({
         return showSummary ? (
           <ParameterSummary
             vehicleName={vehicleName}
-            mission={getMissionName()}
+            mission={missionName}
             parameters={
               updatedParameters.filter((param) => param.overrideValue) || []
             }
@@ -435,7 +263,7 @@ export const MissionModal: React.FC<MissionModalProps> = ({
         ) : (
           <ParameterStep
             vehicleName={vehicleName}
-            mission={getMissionName()}
+            mission={missionName}
             totalDistance={totalDistance}
             bottomDepth={bottomDepth}
             duration={duration}
@@ -451,7 +279,7 @@ export const MissionModal: React.FC<MissionModalProps> = ({
             vehicleName={vehicleName}
             safetyParams={updatedSafetyParams}
             commsParams={updatedCommsParams}
-            mission={getMissionName()}
+            mission={missionName}
             totalDistance={totalDistance}
             bottomDepth={bottomDepth}
             duration={duration}
@@ -480,7 +308,7 @@ export const MissionModal: React.FC<MissionModalProps> = ({
             waypointCount={plottedWaypointCount}
             overrideCount={overrideCount}
             vehicleName={vehicleName}
-            mission={getMissionName()}
+            mission={missionName}
             scheduleId={customScheduleId}
             onScheduleIdChanged={setCustomScheduleId}
             scheduleMethod={scheduleOption}
@@ -494,7 +322,7 @@ export const MissionModal: React.FC<MissionModalProps> = ({
           <AlternativeAddressStep
             alternateAddress={alternateAddress}
             vehicleName={vehicleName}
-            mission={getMissionName()}
+            mission={missionName}
             alternativeAddresses={alternativeAddresses}
             onNotesChanged={setNotes}
             notes={notes}
@@ -506,14 +334,19 @@ export const MissionModal: React.FC<MissionModalProps> = ({
     }
   }
 
-  const [confirmedVehicle, setConfirmedVehicle] = useState<string | null>(null)
-
   const handleSchedule = () => {
+    const waypointOverrides = makeWaypointOverrides(
+      updatedWaypoints,
+      parameters
+    )
+
     onSchedule?.({
       selectedMissionId: selectedMissionId as string,
-      overriddenMissionParams,
-      overriddenSafetyParams: safetyCommsParams.filter((p) => p.overrideValue),
-      plottedWaypoints,
+      parameterOverrides: [
+        waypointOverrides,
+        overriddenMissionParams,
+        safetyCommsParams.filter((p) => p.overrideValue),
+      ].flat(),
       specifiedTime,
       alternateAddress,
       scheduleId: customScheduleId,
@@ -523,35 +356,14 @@ export const MissionModal: React.FC<MissionModalProps> = ({
   }
 
   return currentStep === steps.indexOf('Confirm') ? (
-    <Modal
-      title={
-        <p>
-          This mission will be scheduled for{' '}
-          <span className="text-teal-500">{vehicleName}</span>
-          {alternateAddress && (
-            <>
-              , through{' '}
-              <span className="text-teal-500">{alternateAddress}</span>
-            </>
-          )}
-          . Is that right?
-        </p>
-      }
+    <ConfirmVehicleDialog
+      vehicle={vehicleName}
+      vehicleList={vehicles ?? []}
+      mission={selectedMissionId ?? ''}
+      onChangeVehicle={setConfirmedVehicle}
       onCancel={handlePrevious}
-      className={className}
-      style={style}
-      disableConfirm={!confirmedVehicle}
       onConfirm={handleSchedule}
-      open
-    >
-      <ConfirmVehicleStep
-        vehicleName={vehicleName}
-        vehicles={vehicles}
-        mission={getMissionName()}
-        onConfirmedVehicleChanged={setConfirmedVehicle}
-        confirmedVehicle={confirmedVehicle}
-      />
-    </Modal>
+    />
   ) : (
     <Modal
       className={className}

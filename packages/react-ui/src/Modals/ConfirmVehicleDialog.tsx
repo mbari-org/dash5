@@ -7,9 +7,11 @@ import { FooterProps } from '../Modal/Footer'
 export interface ConfirmVehicleDialogProps extends FooterProps {
   vehicle: string
   vehicleList: string[]
-  mission?: string
-  command?: string
-  onSubmit?: (vehicle: string) => void
+  mission?: string | null
+  command?: string | null
+  alternateAddress?: string | null
+  onChangeVehicle?: (vehicle: string | null) => void
+  onSubmit?: (vehicle: string | null) => void
 }
 
 const styles = {
@@ -22,23 +24,32 @@ export const ConfirmVehicleDialog: React.FC<ConfirmVehicleDialogProps> = ({
   vehicle,
   mission,
   command,
+  alternateAddress,
+  onChangeVehicle,
   vehicleList,
   onConfirm,
   onCancel,
   onSubmit,
 }) => {
-  const [differentVehicle, setDifferentVehicle] =
-    useState<string | undefined>(undefined)
+  const [differentVehicle, setDifferentVehicle] = useState<string | undefined>(
+    undefined
+  )
 
   const [isCorrectVehicle, setIsCorrectVehicle] = useState(true)
+  const displayVehicle = isCorrectVehicle
+    ? vehicle
+    : differentVehicle ?? vehicle
   const title = (
-    <div>
-      This {mission ? 'mission' : 'command'} should be scheduled for{' '}
-      <span className="text-teal-500" data-testid="currentVehicle">
-        {isCorrectVehicle ? vehicle : differentVehicle ?? vehicle}
-      </span>
+    <p>
+      This {mission ? 'mission' : 'command'} will be scheduled for{' '}
+      <span className="text-teal-500">{displayVehicle}</span>
+      {alternateAddress && (
+        <>
+          , through <span className="text-teal-500">{alternateAddress}</span>
+        </>
+      )}
       . Is that right?
-    </div>
+    </p>
   )
 
   const vehicleOptions = vehicleList.map((name) => ({
@@ -50,6 +61,11 @@ export const ConfirmVehicleDialog: React.FC<ConfirmVehicleDialogProps> = ({
     const confirmedVehicle = isCorrectVehicle ? vehicle : differentVehicle
 
     onSubmit?.(confirmedVehicle ?? vehicle)
+  }
+
+  const handleSelectVehicle = (id: string | null) => {
+    setDifferentVehicle(id ?? vehicle)
+    onChangeVehicle?.(id)
   }
 
   const message = (
@@ -85,8 +101,9 @@ export const ConfirmVehicleDialog: React.FC<ConfirmVehicleDialogProps> = ({
           options={vehicleOptions}
           placeholder="Select LRAUV"
           value={differentVehicle}
-          onSelect={(id) => setDifferentVehicle(id ?? vehicle)}
+          onSelect={handleSelectVehicle}
           required={!isCorrectVehicle}
+          disabled={isCorrectVehicle}
         />
       </li>
     </ul>

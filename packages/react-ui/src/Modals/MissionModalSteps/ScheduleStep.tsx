@@ -1,7 +1,7 @@
 import { TextArea } from '../../Fields/TextArea'
 import { Input } from '../../Fields/Input'
+import { DateField } from '../../Fields/DateField'
 import React from 'react'
-import { DateField } from '@mbari/react-ui'
 
 export type ScheduleOption = 'ASAP' | 'end' | 'time'
 
