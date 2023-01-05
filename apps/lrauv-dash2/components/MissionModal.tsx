@@ -18,6 +18,7 @@ import {
   useRecentRuns,
   useScript,
   useStations,
+  useSbdOutgoingAlternativeAddresses,
 } from '@mbari/api-client'
 import { useRouter } from 'next/router'
 import { DateTime } from 'luxon'
@@ -57,6 +58,7 @@ const MissionModal: React.FC<MissionModalProps> = ({ onClose }) => {
   const router = useRouter()
   const params = (router.query?.deployment ?? []) as string[]
   const vehicleName = params[0]
+  const { data: alternativeAddresses } = useSbdOutgoingAlternativeAddresses()
   const { trackedVehicles: vehicles } = useTrackedVehicles()
   const { data: missionData } = useMissionList()
   const { data: frequentRunsData } = useFrequentRuns(
@@ -215,6 +217,7 @@ const MissionModal: React.FC<MissionModalProps> = ({ onClose }) => {
   return (
     <MissionModalView
       style={{ maxHeight: '80vh' }}
+      alternativeAddresses={alternativeAddresses}
       currentIndex={0}
       vehicleName={capitalize(vehicleName)}
       bottomDepth="n/a"

@@ -10,36 +10,26 @@ import { faInfoCircle } from '@fortawesome/pro-regular-svg-icons'
 import { IconProp } from '@fortawesome/fontawesome-svg-core'
 
 export interface ReviewProps {
-  parameters: ParameterProps[]
   safetyCommsParams: ParameterProps[]
-  waypoints: WaypointProps[]
+  plottedWaypoints: WaypointProps[]
+  overriddenMissionParams: ParameterProps[]
   totalDistance?: string
   bottomDepth?: string
   duration?: string
+  overrideCount?: number
+  plottedWaypointCount?: number
 }
 
 export const ReviewStep: React.FC<ReviewProps> = ({
-  parameters,
+  overriddenMissionParams,
   safetyCommsParams,
-  waypoints,
+  plottedWaypoints,
   totalDistance,
   bottomDepth,
   duration,
+  plottedWaypointCount,
+  overrideCount,
 }) => {
-  const plottedWaypoints = waypoints.filter(
-    ({ lat, lon }) => lat !== 'NaN' || lon !== 'NaN'
-  )
-
-  const plottedWaypointCount = plottedWaypoints.length ?? 0
-
-  const overriddenMissionParams = parameters.filter(
-    (param) => param.overrideValue
-  )
-
-  const overrideCount =
-    safetyCommsParams.filter((param) => param.overrideValue)?.length +
-      overriddenMissionParams?.length ?? 0
-
   const waypointRows = plottedWaypoints.map(
     ({ latName, lonName, stationName, lat, lon }) => ({
       cells: [
@@ -163,7 +153,14 @@ export const ReviewStep: React.FC<ReviewProps> = ({
             rows={
               safetyCommsRows.length
                 ? safetyCommsRows
-                : [{ cells: [{ label: '' }, { label: '' }] }]
+                : [
+                    {
+                      cells: [
+                        { label: 'No safety/comms parameters available.' },
+                        { label: '' },
+                      ],
+                    },
+                  ]
             }
             highlightedStyle={'text-teal-500'}
           />{' '}
@@ -181,7 +178,18 @@ export const ReviewStep: React.FC<ReviewProps> = ({
                 { label: 'VALUES' },
               ],
             }}
-            rows={waypointRows}
+            rows={
+              waypointRows.length
+                ? waypointRows
+                : [
+                    {
+                      cells: [
+                        { label: 'This mission does not have any waypoints.' },
+                        { label: '' },
+                      ],
+                    },
+                  ]
+            }
             highlightedStyle={'text-teal-500'}
           />
           <Table
@@ -199,7 +207,14 @@ export const ReviewStep: React.FC<ReviewProps> = ({
             rows={
               missionParamRows.length
                 ? missionParamRows
-                : [{ cells: [{ label: 'No overrides' }, { label: '' }] }]
+                : [
+                    {
+                      cells: [
+                        { label: 'No parameter overrides were configured.' },
+                        { label: '' },
+                      ],
+                    },
+                  ]
             }
             highlightedStyle={'text-teal-500'}
           />

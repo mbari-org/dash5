@@ -15,6 +15,8 @@ import { ParameterProps } from '../Tables/ParameterTable'
 import { ParameterSummary } from './MissionModalSteps/ParameterSummary'
 import { SafetyCommsStep } from './MissionModalSteps/SafetyCommsStep'
 import { ReviewStep } from './MissionModalSteps/ReviewStep'
+import { ScheduleOption, ScheduleStep } from './MissionModalSteps/ScheduleStep'
+import { AlternativeAddressStep } from './MissionModalSteps/AlternativeAddressStep'
 
 export interface MissionModalProps
   extends Omit<StepProgressProps, 'steps'>,
@@ -34,6 +36,7 @@ export interface MissionModalProps
   onSchedule?: () => void
   onCancel?: () => void
   onVerifyParameter?: (param: string) => string
+  alternativeAddresses?: string[]
 }
 
 export const MissionModal: React.FC<MissionModalProps> = ({
@@ -57,6 +60,7 @@ export const MissionModal: React.FC<MissionModalProps> = ({
   onCancel,
   onVerifyParameter,
   onSelectMission,
+  alternativeAddresses,
 }) => {
   const steps = [
     'Mission',
@@ -188,12 +192,25 @@ export const MissionModal: React.FC<MissionModalProps> = ({
     }
     // showSummary flag is set back to false until next summary screen needs to be triggered
     showSummary && setShowSummary(false)
-    const nextStep = currentStep + 1
+    let nextStep = currentStep + 1
     if (
       steps[nextStep].match(/waypoint/i) &&
       JSON.parse(defaultWaypoints).length === 0
     ) {
-      return setCurrentStep(nextStep + 1)
+      nextStep = nextStep + 1
+    }
+    if (
+      steps[nextStep].match(/parameters/i) &&
+      JSON.parse(defaultParameters).length === 0
+    ) {
+      nextStep = nextStep + 1
+    }
+    if (
+      steps[nextStep].match(/safety/i) &&
+      safetyParams.length === 0 &&
+      commsParams.length === 0
+    ) {
+      nextStep = nextStep + 1
     }
     return setCurrentStep(nextStep)
   }
@@ -204,15 +221,28 @@ export const MissionModal: React.FC<MissionModalProps> = ({
       return
     }
 
-    const prevStep = currentStep - 1
+    let prevStep = currentStep - 1
+    if (
+      steps[prevStep].match(/safety/i) &&
+      safetyParams.length === 0 &&
+      commsParams.length === 0
+    ) {
+      prevStep = prevStep - 1
+    }
+    if (
+      steps[prevStep].match(/parameters/i) &&
+      JSON.parse(defaultParameters).length === 0
+    ) {
+      prevStep = prevStep - 1
+    }
     if (
       steps[prevStep].match(/waypoint/i) &&
       JSON.parse(defaultWaypoints).length === 0
     ) {
-      return setCurrentStep(prevStep - 1)
+      prevStep = prevStep - 1
     }
 
-    if (currentStep > 0) {
+    if (prevStep >= 0) {
       return setCurrentStep(prevStep)
     }
   }
@@ -238,15 +268,32 @@ export const MissionModal: React.FC<MissionModalProps> = ({
     return selectedMission?.name ?? ''
   }
 
+  const [showAlternateAddress, setShowAlternateAddress] = useState(false)
+  const handleAlternateAddress = () => {
+    setShowAlternateAddress(true)
+  }
+
   const extraButtons = () => {
     if (currentStep === 0) return []
 
-    const backButton: ExtraButton = {
-      buttonText: 'Back',
-      appearance: 'secondary',
-      onClick: handlePrevious,
+    const extraButtons: ExtraButton[] = [
+      {
+        buttonText: 'Back',
+        appearance: 'secondary',
+        onClick: showAlternateAddress
+          ? () => setShowAlternateAddress(false)
+          : handlePrevious,
+      },
+    ]
+    if (steps[currentStep] === 'Schedule' && !showAlternateAddress) {
+      extraButtons.push({
+        buttonText: 'Send to alternate address',
+        appearance: 'secondary',
+        onClick: handleAlternateAddress,
+        disabled: disableConfirm(),
+      })
     }
-    return [backButton]
+    return extraButtons
   }
 
   const disableConfirm = () => {
@@ -289,6 +336,26 @@ export const MissionModal: React.FC<MissionModalProps> = ({
   ) => {
     setFocusedWaypointIndex(index)
   }
+
+  const plottedWaypoints = waypoints.filter(
+    ({ lat, lon }) => lat !== 'NaN' || lon !== 'NaN'
+  )
+  const safetyCommsParams = updatedSafetyParams.concat(updatedCommsParams)
+  const overriddenMissionParams = updatedParameters.filter(
+    (param) => param.overrideValue
+  )
+  const plottedWaypointCount = plottedWaypoints.length ?? 0
+  const overrideCount =
+    safetyCommsParams.filter((param) => param.overrideValue)?.length +
+      overriddenMissionParams?.length ?? 0
+
+  const [alternateAddress, setAlternateAddress] = useState<string | null>(null)
+  const [scheduleOption, setScheduleOption] = useState<ScheduleOption | null>(
+    null
+  )
+  const [customScheduleId, setCustomScheduleId] = useState<string | null>(null)
+  const [notes, setNotes] = useState<string | null>(null)
+  const [specifiedTime, setSpecifiedTime] = useState<string | null>(null)
 
   const currentModalBody = () => {
     switch (currentStep) {
@@ -376,9 +443,11 @@ export const MissionModal: React.FC<MissionModalProps> = ({
       case 4:
         return (
           <ReviewStep
-            parameters={updatedParameters || []}
-            safetyCommsParams={updatedSafetyParams.concat(updatedCommsParams)}
-            waypoints={updatedWaypoints}
+            overriddenMissionParams={overriddenMissionParams || []}
+            safetyCommsParams={safetyCommsParams || []}
+            plottedWaypoints={plottedWaypoints}
+            plottedWaypointCount={plottedWaypointCount}
+            overrideCount={overrideCount}
             totalDistance={totalDistance}
             bottomDepth={bottomDepth}
             duration={duration}
@@ -386,7 +455,32 @@ export const MissionModal: React.FC<MissionModalProps> = ({
         )
 
       default:
-        return <p>Placeholder for {steps[currentStep]} step</p>
+        return showAlternateAddress ? (
+          <AlternativeAddressStep
+            alternateAddress={alternateAddress}
+            vehicleName={vehicleName}
+            mission={getMissionName()}
+            alternativeAddresses={alternativeAddresses}
+            onNotesChanged={setNotes}
+            notes={notes}
+            onAlternativeAddressChanged={setAlternateAddress}
+          />
+        ) : (
+          <ScheduleStep
+            waypointCount={plottedWaypointCount}
+            overrideCount={overrideCount}
+            vehicleName={vehicleName}
+            mission={getMissionName()}
+            scheduleId={customScheduleId}
+            onScheduleIdChanged={setCustomScheduleId}
+            scheduleMethod={scheduleOption}
+            onScheduleMethodChanged={setScheduleOption}
+            notes={notes}
+            onNotesChanged={setNotes}
+            specifiedTime={specifiedTime}
+            onSpecifiedTimeChanged={setSpecifiedTime}
+          />
+        )
     }
   }
 
