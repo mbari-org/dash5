@@ -17,6 +17,7 @@ import { SafetyCommsStep } from './MissionModalSteps/SafetyCommsStep'
 import { ReviewStep } from './MissionModalSteps/ReviewStep'
 import { ScheduleOption, ScheduleStep } from './MissionModalSteps/ScheduleStep'
 import { AlternativeAddressStep } from './MissionModalSteps/AlternativeAddressStep'
+import { ConfirmVehicleStep } from './MissionModalSteps/ConfirmVehicleStep'
 
 export interface MissionModalProps
   extends Omit<StepProgressProps, 'steps'>,
@@ -33,11 +34,33 @@ export interface MissionModalProps
   safetyParams: ParameterProps[]
   commsParams: ParameterProps[]
   onRefreshStats?: () => void
-  onSchedule?: () => void
+  onSchedule?: (args: {
+    selectedMissionId: string
+    plottedWaypoints: WaypointProps[]
+    overriddenMissionParams: ParameterProps[]
+    overriddenSafetyParams: ParameterProps[]
+    alternateAddress?: string | null
+    specifiedTime?: string | null
+    notes?: string | null
+    scheduleMethod?: ScheduleOption
+    scheduleId?: string | null
+    confirmedVehicle?: string | null
+  }) => void
   onCancel?: () => void
   onVerifyParameter?: (param: string) => string
   alternativeAddresses?: string[]
+  vehicles?: string[]
 }
+
+const steps = [
+  'Mission',
+  'Waypoints',
+  'Parameters',
+  'Safety & Comms',
+  'Review',
+  'Schedule',
+  'Confirm',
+]
 
 export const MissionModal: React.FC<MissionModalProps> = ({
   className,
@@ -61,16 +84,8 @@ export const MissionModal: React.FC<MissionModalProps> = ({
   onVerifyParameter,
   onSelectMission,
   alternativeAddresses,
+  vehicles,
 }) => {
-  const steps = [
-    'Mission',
-    'Waypoints',
-    'Parameters',
-    'Safety & Comms',
-    'Review',
-    'Schedule',
-  ]
-
   const [currentStep, setCurrentStep] = useState(currentIndex)
   const [selectedMissionCategory, setSelectedMissionCategory] = useState<
     string | undefined
@@ -80,7 +95,7 @@ export const MissionModal: React.FC<MissionModalProps> = ({
   >(selectedId)
 
   const [showSummary, setShowSummary] = useState(false)
-  const summarySteps = [1, 2]
+  const summarySteps = [steps.indexOf('Waypoints'), steps.indexOf('Parameters')]
 
   const [defaultWaypoints, setDefaultWaypoints] = useState<string>(
     JSON.stringify(waypoints)
@@ -247,10 +262,6 @@ export const MissionModal: React.FC<MissionModalProps> = ({
     }
   }
 
-  const handleSchedule = () => {
-    onSchedule?.()
-  }
-
   const handleSelect = (id?: string | null) => {
     setSelectedMissionId(id)
     if (id) {
@@ -281,7 +292,10 @@ export const MissionModal: React.FC<MissionModalProps> = ({
         buttonText: 'Back',
         appearance: 'secondary',
         onClick: showAlternateAddress
-          ? () => setShowAlternateAddress(false)
+          ? () => {
+              setShowAlternateAddress(false)
+              setAlternateAddress(null)
+            }
           : handlePrevious,
       },
     ]
@@ -298,9 +312,9 @@ export const MissionModal: React.FC<MissionModalProps> = ({
 
   const disableConfirm = () => {
     switch (currentStep) {
-      case 0:
+      case steps.indexOf('Mission'):
         return !selectedMissionId
-      case 1:
+      case steps.indexOf('Waypoints'):
         return !updatedWaypoints.every(
           ({ lat, lon, latName, lonName }) =>
             (Number(lat) || lat === 'NaN') &&
@@ -309,6 +323,12 @@ export const MissionModal: React.FC<MissionModalProps> = ({
             lonName &&
             lat !== '' &&
             lon !== ''
+        )
+      case steps.indexOf('Schedule'):
+        return (
+          !scheduleOption ||
+          (scheduleOption === 'time' && !specifiedTime) ||
+          (showAlternateAddress && !alternateAddress)
         )
       default:
         false
@@ -359,7 +379,7 @@ export const MissionModal: React.FC<MissionModalProps> = ({
 
   const currentModalBody = () => {
     switch (currentStep) {
-      case 0:
+      case steps.indexOf('Mission'):
         return (
           <MissionStep
             vehicleName={vehicleName}
@@ -371,7 +391,7 @@ export const MissionModal: React.FC<MissionModalProps> = ({
             selectedCategory={selectedMissionCategory}
           />
         )
-      case 1:
+      case steps.indexOf('Waypoints'):
         return showSummary ? (
           <WaypointSummary
             waypoints={updatedWaypoints}
@@ -398,7 +418,7 @@ export const MissionModal: React.FC<MissionModalProps> = ({
           />
         )
 
-      case 2:
+      case steps.indexOf('Parameters'):
         return showSummary ? (
           <ParameterSummary
             vehicleName={vehicleName}
@@ -425,7 +445,7 @@ export const MissionModal: React.FC<MissionModalProps> = ({
           />
         )
 
-      case 3:
+      case steps.indexOf('Safety & Comms'):
         return (
           <SafetyCommsStep
             vehicleName={vehicleName}
@@ -440,7 +460,7 @@ export const MissionModal: React.FC<MissionModalProps> = ({
           />
         )
 
-      case 4:
+      case steps.indexOf('Review'):
         return (
           <ReviewStep
             overriddenMissionParams={overriddenMissionParams || []}
@@ -454,18 +474,8 @@ export const MissionModal: React.FC<MissionModalProps> = ({
           />
         )
 
-      default:
-        return showAlternateAddress ? (
-          <AlternativeAddressStep
-            alternateAddress={alternateAddress}
-            vehicleName={vehicleName}
-            mission={getMissionName()}
-            alternativeAddresses={alternativeAddresses}
-            onNotesChanged={setNotes}
-            notes={notes}
-            onAlternativeAddressChanged={setAlternateAddress}
-          />
-        ) : (
+      case steps.indexOf('Schedule'):
+        return !showAlternateAddress ? (
           <ScheduleStep
             waypointCount={plottedWaypointCount}
             overrideCount={overrideCount}
@@ -480,22 +490,80 @@ export const MissionModal: React.FC<MissionModalProps> = ({
             specifiedTime={specifiedTime}
             onSpecifiedTimeChanged={setSpecifiedTime}
           />
+        ) : (
+          <AlternativeAddressStep
+            alternateAddress={alternateAddress}
+            vehicleName={vehicleName}
+            mission={getMissionName()}
+            alternativeAddresses={alternativeAddresses}
+            onNotesChanged={setNotes}
+            notes={notes}
+            onAlternativeAddressChanged={setAlternateAddress}
+          />
         )
+      default:
+        return null
     }
   }
 
-  return (
+  const [confirmedVehicle, setConfirmedVehicle] = useState<string | null>(null)
+
+  const handleSchedule = () => {
+    onSchedule?.({
+      selectedMissionId: selectedMissionId as string,
+      overriddenMissionParams,
+      overriddenSafetyParams: safetyCommsParams.filter((p) => p.overrideValue),
+      plottedWaypoints,
+      specifiedTime,
+      alternateAddress,
+      scheduleId: customScheduleId,
+      scheduleMethod: scheduleOption as ScheduleOption,
+      confirmedVehicle,
+    })
+  }
+
+  return currentStep === steps.indexOf('Confirm') ? (
+    <Modal
+      title={
+        <p>
+          This mission will be scheduled for{' '}
+          <span className="text-teal-500">{vehicleName}</span>
+          {alternateAddress && (
+            <>
+              , through{' '}
+              <span className="text-teal-500">{alternateAddress}</span>
+            </>
+          )}
+          . Is that right?
+        </p>
+      }
+      onCancel={handlePrevious}
+      className={className}
+      style={style}
+      disableConfirm={!confirmedVehicle}
+      onConfirm={handleSchedule}
+      open
+    >
+      <ConfirmVehicleStep
+        vehicleName={vehicleName}
+        vehicles={vehicles}
+        mission={getMissionName()}
+        onConfirmedVehicleChanged={setConfirmedVehicle}
+        confirmedVehicle={confirmedVehicle}
+      />
+    </Modal>
+  ) : (
     <Modal
       className={className}
       style={style}
       title={
         <StepProgress
-          steps={steps}
+          steps={steps.slice(0, steps.length - 1)}
           currentIndex={currentStep}
           className="h-[52px] w-[742px]"
         />
       }
-      onConfirm={isLastStep ? handleSchedule : handleNext}
+      onConfirm={handleNext}
       disableConfirm={disableConfirm()}
       onCancel={onCancel}
       confirmButtonText={confirmButtonText}

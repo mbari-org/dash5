@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import {
   MissionModal as MissionModalView,
+  MissionModalProps as MissionModalViewProps,
   MissionTableProps,
   ParameterProps,
   WaypointTableProps,
@@ -19,10 +20,10 @@ import {
   useScript,
   useStations,
   useSbdOutgoingAlternativeAddresses,
+  useVehicleNames,
 } from '@mbari/api-client'
 import { useRouter } from 'next/router'
 import { DateTime } from 'luxon'
-import useTrackedVehicles from '../lib/useTrackedVehicles'
 
 export interface MissionModalProps {
   onClose: () => void
@@ -58,8 +59,8 @@ const MissionModal: React.FC<MissionModalProps> = ({ onClose }) => {
   const router = useRouter()
   const params = (router.query?.deployment ?? []) as string[]
   const vehicleName = params[0]
+  const { data: vehicles } = useVehicleNames()
   const { data: alternativeAddresses } = useSbdOutgoingAlternativeAddresses()
-  const { trackedVehicles: vehicles } = useTrackedVehicles()
   const { data: missionData } = useMissionList()
   const { data: frequentRunsData } = useFrequentRuns(
     {
@@ -214,6 +215,11 @@ const MissionModal: React.FC<MissionModalProps> = ({ onClose }) => {
     selectedMissionData?.inserts?.find(({ id }) => id.match(/envelope/i))
       ?.scriptArgs ?? []
 
+  const handleSchedule: MissionModalViewProps['onSchedule'] = (args) => {
+    console.log('Scheduling mission with args: ', args)
+    onClose()
+  }
+
   return (
     <MissionModalView
       style={{ maxHeight: '80vh' }}
@@ -227,19 +233,14 @@ const MissionModal: React.FC<MissionModalProps> = ({ onClose }) => {
       parameters={parameters}
       safetyParams={safetyParams}
       commsParams={commsParams}
-      onCancel={() => {
-        console.log('cancel')
-        onClose()
-      }}
-      onSchedule={() => {
-        console.log('schedule')
-        onClose()
-      }}
+      onCancel={onClose}
+      onSchedule={handleSchedule}
       missions={missions ?? []}
       onSelectMission={setSelectedMission}
       waypoints={waypoints}
       stations={stations}
       onFocusWaypoint={onFocusWaypoint}
+      vehicles={vehicles}
     />
   )
 }
