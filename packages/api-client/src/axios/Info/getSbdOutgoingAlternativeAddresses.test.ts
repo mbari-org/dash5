@@ -7,7 +7,14 @@ import {
 
 let params: GetSbdOutgoingAlternativeAddressesParams = {}
 
-const mockResponse = { value: 'some-value' }
+const mockResponse = {
+  result: [
+    'acomms-gwb@whoi.edu',
+    'mbari.hotspot@gmail.com',
+    'oreilly@mbari.org',
+  ],
+}
+
 const server = setupServer(
   rest.get('/info/sbd/destAddresses', (_req, res, ctx) => {
     return res(ctx.status(200), ctx.json(mockResponse))
@@ -21,7 +28,7 @@ afterAll(() => server.close())
 describe('getSbdOutgoingAlternativeAddresses', () => {
   it('should return the mocked value when successful', async () => {
     const response = await getSbdOutgoingAlternativeAddresses(params)
-    expect(response).toEqual(mockResponse)
+    expect(response).toEqual(mockResponse.result)
   })
 
   it('should throw when unsuccessful', async () => {

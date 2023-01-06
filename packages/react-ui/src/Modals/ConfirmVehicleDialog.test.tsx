@@ -18,7 +18,7 @@ test('should render title with vehicle name', () => {
   render(<ConfirmVehicleDialog {...props} command={'configSet'} />)
 
   expect(
-    screen.queryByText(/this command should be scheduled for/i)
+    screen.queryByText(/this command will be scheduled for/i)
   ).toBeInTheDocument()
   expect(screen.queryByTestId(/currentVehicle/i)).toHaveTextContent(
     props.vehicle

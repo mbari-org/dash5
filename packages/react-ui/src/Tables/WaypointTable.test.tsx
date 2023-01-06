@@ -4,12 +4,17 @@ import '@testing-library/jest-dom'
 import { WaypointTable, WaypointTableProps } from './WaypointTable'
 
 const props: WaypointTableProps = {
-  waypoints: Array(5).fill({
-    id: Math.floor(Math.random() * 100),
-  }),
+  waypoints: Array(5)
+    .fill(0)
+    .map((_, index) => ({
+      latName: `Lat${index + 1}`,
+      lonName: `Lon${index + 1}`,
+      description: `Latitude of ${index + 1} waypoint. If NaN, waypoint
+    will be skipped/Longitude of ${index + 1} waypoint.`,
+    })),
   stations: [
-    { name: 'C1', lat: 36.797, long: -121.847 },
-    { name: 'C2', lat: 46.797, long: -141.847 },
+    { name: 'C1', lat: '36.797', lon: '-121.847' },
+    { name: 'C2', lat: '46.797', lon: '-141.847' },
   ],
   onFocusWaypoint: (index) => {
     console.log(index)
@@ -27,7 +32,11 @@ test('should display the waypoint title', async () => {
 
 test('should display the waypoint description', async () => {
   render(<WaypointTable {...props} />)
-  expect(screen.queryByText(/Latitude of 1st waypoint./i)).toBeInTheDocument()
+  expect(
+    screen.queryByText(
+      'Latitude of 1 waypoint. If NaN, waypoint will be skipped/Longitude of 1 waypoint.'
+    )
+  ).toBeInTheDocument()
 })
 
 test('should display the numbered waypoint map marker icon', async () => {
@@ -64,7 +73,13 @@ test('should display a selected waypoint', async () => {
     <WaypointTable
       {...props}
       waypoints={[
-        { id: '1', station: { name: 'C1', lat: 36.797, long: -121.847 } },
+        {
+          latName: `Lat1`,
+          lonName: `Lon1`,
+          lat: '33.888',
+          lon: '-122.222',
+          stationName: 'C1',
+        },
       ]}
     />
   )
@@ -77,7 +92,13 @@ test('should display the numbered waypoint map marker icon in purple when a wayp
     <WaypointTable
       {...props}
       waypoints={[
-        { id: '1', station: { name: 'C1', lat: 36.797, long: -121.847 } },
+        {
+          latName: `Lat1`,
+          lonName: `Lon1`,
+          lat: '33.888',
+          lon: '-122.222',
+          stationName: 'C1',
+        },
       ]}
     />
   )
@@ -92,7 +113,13 @@ test('should display +/- error warning if custom coordinate is out of range', as
     <WaypointTable
       {...props}
       waypoints={[
-        { id: '2', station: { name: 'Custom', lat: -1, long: -122.376 } },
+        {
+          latName: `Lat1`,
+          lonName: `Lon1`,
+          lat: '-180',
+          lon: '-122.222',
+          stationName: 'Custom',
+        },
       ]}
     />
   )

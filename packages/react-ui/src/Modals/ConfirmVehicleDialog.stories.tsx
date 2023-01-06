@@ -42,3 +42,17 @@ Mission.parameters = {
     url: 'https://www.figma.com/file/FtsKsOCBQ2YjTZlwezG6aI/MBARI-Components?node-id=6865%3A1018',
   },
 }
+
+export const MissionWithAlternat = Template.bind({})
+MissionWithAlternat.args = {
+  ...args,
+  mission: 'sci2.xml',
+  alternateAddress: 'mbari@oreily.org',
+}
+
+MissionWithAlternat.parameters = {
+  design: {
+    type: 'figma',
+    url: 'https://www.figma.com/file/FtsKsOCBQ2YjTZlwezG6aI/MBARI-Components?node-id=6865%3A1018',
+  },
+}

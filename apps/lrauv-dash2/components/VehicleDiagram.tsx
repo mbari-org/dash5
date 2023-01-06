@@ -1,8 +1,4 @@
-import {
-  useVehicleInfo,
-  GetVehicleInfoResponse,
-  useLastDeployment,
-} from '@mbari/api-client'
+import { useVehicleInfo, GetVehicleInfoResponse } from '@mbari/api-client'
 import React from 'react'
 import axios from 'axios'
 import { FullWidthVehicleDiagram } from '@mbari/react-ui'
@@ -22,14 +18,6 @@ const VehicleDiagram: React.FC<{
       timeout: 5000,
     }),
     { staleTime: 5 * 60 * 1000, enabled: !!name }
-  )
-
-  const lastDeployment = useLastDeployment(
-    {
-      vehicle: name,
-      to: new Date().toISOString(),
-    },
-    { staleTime: 5 * 60 * 1000 }
   )
 
   const vehicle =
@@ -114,7 +102,14 @@ const VehicleDiagram: React.FC<{
         colorMissionDefault={vehicle?.color_missiondefault}
         textVolts={vehicle?.text_volts}
         colorVolts={vehicle?.color_volts}
-        status={lastDeployment.data?.recoverEvent ? 'pluggedIn' : 'onMission'}
+        status={
+          (vehicle?.text_mission?.indexOf('PLUGGED') ?? -1) >= 0
+            ? 'pluggedIn'
+            : 'onMission'
+        }
+        colorLeak={vehicle?.color_leak}
+        textLeakAgo={vehicle?.text_leakago}
+        textLeak={vehicle?.text_leak}
       />
     </div>
   )

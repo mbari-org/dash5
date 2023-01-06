@@ -12,6 +12,7 @@ export type ModalId =
   | 'editDocument'
   | 'attachDocument'
   | 'detachDocument'
+  | 'newMission'
   | null
 
 export interface GlobalModalMetaData {

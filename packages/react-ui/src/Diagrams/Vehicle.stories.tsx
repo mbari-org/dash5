@@ -83,6 +83,36 @@ Deployed.parameters = {
   },
 }
 
+export const CriticalLeak = Template.bind({})
+CriticalLeak.args = {
+  ...Deployed.args,
+  colorLeak: 'stleak2',
+  textLeak: 'CRITICAL LEAK',
+  textLeakAgo: '1h 9m ago',
+}
+
+CriticalLeak.parameters = {
+  design: {
+    type: 'figma',
+    url: 'https://okeanids.mbari.org/widget/auv_brizo.svg?dummy=1653078296172',
+  },
+}
+
+export const AuxLeak = Template.bind({})
+AuxLeak.args = {
+  ...Deployed.args,
+  colorLeak: 'stleak1',
+  textLeak: 'AUX LEAK',
+  textLeakAgo: '1h 9m ago',
+}
+
+AuxLeak.parameters = {
+  design: {
+    type: 'figma',
+    url: 'https://okeanids.mbari.org/widget/auv_brizo.svg?dummy=1653078296172',
+  },
+}
+
 export const Scheduled = Template.bind({})
 Scheduled.args = {
   ...args,

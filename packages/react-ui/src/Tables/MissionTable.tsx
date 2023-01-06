@@ -1,7 +1,8 @@
 import React from 'react'
 import clsx from 'clsx'
-import { Table } from '../Data/Table'
+import { Table, TableProps } from '../Data/Table'
 import { SortDirection } from '../Data/TableHeader'
+import { capitalize } from '@mbari/utils'
 
 export interface MissionTableProps {
   className?: string
@@ -18,12 +19,15 @@ export interface Mission {
   id: string
   category: string
   name: string
+  task?: string
   description?: string
-  vehicle: string
-  ranBy: string
-  ranOn: string
+  vehicle?: string
+  ranBy?: string
+  ranOn?: string
   ranAt?: string
   waypointCount?: number
+  recentRun?: boolean
+  frequentRun?: boolean
 }
 
 export const MissionTable: React.FC<MissionTableProps> = ({
@@ -36,29 +40,43 @@ export const MissionTable: React.FC<MissionTableProps> = ({
   sortColumn,
   sortDirection,
 }) => {
+  const shouldShowVehicleColumn = missions.some((p) => p.recentRun)
   const missionRows = missions.map(
     ({
       category,
       name,
+      task,
       description,
-      vehicle,
       ranBy,
       ranOn,
       ranAt,
       waypointCount,
+      vehicle,
     }) => ({
       cells: [
-        { label: category, secondary: name },
-        { label: vehicle },
+        {
+          label: category ? `${category}: ${name}` : `${name}`,
+          secondary: task,
+        },
+        shouldShowVehicleColumn
+          ? {
+              label: capitalize(vehicle ?? 'Current Vehicle'),
+            }
+          : null,
         {
           label: description ? description : 'No description',
-          secondary: `Run by ${ranBy} on ${ranOn} ${
-            waypointCount ? `with ${waypointCount} waypoints` : ''
-          }${waypointCount && ranAt ? ' ' : ''}${ranAt ? `at ${ranAt}` : ''}`,
+          secondary: `${(ranBy && `Last ran by ${ranBy}`) ?? ''} 
+            ${(ranOn && `on ${ranOn}.`) ?? ''} 
+            ${(ranAt && `Location ran at: ${ranAt}.`) ?? ''}
+            ${
+              (waypointCount &&
+                `This mission has ${waypointCount} waypoints`) ??
+              ''
+            }`,
         },
-      ],
+      ].filter((i) => i),
     })
-  )
+  ) as TableProps['rows']
 
   const header = {
     cells: [
@@ -66,15 +84,17 @@ export const MissionTable: React.FC<MissionTableProps> = ({
         label: 'MISSION NAME',
         onSort: onSortColumn,
       },
-      {
-        label: 'ALL LRAUV',
-        onSort: onSortColumn,
-      },
+      shouldShowVehicleColumn
+        ? {
+            label: 'VEHICLE',
+            onSort: onSortColumn,
+          }
+        : null,
       { label: 'DESCRIPTION', onSort: onSortColumn },
-    ],
+    ].filter((i) => i),
     activeSortColumn: sortColumn,
     activeSortDirection: sortDirection,
-  }
+  } as TableProps['header']
 
   const handleSelect = (index: number) => {
     onSelectMission?.(missions[index].id)

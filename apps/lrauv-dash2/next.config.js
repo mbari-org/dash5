@@ -1,6 +1,9 @@
-/** @type {import('next').NextConfig} */
-const nextConfig = {
-  reactStrictMode: true,
-}
+const withTM = require('next-transpile-modules')([
+  '@mbari/react-ui',
+  '@mbari/utils',
+  '@mbari/api-client',
+])
 
-module.exports = nextConfig
+module.exports = withTM({
+  reactStrictMode: true,
+})

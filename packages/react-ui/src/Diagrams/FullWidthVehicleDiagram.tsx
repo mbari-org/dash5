@@ -2,7 +2,6 @@ import React, { useRef } from 'react'
 import clsx from 'clsx'
 import { DropWeightIndicator } from './VehicleAssets/DropWeightIndicator'
 import { DvlIndicator } from './VehicleAssets/DvlIndicator'
-import { Background } from './VehicleAssets/Background'
 import { ChargingCable } from './VehicleAssets/ChargingCable'
 import { AuvBody } from './VehicleAssets/AuvBody'
 import { Thruster } from './VehicleAssets/Thruster'
@@ -16,6 +15,9 @@ import { ErrorLabel } from './VehicleAssets/ErrorLabel'
 import { Note } from './VehicleAssets/Note'
 import { VehicleProps } from './Vehicle'
 import { useResizeObserver } from '@mbari/utils'
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
+import { faArrowUp } from '@fortawesome/pro-light-svg-icons'
+import { Leak } from './VehicleAssets/Leak'
 
 interface FullWidthVehicleDiagramProps extends VehicleProps {
   vehicleWidth?: number
@@ -65,6 +67,9 @@ export const FullWidthVehicleDiagram: React.FC<FullWidthVehicleDiagramProps> =
     colorBat6 = 'st3',
     colorBat7 = 'st3',
     colorBat8 = 'st3',
+    colorLeak = 'st18',
+    textLeak,
+    textLeakAgo,
     textVolts,
     textAmps,
     textAmpAgo,
@@ -223,6 +228,11 @@ export const FullWidthVehicleDiagram: React.FC<FullWidthVehicleDiagramProps> =
             />
 
             <Note textNote={textNote} textNoteTime={textNoteTime} />
+            <Leak
+              textLeak={textLeak}
+              textLeakAgo={textLeakAgo}
+              colorLeak={colorLeak}
+            />
           </g>
         </svg>
         <svg
@@ -332,22 +342,15 @@ export const FullWidthVehicleDiagram: React.FC<FullWidthVehicleDiagramProps> =
           </g>
         </svg>
         {!isDocked && (
-          <svg
-            viewBox="0 0 14 14"
-            className="absolute top-0 left-0"
-            height={14}
-            width={14}
+          <FontAwesomeIcon
+            icon={faArrowUp}
+            className="absolute"
             style={{
-              rotate: `${textArrow}deg`,
-              translate: '22px 228px',
+              top: 224,
+              left: 20,
+              transform: `rotate(${textArrow}deg)`,
             }}
-          >
-            <g>
-              <text className="text-lg" x="0" y="14">
-                {upArrow}
-              </text>
-            </g>
-          </svg>
+          />
         )}
       </div>
     )

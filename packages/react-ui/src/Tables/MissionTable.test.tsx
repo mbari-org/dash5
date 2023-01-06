@@ -7,8 +7,9 @@ const props: MissionTableProps = {
   missions: [
     {
       id: '1',
-      category: 'Science: sci2',
-      name: 'Test mission',
+      category: 'Science',
+      name: 'sci2',
+      task: 'Test mission',
       vehicle: 'Brizo',
       ranBy: 'Jordan Caress',
       ranOn: 'Dec. 10, 2021',
@@ -29,21 +30,31 @@ test('should display header labels', async () => {
   expect(screen.getByText(/Mission Name/i)).toBeInTheDocument()
 })
 
-test('should display category label', async () => {
+test('should display category and name labels', async () => {
   render(<MissionTable {...props} />)
-  const categoryLabel = props.missions[0].category
+  const { category, name } = props.missions[0]
 
-  expect(screen.getByText(categoryLabel)).toBeInTheDocument()
+  expect(screen.getByText(`${category}: ${name}`)).toBeInTheDocument()
 })
 
-test('should display mission name label', async () => {
+test('should display mission task label', async () => {
   render(<MissionTable {...props} />)
   expect(screen.getByText(/test mission/i)).toBeInTheDocument()
 })
 
-test('should display vehicle label', async () => {
-  render(<MissionTable {...props} />)
+test('should display the vehicle label if a recent run is present', async () => {
+  render(
+    <MissionTable
+      {...props}
+      missions={[{ ...props.missions[0], recentRun: true }]}
+    />
+  )
   expect(screen.getByText(/Brizo/i)).toBeInTheDocument()
+})
+
+test('should not display the vehicle label', async () => {
+  render(<MissionTable {...props} />)
+  expect(screen.queryByText(/Brizo/i)).not.toBeInTheDocument()
 })
 
 test('should display No description label when description is not provided', async () => {
@@ -63,9 +74,8 @@ test('should display description label when description is provided', async () =
 
 test('should display run details including pilot and run date', async () => {
   render(<MissionTable {...props} />)
-  const runDetails = `Run by ${props.missions[0].ranBy} on ${props.missions[0].ranOn}`
-
-  expect(screen.getByText(runDetails)).toBeInTheDocument()
+  expect(screen.getByText(/Jordan Caress./i)).toBeInTheDocument()
+  expect(screen.getByText(/on Dec. 10, 2021./i)).toBeInTheDocument()
 })
 
 test('should display run details including number of waypoints when provided', async () => {
@@ -75,9 +85,7 @@ test('should display run details including number of waypoints when provided', a
       missions={[{ ...props.missions[0], waypointCount: 2 }]}
     />
   )
-  const runDetails = `Run by ${props.missions[0].ranBy} on ${props.missions[0].ranOn} with 2 waypoints`
-
-  expect(screen.getByText(runDetails)).toBeInTheDocument()
+  expect(screen.getByText(/This mission has 2 waypoints/i)).toBeInTheDocument()
 })
 
 test('should display run details including number run location when provided', async () => {
@@ -87,7 +95,5 @@ test('should display run details including number run location when provided', a
       missions={[{ ...props.missions[0], ranAt: 'test location' }]}
     />
   )
-  const runDetails = `Run by ${props.missions[0].ranBy} on ${props.missions[0].ranOn} at test location`
-
-  expect(screen.getByText(runDetails)).toBeInTheDocument()
+  expect(screen.getByText(/Last ran by Jordan Caress/i)).toBeInTheDocument()
 })

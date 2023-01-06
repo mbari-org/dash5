@@ -123,7 +123,7 @@ const ScienceDataSection: React.FC<{
           className="my-auto ml-auto px-4 py-2 font-bold text-violet-800"
           onClick={handleEsbSamples}
         >
-          ESB Samples
+          ESP Samples
         </button>
       </header>
       <div className="relative flex h-full flex-shrink flex-grow">

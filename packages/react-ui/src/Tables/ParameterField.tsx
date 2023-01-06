@@ -1,16 +1,23 @@
-import React, { useState } from 'react'
+import { faRulerCombined as faRulerLight } from '@fortawesome/pro-regular-svg-icons'
+import { faRulerCombined as faRulerDark } from '@fortawesome/pro-solid-svg-icons'
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
+import clsx from 'clsx'
+import React, { useEffect, useState } from 'react'
 import { Input } from '../Fields'
-import rulerDark from '../assets/ruler-dark.png'
-import rulerLight from '../assets/ruler-light.png'
 import { ParameterTableProps } from './ParameterTable'
 
 export interface ParameterFieldProps {
-  customValue?: string
-  onVerifyValue: ParameterTableProps['onVerifyValue']
+  className?: string
+  overrideValue?: string
+  onOverride: (newOverride: string) => void
+  onVerifyValue?: ParameterTableProps['onVerifyValue']
+  rulerDarkSrc?: string
+  rulerLightSrc?: string
+  unit?: string
 }
 
 const styles = {
-  container: 'flex h-full w-full',
+  container: 'flex h-[40px] w-full',
   inputLi: 'flex flex-grow rounded',
   buttonLi: 'ml-2 h-full aspect-square rounded border-2 border-stone-300/60',
   button: 'h-full w-full bg-white p-1 justify-center flex',
@@ -18,33 +25,61 @@ const styles = {
 }
 
 export const ParameterField: React.FC<ParameterFieldProps> = ({
-  customValue,
+  overrideValue,
+  onOverride,
   onVerifyValue,
+  rulerDarkSrc,
+  rulerLightSrc,
 }) => {
-  const [overrideValue, setOverrideValue] = useState(customValue || '')
+  const [inputValue, setInputValue] = useState(overrideValue ?? '')
+
+  const handleOverride = (newValue: string) => {
+    onOverride(newValue)
+    setInputValue(newValue)
+  }
+
+  useEffect(() => {
+    if (inputValue !== overrideValue) {
+      setInputValue(overrideValue ? overrideValue : '')
+    }
+  }, [inputValue, overrideValue])
 
   const handleVerify = () => {
-    const verifiedValue = onVerifyValue(overrideValue)
-    console.log(verifiedValue)
-    setOverrideValue(verifiedValue)
+    if (onVerifyValue) {
+      onVerifyValue(overrideValue ?? '')
+    }
   }
+
   return (
     <ul className={styles.container}>
       <li className={styles.inputLi}>
         <Input
-          name="overrride"
-          value={overrideValue}
-          onChange={(e) => setOverrideValue(e.target.value)}
+          name="override"
+          value={inputValue}
+          onChange={(e) => handleOverride(e.target.value)}
         />
       </li>
       <li className={styles.buttonLi}>
         <button className={styles.button} onClick={handleVerify}>
-          <span
-            className={styles.ruler}
-            style={{
-              backgroundImage: `url(${customValue ? rulerDark : rulerLight})`,
-            }}
-          />
+          {rulerDarkSrc ? (
+            <span
+              className={styles.ruler}
+              style={{
+                backgroundImage: `url(${
+                  overrideValue ? rulerDarkSrc : rulerLightSrc
+                })`,
+              }}
+            />
+          ) : (
+            <FontAwesomeIcon
+              icon={overrideValue ? faRulerDark : faRulerLight}
+              className={clsx(
+                'm-auto text-xl',
+                overrideValue && 'text-stone-400',
+                !overrideValue && 'text-stone-300/60'
+              )}
+            />
+          )}
         </button>
       </li>
     </ul>

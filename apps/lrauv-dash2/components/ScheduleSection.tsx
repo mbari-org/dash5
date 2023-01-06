@@ -1,5 +1,4 @@
 import React, { useState, useRef } from 'react'
-import { useMissionSchedule } from '@mbari/api-client'
 import {
   AccessoryButton,
   AccordionCells,
@@ -14,6 +13,9 @@ import { DateTime } from 'luxon'
 import { faPlus } from '@fortawesome/pro-regular-svg-icons'
 import clsx from 'clsx'
 import { Select } from '@mbari/react-ui/dist/Fields/Select'
+import { useDeploymentCommandStatus } from '@mbari/api-client'
+import { capitalize } from '@mbari/utils'
+import useGlobalModalId from '../lib/useGlobalModalId'
 
 export interface ScheduleSectionProps {
   className?: string
@@ -24,16 +26,30 @@ export interface ScheduleSectionProps {
   activeDeployment?: boolean
 }
 
+export const parseMissionCommand = (name: string) => {
+  const info = name
+    .split(' ')
+    .filter((s) => !['run', 'sched', 'asap'].includes(s))
+    .join('')
+    .split(';')
+  return {
+    name: info[0],
+    parameters: info[1],
+  }
+}
+
 export const ScheduleSection: React.FC<ScheduleSectionProps> = ({
   currentDeploymentId,
   activeDeployment,
 }) => {
-  const [scheduleStatus, setScheduleStatus] =
-    useState<ScheduleCellProps['scheduleStatus'] | null>('running')
+  const { setGlobalModalId, globalModalId } = useGlobalModalId()
+  const [scheduleStatus, setScheduleStatus] = useState<
+    ScheduleCellProps['scheduleStatus'] | null
+  >('running')
   const [scheduleFilter, setScheduleFilter] = useState<string>('')
   const [scheduleSearch, setScheduleSearch] = useState<string>('')
 
-  const { data: missions } = useMissionSchedule(
+  const { data: deploymentCommands } = useDeploymentCommandStatus(
     {
       deploymentId: currentDeploymentId ?? 0,
     },
@@ -42,8 +58,12 @@ export const ScheduleSection: React.FC<ScheduleSectionProps> = ({
     }
   )
 
+  const vehicleName = deploymentCommands?.deploymentInfo?.vehicleName ?? '...'
+
   const toggleSchedule = () =>
     setScheduleStatus(scheduleStatus === 'paused' ? 'running' : 'paused')
+
+  const missions = deploymentCommands?.commandStatuses
 
   const scheduledTypes = ['pending', 'running']
   const staticHeaderCellOffset = activeDeployment ? 2 : 0
@@ -60,6 +80,7 @@ export const ScheduleSection: React.FC<ScheduleSectionProps> = ({
   const scheduledCells = missions?.filter((v) =>
     scheduledTypes.includes(v.status)
   )
+
   const historicCells = missions
     ?.filter((v) => !scheduledTypes.includes(v.status))
     .filter(
@@ -72,7 +93,7 @@ export const ScheduleSection: React.FC<ScheduleSectionProps> = ({
       (v) =>
         !scheduleSearch ||
         scheduleSearch.length < 1 ||
-        `${v.eventName}${v.note}${v.user}`
+        `${v.event.data}${v.event.note}${v.event.user}`
           .toLowerCase()
           .includes(scheduleSearch.toLowerCase())
     )
@@ -82,13 +103,12 @@ export const ScheduleSection: React.FC<ScheduleSectionProps> = ({
     results.length + staticFilterCellOffset + staticHeaderCellOffset
 
   const menuRef = useRef<HTMLDivElement | null>(null)
-  const [currentMoreMenu, setCurrentMoreMenu] =
-    useState<{
-      eventId?: number
-      commandType: 'mission' | 'command'
-      status: ScheduleCellStatus
-      rect: DOMRect
-    } | null>(null)
+  const [currentMoreMenu, setCurrentMoreMenu] = useState<{
+    eventId?: number
+    commandType: 'mission' | 'command'
+    status: ScheduleCellStatus
+    rect: DOMRect
+  } | null>(null)
   const closeMoreMenu = () => setCurrentMoreMenu(null)
   const openMoreMenu: ScheduleCellProps['onMoreClick'] = (
     target,
@@ -104,13 +124,16 @@ export const ScheduleSection: React.FC<ScheduleSectionProps> = ({
       return (
         <div className="flex border-b border-stone-200 py-2 px-4 text-sm">
           <p className="flex-grow text-xs">
-            Brizo is scheduled until
-            <br /> tomorrow at ~06:30
+            {capitalize(vehicleName)} is scheduled until
+            <br /> TBD
           </p>
           <AccessoryButton
             label="Mission"
             icon={faPlus}
             className="mx-2"
+            onClick={() => {
+              setGlobalModalId({ id: 'newMission' })
+            }}
             tight
           />
           <AccessoryButton label="Command" icon={faPlus} tight />
@@ -168,41 +191,40 @@ export const ScheduleSection: React.FC<ScheduleSectionProps> = ({
         ? -staticHeaderCellOffset
         : -staticHeaderCellOffset - staticFilterCellOffset
     const mission = results[index + indexOffset]
+    const { name: missionName, parameters: missionParams } =
+      parseMissionCommand(mission?.event.data ?? '')
     return mission ? (
       <ScheduleCell
-        label={mission.eventName}
-        secondary={mission.note}
-        status={
-          (mission.status === 'running' ? scheduleStatus : mission.status) ??
-          'pending'
-        }
-        name={mission.user ?? 'Unknown'}
+        label={missionName ?? 'Unknown'}
+        secondary={missionParams ?? 'No parameters'}
+        status={mission.status === 'TBD' ? 'completed' : 'pending'}
+        name={mission.event.user ?? 'Unknown'}
         scheduleStatus={
           (['pending', 'running'].includes(mission.status) && scheduleStatus) ||
           undefined
         }
         className="border-b border-stone-200"
         description={
-          mission?.endUnixTime
-            ? `Ended ${DateTime.fromMillis(mission.endUnixTime ?? 0).toFormat(
-                'h:mm'
-              )}`
-            : `Started ${DateTime.fromMillis(mission.unixTime ?? 0).toFormat(
-                'h:mm'
-              )}`
+          mission?.event.unixTime
+            ? `Ended ${DateTime.fromMillis(
+                mission.event.unixTime ?? 0
+              ).toFormat('h:mm')}`
+            : `Started ${DateTime.fromMillis(
+                mission.event.unixTime ?? 0
+              ).toFormat('h:mm')}`
         }
         description2={
-          DateTime.fromMillis(
-            mission.endUnixTime ?? mission.unixTime ?? 0
-          ).toRelative() ?? ''
+          DateTime.fromMillis(mission.event.unixTime ?? 0).toRelative() ?? ''
         }
         onSelect={() => undefined}
         onMoreClick={openMoreMenu}
-        eventId={mission.eventId}
-        commandType={mission.commandType}
+        eventId={mission.event.eventId}
+        commandType={
+          mission?.event?.eventType === 'run' ? 'mission' : 'command'
+        }
       />
     ) : (
-      <p>No Data</p>
+      <p className="mx-2 my-2 rounded bg-stone-100 p-2">No Data</p>
     )
   }
 
@@ -239,7 +261,6 @@ export const ScheduleSection: React.FC<ScheduleSectionProps> = ({
   const handleMoveInQueue = ({
     eventId,
     commandType,
-    direction,
   }: {
     eventId: number
     commandType: string

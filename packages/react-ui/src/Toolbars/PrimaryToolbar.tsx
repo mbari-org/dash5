@@ -105,7 +105,7 @@ export const PrimaryToolbar: React.FC<PrimaryToolbarProps> = ({
         <li className={clsx(styles.item, styles.logo, 'mr-6')}>
           {logo ?? <DefaultLogo />}
         </li>
-        <li className="flex flex-shrink overflow-x-auto">
+        <li className="flex flex-shrink">
           <ul className="flex flex-row items-center">
             {options?.map((option) => (
               <PrimaryToolbarOption

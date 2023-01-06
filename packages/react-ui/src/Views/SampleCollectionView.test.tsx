@@ -54,11 +54,11 @@ test('should render the component', () => {
 test('should render child content', async () => {
   render(<SampleCollectionView {...props} />)
 
-  expect(screen.getByText(/01/i)).toBeInTheDocument()
-  expect(screen.getByText(/02/i)).toBeInTheDocument()
-  expect(screen.getByText(/03/i)).toBeInTheDocument()
-  expect(screen.getByText(/04/i)).toBeInTheDocument()
-  expect(screen.getByText(/05/i)).toBeInTheDocument()
+  expect(screen.getByTestId(/sample_1/i)).toBeInTheDocument()
+  expect(screen.getByTestId(/sample_2/i)).toBeInTheDocument()
+  expect(screen.getByTestId(/sample_3/i)).toBeInTheDocument()
+  expect(screen.getByTestId(/sample_4/i)).toBeInTheDocument()
+  expect(screen.getByTestId(/sample_5/i)).toBeInTheDocument()
   expect(screen.getByText(/makai/i)).toBeInTheDocument()
   expect(screen.getByText(/good samples: 1/i)).toBeInTheDocument()
   expect(screen.getByText(/sample failed: 1/i)).toBeInTheDocument()

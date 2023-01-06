@@ -3,7 +3,9 @@ import { faClock } from '@fortawesome/pro-regular-svg-icons'
 import { Field, FieldProps, getErrorMessage } from './Field'
 import { Input } from './Input'
 import { DateTime } from 'luxon'
-import { Calendar, ClockView } from '@material-ui/pickers'
+import { Calendar, ClockView, TimePickerViewsProps } from '@material-ui/pickers'
+import { ClockViewType } from '@material-ui/pickers/constants/ClockType'
+import clsx from 'clsx'
 
 export interface DateFieldInputProps {
   /**
@@ -30,6 +32,10 @@ export interface DateFieldInputProps {
    * A timeZone to set on the date preview.
    */
   timeZone?: string
+}
+
+const styles = {
+  timeButton: 'rounded border border-stone-200 p-2 hover:border-teal-500',
 }
 
 export type DateFieldProps = DateFieldInputProps & FieldProps
@@ -63,8 +69,9 @@ export const DateField = React.forwardRef<HTMLInputElement, DateFieldProps>(
     })
 
     // Manage the current date value
-    const [lastDateFromValue, setLastDateFromValue] =
-      useState<undefined | string>()
+    const [lastDateFromValue, setLastDateFromValue] = useState<
+      undefined | string
+    >()
     const [selectedDate, setDateChange] = useState<DateTime | null>(null)
     const handleDateChange = useCallback(
       (date: DateTime | null) => {
@@ -90,6 +97,7 @@ export const DateField = React.forwardRef<HTMLInputElement, DateFieldProps>(
 
     // Manage when to display the inline date/time picker.
     const [focused, setFocus] = useState(false)
+    const [timeMode, setTimeMode] = useState<ClockViewType>('hours')
     const [interacting, setInteracting] = useState(false)
     const blurTimeout = useRef<ReturnType<typeof setTimeout> | null>(null)
     const handleFocus = useCallback(
@@ -124,6 +132,17 @@ export const DateField = React.forwardRef<HTMLInputElement, DateFieldProps>(
       inputRef.current?.focus()
     }
 
+    const handleTimeMode = (newTimeMode: ClockViewType) => () => {
+      setTimeMode(newTimeMode)
+    }
+
+    const toggleAmPm = () => {
+      if (selectedDate) {
+        const hours = selectedDate.toFormat('a') === 'AM' ? 12 : -12
+        handleDateChange(selectedDate.plus({ hours }))
+      }
+    }
+
     return (
       <>
         <Field
@@ -148,7 +167,7 @@ export const DateField = React.forwardRef<HTMLInputElement, DateFieldProps>(
               (timeZone
                 ? selectedDate?.setZone(timeZone)
                 : selectedDate
-              )?.toFormat('h:mm a, MMM, d yyyy') ?? ' '
+              )?.toFormat('h:mm:ss a, MMM, d yyyy') ?? ' '
             }
             onChange={() => {
               return
@@ -173,9 +192,46 @@ export const DateField = React.forwardRef<HTMLInputElement, DateFieldProps>(
                 />
               </div>
               <div className="relative w-1/2 flex-grow overflow-hidden px-2">
+                <div className="flex justify-center">
+                  <button
+                    onClick={handleTimeMode('hours')}
+                    className={clsx(
+                      styles.timeButton,
+                      timeMode === 'hours' && 'border-teal-300'
+                    )}
+                  >
+                    {selectedDate?.toFormat('hh') ?? '00'}
+                  </button>
+                  <span className="my-auto px-1">:</span>
+                  <button
+                    onClick={handleTimeMode('minutes')}
+                    className={clsx(
+                      styles.timeButton,
+                      timeMode === 'minutes' && 'border-teal-300'
+                    )}
+                  >
+                    {selectedDate?.toFormat('mm') ?? '00'}
+                  </button>
+                  <span className="my-auto px-1">:</span>
+                  <button
+                    onClick={handleTimeMode('seconds')}
+                    className={clsx(
+                      styles.timeButton,
+                      timeMode === 'seconds' && 'border-teal-300'
+                    )}
+                  >
+                    {selectedDate?.toFormat('ss') ?? '00'}
+                  </button>
+                  <button
+                    onClick={toggleAmPm}
+                    className={clsx(styles.timeButton, 'ml-2')}
+                  >
+                    {selectedDate?.toFormat('a') ?? 'AM'}
+                  </button>
+                </div>
                 <ClockView
                   date={selectedDate ?? DateTime.local()}
-                  type="hours"
+                  type={timeMode}
                   onHourChange={handleDateChange}
                   onMinutesChange={handleDateChange}
                   onSecondsChange={handleDateChange}
