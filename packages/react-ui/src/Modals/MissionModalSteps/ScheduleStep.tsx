@@ -100,7 +100,7 @@ export const ScheduleStep: React.FC<ScheduleProps> = ({
         <label>Notes (will appear in log)</label>
         <TextArea
           name="notes"
-          className="max-w-xs"
+          className="h-28 w-full"
           onChange={handleNotesChange}
           value={notes ?? ''}
         />
