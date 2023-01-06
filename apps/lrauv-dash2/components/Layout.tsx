@@ -158,6 +158,8 @@ const Layout: React.FC = ({ children }) => {
         requireAuthentication(<DetachModal onClose={setModal(null)} />)}
       {globalModalId?.id === 'newMission' &&
         requireAuthentication(<MissionModal onClose={setModal(null)} />)}
+      {globalModalId?.id === 'newCommand' &&
+        requireAuthentication(<MissionModal onClose={setModal(null)} />)}
     </div>
   )
 }
