@@ -252,10 +252,13 @@ const MissionModal: React.FC<MissionModalProps> = ({ onClose }) => {
     []
 
   const handleSchedule: MissionModalViewProps['onSchedule'] = ({
+    confirmedVehicle,
     parameterOverrides,
     selectedMissionId,
     scheduleMethod,
     specifiedTime,
+    alternateAddress,
+    notes,
   }) => {
     const commandText = makeMissionCommand({
       mission: selectedMissionId as string,
@@ -263,18 +266,17 @@ const MissionModal: React.FC<MissionModalProps> = ({ onClose }) => {
       scheduleMethod: scheduleMethod as ScheduleOption,
       specifiedTime: specifiedTime ?? undefined,
     })
-    toast.success('Mission scheduled!')
+    toast.success('Mission scheduled see command below for debugging purposes.')
     toast.success(commandText?.split(';').join(';\n') ?? '')
-    // createCommand({
-    //   vehicle: args.confirmedVehicle ?? vehicleName,
-    //   path: selectedMission as string,
-    //   commandNote: args.notes ?? '',
-    //   runCommand: 'y',
-    //   schedDate: args.specifiedTime ?? 'asap',
-    //   destinationAddress: args.alternateAddress,
-    //   commandText: '',
-    // })
-
+    createCommand({
+      vehicle: confirmedVehicle?.toLowerCase() ?? '',
+      path: selectedMission as string,
+      commandNote: notes ?? '',
+      runCommand: 'y',
+      schedDate: specifiedTime ?? 'asap',
+      destinationAddress: alternateAddress,
+      commandText: commandText ?? '',
+    })
     // onClose()
   }
 

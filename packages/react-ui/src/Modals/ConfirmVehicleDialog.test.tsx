@@ -20,9 +20,9 @@ test('should render title with vehicle name', () => {
   expect(
     screen.queryByText(/this command will be scheduled for/i)
   ).toBeInTheDocument()
-  // expect(screen.queryByTestId(/currentVehicle/i)).toHaveTextContent(
-  //   props.vehicle
-  // )
+  expect(screen.queryByTestId(/currentVehicle/i)).toHaveTextContent(
+    props.vehicle
+  )
 })
 
 test('should render vehicle name in title in teal', () => {

@@ -354,7 +354,7 @@ export const MissionModal: React.FC<MissionModalProps> = ({
       alternateAddress,
       scheduleId: customScheduleId,
       scheduleMethod: scheduleOption as ScheduleOption,
-      confirmedVehicle,
+      confirmedVehicle: confirmedVehicle ?? vehicleName,
     })
   }
 
