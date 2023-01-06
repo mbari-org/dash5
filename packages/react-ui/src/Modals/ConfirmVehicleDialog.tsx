@@ -42,7 +42,9 @@ export const ConfirmVehicleDialog: React.FC<ConfirmVehicleDialogProps> = ({
   const title = (
     <p>
       This {mission ? 'mission' : 'command'} will be scheduled for{' '}
-      <span className="text-teal-500">{displayVehicle}</span>
+      <span className="text-teal-500" data-testid="currentVehicle">
+        {displayVehicle}
+      </span>
       {alternateAddress && (
         <>
           , through <span className="text-teal-500">{alternateAddress}</span>
