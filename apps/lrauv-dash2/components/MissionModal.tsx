@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import {
   MissionModal as MissionModalView,
   MissionModalProps as MissionModalViewProps,
@@ -94,8 +94,21 @@ const MissionModal: React.FC<MissionModalProps> = ({ onClose }) => {
     },
     { enabled: !!vehicles }
   )
-  const { mutate: createCommand, isLoading: creatingDocument } =
-    useCreateCommand()
+  const {
+    mutate: createCommand,
+    isLoading: sendingCommand,
+    isSuccess: commandSent,
+    isError: commandError,
+  } = useCreateCommand()
+
+  useEffect(() => {
+    if (commandSent) {
+      toast.success('Command sent')
+      onClose()
+    } else if (commandError) {
+      toast.error(`Error sending command: ${commandError}`)
+    }
+  }, [commandSent, commandError, onClose])
 
   const missionCategories = [
     {
@@ -251,6 +264,8 @@ const MissionModal: React.FC<MissionModalProps> = ({ onClose }) => {
     safetyInsert?.scriptArgs.map((i) => ({ ...i, insert: safetyInsert.id })) ??
     []
 
+  const [commandText, setCommandText] = useState<string | undefined>()
+
   const handleSchedule: MissionModalViewProps['onSchedule'] = ({
     confirmedVehicle,
     parameterOverrides,
@@ -259,25 +274,26 @@ const MissionModal: React.FC<MissionModalProps> = ({ onClose }) => {
     specifiedTime,
     alternateAddress,
     notes,
+    preview,
   }) => {
-    const commandText = makeMissionCommand({
+    const missionCommand = makeMissionCommand({
       mission: selectedMissionId as string,
       parameterOverrides,
       scheduleMethod: scheduleMethod as ScheduleOption,
       specifiedTime: specifiedTime ?? undefined,
     })
-    toast.success('Mission scheduled see command below for debugging purposes.')
-    toast.success(commandText?.split(';').join(';\n') ?? '')
-    createCommand({
-      vehicle: confirmedVehicle?.toLowerCase() ?? '',
-      path: selectedMission as string,
-      commandNote: notes ?? '',
-      runCommand: 'y',
-      schedDate: specifiedTime ?? 'asap',
-      destinationAddress: alternateAddress,
-      commandText: commandText ?? '',
-    })
-    // onClose()
+    setCommandText(missionCommand)
+    if (!preview) {
+      createCommand({
+        vehicle: confirmedVehicle?.toLowerCase() ?? '',
+        path: selectedMission as string,
+        commandNote: notes ?? '',
+        runCommand: 'y',
+        schedDate: specifiedTime ?? 'asap',
+        destinationAddress: alternateAddress ?? undefined,
+        commandText: commandText ?? '',
+      })
+    }
   }
 
   return (
@@ -307,6 +323,8 @@ const MissionModal: React.FC<MissionModalProps> = ({ onClose }) => {
       stations={stations}
       onFocusWaypoint={onFocusWaypoint}
       vehicles={vehicles}
+      loading={sendingCommand}
+      commandText={commandText}
     />
   )
 }

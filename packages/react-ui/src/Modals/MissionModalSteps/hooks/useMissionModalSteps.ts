@@ -10,6 +10,7 @@ const steps = [
   'Review',
   'Schedule',
   'Confirm',
+  'Send Command',
 ]
 
 export interface UseMissionModalStepsProps {

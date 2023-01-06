@@ -32,6 +32,7 @@ export type OnScheduleMissionHandler = (args: {
   scheduleMethod?: ScheduleOption
   scheduleId?: string | null
   confirmedVehicle?: string | null
+  preview?: boolean
 }) => void
 
 export interface MissionModalProps
@@ -55,6 +56,8 @@ export interface MissionModalProps
   onVerifyParameter?: (param: string) => string
   alternativeAddresses?: string[]
   vehicles?: string[]
+  commandText?: string
+  loading?: boolean
 }
 
 export const MissionModal: React.FC<MissionModalProps> = ({
@@ -81,6 +84,8 @@ export const MissionModal: React.FC<MissionModalProps> = ({
   alternativeAddresses,
   unfilteredMissionParameters,
   vehicles,
+  commandText,
+  loading,
 }) => {
   const [selectedMissionCategory, setSelectedMissionCategory] = useState<
     string | undefined
@@ -339,6 +344,7 @@ export const MissionModal: React.FC<MissionModalProps> = ({
   }
 
   const handleSchedule = () => {
+    const preview = currentStep !== steps.indexOf('Send Command')
     const waypointOverrides = makeWaypointOverrides(
       updatedWaypoints,
       unfilteredMissionParameters
@@ -355,41 +361,82 @@ export const MissionModal: React.FC<MissionModalProps> = ({
       scheduleId: customScheduleId,
       scheduleMethod: scheduleOption as ScheduleOption,
       confirmedVehicle: confirmedVehicle ?? vehicleName,
+      preview,
     })
+    if (preview) {
+      handleNext()
+    }
   }
 
-  return currentStep === steps.indexOf('Confirm') ? (
-    <ConfirmVehicleDialog
-      vehicle={vehicleName}
-      vehicleList={vehicles ?? []}
-      mission={selectedMissionId ?? ''}
-      onChangeVehicle={setConfirmedVehicle}
-      onCancel={handlePrevious}
-      onConfirm={handleSchedule}
-    />
-  ) : (
-    <Modal
-      className={className}
-      style={style}
-      title={
-        <StepProgress
-          steps={steps.slice(0, steps.length - 1)}
-          currentIndex={currentStep}
-          className="h-[52px] w-[742px]"
+  switch (currentStep) {
+    case steps.indexOf('Confirm'):
+      return (
+        <ConfirmVehicleDialog
+          vehicle={vehicleName}
+          vehicleList={vehicles ?? []}
+          mission={selectedMissionId ?? ''}
+          onChangeVehicle={setConfirmedVehicle}
+          onCancel={handlePrevious}
+          onConfirm={handleSchedule}
         />
-      }
-      onConfirm={handleNext}
-      disableConfirm={disableConfirm()}
-      onCancel={onCancel}
-      confirmButtonText={confirmButtonText}
-      extraButtons={extraButtons()}
-      snapTo="top-right"
-      extraWideModal
-      bodyOverflowHidden
-      allowPointerEventsOnChildren
-      open
-    >
-      {currentModalBody()}
-    </Modal>
-  )
+      )
+    case steps.indexOf('Send Command'):
+      return (
+        <Modal
+          title="Review and Send Command"
+          onConfirm={handleSchedule}
+          onCancel={handlePrevious}
+          loading={loading}
+          open
+          extraWideModal
+        >
+          <div className="flex flex-col">
+            <p className="mb-2">
+              The following command will be sent to{' '}
+              <span className="text-teal-500">
+                {confirmedVehicle ?? vehicleName}
+              </span>
+              :
+            </p>
+            <pre className="w-full rounded-lg bg-stone-100 p-4 font-mono">
+              {commandText?.split(';').join(';\n')}
+            </pre>
+            {notes && (
+              <>
+                <p className="my-2">Additional notes:</p>
+                <pre className="w-full rounded-lg bg-stone-100 p-4 font-mono">
+                  {notes}
+                </pre>
+              </>
+            )}
+          </div>
+        </Modal>
+      )
+    default:
+      return (
+        <Modal
+          className={className}
+          style={style}
+          title={
+            <StepProgress
+              steps={steps.slice(0, steps.length - 1)}
+              currentIndex={currentStep}
+              className="h-[52px]"
+            />
+          }
+          onConfirm={handleNext}
+          disableConfirm={disableConfirm()}
+          onCancel={onCancel}
+          confirmButtonText={confirmButtonText}
+          extraButtons={extraButtons()}
+          snapTo="top-right"
+          extraWideModal
+          bodyOverflowHidden
+          allowPointerEventsOnChildren
+          open
+        >
+          {currentModalBody()}
+        </Modal>
+      )
+  }
 }
