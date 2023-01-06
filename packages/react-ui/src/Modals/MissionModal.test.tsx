@@ -18,6 +18,7 @@ jest.mock('../assets/ruler-light.png', () => {
 const props: MissionModalProps = {
   currentIndex: 0,
   vehicleName: 'Brizo',
+  unfilteredMissionParameters: [],
   missionCategories: [
     {
       id: 'Recent Runs',

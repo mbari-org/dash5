@@ -4,9 +4,7 @@ import { RequestConfig } from '../types'
 
 export interface GetSbdOutgoingAlternativeAddressesParams {}
 
-export interface GetSbdOutgoingAlternativeAddressesResponse {
-  result: string
-}
+export type GetSbdOutgoingAlternativeAddressesResponse = string[]
 
 export const getSbdOutgoingAlternativeAddresses = async (
   params: GetSbdOutgoingAlternativeAddressesParams,
@@ -22,5 +20,6 @@ export const getSbdOutgoingAlternativeAddresses = async (
     `${url}?${new URLSearchParams({ ...params })}`,
     config
   )
-  return response.data as GetSbdOutgoingAlternativeAddressesResponse
+  return (response.data.result ??
+    []) as GetSbdOutgoingAlternativeAddressesResponse
 }

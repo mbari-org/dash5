@@ -1,20 +1,48 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import {
   MissionModal as MissionModalView,
+  MissionModalProps as MissionModalViewProps,
   MissionTableProps,
   ParameterProps,
   WaypointTableProps,
 } from '@mbari/react-ui'
-import { capitalize, capitalizeEach, makeOrdinal } from '@mbari/utils'
 import {
+  capitalize,
+  capitalizeEach,
+  makeOrdinal,
+  sortByProperty,
+} from '@mbari/utils'
+import {
+  MissionListItem,
+  useFrequentRuns,
   useMissionList,
   useRecentRuns,
   useScript,
   useStations,
+  useSbdOutgoingAlternativeAddresses,
+  useVehicleNames,
+  useCreateCommand,
+  ScriptArgument,
+  ScriptInsert,
 } from '@mbari/api-client'
 import { useRouter } from 'next/router'
 import { DateTime } from 'luxon'
-import useTrackedVehicles from '../lib/useTrackedVehicles'
+import { makeMissionCommand } from '../lib/makeCommand'
+import toast from 'react-hot-toast'
+import { ScheduleOption } from 'react-ui/dist'
+
+const insertForParameter = (
+  argument: ScriptArgument,
+  inserts: ScriptInsert[]
+) => {
+  const insert = inserts.find((i) =>
+    i.scriptArgs.find((a) => a.name === argument.name)
+  )
+  if (insert) {
+    return insert.id
+  }
+  return null
+}
 
 export interface MissionModalProps {
   onClose: () => void
@@ -33,37 +61,80 @@ const parseMissionPath = (mission?: string) => {
   return { category, name }
 }
 
+const convertMissionDataToListItem =
+  (vehicleName: string) => (mission: MissionListItem) => {
+    const { category, name } = parseMissionPath(mission.path)
+    return {
+      id: mission.path,
+      category,
+      name,
+      task: '',
+      description: mission.description,
+      vehicle: vehicleName,
+    }
+  }
+
 const MissionModal: React.FC<MissionModalProps> = ({ onClose }) => {
   const router = useRouter()
   const params = (router.query?.deployment ?? []) as string[]
   const vehicleName = params[0]
-  const { trackedVehicles: vehicles } = useTrackedVehicles()
+  const { data: vehicles } = useVehicleNames({ refresh: 'n' })
+  const { data: alternativeAddresses } = useSbdOutgoingAlternativeAddresses({})
   const { data: missionData } = useMissionList()
-  const { data: recentRunsData } = useRecentRuns(
+  const { data: frequentRunsData } = useFrequentRuns(
     {
-      vehicles,
-      from: DateTime.now().minus({ days: 60 }).toISODate(),
+      vehicle: vehicleName,
     },
     { enabled: !!vehicleName }
   )
+  const { data: recentRunsData } = useRecentRuns(
+    {
+      vehicles: vehicles ?? [],
+      from: DateTime.now().minus({ days: 60 }).toISODate(),
+    },
+    { enabled: !!vehicles }
+  )
+  const {
+    mutate: createCommand,
+    isLoading: sendingCommand,
+    isSuccess: commandSent,
+    isError: commandError,
+  } = useCreateCommand()
+
+  useEffect(() => {
+    if (commandSent) {
+      toast.success('Command sent')
+      onClose()
+    } else if (commandError) {
+      toast.error(`Error sending command: ${commandError}`)
+    }
+  }, [commandSent, commandError, onClose])
 
   const missionCategories = [
     {
       id: 'Recent Runs',
       name: 'Recent Runs',
     },
-    ...(missionData?.list
-      ?.map((mission) => {
-        const { category } = parseMissionPath(mission.path)
-        return {
-          id: category,
-          name: category === '' ? 'Default' : category,
-        }
-      })
-      .filter(
-        (mission, index, self) =>
-          self.findIndex((m) => m.id === mission.id) === index
-      ) ?? []),
+    {
+      id: 'Frequent Runs',
+      name: 'Frequent Runs',
+    },
+    ...sortByProperty({
+      sortProperty: 'name',
+      arrOfObj:
+        missionData?.list
+          ?.map((mission) => {
+            const { category } = parseMissionPath(mission.path)
+            return {
+              id: category,
+              name: category === '' ? 'Default' : category,
+            }
+          })
+          .filter(
+            (mission, index, self) =>
+              self.findIndex((m) => m.id === mission.id) === index
+          ) ?? [],
+    }),
   ]
 
   const recentRuns: MissionTableProps['missions'] =
@@ -85,19 +156,26 @@ const MissionModal: React.FC<MissionModalProps> = ({ onClose }) => {
         (mission, index, s) => s.findIndex((m) => m.id === mission.id) === index
       ) ?? []
 
+  const frequentRuns: MissionTableProps['missions'] =
+    (frequentRunsData
+      ?.map((d) => {
+        const relatedMission = missionData?.list?.find(
+          ({ path }) => path === d?.mission
+        )
+        return (
+          relatedMission && {
+            ...convertMissionDataToListItem(vehicleName)(relatedMission),
+            frequentRun: true,
+          }
+        )
+      })
+      .filter((i) => i) as MissionTableProps['missions']) ?? []
+
   const missions: MissionTableProps['missions'] = [
     ...recentRuns,
-    ...(missionData?.list?.map((mission) => {
-      const { category, name } = parseMissionPath(mission.path)
-      return {
-        id: mission.path,
-        category,
-        name,
-        task: '',
-        description: mission.description,
-        vehicle: vehicleName,
-      }
-    }) ?? []),
+    ...frequentRuns,
+    ...(missionData?.list?.map(convertMissionDataToListItem(vehicleName)) ??
+      []),
   ]
 
   const [selectedMission, setSelectedMission] = useState<string | undefined>()
@@ -150,49 +228,103 @@ const MissionModal: React.FC<MissionModalProps> = ({ onClose }) => {
   ]
     .flat(2)
     .filter((i) => i)
+
+  const commsInsert = selectedMissionData?.inserts?.find(({ id }) =>
+    id.match(/comms/i)
+  )
+  const safetyInsert = selectedMissionData?.inserts?.find(({ id }) =>
+    id.match(/envelope/i)
+  )
+
   const parameters: ParameterProps[] =
-    selectedMissionData?.scriptArgs
-      .filter(({ name }) => !reservedParams.includes(name))
-      .map((arg) => ({
-        description: arg.description ?? '',
-        name: arg.name,
-        unit: arg.unit,
-        value: arg.value,
-      })) ?? []
+    [
+      selectedMissionData?.inserts?.map((i) => i.scriptArgs).flat(),
+      selectedMissionData?.scriptArgs.filter(
+        ({ name }) => !reservedParams.includes(name)
+      ),
+    ]
+      .flat()
+      .map(
+        (arg) =>
+          ({
+            description: arg?.description ?? '',
+            name: arg?.name,
+            unit: arg?.unit,
+            value: arg?.value,
+            insert:
+              arg &&
+              insertForParameter(arg, selectedMissionData?.inserts ?? []),
+          } as ParameterProps)
+      ) ?? []
 
   const commsParams =
-    selectedMissionData?.inserts?.find(({ id }) => id.match(/comms/i))
-      ?.scriptArgs ?? []
+    commsInsert?.scriptArgs.map((i) => ({ ...i, insert: commsInsert.id })) ?? []
 
   const safetyParams =
-    selectedMissionData?.inserts?.find(({ id }) => id.match(/envelope/i))
-      ?.scriptArgs ?? []
+    safetyInsert?.scriptArgs.map((i) => ({ ...i, insert: safetyInsert.id })) ??
+    []
+
+  const [commandText, setCommandText] = useState<string | undefined>()
+
+  const handleSchedule: MissionModalViewProps['onSchedule'] = ({
+    confirmedVehicle,
+    parameterOverrides,
+    selectedMissionId,
+    scheduleMethod,
+    specifiedTime,
+    alternateAddress,
+    notes,
+    preview,
+  }) => {
+    const missionCommand = makeMissionCommand({
+      mission: selectedMissionId as string,
+      parameterOverrides,
+      scheduleMethod: scheduleMethod as ScheduleOption,
+      specifiedTime: specifiedTime ?? undefined,
+    })
+    setCommandText(missionCommand)
+    if (!preview) {
+      createCommand({
+        vehicle: confirmedVehicle?.toLowerCase() ?? '',
+        path: selectedMission as string,
+        commandNote: notes ?? '',
+        runCommand: 'y',
+        schedDate: specifiedTime ?? 'asap',
+        destinationAddress: alternateAddress ?? undefined,
+        commandText: commandText ?? '',
+      })
+    }
+  }
 
   return (
     <MissionModalView
       style={{ maxHeight: '80vh' }}
+      alternativeAddresses={alternativeAddresses}
       currentIndex={0}
       vehicleName={capitalize(vehicleName)}
       bottomDepth="n/a"
       totalDistance="n/a"
       duration="n/a"
-      missionCategories={missionCategories}
+      unfilteredMissionParameters={
+        (selectedMissionData?.scriptArgs ?? []) as ParameterProps[]
+      }
+      missionCategories={missionCategories.map((c) => ({
+        id: c.id,
+        name: c.name,
+      }))}
       parameters={parameters}
       safetyParams={safetyParams}
       commsParams={commsParams}
-      onCancel={() => {
-        console.log('cancel')
-        onClose()
-      }}
-      onSchedule={() => {
-        console.log('schedule')
-        onClose()
-      }}
+      onCancel={onClose}
+      onSchedule={handleSchedule}
       missions={missions ?? []}
       onSelectMission={setSelectedMission}
       waypoints={waypoints}
       stations={stations}
       onFocusWaypoint={onFocusWaypoint}
+      vehicles={vehicles}
+      loading={sendingCommand}
+      commandText={commandText}
     />
   )
 }

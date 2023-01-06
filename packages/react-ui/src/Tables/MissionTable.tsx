@@ -27,6 +27,7 @@ export interface Mission {
   ranAt?: string
   waypointCount?: number
   recentRun?: boolean
+  frequentRun?: boolean
 }
 
 export const MissionTable: React.FC<MissionTableProps> = ({

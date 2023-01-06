@@ -1,7 +1,9 @@
+import { faRulerCombined as faRulerLight } from '@fortawesome/pro-regular-svg-icons'
+import { faRulerCombined as faRulerDark } from '@fortawesome/pro-solid-svg-icons'
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
+import clsx from 'clsx'
 import React, { useEffect, useState } from 'react'
 import { Input } from '../Fields'
-import rulerDark from '@mbari/react-ui/assets/ruler-dark.png'
-import rulerLight from '@mbari/react-ui/assets/ruler-light.png'
 import { ParameterTableProps } from './ParameterTable'
 
 export interface ParameterFieldProps {
@@ -9,6 +11,9 @@ export interface ParameterFieldProps {
   overrideValue?: string
   onOverride: (newOverride: string) => void
   onVerifyValue?: ParameterTableProps['onVerifyValue']
+  rulerDarkSrc?: string
+  rulerLightSrc?: string
+  unit?: string
 }
 
 const styles = {
@@ -23,6 +28,8 @@ export const ParameterField: React.FC<ParameterFieldProps> = ({
   overrideValue,
   onOverride,
   onVerifyValue,
+  rulerDarkSrc,
+  rulerLightSrc,
 }) => {
   const [inputValue, setInputValue] = useState(overrideValue ?? '')
 
@@ -47,19 +54,32 @@ export const ParameterField: React.FC<ParameterFieldProps> = ({
     <ul className={styles.container}>
       <li className={styles.inputLi}>
         <Input
-          name="overrride"
+          name="override"
           value={inputValue}
           onChange={(e) => handleOverride(e.target.value)}
         />
       </li>
       <li className={styles.buttonLi}>
         <button className={styles.button} onClick={handleVerify}>
-          <span
-            className={styles.ruler}
-            style={{
-              backgroundImage: `url(${overrideValue ? rulerDark : rulerLight})`,
-            }}
-          />
+          {rulerDarkSrc ? (
+            <span
+              className={styles.ruler}
+              style={{
+                backgroundImage: `url(${
+                  overrideValue ? rulerDarkSrc : rulerLightSrc
+                })`,
+              }}
+            />
+          ) : (
+            <FontAwesomeIcon
+              icon={overrideValue ? faRulerDark : faRulerLight}
+              className={clsx(
+                'm-auto text-xl',
+                overrideValue && 'text-stone-400',
+                !overrideValue && 'text-stone-300/60'
+              )}
+            />
+          )}
         </button>
       </li>
     </ul>
