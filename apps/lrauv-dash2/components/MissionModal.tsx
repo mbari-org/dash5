@@ -29,6 +29,7 @@ import { useRouter } from 'next/router'
 import { DateTime } from 'luxon'
 import { makeMissionCommand } from '../lib/makeCommand'
 import toast from 'react-hot-toast'
+import { ScheduleOption } from 'react-ui/dist'
 
 const insertForParameter = (
   argument: ScriptArgument,
@@ -230,14 +231,18 @@ const MissionModal: React.FC<MissionModalProps> = ({ onClose }) => {
       ),
     ]
       .flat()
-      .map((arg) => ({
-        description: arg?.description ?? '',
-        name: arg?.name,
-        unit: arg?.unit,
-        value: arg?.value,
-        insert:
-          arg && insertForParameter(arg, selectedMissionData?.inserts ?? []),
-      })) ?? []
+      .map(
+        (arg) =>
+          ({
+            description: arg?.description ?? '',
+            name: arg?.name,
+            unit: arg?.unit,
+            value: arg?.value,
+            insert:
+              arg &&
+              insertForParameter(arg, selectedMissionData?.inserts ?? []),
+          } as ParameterProps)
+      ) ?? []
 
   const commsParams =
     commsInsert?.scriptArgs.map((i) => ({ ...i, insert: commsInsert.id })) ?? []
@@ -255,14 +260,11 @@ const MissionModal: React.FC<MissionModalProps> = ({ onClose }) => {
     const commandText = makeMissionCommand({
       mission: selectedMissionId as string,
       parameterOverrides,
-      scheduleMethod,
-      specifiedTime,
+      scheduleMethod: scheduleMethod as ScheduleOption,
+      specifiedTime: specifiedTime ?? undefined,
     })
     toast.success('Mission scheduled!')
     toast.success(commandText?.split(';').join(';\n') ?? '')
-
-    // const commandText = [`load ${args.selectedMissionId}`, args.overriddenMissionParams.map(p => `set ${}`)]
-    // console.log('Scheduling mission with args: ', commandText)
     // createCommand({
     //   vehicle: args.confirmedVehicle ?? vehicleName,
     //   path: selectedMission as string,
@@ -288,7 +290,10 @@ const MissionModal: React.FC<MissionModalProps> = ({ onClose }) => {
       unfilteredMissionParameters={
         (selectedMissionData?.scriptArgs ?? []) as ParameterProps[]
       }
-      missionCategories={missionCategories}
+      missionCategories={missionCategories.map((c) => ({
+        id: c.id,
+        name: c.name,
+      }))}
       parameters={parameters}
       safetyParams={safetyParams}
       commsParams={commsParams}
