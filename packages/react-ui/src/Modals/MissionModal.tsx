@@ -23,6 +23,17 @@ import useManagedParameters from './MissionModalSteps/hooks/useManagedParameters
 import useMissionModalSteps from './MissionModalSteps/hooks/useMissionModalSteps'
 import { ConfirmVehicleDialog } from './ConfirmVehicleDialog'
 
+export type OnScheduleMissionHandler = (args: {
+  selectedMissionId: string
+  parameterOverrides: ParameterProps[]
+  alternateAddress?: string | null
+  specifiedTime?: string | null
+  notes?: string | null
+  scheduleMethod?: ScheduleOption
+  scheduleId?: string | null
+  confirmedVehicle?: string | null
+}) => void
+
 export interface MissionModalProps
   extends Omit<StepProgressProps, 'steps'>,
     MissionTableProps,
@@ -37,17 +48,9 @@ export interface MissionModalProps
   parameters: ParameterProps[]
   safetyParams: ParameterProps[]
   commsParams: ParameterProps[]
+  unfilteredMissionParameters: ParameterProps[]
   onRefreshStats?: () => void
-  onSchedule?: (args: {
-    selectedMissionId: string
-    parameterOverrides: ParameterProps[]
-    alternateAddress?: string | null
-    specifiedTime?: string | null
-    notes?: string | null
-    scheduleMethod?: ScheduleOption
-    scheduleId?: string | null
-    confirmedVehicle?: string | null
-  }) => void
+  onSchedule?: OnScheduleMissionHandler
   onCancel?: () => void
   onVerifyParameter?: (param: string) => string
   alternativeAddresses?: string[]
@@ -76,6 +79,7 @@ export const MissionModal: React.FC<MissionModalProps> = ({
   onVerifyParameter,
   onSelectMission,
   alternativeAddresses,
+  unfilteredMissionParameters,
   vehicles,
 }) => {
   const [selectedMissionCategory, setSelectedMissionCategory] = useState<
@@ -337,9 +341,8 @@ export const MissionModal: React.FC<MissionModalProps> = ({
   const handleSchedule = () => {
     const waypointOverrides = makeWaypointOverrides(
       updatedWaypoints,
-      parameters
+      unfilteredMissionParameters
     )
-
     onSchedule?.({
       selectedMissionId: selectedMissionId as string,
       parameterOverrides: [

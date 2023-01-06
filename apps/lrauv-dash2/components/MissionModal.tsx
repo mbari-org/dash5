@@ -21,9 +21,27 @@ import {
   useStations,
   useSbdOutgoingAlternativeAddresses,
   useVehicleNames,
+  useCreateCommand,
+  ScriptArgument,
+  ScriptInsert,
 } from '@mbari/api-client'
 import { useRouter } from 'next/router'
 import { DateTime } from 'luxon'
+import { makeMissionCommand } from '../lib/makeCommand'
+import toast from 'react-hot-toast'
+
+const insertForParameter = (
+  argument: ScriptArgument,
+  inserts: ScriptInsert[]
+) => {
+  const insert = inserts.find((i) =>
+    i.scriptArgs.find((a) => a.name === argument.name)
+  )
+  if (insert) {
+    return insert.id
+  }
+  return null
+}
 
 export interface MissionModalProps {
   onClose: () => void
@@ -59,8 +77,8 @@ const MissionModal: React.FC<MissionModalProps> = ({ onClose }) => {
   const router = useRouter()
   const params = (router.query?.deployment ?? []) as string[]
   const vehicleName = params[0]
-  const { data: vehicles } = useVehicleNames()
-  const { data: alternativeAddresses } = useSbdOutgoingAlternativeAddresses()
+  const { data: vehicles } = useVehicleNames({ refresh: 'n' })
+  const { data: alternativeAddresses } = useSbdOutgoingAlternativeAddresses({})
   const { data: missionData } = useMissionList()
   const { data: frequentRunsData } = useFrequentRuns(
     {
@@ -70,13 +88,13 @@ const MissionModal: React.FC<MissionModalProps> = ({ onClose }) => {
   )
   const { data: recentRunsData } = useRecentRuns(
     {
-      vehicles,
+      vehicles: vehicles ?? [],
       from: DateTime.now().minus({ days: 60 }).toISODate(),
     },
     { enabled: !!vehicles }
   )
-
-  console.log(frequentRunsData)
+  const { mutate: createCommand, isLoading: creatingDocument } =
+    useCreateCommand()
 
   const missionCategories = [
     {
@@ -197,27 +215,65 @@ const MissionModal: React.FC<MissionModalProps> = ({ onClose }) => {
     .flat(2)
     .filter((i) => i)
 
+  const commsInsert = selectedMissionData?.inserts?.find(({ id }) =>
+    id.match(/comms/i)
+  )
+  const safetyInsert = selectedMissionData?.inserts?.find(({ id }) =>
+    id.match(/envelope/i)
+  )
+
   const parameters: ParameterProps[] =
-    selectedMissionData?.scriptArgs
-      .filter(({ name }) => !reservedParams.includes(name))
+    [
+      selectedMissionData?.inserts?.map((i) => i.scriptArgs).flat(),
+      selectedMissionData?.scriptArgs.filter(
+        ({ name }) => !reservedParams.includes(name)
+      ),
+    ]
+      .flat()
       .map((arg) => ({
-        description: arg.description ?? '',
-        name: arg.name,
-        unit: arg.unit,
-        value: arg.value,
+        description: arg?.description ?? '',
+        name: arg?.name,
+        unit: arg?.unit,
+        value: arg?.value,
+        insert:
+          arg && insertForParameter(arg, selectedMissionData?.inserts ?? []),
       })) ?? []
 
   const commsParams =
-    selectedMissionData?.inserts?.find(({ id }) => id.match(/comms/i))
-      ?.scriptArgs ?? []
+    commsInsert?.scriptArgs.map((i) => ({ ...i, insert: commsInsert.id })) ?? []
 
   const safetyParams =
-    selectedMissionData?.inserts?.find(({ id }) => id.match(/envelope/i))
-      ?.scriptArgs ?? []
+    safetyInsert?.scriptArgs.map((i) => ({ ...i, insert: safetyInsert.id })) ??
+    []
 
-  const handleSchedule: MissionModalViewProps['onSchedule'] = (args) => {
-    console.log('Scheduling mission with args: ', args)
-    onClose()
+  const handleSchedule: MissionModalViewProps['onSchedule'] = ({
+    parameterOverrides,
+    selectedMissionId,
+    scheduleMethod,
+    specifiedTime,
+  }) => {
+    const commandText = makeMissionCommand({
+      mission: selectedMissionId as string,
+      parameterOverrides,
+      scheduleMethod,
+      specifiedTime,
+    })
+    toast.success('Mission scheduled!')
+    toast.success(commandText?.split(';').join(';\n') ?? '')
+
+    // const commandText = [`load ${args.selectedMissionId}`, args.overriddenMissionParams.map(p => `set ${}`)]
+    // console.log('Scheduling mission with args: ', commandText)
+    // createCommand({
+    //   vehicle: args.confirmedVehicle ?? vehicleName,
+    //   path: selectedMission as string,
+    //   commandNote: args.notes ?? '',
+    //   runCommand: 'y',
+    //   schedDate: args.specifiedTime ?? 'asap',
+    //   destinationAddress: args.alternateAddress,
+    //   commandText: '',
+    // })
+
+    // onClose()
   }
 
   return (
@@ -229,6 +285,9 @@ const MissionModal: React.FC<MissionModalProps> = ({ onClose }) => {
       bottomDepth="n/a"
       totalDistance="n/a"
       duration="n/a"
+      unfilteredMissionParameters={
+        (selectedMissionData?.scriptArgs ?? []) as ParameterProps[]
+      }
       missionCategories={missionCategories}
       parameters={parameters}
       safetyParams={safetyParams}

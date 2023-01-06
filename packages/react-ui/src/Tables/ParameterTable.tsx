@@ -23,6 +23,7 @@ export interface ParameterProps {
   unit?: string
   dvlOff?: boolean
   overrideValue?: string
+  insert?: string
 }
 
 export const ParameterTable: React.FC<ParameterTableProps> = ({

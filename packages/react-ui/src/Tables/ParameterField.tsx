@@ -54,10 +54,9 @@ export const ParameterField: React.FC<ParameterFieldProps> = ({
     <ul className={styles.container}>
       <li className={styles.inputLi}>
         <Input
-          name="overrride"
+          name="override"
           value={inputValue}
           onChange={(e) => handleOverride(e.target.value)}
-          type="number"
         />
       </li>
       <li className={styles.buttonLi}>
