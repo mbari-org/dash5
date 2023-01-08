@@ -27,12 +27,19 @@ export interface CommandModalProps
   className?: string
   style?: React.CSSProperties
   vehicleName: string
-  recentCommands?: SelectOption[]
   onCancel?: () => void
   onSubmit: AsyncSubmitHandler<ScheduleCommandFormValues>
   onAltAddressSubmit?: AsyncSubmitHandler<ScheduleCommandFormValues>
   onMoreInfo?: () => void
+  recentCommands?: Command[]
+  frequentCommands?: Command[]
 }
+
+const filters: SelectOption[] = [
+  { name: 'Recent Commands', id: 'recent' },
+  { name: 'Frequent Commands', id: 'frequent' },
+  { name: 'All Commands', id: 'all' },
+]
 
 export const CommandModal: React.FC<CommandModalProps> = ({
   className,
@@ -41,8 +48,9 @@ export const CommandModal: React.FC<CommandModalProps> = ({
   currentIndex,
   vehicleName,
   commands,
-  selectedId,
   recentCommands,
+  frequentCommands,
+  selectedId,
   onCancel,
   onSubmit,
   onAltAddressSubmit,
@@ -50,37 +58,49 @@ export const CommandModal: React.FC<CommandModalProps> = ({
 }) => {
   const submitButtonRef = useRef<HTMLButtonElement | null>(null)
   const [currentStep, setCurrentStep] = useState(currentIndex)
-  const [selectedCommandId, setSelectedCommandId] =
-    useState<string | null | undefined>(selectedId)
-  const [selectedRecentId, setSelectedRecentId] =
-    useState<string | null | undefined>('')
+  const [selectedCommandId, setSelectedCommandId] = useState<
+    string | null | undefined
+  >(selectedId)
+  const [selectedFilter, setSelectedFilter] = useState<
+    string | null | undefined
+  >('')
   const [searchTerm, setSearchTerm] = useState('')
   const [filteredCommands, setFilteredCommands] = useState<Command[]>(commands)
   const [sortColumn, setSortColumn] = useState<number | null | undefined>(null)
   const [sortDirection, setSortDirection] = useState<SortDirection>(null)
 
   useEffect(() => {
-    if (selectedRecentId) {
+    if (selectedFilter) {
       setSearchTerm('')
       setSortDirection(null)
-      const filteredByRecent = commands.filter(
-        ({ id }) => id === selectedRecentId
-      )
-      setFilteredCommands(filteredByRecent.length ? filteredByRecent : commands)
+      console.log(selectedFilter)
+      switch (selectedFilter) {
+        case 'recent':
+          console.log(recentCommands)
+          setFilteredCommands(recentCommands || [])
+          break
+        case 'frequent':
+          console.log(frequentCommands)
+          setFilteredCommands(frequentCommands || [])
+          break
+        default:
+          setFilteredCommands(commands)
+          break
+      }
     }
 
     if (searchTerm) {
       setSortDirection(null)
-      const searchResults = commands.filter(({ name }) =>
+      const searchResults = filteredCommands.filter(({ name }) =>
         name.includes(searchTerm)
       )
       setFilteredCommands(searchResults)
     }
 
-    if (!selectedRecentId && !searchTerm) {
+    if (!selectedFilter && !searchTerm) {
       setFilteredCommands(commands)
     }
-  }, [searchTerm, selectedRecentId, commands])
+  }, [searchTerm, selectedFilter, commands])
 
   const isLastStep = currentStep === steps.length - 1
   const confirmButtonText = isLastStep ? (
@@ -109,13 +129,13 @@ export const CommandModal: React.FC<CommandModalProps> = ({
       setSelectedCommandId(null)
     }
     setSearchTerm('')
-    setSelectedRecentId(id)
+    setSelectedFilter(id)
   }
 
   const handleSearch = (term: string) => {
-    if (selectedRecentId || selectedCommandId) {
+    if (selectedFilter || selectedCommandId) {
       setSelectedCommandId(null)
-      setSelectedRecentId(null)
+      setSelectedFilter(null)
     }
     setSearchTerm(term)
   }
@@ -216,8 +236,8 @@ export const CommandModal: React.FC<CommandModalProps> = ({
               <SelectField
                 name="Recent commands"
                 placeholder="Recent Commands"
-                options={recentCommands}
-                value={selectedRecentId ?? undefined}
+                options={filters}
+                value={selectedFilter ?? undefined}
                 onSelect={(id) => handleSelectRecent(id)}
                 clearable
               />

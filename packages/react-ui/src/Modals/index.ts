@@ -1,3 +1,4 @@
+export * from './CommandModal'
 export * from './ConfirmStopModal'
 export * from './NewDeploymentModal'
 export * from './LoginModal'

@@ -20,6 +20,7 @@ import DocumentInstanceModal from './DocumentInstanceModal'
 import AttachmentModal from './AttachmentModal'
 import DetachModal from './DetachModal'
 import MissionModal from './MissionModal'
+import { CommandModal } from './CommandModal'
 
 const Layout: React.FC = ({ children }) => {
   const [showLogin, setLogin] = useState(false)
@@ -159,7 +160,7 @@ const Layout: React.FC = ({ children }) => {
       {globalModalId?.id === 'newMission' &&
         requireAuthentication(<MissionModal onClose={setModal(null)} />)}
       {globalModalId?.id === 'newCommand' &&
-        requireAuthentication(<MissionModal onClose={setModal(null)} />)}
+        requireAuthentication(<CommandModal onClose={setModal(null)} />)}
     </div>
   )
 }

@@ -18,7 +18,6 @@ export interface Command {
   id: string
   name: string
   description?: string
-  vehicle: string
 }
 
 export const CommandTable: React.FC<CommandTableProps> = ({
@@ -31,7 +30,7 @@ export const CommandTable: React.FC<CommandTableProps> = ({
   activeSortColumn,
   sortDirection,
 }) => {
-  const commandRows = commands.map(({ name, vehicle, description }) => ({
+  const commandRows = commands.map(({ name, description }) => ({
     cells: [
       {
         label: name,
@@ -40,12 +39,7 @@ export const CommandTable: React.FC<CommandTableProps> = ({
         span: 2,
       },
       {
-        label: vehicle,
-        highlighted: true,
-        highlightedStyle: 'opacity-60',
-      },
-      {
-        label: description ? description : 'No description',
+        label: description ?? 'No description available',
         highlighted: true,
         highlightedStyle: 'opacity-60',
         span: 2,
@@ -59,10 +53,6 @@ export const CommandTable: React.FC<CommandTableProps> = ({
         label: 'COMMAND',
         onSort: onSortColumn,
         span: 2,
-      },
-      {
-        label: 'ALL LRAUV',
-        onSort: onSortColumn,
       },
       { label: 'DESCRIPTION', span: 2, onSort: onSortColumn },
     ],
