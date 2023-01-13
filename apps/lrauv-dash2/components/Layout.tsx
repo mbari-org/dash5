@@ -24,6 +24,7 @@ import { LogsModal } from './LogsModal'
 import { DocsModal } from './DocsModal'
 import { ChartsModal } from './ChartsModal'
 import { CommsModal } from './CommsModal'
+import { ESPModal } from './ESPModal'
 
 const Layout: React.FC = ({ children }) => {
   const [showLogin, setLogin] = useState(false)
@@ -183,6 +184,12 @@ const Layout: React.FC = ({ children }) => {
       )}
       {globalModalId?.id === 'vehicleDocs' && vehicleName.length > 0 && (
         <DocsModal
+          onClose={setModal(null)}
+          vehicleName={vehicleName as string}
+        />
+      )}
+      {globalModalId?.id === 'espSamples' && vehicleName.length > 0 && (
+        <ESPModal
           onClose={setModal(null)}
           vehicleName={vehicleName as string}
         />
