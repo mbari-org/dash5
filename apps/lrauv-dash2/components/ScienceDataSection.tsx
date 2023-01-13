@@ -5,6 +5,7 @@ import { useEffect, useRef, useState } from 'react'
 import { capitalize, humanize, swallow } from '@mbari/utils'
 import { useChartData } from '@mbari/api-client'
 import { AccordionCells } from '@mbari/react-ui'
+import clsx from 'clsx'
 
 const LineChart = dynamic(
   () => import('@mbari/react-ui/dist/Charts/LineChart'),
@@ -15,21 +16,33 @@ const LineChart = dynamic(
 
 const vehicleUnits = ['arcdeg', 'deg', 'm', 's', 'v', 'rad', 'ma', 'ah']
 
-const ScienceCell: React.FC<{
+export const ScienceCell: React.FC<{
   title?: string
   color: string
   name: string
   unit: string
   values?: number[]
   times?: number[]
-}> = ({ color, values, times, unit, name }) => {
+  timeout?: number
+  cellHeightClassname?: string
+  chartHeightClassname?: string
+}> = ({
+  color,
+  values,
+  times,
+  unit,
+  name,
+  timeout: timeoutms,
+  cellHeightClassname = 'h-[340px]',
+  chartHeightClassname = 'h-[320px]',
+}) => {
   const [ready, setReady] = useState(false)
   const timeout = useRef<ReturnType<typeof setTimeout>>(null)
   useEffect(() => {
     if (!ready && !timeout.current) {
       setTimeout(() => {
         setReady(true)
-      }, 2000)
+      }, timeoutms ?? 2000)
     }
     const currentTimeout = timeout.current
     return () => {
@@ -41,8 +54,13 @@ const ScienceCell: React.FC<{
 
   const metric = `${capitalize(name)} (${unit})`
   return (
-    <div className="h-[340px] w-full border-b border-b-slate-200 p-4">
-      <div className="relative my-auto h-[320px]">
+    <div
+      className={clsx(
+        cellHeightClassname,
+        'w-full border-b border-b-slate-200 p-4'
+      )}
+    >
+      <div className={clsx(chartHeightClassname, 'relative my-auto')}>
         {values && times && ready ? (
           <LineChart
             data={values?.map((v, i) => ({
@@ -102,8 +120,8 @@ const ScienceDataSection: React.FC<{
     )
   }
 
-  const handleEsbSamples = swallow(() => {
-    setGlobalModalId({ id: 'esbSamples' })
+  const handleespSamples = swallow(() => {
+    setGlobalModalId({ id: 'espSamples' })
   })
 
   return (
@@ -121,7 +139,7 @@ const ScienceDataSection: React.FC<{
         />
         <button
           className="my-auto ml-auto px-4 py-2 font-bold text-violet-800"
-          onClick={handleEsbSamples}
+          onClick={handleespSamples}
         >
           ESP Samples
         </button>
