@@ -51,6 +51,13 @@ const VehicleAccordion: React.FC<VehicleAccordionProps> = ({
     from,
     to,
   })
+  const { data: commsLogs, isLoading: commsLoading } = useEvents({
+    vehicles: [vehicleName],
+    eventTypes: ['command', 'run'],
+    from,
+    to,
+  })
+
   const { data: deploymentCommandStatus } = useDeploymentCommandStatus(
     {
       deploymentId: currentDeploymentId ?? 0,
@@ -142,7 +149,7 @@ const VehicleAccordion: React.FC<VehicleAccordionProps> = ({
       <AccordionHeader
         label="Comms Queue"
         secondaryLabel={
-          activeDeployment ? 'surfacing in ~20 min, no items in queue' : ''
+          activeDeployment ? `${commsLogs?.length ?? 0} item(s) in queue` : ''
         }
         onToggle={handleToggleForSection('comms')}
         open={section === 'comms'}
