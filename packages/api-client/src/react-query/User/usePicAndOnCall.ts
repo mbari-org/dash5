@@ -44,6 +44,7 @@ export const usePicAndOnCall = (
     },
     {
       staleTime: 5 * 60 * 1000,
+      enabled: (options?.enabled ?? true) && (token?.length ?? 0) > 0,
       ...options,
     }
   )
