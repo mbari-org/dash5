@@ -6,7 +6,7 @@ import { Select } from '../Fields/Select'
 export interface CommandDetailProps {
   className?: string
   style?: React.CSSProperties
-  commands: CommandParameter[]
+  parameters: CommandParameter[]
   onSelect: (param: string, value: string) => void
 }
 
@@ -20,7 +20,7 @@ export interface CommandParameter {
 export const CommandDetailTable: React.FC<CommandDetailProps> = ({
   className,
   style,
-  commands,
+  parameters,
   onSelect,
 }) => {
   const Row = (command: CommandParameter) => {
@@ -69,11 +69,11 @@ export const CommandDetailTable: React.FC<CommandDetailProps> = ({
     }
   }
 
-  const commandRows = commands.map((command) => Row(command))
+  const paramterRows = parameters.map((paramter) => Row(paramter))
 
   return (
     <article className={clsx('', className)} style={style}>
-      <Table header={{ cells: [{ label: 'CONFIGSET' }] }} rows={commandRows} />
+      <Table header={{ cells: [{ label: 'CONFIGSET' }] }} rows={paramterRows} />
     </article>
   )
 }

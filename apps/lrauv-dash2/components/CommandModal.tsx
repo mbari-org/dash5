@@ -3,10 +3,10 @@ import {
   useCommands,
   useFrequentCommands,
   useRecentCommands,
-  ApiCommand,
 } from '@mbari/api-client'
 import { useRouter } from 'next/router'
 import toast from 'react-hot-toast'
+import { useState } from 'react'
 
 export interface CommandModalProps {
   onClose: () => void
@@ -19,6 +19,9 @@ export const CommandModal: React.FC<CommandModalProps> = ({
   className,
   style,
 }) => {
+  const [currentCommandId, setCurrentCommand] = useState<
+    string | null | undefined
+  >()
   const steps = ['Command', 'Build', 'Schedule']
   const router = useRouter()
   const params = (router.query?.deployment ?? []) as string[]
@@ -40,35 +43,29 @@ export const CommandModal: React.FC<CommandModalProps> = ({
     })) ?? []
 
   const recentCommands =
-    recentCommandsData
-      ?.map((c) => ({
-        id: c?.writtenCommand ?? c?.command?.keyword,
-        name: c?.writtenCommand,
-        description: commandData?.commands.find(
-          (cd) => cd.keyword === c?.command?.keyword
-        )?.description,
-      }))
-      .filter(
-        (c, i, a) => a.findIndex((o) => o.description === c.description) === i
-      ) ?? []
+    recentCommandsData?.map((c) => ({
+      id: c.id,
+      name: c?.writtenCommand,
+      description: c?.note ?? 'no notes',
+    })) ?? []
 
   const frequentCommands =
-    frequentCommandsData
-      ?.map((c) => ({
-        id: c?.writtenCommand ?? c?.command?.keyword,
-        name: c?.writtenCommand,
-        description: commandData?.commands.find(
-          (cd) => cd.keyword === c?.command?.keyword
-        )?.description,
-      }))
-      .filter(
-        (c, i, a) => a.findIndex((o) => o.description === c.description) === i
-      ) ?? []
+    frequentCommandsData?.map((c) => ({
+      id: c?.writtenCommand ?? c?.command?.keyword,
+      name: c?.writtenCommand,
+      description: commandData?.commands.find(
+        (cd) => cd.keyword === c?.command?.keyword
+      )?.description,
+    })) ?? []
 
   const handleSubmit = () => {
     toast.success('Command sent!')
     onClose()
   }
+
+  const syntaxVariations = commandData?.commands.find(
+    (c) => c.keyword === currentCommandId
+  )?.syntaxList
 
   return (
     <CommandModalView
@@ -82,6 +79,8 @@ export const CommandModal: React.FC<CommandModalProps> = ({
       onCancel={onClose}
       vehicleName={vehicleName}
       steps={steps}
+      onSelectCommandId={setCurrentCommand}
+      syntaxVariations={syntaxVariations ?? []}
     />
   )
 }
