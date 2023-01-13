@@ -280,7 +280,9 @@ const Vehicle: NextPage = () => {
             <VehicleAccordion
               authenticated={authenticated}
               vehicleName={vehicleName}
-              from={DateTime.fromMillis(startTime).toISO()}
+              from={DateTime.fromMillis(startTime)
+                .minus({ days: deployment.active ? 1 : 0 })
+                .toISO()}
               to={DateTime.fromMillis(endTime).toISO()}
               activeDeployment={deployment.active}
               currentDeploymentId={deployment.deploymentId as number}
