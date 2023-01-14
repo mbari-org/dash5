@@ -132,7 +132,7 @@ const Vehicle: NextPage = () => {
     {
       vehicle: vehicleName as string,
       from: DateTime.fromMillis(startTime).toISO(),
-      to: DateTime.fromMillis(endTime).toISO(),
+      to: endTime ? DateTime.fromMillis(endTime).toISO() : undefined,
     },
     {
       enabled: currentTab === 'depth' && startTime > 0,
@@ -267,6 +267,7 @@ const Vehicle: NextPage = () => {
                         yAxisLabel={`${humanize(depthData?.name)} (${
                           depthData?.units
                         })`}
+                        onHover={handleTimeScrub}
                         inverted={depthData.name === 'depth'}
                         className="h-[340px] w-full"
                       />

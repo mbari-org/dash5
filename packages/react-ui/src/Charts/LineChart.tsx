@@ -1,6 +1,6 @@
 import React, { useRef } from 'react'
 import clsx from 'clsx'
-import Plot from 'react-plotly.js'
+import Plot, { PlotParams } from 'react-plotly.js'
 import { DateTime } from 'luxon'
 import { useResizeObserver } from '@mbari/utils'
 
@@ -19,6 +19,7 @@ export interface LineChartProps {
   xAxisLabel?: string
   yAxisLabel?: string
   inverted?: boolean
+  onHover?: (millis?: number | null) => void
 }
 
 const LineChart: React.FC<LineChartProps> = ({
@@ -30,6 +31,7 @@ const LineChart: React.FC<LineChartProps> = ({
   color = '#17BECF',
   yAxisLabel,
   inverted,
+  onHover: handleHoverFromParent,
 }) => {
   const container = useRef(null)
   const { size } = useResizeObserver({ element: container })
@@ -42,13 +44,26 @@ const LineChart: React.FC<LineChartProps> = ({
     },
   }
 
+  const handleHover: PlotParams['onHover'] = (e) => {
+    handleHoverFromParent?.(e.xvals[0] as number)
+  }
+
+  const resetHover = () => {
+    handleHoverFromParent?.(null)
+  }
+
   return (
-    <div className={clsx('', className)} style={style} ref={container}>
+    <div
+      className={clsx('', className)}
+      style={style}
+      ref={container}
+      onMouseOut={resetHover}
+    >
       <Plot
         data={[
           {
             x: data.map(({ timestamp }) =>
-              DateTime.fromMillis(timestamp).toISO()
+              DateTime.fromMillis(timestamp ?? 0).toISO()
             ),
             y: data.map(({ value }) => value),
             type: 'scatter',
@@ -88,6 +103,7 @@ const LineChart: React.FC<LineChartProps> = ({
         config={{
           displaylogo: false,
         }}
+        onHover={handleHover}
       />
     </div>
   )
