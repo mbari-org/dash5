@@ -31,9 +31,9 @@ export const ESPModal: React.FC<ESPModalProps> = ({
       allowPointerEventsOnChildren
       open
     >
-      <div className="flex flex-grow flex-col rounded border border-stone-200">
+      <div className="flex flex-grow flex-col rounded">
         {svgUrl ? (
-          <img src={svgUrl} className="block h-auto w-full" />
+          <img src={svgUrl} className="my-auto block h-auto w-full" />
         ) : (
           <Spinner className="m-auto" />
         )}

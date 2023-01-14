@@ -19,7 +19,7 @@ export const CommsModal: React.FC<CommsModalProps> = ({
 }) => {
   const { deployment } = useCurrentDeployment()
   const deploymentStartTime = deployment?.startEvent?.unixTime ?? 0
-  const deploymentEndTime = deployment?.endEvent.unixTime
+  const deploymentEndTime = deployment?.endEvent?.unixTime
   const formattedStart =
     DateTime.fromMillis(deploymentStartTime).toFormat('h:mm a MMM d, yyyy')
   const formattedEnd = deploymentEndTime
