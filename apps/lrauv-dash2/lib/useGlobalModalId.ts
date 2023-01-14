@@ -8,11 +8,15 @@ export type ModalId =
   | 'newDeployment'
   | 'editDeployment'
   | 'sendNote'
-  | 'esbSamples'
+  | 'espSamples'
   | 'editDocument'
   | 'attachDocument'
   | 'detachDocument'
   | 'newMission'
+  | 'vehicleLogs'
+  | 'vehicleDocs'
+  | 'vehicleCharts'
+  | 'vehicleComms'
   | null
 
 export interface GlobalModalMetaData {

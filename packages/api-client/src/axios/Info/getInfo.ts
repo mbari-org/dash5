@@ -4,6 +4,11 @@ import { RequestConfig } from '../types'
 
 export interface GetInfoParams {}
 
+export interface StatusWidgetConfig {
+  espStatusWidgetUrlPattern: string
+  lrauvStatusWidgetUrlPattern: string
+}
+
 export interface ExternalAppConfig {
   base: string
   dashui: string
@@ -12,6 +17,7 @@ export interface ExternalAppConfig {
   schemaBase: string
   tethysdash: string
   useradmin: string
+  statusWidgets: StatusWidgetConfig
 }
 
 export interface RecaptchaConfig {

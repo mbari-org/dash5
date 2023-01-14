@@ -111,10 +111,12 @@ const Vehicle: NextPage = () => {
       name: dep.name,
     })) ?? []
 
+  const deploymentStartTime = deployment?.startEvent?.unixTime ?? 0
   const startTime =
     deployment?.active && missionStartedEvent?.[0]?.unixTime
       ? missionStartedEvent?.[0]?.unixTime
-      : deployment?.startEvent?.unixTime ?? 0
+      : deploymentStartTime
+
   const endTime = deployment?.active
     ? DateTime.utc().plus({ hours: 4 }).endOf('day').toMillis()
     : deployment?.lastEvent ?? 0
@@ -293,7 +295,9 @@ const Vehicle: NextPage = () => {
             <VehicleAccordion
               authenticated={authenticated}
               vehicleName={vehicleName}
-              from={DateTime.fromMillis(startTime).toISO()}
+              from={DateTime.fromMillis(deploymentStartTime)
+                .minus({ days: deployment.active ? 1 : 0 })
+                .toISO()}
               to={DateTime.fromMillis(endTime).toISO()}
               activeDeployment={deployment.active}
               currentDeploymentId={deployment.deploymentId as number}

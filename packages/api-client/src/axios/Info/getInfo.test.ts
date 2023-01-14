@@ -58,6 +58,12 @@ export const mockResponse = {
         schemaBase: 'http://okeanids.mbari.org/tethys/Xml',
         tethysdash: 'https://okeanids.mbari.org/TethysDash',
         useradmin: 'https://okeanids.mbari.org/',
+        statusWidgets: {
+          espStatusWidgetUrlPattern:
+            'https://okeanids.mbari.org/widget/esp_<vehicleName>.svg',
+          lrauvStatusWidgetUrlPattern:
+            'https://okeanids.mbari.org/widget/auv_<vehicleName>.svg',
+        },
       },
       googleApiKey: 'AIza55555v055555xu555555Al6L55555HJ5555',
       odss2dashApi: 'https://okeanids.mbari.org/odss2dash/api',
@@ -191,7 +197,6 @@ afterEach(() => server.resetHandlers())
 afterAll(() => server.close())
 
 describe('getInfo', () => {
-  // TODO: Add tests for the actual API call
   it('should return the mocked value when successful', async () => {
     const response = await getInfo(params)
     expect(response).toEqual(mockResponse.result)
