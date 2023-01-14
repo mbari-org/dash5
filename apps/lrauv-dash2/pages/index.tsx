@@ -1,9 +1,9 @@
-import { MissionProgressToolbar, OverviewToolbar } from '@mbari/react-ui'
+import { OverviewToolbar } from '@mbari/react-ui'
 import { NextPage } from 'next'
 import Layout from '../components/Layout'
-import { DateTime } from 'luxon'
 import { useEffect, useRef } from 'react'
 import dynamic from 'next/dynamic'
+import VehicleDeploymentDropdown from '../components/VehicleDeploymentDropdown'
 import VehicleList from '../components/VehicleList'
 import useTrackedVehicles from '../lib/useTrackedVehicles'
 import { SharedPathContextProvider } from '../components/SharedPathContextProvider'
@@ -32,42 +32,49 @@ const styles = {
 const OverviewPage: NextPage = () => {
   const router = useRouter()
   const { trackedVehicles } = useTrackedVehicles()
-  const startTime = DateTime.utc().minus({ weeks: 1 }).toISO()
-  const endTime = DateTime.utc().plus({ days: 4 }).toISO()
   const mounted = useRef(false)
   const { setGlobalModalId } = useGlobalModalId()
   useEffect(() => {
     mounted.current = true
+    setGlobalModalId(null)
   })
+
   const handleSelectedVehicle = (vehicle: string) => {
     router.push(`/vehicle/${vehicle}`)
   }
   return (
     <Layout>
-      <OverviewToolbar deployment={{ name: 'Overview', id: '0' }} />
-      <div className={styles.content}>
-        <section className={styles.primary}>
-          <MissionProgressToolbar
-            startTime={startTime}
-            endTime={endTime}
-            ticks={6}
-            ariaLabel="Mission Progress"
-            className="bg-secondary-300/60"
-          />
-          <div className={styles.mapContainer}>
-            <SharedPathContextProvider>
-              <Map className="h-full w-full">
-                {trackedVehicles.map((name) => (
-                  <VehiclePath name={name} key={`path${name}`} grouped />
-                ))}
-              </Map>
-            </SharedPathContextProvider>
+      {trackedVehicles?.length ? (
+        <>
+          <OverviewToolbar deployment={{ name: 'Overview', id: '0' }} />
+          <div className={styles.content}>
+            <section className={styles.primary}>
+              <div className={styles.mapContainer}>
+                <SharedPathContextProvider>
+                  <Map className="h-full w-full">
+                    {trackedVehicles.map((name) => (
+                      <VehiclePath name={name} key={`path${name}`} grouped />
+                    ))}
+                  </Map>
+                </SharedPathContextProvider>
+              </div>
+            </section>
+            <section className={styles.secondary}>
+              <VehicleList onSelectVehicle={handleSelectedVehicle} />
+            </section>
           </div>
-        </section>
-        <section className={styles.secondary}>
-          <VehicleList onSelectVehicle={handleSelectedVehicle} />
-        </section>
-      </div>
+        </>
+      ) : (
+        <>
+          <p className="p-6 text-xl">
+            To get started you must add at least one vehicle to track.
+          </p>
+          <VehicleDeploymentDropdown
+            className="mx-6 max-h-96 w-96"
+            scrollable
+          />
+        </>
+      )}
     </Layout>
   )
 }
