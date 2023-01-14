@@ -4,6 +4,7 @@ import { capitalize } from '@mbari/utils'
 import useCurrentDeployment from '../lib/useCurrentDeployment'
 import { useChartData } from '@mbari/api-client'
 import { useState } from 'react'
+import { DateTime } from 'luxon'
 
 export interface ChartsModalProps {
   vehicleName: string
@@ -20,12 +21,14 @@ export const ChartsModal: React.FC<ChartsModalProps> = ({
 }) => {
   const { deployment } = useCurrentDeployment()
   const deploymentStartTime = deployment?.startEvent?.unixTime ?? 0
-  const deploymentEndTime = deployment?.endEvent.unixTime
+  const deploymentEndTime = deployment?.endEvent?.unixTime
 
   const { data: chartData } = useChartData({
     vehicle: vehicleName,
-    from: deploymentStartTime,
-    to: deploymentEndTime,
+    from: DateTime.fromMillis(deploymentStartTime).toISO(),
+    to: deploymentEndTime
+      ? DateTime.fromMillis(deploymentEndTime).toISO()
+      : undefined,
   })
   const [chart, setChart] = useState<string | null>(null)
   const data = chartData?.find((c) => c.name === chart)

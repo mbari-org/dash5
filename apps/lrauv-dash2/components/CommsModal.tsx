@@ -45,7 +45,13 @@ export const CommsModal: React.FC<CommsModalProps> = ({
           from={DateTime.fromMillis(deploymentStartTime)
             .minus({ days: 1 })
             .toISO()}
-          to={deploymentEndTime}
+          to={
+            deploymentEndTime
+              ? DateTime.fromMillis(deploymentEndTime)
+                  .minus({ days: 1 })
+                  .toISO()
+              : undefined
+          }
         />
       </div>
     </Modal>

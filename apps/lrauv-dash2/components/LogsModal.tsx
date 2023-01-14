@@ -19,7 +19,7 @@ export const LogsModal: React.FC<LogsModalProps> = ({
 }) => {
   const { deployment } = useCurrentDeployment()
   const deploymentStartTime = deployment?.startEvent?.unixTime ?? 0
-  const deploymentEndTime = deployment?.endEvent.unixTime
+  const deploymentEndTime = deployment?.endEvent?.unixTime
   const formattedStart =
     DateTime.fromMillis(deploymentStartTime).toFormat('h:mm a MMM d, yyyy')
   const formattedEnd = deploymentEndTime
@@ -45,7 +45,11 @@ export const LogsModal: React.FC<LogsModalProps> = ({
           from={DateTime.fromMillis(deploymentStartTime)
             .minus({ days: 1 })
             .toISO()}
-          to={deploymentEndTime}
+          to={
+            deploymentEndTime
+              ? DateTime.fromMillis(deploymentEndTime).toISO()
+              : undefined
+          }
         />
       </div>
     </Modal>
