@@ -23,6 +23,7 @@ const args: MissionProgressToolbarProps = {
   ticks: 5,
   startTime: DateTime.local().minus({ days: 3, hours: 7 }).toISO(),
   endTime: DateTime.local().plus({ days: 1, hours: 3 }).toISO(),
+  indicatorTime: DateTime.local().minus({ days: 2, hours: 7 }).toMillis(),
 }
 
 export const Standard = Template.bind({})

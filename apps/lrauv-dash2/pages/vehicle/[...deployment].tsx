@@ -132,6 +132,7 @@ const Vehicle: NextPage = () => {
     {
       vehicle: vehicleName as string,
       from: DateTime.fromMillis(startTime).toISO(),
+      to: DateTime.fromMillis(endTime).toISO(),
     },
     {
       enabled: currentTab === 'depth' && startTime > 0,
@@ -141,6 +142,13 @@ const Vehicle: NextPage = () => {
   const depthData = chartData?.find((d) => d.name === 'depth')
   const chartAvailable =
     !!depthData && !chartLoading && !chartIdle && !chartError
+
+  const [indicatorTime, setIndicatorTime] = useState<number | null | undefined>(
+    null
+  )
+  const handleTimeScrub = (time?: number | null) => {
+    setIndicatorTime(time)
+  }
 
   return (
     <Layout>
@@ -197,6 +205,8 @@ const Vehicle: NextPage = () => {
             ticks={6}
             ariaLabel="Mission Progress"
             className="bg-secondary-300/60"
+            onScrub={handleTimeScrub}
+            indicatorTime={indicatorTime}
           />
           <div className={styles.mapContainer}>
             <Map className="h-full w-full" maxZoom={13}>
@@ -204,6 +214,8 @@ const Vehicle: NextPage = () => {
                 name={vehicleName as string}
                 from={startTime}
                 to={endTime}
+                indicatorTime={indicatorTime}
+                onScrub={handleTimeScrub}
               />
             </Map>
             <div className="absolute bottom-0 z-[1001] flex w-full flex-col">

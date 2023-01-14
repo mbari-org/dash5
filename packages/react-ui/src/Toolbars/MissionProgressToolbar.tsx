@@ -1,4 +1,4 @@
-import React, { useCallback, useRef, useState } from 'react'
+import React, { useCallback, useEffect, useRef, useState } from 'react'
 import clsx from 'clsx'
 import { DateTime } from 'luxon'
 import { useResizeObserver } from '@mbari/utils'
@@ -21,6 +21,8 @@ export interface MissionProgressToolbarProps {
   endTime: string
   ticks: number
   ariaLabel: string
+  onScrub?: (millis?: number | null) => void
+  indicatorTime?: number | null
 }
 
 export const MissionProgressToolbar: React.FC<MissionProgressToolbarProps> = ({
@@ -29,6 +31,8 @@ export const MissionProgressToolbar: React.FC<MissionProgressToolbarProps> = ({
   ariaLabel,
   startTime,
   endTime,
+  indicatorTime,
+  onScrub: handleScrub,
 }) => {
   const container = useRef(null as HTMLButtonElement | null)
   const {
@@ -45,28 +49,42 @@ export const MissionProgressToolbar: React.FC<MissionProgressToolbarProps> = ({
   const missionInProgress = progress > 0 && progress < 1
   const useAbsolute = start.diffNow('days').days < -7
 
+  const [interactive, setInteractive] = useState(false)
   const [hoverProgress, setHoverProgress] = useState(null as null | number)
   const handleMouseMove = useCallback(
     (e: React.MouseEvent<SVGSVGElement>) => {
       const x =
         e.clientX - (container?.current?.getBoundingClientRect?.().left ?? 0)
-      setHoverProgress(x / containerWidth)
+      const progress = x / containerWidth
+      setHoverProgress(progress)
+      handleScrub?.(start.toMillis() + duration * progress * 1000)
     },
-    [container, setHoverProgress, containerWidth]
+    [container, setHoverProgress, containerWidth, duration]
   )
+
+  const indicatorProgress =
+    !interactive && indicatorTime
+      ? (indicatorTime - DateTime.fromISO(startTime).toMillis()) /
+        (duration * 1000)
+      : null
 
   const timeout = useRef<ReturnType<typeof setTimeout> | null>(null)
   const handleMouseOver = useCallback(() => {
     if (timeout.current) {
       clearTimeout(timeout.current)
+      setInteractive(true)
     }
-  }, [timeout])
+  }, [timeout, setInteractive])
   const handleMouseOut = useCallback(() => {
     if (timeout.current) {
       clearTimeout(timeout.current)
     }
-    timeout.current = setTimeout(() => setHoverProgress(null), 250)
-  }, [timeout])
+    timeout.current = setTimeout(() => {
+      setHoverProgress(null)
+      handleScrub?.(null)
+      setInteractive(false)
+    }, 250)
+  }, [timeout, setInteractive, handleScrub])
 
   return (
     <div className={clsx(styles.container, className)} aria-label={ariaLabel}>
@@ -119,6 +137,18 @@ export const MissionProgressToolbar: React.FC<MissionProgressToolbarProps> = ({
                 label={start
                   .plus({ seconds: hoverProgress * duration })
                   .toFormat('MMM d, h:mm a')}
+                align={hoverProgress > 0.75 ? 'right' : 'left'}
+                highlight
+              />
+            )}
+            {!interactive && indicatorProgress && (
+              <Point
+                x={width * indicatorProgress}
+                y={height / 2}
+                label={start
+                  .plus({ seconds: indicatorProgress * duration })
+                  .toFormat('MMM d, h:mm a')}
+                align={indicatorProgress > 0.75 ? 'right' : 'left'}
                 highlight
               />
             )}
