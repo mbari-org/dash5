@@ -6,10 +6,12 @@ export const Point: React.FC<{
   y: number
   label: string
   highlight?: boolean
-}> = ({ x, y, label, highlight = false }) => (
+  align?: 'left' | 'right'
+}> = ({ x, y, label, highlight = false, align }) => (
   <>
     <text
       x={x}
+      textAnchor={align === 'right' ? 'end' : 'start'}
       y={y - 10}
       className={clsx(
         'text-center font-display',

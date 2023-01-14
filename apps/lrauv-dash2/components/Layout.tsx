@@ -21,6 +21,11 @@ import AttachmentModal from './AttachmentModal'
 import DetachModal from './DetachModal'
 import MissionModal from './MissionModal'
 import { CommandModal } from './CommandModal'
+import { LogsModal } from './LogsModal'
+import { DocsModal } from './DocsModal'
+import { ChartsModal } from './ChartsModal'
+import { CommsModal } from './CommsModal'
+import { ESPModal } from './ESPModal'
 
 const Layout: React.FC = ({ children }) => {
   const [showLogin, setLogin] = useState(false)
@@ -79,6 +84,7 @@ const Layout: React.FC = ({ children }) => {
   const requireAuthentication = (modalJsx: React.ReactNode) =>
     authenticated ? modalJsx : <UserLogin onClose={setModal(null)} />
 
+  const vehicleName = router.query.deployment?.[0] ?? ''
   return (
     <div className="flex h-screen w-screen flex-col">
       <Head>
@@ -91,7 +97,7 @@ const Layout: React.FC = ({ children }) => {
       {mounted && (
         <PrimaryToolbar
           options={['Overview', ...trackedVehicles]}
-          currentOption={(router.query.deployment?.[0] as string) ?? 'Overview'}
+          currentOption={vehicleName.length > 0 ? vehicleName : 'Overview'}
           onSelectOption={handleSelectOption}
           onRemoveOption={handleRemoveOption}
           canRemoveOption={canRemoveOption}
@@ -161,6 +167,36 @@ const Layout: React.FC = ({ children }) => {
         requireAuthentication(<MissionModal onClose={setModal(null)} />)}
       {globalModalId?.id === 'newCommand' &&
         requireAuthentication(<CommandModal onClose={setModal(null)} />)}
+      {globalModalId?.id === 'vehicleComms' && vehicleName.length > 0 && (
+        <CommsModal
+          onClose={setModal(null)}
+          vehicleName={vehicleName as string}
+        />
+      )}
+      {globalModalId?.id === 'vehicleLogs' && vehicleName.length > 0 && (
+        <LogsModal
+          onClose={setModal(null)}
+          vehicleName={vehicleName as string}
+        />
+      )}
+      {globalModalId?.id === 'vehicleCharts' && vehicleName.length > 0 && (
+        <ChartsModal
+          onClose={setModal(null)}
+          vehicleName={vehicleName as string}
+        />
+      )}
+      {globalModalId?.id === 'vehicleDocs' && vehicleName.length > 0 && (
+        <DocsModal
+          onClose={setModal(null)}
+          vehicleName={vehicleName as string}
+        />
+      )}
+      {globalModalId?.id === 'espSamples' && vehicleName.length > 0 && (
+        <ESPModal
+          onClose={setModal(null)}
+          vehicleName={vehicleName as string}
+        />
+      )}
     </div>
   )
 }

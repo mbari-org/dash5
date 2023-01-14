@@ -21,9 +21,12 @@ afterAll(() => server.close())
 const MockPic: React.FC<{ vehicleName: string | string[] }> = ({
   vehicleName,
 }) => {
-  const query = usePicAndOnCall({
-    vehicleName,
-  })
+  const query = usePicAndOnCall(
+    {
+      vehicleName,
+    },
+    { enabled: true }
+  )
   return query.isLoading ? null : (
     <div>
       {query.data?.map((result, index) => (
@@ -38,7 +41,7 @@ const MockPic: React.FC<{ vehicleName: string | string[] }> = ({
 describe('usePicAndOnCall', () => {
   it('should render the pic users when multiple vehicles are supplied', async () => {
     render(
-      <MockProviders queryClient={new QueryClient()}>
+      <MockProviders queryClient={new QueryClient()} testToken="abcd1234">
         <MockPic vehicleName={['daphne', 'tethys', 'atlas']} />
       </MockProviders>
     )
@@ -59,7 +62,7 @@ describe('usePicAndOnCall', () => {
 
   it('should render pic user', async () => {
     render(
-      <MockProviders queryClient={new QueryClient()}>
+      <MockProviders queryClient={new QueryClient()} testToken="123456">
         <MockPic vehicleName="daphne" />
       </MockProviders>
     )
