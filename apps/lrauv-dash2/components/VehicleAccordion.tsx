@@ -13,6 +13,7 @@ import {
 } from '@mbari/api-client'
 import { DateTime } from 'luxon'
 import { parseMissionCommand, ScheduleSection } from './ScheduleSection'
+import useGlobalModalId from '../lib/useGlobalModalId'
 
 export type VehicleAccordionSection =
   | 'handoff'
@@ -51,6 +52,13 @@ const VehicleAccordion: React.FC<VehicleAccordionProps> = ({
     from,
     to,
   })
+  const { data: commsLogs, isLoading: commsLoading } = useEvents({
+    vehicles: [vehicleName],
+    eventTypes: ['command', 'run'],
+    from,
+    to,
+  })
+
   const { data: deploymentCommandStatus } = useDeploymentCommandStatus(
     {
       deploymentId: currentDeploymentId ?? 0,
@@ -89,6 +97,26 @@ const VehicleAccordion: React.FC<VehicleAccordionProps> = ({
         onCall === profileName ? ' (you)' : ''
       }`
 
+  const { setGlobalModalId } = useGlobalModalId()
+  const handleExpand = (section: string) => () => {
+    switch (section) {
+      case 'logs':
+        setGlobalModalId({ id: 'vehicleLogs' })
+        break
+      case 'docs':
+        setGlobalModalId({ id: 'vehicleDocs' })
+        break
+      case 'charts':
+        setGlobalModalId({ id: 'vehicleCharts' })
+        break
+      case 'comms':
+        setGlobalModalId({ id: 'vehicleComms' })
+        break
+      default:
+        break
+    }
+  }
+
   return (
     <div className="flex h-full flex-col divide-y divide-solid divide-stone-200">
       <AccordionHeader
@@ -113,6 +141,7 @@ const VehicleAccordion: React.FC<VehicleAccordionProps> = ({
         onToggle={handleToggleForSection('data')}
         open={section === 'data'}
         className="flex flex-shrink-0"
+        onExpand={handleExpand('charts')}
       />
       {section === 'data' && (
         <ScienceDataSection from={from} to={to} vehicleName={vehicleName} />
@@ -142,11 +171,12 @@ const VehicleAccordion: React.FC<VehicleAccordionProps> = ({
       <AccordionHeader
         label="Comms Queue"
         secondaryLabel={
-          activeDeployment ? 'surfacing in ~20 min, no items in queue' : ''
+          activeDeployment ? `${commsLogs?.length ?? 0} item(s) in queue` : ''
         }
         onToggle={handleToggleForSection('comms')}
         open={section === 'comms'}
         className="flex flex-shrink-0"
+        onExpand={handleExpand('comms')}
       />
       {section === 'comms' && (
         <CommsSection vehicleName={vehicleName} from={from} to={to} />
@@ -157,12 +187,14 @@ const VehicleAccordion: React.FC<VehicleAccordionProps> = ({
         onToggle={handleToggleForSection('log')}
         open={section === 'log'}
         className="flex flex-shrink-0"
+        onExpand={handleExpand('logs')}
       />
       {section === 'log' && (
         <LogsSection vehicleName={vehicleName} from={from} to={to} />
       )}
       <AccordionHeader
         label="Docs"
+        onExpand={handleExpand('docs')}
         onToggle={handleToggleForSection('docs')}
         open={section === 'docs'}
         className="flex flex-shrink-0"

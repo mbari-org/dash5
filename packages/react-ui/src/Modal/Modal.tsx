@@ -21,7 +21,12 @@ export interface ModalViewProps {
   maximized?: boolean
   className?: string
   style?: React.CSSProperties
-  snapTo?: 'top-right' | 'bottom-right' | 'top-left' | 'bottom-left'
+  snapTo?:
+    | 'top-right'
+    | 'bottom-right'
+    | 'top-left'
+    | 'bottom-left'
+    | 'all-sides'
   allowPointerEventsOnChildren?: boolean
 }
 
@@ -60,6 +65,7 @@ const styles = {
   snapToTopRight: 'mt-0 mr-0 mb-auto ml-auto',
   snapToBottomLeft: 'mb-0 mr-0 mt-auto mr-auto',
   snapToBottomRight: 'mb-0 mr-0 mt-auto ml-auto',
+  snapToAllSides: 'inset-0',
   defaultModalHeight: 'md:max-h-3/4',
   // 'flex flex-col bg-white w-full overflow-hidden md:max-h-3/4 rounded-md border m-auto pointer-events-auto transition-shadow transition-colors duration-300 ease-out relative',
   defaultModalWidth: 'md:max-w-md lg:max-w-lg',
@@ -71,7 +77,7 @@ const styles = {
   dragButton:
     'cursor-move flex flex-grow bg-opacity-50 hover:bg-stone-100 ml-1 my-1 rounded transition-colors duration-100 ease-out',
   closeButton: 'my-1 mr-2 text-stone-400',
-  modalBody: 'text-base font-normal',
+  modalBody: 'flex flex-col flex-grow text-base font-normal',
   modalScroll: 'overflow-auto',
   bodyMarginAndPadding: 'mb-6 px-4 py-4',
   notDragging: 'shadow-xl border-stone-100',
@@ -206,6 +212,7 @@ export const Modal: React.FC<ModalProps & FooterProps> = ({
           snapTo === 'top-left' && styles.snapToTopLeft,
           snapTo === 'bottom-right' && styles.snapToBottomRight,
           snapTo === 'bottom-left' && styles.snapToBottomLeft,
+          snapTo === 'all-sides' && styles.snapToAllSides,
           !snapTo && styles.snapToCenter,
           className
         )}
