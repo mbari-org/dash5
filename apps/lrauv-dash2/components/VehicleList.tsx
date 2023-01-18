@@ -81,7 +81,6 @@ const ConnectedVehicleCell: React.FC<{
   const lastLoad = React.useRef(isLoading)
   useEffect(() => {
     if (lastLoad.current !== isLoading) {
-      virtualizer.measure()
       lastLoad.current = isLoading
     }
   }, [isLoading, virtualizer])
@@ -89,7 +88,6 @@ const ConnectedVehicleCell: React.FC<{
   const handleToggle = () => {
     setIsOpen(!isOpen)
     externalHandleToggle(!isOpen, name)
-    virtualizer.measure()
   }
 
   const vehicle =
