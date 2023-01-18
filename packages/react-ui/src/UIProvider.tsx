@@ -8,8 +8,8 @@ export const UIProvider: React.FC<{ children?: React.ReactNode }> = ({
   children,
 }) => {
   return (
-    <MuiPickersUtilsProvider utils={LuxonUtils}>
-      <DndProvider backend={HTML5Backend}>{children}</DndProvider>
-    </MuiPickersUtilsProvider>
+    // <MuiPickersUtilsProvider utils={LuxonUtils}>
+    <DndProvider backend={HTML5Backend}>{children}</DndProvider>
+    // </MuiPickersUtilsProvider>
   )
 }

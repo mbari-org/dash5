@@ -21,7 +21,9 @@ export const VehicleDropdownOption: React.FC<VehicleOptionProps> = ({
 }) => {
   return (
     <ul className={clsx(styles.container, 'flex w-full')}>
-      <li className=" w-1/5">{name}</li>
+      <li className=" w-1/5" aria-label={`select vehicle ${name}`}>
+        {name}
+      </li>
       <li
         aria-label="status indicator icon"
         className={clsx(
