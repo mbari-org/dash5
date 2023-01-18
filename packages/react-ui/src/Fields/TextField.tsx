@@ -14,6 +14,7 @@ export interface TextFieldInputProps {
   onFocus?: React.FocusEventHandler<HTMLInputElement>
   onBlur?: React.FocusEventHandler<HTMLInputElement>
   type?: string
+  children?: React.ReactNode
 }
 
 export type TextFieldProps = TextFieldInputProps & FieldProps

@@ -1,5 +1,4 @@
 import { useEffect, useRef, useCallback, RefObject } from 'react'
-import { getElement } from './getElement'
 
 interface UseEventListenerProps<T> {
   type: keyof WindowEventMap
@@ -28,7 +27,10 @@ export const useEventListener = <
   }, [])
 
   useEffect(() => {
-    const target = getElement(element)
+    const target =
+      element && 'current' in element
+        ? (element as RefObject<Element>)?.current
+        : element
 
     target?.addEventListener(type, handleEventListener)
 

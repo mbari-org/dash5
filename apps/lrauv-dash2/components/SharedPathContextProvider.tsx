@@ -45,7 +45,9 @@ const SharedPathContext = React.createContext<{
   dispatch: () => undefined,
 })
 
-export const SharedPathContextProvider: React.FC = ({ children }) => {
+export const SharedPathContextProvider: React.FC<{
+  children?: React.ReactNode
+}> = ({ children }) => {
   const [sharedPath, dispatch] = useReducer(pathReducer, {})
   return (
     <SharedPathContext.Provider value={{ sharedPath, dispatch }}>

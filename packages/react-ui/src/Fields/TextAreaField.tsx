@@ -8,6 +8,7 @@ export interface TextAreaFieldInputProps {
   onChange?: React.ChangeEventHandler<HTMLTextAreaElement>
   onFocus?: React.FocusEventHandler<HTMLTextAreaElement>
   onBlur?: React.FocusEventHandler<HTMLTextAreaElement>
+  children?: React.ReactNode
 }
 
 export type TextAreaFieldProps = TextAreaFieldInputProps & FieldProps

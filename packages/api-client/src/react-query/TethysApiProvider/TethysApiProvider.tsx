@@ -11,6 +11,7 @@ interface TethysApiProviderProps {
   onSessionEnd?: () => void
   setSessionToken: (token: string) => void
   sessionToken: string
+  children?: React.ReactNode
 }
 
 export const TethysApiProvider: React.FC<TethysApiProviderProps> = ({
