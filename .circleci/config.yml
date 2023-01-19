@@ -169,15 +169,15 @@ jobs:
           name: Run turbo repo tests
 
   test_dash:
-    resource_class: medium
+    resource_class: large
     parallelism: 1
     executor:
       name: pw-focal-development
     steps:
       - checkout
       - setup-environment
-      - restore-packages
-      - restore-monorepo
+      # - restore-packages
+      # - restore-monorepo
       - install-monorepo
       - run:
           command: npx playwright install
