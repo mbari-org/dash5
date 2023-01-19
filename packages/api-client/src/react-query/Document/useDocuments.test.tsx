@@ -34,9 +34,7 @@ it('should render the document id', async () => {
   )
 
   const docIdAsString = mockResponse.result[0].docId.toString()
-  await waitFor(() => {
-    return screen.queryByText(docIdAsString)
-  })
+  await waitFor(() => screen.findByTestId('docId'))
 
   expect(screen.queryByTestId('docId')).toHaveTextContent(docIdAsString)
 })
