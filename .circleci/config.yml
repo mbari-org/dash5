@@ -185,6 +185,10 @@ jobs:
       - run:
           command: yarn turbo run test --filter=lrauv-dash2
           name: Run turbo repo tests
+      - store_artifacts:
+          path: /apps/lrauv-dash2/test-results
+      - store_artifacts:
+          path: /test-results
 
   deploy_ui:
     resource_class: xlarge
