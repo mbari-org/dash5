@@ -172,8 +172,7 @@ jobs:
     resource_class: medium
     parallelism: 1
     executor:
-      name: node/default
-      tag: '14.19.1'
+      name: pw-focal-development
     steps:
       - checkout
       - setup-environment
