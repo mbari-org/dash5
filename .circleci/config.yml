@@ -181,6 +181,9 @@ jobs:
       - restore-monorepo
       - install-monorepo
       - run:
+          command: npx playwright install
+          name: Install playwright
+      - run:
           command: yarn turbo run test --filter=lrauv-dash2
           name: Run turbo repo tests
 
