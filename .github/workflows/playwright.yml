@@ -12,8 +12,6 @@ jobs:
         node-version: '16.x'
     - name: Install dependencies
       run: yarn install
-    - name: Build monorepo
-      run: yarn build
     - name: Install Playwright
       run: npx playwright install --with-deps
     - name: Run Playwright tests
