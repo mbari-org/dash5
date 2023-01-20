@@ -187,8 +187,10 @@ jobs:
           name: Run turbo repo tests
       - store_artifacts:
           path: /apps/lrauv-dash2/test-results
+          when: always
       - store_artifacts:
           path: /test-results
+          when: always
 
   deploy_ui:
     resource_class: xlarge
