@@ -4,6 +4,7 @@ import React, { FC } from 'react'
 interface TabGroupProps {
   style?: React.CSSProperties
   className?: string
+  children?: React.ReactNode
 }
 export const TabGroup: FC<TabGroupProps> = ({ children, className, style }) => {
   return (

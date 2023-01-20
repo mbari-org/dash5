@@ -106,6 +106,7 @@ export const SampleCollectionView: React.FC<SampleCollectionViewProps> = ({
 interface ColorCodeProps {
   className: string
   noBorder?: boolean
+  children?: React.ReactNode
 }
 
 const ColorCode: React.FC<ColorCodeProps> = ({

@@ -21,6 +21,7 @@ export interface FieldProps {
   errors?: ErrorMap
   selfControllable?: boolean
   hint?: string
+  children?: React.ReactNode
 }
 
 export const getErrorMessage = ({

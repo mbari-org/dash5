@@ -39,7 +39,14 @@ const PrimaryToolbarOption: React.FC<{
   selected: boolean
   onClick: React.MouseEventHandler<HTMLButtonElement>
   onRemove?: (option: string) => void
-}> = ({ option, selected, onClick: handleClick, onRemove: handleRemove }) => {
+  testId?: string
+}> = ({
+  option,
+  selected,
+  onClick: handleClick,
+  onRemove: handleRemove,
+  testId,
+}) => {
   return (
     <li
       className={clsx(
@@ -54,6 +61,7 @@ const PrimaryToolbarOption: React.FC<{
         appearance={selected ? 'primary' : 'transparent'}
         onClick={handleClick}
         className="capitalize"
+        data-test-id={testId}
       >
         {option}
       </Button>
@@ -107,7 +115,7 @@ export const PrimaryToolbar: React.FC<PrimaryToolbarProps> = ({
         </li>
         <li className="flex flex-shrink">
           <ul className="flex flex-row items-center">
-            {options?.map((option) => (
+            {options?.map((option, index) => (
               <PrimaryToolbarOption
                 key={option}
                 option={option}
@@ -116,6 +124,7 @@ export const PrimaryToolbar: React.FC<PrimaryToolbarProps> = ({
                 onRemove={
                   canRemoveOption(option) ? handleRemoveOption : undefined
                 }
+                testId={`primary-toolbar-option-${index}`}
               />
             ))}
           </ul>
@@ -138,6 +147,7 @@ export const PrimaryToolbar: React.FC<PrimaryToolbarProps> = ({
               tooltip="Login"
               ariaLabel="login"
               onClick={handleLoginClick}
+              testId="login"
             />
           )}
           {signedIn && !avatarName && (

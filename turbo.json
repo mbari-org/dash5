@@ -3,7 +3,9 @@
   "globalDependencies": [
     "$NEXT_PUBLIC_BASE_URL",
     "$NEXT_PUBLIC_API_HOST",
-    "$NODE_ENV"
+    "$NODE_ENV",
+    "$PORT",
+    "$CI"
   ],
   "pipeline": {
     "build": {

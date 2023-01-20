@@ -9,6 +9,7 @@ export interface MapProps {
   zoom?: number
   minZoom?: number
   maxZoom?: number
+  children?: React.ReactNode
 }
 
 const Map: React.FC<MapProps> = ({

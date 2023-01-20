@@ -21,6 +21,7 @@ export interface ButtonProps {
   onClick?: React.MouseEventHandler<HTMLButtonElement>
   form?: string
   tight?: boolean
+  children?: React.ReactNode
 }
 
 const styles = {

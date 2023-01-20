@@ -16,6 +16,7 @@ export const mockAuthResponse = {
 export const MockProviders: React.FC<{
   queryClient: QueryClient
   testToken?: string
+  children?: React.ReactNode
 }> = ({ queryClient, testToken = '', children }) => (
   <QueryClientProvider client={queryClient}>
     <TethysApiProvider setSessionToken={() => {}} sessionToken={testToken}>

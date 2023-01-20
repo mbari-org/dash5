@@ -3,7 +3,9 @@ import { createPortal } from 'react-dom'
 
 export const useOverlayRoot = () => document.getElementById('overlay-root')
 
-export const Overlay: React.FC = ({ children }) => {
+export const Overlay: React.FC<{ children?: React.ReactNode }> = ({
+  children,
+}) => {
   const overlayRoot = useOverlayRoot()
   const el = useRef(document.createElement('div'))
 

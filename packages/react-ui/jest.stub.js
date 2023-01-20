@@ -4,3 +4,11 @@ if (typeof window.URL.createObjectURL === 'undefined') {
     // Mock this function for mapbox-gl to work
   }
 }
+
+if (typeof window.ResizeObserver === 'undefined') {
+  window.ResizeObserver = jest.fn().mockImplementation(() => ({
+    observe: jest.fn(),
+    unobserve: jest.fn(),
+    disconnect: jest.fn(),
+  }))
+}

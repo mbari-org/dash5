@@ -125,6 +125,7 @@ const DocumentInstanceModal: React.FC<{ onClose?: () => void }> = ({
               height: 'calc(100vh - 280px)',
             }}
           >
+            {/* @ts-ignore */}
             <ReactQuill
               theme="snow"
               value={content}

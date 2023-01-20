@@ -29,7 +29,18 @@ const mockVehicleResponse = {
 
 const mockDeploymentResponse = {
   aku: {
-    result: {},
+    result: {
+      deploymentId: 3000388,
+      vehicleName: 'aku',
+      name: 'Brizo 10 EcoHAB',
+      path: '2022-05-16',
+      startEvent: { unixTime: 1652734481691, state: 1, eventId: 16791084 },
+      launchEvent: {
+        unixTime: 1652734494872,
+        eventId: 16794560,
+        note: 'Vehicle in water',
+      },
+    },
   },
   brizo: {
     result: {
@@ -131,15 +142,15 @@ describe('useVehicleNames', () => {
       return screen.getByTestId('result0')
     })
 
-    expect(screen.getByTestId('result0')).toHaveTextContent(
+    expect(screen.getByTestId('result2')).toHaveTextContent(
       mockDeploymentResponse.brizo.result.vehicleName
     )
     expect(screen.getByTestId('result1')).toHaveTextContent(
-      mockDeploymentResponse.daphne.result.vehicleName
+      mockDeploymentResponse.aku.result.vehicleName
     )
     expect(screen.getByTestId('result2')).toHaveTextContent(
-      mockDeploymentResponse.ahi.result.vehicleName
+      mockDeploymentResponse.brizo.result.vehicleName
     )
-    expect(screen.getByTestId('result3')).toHaveTextContent('aku')
+    expect(screen.getByTestId('result3')).toHaveTextContent('daphne')
   })
 })

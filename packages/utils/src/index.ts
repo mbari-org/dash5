@@ -1,7 +1,6 @@
 export * from './flat'
 export * from './humanize'
 export * from './truncate'
-export * from './getElement'
 export * from './useBreakpoint'
 export * from './useDebounce'
 export * from './useEventListener'

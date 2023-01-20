@@ -59,6 +59,7 @@ export const Dropdown: React.FC<DropdownProps> = ({
                 className={clsx(styles.options, styles.cellPadding)}
                 onClick={swallow(onSelect)}
                 disabled={disabled}
+                data-testid={`dropdown-option-${index}`}
               >
                 <span>
                   {icon && (
