@@ -243,9 +243,9 @@ workflows:
       - lint:
           requires:
             - build
-      - test_dash:
-          requires:
-            - build
+      # - test_dash:
+      #     requires:
+      #       - build
       - test_ui:
           requires:
             - build
@@ -264,7 +264,7 @@ workflows:
       - deploy_dash:
           requires:
             - test_utils
-            - test_dash
+            # - test_dash
             - test_ui
             - test_api
             - lint

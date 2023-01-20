@@ -1,0 +1,26 @@
+name: Test Dash
+run-name: ${{ github.actor }} is testing the LRAUV Dash in Playwright
+on: [push]
+jobs:
+  test:
+    timeout-minutes: 60
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v3
+    - uses: actions/setup-node@v3
+      with:
+        node-version: '18.x'
+    - name: Install dependencies
+      run: yarn install
+    - name: Build monorepo
+      run: yarn build
+    - name: Install Playwright
+      run: npx playwright install --with-deps
+    - name: Run Playwright tests
+      run: yarn workspace @mbari/lrauv-dash2 test
+    - name: Upload test results
+      if: always()
+      uses: actions/upload-artifact@v3
+      with:
+        name: playwright-report
+        path: playwright-report
