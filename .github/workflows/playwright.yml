@@ -15,7 +15,7 @@ jobs:
     - name: Install Playwright
       run: npx playwright install --with-deps
     - name: Run Playwright tests
-      run: yarn workspace @mbari/lrauv-dash2 test
+      run: yarn turbo run test --filter=lrauv-dash2
     - name: Upload test results
       if: always()
       uses: actions/upload-artifact@v3
