@@ -32,25 +32,24 @@ const mockVehicleResponse = {
 test('should inform user to add a vehicle and replace with content upon selection', async ({
   page,
 }) => {
-  await page.route('**/api/info/vehicles*', (route) =>
+  await page.route('**/info/vehicles*', (route) =>
     route.fulfill({
       status: 200,
       body: JSON.stringify(mockVehicleResponse),
     })
   )
-  await page.route('**/api/deployments/last*', (route) =>
+  await page.route('**/deployments/last*', (route) =>
     route.fulfill({
       status: 200,
       body: JSON.stringify(mockDeploymentResponse),
     })
   )
-  await page.route('**/api/info?', (route) =>
+  await page.route('**/info?', (route) =>
     route.fulfill({
       status: 200,
       body: JSON.stringify({}),
     })
   )
-
   await page.goto('/')
   await expect(
     page.getByText('you must add at least one vehicle')
