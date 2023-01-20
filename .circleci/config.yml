@@ -186,10 +186,7 @@ jobs:
           command: yarn turbo run test --filter=lrauv-dash2
           name: Run turbo repo tests
       - store_artifacts:
-          path: /project/apps/lrauv-dash2/test-results
-          when: always
-      - store_artifacts:
-          path: /project/test-results
+          path: ~/project/apps/lrauv-dash2/test-results
           when: always
 
   deploy_ui:
@@ -243,9 +240,9 @@ workflows:
       - lint:
           requires:
             - build
-      # - test_dash:
-      #     requires:
-      #       - build
+      - test_dash:
+          requires:
+            - build
       - test_ui:
           requires:
             - build
@@ -264,7 +261,7 @@ workflows:
       - deploy_dash:
           requires:
             - test_utils
-            # - test_dash
+            - test_dash
             - test_ui
             - test_api
             - lint
