@@ -6,6 +6,12 @@ orbs:
   aws-cli: circleci/aws-cli@1.3.0
   node: circleci/node@5.0.2
   serverless-framework: circleci/serverless-framework@1.0.1
+executors:
+  pw-focal-development:
+    docker:
+      - image: mcr.microsoft.com/playwright:v1.29.0-focal
+    environment:
+      NODE_ENV: development
 version: 2.1
 commands:
   setup-environment:
@@ -91,7 +97,7 @@ jobs:
     resource_class: large
     executor:
       name: node/default
-      tag: '14.19.1'
+      tag: '16.18.1'
     steps:
       - checkout
       - setup-environment
@@ -103,7 +109,7 @@ jobs:
     parallelism: 1
     executor:
       name: node/default
-      tag: '14.19.1'
+      tag: '16.18.1'
     steps:
       - checkout
       - setup-environment
@@ -119,7 +125,7 @@ jobs:
     parallelism: 1
     executor:
       name: node/default
-      tag: '14.19.1'
+      tag: '16.18.1'
     steps:
       - checkout
       - setup-environment
@@ -135,7 +141,7 @@ jobs:
     parallelism: 1
     executor:
       name: node/default
-      tag: '14.19.1'
+      tag: '16.18.1'
     steps:
       - checkout
       - setup-environment
@@ -151,7 +157,7 @@ jobs:
     parallelism: 1
     executor:
       name: node/default
-      tag: '14.19.1'
+      tag: '16.18.1'
     steps:
       - checkout
       - setup-environment
@@ -163,11 +169,10 @@ jobs:
           name: Run turbo repo tests
 
   test_dash:
-    resource_class: medium
+    resource_class: large
     parallelism: 1
     executor:
-      name: node/default
-      tag: '14.19.1'
+      name: pw-focal-development
     steps:
       - checkout
       - setup-environment
@@ -175,14 +180,20 @@ jobs:
       - restore-monorepo
       - install-monorepo
       - run:
+          command: npx playwright install
+          name: Install playwright
+      - run:
           command: yarn turbo run test --filter=lrauv-dash2
           name: Run turbo repo tests
+      - store_artifacts:
+          path: ~/project/apps/lrauv-dash2/test-results
+          when: always
 
   deploy_ui:
     resource_class: xlarge
     executor:
       name: node/default
-      tag: '14.19.1'
+      tag: '16.18.1'
     steps:
       - checkout
       - setup-environment
@@ -204,7 +215,7 @@ jobs:
   deploy_dash:
     executor:
       name: node/default
-      tag: '14.19.1'
+      tag: '16.18.1'
     steps:
       - checkout
       - setup-environment

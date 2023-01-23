@@ -28,6 +28,7 @@ export interface ModalViewProps {
     | 'bottom-left'
     | 'all-sides'
   allowPointerEventsOnChildren?: boolean
+  children?: React.ReactNode
 }
 
 export type ModalProps = ModalViewProps & FooterProps

@@ -50,7 +50,8 @@ export const CellVirtualizer: React.FC<CellVirtualizerProps> = ({
         {rowVirtualizer.getVirtualItems().map((virtualItem: any) => (
           <div
             key={virtualItem.key}
-            ref={virtualItem.measureElement}
+            data-index={virtualItem.index}
+            ref={rowVirtualizer.measureElement}
             style={{
               position: 'absolute',
               top: 0,

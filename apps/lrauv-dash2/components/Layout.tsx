@@ -26,7 +26,7 @@ import { ChartsModal } from './ChartsModal'
 import { CommsModal } from './CommsModal'
 import { ESPModal } from './ESPModal'
 
-const Layout: React.FC = ({ children }) => {
+const Layout: React.FC<{ children?: React.ReactNode }> = ({ children }) => {
   const [showLogin, setLogin] = useState(false)
   const router = useRouter()
   const [mounted, setMounted] = useState(false)

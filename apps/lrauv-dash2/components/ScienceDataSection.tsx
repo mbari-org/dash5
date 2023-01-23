@@ -7,7 +7,7 @@ import { useChartData } from '@mbari/api-client'
 import { AccordionCells } from '@mbari/react-ui'
 import clsx from 'clsx'
 
-const LineChart = dynamic(
+const LineChart: any = dynamic(
   () => import('@mbari/react-ui/dist/Charts/LineChart'),
   {
     ssr: false,
