@@ -17,7 +17,7 @@ export const useRecentRuns = (
   const data = query.data?.map((event) => {
     return {
       ...event,
-      mission: `${event.data?.match(/[a-zA-Z_/]+(?=\.xml)/)?.[0]}.xml`,
+      mission: event.data?.match(/[a-zA-Z_/]+(\.xml|\.tl)/)?.[0] ?? '',
     }
   })
 
