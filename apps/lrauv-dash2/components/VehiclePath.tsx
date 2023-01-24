@@ -46,22 +46,6 @@ const VehiclePath: React.FC<{
   )
 
   const timeout = useRef<ReturnType<typeof setTimeout> | null>(null)
-  // const handleMouseOver = useCallback(() => {
-  //   if (timeout.current) {
-  //     clearTimeout(timeout.current)
-  //     setInteractive(true)
-  //   }
-  // }, [timeout, setInteractive])
-  // const handleMouseOut = useCallback(() => {
-  //   if (timeout.current) {
-  //     clearTimeout(timeout.current)
-  //   }
-  //   timeout.current = setTimeout(() => {
-  //     setHoverProgress(null)
-  //     handleScrub?.(null)
-  //     setInteractive(false)
-  //   }, 250)
-  // }, [timeout, setInteractive, handleScrub])
 
   const handleCoord: LeafletMouseEventHandlerFn = useCallback(
     (e) => {

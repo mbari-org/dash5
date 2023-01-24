@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useRef, useCallback, useMemo } from 'react'
 import { NextPage } from 'next'
 import { useRouter } from 'next/router'
 import dynamic from 'next/dynamic'
@@ -32,6 +32,8 @@ import VehicleAccordion from '../../components/VehicleAccordion'
 import useGlobalModalId from '../../lib/useGlobalModalId'
 import useCurrentDeployment from '../../lib/useCurrentDeployment'
 import { humanize } from '@mbari/utils'
+import useGlobalDrawerState from '../../lib/useGlobalDrawerState'
+import useManagedMapMarkers from '../../lib/useManagedMapMarkers'
 
 const styles = {
   content: 'flex flex-shrink flex-grow flex-row overflow-hidden',
@@ -47,6 +49,12 @@ const styles = {
 const Map = dynamic(() => import('@mbari/react-ui/dist/Map/Map'), {
   ssr: false,
 })
+const DraggableMarker = dynamic(
+  () => import('../../components/DraggableMarker'),
+  {
+    ssr: false,
+  }
+)
 const LineChart = dynamic(
   () => import('@mbari/react-ui/dist/Charts/LineChart'),
   {
@@ -56,19 +64,25 @@ const LineChart = dynamic(
 const VehiclePath = dynamic(() => import('../../components/VehiclePath'), {
   ssr: false,
 })
+const WaypointPreviewPath = dynamic(
+  () => import('../../components/WaypointPreviewPath'),
+  {
+    ssr: false,
+  }
+)
 
 type AvailableTab = 'vehicle' | 'depth' | null
 
 const Vehicle: NextPage = () => {
-  const [drawer, setDrawer] = useState(true)
+  const { drawerOpen, setDrawerOpen } = useGlobalDrawerState()
   const { authenticated } = useTethysApiContext()
   const { setGlobalModalId } = useGlobalModalId()
   const router = useRouter()
   const [currentTab, setTab] = useState<AvailableTab>('vehicle')
-  const toggleDrawer = () => setDrawer(!drawer)
+  const toggleDrawer = () => setDrawerOpen(!drawerOpen)
   const setCurrentTab = (tab: AvailableTab) => () => {
     setTab(tab)
-    setDrawer(true)
+    setDrawerOpen(true)
   }
   const params = (router.query?.deployment ?? []) as string[]
   const vehicleName = params[0]
@@ -152,6 +166,15 @@ const Vehicle: NextPage = () => {
     setIndicatorTime(time)
   }
 
+  const { mapMarkers, setMapMarkers } = useManagedMapMarkers()
+  const handleDragEnd = useCallback(
+    (index, { lat, lng }) =>
+      setMapMarkers(
+        mapMarkers.map((m, i) => (i === index ? { ...m, lat, lon: lng } : m))
+      ),
+    [mapMarkers, setMapMarkers]
+  )
+
   return (
     <Layout>
       <OverviewToolbar
@@ -212,13 +235,29 @@ const Vehicle: NextPage = () => {
           />
           <div className={styles.mapContainer}>
             <Map className="h-full w-full" maxZoom={13}>
-              <VehiclePath
-                name={vehicleName as string}
-                from={startTime}
-                to={endTime}
-                indicatorTime={indicatorTime}
-                onScrub={handleTimeScrub}
-              />
+              {mapMarkers?.length ? (
+                <>
+                  {mapMarkers.map((m) => (
+                    <DraggableMarker
+                      lat={m.lat}
+                      lng={m.lon}
+                      key={`${m.index}:${m.lat}-${m.lon}`}
+                      index={m.index}
+                      draggable
+                      onDragEnd={handleDragEnd}
+                    />
+                  ))}
+                  <WaypointPreviewPath waypoints={mapMarkers} />
+                </>
+              ) : (
+                <VehiclePath
+                  name={vehicleName as string}
+                  from={startTime}
+                  to={endTime}
+                  indicatorTime={indicatorTime}
+                  onScrub={handleTimeScrub}
+                />
+              )}
             </Map>
             <div className="absolute bottom-0 z-[1001] flex w-full flex-col">
               <TabGroup className="w-full px-8">
@@ -226,7 +265,7 @@ const Vehicle: NextPage = () => {
                   onClick={toggleDrawer}
                   label={
                     <FontAwesomeIcon
-                      icon={drawer ? faChevronDown : faChevronUp}
+                      icon={drawerOpen ? faChevronDown : faChevronUp}
                       size="1x"
                     />
                   }
@@ -248,7 +287,7 @@ const Vehicle: NextPage = () => {
               <div
                 className={clsx(
                   'flex w-full bg-white',
-                  drawer ? 'h-80' : 'h-12'
+                  drawerOpen ? 'h-80' : 'h-12'
                 )}
               >
                 {currentTab === 'vehicle' && (

@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import {
   MissionModal as MissionModalView,
   MissionModalProps as MissionModalViewProps,
@@ -30,6 +30,8 @@ import { DateTime } from 'luxon'
 import { makeMissionCommand } from '../lib/makeCommand'
 import toast from 'react-hot-toast'
 import { ScheduleOption } from 'react-ui/dist'
+import useGlobalDrawerState from '../lib/useGlobalDrawerState'
+import useManagedMapMarkers from '../lib/useManagedMapMarkers'
 
 const insertForParameter = (
   argument: ScriptArgument,
@@ -76,6 +78,7 @@ const convertMissionDataToListItem =
 
 const MissionModal: React.FC<MissionModalProps> = ({ onClose }) => {
   const router = useRouter()
+  const { drawerOpen, setDrawerOpen } = useGlobalDrawerState()
   const params = (router.query?.deployment ?? []) as string[]
   const vehicleName = params[0]
   const { data: vehicles } = useVehicleNames({ refresh: 'n' })
@@ -109,6 +112,12 @@ const MissionModal: React.FC<MissionModalProps> = ({ onClose }) => {
       toast.error(`Error sending command: ${commandError}`)
     }
   }, [commandSent, commandError, onClose])
+
+  useEffect(() => {
+    if (drawerOpen) {
+      setDrawerOpen(false)
+    }
+  })
 
   const missionCategories = [
     {
@@ -206,6 +215,30 @@ const MissionModal: React.FC<MissionModalProps> = ({ onClose }) => {
         will be skipped/Longitude of ${makeOrdinal(index + 1)} waypoint.`,
       }
     }) ?? []
+
+  const { setMapMarkers } = useManagedMapMarkers()
+  const mapMarkers = useRef<string>('')
+  const missionMapMarkersJSON = JSON.stringify(waypoints ?? '')
+  useEffect(() => {
+    if (mapMarkers.current !== missionMapMarkersJSON) {
+      console.log('Updating map markers')
+      setMapMarkers(
+        waypoints
+          .map(({ lat, lon }, i) =>
+            lat === 'NaN'
+              ? null
+              : { index: i, lat: parseFloat(lat), lon: parseFloat(lon) }
+          )
+          .filter((i) => i)
+      )
+      mapMarkers.current = missionMapMarkersJSON
+    } else {
+      console.log(
+        "Ignoring map markers update because they haven't changed",
+        missionMapMarkersJSON
+      )
+    }
+  }, [setMapMarkers, mapMarkers.current, missionMapMarkersJSON, waypoints])
 
   const { data: stationsData } = useStations({ enabled: waypoints.length > 0 })
   const stations: WaypointTableProps['stations'] =
