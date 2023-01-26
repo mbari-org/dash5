@@ -4,6 +4,7 @@ import {
   MissionModalProps as MissionModalViewProps,
   MissionTableProps,
   ParameterProps,
+  useManagedWaypoints,
   WaypointTableProps,
 } from '@mbari/react-ui'
 import {
@@ -75,7 +76,14 @@ const convertMissionDataToListItem =
     }
   }
 
-const MissionModal: React.FC<MissionModalProps> = ({ onClose }) => {
+const MissionModal: React.FC<MissionModalProps> = ({
+  onClose: handleClose,
+}) => {
+  const { handleWaypointsUpdate } = useManagedWaypoints()
+  const onClose = () => {
+    handleWaypointsUpdate([])
+    handleClose?.()
+  }
   const router = useRouter()
   const { drawerOpen, setDrawerOpen } = useGlobalDrawerState()
   const params = (router.query?.deployment ?? []) as string[]
