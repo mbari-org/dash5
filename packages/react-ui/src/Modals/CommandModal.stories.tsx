@@ -12,20 +12,22 @@ export default {
 } as Meta
 
 const Template: Story<CommandModalProps> = (args) => {
-  const onSubmit: (values: ScheduleCommandFormValues) => Promise<undefined> =
-    async (values: ScheduleCommandFormValues) => {
-      console.log('submitting')
-      await wait(1)
-      console.log('Submitted', values)
-      return undefined
-    }
-  const onAlt: (values: ScheduleCommandFormValues) => Promise<undefined> =
-    async (values: ScheduleCommandFormValues) => {
-      console.log('alt submitting')
-      await wait(1)
-      console.log('Alt submitted', values)
-      return undefined
-    }
+  const onSubmit: (
+    values: ScheduleCommandFormValues
+  ) => Promise<undefined> = async (values: ScheduleCommandFormValues) => {
+    console.log('submitting')
+    await wait(1)
+    console.log('Submitted', values)
+    return undefined
+  }
+  const onAlt: (
+    values: ScheduleCommandFormValues
+  ) => Promise<undefined> = async (values: ScheduleCommandFormValues) => {
+    console.log('alt submitting')
+    await wait(1)
+    console.log('Alt submitted', values)
+    return undefined
+  }
   return (
     <CommandModal {...args} onSubmit={onSubmit} onAltAddressSubmit={onAlt} />
   )
@@ -118,7 +120,7 @@ const commandTableArgs: CommandTableProps = {
 
 const args: Omit<CommandModalProps, 'onSubmit'> = {
   steps: ['Command', 'Build', 'Schedule'],
-  currentIndex: 0,
+  currentStepIndex: 0,
   vehicleName: 'Brizo',
   recentCommands: [
     {
@@ -149,7 +151,7 @@ Command.parameters = {
 }
 
 export const Build = Template.bind({})
-Build.args = { ...args, currentIndex: 1 }
+Build.args = { ...args, currentStepIndex: 1 }
 
 Build.parameters = {
   design: {
@@ -159,7 +161,7 @@ Build.parameters = {
 }
 
 export const Schedule = Template.bind({})
-Schedule.args = { ...args, currentIndex: 2 }
+Schedule.args = { ...args, currentStepIndex: 2 }
 
 Schedule.parameters = {
   design: {

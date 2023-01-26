@@ -6,7 +6,7 @@ export interface StepProgressProps {
   className?: string
   style?: React.CSSProperties
   steps: string[]
-  currentIndex: number
+  currentStepIndex: number
 }
 
 const styles = {
@@ -72,7 +72,7 @@ const Step: React.FC<StepProps> = ({ first, last, label, active }) => {
 export const StepProgress: React.FC<StepProgressProps> = ({
   className,
   steps,
-  currentIndex,
+  currentStepIndex,
 }) => {
   return (
     <article className={clsx(styles.container, className)}>
@@ -83,7 +83,7 @@ export const StepProgress: React.FC<StepProgressProps> = ({
             label={`${index + 1}. ${step}`}
             first={index === 0}
             last={index === steps.length - 1}
-            active={index === currentIndex}
+            active={index === currentStepIndex}
           />
         ))}
       </ul>

@@ -1,7 +1,6 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useCallback } from 'react'
 import { NextPage } from 'next'
 import { useRouter } from 'next/router'
-import dynamic from 'next/dynamic'
 import { DateTime } from 'luxon'
 import {
   Tab,
@@ -32,6 +31,8 @@ import VehicleAccordion from '../../components/VehicleAccordion'
 import useGlobalModalId from '../../lib/useGlobalModalId'
 import useCurrentDeployment from '../../lib/useCurrentDeployment'
 import { humanize } from '@mbari/utils'
+import useGlobalDrawerState from '../../lib/useGlobalDrawerState'
+import dynamic from 'next/dynamic'
 
 const styles = {
   content: 'flex flex-shrink flex-grow flex-row overflow-hidden',
@@ -41,34 +42,34 @@ const styles = {
     'flex w-[438px] flex-shrink-0 flex-col bg-white border-t-2 border-t-secondary-300/60 border-l border-l-slate-300',
 }
 
-// This is a tricky workaround to prevent leaflet from crashing next.js
-// SSR. If we don't do this, the leaflet map will be loaded server side
-// and throw a window error.
-const Map = dynamic(() => import('@mbari/react-ui/dist/Map/Map'), {
-  ssr: false,
-})
 const LineChart = dynamic(
   () => import('@mbari/react-ui/dist/Charts/LineChart'),
   {
     ssr: false,
   }
 )
-const VehiclePath = dynamic(() => import('../../components/VehiclePath'), {
+
+const DeploymentMap = dynamic(() => import('../../components/DeploymentMap'), {
   ssr: false,
 })
 
 type AvailableTab = 'vehicle' | 'depth' | null
 
 const Vehicle: NextPage = () => {
-  const [drawer, setDrawer] = useState(true)
+  const [mounted, setMounted] = useState(false)
+  useEffect(() => {
+    mounted || setMounted(true)
+  })
+
+  const { drawerOpen, setDrawerOpen } = useGlobalDrawerState()
   const { authenticated } = useTethysApiContext()
   const { setGlobalModalId } = useGlobalModalId()
   const router = useRouter()
   const [currentTab, setTab] = useState<AvailableTab>('vehicle')
-  const toggleDrawer = () => setDrawer(!drawer)
+  const toggleDrawer = () => setDrawerOpen(!drawerOpen)
   const setCurrentTab = (tab: AvailableTab) => () => {
     setTab(tab)
-    setDrawer(true)
+    setDrawerOpen(true)
   }
   const params = (router.query?.deployment ?? []) as string[]
   const vehicleName = params[0]
@@ -211,22 +212,20 @@ const Vehicle: NextPage = () => {
             indicatorTime={indicatorTime}
           />
           <div className={styles.mapContainer}>
-            <Map className="h-full w-full" maxZoom={13}>
-              <VehiclePath
-                name={vehicleName as string}
-                from={startTime}
-                to={endTime}
-                indicatorTime={indicatorTime}
-                onScrub={handleTimeScrub}
-              />
-            </Map>
+            <DeploymentMap
+              vehicleName={vehicleName}
+              indicatorTime={indicatorTime}
+              startTime={startTime}
+              endTime={endTime}
+              onScrub={handleTimeScrub}
+            />
             <div className="absolute bottom-0 z-[1001] flex w-full flex-col">
               <TabGroup className="w-full px-8">
                 <Tab
                   onClick={toggleDrawer}
                   label={
                     <FontAwesomeIcon
-                      icon={drawer ? faChevronDown : faChevronUp}
+                      icon={drawerOpen ? faChevronDown : faChevronUp}
                       size="1x"
                     />
                   }
@@ -248,7 +247,7 @@ const Vehicle: NextPage = () => {
               <div
                 className={clsx(
                   'flex w-full bg-white',
-                  drawer ? 'h-80' : 'h-12'
+                  drawerOpen ? 'h-80' : 'h-12'
                 )}
               >
                 {currentTab === 'vehicle' && (

@@ -1,68 +1,107 @@
-import { useState, useEffect } from 'react'
+import { atom, useRecoilState } from 'recoil'
+import { useRef, useEffect, useCallback } from 'react'
 import {
   WaypointProps,
   WaypointTableProps,
 } from '../../../Tables/WaypointTable'
 
-const useManagedWaypoints = (waypoints: WaypointProps[]) => {
-  const [defaultWaypoints, setDefaultWaypoints] = useState<string>(
-    JSON.stringify(waypoints)
-  )
+export interface UseManagedWaypointsState {
+  waypoints?: WaypointProps[]
+  editable?: boolean
+  focusedWaypointIndex?: number | null
+}
+
+const managedWaypoints = atom<UseManagedWaypointsState | null>({
+  key: 'managedWaypoints',
+  default: null,
+})
+
+const useManagedWaypoints = (waypoints: WaypointProps[] = []) => {
+  const defaultWaypoints = useRef<string>(JSON.stringify(waypoints))
+
   const [updatedWaypoints, setUpdatedWaypoints] =
-    useState<WaypointProps[]>(waypoints)
-  const initialWaypoints = waypoints.map((waypoint) =>
+    useRecoilState(managedWaypoints)
+
+  const initialWaypoints = waypoints?.map((waypoint) =>
     (waypoint.lat || waypoint.lon) && !waypoint.stationName
       ? { ...waypoint, stationName: 'Custom' }
       : waypoint
   )
+
+  // Initialize managedWaypoints state via JSON string comparison.
   useEffect(() => {
-    if (defaultWaypoints !== JSON.stringify(waypoints)) {
-      setDefaultWaypoints(JSON.stringify(waypoints))
-      setUpdatedWaypoints(initialWaypoints)
+    if (
+      defaultWaypoints.current !== JSON.stringify(waypoints) ||
+      updatedWaypoints?.waypoints === undefined
+    ) {
+      defaultWaypoints.current = JSON.stringify(waypoints)
+      setUpdatedWaypoints({ waypoints: initialWaypoints ?? [] })
     }
-  }, [waypoints, defaultWaypoints, setDefaultWaypoints, setUpdatedWaypoints])
+  }, [
+    waypoints,
+    setUpdatedWaypoints,
+    initialWaypoints,
+    updatedWaypoints?.waypoints,
+  ])
 
-  const handleWaypointsUpdate = (newWaypoints: WaypointProps[]) => {
-    setUpdatedWaypoints(newWaypoints)
-  }
+  // Update waypoints via user input
+  const handleWaypointsUpdate = useCallback(
+    (newWaypoints: WaypointProps[]) => {
+      setUpdatedWaypoints({ ...updatedWaypoints, waypoints: newWaypoints })
+    },
+    [setUpdatedWaypoints, updatedWaypoints]
+  )
 
-  const handleNaNwaypoints = () => {
-    const allNaNwaypoints = updatedWaypoints.map((waypoint) => ({
-      ...waypoint,
-      lat: 'NaN',
-      lon: 'NaN',
-      stationName: 'Custom',
-    }))
-    setUpdatedWaypoints(allNaNwaypoints)
-  }
-  const handleResetWaypoints = () => {
-    setUpdatedWaypoints(initialWaypoints)
-  }
+  // Clear all waypoints
+  const handleNaNwaypoints = useCallback(() => {
+    const allNaNwaypoints =
+      updatedWaypoints?.waypoints?.map((waypoint) => ({
+        ...waypoint,
+        lat: 'NaN',
+        lon: 'NaN',
+        stationName: 'Custom',
+      })) ?? []
+    setUpdatedWaypoints({ ...updatedWaypoints, waypoints: allNaNwaypoints })
+  }, [setUpdatedWaypoints, updatedWaypoints])
 
-  const [focusedWaypointIndex, setFocusedWaypointIndex] = useState<
-    number | null
-  >(null)
+  // Reset waypoints to initial state
+  const handleResetWaypoints = useCallback(() => {
+    setUpdatedWaypoints({ ...updatedWaypoints, waypoints: initialWaypoints })
+  }, [setUpdatedWaypoints, updatedWaypoints, initialWaypoints])
+
+  // Handle focused waypoint via user input or external event.
   const handleFocusWaypoint: WaypointTableProps['onFocusWaypoint'] = (
     index
   ) => {
-    setFocusedWaypointIndex(index)
+    console.log('handleFocusWaypoint', index)
+    setUpdatedWaypoints({
+      ...updatedWaypoints,
+      waypoints: updatedWaypoints?.waypoints ?? [],
+      focusedWaypointIndex: index,
+    })
   }
 
+  // Determine count of waypoints with actual values.
   const plottedWaypoints = waypoints.filter(
     ({ lat, lon }) => lat !== 'NaN' || lon !== 'NaN'
   )
-
   const plottedWaypointCount = plottedWaypoints.length ?? 0
+
+  const setWaypointsEditable = (editable: boolean) => {
+    setUpdatedWaypoints({ ...updatedWaypoints, editable })
+  }
 
   return {
     handleNaNwaypoints,
     handleResetWaypoints,
     handleWaypointsUpdate,
-    updatedWaypoints,
+    setWaypointsEditable,
+    editable: updatedWaypoints?.editable,
+    updatedWaypoints: updatedWaypoints?.waypoints ?? [],
     plottedWaypoints,
     plottedWaypointCount,
     handleFocusWaypoint,
-    focusedWaypointIndex,
+    focusedWaypointIndex: updatedWaypoints?.focusedWaypointIndex,
   }
 }
 
