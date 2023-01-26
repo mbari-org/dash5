@@ -223,34 +223,6 @@ const MissionModal: React.FC<MissionModalProps> = ({
       }
     }) ?? []
 
-  // const { setMapMarkers } = useManagedMapMarkers()
-  // const mapMarkers = useRef<string>('')
-  // const missionMapMarkersJSON = JSON.stringify(waypoints ?? '')
-  // useEffect(() => {
-  //   if (mapMarkers.current !== missionMapMarkersJSON) {
-  //     setMapMarkers({
-  //       markers: (waypoints
-  //         .map(({ lat, lon, latName, lonName }, i) =>
-  //           lat === 'NaN'
-  //             ? null
-  //             : {
-  //                 id: `${latName}-${lonName}`,
-  //                 index: i,
-  //                 lat: parseFloat(lat as string),
-  //                 lon: parseFloat(lon as string),
-  //               }
-  //         )
-  //         .filter((i) => i) ?? []) as ManagedMapMarkers[],
-  //     })
-  //     mapMarkers.current = missionMapMarkersJSON
-  //   } else {
-  //     console.log(
-  //       "Ignoring map markers update because they haven't changed",
-  //       missionMapMarkersJSON
-  //     )
-  //   }
-  // }, [setMapMarkers, mapMarkers.current, missionMapMarkersJSON, waypoints])
-
   const { data: stationsData } = useStations({ enabled: waypoints.length > 0 })
   const stations: WaypointTableProps['stations'] =
     stationsData?.map(({ name, geojson }) => ({
