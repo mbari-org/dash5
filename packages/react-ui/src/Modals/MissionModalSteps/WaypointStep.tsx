@@ -44,7 +44,7 @@ export const WaypointStep: React.FC<WaypointStepProps> = ({
   const handleClearFocus = () => onFocusWaypoint?.(null)
 
   return (
-    <article className="h-full">
+    <article className="flex h-full flex-col">
       {!focusedWaypointIndex ? (
         <ul className="mx-4 flex pb-2">
           <li className="flex-grow self-center">
@@ -66,22 +66,26 @@ export const WaypointStep: React.FC<WaypointStepProps> = ({
           </li>
         </ul>
       ) : null}
-      <WaypointTable
-        className="max-h-[calc(100%-20px)]"
-        waypoints={waypoints}
-        stations={stations}
-        onUpdate={onUpdate}
-        onFocusWaypoint={onFocusWaypoint}
-        onDone={handleClearFocus}
-        focusedWaypointIndex={focusedWaypointIndex}
-        grayHeader
-      />
-      <StatDisplay
-        totalDistance={totalDistance}
-        bottomDepth={bottomDepth}
-        duration={duration}
-        onRefreshStats={onRefreshStats}
-      />
+      <div className="flex flex-shrink flex-grow">
+        <WaypointTable
+          className="max-h-[572px] min-h-[200px]"
+          waypoints={waypoints}
+          stations={stations}
+          onUpdate={onUpdate}
+          onFocusWaypoint={onFocusWaypoint}
+          onDone={handleClearFocus}
+          focusedWaypointIndex={focusedWaypointIndex}
+          grayHeader
+        />
+      </div>
+      <div className="flex-shrink-0">
+        <StatDisplay
+          totalDistance={totalDistance}
+          bottomDepth={bottomDepth}
+          duration={duration}
+          onRefreshStats={onRefreshStats}
+        />
+      </div>
     </article>
   )
 }
