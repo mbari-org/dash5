@@ -29,9 +29,8 @@ import { useRouter } from 'next/router'
 import { DateTime } from 'luxon'
 import { makeMissionCommand } from '../lib/makeCommand'
 import toast from 'react-hot-toast'
-import { ScheduleOption } from 'react-ui/dist'
+import { ScheduleOption } from '@mbari/react-ui'
 import useGlobalDrawerState from '../lib/useGlobalDrawerState'
-import useManagedMapMarkers from '../lib/useManagedMapMarkers'
 
 const insertForParameter = (
   argument: ScriptArgument,
@@ -216,29 +215,33 @@ const MissionModal: React.FC<MissionModalProps> = ({ onClose }) => {
       }
     }) ?? []
 
-  const { setMapMarkers } = useManagedMapMarkers()
-  const mapMarkers = useRef<string>('')
-  const missionMapMarkersJSON = JSON.stringify(waypoints ?? '')
-  useEffect(() => {
-    if (mapMarkers.current !== missionMapMarkersJSON) {
-      console.log('Updating map markers')
-      setMapMarkers(
-        waypoints
-          .map(({ lat, lon }, i) =>
-            lat === 'NaN'
-              ? null
-              : { index: i, lat: parseFloat(lat), lon: parseFloat(lon) }
-          )
-          .filter((i) => i)
-      )
-      mapMarkers.current = missionMapMarkersJSON
-    } else {
-      console.log(
-        "Ignoring map markers update because they haven't changed",
-        missionMapMarkersJSON
-      )
-    }
-  }, [setMapMarkers, mapMarkers.current, missionMapMarkersJSON, waypoints])
+  // const { setMapMarkers } = useManagedMapMarkers()
+  // const mapMarkers = useRef<string>('')
+  // const missionMapMarkersJSON = JSON.stringify(waypoints ?? '')
+  // useEffect(() => {
+  //   if (mapMarkers.current !== missionMapMarkersJSON) {
+  //     setMapMarkers({
+  //       markers: (waypoints
+  //         .map(({ lat, lon, latName, lonName }, i) =>
+  //           lat === 'NaN'
+  //             ? null
+  //             : {
+  //                 id: `${latName}-${lonName}`,
+  //                 index: i,
+  //                 lat: parseFloat(lat as string),
+  //                 lon: parseFloat(lon as string),
+  //               }
+  //         )
+  //         .filter((i) => i) ?? []) as ManagedMapMarkers[],
+  //     })
+  //     mapMarkers.current = missionMapMarkersJSON
+  //   } else {
+  //     console.log(
+  //       "Ignoring map markers update because they haven't changed",
+  //       missionMapMarkersJSON
+  //     )
+  //   }
+  // }, [setMapMarkers, mapMarkers.current, missionMapMarkersJSON, waypoints])
 
   const { data: stationsData } = useStations({ enabled: waypoints.length > 0 })
   const stations: WaypointTableProps['stations'] =
@@ -333,7 +336,7 @@ const MissionModal: React.FC<MissionModalProps> = ({ onClose }) => {
     <MissionModalView
       style={{ maxHeight: '80vh' }}
       alternativeAddresses={alternativeAddresses}
-      currentIndex={0}
+      currentStepIndex={0}
       vehicleName={capitalize(vehicleName)}
       bottomDepth="n/a"
       totalDistance="n/a"

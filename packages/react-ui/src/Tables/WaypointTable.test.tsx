@@ -1,5 +1,5 @@
 import React from 'react'
-import { render, screen } from '@testing-library/react'
+import { render, screen, waitFor } from '@testing-library/react'
 import '@testing-library/jest-dom'
 import { WaypointTable, WaypointTableProps } from './WaypointTable'
 
@@ -53,8 +53,8 @@ test('should display the map marker icon with opacity 60 when not in focus mode'
   )
 })
 
-test('should display alternative focus mode view if focusWaypointIndex prop is provided', async () => {
-  render(<WaypointTable {...props} focusWaypointIndex={1} />)
+test('should display alternative focus mode view if focusedWaypointIndex prop is provided', async () => {
+  render(<WaypointTable {...props} focusedWaypointIndex={1} />)
   expect(
     screen.queryByText(/Place the location pin to set Lat2\/Lon2/i)
   ).toBeInTheDocument()
@@ -62,7 +62,7 @@ test('should display alternative focus mode view if focusWaypointIndex prop is p
 })
 
 test('should display the numbered waypoint map marker icon in purple when in focus mode', async () => {
-  render(<WaypointTable {...props} focusWaypointIndex={1} />)
+  render(<WaypointTable {...props} focusedWaypointIndex={1} />)
   expect(screen.queryByTestId(/map marker icon/i)).toHaveClass(
     'text-purple-700'
   )
@@ -116,7 +116,7 @@ test('should display +/- error warning if custom coordinate is out of range', as
         {
           latName: `Lat1`,
           lonName: `Lon1`,
-          lat: '-180',
+          lat: '-900',
           lon: '-122.222',
           stationName: 'Custom',
         },
@@ -124,5 +124,8 @@ test('should display +/- error warning if custom coordinate is out of range', as
     />
   )
 
+  await waitFor(() =>
+    expect(screen.queryByText(/\+\/- error?/i)).toBeInTheDocument()
+  )
   expect(screen.queryByText(/\+\/- error?/i)).toBeInTheDocument()
 })

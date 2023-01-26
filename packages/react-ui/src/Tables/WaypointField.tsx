@@ -71,6 +71,7 @@ export const WaypointField: React.FC<WaypointFieldProps> = ({
   const [latError, setLatError] = useState<boolean>(
     (isCustom && latErrorCondition(Number(lat))) || false
   )
+
   const [longError, setLongError] = useState<boolean>(
     (isCustom && lonErrorCondition(Number(lon))) || false
   )
@@ -78,13 +79,10 @@ export const WaypointField: React.FC<WaypointFieldProps> = ({
   const options: StationOption[] | undefined = stationOptions?.map(
     ({ name }) => ({ id: name, name })
   )
-  const optionsWithCustom: StationOption[] | undefined = (options &&
-    [
-      { id: 'Custom', name: 'Custom' },
-      { id: NAN, name: NAN },
-    ].concat(options)) || [
+  const optionsWithCustom: StationOption[] | undefined = [
     { id: 'Custom', name: 'Custom' },
     { id: NAN, name: NAN },
+    ...(options ?? []),
   ]
 
   // TODO: add bad input error handling

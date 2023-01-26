@@ -1,7 +1,6 @@
-import { useEffect, useState, useRef, useCallback, useMemo } from 'react'
+import { useEffect, useState, useCallback } from 'react'
 import { NextPage } from 'next'
 import { useRouter } from 'next/router'
-import dynamic from 'next/dynamic'
 import { DateTime } from 'luxon'
 import {
   Tab,
@@ -33,7 +32,7 @@ import useGlobalModalId from '../../lib/useGlobalModalId'
 import useCurrentDeployment from '../../lib/useCurrentDeployment'
 import { humanize } from '@mbari/utils'
 import useGlobalDrawerState from '../../lib/useGlobalDrawerState'
-import useManagedMapMarkers from '../../lib/useManagedMapMarkers'
+import dynamic from 'next/dynamic'
 
 const styles = {
   content: 'flex flex-shrink flex-grow flex-row overflow-hidden',
@@ -43,37 +42,25 @@ const styles = {
     'flex w-[438px] flex-shrink-0 flex-col bg-white border-t-2 border-t-secondary-300/60 border-l border-l-slate-300',
 }
 
-// This is a tricky workaround to prevent leaflet from crashing next.js
-// SSR. If we don't do this, the leaflet map will be loaded server side
-// and throw a window error.
-const Map = dynamic(() => import('@mbari/react-ui/dist/Map/Map'), {
-  ssr: false,
-})
-const DraggableMarker = dynamic(
-  () => import('../../components/DraggableMarker'),
-  {
-    ssr: false,
-  }
-)
 const LineChart = dynamic(
   () => import('@mbari/react-ui/dist/Charts/LineChart'),
   {
     ssr: false,
   }
 )
-const VehiclePath = dynamic(() => import('../../components/VehiclePath'), {
+
+const DeploymentMap = dynamic(() => import('../../components/DeploymentMap'), {
   ssr: false,
 })
-const WaypointPreviewPath = dynamic(
-  () => import('../../components/WaypointPreviewPath'),
-  {
-    ssr: false,
-  }
-)
 
 type AvailableTab = 'vehicle' | 'depth' | null
 
 const Vehicle: NextPage = () => {
+  const [mounted, setMounted] = useState(false)
+  useEffect(() => {
+    mounted || setMounted(true)
+  })
+
   const { drawerOpen, setDrawerOpen } = useGlobalDrawerState()
   const { authenticated } = useTethysApiContext()
   const { setGlobalModalId } = useGlobalModalId()
@@ -166,15 +153,6 @@ const Vehicle: NextPage = () => {
     setIndicatorTime(time)
   }
 
-  const { mapMarkers, setMapMarkers } = useManagedMapMarkers()
-  const handleDragEnd = useCallback(
-    (index, { lat, lng }) =>
-      setMapMarkers(
-        mapMarkers.map((m, i) => (i === index ? { ...m, lat, lon: lng } : m))
-      ),
-    [mapMarkers, setMapMarkers]
-  )
-
   return (
     <Layout>
       <OverviewToolbar
@@ -234,31 +212,13 @@ const Vehicle: NextPage = () => {
             indicatorTime={indicatorTime}
           />
           <div className={styles.mapContainer}>
-            <Map className="h-full w-full" maxZoom={13}>
-              {mapMarkers?.length ? (
-                <>
-                  {mapMarkers.map((m) => (
-                    <DraggableMarker
-                      lat={m.lat}
-                      lng={m.lon}
-                      key={`${m.index}:${m.lat}-${m.lon}`}
-                      index={m.index}
-                      draggable
-                      onDragEnd={handleDragEnd}
-                    />
-                  ))}
-                  <WaypointPreviewPath waypoints={mapMarkers} />
-                </>
-              ) : (
-                <VehiclePath
-                  name={vehicleName as string}
-                  from={startTime}
-                  to={endTime}
-                  indicatorTime={indicatorTime}
-                  onScrub={handleTimeScrub}
-                />
-              )}
-            </Map>
+            <DeploymentMap
+              vehicleName={vehicleName}
+              indicatorTime={indicatorTime}
+              startTime={startTime}
+              endTime={endTime}
+              onScrub={handleTimeScrub}
+            />
             <div className="absolute bottom-0 z-[1001] flex w-full flex-col">
               <TabGroup className="w-full px-8">
                 <Tab

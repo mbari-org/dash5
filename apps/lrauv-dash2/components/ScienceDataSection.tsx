@@ -50,7 +50,7 @@ export const ScienceCell: React.FC<{
         clearTimeout(currentTimeout)
       }
     }
-  }, [ready, timeout, setReady])
+  }, [ready, timeout, setReady, timeoutms])
 
   const metric = `${capitalize(name)} (${unit})`
   return (

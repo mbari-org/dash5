@@ -18,6 +18,7 @@ export interface WaypointStepProps extends WaypointTableProps {
   onUpdate?: (updatedWaypoints: WaypointProps[]) => void
   onNaNall: () => void
   onResetAll: () => void
+  focusedWaypointIndex?: number | null
 }
 
 const styles = {
@@ -37,36 +38,42 @@ export const WaypointStep: React.FC<WaypointStepProps> = ({
   onNaNall,
   onResetAll,
   onFocusWaypoint,
+  focusedWaypointIndex,
 }) => {
   const waypointCount = waypoints.length ?? 0
+  const handleClearFocus = () => onFocusWaypoint?.(null)
 
   return (
     <article className="h-full">
-      <ul className="mx-4 flex pb-2">
-        <li className="flex-grow self-center">
-          Set up to {waypointCount} waypoint{waypointCount !== 1 && 's'} for{' '}
-          {vehicleName}&apos;s{' '}
-          <span className="text-teal-500" data-testid="mission name">
-            {mission}
-          </span>{' '}
-          mission
-        </li>
-        <li className="flex items-center">
-          <button className={clsx(styles.resetButtons)} onClick={onNaNall}>
-            NaN all
-          </button>
+      {!focusedWaypointIndex ? (
+        <ul className="mx-4 flex pb-2">
+          <li className="flex-grow self-center">
+            Set up to {waypointCount} waypoint{waypointCount !== 1 && 's'} for{' '}
+            {vehicleName}&apos;s{' '}
+            <span className="text-teal-500" data-testid="mission name">
+              {mission}
+            </span>{' '}
+            mission
+          </li>
+          <li className="flex items-center">
+            <button className={clsx(styles.resetButtons)} onClick={onNaNall}>
+              NaN all
+            </button>
 
-          <button className={clsx(styles.resetButtons)} onClick={onResetAll}>
-            Reset all
-          </button>
-        </li>
-      </ul>
+            <button className={clsx(styles.resetButtons)} onClick={onResetAll}>
+              Reset all
+            </button>
+          </li>
+        </ul>
+      ) : null}
       <WaypointTable
         className="max-h-[calc(100%-20px)]"
         waypoints={waypoints}
         stations={stations}
         onUpdate={onUpdate}
         onFocusWaypoint={onFocusWaypoint}
+        onDone={handleClearFocus}
+        focusedWaypointIndex={focusedWaypointIndex}
         grayHeader
       />
       <StatDisplay

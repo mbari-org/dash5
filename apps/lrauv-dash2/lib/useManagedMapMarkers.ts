@@ -1,13 +1,18 @@
 import { atom, useRecoilState } from 'recoil'
 
-interface UseManagedMapMarkersState {
+export interface ManagedMapMarkers {
   id: string
   index: number
   lat: number
   lon: number
 }
 
-const managedMapMarkers = atom<UseManagedMapMarkersState[] | null>({
+export interface UseManagedMapMarkersState {
+  markers: ManagedMapMarkers[]
+  editable?: boolean
+}
+
+const managedMapMarkers = atom<UseManagedMapMarkersState | null>({
   key: 'managedMapMarkers',
   default: null,
 })

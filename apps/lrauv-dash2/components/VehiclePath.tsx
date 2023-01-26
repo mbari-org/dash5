@@ -57,7 +57,7 @@ const VehiclePath: React.FC<{
       )[0]
       handleScrub?.(coord?.unixTime)
     },
-    [timeout, handleScrub]
+    [timeout, handleScrub, vehiclePosition?.gpsFixes]
   )
 
   const handleMouseOut: LeafletMouseEventHandlerFn = useCallback(() => {
@@ -67,7 +67,7 @@ const VehiclePath: React.FC<{
     timeout.current = setTimeout(() => {
       handleScrub?.(null)
     }, 1000)
-  }, [timeout, setTimeout, handleScrub])
+  }, [timeout, handleScrub])
 
   const route = vehiclePosition?.gpsFixes?.map(
     (g) => [g.latitude, g.longitude] as [number, number]

@@ -242,42 +242,42 @@ const commsParams: ParameterProps[] = [
 ]
 
 const args = {
-  currentIndex: 0,
+  currentStepIndex: 0,
   vehicleName: 'Brizo',
   totalDistance: '7.2km',
   bottomDepth: '100-180m',
   duration: '6hrs',
-  missionFilters: [
+  missionCategories: [
     {
-      id: '1',
+      id: 'Behavior',
       name: 'Behavior',
     },
     {
-      id: '2',
+      id: 'Demo',
       name: 'Demo',
     },
     {
-      id: '3',
+      id: 'Engineering',
       name: 'Engineering',
     },
     {
-      id: '4',
+      id: 'Insert',
       name: 'Insert',
     },
     {
-      id: '5',
+      id: 'Maintenance',
       name: 'Maintenance',
     },
     {
-      id: '6',
+      id: 'Regression',
       name: 'Regression',
     },
     {
-      id: '7',
+      id: 'Science',
       name: 'Science',
     },
     {
-      id: '8',
+      id: 'Transport',
       name: 'Transport',
     },
   ],
@@ -301,7 +301,7 @@ Mission.parameters = {
 }
 
 export const Waypoint = Template.bind({})
-Waypoint.args = { ...args, currentIndex: 1, selectedId: '1' }
+Waypoint.args = { ...args, currentStepIndex: 1, selectedId: '1' }
 
 Waypoint.parameters = {
   design: {
@@ -311,7 +311,7 @@ Waypoint.parameters = {
 }
 
 export const Parameter = Template.bind({})
-Parameter.args = { ...args, currentIndex: 2, selectedId: '1' }
+Parameter.args = { ...args, currentStepIndex: 2, selectedId: '1' }
 
 Parameter.parameters = {
   design: {
@@ -321,7 +321,7 @@ Parameter.parameters = {
 }
 
 export const SafetyComms = Template.bind({})
-SafetyComms.args = { ...args, currentIndex: 3, selectedId: '1' }
+SafetyComms.args = { ...args, currentStepIndex: 3, selectedId: '1' }
 
 SafetyComms.parameters = {
   design: {
@@ -347,7 +347,7 @@ will be skipped/Longitude of ${makeOrdinal(index + 1)} waypoint.`,
 export const Review = Template.bind({})
 Review.args = {
   ...args,
-  currentIndex: 4,
+  currentStepIndex: 4,
   selectedId: '1',
   waypoints: reviewWaypoints,
   commsParams: commsParams.map((param) => ({ ...param, overrideValue: '3' })),

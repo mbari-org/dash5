@@ -24,7 +24,7 @@ const args: StepProgressProps = {
     'Review',
     'Schedule',
   ],
-  currentIndex: 0,
+  currentStepIndex: 0,
 }
 
 export const Standard = Template.bind({})

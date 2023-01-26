@@ -45,11 +45,11 @@ const mapMarkerIcons = [
 ]
 
 const DraggableMarker: React.FC<{
-  draggable: boolean
+  draggable?: boolean
   lat: number
   lng: number
   index: number
-  onDragEnd: (index: number, latlng: L.LatLng) => void
+  onDragEnd: (index: number, latlng: { lat: number; lng: number }) => void
 }> = ({ draggable, lat, lng, index, onDragEnd: handleDragEnd }) => {
   const [position, setPosition] = useState({ lat, lng })
   const markerRef = useRef<L.Marker | null>(null)
@@ -63,7 +63,7 @@ const DraggableMarker: React.FC<{
         }
       },
     }),
-    [handleDragEnd]
+    [handleDragEnd, index, setPosition]
   )
   const icon = mapMarkerIcons[index] ?? mapMarker
 

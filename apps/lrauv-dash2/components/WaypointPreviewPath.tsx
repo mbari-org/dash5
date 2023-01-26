@@ -50,7 +50,7 @@ const WaypointPreviewPath: React.FC<{
         decorator.current.removeFrom(map)
       }
     }
-  }, [route, map, routeAsString, decorator.current])
+  }, [route, map, routeAsString])
   return route ? (
     <>
       {waypoints && (
