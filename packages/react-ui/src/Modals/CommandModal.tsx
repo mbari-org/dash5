@@ -38,7 +38,7 @@ export const CommandModal: React.FC<CommandModalProps> = ({
   className,
   style,
   steps,
-  currentIndex,
+  currentStepIndex,
   vehicleName,
   commands,
   selectedId,
@@ -49,11 +49,13 @@ export const CommandModal: React.FC<CommandModalProps> = ({
   onMoreInfo,
 }) => {
   const submitButtonRef = useRef<HTMLButtonElement | null>(null)
-  const [currentStep, setCurrentStep] = useState(currentIndex)
-  const [selectedCommandId, setSelectedCommandId] =
-    useState<string | null | undefined>(selectedId)
-  const [selectedRecentId, setSelectedRecentId] =
-    useState<string | null | undefined>('')
+  const [currentStep, setCurrentStep] = useState(currentStepIndex)
+  const [selectedCommandId, setSelectedCommandId] = useState<
+    string | null | undefined
+  >(selectedId)
+  const [selectedRecentId, setSelectedRecentId] = useState<
+    string | null | undefined
+  >('')
   const [searchTerm, setSearchTerm] = useState('')
   const [filteredCommands, setFilteredCommands] = useState<Command[]>(commands)
   const [sortColumn, setSortColumn] = useState<number | null | undefined>(null)
@@ -185,7 +187,7 @@ export const CommandModal: React.FC<CommandModalProps> = ({
       title={
         <StepProgress
           steps={steps}
-          currentIndex={currentStep}
+          currentStepIndex={currentStep}
           className="h-[52px] w-[512px]"
         />
       }

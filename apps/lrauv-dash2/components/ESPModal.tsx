@@ -1,3 +1,4 @@
+/* eslint @next/next/no-img-element: "off" */
 import { Modal, Spinner } from '@mbari/react-ui'
 import { capitalize } from '@mbari/utils'
 import { useSiteConfig } from '@mbari/api-client'
@@ -33,7 +34,7 @@ export const ESPModal: React.FC<ESPModalProps> = ({
     >
       <div className="flex flex-grow flex-col rounded">
         {svgUrl ? (
-          <img src={svgUrl} className="my-auto block h-auto w-full" />
+          <img src={svgUrl} className="my-auto block h-auto w-full" alt="" />
         ) : (
           <Spinner className="m-auto" />
         )}

@@ -46,22 +46,6 @@ const VehiclePath: React.FC<{
   )
 
   const timeout = useRef<ReturnType<typeof setTimeout> | null>(null)
-  // const handleMouseOver = useCallback(() => {
-  //   if (timeout.current) {
-  //     clearTimeout(timeout.current)
-  //     setInteractive(true)
-  //   }
-  // }, [timeout, setInteractive])
-  // const handleMouseOut = useCallback(() => {
-  //   if (timeout.current) {
-  //     clearTimeout(timeout.current)
-  //   }
-  //   timeout.current = setTimeout(() => {
-  //     setHoverProgress(null)
-  //     handleScrub?.(null)
-  //     setInteractive(false)
-  //   }, 250)
-  // }, [timeout, setInteractive, handleScrub])
 
   const handleCoord: LeafletMouseEventHandlerFn = useCallback(
     (e) => {
@@ -73,7 +57,7 @@ const VehiclePath: React.FC<{
       )[0]
       handleScrub?.(coord?.unixTime)
     },
-    [timeout, handleScrub]
+    [timeout, handleScrub, vehiclePosition?.gpsFixes]
   )
 
   const handleMouseOut: LeafletMouseEventHandlerFn = useCallback(() => {
@@ -83,7 +67,7 @@ const VehiclePath: React.FC<{
     timeout.current = setTimeout(() => {
       handleScrub?.(null)
     }, 1000)
-  }, [timeout, setTimeout, handleScrub])
+  }, [timeout, handleScrub])
 
   const route = vehiclePosition?.gpsFixes?.map(
     (g) => [g.latitude, g.longitude] as [number, number]
