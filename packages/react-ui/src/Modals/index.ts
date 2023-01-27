@@ -1,3 +1,5 @@
+import useManagedWaypoints from './MissionModalSteps/hooks/useManagedWaypoints'
+
 export * from './CommandModal'
 export * from './ConfirmStopModal'
 export * from './NewDeploymentModal'
@@ -8,3 +10,5 @@ export * from './ReassignmentModal'
 export * from './CreateAccountModal'
 export * from './ForgotPasswordModal'
 export * from './MissionModalSteps/ScheduleStep'
+
+export { useManagedWaypoints }

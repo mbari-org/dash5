@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import React, { useEffect, useState } from 'react'
 import { Modal } from '../Modal/Modal'
 import { StepProgress, StepProgressProps } from '../Navigation/StepProgress'
 import { SelectOption } from '../Fields/Select'
@@ -58,12 +58,13 @@ export interface MissionModalProps
   vehicles?: string[]
   commandText?: string
   loading?: boolean
+  onStepIndexChange?: (step: number) => void
 }
 
 export const MissionModal: React.FC<MissionModalProps> = ({
   className,
   style,
-  currentIndex,
+  currentStepIndex,
   vehicleName,
   missions,
   missionCategories,
@@ -117,7 +118,7 @@ export const MissionModal: React.FC<MissionModalProps> = ({
 
   const { steps, currentStep, handleNext, handlePrevious, showSummary } =
     useMissionModalSteps({
-      initialIndex: currentIndex,
+      initialIndex: currentStepIndex,
       waypoints,
       defaultParameters: parameters,
       updatedParameters,
@@ -133,6 +134,9 @@ export const MissionModal: React.FC<MissionModalProps> = ({
     handleFocusWaypoint,
     plottedWaypointCount,
     plottedWaypoints,
+    setWaypointsEditable,
+    focusedWaypointIndex,
+    editable,
   } = useManagedWaypoints(waypoints)
 
   const isLastStep = currentStep === steps.length - 1
@@ -194,14 +198,16 @@ export const MissionModal: React.FC<MissionModalProps> = ({
       case steps.indexOf('Mission'):
         return !selectedMissionId
       case steps.indexOf('Waypoints'):
-        return !updatedWaypoints.every(
-          ({ lat, lon, latName, lonName }) =>
-            (Number(lat) || lat === 'NaN') &&
-            (Number(lon) || lon === 'NaN') &&
-            latName &&
-            lonName &&
-            lat !== '' &&
-            lon !== ''
+        return (
+          !updatedWaypoints.every(
+            ({ lat, lon, latName, lonName }) =>
+              (Number(lat) || lat === 'NaN') &&
+              (Number(lon) || lon === 'NaN') &&
+              latName &&
+              lonName &&
+              lat !== '' &&
+              lon !== ''
+          ) || !!focusedWaypointIndex
         )
       case steps.indexOf('Schedule'):
         return (
@@ -252,6 +258,7 @@ export const MissionModal: React.FC<MissionModalProps> = ({
             onNaNall={handleNaNwaypoints}
             onResetAll={handleResetWaypoints}
             onFocusWaypoint={handleFocusWaypoint}
+            focusedWaypointIndex={focusedWaypointIndex}
           />
         )
 
@@ -368,6 +375,21 @@ export const MissionModal: React.FC<MissionModalProps> = ({
     }
   }
 
+  useEffect(() => {
+    if (
+      !editable &&
+      currentStep === steps.indexOf('Waypoints') &&
+      !showSummary
+    ) {
+      setWaypointsEditable(true)
+    } else if (
+      editable &&
+      (showSummary || currentStep !== steps.indexOf('Waypoints'))
+    ) {
+      setWaypointsEditable(false)
+    }
+  }, [editable, setWaypointsEditable, currentStep, steps])
+
   switch (currentStep) {
     case steps.indexOf('Confirm'):
       return (
@@ -420,7 +442,7 @@ export const MissionModal: React.FC<MissionModalProps> = ({
           title={
             <StepProgress
               steps={steps.slice(0, steps.length - 1)}
-              currentIndex={currentStep}
+              currentStepIndex={currentStep}
               className="h-[52px]"
             />
           }

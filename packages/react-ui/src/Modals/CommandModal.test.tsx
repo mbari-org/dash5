@@ -6,7 +6,7 @@ import { ScheduleCommandFormValues } from '../Forms/ScheduleCommandForm'
 
 const props: CommandModalProps = {
   steps: ['Command', 'Build', 'Schedule'],
-  currentIndex: 0,
+  currentStepIndex: 0,
   vehicleName: 'Brizo',
   recentCommands: [
     {
@@ -111,7 +111,7 @@ test('should display search commands placeholder text', async () => {
 
 // Step 3 tests
 test('should render command', () => {
-  render(<CommandModal {...props} currentIndex={2} />)
+  render(<CommandModal {...props} currentStepIndex={2} />)
 
   const selectedCommand =
     props?.commands?.find((command) => command?.id === props?.selectedId)
@@ -126,7 +126,7 @@ test('should render command', () => {
 })
 
 test('should render vehicle name', () => {
-  render(<CommandModal {...props} currentIndex={2} />)
+  render(<CommandModal {...props} currentStepIndex={2} />)
 
   expect(screen.getByText(props.vehicleName)).toBeInTheDocument()
 })
@@ -135,7 +135,7 @@ test('should render extra buttons and correct button text', () => {
   render(
     <CommandModal
       {...props}
-      currentIndex={2}
+      currentStepIndex={2}
       onAltAddressSubmit={props.onSubmit}
     />
   )

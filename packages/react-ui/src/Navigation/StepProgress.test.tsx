@@ -5,7 +5,7 @@ import { StepProgress, StepProgressProps } from './StepProgress'
 
 const props: StepProgressProps = {
   steps: ['Mission', 'Waypoints'],
-  currentIndex: 0,
+  currentStepIndex: 0,
 }
 
 test('should render step title', async () => {

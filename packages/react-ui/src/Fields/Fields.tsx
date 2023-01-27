@@ -24,6 +24,7 @@ export interface FieldsProps {
    * Used to map react-hook-form's register method to child fields. This will also be passed to nested fields.
    */
   register?: any
+  children?: React.ReactNode
 }
 
 const style = {

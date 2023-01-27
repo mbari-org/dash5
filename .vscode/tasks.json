@@ -64,7 +64,7 @@
     {
       "label": "[lrauv-dash2]: Tests",
       "type": "shell",
-      "command": "yarn workspace @mbari/lrauv-dash2 test:watch",
+      "command": "yarn workspace @mbari/lrauv-dash2 test",
       "presentation": {
         "reveal": "always",
         "panel": "new",

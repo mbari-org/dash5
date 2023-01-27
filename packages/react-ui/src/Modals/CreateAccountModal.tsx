@@ -8,6 +8,7 @@ import { Modal, ModalPropsWithoutTitle } from '../Modal'
 
 export interface CreateAccountModalProps extends ModalPropsWithoutTitle {
   onSubmit: AsyncSubmitHandler<CreateAccountFormValues>
+  children?: React.ReactNode
 }
 
 export const CreateAccountModal: React.FC<CreateAccountModalProps> = ({

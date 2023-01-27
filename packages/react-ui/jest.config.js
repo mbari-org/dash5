@@ -31,5 +31,6 @@ module.exports = {
       []
     ),
   ],
+  testPathIgnorePatterns: ['/node_modules/', '/dist/'],
   setupFiles: ['<rootDir>/jest.stub.js'],
 }

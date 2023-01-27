@@ -59,6 +59,7 @@ const LineChart: React.FC<LineChartProps> = ({
       ref={container}
       onMouseOut={resetHover}
     >
+      {/* @ts-ignore */}
       <Plot
         data={[
           {

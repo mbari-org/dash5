@@ -1,9 +1,10 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import {
   MissionModal as MissionModalView,
   MissionModalProps as MissionModalViewProps,
   MissionTableProps,
   ParameterProps,
+  useManagedWaypoints,
   WaypointTableProps,
 } from '@mbari/react-ui'
 import {
@@ -29,7 +30,9 @@ import { useRouter } from 'next/router'
 import { DateTime } from 'luxon'
 import { makeMissionCommand } from '../lib/makeCommand'
 import toast from 'react-hot-toast'
-import { ScheduleOption } from 'react-ui/dist'
+import { ScheduleOption } from '@mbari/react-ui'
+import useGlobalDrawerState from '../lib/useGlobalDrawerState'
+import { point, distance } from '@turf/turf'
 
 const insertForParameter = (
   argument: ScriptArgument,
@@ -74,10 +77,56 @@ const convertMissionDataToListItem =
     }
   }
 
-const MissionModal: React.FC<MissionModalProps> = ({ onClose }) => {
+const MissionModal: React.FC<MissionModalProps> = ({
+  onClose: handleClose,
+}) => {
+  // Global waypoints
+  const { handleWaypointsUpdate, updatedWaypoints } = useManagedWaypoints()
+  const onClose = () => {
+    handleWaypointsUpdate([])
+    handleClose?.()
+  }
+  const [estDistance, setEstDistance] = useState<number | null>(null)
+  useEffect(() => {
+    const applicableWaypoints = updatedWaypoints.filter(
+      (w) =>
+        ![
+          w.lat?.toLowerCase() ?? 'nan',
+          w.lon?.toLocaleLowerCase() ?? 'nan',
+        ].includes('nan')
+    )
+    if (applicableWaypoints.length > 0) {
+      const newDistance = applicableWaypoints.reduce((acc, curr, index) => {
+        if (index === 0) {
+          return acc
+        }
+        const prev = applicableWaypoints[index - 1]
+        return (
+          acc +
+          distance(
+            point([Number(curr.lat ?? 0), Number(curr.lon ?? 0)]),
+            point([Number(prev.lat ?? 0), Number(prev.lon ?? 0)]),
+            { units: 'kilometers' }
+          )
+        )
+      }, 0)
+      if (newDistance !== estDistance) {
+        setEstDistance(newDistance)
+      }
+    } else {
+      if (estDistance) {
+        setEstDistance(null)
+      }
+    }
+  }, [estDistance, setEstDistance, updatedWaypoints])
+
+  // Query param state
   const router = useRouter()
+  const { drawerOpen, setDrawerOpen } = useGlobalDrawerState()
   const params = (router.query?.deployment ?? []) as string[]
   const vehicleName = params[0]
+
+  // Network supplied data
   const { data: vehicles } = useVehicleNames({ refresh: 'n' })
   const { data: alternativeAddresses } = useSbdOutgoingAlternativeAddresses({})
   const { data: missionData } = useMissionList()
@@ -109,6 +158,12 @@ const MissionModal: React.FC<MissionModalProps> = ({ onClose }) => {
       toast.error(`Error sending command: ${commandError}`)
     }
   }, [commandSent, commandError, onClose])
+
+  useEffect(() => {
+    if (drawerOpen) {
+      setDrawerOpen(false)
+    }
+  })
 
   const missionCategories = [
     {
@@ -300,11 +355,13 @@ const MissionModal: React.FC<MissionModalProps> = ({ onClose }) => {
     <MissionModalView
       style={{ maxHeight: '80vh' }}
       alternativeAddresses={alternativeAddresses}
-      currentIndex={0}
+      currentStepIndex={0}
       vehicleName={capitalize(vehicleName)}
       bottomDepth="n/a"
-      totalDistance="n/a"
-      duration="n/a"
+      totalDistance={estDistance ? `${estDistance.toPrecision(4)}km` : 'n/a'}
+      duration={
+        estDistance ? (estDistance / 3.2).toPrecision(2) + ' hours' : 'n/a'
+      }
       unfilteredMissionParameters={
         (selectedMissionData?.scriptArgs ?? []) as ParameterProps[]
       }

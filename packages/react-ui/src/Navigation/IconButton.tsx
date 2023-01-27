@@ -16,6 +16,7 @@ export interface IconButtonProps {
   className?: string
   style?: React.CSSProperties
   noPadding?: boolean
+  testId?: string
   ariaLabel: string
   /**
    * The tailwind text size class to apply to the icon.
@@ -51,6 +52,7 @@ export const IconButton: React.FC<IconButtonProps> = ({
   inactive,
   noPadding,
   ariaLabel,
+  testId,
   size = 'text-lg',
 }) => {
   const [hoverTimeout, setHoverTimeout] = useState<any>()
@@ -98,6 +100,7 @@ export const IconButton: React.FC<IconButtonProps> = ({
       onMouseEnter={handleMouseOver}
       onMouseLeave={handleMouseOut}
       aria-label={ariaLabel}
+      data-testid={testId}
     >
       <FontAwesomeIcon icon={icon as IconProp} />
       {tooltip ? (

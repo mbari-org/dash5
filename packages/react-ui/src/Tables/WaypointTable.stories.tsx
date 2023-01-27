@@ -53,7 +53,7 @@ Standard.parameters = {
 export const FocusMode = AltTemplate.bind({})
 FocusMode.args = {
   ...args,
-  focusWaypointIndex: 0,
+  focusedWaypointIndex: 0,
   onDone: () => {
     console.log('done')
   },

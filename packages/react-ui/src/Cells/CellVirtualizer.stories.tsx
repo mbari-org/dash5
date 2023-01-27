@@ -26,7 +26,10 @@ const ToggleableVehicleCell: React.FC<{
 }> = ({ index, virtualizer }) => {
   const [isOpen, setIsOpen] = React.useState(true)
   return (
-    <div className="flex flex-col border-b border-stone-200">
+    <div
+      className="flex flex-col border-b border-stone-200"
+      ref={virtualizer.measureElement}
+    >
       <VehicleHeader
         color="#028390"
         name="Brizo"

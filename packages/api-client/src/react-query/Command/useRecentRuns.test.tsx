@@ -25,7 +25,7 @@ const mockResponse = {
       isoTime: '2022-08-09T02:53:47.155Z',
       eventType: 'run',
       user: 'Brian Kieft',
-      data: 'sched asap "load Science/profile_station.xml;set profile_station.MissionTimeout 10 h;set profile_station.NeedCommsTime 60 min;set profile_station.Lat 43.92975 degree;set profile_station.Lon -86.5052 degree;set profile_station.YoYoMaxDepth 4 m" oapn 1 2\nsched asap "set profile_station.YoYoPitch 12 degree;set profile_station.Speed 0.8 m/s;set profile_station.MaxDepth 9 m;set profile_station.MinOffshore 0.5 km;run" oapn 2 2',
+      data: 'sched asap "load Science/profile_station.tl;set profile_station.MissionTimeout 10 h;set profile_station.NeedCommsTime 60 min;set profile_station.Lat 43.92975 degree;set profile_station.Lon -86.5052 degree;set profile_station.YoYoMaxDepth 4 m" oapn 1 2\nsched asap "set profile_station.YoYoPitch 12 degree;set profile_station.Speed 0.8 m/s;set profile_station.MaxDepth 9 m;set profile_station.MinOffshore 0.5 km;run" oapn 2 2',
     },
     {
       eventId: 17096967,
@@ -58,10 +58,11 @@ const MockCommands: React.FC = () => {
 
   return query.isLoading ? null : (
     <div>
-      <span data-testid="command">{query.data?.[0]?.mission ?? 'Loading'}</span>
-      {/* <span data-testid="description">
-        {query.data?.[0]?.command.description ?? 'Loading'}
-      </span> */}
+      {query.data?.map((c, i) => (
+        <span data-testid={`command${i}`} key={`command${i}`}>
+          {c?.mission ?? 'Loading'}
+        </span>
+      ))}
     </div>
   )
 }
@@ -75,11 +76,14 @@ describe('useRecentRuns', () => {
     )
 
     await waitFor(() => {
-      return screen.getByTestId('command')
+      return screen.getByTestId('command0')
     })
 
-    expect(screen.getByTestId('command')).toHaveTextContent(
+    expect(screen.getByTestId('command0')).toHaveTextContent(
       'Science/profile_station.xml'
+    )
+    expect(screen.getByTestId('command1')).toHaveTextContent(
+      'Science/profile_station.tl'
     )
   })
 })

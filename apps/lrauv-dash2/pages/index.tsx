@@ -35,8 +35,10 @@ const OverviewPage: NextPage = () => {
   const mounted = useRef(false)
   const { setGlobalModalId } = useGlobalModalId()
   useEffect(() => {
-    mounted.current = true
-    setGlobalModalId(null)
+    if (!mounted.current) {
+      mounted.current = true
+      setGlobalModalId(null)
+    }
   })
 
   const handleSelectedVehicle = (vehicle: string) => {
@@ -47,7 +49,7 @@ const OverviewPage: NextPage = () => {
       {trackedVehicles?.length ? (
         <>
           <OverviewToolbar deployment={{ name: 'Overview', id: '0' }} />
-          <div className={styles.content}>
+          <div className={styles.content} data-testid="vehicle-dashboard">
             <section className={styles.primary}>
               <div className={styles.mapContainer}>
                 <SharedPathContextProvider>
@@ -66,7 +68,7 @@ const OverviewPage: NextPage = () => {
         </>
       ) : (
         <>
-          <p className="p-6 text-xl">
+          <p className="p-6 text-xl" aria-label="get started">
             To get started you must add at least one vehicle to track.
           </p>
           <VehicleDeploymentDropdown
