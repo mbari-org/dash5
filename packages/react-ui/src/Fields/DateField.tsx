@@ -3,7 +3,7 @@ import { faClock } from '@fortawesome/pro-regular-svg-icons'
 import { Field, FieldProps, getErrorMessage } from './Field'
 import { Input } from './Input'
 import { DateTime } from 'luxon'
-import { Calendar, ClockView, TimePickerViewsProps } from '@material-ui/pickers'
+import { Calendar, ClockView } from '@material-ui/pickers'
 import { ClockViewType } from '@material-ui/pickers/constants/ClockType'
 import clsx from 'clsx'
 
