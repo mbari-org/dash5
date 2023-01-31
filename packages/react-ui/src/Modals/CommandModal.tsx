@@ -3,74 +3,45 @@ import { Modal } from '../Modal/Modal'
 import { StepProgress, StepProgressProps } from '../Navigation/StepProgress'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { faChevronDoubleRight } from '@fortawesome/pro-solid-svg-icons'
-import { faInfoCircle } from '@fortawesome/pro-regular-svg-icons'
-import { IconButton } from '../Navigation'
-import { Input, SelectField } from '../Fields'
+
 import {
-  Command,
-  CommandTable,
-  CommandTableProps,
-} from '../Tables/CommandTable'
-import { SelectOption } from '../Fields/Select'
-import { SortDirection } from '../Data/TableHeader'
-import { sortByProperty } from '@mbari/utils'
+  SelectCommandStep,
+  SelectCommandStepProps,
+} from './CommandModalSteps/SelectCommandStep'
+import { BuildFreeformCommandStep } from './CommandModalSteps/BuildFreeformCommandStep'
+import {
+  BuildTemplatedCommandStep,
+  CommandSyntax,
+} from './CommandModalSteps/BuildTemplatedCommandStep'
+import { OptionSet, CommandDetailProps } from '../Tables/CommandDetailTable'
 import {
   ScheduleCommandForm,
   ScheduleCommandFormValues,
 } from '../Forms/ScheduleCommandForm'
 import { AsyncSubmitHandler } from '@sumocreations/forms'
 import { ExtraButton } from '../Modal/Footer'
-import { CommandDetailTable } from '../Tables/CommandDetailTable'
-
-export interface CommandSyntax {
-  argList: Argument[]
-  help: string
-}
-
-export type ArgumentType =
-  | 'ARG_FLOAT'
-  | 'ARG_INT'
-  | 'ARG_SECONDS'
-  | 'ARG_QUOTED_STRING'
-  | 'ARG_STRING'
-  | 'ARG_REGEX'
-  | 'ARG_TIMESTAMP'
-  | 'ARG_TOKEN'
-  | 'ARG_KEYWORD'
-  | 'ARG_MISSION'
-  | 'ARG_SERVICE_TYPE'
-  | 'ARG_UNIT'
-  | 'ARG_UNIVERSAL'
-  | 'ARG_VARIABLE'
-  | 'ARG_NONE'
-
-export interface Argument {
-  argType: ArgumentType
-  keyword?: string
-  required?: string
-}
 
 export interface CommandModalProps
   extends StepProgressProps,
-    CommandTableProps {
+    SelectCommandStepProps {
   className?: string
   style?: React.CSSProperties
   vehicleName: string
   onCancel?: () => void
   onSubmit: AsyncSubmitHandler<ScheduleCommandFormValues>
   onAltAddressSubmit?: AsyncSubmitHandler<ScheduleCommandFormValues>
-  onMoreInfo?: () => void
-  onSelectCommandId?: (commandId?: string | null) => void
-  recentCommands?: Command[]
-  frequentCommands?: Command[]
   syntaxVariations?: CommandSyntax[]
+  units?: OptionSet[]
+  moduleNames?: OptionSet[]
+  missions?: OptionSet[]
+  decimationTypes?: OptionSet[]
+  serviceTypes?: OptionSet[]
+  variableTypes?: OptionSet[]
+  universals?: OptionSet[]
+  onUpdateField?: CommandDetailProps['onSelect']
+  onSelectModule?: (module: string) => void
+  onSelectOutputUri?: (outputUri: string) => void
 }
-
-const filters: SelectOption[] = [
-  { name: 'Recent Commands', id: 'recent' },
-  { name: 'Frequent Commands', id: 'frequent' },
-  { name: 'All Commands', id: 'all' },
-]
 
 export const CommandModal: React.FC<CommandModalProps> = ({
   className,
@@ -85,66 +56,37 @@ export const CommandModal: React.FC<CommandModalProps> = ({
   onCancel,
   onSubmit,
   onAltAddressSubmit,
-  onMoreInfo,
+  onMoreInfo: handleMoreInfo,
   onSelectCommandId,
   syntaxVariations,
+  units,
+  moduleNames,
+  serviceTypes,
+  variableTypes,
+  missions,
+  universals,
+  decimationTypes,
+  onUpdateField: handleUpdatedField,
 }) => {
   const submitButtonRef = useRef<HTMLButtonElement | null>(null)
-  const [currentStep, setCurrentStep] = useState(currentStepIndex)
-  const [selectedCommandId, setSelectedCommandId] = useState<
+  const [selectedCommandId, setSelectedCommandId] =
+    useState<SelectCommandStepProps['selectedId']>(selectedId)
+  const [currentStep, setCurrentStep] = useState(currentStepIndex ?? 0)
+  const [selectedCommandName, setSelectedCommandName] = useState<
     string | null | undefined
-  >(selectedId)
-  const [selectedFilter, setSelectedFilter] = useState<
-    string | null | undefined
-  >('recent')
-  const [selectedRecentId, setSelectedRecentId] = useState<
-    string | null | undefined
-  >('')
-  const [searchTerm, setSearchTerm] = useState('')
-  const [filteredCommands, setFilteredCommands] = useState<Command[]>(commands)
-  const [sortColumn, setSortColumn] = useState<number | null | undefined>(null)
-  const [sortDirection, setSortDirection] = useState<SortDirection>(null)
+  >(null)
+  const [useTemplateStep, setUseTemplateStep] = useState(false)
 
-  const handleSelectedCommandId = (commandId?: string | null) => {
-    setSelectedCommandId(commandId)
-    onSelectCommandId?.(commandId)
+  const handleSelectCommandId: SelectCommandStepProps['onSelectCommandId'] = (
+    id,
+    name,
+    isTemplate
+  ) => {
+    setSelectedCommandId(id ?? undefined)
+    setSelectedCommandName(name)
+    setUseTemplateStep(isTemplate ?? false)
+    onSelectCommandId?.(id)
   }
-
-  const variations: SelectOption[] =
-    syntaxVariations?.map((s) => ({
-      id: s.help,
-      name: s.help,
-    })) ?? []
-
-  useEffect(() => {
-    if (selectedFilter) {
-      setSearchTerm('')
-      setSortDirection(null)
-      switch (selectedFilter) {
-        case 'recent':
-          setFilteredCommands(recentCommands || [])
-          break
-        case 'frequent':
-          setFilteredCommands(frequentCommands || [])
-          break
-        default:
-          setFilteredCommands(commands)
-          break
-      }
-    }
-
-    if (searchTerm) {
-      setSortDirection(null)
-      const searchResults = filteredCommands.filter(({ name }) =>
-        name.includes(searchTerm)
-      )
-      setFilteredCommands(searchResults)
-    }
-
-    if (!selectedFilter && !searchTerm) {
-      setFilteredCommands(commands)
-    }
-  }, [searchTerm, selectedFilter, commands])
 
   const isLastStep = currentStep === steps.length - 1
   const confirmButtonText = isLastStep ? (
@@ -157,6 +99,7 @@ export const CommandModal: React.FC<CommandModalProps> = ({
   )
 
   const handleNext = () => {
+    console.log('Handle Next', selectedCommandId)
     if (selectedCommandId) {
       return setCurrentStep(currentStep + 1)
     }
@@ -168,41 +111,9 @@ export const CommandModal: React.FC<CommandModalProps> = ({
     }
   }
 
-  const handleSelectRecent = (id: string | null) => {
-    if (!id) {
-      handleSelectedCommandId(null)
-    }
-    setSearchTerm('')
-    setSelectedFilter(id)
-  }
-
-  const handleSearch = (term: string) => {
-    if (selectedFilter || selectedCommandId) {
-      handleSelectedCommandId(null)
-      setSelectedFilter(null)
-    }
-    setSearchTerm(term)
-  }
-
   const getCommandNameById = (id: string) => {
     const selectedCommand = commands.find((command) => command.id === id)
     return selectedCommand?.name
-  }
-
-  const handleSort = (column: number, isAscending?: boolean) => {
-    const sortableColumns: string[] = ['name', 'vehicle', 'description']
-    const sortProperty = sortableColumns[column] as keyof Command
-    const updatedIsAscending = !isAscending
-
-    const sortedCommands = sortByProperty({
-      arrOfObj: [...filteredCommands],
-      sortProperty,
-      secondarySort: 'name',
-      sortAscending: updatedIsAscending,
-    })
-    setSortColumn(column)
-    setSortDirection(updatedIsAscending ? 'asc' : 'desc')
-    setFilteredCommands(sortedCommands as Command[])
   }
 
   const [shouldUseAltAddress, setShouldUseAltAddress] = useState(false)
@@ -264,74 +175,39 @@ export const CommandModal: React.FC<CommandModalProps> = ({
       open
     >
       {currentStep === 0 && (
-        <section className="h-full">
-          <ul className="grid grid-cols-5 pb-2">
-            <li className="col-span-2 self-center">
-              Select a command for{' '}
-              <span className="text-teal-500" data-testid="vehicle name">
-                {vehicleName}
-              </span>
-              <IconButton
-                icon={faInfoCircle}
-                ariaLabel="More info"
-                onClick={onMoreInfo}
-              />
-            </li>
-            <li className="col-span-3 flex items-center">
-              <SelectField
-                name="Recent commands"
-                placeholder="Recent Commands"
-                options={filters}
-                value={selectedFilter ?? undefined}
-                onSelect={(id) => handleSelectRecent(id)}
-              />
-              <Input
-                name="Search commands field"
-                placeholder="Search commands"
-                className="ml-2 h-full flex-grow"
-                value={searchTerm}
-                onChange={(e) => handleSearch(e.target.value)}
-              />
-            </li>
-          </ul>
-
-          <CommandTable
-            commands={filteredCommands}
-            selectedId={selectedCommandId ? selectedCommandId : ''}
-            onSelectCommand={handleSelectedCommandId}
-            onSortColumn={handleSort}
-            // calculated max height provides responsive table size without clipping inside modal
-            className="max-h-[calc(100%-40px)]"
-            activeSortColumn={sortColumn}
-            sortDirection={sortDirection}
+        <SelectCommandStep
+          selectedId={selectedId}
+          commands={commands}
+          recentCommands={recentCommands}
+          frequentCommands={frequentCommands}
+          onSelectCommandId={handleSelectCommandId}
+          onMoreInfo={handleMoreInfo}
+          vehicleName={vehicleName}
+        />
+      )}
+      {currentStep === 1 &&
+        (useTemplateStep ? (
+          <BuildTemplatedCommandStep
+            selectedCommandName={selectedCommandName ?? 'unknown command'}
+            syntaxVariations={syntaxVariations}
+            units={units}
+            moduleNames={moduleNames}
+            onUpdateField={handleUpdatedField}
+            serviceTypes={serviceTypes}
+            variableTypes={variableTypes}
+            missions={missions}
+            universals={universals}
+            decimationTypes={decimationTypes}
+            commands={[
+              {
+                name: 'Command',
+                options: commands.map((c) => c.name),
+              },
+            ]}
           />
-        </section>
-      )}
-      {currentStep === 1 && (
-        <section className="h-full">
-          <ul className="flex flex-col">
-            <li className="w-full">
-              Build command{' '}
-              <span className="text-teal-500" data-testid="vehicle name">
-                {selectedCommandId}
-              </span>
-            </li>
-            <li className="my-4 flex w-full items-center">
-              <p className="mr-2 flex-shrink-0">Choose a syntax</p>
-              <SelectField
-                name="syntax"
-                placeholder=""
-                options={variations}
-                className="mr-8 w-full"
-                // value={selectedFilter ?? undefined}
-                // onSelect={(id) => handleSelectRecent(id)}
-                clearable
-              />
-            </li>
-          </ul>
-          {/* <CommandDetailTable parameters={} /> */}
-        </section>
-      )}
+        ) : (
+          <BuildFreeformCommandStep command={selectedCommandName ?? ''} />
+        ))}
       {currentStep === 2 && selectedCommandId && (
         <ScheduleCommandForm
           vehicleName={vehicleName}
