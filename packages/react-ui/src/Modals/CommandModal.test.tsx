@@ -1,8 +1,6 @@
-import React from 'react'
 import { render, screen } from '@testing-library/react'
 import '@testing-library/jest-dom'
 import { CommandModal, CommandModalProps } from './CommandModal'
-import { ScheduleCommandFormValues } from '../Forms/ScheduleCommandForm'
 
 const props: CommandModalProps = {
   steps: ['Command', 'Build', 'Schedule'],

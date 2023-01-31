@@ -3,7 +3,6 @@ import React from 'react'
 import { Story, Meta } from '@storybook/react/types-6-0'
 import { CommandModal, CommandModalProps } from './CommandModal'
 import { CommandTableProps } from '../Tables/CommandTable'
-import { ScheduleCommandFormValues } from '../Forms/ScheduleCommandForm'
 import { wait } from '@mbari/utils'
 
 export default {
