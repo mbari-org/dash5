@@ -62,7 +62,7 @@ const props: CommandModalProps = {
       }`
     )
   },
-  onSubmit: async (values: ScheduleCommandFormValues) => {
+  onSchedule: async (values) => {
     console.log(values)
     return undefined
   },
@@ -136,7 +136,7 @@ test('should render extra buttons and correct button text', () => {
     <CommandModal
       {...props}
       currentStepIndex={2}
-      onAltAddressSubmit={props.onSubmit}
+      alternativeAddresses={['one@example.com', 'two@example.com']}
     />
   )
 

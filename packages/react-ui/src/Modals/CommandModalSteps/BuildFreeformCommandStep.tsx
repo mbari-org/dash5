@@ -3,14 +3,16 @@ import { TextAreaField, TextAreaFieldProps } from '../../Fields'
 
 export interface BuildFreeformCommandStepProps {
   command?: string | null
+  onCommandTextChange?: (command: string) => void
 }
 
 export const BuildFreeformCommandStep: React.FC<
   BuildFreeformCommandStepProps
-> = ({ command: initialCommand }) => {
+> = ({ command: initialCommand, onCommandTextChange }) => {
   const [command, setCommand] = useState(initialCommand)
   const handleChangedCommand: TextAreaFieldProps['onChange'] = (e) => {
     setCommand(e.target.value)
+    onCommandTextChange?.(e.target.value)
   }
 
   return (

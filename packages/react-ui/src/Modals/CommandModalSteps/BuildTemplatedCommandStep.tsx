@@ -6,7 +6,7 @@ import {
   getValues,
   OptionSet,
 } from '../../Tables/CommandDetailTable'
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { SelectField, TextAreaField, TextAreaFieldProps } from '../../Fields'
 import { SelectOption } from '../../Fields/Select'
 
@@ -252,6 +252,7 @@ export interface BuildTemplatedCommandStepProps {
   variableTypes?: OptionSet[]
   universals?: OptionSet[]
   onUpdateField?: CommandDetailProps['onSelect']
+  onCommandTextChange?: (text: string) => void
 }
 
 export const BuildTemplatedCommandStep: React.FC<
@@ -271,6 +272,7 @@ export const BuildTemplatedCommandStep: React.FC<
   selectedSyntax,
   onSelectSyntax: handleSelectSyntax,
   onUpdateField: handleUpdatedField,
+  onCommandTextChange: handleCommandTextChange,
 }) => {
   // Assign default syntax if none is selected
   useEffect(() => {
@@ -355,6 +357,15 @@ export const BuildTemplatedCommandStep: React.FC<
         : acc.replace(id, value ?? (isRequired ? id : ''))
     }, argumentAsTemplate)
     .replace(/\s+/g, ' ')
+    .trim()
+
+  const persistedCommand = useRef(argumentAsCommand)
+  useEffect(() => {
+    if (persistedCommand.current === argumentAsCommand) return
+    persistedCommand.current = argumentAsCommand
+    handleCommandTextChange?.(argumentAsCommand)
+  }, [argumentAsCommand, handleCommandTextChange])
+
   return (
     <section className="flex h-full flex-col">
       <ul className="flex flex-col">

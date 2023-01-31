@@ -3,6 +3,11 @@ import { Modal } from '../Modal/Modal'
 import { StepProgress, StepProgressProps } from '../Navigation/StepProgress'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { faChevronDoubleRight } from '@fortawesome/pro-solid-svg-icons'
+import { ConfirmVehicleDialog } from './ConfirmVehicleDialog'
+
+// Special reuse of MissionModalStep which is identical here.
+import { ScheduleOption, ScheduleStep } from './MissionModalSteps/ScheduleStep'
+import { AlternativeAddressStep } from './MissionModalSteps/AlternativeAddressStep'
 
 import {
   SelectCommandStep,
@@ -15,22 +20,29 @@ import {
   CommandSyntax,
 } from './CommandModalSteps/BuildTemplatedCommandStep'
 import { OptionSet, CommandDetailProps } from '../Tables/CommandDetailTable'
-import {
-  ScheduleCommandForm,
-  ScheduleCommandFormValues,
-} from '../Forms/ScheduleCommandForm'
-import { AsyncSubmitHandler } from '@sumocreations/forms'
 import { ExtraButton } from '../Modal/Footer'
+
+export type OnScheduleCommandHandler = (args: {
+  commandText: string
+  alternateAddress?: string | null
+  specifiedTime?: string | null
+  notes?: string | null
+  scheduleMethod?: ScheduleOption
+  scheduleId?: string | null
+  confirmedVehicle?: string | null
+  preview?: boolean
+}) => void
 
 export interface CommandModalProps
   extends StepProgressProps,
     SelectCommandStepProps {
+  loading?: boolean
   className?: string
   style?: React.CSSProperties
   vehicleName: string
   onCancel?: () => void
-  onSubmit: AsyncSubmitHandler<ScheduleCommandFormValues>
-  onAltAddressSubmit?: AsyncSubmitHandler<ScheduleCommandFormValues>
+  onSchedule: OnScheduleCommandHandler
+  alternativeAddresses?: string[]
   syntaxVariations?: CommandSyntax[]
   units?: OptionSet[]
   moduleNames?: OptionSet[]
@@ -42,9 +54,11 @@ export interface CommandModalProps
   onUpdateField?: CommandDetailProps['onSelect']
   onSelectModule?: (module: string) => void
   onSelectOutputUri?: (outputUri: string) => void
+  vehicles?: string[]
 }
 
 export const CommandModal: React.FC<CommandModalProps> = ({
+  loading,
   className,
   style,
   steps,
@@ -55,8 +69,8 @@ export const CommandModal: React.FC<CommandModalProps> = ({
   frequentCommands,
   selectedId,
   onCancel,
-  onSubmit,
-  onAltAddressSubmit,
+  onSchedule,
+  alternativeAddresses,
   onMoreInfo: handleMoreInfo,
   onSelectCommandId,
   syntaxVariations,
@@ -65,6 +79,7 @@ export const CommandModal: React.FC<CommandModalProps> = ({
   serviceTypes,
   variableTypes,
   missions,
+  vehicles,
   universals,
   decimationTypes,
   onUpdateField: handleUpdatedField,
@@ -100,13 +115,18 @@ export const CommandModal: React.FC<CommandModalProps> = ({
   )
 
   const handleNext = () => {
-    console.log('Handle Next', selectedCommandId)
+    console.log('Handle Next', selectedCommandId, '->', currentStep + 1)
     if (selectedCommandId) {
       return setCurrentStep(currentStep + 1)
     }
   }
 
   const handlePrevious = () => {
+    if (showAlternateAddress) {
+      setAlternateAddress(null)
+      setShowAlternateAddress(false)
+      return
+    }
     if (currentStep > 0) {
       return setCurrentStep(currentStep - 1)
     }
@@ -117,7 +137,17 @@ export const CommandModal: React.FC<CommandModalProps> = ({
     return selectedCommand?.name
   }
 
-  const [shouldUseAltAddress, setShouldUseAltAddress] = useState(false)
+  // Schedule section details
+  const [alternateAddress, setAlternateAddress] = useState<string | null>(null)
+  const [confirmedVehicle, setConfirmedVehicle] = useState<string | null>(null)
+  const [showAlternateAddress, setShowAlternateAddress] = useState(false)
+  const [scheduleOption, setScheduleOption] = useState<ScheduleOption | null>(
+    null
+  )
+  const [customScheduleId, setCustomScheduleId] = useState<string | null>(null)
+  const [notes, setNotes] = useState<string | null>(null)
+  const [specifiedTime, setSpecifiedTime] = useState<string | null>(null)
+
   const extraButtons = () => {
     if (currentStep === 0) return []
 
@@ -131,28 +161,17 @@ export const CommandModal: React.FC<CommandModalProps> = ({
       appearance: 'secondary',
       type: 'submit',
       onClick: () => {
-        if (submitButtonRef.current) {
-          setShouldUseAltAddress(true)
-          submitButtonRef.current.click()
-        }
+        setShowAlternateAddress(true)
       },
     }
 
-    return isLastStep && onAltAddressSubmit
+    return isLastStep && !!alternativeAddresses && !showAlternateAddress
       ? [backButton, altAddressButton]
       : [backButton]
   }
 
-  const handleScheduleSubmit: CommandModalProps['onSubmit'] = useCallback(
-    async (values) => {
-      if (shouldUseAltAddress) {
-        setShouldUseAltAddress(false)
-        return await onAltAddressSubmit?.(values)
-      }
-      return onSubmit(values)
-    },
-    [shouldUseAltAddress, onAltAddressSubmit, onSubmit]
-  )
+  // Command text state
+  const [commandText, setCommandText] = useState<string | null>(null)
 
   // Templated Command State
   const [selectedSyntax, setSelectedSyntax] = useState<string | null>(null)
@@ -165,6 +184,7 @@ export const CommandModal: React.FC<CommandModalProps> = ({
       setSelectedParameters({ ...selectedParameters, [lookup]: value })
       handleUpdatedField?.(param, argType, value)
     }
+
   // Reset params when command or syntax changes
   const lastSyntax = useRef({ selectedSyntax, selectedCommandId })
   useEffect(() => {
@@ -177,8 +197,31 @@ export const CommandModal: React.FC<CommandModalProps> = ({
     }
   }, [selectedCommandId, selectedSyntax, setSelectedParameters])
 
-  return (
+  const handleSchedule = () => {
+    onSchedule({
+      commandText: commandText ?? '',
+      specifiedTime,
+      alternateAddress,
+      scheduleId: customScheduleId,
+      scheduleMethod: scheduleOption as ScheduleOption,
+      confirmedVehicle: confirmedVehicle ?? vehicleName,
+      notes,
+    })
+  }
+
+  return currentStep === 3 ? (
+    <ConfirmVehicleDialog
+      loading={loading}
+      vehicle={vehicleName}
+      vehicleList={vehicles ?? [vehicleName]}
+      command={commandText ?? ''}
+      onChangeVehicle={setConfirmedVehicle}
+      onCancel={handlePrevious}
+      onConfirm={handleSchedule}
+    />
+  ) : (
     <Modal
+      loading={loading}
       className={className}
       style={style}
       title={
@@ -188,13 +231,12 @@ export const CommandModal: React.FC<CommandModalProps> = ({
           className="h-[52px] w-[512px]"
         />
       }
-      onConfirm={isLastStep ? null : handleNext}
+      onConfirm={handleNext}
       onCancel={onCancel}
       confirmButtonText={confirmButtonText}
       extraButtons={extraButtons()}
       extraWideModal
       bodyOverflowHidden
-      form={isLastStep ? 'scheduleCommandForm' : undefined}
       snapTo="top-right"
       open
     >
@@ -231,19 +273,44 @@ export const CommandModal: React.FC<CommandModalProps> = ({
                 options: commands.map((c) => c.name),
               },
             ]}
+            onCommandTextChange={setCommandText}
           />
         ) : (
-          <BuildFreeformCommandStep command={selectedCommandName ?? ''} />
+          <BuildFreeformCommandStep
+            command={commandText ?? selectedCommandName ?? ''}
+            onCommandTextChange={setCommandText}
+          />
         ))}
-      {currentStep === 2 && selectedCommandId && (
-        <ScheduleCommandForm
-          vehicleName={vehicleName}
-          command={getCommandNameById(selectedCommandId) ?? ''}
-          onSubmit={handleScheduleSubmit}
-          id="scheduleCommandForm"
-          ref={submitButtonRef}
-        />
-      )}
+      {currentStep === 2 &&
+        selectedCommandId &&
+        (showAlternateAddress ? (
+          <AlternativeAddressStep
+            alternateAddress={alternateAddress}
+            vehicleName={vehicleName}
+            mission={commandText ?? getCommandNameById(selectedCommandId) ?? ''}
+            commandDescriptor="command"
+            alternativeAddresses={alternativeAddresses}
+            onNotesChanged={setNotes}
+            notes={notes}
+            onAlternativeAddressChanged={setAlternateAddress}
+          />
+        ) : (
+          <ScheduleStep
+            vehicleName={vehicleName}
+            commandText={
+              commandText ?? getCommandNameById(selectedCommandId) ?? ''
+            }
+            commandDescriptor="command"
+            scheduleId={customScheduleId}
+            onScheduleIdChanged={setCustomScheduleId}
+            scheduleMethod={scheduleOption}
+            onScheduleMethodChanged={setScheduleOption}
+            notes={notes}
+            onNotesChanged={setNotes}
+            specifiedTime={specifiedTime}
+            onSpecifiedTimeChanged={setSpecifiedTime}
+          />
+        ))}
     </Modal>
   )
 }

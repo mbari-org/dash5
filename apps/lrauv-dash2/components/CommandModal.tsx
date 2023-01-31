@@ -1,3 +1,4 @@
+import { useEffect } from 'react'
 import {
   CommandModal as CommandModalView,
   CommandModalProps as CommandModalViewProps,
@@ -12,7 +13,11 @@ import {
   useUniversals,
   useMissionList,
   useScript,
+  useCreateCommand,
+  useVehicleNames,
+  useSbdOutgoingAlternativeAddresses,
 } from '@mbari/api-client'
+import { makeCommand } from '../lib/makeCommand'
 import { useRouter } from 'next/router'
 import toast from 'react-hot-toast'
 import { useState } from 'react'
@@ -50,6 +55,25 @@ export const CommandModal: React.FC<CommandModalProps> = ({
   const params = (router.query?.deployment ?? []) as string[]
   const vehicleName = params[0]
 
+  // Network Mutations
+  const {
+    mutate: createCommand,
+    isLoading: sendingCommand,
+    isSuccess: commandSent,
+    isError: commandError,
+  } = useCreateCommand()
+
+  useEffect(() => {
+    if (commandSent) {
+      toast.success('Command sent')
+      onClose()
+    } else if (commandError) {
+      toast.error(`Error sending command: ${commandError}`)
+    }
+  }, [commandSent, commandError, onClose])
+
+  // Network supplied data
+  const { data: vehicles } = useVehicleNames({ refresh: 'n' })
   const { data: unitsData } = useUnits()
   const { data: commandData } = useCommands()
   const { data: recentCommandsData } = useRecentCommands({
@@ -58,6 +82,7 @@ export const CommandModal: React.FC<CommandModalProps> = ({
   const { data: frequentCommandsData } = useFrequentCommands({
     vehicle: vehicleName,
   })
+  const { data: alternativeAddresses } = useSbdOutgoingAlternativeAddresses({})
   const { data: moduleInfoData } = useModuleInfo()
   const { data: universalData } = useUniversals({})
   const { data: missionData } = useMissionList()
@@ -126,10 +151,24 @@ export const CommandModal: React.FC<CommandModalProps> = ({
       )?.description,
     })) ?? []
 
-  const handleSubmit: CommandModalViewProps['onSubmit'] = async () => {
-    toast.success('Command sent!')
-    onClose()
-    return undefined
+  const handleSchedule: CommandModalViewProps['onSchedule'] = ({
+    confirmedVehicle,
+    commandText,
+    scheduleMethod,
+    specifiedTime,
+    alternateAddress,
+    notes,
+  }) => {
+    createCommand({
+      vehicle: confirmedVehicle?.toLowerCase() ?? '',
+      path: selectedMission as string,
+      commandNote: notes ?? '',
+      runCommand: 'y',
+      schedDate: specifiedTime ?? 'asap',
+      destinationAddress: alternateAddress ?? undefined,
+      commandText:
+        makeCommand({ commandText, scheduleMethod, specifiedTime }) ?? '',
+    })
   }
 
   const syntaxVariations = commandData?.commands.find(
@@ -173,7 +212,7 @@ export const CommandModal: React.FC<CommandModalProps> = ({
       recentCommands={recentCommands}
       frequentCommands={frequentCommands}
       currentStepIndex={0}
-      onSubmit={handleSubmit}
+      onSchedule={handleSchedule}
       onCancel={onClose}
       vehicleName={vehicleName}
       steps={steps}
@@ -186,6 +225,9 @@ export const CommandModal: React.FC<CommandModalProps> = ({
       variableTypes={variableTypes}
       onUpdateField={handleUpdatedField}
       moduleNames={moduleNames}
+      vehicles={vehicles}
+      alternativeAddresses={alternativeAddresses ?? []}
+      loading={sendingCommand}
     />
   )
 }

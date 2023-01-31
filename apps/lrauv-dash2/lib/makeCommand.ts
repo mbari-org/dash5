@@ -10,6 +10,31 @@ const printUnit = (p: ParameterProps) => {
   return `${p.overrideValue} ${p.unit}`
 }
 
+export const makeCommand = ({
+  commandText,
+  scheduleMethod,
+  specifiedTime,
+}: {
+  commandText: string
+  scheduleMethod: ScheduleOption
+  specifiedTime?: string
+}) => {
+  switch (scheduleMethod) {
+    case 'ASAP':
+      return `sched asap "${commandText}"`
+    case 'end':
+      return `sched "${commandText}"`
+    case 'time':
+      if (!specifiedTime) {
+        return ''
+      }
+      const t = DateTime.fromISO(specifiedTime)
+      return `sched ${t.toFormat('yyyyMMdd')}T${t.toFormat(
+        'HHmm'
+      )} "${commandText}"`
+  }
+}
+
 export const makeMissionCommand = ({
   mission,
   parameterOverrides,
@@ -31,18 +56,9 @@ export const makeMissionCommand = ({
     )
   })
   commands.push('run')
-  switch (scheduleMethod) {
-    case 'ASAP':
-      return `sched asap "${commands.join(';')}"`
-    case 'end':
-      return `sched "${commands.join(';')}"`
-    case 'time':
-      if (!specifiedTime) {
-        return ''
-      }
-      const t = DateTime.fromISO(specifiedTime)
-      return `sched ${t.toFormat('yyyyMMdd')}T${t.toFormat(
-        'HHmm'
-      )} "${commands.join(';')}"`
-  }
+  makeCommand({
+    commandText: commands.join('; '),
+    scheduleMethod,
+    specifiedTime,
+  })
 }

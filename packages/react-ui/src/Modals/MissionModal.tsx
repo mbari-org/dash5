@@ -324,7 +324,7 @@ export const MissionModal: React.FC<MissionModalProps> = ({
             waypointCount={plottedWaypointCount}
             overrideCount={overrideCount}
             vehicleName={vehicleName}
-            mission={missionName}
+            commandText={missionName}
             scheduleId={customScheduleId}
             onScheduleIdChanged={setCustomScheduleId}
             scheduleMethod={scheduleOption}
@@ -363,6 +363,7 @@ export const MissionModal: React.FC<MissionModalProps> = ({
         overriddenMissionParams,
         safetyCommsParams.filter((p) => p.overrideValue),
       ].flat(),
+      notes,
       specifiedTime,
       alternateAddress,
       scheduleId: customScheduleId,

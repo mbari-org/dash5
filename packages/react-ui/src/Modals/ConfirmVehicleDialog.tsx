@@ -5,6 +5,7 @@ import { Dialog } from '../Modal/Dialog'
 import { FooterProps } from '../Modal/Footer'
 
 export interface ConfirmVehicleDialogProps extends FooterProps {
+  loading?: boolean
   vehicle: string
   vehicleList: string[]
   mission?: string | null
@@ -30,6 +31,7 @@ export const ConfirmVehicleDialog: React.FC<ConfirmVehicleDialogProps> = ({
   onConfirm,
   onCancel,
   onSubmit,
+  loading,
 }) => {
   const [differentVehicle, setDifferentVehicle] = useState<string | undefined>(
     undefined
@@ -113,6 +115,7 @@ export const ConfirmVehicleDialog: React.FC<ConfirmVehicleDialogProps> = ({
 
   return (
     <Dialog
+      loading={loading}
       open
       title={title}
       message={message}

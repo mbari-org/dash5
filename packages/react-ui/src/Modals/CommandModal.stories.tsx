@@ -12,25 +12,13 @@ export default {
 } as Meta
 
 const Template: Story<CommandModalProps> = (args) => {
-  const onSubmit: (
-    values: ScheduleCommandFormValues
-  ) => Promise<undefined> = async (values: ScheduleCommandFormValues) => {
+  const onSchedule: CommandModalProps['onSchedule'] = async (values) => {
     console.log('submitting')
     await wait(1)
     console.log('Submitted', values)
     return undefined
   }
-  const onAlt: (
-    values: ScheduleCommandFormValues
-  ) => Promise<undefined> = async (values: ScheduleCommandFormValues) => {
-    console.log('alt submitting')
-    await wait(1)
-    console.log('Alt submitted', values)
-    return undefined
-  }
-  return (
-    <CommandModal {...args} onSubmit={onSubmit} onAltAddressSubmit={onAlt} />
-  )
+  return <CommandModal {...args} onSchedule={onSchedule} />
 }
 
 const commandTableArgs: CommandTableProps = {
@@ -136,6 +124,7 @@ const args: Omit<CommandModalProps, 'onSubmit'> = {
       name: 'schedule clear; schedule resume',
     },
   ],
+  onSchedule: () => console.log('schedule'),
   onCancel: () => console.log('cancel'),
   ...commandTableArgs,
 }
@@ -161,7 +150,11 @@ Build.parameters = {
 }
 
 export const Schedule = Template.bind({})
-Schedule.args = { ...args, currentStepIndex: 2 }
+Schedule.args = {
+  ...args,
+  currentStepIndex: 2,
+  alternativeAddresses: ['one@example.com', 'two@example.com'],
+}
 
 Schedule.parameters = {
   design: {
