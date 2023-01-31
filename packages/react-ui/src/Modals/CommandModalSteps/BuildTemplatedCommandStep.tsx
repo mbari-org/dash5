@@ -233,8 +233,15 @@ export interface Argument {
   required?: string
 }
 
+export interface TemplateParameterConfig {
+  [key: string]: string
+}
+
 export interface BuildTemplatedCommandStepProps {
   selectedCommandName?: string
+  selectedSyntax: string | null
+  onSelectSyntax: (syntax: string | null) => void
+  selectedParameters?: TemplateParameterConfig
   syntaxVariations?: CommandSyntax[]
   units?: OptionSet[]
   moduleNames?: OptionSet[]
@@ -260,14 +267,15 @@ export const BuildTemplatedCommandStep: React.FC<
   commands,
   universals,
   variableTypes,
+  selectedParameters = {},
+  selectedSyntax,
+  onSelectSyntax: handleSelectSyntax,
   onUpdateField: handleUpdatedField,
 }) => {
-  const [selectedSyntax, setSelectedSyntax] = useState<string | null>(null)
-
   // Assign default syntax if none is selected
   useEffect(() => {
     if (syntaxVariations?.find(({ help }) => help === selectedSyntax)) return
-    setSelectedSyntax(syntaxVariations?.[0]?.help ?? null)
+    handleSelectSyntax(syntaxVariations?.[0]?.help ?? null)
   }, [selectedSyntax, syntaxVariations])
 
   const variations: SelectOption[] =
@@ -292,20 +300,6 @@ export const BuildTemplatedCommandStep: React.FC<
   const argumentAsTemplate = [selectedCommandName, argList.map(idForArg)]
     .flat()
     .join(' ')
-
-  const [selectedParameters, setSelectedParameters] = useState<{
-    [key: string]: string
-  }>({})
-
-  const handleParameterSelect: CommandDetailProps['onSelect'] = (
-    param,
-    argType,
-    value
-  ) => {
-    const lookup = argType === 'ARG_KEYWORD' ? param : argType
-    setSelectedParameters({ ...selectedParameters, [lookup]: value })
-    handleUpdatedField?.(param, argType, value)
-  }
 
   const formatValueForArg = (
     value: string | undefined,
@@ -368,7 +362,7 @@ export const BuildTemplatedCommandStep: React.FC<
             options={variations}
             className="mr-8 w-full"
             value={selectedSyntax ?? undefined}
-            onSelect={(id) => setSelectedSyntax(id)}
+            onSelect={handleSelectSyntax}
           />
         </li>
         <li className="flex-shrink flex-grow">
@@ -389,7 +383,7 @@ export const BuildTemplatedCommandStep: React.FC<
                 }
               )
             )}
-            onSelect={handleParameterSelect}
+            onSelect={handleUpdatedField ?? (() => {})}
           />
         </li>
         <li className="mt-4">

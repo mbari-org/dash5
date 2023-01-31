@@ -11,6 +11,7 @@ import {
 import { BuildFreeformCommandStep } from './CommandModalSteps/BuildFreeformCommandStep'
 import {
   BuildTemplatedCommandStep,
+  BuildTemplatedCommandStepProps,
   CommandSyntax,
 } from './CommandModalSteps/BuildTemplatedCommandStep'
 import { OptionSet, CommandDetailProps } from '../Tables/CommandDetailTable'
@@ -153,6 +154,29 @@ export const CommandModal: React.FC<CommandModalProps> = ({
     [shouldUseAltAddress, onAltAddressSubmit, onSubmit]
   )
 
+  // Templated Command State
+  const [selectedSyntax, setSelectedSyntax] = useState<string | null>(null)
+  const [selectedParameters, setSelectedParameters] = useState<{
+    [key: string]: string
+  }>({})
+  const handleTemplateParameterChange: BuildTemplatedCommandStepProps['onUpdateField'] =
+    (param, argType, value) => {
+      const lookup = argType === 'ARG_KEYWORD' ? param : argType
+      setSelectedParameters({ ...selectedParameters, [lookup]: value })
+      handleUpdatedField?.(param, argType, value)
+    }
+  // Reset params when command or syntax changes
+  const lastSyntax = useRef({ selectedSyntax, selectedCommandId })
+  useEffect(() => {
+    if (
+      selectedCommandId !== lastSyntax.current.selectedCommandId ||
+      selectedSyntax !== lastSyntax.current.selectedSyntax
+    ) {
+      setSelectedParameters({})
+      lastSyntax.current = { selectedSyntax, selectedCommandId }
+    }
+  }, [selectedCommandId, selectedSyntax, setSelectedParameters])
+
   return (
     <Modal
       className={className}
@@ -176,7 +200,7 @@ export const CommandModal: React.FC<CommandModalProps> = ({
     >
       {currentStep === 0 && (
         <SelectCommandStep
-          selectedId={selectedId}
+          selectedId={selectedCommandId}
           commands={commands}
           recentCommands={recentCommands}
           frequentCommands={frequentCommands}
@@ -192,7 +216,10 @@ export const CommandModal: React.FC<CommandModalProps> = ({
             syntaxVariations={syntaxVariations}
             units={units}
             moduleNames={moduleNames}
-            onUpdateField={handleUpdatedField}
+            onUpdateField={handleTemplateParameterChange}
+            selectedSyntax={selectedSyntax}
+            onSelectSyntax={setSelectedSyntax}
+            selectedParameters={selectedParameters}
             serviceTypes={serviceTypes}
             variableTypes={variableTypes}
             missions={missions}
