@@ -319,7 +319,16 @@ export const BuildTemplatedCommandStep: React.FC<
         if (values[0] === 'Universal') {
           return values?.slice(-1)[0] ?? undefined
         }
-        return values.length > 2 ? values.slice(-2).join('.') : undefined
+        return values.length > 2
+          ? values
+              .map((v) => {
+                // extract any file name from a path i.e. script path
+                const file = v.match(/[a-zA-Z_]+(?=\.xml|\.tl)/)
+                return file ? file[0] : v
+              })
+              ?.slice(-2)
+              .join('.')
+          : undefined
       case 'ARG_COMPONENT':
         return value ? values[1] : value
       case 'ARG_COMMAND':
@@ -329,22 +338,23 @@ export const BuildTemplatedCommandStep: React.FC<
     }
   }
 
-  const argumentAsCommand = argList.reduce((acc, arg) => {
-    const id = idForArg(arg)
-    const isKeyWord = arg.argType === 'ARG_KEYWORD'
-    const value = formatValueForArg(
-      selectedParameters[isKeyWord ? arg.keyword ?? '' : arg.argType],
-      arg.argType
-    )
-    return isKeyWord
-      ? acc.replace(
-          id,
-          value === 'true' || arg.required === 'REQUIRED'
-            ? (arg.keyword as string)
-            : ''
-        )
-      : acc.replace(id, value ?? id)
-  }, argumentAsTemplate)
+  const argumentAsCommand = argList
+    .reduce((acc, arg) => {
+      const id = idForArg(arg)
+      const isKeyWord = arg.argType === 'ARG_KEYWORD'
+      const isRequired = arg.required === 'REQUIRED'
+      const value = formatValueForArg(
+        selectedParameters[isKeyWord ? arg.keyword ?? '' : arg.argType],
+        arg.argType
+      )
+      return isKeyWord
+        ? acc.replace(
+            id,
+            value === 'true' || isRequired ? (arg.keyword as string) : ''
+          )
+        : acc.replace(id, value ?? (isRequired ? id : ''))
+    }, argumentAsTemplate)
+    .replace(/\s+/g, ' ')
   return (
     <section className="flex h-full flex-col">
       <ul className="flex flex-col">
