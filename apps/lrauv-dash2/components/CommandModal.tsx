@@ -32,12 +32,12 @@ export const CommandModal: React.FC<CommandModalProps> = ({
     string | null | undefined
   >()
   const [selectedMission, setSelectedMission] = useState<string | undefined>()
-  const [configVariable, setConfigVariable] = useState({
+  const [configVariable, setConfigVariable] = useState<Record<string, string>>({
     Module: '',
     Component: '',
     Element: '',
   })
-  const [variable, setVariable] = useState({
+  const [variable, setVariable] = useState<Record<string, string>>({
     Variable: '',
     Mission: '',
     Module: '',
@@ -126,9 +126,10 @@ export const CommandModal: React.FC<CommandModalProps> = ({
       )?.description,
     })) ?? []
 
-  const handleSubmit = () => {
+  const handleSubmit: CommandModalViewProps['onSubmit'] = async () => {
     toast.success('Command sent!')
     onClose()
+    return undefined
   }
 
   const syntaxVariations = commandData?.commands.find(
@@ -145,7 +146,7 @@ export const CommandModal: React.FC<CommandModalProps> = ({
     case 'Mission':
       variableTypes.push({
         name: 'Mission',
-        options: missionData?.list?.map((m) => m.path),
+        options: missionData?.list?.map((m) => m.path) ?? [],
       })
       selectedMissionData?.scriptArgs &&
         variableTypes.push({
@@ -171,7 +172,7 @@ export const CommandModal: React.FC<CommandModalProps> = ({
       commands={commands}
       recentCommands={recentCommands}
       frequentCommands={frequentCommands}
-      currentIndex={0}
+      currentStepIndex={0}
       onSubmit={handleSubmit}
       onCancel={onClose}
       vehicleName={vehicleName}

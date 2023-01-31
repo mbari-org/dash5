@@ -323,7 +323,7 @@ export const BuildTemplatedCommandStep: React.FC<
         return values.length > 2 ? values.slice(-2).join('.') : undefined
       case 'ARG_VARIABLE':
         if (values[0] === 'Universal') {
-          return values.slice(-1)
+          return values?.slice(-1)[0] ?? undefined
         }
         return values.length > 2 ? values.slice(-2).join('.') : undefined
       case 'ARG_COMPONENT':
