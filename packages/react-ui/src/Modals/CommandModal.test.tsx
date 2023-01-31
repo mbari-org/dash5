@@ -99,9 +99,9 @@ test('should display progress bar steps', async () => {
 })
 
 // Step 1 tests
-test('should display recent commands placeholder text', async () => {
+test('should display template commands placeholder text', async () => {
   render(<CommandModal {...props} />)
-  expect(screen.queryByText(/recent commands/i)).toBeInTheDocument()
+  expect(screen.queryByText(/template/i)).toBeInTheDocument()
 })
 
 test('should display search commands placeholder text', async () => {

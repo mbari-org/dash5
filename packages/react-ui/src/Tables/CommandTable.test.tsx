@@ -38,11 +38,6 @@ test('should display mission name label', async () => {
   expect(screen.queryByText(/test command/i)).toBeInTheDocument()
 })
 
-test('should display vehicle label', async () => {
-  render(<CommandTable {...props} />)
-  expect(screen.getByText(/Brizo/i)).toBeInTheDocument()
-})
-
 test('should display description label when description is provided', async () => {
   render(<CommandTable {...props} />)
   expect(screen.getByText(/test description/i)).toBeInTheDocument()

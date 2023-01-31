@@ -14,7 +14,7 @@ const props: CommandDetailProps = {
     {
       name: 'Module',
       description: 'Description of a module',
-      value: 'Science',
+      value: 'Module____Science',
       inputType: 'string',
       argType: 'ARG_VARIABLE',
       options: [{ name: 'Module', options: ['Science', 'Alchemy'] }],
@@ -35,8 +35,8 @@ test('should render the component', async () => {
 
 test('should display the command name', async () => {
   render(<CommandDetailTable {...props} />)
-
-  expect(screen.getByText(props.parameters[0].name)).toBeInTheDocument()
+  // See supplied parameter values in props above as Module____Science.
+  expect(screen.getByText('Science')).toBeInTheDocument()
 })
 
 test('should display the command description', async () => {
