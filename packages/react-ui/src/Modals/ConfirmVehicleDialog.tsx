@@ -5,6 +5,7 @@ import { Dialog } from '../Modal/Dialog'
 import { FooterProps } from '../Modal/Footer'
 
 export interface ConfirmVehicleDialogProps extends FooterProps {
+  loading?: boolean
   vehicle: string
   vehicleList: string[]
   mission?: string | null
@@ -30,6 +31,7 @@ export const ConfirmVehicleDialog: React.FC<ConfirmVehicleDialogProps> = ({
   onConfirm,
   onCancel,
   onSubmit,
+  loading,
 }) => {
   const [differentVehicle, setDifferentVehicle] = useState<string | undefined>(
     undefined
@@ -61,13 +63,17 @@ export const ConfirmVehicleDialog: React.FC<ConfirmVehicleDialogProps> = ({
 
   const handleConfirm = () => {
     const confirmedVehicle = isCorrectVehicle ? vehicle : differentVehicle
-
     onSubmit?.(confirmedVehicle ?? vehicle)
   }
 
   const handleSelectVehicle = (id: string | null) => {
     setDifferentVehicle(id ?? vehicle)
     onChangeVehicle?.(id)
+  }
+
+  const setCurrentVehicleAsConfirmed = () => {
+    setIsCorrectVehicle(true)
+    onChangeVehicle?.(vehicle)
   }
 
   const message = (
@@ -79,7 +85,7 @@ export const ConfirmVehicleDialog: React.FC<ConfirmVehicleDialogProps> = ({
           name="vehicle"
           id="default"
           data-testid="default"
-          onChange={() => setIsCorrectVehicle(true)}
+          onChange={setCurrentVehicleAsConfirmed}
           checked={isCorrectVehicle}
         />
         <label htmlFor="default">
@@ -113,6 +119,7 @@ export const ConfirmVehicleDialog: React.FC<ConfirmVehicleDialogProps> = ({
 
   return (
     <Dialog
+      loading={loading}
       open
       title={title}
       message={message}

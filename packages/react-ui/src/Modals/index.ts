@@ -1,5 +1,6 @@
 import useManagedWaypoints from './MissionModalSteps/hooks/useManagedWaypoints'
 
+export * from './CommandModal'
 export * from './ConfirmStopModal'
 export * from './NewDeploymentModal'
 export * from './LoginModal'

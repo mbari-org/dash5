@@ -136,7 +136,14 @@ export const ScheduleSection: React.FC<ScheduleSectionProps> = ({
             }}
             tight
           />
-          <AccessoryButton label="Command" icon={faPlus} tight />
+          <AccessoryButton
+            label="Command"
+            icon={faPlus}
+            tight
+            onClick={() => {
+              setGlobalModalId({ id: 'newCommand' })
+            }}
+          />
         </div>
       )
     }

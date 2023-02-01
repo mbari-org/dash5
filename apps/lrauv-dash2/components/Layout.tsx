@@ -20,6 +20,7 @@ import DocumentInstanceModal from './DocumentInstanceModal'
 import AttachmentModal from './AttachmentModal'
 import DetachModal from './DetachModal'
 import MissionModal from './MissionModal'
+import { CommandModal } from './CommandModal'
 import { LogsModal } from './LogsModal'
 import { DocsModal } from './DocsModal'
 import { ChartsModal } from './ChartsModal'
@@ -164,6 +165,8 @@ const Layout: React.FC<{ children?: React.ReactNode }> = ({ children }) => {
         requireAuthentication(<DetachModal onClose={setModal(null)} />)}
       {globalModalId?.id === 'newMission' &&
         requireAuthentication(<MissionModal onClose={setModal(null)} />)}
+      {globalModalId?.id === 'newCommand' &&
+        requireAuthentication(<CommandModal onClose={setModal(null)} />)}
       {globalModalId?.id === 'vehicleComms' && vehicleName.length > 0 && (
         <CommsModal
           onClose={setModal(null)}

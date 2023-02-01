@@ -6,7 +6,7 @@ import {
 } from './getFrequentCommands'
 
 let params: GetFrequentCommandsParams = {
-  vehicleName: 'example',
+  vehicle: 'example',
 }
 
 const mockResponse = {

@@ -3,7 +3,7 @@ import { setupServer } from 'msw/node'
 import { getRecentCommands, GetRecentCommandsParams } from './getRecentCommands'
 
 let params: GetRecentCommandsParams = {
-  vehicleName: 'example',
+  vehicle: 'example',
 }
 
 const mockResponse = {

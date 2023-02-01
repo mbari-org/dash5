@@ -20,8 +20,25 @@ export interface Syntax {
   help: string
 }
 
+export type ArgumentType =
+  | 'ARG_FLOAT'
+  | 'ARG_INT'
+  | 'ARG_SECONDS'
+  | 'ARG_QUOTED_STRING'
+  | 'ARG_STRING'
+  | 'ARG_REGEX'
+  | 'ARG_TIMESTAMP'
+  | 'ARG_TOKEN'
+  | 'ARG_KEYWORD'
+  | 'ARG_MISSION'
+  | 'ARG_SERVICE_TYPE'
+  | 'ARG_UNIT'
+  | 'ARG_UNIVERSAL'
+  | 'ARG_VARIABLE'
+  | 'ARG_NONE'
+
 export interface Arg {
-  argType: string
+  argType: ArgumentType
   keyword?: string
   required?: string
 }

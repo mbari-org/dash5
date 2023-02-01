@@ -1,9 +1,9 @@
 import { TextArea } from '../../Fields/TextArea'
-import React, { useState } from 'react'
 
 export interface AlternativeAddressProps {
   vehicleName: string
   mission: string
+  commandDescriptor?: string
   alternativeAddresses?: string[]
   onNotesChanged?: (notes: string) => void
   onAlternativeAddressChanged?: (address: string) => void
@@ -14,6 +14,7 @@ export interface AlternativeAddressProps {
 export const AlternativeAddressStep: React.FC<AlternativeAddressProps> = ({
   vehicleName,
   mission,
+  commandDescriptor = 'mission',
   alternativeAddresses = [],
   alternateAddress = null,
   notes = null,
@@ -35,7 +36,7 @@ export const AlternativeAddressStep: React.FC<AlternativeAddressProps> = ({
         <span className="text-teal-500" data-testid="mission name">
           {mission}
         </span>{' '}
-        mission for{' '}
+        {commandDescriptor} for{' '}
         <span className="text-teal-500" data-testid="mission name">
           {vehicleName}
         </span>

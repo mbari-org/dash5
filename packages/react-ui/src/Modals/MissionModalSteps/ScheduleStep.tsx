@@ -7,7 +7,8 @@ export type ScheduleOption = 'ASAP' | 'end' | 'time'
 
 export interface ScheduleProps {
   vehicleName: string
-  mission: string
+  commandText: string
+  commandDescriptor?: string
   waypointCount?: number
   overrideCount?: number
   onNotesChanged?: (notes: string) => void
@@ -22,7 +23,8 @@ export interface ScheduleProps {
 
 export const ScheduleStep: React.FC<ScheduleProps> = ({
   vehicleName,
-  mission,
+  commandText,
+  commandDescriptor = 'mission',
   waypointCount,
   overrideCount,
   onNotesChanged,
@@ -41,19 +43,26 @@ export const ScheduleStep: React.FC<ScheduleProps> = ({
     onNotesChanged?.(e.target.value)
   }
 
+  const customizationsCount = (waypointCount ?? 0) + (overrideCount ?? 0)
+  const hasBothCustomizations = waypointCount !== overrideCount
+  const overrideSummary = customizationsCount
+    ? `with ${(waypointCount ?? 0) > 0 ? `${waypointCount} waypoint(s)` : ''} ${
+        hasBothCustomizations ? 'and' : ''
+      } ${(overrideCount ?? 0) > 0 ? `${overrideCount} override(s)` : ''}`
+    : ''
+
   return (
     <article className="h-full">
       <section className="mx-4 mb-6">
         Schedule{' '}
         <span className="text-teal-500" data-testid="mission name">
-          {mission}
+          {commandText}
         </span>{' '}
-        mission for{' '}
+        {commandDescriptor} for{' '}
         <span className="text-teal-500" data-testid="mission name">
           {vehicleName}
         </span>{' '}
-        with {waypointCount || 'no'} waypoint(s) and {overrideCount ?? 'no'}{' '}
-        override(s)
+        {overrideSummary}
       </section>
       <ul className="ml-4 -mt-1 flex max-h-full flex-col">
         {[

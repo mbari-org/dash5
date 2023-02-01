@@ -26,7 +26,14 @@ export const useRecentCommands = (
       const keyword = commandEvent.text?.replace('%20', ' ').split(' ')[0]
       const command = commands.data?.commands.find((c) => c.keyword === keyword)
       if (command) {
-        return { writtenCommand: commandEvent.text, command }
+        return {
+          writtenCommand: commandEvent.text,
+          command,
+          time: commandEvent.isoTime,
+          note: commandEvent.note,
+          user: commandEvent.user,
+          id: commandEvent.eventId,
+        }
       }
       return undefined
     })
