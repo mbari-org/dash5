@@ -12,18 +12,16 @@ const printUnit = (p: ParameterProps) => {
 
 export const makeCommand = ({
   commandText,
-  scheduleMethod,
+  scheduleMethod = 'end',
   specifiedTime,
 }: {
   commandText: string
-  scheduleMethod: ScheduleOption
-  specifiedTime?: string
+  scheduleMethod?: ScheduleOption
+  specifiedTime?: string | null
 }) => {
   switch (scheduleMethod) {
     case 'ASAP':
       return `sched asap "${commandText}"`
-    case 'end':
-      return `sched "${commandText}"`
     case 'time':
       if (!specifiedTime) {
         return ''
@@ -32,6 +30,8 @@ export const makeCommand = ({
       return `sched ${t.toFormat('yyyyMMdd')}T${t.toFormat(
         'HHmm'
       )} "${commandText}"`
+    default:
+      return `sched "${commandText}"`
   }
 }
 
@@ -56,7 +56,7 @@ export const makeMissionCommand = ({
     )
   })
   commands.push('run')
-  makeCommand({
+  return makeCommand({
     commandText: commands.join('; '),
     scheduleMethod,
     specifiedTime,
