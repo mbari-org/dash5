@@ -5,7 +5,7 @@ import { RequestConfig } from '../types'
 import { GetEventsResponse } from '../Event/getEvents'
 
 export interface GetRecentCommandsParams {
-  vehicleName: string
+  vehicle: string
   limit?: number
 }
 

@@ -3,86 +3,106 @@ import { Modal } from '../Modal/Modal'
 import { StepProgress, StepProgressProps } from '../Navigation/StepProgress'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { faChevronDoubleRight } from '@fortawesome/pro-solid-svg-icons'
-import { faInfoCircle } from '@fortawesome/pro-regular-svg-icons'
-import { IconButton } from '../Navigation'
-import { Input, SelectField } from '../Fields'
+import { ConfirmVehicleDialog } from './ConfirmVehicleDialog'
+
+// Special reuse of MissionModalStep which is identical here.
+import { ScheduleOption, ScheduleStep } from './MissionModalSteps/ScheduleStep'
+import { AlternativeAddressStep } from './MissionModalSteps/AlternativeAddressStep'
+
 import {
-  Command,
-  CommandTable,
-  CommandTableProps,
-} from '../Tables/CommandTable'
-import { SelectOption } from '../Fields/Select'
-import { SortDirection } from '../Data/TableHeader'
-import { sortByProperty } from '@mbari/utils'
+  SelectCommandStep,
+  SelectCommandStepProps,
+} from './CommandModalSteps/SelectCommandStep'
+import { BuildFreeformCommandStep } from './CommandModalSteps/BuildFreeformCommandStep'
 import {
-  ScheduleCommandForm,
-  ScheduleCommandFormValues,
-} from '../Forms/ScheduleCommandForm'
-import { AsyncSubmitHandler } from '@sumocreations/forms'
+  BuildTemplatedCommandStep,
+  BuildTemplatedCommandStepProps,
+  CommandSyntax,
+} from './CommandModalSteps/BuildTemplatedCommandStep'
+import { OptionSet, CommandDetailProps } from '../Tables/CommandDetailTable'
 import { ExtraButton } from '../Modal/Footer'
+
+export type OnScheduleCommandHandler = (args: {
+  commandText: string
+  alternateAddress?: string | null
+  specifiedTime?: string | null
+  notes?: string | null
+  scheduleMethod?: ScheduleOption
+  scheduleId?: string | null
+  confirmedVehicle?: string | null
+  preview?: boolean
+}) => void
 
 export interface CommandModalProps
   extends StepProgressProps,
-    CommandTableProps {
+    SelectCommandStepProps {
+  loading?: boolean
   className?: string
   style?: React.CSSProperties
   vehicleName: string
-  recentCommands?: SelectOption[]
   onCancel?: () => void
-  onSubmit: AsyncSubmitHandler<ScheduleCommandFormValues>
-  onAltAddressSubmit?: AsyncSubmitHandler<ScheduleCommandFormValues>
-  onMoreInfo?: () => void
+  onSchedule: OnScheduleCommandHandler
+  alternativeAddresses?: string[]
+  syntaxVariations?: CommandSyntax[]
+  units?: OptionSet[]
+  moduleNames?: OptionSet[]
+  missions?: OptionSet[]
+  decimationTypes?: OptionSet[]
+  serviceTypes?: OptionSet[]
+  variableTypes?: OptionSet[]
+  universals?: OptionSet[]
+  onUpdateField?: CommandDetailProps['onSelect']
+  onSelectModule?: (module: string) => void
+  onSelectOutputUri?: (outputUri: string) => void
+  vehicles?: string[]
 }
 
 export const CommandModal: React.FC<CommandModalProps> = ({
+  loading,
   className,
   style,
   steps,
   currentStepIndex,
   vehicleName,
   commands,
-  selectedId,
   recentCommands,
+  frequentCommands,
+  selectedId,
   onCancel,
-  onSubmit,
-  onAltAddressSubmit,
-  onMoreInfo,
+  onSchedule,
+  alternativeAddresses,
+  onMoreInfo: handleMoreInfo,
+  onSelectCommandId,
+  syntaxVariations,
+  units,
+  moduleNames,
+  serviceTypes,
+  variableTypes,
+  missions,
+  vehicles,
+  universals,
+  decimationTypes,
+  onUpdateField: handleUpdatedField,
 }) => {
   const submitButtonRef = useRef<HTMLButtonElement | null>(null)
-  const [currentStep, setCurrentStep] = useState(currentStepIndex)
-  const [selectedCommandId, setSelectedCommandId] = useState<
+  const [selectedCommandId, setSelectedCommandId] =
+    useState<SelectCommandStepProps['selectedId']>(selectedId)
+  const [currentStep, setCurrentStep] = useState(currentStepIndex ?? 0)
+  const [selectedCommandName, setSelectedCommandName] = useState<
     string | null | undefined
-  >(selectedId)
-  const [selectedRecentId, setSelectedRecentId] = useState<
-    string | null | undefined
-  >('')
-  const [searchTerm, setSearchTerm] = useState('')
-  const [filteredCommands, setFilteredCommands] = useState<Command[]>(commands)
-  const [sortColumn, setSortColumn] = useState<number | null | undefined>(null)
-  const [sortDirection, setSortDirection] = useState<SortDirection>(null)
+  >(null)
+  const [useTemplateStep, setUseTemplateStep] = useState(false)
 
-  useEffect(() => {
-    if (selectedRecentId) {
-      setSearchTerm('')
-      setSortDirection(null)
-      const filteredByRecent = commands.filter(
-        ({ id }) => id === selectedRecentId
-      )
-      setFilteredCommands(filteredByRecent.length ? filteredByRecent : commands)
-    }
-
-    if (searchTerm) {
-      setSortDirection(null)
-      const searchResults = commands.filter(({ name }) =>
-        name.includes(searchTerm)
-      )
-      setFilteredCommands(searchResults)
-    }
-
-    if (!selectedRecentId && !searchTerm) {
-      setFilteredCommands(commands)
-    }
-  }, [searchTerm, selectedRecentId, commands])
+  const handleSelectCommandId: SelectCommandStepProps['onSelectCommandId'] = (
+    id,
+    name,
+    isTemplate
+  ) => {
+    setSelectedCommandId(id ?? undefined)
+    setSelectedCommandName(name)
+    setUseTemplateStep(isTemplate ?? false)
+    onSelectCommandId?.(id)
+  }
 
   const isLastStep = currentStep === steps.length - 1
   const confirmButtonText = isLastStep ? (
@@ -95,31 +115,21 @@ export const CommandModal: React.FC<CommandModalProps> = ({
   )
 
   const handleNext = () => {
+    console.log('Handle Next', selectedCommandId, '->', currentStep + 1)
     if (selectedCommandId) {
       return setCurrentStep(currentStep + 1)
     }
   }
 
   const handlePrevious = () => {
+    if (showAlternateAddress) {
+      setAlternateAddress(null)
+      setShowAlternateAddress(false)
+      return
+    }
     if (currentStep > 0) {
       return setCurrentStep(currentStep - 1)
     }
-  }
-
-  const handleSelectRecent = (id: string | null) => {
-    if (!id) {
-      setSelectedCommandId(null)
-    }
-    setSearchTerm('')
-    setSelectedRecentId(id)
-  }
-
-  const handleSearch = (term: string) => {
-    if (selectedRecentId || selectedCommandId) {
-      setSelectedCommandId(null)
-      setSelectedRecentId(null)
-    }
-    setSearchTerm(term)
   }
 
   const getCommandNameById = (id: string) => {
@@ -127,23 +137,17 @@ export const CommandModal: React.FC<CommandModalProps> = ({
     return selectedCommand?.name
   }
 
-  const handleSort = (column: number, isAscending?: boolean) => {
-    const sortableColumns: string[] = ['name', 'vehicle', 'description']
-    const sortProperty = sortableColumns[column] as keyof Command
-    const updatedIsAscending = !isAscending
+  // Schedule section details
+  const [alternateAddress, setAlternateAddress] = useState<string | null>(null)
+  const [confirmedVehicle, setConfirmedVehicle] = useState<string | null>(null)
+  const [showAlternateAddress, setShowAlternateAddress] = useState(false)
+  const [scheduleOption, setScheduleOption] = useState<ScheduleOption | null>(
+    null
+  )
+  const [customScheduleId, setCustomScheduleId] = useState<string | null>(null)
+  const [notes, setNotes] = useState<string | null>(null)
+  const [specifiedTime, setSpecifiedTime] = useState<string | null>(null)
 
-    const sortedCommands = sortByProperty({
-      arrOfObj: [...filteredCommands],
-      sortProperty,
-      secondarySort: 'name',
-      sortAscending: updatedIsAscending,
-    })
-    setSortColumn(column)
-    setSortDirection(updatedIsAscending ? 'asc' : 'desc')
-    setFilteredCommands(sortedCommands as Command[])
-  }
-
-  const [shouldUseAltAddress, setShouldUseAltAddress] = useState(false)
   const extraButtons = () => {
     if (currentStep === 0) return []
 
@@ -157,31 +161,67 @@ export const CommandModal: React.FC<CommandModalProps> = ({
       appearance: 'secondary',
       type: 'submit',
       onClick: () => {
-        if (submitButtonRef.current) {
-          setShouldUseAltAddress(true)
-          submitButtonRef.current.click()
-        }
+        setShowAlternateAddress(true)
       },
     }
 
-    return isLastStep && onAltAddressSubmit
+    return isLastStep && !!alternativeAddresses && !showAlternateAddress
       ? [backButton, altAddressButton]
       : [backButton]
   }
 
-  const handleScheduleSubmit: CommandModalProps['onSubmit'] = useCallback(
-    async (values) => {
-      if (shouldUseAltAddress) {
-        setShouldUseAltAddress(false)
-        return await onAltAddressSubmit?.(values)
-      }
-      return onSubmit(values)
-    },
-    [shouldUseAltAddress, onAltAddressSubmit, onSubmit]
-  )
+  // Command text state
+  const [commandText, setCommandText] = useState<string | null>(null)
 
-  return (
+  // Templated Command State
+  const [selectedSyntax, setSelectedSyntax] = useState<string | null>(null)
+  const [selectedParameters, setSelectedParameters] = useState<{
+    [key: string]: string
+  }>({})
+  const handleTemplateParameterChange: BuildTemplatedCommandStepProps['onUpdateField'] =
+    (param, argType, value) => {
+      const lookup = argType === 'ARG_KEYWORD' ? param : argType
+      setSelectedParameters({ ...selectedParameters, [lookup]: value })
+      handleUpdatedField?.(param, argType, value)
+    }
+
+  // Reset params when command or syntax changes
+  const lastSyntax = useRef({ selectedSyntax, selectedCommandId })
+  useEffect(() => {
+    if (
+      selectedCommandId !== lastSyntax.current.selectedCommandId ||
+      selectedSyntax !== lastSyntax.current.selectedSyntax
+    ) {
+      setSelectedParameters({})
+      lastSyntax.current = { selectedSyntax, selectedCommandId }
+    }
+  }, [selectedCommandId, selectedSyntax, setSelectedParameters])
+
+  const handleSchedule = () => {
+    onSchedule({
+      commandText: commandText ?? '',
+      specifiedTime,
+      alternateAddress,
+      scheduleId: customScheduleId,
+      scheduleMethod: scheduleOption as ScheduleOption,
+      confirmedVehicle: confirmedVehicle ?? vehicleName,
+      notes,
+    })
+  }
+
+  return currentStep === 3 ? (
+    <ConfirmVehicleDialog
+      loading={loading}
+      vehicle={vehicleName}
+      vehicleList={vehicles ?? [vehicleName]}
+      command={commandText ?? ''}
+      onChangeVehicle={setConfirmedVehicle}
+      onCancel={handlePrevious}
+      onConfirm={handleSchedule}
+    />
+  ) : (
     <Modal
+      loading={loading}
       className={className}
       style={style}
       title={
@@ -191,74 +231,86 @@ export const CommandModal: React.FC<CommandModalProps> = ({
           className="h-[52px] w-[512px]"
         />
       }
-      onConfirm={isLastStep ? null : handleNext}
+      onConfirm={handleNext}
       onCancel={onCancel}
       confirmButtonText={confirmButtonText}
       extraButtons={extraButtons()}
       extraWideModal
       bodyOverflowHidden
-      form={isLastStep ? 'scheduleCommandForm' : undefined}
+      snapTo="top-right"
       open
     >
       {currentStep === 0 && (
-        <section className="h-full">
-          <ul className="grid grid-cols-5 pb-2">
-            <li className="col-span-2 self-center">
-              Select a command for{' '}
-              <span className="text-teal-500" data-testid="vehicle name">
-                {vehicleName}
-              </span>
-              <IconButton
-                icon={faInfoCircle}
-                ariaLabel="More info"
-                onClick={onMoreInfo}
-              />
-            </li>
-            <li className="col-span-3 flex items-center">
-              <SelectField
-                name="Recent commands"
-                placeholder="Recent Commands"
-                options={recentCommands}
-                value={selectedRecentId ?? undefined}
-                onSelect={(id) => handleSelectRecent(id)}
-                clearable
-              />
-              <Input
-                name="Search commands field"
-                placeholder="Search commands"
-                className="ml-2 h-full flex-grow"
-                value={searchTerm}
-                onChange={(e) => handleSearch(e.target.value)}
-              />
-            </li>
-          </ul>
-
-          <CommandTable
-            commands={filteredCommands}
-            selectedId={selectedCommandId ? selectedCommandId : ''}
-            onSelectCommand={setSelectedCommandId}
-            onSortColumn={handleSort}
-            // calculated max height provides responsive table size without clipping inside modal
-            className="max-h-[calc(100%-40px)]"
-            activeSortColumn={sortColumn}
-            sortDirection={sortDirection}
-          />
-        </section>
-      )}
-      {currentStep === 1 && (
-        <p className="mt-4 text-[50px] text-stone-400/80">
-          Placeholder for future steps
-        </p>
-      )}
-      {currentStep === 2 && selectedCommandId && (
-        <ScheduleCommandForm
+        <SelectCommandStep
+          selectedId={selectedCommandId}
+          commands={commands}
+          recentCommands={recentCommands}
+          frequentCommands={frequentCommands}
+          onSelectCommandId={handleSelectCommandId}
+          onMoreInfo={handleMoreInfo}
           vehicleName={vehicleName}
-          command={getCommandNameById(selectedCommandId) ?? ''}
-          onSubmit={handleScheduleSubmit}
-          id="scheduleCommandForm"
-          ref={submitButtonRef}
         />
       )}
+      {currentStep === 1 &&
+        (useTemplateStep ? (
+          <BuildTemplatedCommandStep
+            selectedCommandName={selectedCommandName ?? 'unknown command'}
+            syntaxVariations={syntaxVariations}
+            units={units}
+            moduleNames={moduleNames}
+            onUpdateField={handleTemplateParameterChange}
+            selectedSyntax={selectedSyntax}
+            onSelectSyntax={setSelectedSyntax}
+            selectedParameters={selectedParameters}
+            serviceTypes={serviceTypes}
+            variableTypes={variableTypes}
+            missions={missions}
+            universals={universals}
+            decimationTypes={decimationTypes}
+            commands={[
+              {
+                name: 'Command',
+                options: commands.map((c) => c.name),
+              },
+            ]}
+            onCommandTextChange={setCommandText}
+          />
+        ) : (
+          <BuildFreeformCommandStep
+            command={commandText ?? selectedCommandName ?? ''}
+            onCommandTextChange={setCommandText}
+          />
+        ))}
+      {currentStep === 2 &&
+        selectedCommandId &&
+        (showAlternateAddress ? (
+          <AlternativeAddressStep
+            alternateAddress={alternateAddress}
+            vehicleName={vehicleName}
+            mission={commandText ?? getCommandNameById(selectedCommandId) ?? ''}
+            commandDescriptor="command"
+            alternativeAddresses={alternativeAddresses}
+            onNotesChanged={setNotes}
+            notes={notes}
+            onAlternativeAddressChanged={setAlternateAddress}
+          />
+        ) : (
+          <ScheduleStep
+            vehicleName={vehicleName}
+            commandText={
+              commandText ?? getCommandNameById(selectedCommandId) ?? ''
+            }
+            commandDescriptor="command"
+            scheduleId={customScheduleId}
+            onScheduleIdChanged={setCustomScheduleId}
+            scheduleMethod={scheduleOption}
+            onScheduleMethodChanged={setScheduleOption}
+            notes={notes}
+            onNotesChanged={setNotes}
+            specifiedTime={specifiedTime}
+            onSpecifiedTimeChanged={setSpecifiedTime}
+          />
+        ))}
     </Modal>
   )
 }

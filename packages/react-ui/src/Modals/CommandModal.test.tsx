@@ -1,8 +1,6 @@
-import React from 'react'
 import { render, screen } from '@testing-library/react'
 import '@testing-library/jest-dom'
 import { CommandModal, CommandModalProps } from './CommandModal'
-import { ScheduleCommandFormValues } from '../Forms/ScheduleCommandForm'
 
 const props: CommandModalProps = {
   steps: ['Command', 'Build', 'Schedule'],
@@ -62,7 +60,7 @@ const props: CommandModalProps = {
       }`
     )
   },
-  onSubmit: async (values: ScheduleCommandFormValues) => {
+  onSchedule: async (values) => {
     console.log(values)
     return undefined
   },
@@ -99,9 +97,9 @@ test('should display progress bar steps', async () => {
 })
 
 // Step 1 tests
-test('should display recent commands placeholder text', async () => {
+test('should display template commands placeholder text', async () => {
   render(<CommandModal {...props} />)
-  expect(screen.queryByText(/recent commands/i)).toBeInTheDocument()
+  expect(screen.queryByText(/template/i)).toBeInTheDocument()
 })
 
 test('should display search commands placeholder text', async () => {
@@ -136,7 +134,7 @@ test('should render extra buttons and correct button text', () => {
     <CommandModal
       {...props}
       currentStepIndex={2}
-      onAltAddressSubmit={props.onSubmit}
+      alternativeAddresses={['one@example.com', 'two@example.com']}
     />
   )
 

@@ -98,7 +98,7 @@ afterEach(() => server.resetHandlers())
 afterAll(() => server.close())
 
 const MockCommands: React.FC = () => {
-  const query = useFrequentCommands({ vehicleName: 'sim' })
+  const query = useFrequentCommands({ vehicle: 'sim' })
 
   return query.isLoading ? null : (
     <div>

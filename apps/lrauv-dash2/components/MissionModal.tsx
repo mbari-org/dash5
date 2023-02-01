@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import {
   MissionModal as MissionModalView,
   MissionModalProps as MissionModalViewProps,
@@ -82,10 +82,10 @@ const MissionModal: React.FC<MissionModalProps> = ({
 }) => {
   // Global waypoints
   const { handleWaypointsUpdate, updatedWaypoints } = useManagedWaypoints()
-  const onClose = () => {
+  const onClose = useCallback(() => {
     handleWaypointsUpdate([])
     handleClose?.()
-  }
+  }, [handleClose, handleWaypointsUpdate])
   const [estDistance, setEstDistance] = useState<number | null>(null)
   useEffect(() => {
     const applicableWaypoints = updatedWaypoints.filter(

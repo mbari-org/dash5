@@ -59,7 +59,7 @@ const Vehicle: NextPage = () => {
   const [mounted, setMounted] = useState(false)
   useEffect(() => {
     mounted || setMounted(true)
-  })
+  }, [mounted, setMounted])
 
   const { drawerOpen, setDrawerOpen } = useGlobalDrawerState()
   const { authenticated } = useTethysApiContext()

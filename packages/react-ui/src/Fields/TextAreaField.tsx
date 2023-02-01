@@ -1,3 +1,4 @@
+import clsx from 'clsx'
 import React from 'react'
 import { Field, FieldProps, getErrorMessage } from './Field'
 import { TextArea } from './TextArea'
@@ -9,6 +10,8 @@ export interface TextAreaFieldInputProps {
   onFocus?: React.FocusEventHandler<HTMLTextAreaElement>
   onBlur?: React.FocusEventHandler<HTMLTextAreaElement>
   children?: React.ReactNode
+  value?: string
+  textAreaClassNames?: string
 }
 
 export type TextAreaFieldProps = TextAreaFieldInputProps & FieldProps
@@ -34,6 +37,7 @@ export const TextAreaField = React.forwardRef<
       onChange,
       onBlur,
       onFocus,
+      textAreaClassNames,
       ...fieldProps
     },
     forwardedRef
@@ -58,10 +62,11 @@ export const TextAreaField = React.forwardRef<
           disabled={disabled}
           error={hasError(determinedErrorMessage)}
           ref={forwardedRef}
-          className={getPaddingForField(hasIcon)}
+          className={clsx(getPaddingForField(hasIcon), textAreaClassNames)}
           onChange={onChange}
           onFocus={onFocus}
           onBlur={onBlur}
+          value={fieldProps.value}
         />
       </Field>
     )

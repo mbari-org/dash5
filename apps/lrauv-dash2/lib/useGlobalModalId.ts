@@ -13,6 +13,7 @@ export type ModalId =
   | 'attachDocument'
   | 'detachDocument'
   | 'newMission'
+  | 'newCommand'
   | 'vehicleLogs'
   | 'vehicleDocs'
   | 'vehicleCharts'

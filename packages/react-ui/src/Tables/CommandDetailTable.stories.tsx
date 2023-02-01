@@ -13,39 +13,51 @@ const Template: Story<CommandDetailProps> = (args) => (
 )
 
 const args: CommandDetailProps = {
-  commands: [
+  parameters: [
     {
       name: 'Module',
       description: 'Description of a module',
       value: 'Science',
-      options: ['Science', 'Alchemy'],
+      inputType: 'string',
+      argType: 'ARG_STRING',
+      options: [{ name: 'Module', options: ['Science', 'Navigation'] }],
     },
     {
       name: 'Component',
       description: 'Description of a component',
       value: 'CTD_Seabird',
-      options: ['CTD_Seabird', 'GTO_Mustang'],
+      inputType: 'string',
+      argType: 'ARG_STRING',
+      options: [{ name: 'Component', options: ['CTD_Seabird', 'CTD_Wetlabs'] }],
     },
     {
       name: 'Element',
       description: 'Description of a element',
       value: 'loadAtStartup',
-      options: ['loadAtStartup', 'componentDidMount'],
+      inputType: 'string',
+      argType: 'ARG_STRING',
+      options: [
+        { name: 'Element', options: ['loadAtStartup', 'loadAtStartup'] },
+      ],
     },
     {
       name: 'Float number',
       description: 'Description of a float number',
       value: '1',
-      options: ['1', '2022'],
+      inputType: 'number',
+      argType: 'ARG_STRING',
     },
     {
       name: 'Unit',
       description: 'Description of a unit',
       value: 'bool',
-      options: ['bool', 'nand'],
+      inputType: 'boolean',
+      argType: 'ARG_STRING',
     },
     {
       name: 'Persist',
+      inputType: 'boolean',
+      argType: 'ARG_STRING',
       description: 'Description of a unit',
     },
   ],
@@ -56,7 +68,7 @@ export const Standard = Template.bind({})
 Standard.args = args
 Standard.parameters = {
   design: {
-    type: 'figma',
+    inputType: 'figma',
     url: 'https://www.figma.com/file/FtsKsOCBQ2YjTZlwezG6aI/MBARI-Components?node-id=5569%3A805',
   },
 }
