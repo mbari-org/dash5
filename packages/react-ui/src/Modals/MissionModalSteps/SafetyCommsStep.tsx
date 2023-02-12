@@ -13,8 +13,16 @@ export interface SafetyCommsProps extends StatProps {
   mission: string
   safetyParams: ParameterProps[]
   commsParams: ParameterProps[]
-  onSafetyUpdate: (name: string, newOverrideValue: string) => void
-  onCommsUpdate: (name: string, newOverrideValue: string) => void
+  onSafetyUpdate: (
+    name: string,
+    newOverrideValue: string,
+    newOverrideUnit: string
+  ) => void
+  onCommsUpdate: (
+    name: string,
+    newOverrideValue: string,
+    newOverrideUnit: string
+  ) => void
   onVerifyValue?: (param: string) => string
   unitOptions?: ParameterTableProps['unitOptions']
 }
