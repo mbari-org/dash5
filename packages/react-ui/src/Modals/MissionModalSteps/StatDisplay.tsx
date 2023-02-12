@@ -1,12 +1,14 @@
 import React from 'react'
 import { IconButton } from '../../Navigation/IconButton'
 import { faSync } from '@fortawesome/pro-solid-svg-icons'
+import clsx from 'clsx'
 
 export interface StatProps {
   totalDistance?: string
   bottomDepth?: string
   duration?: string
   onRefreshStats?: () => void
+  className?: string
 }
 
 const styles = {
@@ -18,9 +20,10 @@ export const StatDisplay: React.FC<StatProps> = ({
   bottomDepth,
   duration,
   onRefreshStats,
+  className,
 }) => {
   return (
-    <ul className="mr-4 mt-2 flex items-center justify-end">
+    <ul className={clsx('mr-4 mt-2 flex items-center justify-end', className)}>
       {onRefreshStats && (
         <li className="rounded border-2 border-stone-300/60">
           <IconButton

@@ -1,7 +1,11 @@
 import React, { useEffect, useState } from 'react'
 import { SelectOption } from '../../Fields/Select'
 import { Input, SelectField } from '../../Fields'
-import { ParameterTable, ParameterProps } from '../../Tables/ParameterTable'
+import {
+  ParameterTable,
+  ParameterProps,
+  ParameterTableProps,
+} from '../../Tables/ParameterTable'
 import { StatDisplay, StatProps } from './StatDisplay'
 
 export interface SafetyCommsProps extends StatProps {
@@ -12,6 +16,7 @@ export interface SafetyCommsProps extends StatProps {
   onSafetyUpdate: (name: string, newOverrideValue: string) => void
   onCommsUpdate: (name: string, newOverrideValue: string) => void
   onVerifyValue?: (param: string) => string
+  unitOptions?: ParameterTableProps['unitOptions']
 }
 
 export const SafetyCommsStep: React.FC<SafetyCommsProps> = ({
@@ -25,6 +30,7 @@ export const SafetyCommsStep: React.FC<SafetyCommsProps> = ({
   onVerifyValue,
   onSafetyUpdate,
   onCommsUpdate,
+  unitOptions,
 }) => {
   const [initialSafetyParams, setInitialSafetyParams] = useState(safetyParams)
   const [initialCommsParams, setInitialCommsParams] = useState(commsParams)
@@ -125,7 +131,7 @@ export const SafetyCommsStep: React.FC<SafetyCommsProps> = ({
   }
 
   return (
-    <article className="h-full">
+    <article className="flex h-full flex-col">
       <section className="pb-2">
         <div className="mb-4">
           Set mission parameters for {vehicleName}&apos;s{' '}
@@ -158,31 +164,32 @@ export const SafetyCommsStep: React.FC<SafetyCommsProps> = ({
           </ul>
         </div>
       </section>
-
-      <section className="h-[calc(90%-50px)]">
-        <ParameterTable
-          className="mb-4 max-h-[calc(50%-30px)] min-h-[100px]"
-          altHeaderLabel="SAFETY PARAMETERS"
-          parameters={filteredSafetyParams}
-          onParamUpdate={onSafetyUpdate}
-          onVerifyValue={onVerifyValue}
-        />
-
-        <ParameterTable
-          className="max-h-[calc(50%-30px)] min-h-[100px]"
-          altHeaderLabel="COMMS PARAMETERS"
-          parameters={filteredCommsParams}
-          onParamUpdate={onCommsUpdate}
-          onVerifyValue={onVerifyValue}
-        />
-        <div className="h-[10px]">
-          <StatDisplay
-            totalDistance={totalDistance}
-            bottomDepth={bottomDepth}
-            duration={duration}
+      <section className="grid flex-grow grid-rows-2 gap-2 overflow-hidden">
+        {filteredSafetyParams.length > 0 && (
+          <ParameterTable
+            altHeaderLabel="SAFETY PARAMETERS"
+            parameters={filteredSafetyParams}
+            onParamUpdate={onSafetyUpdate}
+            onVerifyValue={onVerifyValue}
+            unitOptions={unitOptions}
           />
-        </div>
+        )}
+        {filteredCommsParams.length > 0 && (
+          <ParameterTable
+            altHeaderLabel="COMMS PARAMETERS"
+            parameters={filteredCommsParams}
+            onParamUpdate={onCommsUpdate}
+            onVerifyValue={onVerifyValue}
+            unitOptions={unitOptions}
+          />
+        )}
       </section>
+      <StatDisplay
+        className="flex-shrink-0 flex-grow-0"
+        totalDistance={totalDistance}
+        bottomDepth={bottomDepth}
+        duration={duration}
+      />
     </article>
   )
 }

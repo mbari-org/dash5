@@ -1,5 +1,8 @@
 import { useState, useEffect } from 'react'
-import { ParameterProps } from '../../../Tables/ParameterTable'
+import {
+  ParameterProps,
+  ParameterTableProps,
+} from '../../../Tables/ParameterTable'
 
 const useManagedParameters = ({
   parameters,
@@ -37,38 +40,52 @@ const useManagedParameters = ({
   const updateParams = (
     params: ParameterProps[],
     name: string,
-    newOverrideValue: string
+    overrideValue: string,
+    overrideUnit?: string
   ) => {
     return params.map((param) =>
-      param.name === name
-        ? { ...param, overrideValue: newOverrideValue }
-        : param
+      param.name === name ? { ...param, overrideValue, overrideUnit } : param
     )
   }
 
-  const handleParamUpdate = (name: string, newOverrideValue: string) => {
+  const handleParamUpdate: ParameterTableProps['onParamUpdate'] = (
+    name: string,
+    overrideValue: string,
+    overrideUnit: string
+  ) => {
     const newParameters = updateParams(
       updatedParameters,
       name,
-      newOverrideValue
+      overrideValue,
+      overrideUnit
     )
     setUpdatedParameters(newParameters)
   }
 
-  const handleSafetyUpdate = (name: string, newOverrideValue: string) => {
+  const handleSafetyUpdate: ParameterTableProps['onParamUpdate'] = (
+    name: string,
+    newOverrideValue: string,
+    overrideUnit: string
+  ) => {
     const newSafetyParams = updateParams(
       updatedSafetyParams,
       name,
-      newOverrideValue
+      newOverrideValue,
+      overrideUnit
     )
     setUpdatedSafetyParams(newSafetyParams)
   }
 
-  const handleCommsUpdate = (name: string, newOverrideValue: string) => {
+  const handleCommsUpdate: ParameterTableProps['onParamUpdate'] = (
+    name: string,
+    newOverrideValue: string,
+    overrideUnit: string
+  ) => {
     const newCommsParams = updateParams(
       updatedCommsParams,
       name,
-      newOverrideValue
+      newOverrideValue,
+      overrideUnit
     )
     setUpdatedCommsParams(newCommsParams)
   }

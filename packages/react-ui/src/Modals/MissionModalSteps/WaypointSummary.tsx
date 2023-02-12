@@ -86,9 +86,9 @@ export const WaypointSummary: React.FC<WaypointSummaryProps> = ({
             ]}
           />
         </li>
-        <li className="max-h-full overflow-hidden">
+        <li className="flex max-h-full flex-col overflow-hidden">
           <Table
-            className="max-h-[calc(100%-80px)] overflow-auto"
+            className="overflow-auto"
             header={{
               cells: [
                 {
