@@ -1,7 +1,10 @@
 import { useVehicleInfo, GetVehicleInfoResponse } from '@mbari/api-client'
 import React from 'react'
 import axios from 'axios'
-import { FullWidthVehicleDiagram } from '@mbari/react-ui'
+import {
+  FullWidthVehicleDiagram,
+  FullWidthVehicleDiagramProps,
+} from '@mbari/react-ui'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { faTriangleExclamation } from '@fortawesome/pro-solid-svg-icons'
 import clsx from 'clsx'
@@ -10,7 +13,8 @@ const VehicleDiagram: React.FC<{
   name: string
   className?: string
   style?: React.CSSProperties
-}> = ({ name, className, style }) => {
+  onBatteryClick?: FullWidthVehicleDiagramProps['onBatteryClick']
+}> = ({ name, className, style, onBatteryClick: handleBatteryClick }) => {
   const { data: vehicleInfo } = useVehicleInfo(
     { name },
     axios.create({
@@ -110,6 +114,7 @@ const VehicleDiagram: React.FC<{
         colorLeak={vehicle?.color_leak}
         textLeakAgo={vehicle?.text_leakago}
         textLeak={vehicle?.text_leak}
+        onBatteryClick={handleBatteryClick}
       />
     </div>
   )

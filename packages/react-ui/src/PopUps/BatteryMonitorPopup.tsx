@@ -1,7 +1,6 @@
 import React, { useState } from 'react'
 import clsx from 'clsx'
 import { Modal } from '../Modal'
-// import chart from '../assets/stand-in-chart.png'
 import { Table } from '../Data/Table'
 import { IconButton } from '../Navigation'
 import {

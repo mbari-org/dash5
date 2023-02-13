@@ -19,7 +19,7 @@ import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { faArrowUp } from '@fortawesome/pro-light-svg-icons'
 import { Leak } from './VehicleAssets/Leak'
 
-interface FullWidthVehicleDiagramProps extends VehicleProps {
+export interface FullWidthVehicleDiagramProps extends VehicleProps {
   vehicleWidth?: number
   vehicleHeight?: number
   onBatteryClick?: BatteryProps['onClick']

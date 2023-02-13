@@ -26,6 +26,7 @@ import { DocsModal } from './DocsModal'
 import { ChartsModal } from './ChartsModal'
 import { CommsModal } from './CommsModal'
 import { ESPModal } from './ESPModal'
+import { BatteryMonitorPopup } from 'react-ui/dist'
 
 const Layout: React.FC<{ children?: React.ReactNode }> = ({ children }) => {
   const [showLogin, setLogin] = useState(false)
@@ -195,6 +196,43 @@ const Layout: React.FC<{ children?: React.ReactNode }> = ({ children }) => {
         <ESPModal
           onClose={setModal(null)}
           vehicleName={vehicleName as string}
+        />
+      )}
+      {globalModalId?.id === 'battery' && vehicleName.length > 0 && (
+        <BatteryMonitorPopup
+          onClose={setModal(null)}
+          batteryPercent={72}
+          batteryRemaining={{
+            hours: 1,
+            miles: 20,
+          }}
+          missionRemaining={{
+            hours: 2,
+            miles: 40,
+          }}
+          suggestions={[
+            {
+              headline: 'Reduce thruster speeds to 25% power',
+              important: true,
+              improvement: '1hr',
+              description:
+                'Has the biggest impact on battery. This is the top recommendation to conserve battery life.',
+              onExternalInfoClick: () => {
+                setGlobalModalId({ id: 'newCommand' })
+              },
+            },
+            {
+              headline: 'Turn off DVL',
+              improvement: '30min',
+              description: 'Moderate energy savings',
+            },
+            {
+              headline: 'Turn off cell comms',
+              improvement: '20min',
+              description: 'Bold move',
+            },
+          ]}
+          open
         />
       )}
     </div>
