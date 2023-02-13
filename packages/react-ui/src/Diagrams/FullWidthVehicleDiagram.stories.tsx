@@ -3,17 +3,62 @@ import React from 'react'
 import { Story, Meta } from '@storybook/react/types-6-0'
 import { VehicleProps } from './Vehicle'
 import { FullWidthVehicleDiagram } from './FullWidthVehicleDiagram'
+import { BatteryMonitorPopup } from '..'
 
 export default {
   title: 'Diagrams/FullWidthVehicleDiagram',
   component: FullWidthVehicleDiagram,
 } as Meta
 
-const Template: Story<VehicleProps> = (args) => (
-  <div className="relative h-[300px] w-full bg-stone-200 p-2">
-    <FullWidthVehicleDiagram {...args} />
-  </div>
-)
+const Template: Story<VehicleProps> = (args) => {
+  const [open, setOpen] = React.useState(false)
+  const handleBatteryClick = () => {
+    setOpen(true)
+  }
+  return (
+    <div className="relative h-[300px] w-full bg-stone-200 p-2">
+      <BatteryMonitorPopup
+        className="absolute top-0 left-0"
+        batteryPercent={72}
+        batteryRemaining={{
+          hours: 1,
+          miles: 20,
+        }}
+        missionRemaining={{
+          hours: 2,
+          miles: 40,
+        }}
+        suggestions={[
+          {
+            headline: 'Reduce thruster speeds to 25% power',
+            important: true,
+            improvement: '1hr',
+            description:
+              'Has the biggest impact on battery. This is the top recommendation to conserve battery life.',
+            onExternalInfoClick: () => {
+              console.log(
+                `there's something happening here. what it is ain't exactly clear`
+              )
+            },
+          },
+          {
+            headline: 'Turn off DVL',
+            improvement: '30min',
+            description: 'Moderate energy savings',
+          },
+          {
+            headline: 'Turn off cell comms',
+            improvement: '20min',
+            description: 'Bold move',
+          },
+        ]}
+        open={open}
+        onClose={() => setOpen(false)}
+      />
+      <FullWidthVehicleDiagram {...args} onBatteryClick={handleBatteryClick} />
+    </div>
+  )
+}
 
 const args: VehicleProps = {
   textVehicle: 'BRIZO',
