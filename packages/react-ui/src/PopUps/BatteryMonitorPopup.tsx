@@ -1,7 +1,6 @@
 import React, { useState } from 'react'
 import clsx from 'clsx'
 import { Modal } from '../Modal'
-// import chart from '../assets/stand-in-chart.png'
 import { Table } from '../Data/Table'
 import { IconButton } from '../Navigation'
 import {
@@ -14,18 +13,24 @@ export interface BatteryMonitorPopupProps {
   style?: React.CSSProperties
   open?: boolean
   batteryPercent: number
-  batteryRemaining: Estimate
-  missionRemaining: Estimate
+  batteryRemaining?: Estimate
+  missionRemaining?: Estimate
   suggestions: Suggestion[]
   onClose?: () => void
+  children?: React.ReactNode
 }
 
-interface Estimate {
+export interface EstimatedDistance {
+  value: number
+  unit: 'mi' | 'km' | 'm' | 'ft' | 'in'
+}
+
+export interface Estimate {
   hours: number
-  miles: number
+  distance: EstimatedDistance
 }
 
-interface Suggestion {
+export interface Suggestion {
   headline: string
   important?: boolean
   description: string
@@ -42,6 +47,7 @@ export const BatteryMonitorPopup: React.FC<BatteryMonitorPopupProps> = ({
   missionRemaining,
   suggestions,
   onClose,
+  children,
 }) => {
   const Row = (suggestion: Suggestion) => {
     const [expanded, setExpanded] = useState(false)
@@ -112,28 +118,31 @@ export const BatteryMonitorPopup: React.FC<BatteryMonitorPopupProps> = ({
       fullWidthBody
       onClose={onClose}
       title={
-        <ul>
+        <ul className="mb-4">
           <li className="mb-2">Battery monitor: {batteryPercent}%</li>
-          <li className=" opacity-60">
-            Battery remaining: {batteryRemaining.hours}{' '}
-            {batteryRemaining.hours === 1 ? 'hour' : 'hours'} (~
-            {batteryRemaining.miles}mi)
-          </li>
-          <li className="mb-4 opacity-60">
-            Mission remaining: {missionRemaining.hours}{' '}
-            {missionRemaining.hours === 1 ? 'hour' : 'hours'} (~
-            {missionRemaining.miles}mi)
-          </li>
+          {batteryRemaining && batteryRemaining.hours ? (
+            <li className="opacity-60">
+              Battery remaining: {batteryRemaining.hours}{' '}
+              {batteryRemaining.hours === 1 ? 'hour' : 'hours'} (~
+              {batteryRemaining.distance.value}
+              {batteryRemaining.distance.unit})
+            </li>
+          ) : null}
+          {missionRemaining && missionRemaining.hours ? (
+            <li className="opacity-60">
+              Mission remaining: {missionRemaining.hours}{' '}
+              {missionRemaining.hours === 1 ? 'hour' : 'hours'} (~
+              {missionRemaining.distance.value}
+              {missionRemaining.distance.unit})
+            </li>
+          ) : null}
         </ul>
       }
       className={clsx('', className)}
       style={style}
       open={open}
     >
-      <section>
-        {/* eslint-disable-next-line -- remove this image tag, associated image asset, and mocked asset in test when actual chart component is implemented */}
-        {/* <img src={chart} alt="chart to be replaced" /> */}
-      </section>
+      <section>{children}</section>
       <section>
         <Table
           grayHeader

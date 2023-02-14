@@ -18,6 +18,7 @@ export type ModalId =
   | 'vehicleDocs'
   | 'vehicleCharts'
   | 'vehicleComms'
+  | 'battery'
   | null
 
 export interface GlobalModalMetaData {

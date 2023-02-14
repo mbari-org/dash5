@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback } from 'react'
+import { useEffect, useState } from 'react'
 import { NextPage } from 'next'
 import { useRouter } from 'next/router'
 import { DateTime } from 'luxon'
@@ -33,6 +33,7 @@ import useCurrentDeployment from '../../lib/useCurrentDeployment'
 import { humanize } from '@mbari/utils'
 import useGlobalDrawerState from '../../lib/useGlobalDrawerState'
 import dynamic from 'next/dynamic'
+import { toast } from 'react-hot-toast'
 
 const styles = {
   content: 'flex flex-shrink flex-grow flex-row overflow-hidden',
@@ -152,6 +153,9 @@ const Vehicle: NextPage = () => {
   const handleTimeScrub = (time?: number | null) => {
     setIndicatorTime(time)
   }
+  const handleBatteryClick = () => {
+    setGlobalModalId({ id: 'battery' })
+  }
 
   return (
     <Layout>
@@ -254,6 +258,7 @@ const Vehicle: NextPage = () => {
                   <VehicleDiagram
                     name={vehicleName as string}
                     className="m-auto flex h-full w-full"
+                    onBatteryClick={handleBatteryClick}
                   />
                 )}
                 {currentTab === 'depth' && (

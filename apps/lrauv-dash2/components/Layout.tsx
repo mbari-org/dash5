@@ -26,6 +26,8 @@ import { DocsModal } from './DocsModal'
 import { ChartsModal } from './ChartsModal'
 import { CommsModal } from './CommsModal'
 import { ESPModal } from './ESPModal'
+import { BatteryMonitorPopup } from 'react-ui/dist'
+import { BatteryModal } from './BatteryModal'
 
 const Layout: React.FC<{ children?: React.ReactNode }> = ({ children }) => {
   const [showLogin, setLogin] = useState(false)
@@ -196,6 +198,9 @@ const Layout: React.FC<{ children?: React.ReactNode }> = ({ children }) => {
           onClose={setModal(null)}
           vehicleName={vehicleName as string}
         />
+      )}
+      {globalModalId?.id === 'battery' && vehicleName.length > 0 && (
+        <BatteryModal vehicleName={vehicleName} onClose={setModal(null)} />
       )}
     </div>
   )
