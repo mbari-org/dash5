@@ -12,10 +12,11 @@ export const ParameterSummary: React.FC<ParameterStepProps> = ({
   duration,
   onParamUpdate,
   onVerifyValue,
+  unitOptions,
 }) => {
   return (
-    <article className="h-full">
-      <ul className="ml-2 mb-2">
+    <article className="flex h-full flex-col">
+      <ul className="ml-2 mb-2 flex-shrink-0 flex-grow-0">
         <li className="mb-4">
           Set mission parameters for {vehicleName}&apos;s{' '}
           <span className="text-teal-500" data-testid="mission name">
@@ -26,15 +27,17 @@ export const ParameterSummary: React.FC<ParameterStepProps> = ({
         <li>Summary of Overrides ({parameters.length})</li>
       </ul>
       <ParameterTable
-        className="max-h-[calc(100%-90px)]"
+        className=""
         parameters={parameters}
         onParamUpdate={onParamUpdate}
         onVerifyValue={onVerifyValue}
+        unitOptions={unitOptions}
       />
       <StatDisplay
         totalDistance={totalDistance}
         bottomDepth={bottomDepth}
         duration={duration}
+        className="flex-shrink-0 flex-grow-0"
       />
     </article>
   )

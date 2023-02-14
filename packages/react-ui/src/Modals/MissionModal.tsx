@@ -11,7 +11,7 @@ import { WaypointStep } from './MissionModalSteps/WaypointStep'
 import { ExtraButton } from '../Modal/Footer'
 import { WaypointSummary } from './MissionModalSteps/WaypointSummary'
 import { ParameterStep } from './MissionModalSteps/ParameterStep'
-import { ParameterProps } from '../Tables/ParameterTable'
+import { ParameterProps, ParameterTableProps } from '../Tables/ParameterTable'
 import { ParameterSummary } from './MissionModalSteps/ParameterSummary'
 import { SafetyCommsStep } from './MissionModalSteps/SafetyCommsStep'
 import { ReviewStep } from './MissionModalSteps/ReviewStep'
@@ -46,6 +46,7 @@ export interface MissionModalProps
   totalDistance?: string
   bottomDepth?: string
   duration?: string
+  unitOptions?: ParameterTableProps['unitOptions']
   parameters: ParameterProps[]
   safetyParams: ParameterProps[]
   commsParams: ParameterProps[]
@@ -87,6 +88,7 @@ export const MissionModal: React.FC<MissionModalProps> = ({
   vehicles,
   commandText,
   loading,
+  unitOptions,
 }) => {
   const [selectedMissionCategory, setSelectedMissionCategory] = useState<
     string | undefined
@@ -275,6 +277,7 @@ export const MissionModal: React.FC<MissionModalProps> = ({
             duration={duration}
             onVerifyValue={onVerifyParameter}
             onParamUpdate={handleParamUpdate}
+            unitOptions={unitOptions}
           />
         ) : (
           <ParameterStep
@@ -286,6 +289,7 @@ export const MissionModal: React.FC<MissionModalProps> = ({
             parameters={updatedParameters || []}
             onVerifyValue={onVerifyParameter}
             onParamUpdate={handleParamUpdate}
+            unitOptions={unitOptions}
           />
         )
 
@@ -301,6 +305,7 @@ export const MissionModal: React.FC<MissionModalProps> = ({
             duration={duration}
             onSafetyUpdate={handleSafetyUpdate}
             onCommsUpdate={handleCommsUpdate}
+            unitOptions={unitOptions}
           />
         )
 

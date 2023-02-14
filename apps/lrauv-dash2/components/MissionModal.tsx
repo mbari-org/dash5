@@ -18,6 +18,7 @@ import {
   useFrequentRuns,
   useMissionList,
   useRecentRuns,
+  useUnits,
   useScript,
   useStations,
   useSbdOutgoingAlternativeAddresses,
@@ -130,6 +131,7 @@ const MissionModal: React.FC<MissionModalProps> = ({
   const { data: vehicles } = useVehicleNames({ refresh: 'n' })
   const { data: alternativeAddresses } = useSbdOutgoingAlternativeAddresses({})
   const { data: missionData } = useMissionList()
+  const { data: unitsData } = useUnits()
   const { data: frequentRunsData } = useFrequentRuns(
     {
       vehicle: vehicleName,
@@ -382,6 +384,7 @@ const MissionModal: React.FC<MissionModalProps> = ({
       vehicles={vehicles}
       loading={sendingCommand}
       commandText={commandText}
+      unitOptions={unitsData}
     />
   )
 }

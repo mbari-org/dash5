@@ -7,7 +7,10 @@ const printUnit = (p: ParameterProps) => {
   if (p.overrideValue?.match(/true/i)) {
     return '1 bool'
   }
-  return `${p.overrideValue} ${p.unit}`
+  if (p.overrideValue?.match(/false/i)) {
+    return '0 bool'
+  }
+  return `${p.overrideValue} ${p.overrideUnit ?? p.unit}`
 }
 
 export const makeCommand = ({

@@ -51,6 +51,25 @@ const args: ParameterTableProps = {
   ],
   onVerifyValue: (value: string) => `${value} √`,
   onParamUpdate: (value: string) => console.log(value),
+  unitOptions: [
+    {
+      name: 'ampere',
+      abbreviation: 'A',
+    },
+    {
+      name: 'ampere_hour',
+      abbreviation: 'Ah',
+      baseUnit: 'ampere_second',
+    },
+    {
+      name: 'ampere_per_count',
+      abbreviation: 'A/count',
+    },
+    {
+      name: 'ampere_per_meter',
+      abbreviation: 'A/m',
+    },
+  ],
 }
 
 export const Standard = Template.bind({})
