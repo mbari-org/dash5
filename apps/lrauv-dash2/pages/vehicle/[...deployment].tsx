@@ -9,7 +9,9 @@ import {
   DeploymentInfo,
   StatusIcon,
   UnderwaterIcon,
+  SurfacedIcon,
   ConnectedIcon,
+  NotConnectedIcon,
   MissionProgressToolbar,
   OverviewToolbar,
   VehicleCommsCell,
@@ -21,6 +23,7 @@ import {
   useTethysApiContext,
   useChartData,
   usePicAndOnCall,
+  useEvents,
 } from '@mbari/api-client'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { faChevronDown, faChevronUp } from '@fortawesome/pro-solid-svg-icons'
@@ -33,7 +36,8 @@ import useCurrentDeployment from '../../lib/useCurrentDeployment'
 import { humanize } from '@mbari/utils'
 import useGlobalDrawerState from '../../lib/useGlobalDrawerState'
 import dynamic from 'next/dynamic'
-import { toast } from 'react-hot-toast'
+import { useTethysSubscriptionEvent } from '../../lib/useWebSocketListeners'
+import { useLastCommsTime } from '../../lib/useLastCommsTime'
 
 const styles = {
   content: 'flex flex-shrink flex-grow flex-row overflow-hidden',
@@ -123,6 +127,19 @@ const Vehicle: NextPage = () => {
     ? DateTime.utc().plus({ hours: 4 }).endOf('day').toMillis()
     : deployment?.lastEvent ?? 0
 
+  const lastCommsMillis = useLastCommsTime(vehicleName, startTime)
+  const lastCommsTime = lastCommsMillis
+    ? DateTime.fromMillis(lastCommsMillis)
+    : null
+  const nextCommsTime = lastCommsMillis
+    ? DateTime.now().plus({
+        milliseconds:
+          DateTime.now().toMillis() -
+          lastCommsMillis +
+          25 * 60 * 1000 + // Replace with actual NeedsCommsInterval
+          5 * 60 * 1000, // Replacee w/ buffer time
+      })
+    : null
   const handleClickPilot = () => setGlobalModalId({ id: 'reassign' })
   const handleNewDeployment = () => setGlobalModalId({ id: 'newDeployment' })
   const handleEditDeployment = () => setGlobalModalId({ id: 'editDeployment' })
@@ -157,6 +174,8 @@ const Vehicle: NextPage = () => {
     setGlobalModalId({ id: 'battery' })
   }
 
+  const pingEvent = useTethysSubscriptionEvent('VehiclePingResult', vehicleName)
+
   return (
     <Layout>
       <OverviewToolbar
@@ -173,34 +192,51 @@ const Vehicle: NextPage = () => {
               }
         }
         onClickPilot={loadingPic ? undefined : handleClickPilot}
-        supportIcon1={<CommsIcon />}
-        supportIcon2={<StatusIcon />}
+        supportIcon1={
+          pingEvent?.reachable ? <ConnectedIcon /> : <NotConnectedIcon />
+        }
+        supportIcon2={
+          pingEvent?.reachable ? <SurfacedIcon /> : <UnderwaterIcon />
+        }
         onSelectNewDeployment={handleNewDeployment}
         deployments={deployments}
         onEditDeployment={handleEditDeployment}
         onSelectDeployment={handleSelectDeployment}
         onIcon1hover={() => (
           <VehicleCommsCell
-            icon={<ConnectedIcon />}
-            headline="Cell Comms: Connected"
-            host="lrauv-brizo-cell.shore.mbari.org"
-            lastPing="Today at 14:40:36 (3s ago)"
-            nextComms="14:55 (in 15m)"
-            onSelect={() => {
-              console.log('event fired')
-            }}
+            icon={
+              pingEvent?.reachable ? <ConnectedIcon /> : <NotConnectedIcon />
+            }
+            headline={`Cell Comms: ${
+              pingEvent?.reachable ? 'Connected' : 'Not Connected'
+            }`}
+            host={pingEvent?.hostName ?? 'Not available'}
+            lastPing={
+              ((pingEvent?.checkedAt &&
+                DateTime.fromMillis(
+                  pingEvent?.checkedAt
+                ).toRelative()) as string) ?? 'Not available'
+            }
+            nextComms={`${nextCommsTime?.toFormat(
+              'hh:mm'
+            )} (in ${nextCommsTime?.toRelative()})`}
           />
         )}
         onIcon2hover={() => (
           <VehicleInfoCell
-            icon={<UnderwaterIcon />}
+            icon={pingEvent?.reachable ? <SurfacedIcon /> : <UnderwaterIcon />}
             headline="Likely underwater"
-            subtitle="Last confirmed on surface 47min ago"
-            lastCommsOverSat="Today at 14:08:36 (47m ago)"
-            estimate="Est. to surface in 15 mins at ~14:55"
-            onSelect={() => {
-              console.log('event fired')
-            }}
+            subtitle="Last comms over satellite"
+            lastCommsOverSat={`${
+              lastCommsTime?.day === DateTime.now().day
+                ? 'Today'
+                : lastCommsTime?.toFormat('mmm, d')
+            } at ${lastCommsTime?.toFormat(
+              'hh:mm:ss'
+            )} (${lastCommsTime?.toRelative()})`}
+            estimate={`Est. to surface in ${nextCommsTime?.toRelative()} at ~${nextCommsTime?.toFormat(
+              'hh:mm'
+            )}`}
           />
         )}
       />
