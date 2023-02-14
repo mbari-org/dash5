@@ -3,6 +3,7 @@
   "globalDependencies": [
     "$NEXT_PUBLIC_BASE_URL",
     "$NEXT_PUBLIC_API_HOST",
+    "$NEXT_PUBLIC_WEBSOCKET_URL",
     "$NODE_ENV",
     "$PORT",
     "$CI"
@@ -13,6 +14,7 @@
         "^build",
         "$NEXT_PUBLIC_BASE_URL",
         "$NEXT_PUBLIC_API_HOST",
+        "$NEXT_PUBLIC_WEBSOCKET_URL",
         "$NODE_ENV"
       ],
       "outputs": [".next/**", "dist/**", "lib/**"]
