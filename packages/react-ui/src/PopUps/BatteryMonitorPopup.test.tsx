@@ -21,7 +21,7 @@ const props: BatteryMonitorPopupProps = {
   },
   missionRemaining: {
     hours: 2,
-    distance: { value: 20, unit: 'mi' },
+    distance: { value: 40, unit: 'mi' },
   },
   suggestions: [
     {
