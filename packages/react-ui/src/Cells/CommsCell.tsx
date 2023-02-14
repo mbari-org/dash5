@@ -5,7 +5,6 @@ import { faBuilding } from '@fortawesome/pro-regular-svg-icons'
 import { IconProp } from '@fortawesome/fontawesome-svg-core'
 import { swallow, truncate } from '@mbari/utils'
 import { AcknowledgeIcon } from '../Icons/AcknowledgeIcon'
-import { IconButton } from '../Navigation'
 
 export interface CommsCellProps {
   className?: string
@@ -18,7 +17,7 @@ export interface CommsCellProps {
   time: string
   isUpload: boolean
   isScheduled: boolean
-  onSelect: () => void
+  onSelect?: () => void
 }
 
 const styles = {
