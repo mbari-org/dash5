@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { NextPage } from 'next'
 import { useRouter } from 'next/router'
 import { DateTime } from 'luxon'
@@ -164,6 +164,22 @@ const Vehicle: NextPage = () => {
   const chartAvailable =
     !!depthData && !chartLoading && !chartIdle && !chartError
 
+  const depthChart = useMemo(() => {
+    return chartAvailable ? (
+      <LineChart
+        name={depthData?.name ?? ''}
+        data={depthData?.values.map((v, i) => ({
+          value: v,
+          timestamp: depthData.times[i],
+        }))}
+        yAxisLabel={`${humanize(depthData?.name)} (${depthData?.units})`}
+        onHover={handleTimeScrub}
+        inverted={depthData.name === 'depth'}
+        className="h-[340px] w-full"
+      />
+    ) : null
+  }, [depthData, chartAvailable])
+
   const [indicatorTime, setIndicatorTime] = useState<number | null | undefined>(
     null
   )
@@ -299,21 +315,7 @@ const Vehicle: NextPage = () => {
                 )}
                 {currentTab === 'depth' && (
                   <div className="flex h-full w-full overflow-hidden px-4">
-                    {chartAvailable && (
-                      <LineChart
-                        name={depthData?.name ?? ''}
-                        data={depthData?.values.map((v, i) => ({
-                          value: v,
-                          timestamp: depthData.times[i],
-                        }))}
-                        yAxisLabel={`${humanize(depthData?.name)} (${
-                          depthData?.units
-                        })`}
-                        onHover={handleTimeScrub}
-                        inverted={depthData.name === 'depth'}
-                        className="h-[340px] w-full"
-                      />
-                    )}
+                    {depthChart}
                     {chartLoading && (
                       <p className="text-md m-auto font-bold">
                         Loading Depth Data
