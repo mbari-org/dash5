@@ -1,10 +1,9 @@
-import { SelectField, AbsoluteOverlay } from '@mbari/react-ui'
+import { SelectField, AbsoluteOverlay, AccordionCells } from '@mbari/react-ui'
 import useGlobalModalId from '../lib/useGlobalModalId'
 import dynamic from 'next/dynamic'
 import { useEffect, useRef, useState } from 'react'
 import { capitalize, humanize, swallow } from '@mbari/utils'
 import { useChartData } from '@mbari/api-client'
-import { AccordionCells } from '@mbari/react-ui'
 import clsx from 'clsx'
 
 const LineChart: any = dynamic(

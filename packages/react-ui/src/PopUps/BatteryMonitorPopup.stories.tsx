@@ -20,11 +20,11 @@ const args: BatteryMonitorPopupProps = {
   batteryPercent: 72,
   batteryRemaining: {
     hours: 1,
-    miles: 20,
+    distance: { value: 3.2, unit: 'km' },
   },
   missionRemaining: {
     hours: 2,
-    miles: 40,
+    distance: { value: 2 * 3.2, unit: 'km' },
   },
   suggestions: [
     {
