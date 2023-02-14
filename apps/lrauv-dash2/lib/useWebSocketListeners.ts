@@ -1,11 +1,12 @@
 import { useEffect, useState } from 'react'
 import { useTethysApiContext } from '@mbari/api-client'
-import { QueryClient, useQueryClient } from 'react-query'
+import { useQueryClient } from 'react-query'
 
 type SubscriptionEventType =
   | 'VehicleConnected'
   | 'VehiclePingResult'
   | 'presence'
+  | null
 
 export const SUPPORTED_EVENT_TYPES: SubscriptionEventType[] = [
   'VehicleConnected',
@@ -66,7 +67,11 @@ export const useTethysSubscription = () => {
     }
     websocket.onmessage = (event) => {
       const data = JSON.parse(event.data) as TethysSubscriptionEvent
-      if (!SUPPORTED_EVENT_TYPES.includes(data.eventName ?? '')) {
+      if (
+        !SUPPORTED_EVENT_TYPES.includes(
+          (data.eventName ?? null) as SubscriptionEventType
+        )
+      ) {
         console.log('Unsupported event type: ', data.eventName)
         return
       }
