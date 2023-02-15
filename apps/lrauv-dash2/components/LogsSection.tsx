@@ -50,16 +50,12 @@ const LogsSection: React.FC<LogsSectionProps> = ({ vehicleName, from, to }) => {
         ? 'Today'
         : DateTime.fromISO(item?.isoTime ?? '').toFormat('yyyy-MM-dd')
     const time = DateTime.fromISO(item?.isoTime ?? '').toFormat('H:mm')
-    const handleSelection = () => {
-      console.log('Do something.')
-    }
 
     return item ? (
       <LogCell
         className="border-b border-slate-200"
         date={date}
         time={time}
-        onSelect={handleSelection}
         label={displayNameForEventType(item)}
         log={formatEvent(item, siteConfig?.appConfig.external.tethysdash ?? '')}
         isUpload={isUploadEvent(item)}

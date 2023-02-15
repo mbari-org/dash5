@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { NextPage } from 'next'
 import { useRouter } from 'next/router'
 import { DateTime } from 'luxon'
@@ -9,7 +9,9 @@ import {
   DeploymentInfo,
   StatusIcon,
   UnderwaterIcon,
+  SurfacedIcon,
   ConnectedIcon,
+  NotConnectedIcon,
   MissionProgressToolbar,
   OverviewToolbar,
   VehicleCommsCell,
@@ -21,6 +23,7 @@ import {
   useTethysApiContext,
   useChartData,
   usePicAndOnCall,
+  useEvents,
 } from '@mbari/api-client'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { faChevronDown, faChevronUp } from '@fortawesome/pro-solid-svg-icons'
@@ -33,7 +36,8 @@ import useCurrentDeployment from '../../lib/useCurrentDeployment'
 import { humanize } from '@mbari/utils'
 import useGlobalDrawerState from '../../lib/useGlobalDrawerState'
 import dynamic from 'next/dynamic'
-import { toast } from 'react-hot-toast'
+import { useTethysSubscriptionEvent } from '../../lib/useWebSocketListeners'
+import { useLastCommsTime } from '../../lib/useLastCommsTime'
 
 const styles = {
   content: 'flex flex-shrink flex-grow flex-row overflow-hidden',
@@ -123,6 +127,19 @@ const Vehicle: NextPage = () => {
     ? DateTime.utc().plus({ hours: 4 }).endOf('day').toMillis()
     : deployment?.lastEvent ?? 0
 
+  const lastCommsMillis = useLastCommsTime(vehicleName, startTime)
+  const lastCommsTime = lastCommsMillis
+    ? DateTime.fromMillis(lastCommsMillis)
+    : null
+  const nextCommsTime = lastCommsMillis
+    ? DateTime.now().plus({
+        milliseconds:
+          DateTime.now().toMillis() -
+          lastCommsMillis +
+          25 * 60 * 1000 + // Replace with actual NeedsCommsInterval
+          5 * 60 * 1000, // Replacee w/ buffer time
+      })
+    : null
   const handleClickPilot = () => setGlobalModalId({ id: 'reassign' })
   const handleNewDeployment = () => setGlobalModalId({ id: 'newDeployment' })
   const handleEditDeployment = () => setGlobalModalId({ id: 'editDeployment' })
@@ -147,6 +164,22 @@ const Vehicle: NextPage = () => {
   const chartAvailable =
     !!depthData && !chartLoading && !chartIdle && !chartError
 
+  const depthChart = useMemo(() => {
+    return chartAvailable ? (
+      <LineChart
+        name={depthData?.name ?? ''}
+        data={depthData?.values.map((v, i) => ({
+          value: v,
+          timestamp: depthData.times[i],
+        }))}
+        yAxisLabel={`${humanize(depthData?.name)} (${depthData?.units})`}
+        onHover={handleTimeScrub}
+        inverted={depthData.name === 'depth'}
+        className="h-[340px] w-full"
+      />
+    ) : null
+  }, [depthData, chartAvailable])
+
   const [indicatorTime, setIndicatorTime] = useState<number | null | undefined>(
     null
   )
@@ -156,6 +189,8 @@ const Vehicle: NextPage = () => {
   const handleBatteryClick = () => {
     setGlobalModalId({ id: 'battery' })
   }
+
+  const pingEvent = useTethysSubscriptionEvent('VehiclePingResult', vehicleName)
 
   return (
     <Layout>
@@ -173,34 +208,51 @@ const Vehicle: NextPage = () => {
               }
         }
         onClickPilot={loadingPic ? undefined : handleClickPilot}
-        supportIcon1={<CommsIcon />}
-        supportIcon2={<StatusIcon />}
+        supportIcon1={
+          pingEvent?.reachable ? <ConnectedIcon /> : <NotConnectedIcon />
+        }
+        supportIcon2={
+          pingEvent?.reachable ? <SurfacedIcon /> : <UnderwaterIcon />
+        }
         onSelectNewDeployment={handleNewDeployment}
         deployments={deployments}
         onEditDeployment={handleEditDeployment}
         onSelectDeployment={handleSelectDeployment}
         onIcon1hover={() => (
           <VehicleCommsCell
-            icon={<ConnectedIcon />}
-            headline="Cell Comms: Connected"
-            host="lrauv-brizo-cell.shore.mbari.org"
-            lastPing="Today at 14:40:36 (3s ago)"
-            nextComms="14:55 (in 15m)"
-            onSelect={() => {
-              console.log('event fired')
-            }}
+            icon={
+              pingEvent?.reachable ? <ConnectedIcon /> : <NotConnectedIcon />
+            }
+            headline={`Cell Comms: ${
+              pingEvent?.reachable ? 'Connected' : 'Not Connected'
+            }`}
+            host={pingEvent?.hostName ?? 'Not available'}
+            lastPing={
+              ((pingEvent?.checkedAt &&
+                DateTime.fromMillis(
+                  pingEvent?.checkedAt
+                ).toRelative()) as string) ?? 'Not available'
+            }
+            nextComms={`${nextCommsTime?.toFormat(
+              'hh:mm'
+            )} (in ${nextCommsTime?.toRelative()})`}
           />
         )}
         onIcon2hover={() => (
           <VehicleInfoCell
-            icon={<UnderwaterIcon />}
+            icon={pingEvent?.reachable ? <SurfacedIcon /> : <UnderwaterIcon />}
             headline="Likely underwater"
-            subtitle="Last confirmed on surface 47min ago"
-            lastCommsOverSat="Today at 14:08:36 (47m ago)"
-            estimate="Est. to surface in 15 mins at ~14:55"
-            onSelect={() => {
-              console.log('event fired')
-            }}
+            subtitle="Last comms over satellite"
+            lastCommsOverSat={`${
+              lastCommsTime?.day === DateTime.now().day
+                ? 'Today'
+                : lastCommsTime?.toFormat('mmm, d')
+            } at ${lastCommsTime?.toFormat(
+              'hh:mm:ss'
+            )} (${lastCommsTime?.toRelative()})`}
+            estimate={`Est. to surface in ${nextCommsTime?.toRelative()} at ~${nextCommsTime?.toFormat(
+              'hh:mm'
+            )}`}
           />
         )}
       />
@@ -263,21 +315,7 @@ const Vehicle: NextPage = () => {
                 )}
                 {currentTab === 'depth' && (
                   <div className="flex h-full w-full overflow-hidden px-4">
-                    {chartAvailable && (
-                      <LineChart
-                        name={depthData?.name ?? ''}
-                        data={depthData?.values.map((v, i) => ({
-                          value: v,
-                          timestamp: depthData.times[i],
-                        }))}
-                        yAxisLabel={`${humanize(depthData?.name)} (${
-                          depthData?.units
-                        })`}
-                        onHover={handleTimeScrub}
-                        inverted={depthData.name === 'depth'}
-                        className="h-[340px] w-full"
-                      />
-                    )}
+                    {depthChart}
                     {chartLoading && (
                       <p className="text-md m-auto font-bold">
                         Loading Depth Data
