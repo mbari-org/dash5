@@ -25,8 +25,8 @@ const useManagedParameters = ({
     )
     return {
       ...param,
-      overrideValue: defaultOverride?.overrideValue,
-      overrideUnit: defaultOverride?.overrideUnit,
+      overrideValue: defaultOverride?.overrideValue ?? param.overrideValue,
+      overrideUnit: defaultOverride?.overrideUnit ?? param.overrideUnit,
     }
   }
 
