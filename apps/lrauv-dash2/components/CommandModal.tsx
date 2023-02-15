@@ -229,7 +229,7 @@ export const CommandModal: React.FC<CommandModalProps> = ({
       vehicles={vehicles}
       alternativeAddresses={alternativeAddresses ?? []}
       loading={sendingCommand}
-      defaultCommand={defaultCommand}
+      defaultCommand={defaultCommand ?? undefined}
     />
   )
 }
