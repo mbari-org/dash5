@@ -107,6 +107,16 @@ const props: MissionModalProps = {
   onFocusWaypoint: (index) => {
     console.log(index)
   },
+  defaultOverrides: [
+    {
+      description:
+        '\n        Transit surface communications. Elapsed time after previous surface\n        comms when vehicle will begin to ascend for additional surface\n        communications\n    ',
+      name: 'SurfaceComms',
+      unit: 'minute',
+      value: '45',
+      overrideValue: '35',
+    },
+  ],
   parameters: [
     {
       description: '\n        Maximum duration of mission\n    ',
@@ -120,7 +130,6 @@ const props: MissionModalProps = {
       name: 'SurfaceComms',
       unit: 'minute',
       value: '45',
-      overrideValue: '35',
     },
   ],
   commsParams: [
@@ -393,6 +402,15 @@ test('should display only mission parameters with overrides', async () => {
   )
   expect(screen.queryByText(props.parameters[1].name)).toBeInTheDocument()
   expect(screen.queryByText(props.parameters[0].name)).not.toBeInTheDocument()
+})
+
+test('should display safety parameters', async () => {
+  render(
+    <RecoilRoot>
+      <MissionModal {...props} currentStepIndex={4} />
+    </RecoilRoot>
+  )
+  expect(screen.queryByText(props.safetyParams[0].name)).toBeInTheDocument()
 })
 
 test('should display only plotted waypoints (i.e. ones that do not have NaN as a value)', async () => {
