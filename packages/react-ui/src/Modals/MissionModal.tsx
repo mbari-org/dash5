@@ -51,6 +51,7 @@ export interface MissionModalProps
   safetyParams: ParameterProps[]
   commsParams: ParameterProps[]
   unfilteredMissionParameters: ParameterProps[]
+  defaultOverrides?: ParameterProps[]
   onRefreshStats?: () => void
   onSchedule?: OnScheduleMissionHandler
   onCancel?: () => void
@@ -60,6 +61,8 @@ export interface MissionModalProps
   commandText?: string
   loading?: boolean
   onStepIndexChange?: (step: number) => void
+  selectedMissionCategory?: string
+  defaultSearchText?: string
 }
 
 export const MissionModal: React.FC<MissionModalProps> = ({
@@ -89,10 +92,13 @@ export const MissionModal: React.FC<MissionModalProps> = ({
   commandText,
   loading,
   unitOptions,
+  selectedMissionCategory: defaultMissionCategory,
+  defaultOverrides,
+  defaultSearchText,
 }) => {
   const [selectedMissionCategory, setSelectedMissionCategory] = useState<
     string | undefined
-  >('Recent Runs')
+  >(defaultMissionCategory ?? 'Recent Runs')
   const [selectedMissionId, setSelectedMissionId] = useState<
     string | null | undefined
   >(selectedId)
@@ -116,7 +122,12 @@ export const MissionModal: React.FC<MissionModalProps> = ({
     overriddenMissionParams,
     safetyCommsParams,
     overrideCount,
-  } = useManagedParameters({ parameters, safetyParams, commsParams })
+  } = useManagedParameters({
+    parameters,
+    safetyParams,
+    commsParams,
+    defaultOverrides,
+  })
 
   const { steps, currentStep, handleNext, handlePrevious, showSummary } =
     useMissionModalSteps({
@@ -234,6 +245,7 @@ export const MissionModal: React.FC<MissionModalProps> = ({
             onSelect={handleSelect}
             onSelectCategory={handleSelectCategory}
             selectedCategory={selectedMissionCategory}
+            defaultSearchText={defaultSearchText}
           />
         )
       case steps.indexOf('Waypoints'):
