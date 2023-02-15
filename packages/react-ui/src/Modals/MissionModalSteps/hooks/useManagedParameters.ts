@@ -8,20 +8,37 @@ const useManagedParameters = ({
   parameters,
   safetyParams,
   commsParams,
+  defaultOverrides,
 }: {
   parameters: ParameterProps[]
   safetyParams: ParameterProps[]
   commsParams: ParameterProps[]
+  defaultOverrides?: ParameterProps[]
 }) => {
   const [defaultParameters, setDefaultParameters] = useState<string>(
     JSON.stringify(parameters)
   )
-  const [updatedParameters, setUpdatedParameters] =
-    useState<ParameterProps[]>(parameters)
-  const [updatedSafetyParams, setUpdatedSafetyParams] =
-    useState<ParameterProps[]>(safetyParams)
-  const [updatedCommsParams, setUpdatedCommsParams] =
-    useState<ParameterProps[]>(commsParams)
+
+  const mergeOverrides = (param: ParameterProps) => {
+    const defaultOverride = defaultOverrides?.find(
+      (override) => override.name === param.name
+    )
+    return {
+      ...param,
+      overrideValue: defaultOverride?.overrideValue,
+      overrideUnit: defaultOverride?.overrideUnit,
+    }
+  }
+
+  const [updatedParameters, setUpdatedParameters] = useState<ParameterProps[]>(
+    parameters.map(mergeOverrides)
+  )
+  const [updatedSafetyParams, setUpdatedSafetyParams] = useState<
+    ParameterProps[]
+  >(safetyParams.map(mergeOverrides))
+  const [updatedCommsParams, setUpdatedCommsParams] = useState<
+    ParameterProps[]
+  >(commsParams.map(mergeOverrides))
   useEffect(() => {
     const paramString = JSON.stringify(parameters)
     if (defaultParameters !== paramString) {

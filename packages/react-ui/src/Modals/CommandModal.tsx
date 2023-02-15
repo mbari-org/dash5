@@ -42,6 +42,7 @@ export interface CommandModalProps
   vehicleName: string
   onCancel?: () => void
   onSchedule: OnScheduleCommandHandler
+  defaultCommand?: string
   alternativeAddresses?: string[]
   syntaxVariations?: CommandSyntax[]
   units?: OptionSet[]
@@ -83,14 +84,14 @@ export const CommandModal: React.FC<CommandModalProps> = ({
   universals,
   decimationTypes,
   onUpdateField: handleUpdatedField,
+  defaultCommand,
 }) => {
-  const submitButtonRef = useRef<HTMLButtonElement | null>(null)
   const [selectedCommandId, setSelectedCommandId] =
     useState<SelectCommandStepProps['selectedId']>(selectedId)
   const [currentStep, setCurrentStep] = useState(currentStepIndex ?? 0)
   const [selectedCommandName, setSelectedCommandName] = useState<
     string | null | undefined
-  >(null)
+  >(defaultCommand)
   const [useTemplateStep, setUseTemplateStep] = useState(false)
 
   const handleSelectCommandId: SelectCommandStepProps['onSelectCommandId'] = (

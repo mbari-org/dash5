@@ -16,6 +16,7 @@ import { Select } from '@mbari/react-ui/dist/Fields/Select'
 import { useDeploymentCommandStatus } from '@mbari/api-client'
 import { capitalize } from '@mbari/utils'
 import useGlobalModalId from '../lib/useGlobalModalId'
+import { toast } from 'react-hot-toast'
 
 export interface ScheduleSectionProps {
   className?: string
@@ -42,7 +43,7 @@ export const ScheduleSection: React.FC<ScheduleSectionProps> = ({
   currentDeploymentId,
   activeDeployment,
 }) => {
-  const { setGlobalModalId, globalModalId } = useGlobalModalId()
+  const { setGlobalModalId } = useGlobalModalId()
   const [scheduleStatus, setScheduleStatus] = useState<
     ScheduleCellProps['scheduleStatus'] | null
   >('running')
@@ -242,17 +243,20 @@ export const ScheduleSection: React.FC<ScheduleSectionProps> = ({
     eventId: number
     commandType: string
   }) => {
-    console.log('should duplicate:', eventId, commandType)
+    const event = results.find((r) => r?.event.eventId === eventId)?.event
+    const mission = parseMissionCommand(event?.data ?? '')
+    setGlobalModalId({
+      id: 'newCommand',
+      meta: {
+        command: event?.text ?? event?.data ?? '',
+        mission: mission.name,
+        params: mission.parameters,
+      },
+    })
   }
 
-  const handleDelete = ({
-    eventId,
-    commandType,
-  }: {
-    eventId: number
-    commandType: string
-  }) => {
-    console.log('should delete:', eventId, commandType)
+  const handleDelete = (_: { eventId: number; commandType: string }) => {
+    toast.error('This feature is currently not supported.')
   }
 
   const handleDownload = ({
@@ -262,7 +266,18 @@ export const ScheduleSection: React.FC<ScheduleSectionProps> = ({
     eventId: number
     commandType: string
   }) => {
-    console.log('should download:', eventId, commandType)
+    toast.success(`Saved ${commandType}-${eventId}.txt`)
+    const event = results.find((r) => r?.event.eventId === eventId)?.event
+    const element = document.createElement('a')
+    element.setAttribute(
+      'href',
+      'data:text/plain;charset=utf-8,' + encodeURIComponent(event?.data ?? '')
+    )
+    element.setAttribute('download', `${commandType}-${eventId}.txt`)
+    element.style.display = 'none'
+    document.body.appendChild(element)
+    element.click()
+    element.remove()
   }
 
   const handleMoveInQueue = ({
@@ -295,6 +310,7 @@ export const ScheduleSection: React.FC<ScheduleSectionProps> = ({
           }}
         >
           <Dropdown
+            className="min-w-[240px]"
             onDismiss={closeMoreMenu}
             options={[
               {
