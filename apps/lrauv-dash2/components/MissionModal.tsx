@@ -18,6 +18,7 @@ import {
   useFrequentRuns,
   useMissionList,
   useRecentRuns,
+  useUnits,
   useScript,
   useStations,
   useSbdOutgoingAlternativeAddresses,
@@ -33,6 +34,7 @@ import toast from 'react-hot-toast'
 import { ScheduleOption } from '@mbari/react-ui'
 import useGlobalDrawerState from '../lib/useGlobalDrawerState'
 import { point, distance } from '@turf/turf'
+import useGlobalModalId from '../lib/useGlobalModalId'
 
 const insertForParameter = (
   argument: ScriptArgument,
@@ -80,6 +82,7 @@ const convertMissionDataToListItem =
 const MissionModal: React.FC<MissionModalProps> = ({
   onClose: handleClose,
 }) => {
+  const { globalModalId } = useGlobalModalId()
   // Global waypoints
   const { handleWaypointsUpdate, updatedWaypoints } = useManagedWaypoints()
   const onClose = useCallback(() => {
@@ -130,6 +133,7 @@ const MissionModal: React.FC<MissionModalProps> = ({
   const { data: vehicles } = useVehicleNames({ refresh: 'n' })
   const { data: alternativeAddresses } = useSbdOutgoingAlternativeAddresses({})
   const { data: missionData } = useMissionList()
+  const { data: unitsData } = useUnits()
   const { data: frequentRunsData } = useFrequentRuns(
     {
       vehicle: vehicleName,
@@ -233,7 +237,10 @@ const MissionModal: React.FC<MissionModalProps> = ({
       []),
   ]
 
-  const [selectedMission, setSelectedMission] = useState<string | undefined>()
+  const [selectedMission, setSelectedMission] = useState<string | undefined>(
+    globalModalId?.meta?.mission ?? undefined
+  )
+  const selectedMissionCategory = selectedMission?.split('/')[0]
   const { data: selectedMissionData } = useScript(
     {
       path: selectedMission as string,
@@ -351,6 +358,8 @@ const MissionModal: React.FC<MissionModalProps> = ({
     }
   }
 
+  const defaultOverrides: ParameterProps[] = []
+
   return (
     <MissionModalView
       style={{ maxHeight: '80vh' }}
@@ -382,6 +391,11 @@ const MissionModal: React.FC<MissionModalProps> = ({
       vehicles={vehicles}
       loading={sendingCommand}
       commandText={commandText}
+      unitOptions={unitsData}
+      selectedId={selectedMission}
+      selectedMissionCategory={selectedMissionCategory}
+      defaultSearchText={globalModalId?.meta?.mission ?? ''}
+      defaultOverrides={defaultOverrides}
     />
   )
 }

@@ -2,6 +2,7 @@
 import { Modal, Spinner } from '@mbari/react-ui'
 import { capitalize } from '@mbari/utils'
 import { useSiteConfig } from '@mbari/api-client'
+import { useState } from 'react'
 
 export interface ESPModalProps {
   vehicleName: string
@@ -17,11 +18,15 @@ export const ESPModal: React.FC<ESPModalProps> = ({
   onClose,
 }) => {
   const { data } = useSiteConfig({})
-  const svgUrl =
-    data?.appConfig.external.statusWidgets.espStatusWidgetUrlPattern.replace(
+  const svgUrl = `
+    ${data?.appConfig.external.statusWidgets.espStatusWidgetUrlPattern.replace(
       '<vehicleName>',
       vehicleName
-    )
+    )}?x=${Date.now()}`
+  const [error, setError] = useState(false)
+  const handleError = () => {
+    setError(true)
+  }
   return (
     <Modal
       className={className}
@@ -32,13 +37,27 @@ export const ESPModal: React.FC<ESPModalProps> = ({
       allowPointerEventsOnChildren
       open
     >
-      <div className="flex flex-grow flex-col rounded">
-        {svgUrl ? (
-          <img src={svgUrl} className="my-auto block h-auto w-full" alt="" />
-        ) : (
-          <Spinner className="m-auto" />
-        )}
-      </div>
+      {error && (
+        <div>
+          <p className="font-bold text-red-600">
+            No ESP sample data available for this vehicle.
+          </p>
+        </div>
+      )}
+      {!error && (
+        <div className="flex flex-grow flex-col rounded">
+          {svgUrl ? (
+            <img
+              src={svgUrl}
+              className="my-auto block h-auto w-full"
+              alt=""
+              onError={handleError}
+            />
+          ) : (
+            <Spinner className="m-auto" />
+          )}
+        </div>
+      )}
     </Modal>
   )
 }

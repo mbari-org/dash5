@@ -16,6 +16,7 @@ import { Select } from '@mbari/react-ui/dist/Fields/Select'
 import { useDeploymentCommandStatus } from '@mbari/api-client'
 import { capitalize } from '@mbari/utils'
 import useGlobalModalId from '../lib/useGlobalModalId'
+import { toast } from 'react-hot-toast'
 
 export interface ScheduleSectionProps {
   className?: string
@@ -42,10 +43,7 @@ export const ScheduleSection: React.FC<ScheduleSectionProps> = ({
   currentDeploymentId,
   activeDeployment,
 }) => {
-  const { setGlobalModalId, globalModalId } = useGlobalModalId()
-  const [scheduleStatus, setScheduleStatus] = useState<
-    ScheduleCellProps['scheduleStatus'] | null
-  >('running')
+  const { setGlobalModalId } = useGlobalModalId()
   const [scheduleFilter, setScheduleFilter] = useState<string>('')
   const [scheduleSearch, setScheduleSearch] = useState<string>('')
 
@@ -60,8 +58,14 @@ export const ScheduleSection: React.FC<ScheduleSectionProps> = ({
 
   const vehicleName = deploymentCommands?.deploymentInfo?.vehicleName ?? '...'
 
-  const toggleSchedule = () =>
-    setScheduleStatus(scheduleStatus === 'paused' ? 'running' : 'paused')
+  const toggleSchedule = () => {
+    setGlobalModalId({
+      id: 'newCommand',
+      meta: {
+        command: scheduleStatus === 'paused' ? 'sched resume' : 'sched pause',
+      },
+    })
+  }
 
   const missions = deploymentCommands?.commandStatuses
 
@@ -118,6 +122,9 @@ export const ScheduleSection: React.FC<ScheduleSectionProps> = ({
       setCurrentMoreMenu({ ...target, rect })
     }
   }
+
+  const scheduleStatus: ScheduleCellProps['scheduleStatus'] | null =
+    missions?.[0].event.data === 'sched pause' ? 'paused' : 'running'
 
   const cellAtIndex = (index: number) => {
     if (index === 0 && activeDeployment) {
@@ -237,22 +244,24 @@ export const ScheduleSection: React.FC<ScheduleSectionProps> = ({
 
   const handleDuplicate = ({
     eventId,
-    commandType,
   }: {
     eventId: number
     commandType: string
   }) => {
-    console.log('should duplicate:', eventId, commandType)
+    const event = results.find((r) => r?.event.eventId === eventId)?.event
+    const mission = parseMissionCommand(event?.data ?? '')
+    setGlobalModalId({
+      id: 'newCommand',
+      meta: {
+        command: event?.text ?? event?.data ?? '',
+        mission: mission.name,
+        params: mission.parameters,
+      },
+    })
   }
 
-  const handleDelete = ({
-    eventId,
-    commandType,
-  }: {
-    eventId: number
-    commandType: string
-  }) => {
-    console.log('should delete:', eventId, commandType)
+  const handleDelete = (_: { eventId: number; commandType: string }) => {
+    toast.error('This feature is currently not supported.')
   }
 
   const handleDownload = ({
@@ -262,7 +271,18 @@ export const ScheduleSection: React.FC<ScheduleSectionProps> = ({
     eventId: number
     commandType: string
   }) => {
-    console.log('should download:', eventId, commandType)
+    toast.success(`Saved ${commandType}-${eventId}.txt`)
+    const event = results.find((r) => r?.event.eventId === eventId)?.event
+    const element = document.createElement('a')
+    element.setAttribute(
+      'href',
+      'data:text/plain;charset=utf-8,' + encodeURIComponent(event?.data ?? '')
+    )
+    element.setAttribute('download', `${commandType}-${eventId}.txt`)
+    element.style.display = 'none'
+    document.body.appendChild(element)
+    element.click()
+    element.remove()
   }
 
   const handleMoveInQueue = ({
@@ -295,6 +315,7 @@ export const ScheduleSection: React.FC<ScheduleSectionProps> = ({
           }}
         >
           <Dropdown
+            className="min-w-[240px]"
             onDismiss={closeMoreMenu}
             options={[
               {

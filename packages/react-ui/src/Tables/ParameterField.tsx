@@ -1,87 +1,148 @@
-import { faRulerCombined as faRulerLight } from '@fortawesome/pro-regular-svg-icons'
-import { faRulerCombined as faRulerDark } from '@fortawesome/pro-solid-svg-icons'
+import { faCheckSquare } from '@fortawesome/pro-solid-svg-icons'
+import { faSquare } from '@fortawesome/pro-regular-svg-icons'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
+import React, { MouseEvent, useEffect, useState } from 'react'
+import { Input, Select } from '../Fields'
 import clsx from 'clsx'
-import React, { useEffect, useState } from 'react'
-import { Input } from '../Fields'
-import { ParameterTableProps } from './ParameterTable'
+
+export interface ParameterFieldUnit {
+  name: string
+  abbreviation: string
+  baseUnit?: string
+}
+
+const getUnitOptions = (name: string, units: ParameterFieldUnit[]) => {
+  const defaultUnit = units.find((u) => u.name === name)
+  const baseUnit = defaultUnit?.baseUnit || defaultUnit?.name
+  let filteredUnits = units
+  if (baseUnit) {
+    filteredUnits = units.filter(
+      (u) => u.baseUnit === baseUnit || u.name === baseUnit
+    )
+  }
+  if (baseUnit === 'second') {
+    // a little "exception" to show the long abbreviations at the end.
+    filteredUnits = filteredUnits.sort(
+      (t, u) => t.abbreviation.length - u.abbreviation.length
+    )
+  }
+  return filteredUnits.map((u) => ({
+    name: u.abbreviation ?? u.name,
+    id: u.name,
+  }))
+}
 
 export interface ParameterFieldProps {
   className?: string
   overrideValue?: string
-  onOverride: (newOverride: string) => void
-  onVerifyValue?: ParameterTableProps['onVerifyValue']
-  rulerDarkSrc?: string
-  rulerLightSrc?: string
+  onOverride: (newOverride: string, overrideUnit: string) => void
+  overrideUnit?: string
   unit?: string
+  unitOptions?: ParameterFieldUnit[]
+  name?: string
+  defaultValue: string
 }
 
 const styles = {
-  container: 'flex h-[40px] w-full',
-  inputLi: 'flex flex-grow rounded',
-  buttonLi: 'ml-2 h-full aspect-square rounded border-2 border-stone-300/60',
+  container: 'h-[40px] grid grid-cols-3 gap-1 rounded overflow-hidden',
+  input: 'flex rounded col-span-2',
+  select: 'h-full',
   button: 'h-full w-full bg-white p-1 justify-center flex',
   ruler: 'aspect-square h-full bg-white bg-cover bg-center',
 }
 
 export const ParameterField: React.FC<ParameterFieldProps> = ({
   overrideValue,
+  overrideUnit,
   onOverride,
-  onVerifyValue,
-  rulerDarkSrc,
-  rulerLightSrc,
+  unit,
+  unitOptions,
+  name,
+  defaultValue,
 }) => {
-  const [inputValue, setInputValue] = useState(overrideValue ?? '')
+  const [inputValue, setInputValue] = useState<string>(overrideValue ?? '')
+  const [unitValue, setUnitValue] = useState(overrideUnit ?? unit)
 
-  const handleOverride = (newValue: string) => {
-    onOverride(newValue)
+  const lastOverrideValue = React.useRef(overrideValue)
+  useEffect(() => {
+    if (lastOverrideValue.current !== overrideValue) {
+      setInputValue(overrideValue ? overrideValue : '')
+      lastOverrideValue.current = overrideValue
+    }
+  }, [inputValue, overrideValue, lastOverrideValue])
+
+  const handleOverride = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const newValue = e?.target?.value ?? ''
     setInputValue(newValue)
+    onOverride(newValue, unitValue ?? '')
   }
 
-  useEffect(() => {
-    if (inputValue !== overrideValue) {
-      setInputValue(overrideValue ? overrideValue : '')
-    }
-  }, [inputValue, overrideValue])
+  const handleUnitOverride = (newUnit: string) => {
+    setUnitValue(newUnit)
+    onOverride(inputValue, newUnit)
+  }
 
-  const handleVerify = () => {
-    if (onVerifyValue) {
-      onVerifyValue(overrideValue ?? '')
-    }
+  const isTrueFalseField = ['True', 'False'].includes(defaultValue)
+  const useCheckbox = unit === 'bool' || isTrueFalseField
+  const toggleValues = isTrueFalseField ? ['True', 'False'] : ['1', '0']
+  const valueIsNotDefault =
+    !!overrideValue && overrideValue.length > 1 && inputValue !== defaultValue
+  if (useCheckbox) {
+    console.log(
+      name,
+      overrideValue,
+      inputValue,
+      defaultValue,
+      valueIsNotDefault
+    )
+  }
+  const handleToggle = (e: MouseEvent) => {
+    e.preventDefault()
+    const checked = inputValue === 'True' || inputValue === '1'
+    const newValue = !checked ? toggleValues[0] : toggleValues[1]
+    setInputValue(newValue)
+    onOverride(newValue, unitValue ?? '')
   }
 
   return (
     <ul className={styles.container}>
-      <li className={styles.inputLi}>
-        <Input
-          name="override"
-          value={inputValue}
-          onChange={(e) => handleOverride(e.target.value)}
-        />
-      </li>
-      <li className={styles.buttonLi}>
-        <button className={styles.button} onClick={handleVerify}>
-          {rulerDarkSrc ? (
-            <span
-              className={styles.ruler}
-              style={{
-                backgroundImage: `url(${
-                  overrideValue ? rulerDarkSrc : rulerLightSrc
-                })`,
-              }}
-            />
-          ) : (
+      <li className={styles.input}>
+        {useCheckbox ? (
+          <button
+            onClick={handleToggle}
+            className={clsx(
+              'flex w-full',
+              !valueIsNotDefault && 'text-stone-300'
+            )}
+          >
             <FontAwesomeIcon
-              icon={overrideValue ? faRulerDark : faRulerLight}
-              className={clsx(
-                'm-auto text-xl',
-                overrideValue && 'text-stone-400',
-                !overrideValue && 'text-stone-300/60'
-              )}
+              icon={
+                ['True', '1'].includes(inputValue) ? faCheckSquare : faSquare
+              }
+              size="2xl"
+              className="ml-0"
             />
-          )}
-        </button>
+          </button>
+        ) : (
+          <Input
+            name={name ?? 'override'}
+            value={inputValue}
+            onChange={handleOverride}
+          />
+        )}
       </li>
+      {unit && unitOptions && (
+        <li className={styles.select}>
+          <Select
+            name="overrideUnit"
+            options={getUnitOptions(unit, unitOptions)}
+            value={unitValue}
+            placeholder={unit}
+            onSelect={(id) => handleUnitOverride(id ?? unit)}
+            disabled={!inputValue}
+          />
+        </li>
+      )}
     </ul>
   )
 }

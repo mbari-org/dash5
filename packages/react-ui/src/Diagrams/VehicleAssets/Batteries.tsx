@@ -17,6 +17,7 @@ export interface BatteryProps {
   colorVolts?: VehicleProps['colorVolts']
   colorAmps?: VehicleProps['colorAmps']
   isDocked?: boolean
+  onClick?: (event: React.MouseEvent<SVGElement, MouseEvent>) => void
 }
 export const Batteries: React.FC<BatteryProps> = ({
   colorBat1,
@@ -33,6 +34,7 @@ export const Batteries: React.FC<BatteryProps> = ({
   textAmpAgo,
   colorVolts,
   colorAmps,
+  onClick: handleClick,
 }) => {
   return (
     <g>
@@ -142,6 +144,15 @@ export const Batteries: React.FC<BatteryProps> = ({
       >
         AmpH:
       </text>
+      <rect
+        x="300"
+        y="234"
+        className="cursor-pointer fill-stone-500/0 transition-colors duration-100 hover:fill-stone-500/20"
+        width="87"
+        height="50"
+        rx="5"
+        onClick={handleClick}
+      />
     </g>
   )
 }

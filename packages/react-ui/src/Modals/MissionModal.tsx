@@ -11,7 +11,7 @@ import { WaypointStep } from './MissionModalSteps/WaypointStep'
 import { ExtraButton } from '../Modal/Footer'
 import { WaypointSummary } from './MissionModalSteps/WaypointSummary'
 import { ParameterStep } from './MissionModalSteps/ParameterStep'
-import { ParameterProps } from '../Tables/ParameterTable'
+import { ParameterProps, ParameterTableProps } from '../Tables/ParameterTable'
 import { ParameterSummary } from './MissionModalSteps/ParameterSummary'
 import { SafetyCommsStep } from './MissionModalSteps/SafetyCommsStep'
 import { ReviewStep } from './MissionModalSteps/ReviewStep'
@@ -46,10 +46,12 @@ export interface MissionModalProps
   totalDistance?: string
   bottomDepth?: string
   duration?: string
+  unitOptions?: ParameterTableProps['unitOptions']
   parameters: ParameterProps[]
   safetyParams: ParameterProps[]
   commsParams: ParameterProps[]
   unfilteredMissionParameters: ParameterProps[]
+  defaultOverrides?: ParameterProps[]
   onRefreshStats?: () => void
   onSchedule?: OnScheduleMissionHandler
   onCancel?: () => void
@@ -59,6 +61,8 @@ export interface MissionModalProps
   commandText?: string
   loading?: boolean
   onStepIndexChange?: (step: number) => void
+  selectedMissionCategory?: string
+  defaultSearchText?: string
 }
 
 export const MissionModal: React.FC<MissionModalProps> = ({
@@ -87,10 +91,14 @@ export const MissionModal: React.FC<MissionModalProps> = ({
   vehicles,
   commandText,
   loading,
+  unitOptions,
+  selectedMissionCategory: defaultMissionCategory,
+  defaultOverrides,
+  defaultSearchText,
 }) => {
   const [selectedMissionCategory, setSelectedMissionCategory] = useState<
     string | undefined
-  >('Recent Runs')
+  >(defaultMissionCategory ?? 'Recent Runs')
   const [selectedMissionId, setSelectedMissionId] = useState<
     string | null | undefined
   >(selectedId)
@@ -114,7 +122,12 @@ export const MissionModal: React.FC<MissionModalProps> = ({
     overriddenMissionParams,
     safetyCommsParams,
     overrideCount,
-  } = useManagedParameters({ parameters, safetyParams, commsParams })
+  } = useManagedParameters({
+    parameters,
+    safetyParams,
+    commsParams,
+    defaultOverrides,
+  })
 
   const { steps, currentStep, handleNext, handlePrevious, showSummary } =
     useMissionModalSteps({
@@ -232,6 +245,7 @@ export const MissionModal: React.FC<MissionModalProps> = ({
             onSelect={handleSelect}
             onSelectCategory={handleSelectCategory}
             selectedCategory={selectedMissionCategory}
+            defaultSearchText={defaultSearchText}
           />
         )
       case steps.indexOf('Waypoints'):
@@ -275,6 +289,7 @@ export const MissionModal: React.FC<MissionModalProps> = ({
             duration={duration}
             onVerifyValue={onVerifyParameter}
             onParamUpdate={handleParamUpdate}
+            unitOptions={unitOptions}
           />
         ) : (
           <ParameterStep
@@ -286,6 +301,7 @@ export const MissionModal: React.FC<MissionModalProps> = ({
             parameters={updatedParameters || []}
             onVerifyValue={onVerifyParameter}
             onParamUpdate={handleParamUpdate}
+            unitOptions={unitOptions}
           />
         )
 
@@ -301,6 +317,7 @@ export const MissionModal: React.FC<MissionModalProps> = ({
             duration={duration}
             onSafetyUpdate={handleSafetyUpdate}
             onCommsUpdate={handleCommsUpdate}
+            unitOptions={unitOptions}
           />
         )
 

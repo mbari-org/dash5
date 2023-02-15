@@ -13,6 +13,7 @@ export interface MissionStepProps {
   missionCategories?: SelectOption[]
   selectedCategory?: string
   onSelectCategory?: (id?: string) => void
+  defaultSearchText?: string
 }
 
 export const MissionStep: React.FC<MissionStepProps> = ({
@@ -23,8 +24,9 @@ export const MissionStep: React.FC<MissionStepProps> = ({
   missionCategories,
   onSelectCategory: handleSelectCategory,
   selectedCategory = 'Recent Runs',
+  defaultSearchText = '',
 }) => {
-  const [searchTerm, setSearchTerm] = useState('')
+  const [searchTerm, setSearchTerm] = useState(defaultSearchText)
   const [filteredMissions, setFilteredMissions] = useState<Mission[]>(missions)
   const [searchMissions, setSearchMissions] = useState<Mission[]>([])
   const [sortColumn, setSortColumn] = useState<number | null | undefined>(null)

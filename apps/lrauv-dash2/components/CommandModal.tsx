@@ -21,6 +21,7 @@ import { makeCommand } from '../lib/makeCommand'
 import { useRouter } from 'next/router'
 import toast from 'react-hot-toast'
 import { useState } from 'react'
+import useGlobalModalId from '../lib/useGlobalModalId'
 
 export interface CommandModalProps {
   onClose: () => void
@@ -33,10 +34,11 @@ export const CommandModal: React.FC<CommandModalProps> = ({
   className,
   style,
 }) => {
+  const { globalModalId } = useGlobalModalId()
+  const defaultCommand = globalModalId?.meta?.command
   const [currentCommandId, setCurrentCommand] = useState<
     string | null | undefined
-  >()
-  const [selectedMission, setSelectedMission] = useState<string | undefined>()
+  >(defaultCommand)
   const [configVariable, setConfigVariable] = useState<Record<string, string>>({
     Module: '',
     Component: '',
@@ -88,10 +90,10 @@ export const CommandModal: React.FC<CommandModalProps> = ({
   const { data: missionData } = useMissionList()
   const { data: selectedMissionData } = useScript(
     {
-      path: selectedMission ?? variable.Mission,
+      path: variable.Mission,
       gitRef: missionData?.gitRef ?? 'master',
     },
-    { enabled: !!selectedMission || (variable.Mission ?? '') !== '' }
+    { enabled: (variable.Mission ?? '') !== '' }
   )
 
   const handleUpdatedField: CommandModalViewProps['onUpdateField'] = (
@@ -161,7 +163,6 @@ export const CommandModal: React.FC<CommandModalProps> = ({
   }) => {
     createCommand({
       vehicle: confirmedVehicle?.toLowerCase() ?? '',
-      path: selectedMission as string,
       commandNote: notes ?? '',
       runCommand: 'y',
       schedDate: specifiedTime ?? 'asap',
@@ -211,7 +212,7 @@ export const CommandModal: React.FC<CommandModalProps> = ({
       commands={commands}
       recentCommands={recentCommands}
       frequentCommands={frequentCommands}
-      currentStepIndex={0}
+      currentStepIndex={defaultCommand ? 1 : 0}
       onSchedule={handleSchedule}
       onCancel={onClose}
       vehicleName={vehicleName}
@@ -228,6 +229,7 @@ export const CommandModal: React.FC<CommandModalProps> = ({
       vehicles={vehicles}
       alternativeAddresses={alternativeAddresses ?? []}
       loading={sendingCommand}
+      defaultCommand={defaultCommand ?? undefined}
     />
   )
 }

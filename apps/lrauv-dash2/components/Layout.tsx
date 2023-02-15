@@ -1,7 +1,7 @@
 import React, { useEffect } from 'react'
 import Head from 'next/head'
 import { PrimaryToolbar, ProfileDropdown } from '@mbari/react-ui'
-import { useTethysApiContext } from '@mbari/api-client'
+import { useSiteConfig, useTethysApiContext } from '@mbari/api-client'
 import { useState } from 'react'
 import Image from 'next/image'
 import VehicleDeploymentDropdown from '../components/VehicleDeploymentDropdown'
@@ -26,9 +26,12 @@ import { DocsModal } from './DocsModal'
 import { ChartsModal } from './ChartsModal'
 import { CommsModal } from './CommsModal'
 import { ESPModal } from './ESPModal'
+import { BatteryModal } from './BatteryModal'
+import { useTethysSubscription } from '../lib/useWebSocketListeners'
 
 const Layout: React.FC<{ children?: React.ReactNode }> = ({ children }) => {
   const [showLogin, setLogin] = useState(false)
+  useTethysSubscription()
   const router = useRouter()
   const [mounted, setMounted] = useState(false)
   const { globalModalId, setGlobalModalId } = useGlobalModalId()
@@ -196,6 +199,9 @@ const Layout: React.FC<{ children?: React.ReactNode }> = ({ children }) => {
           onClose={setModal(null)}
           vehicleName={vehicleName as string}
         />
+      )}
+      {globalModalId?.id === 'battery' && vehicleName.length > 0 && (
+        <BatteryModal vehicleName={vehicleName} onClose={setModal(null)} />
       )}
     </div>
   )

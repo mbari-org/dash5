@@ -1,10 +1,9 @@
-import { SelectField, AbsoluteOverlay } from '@mbari/react-ui'
+import { SelectField, AbsoluteOverlay, AccordionCells } from '@mbari/react-ui'
 import useGlobalModalId from '../lib/useGlobalModalId'
 import dynamic from 'next/dynamic'
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { capitalize, humanize, swallow } from '@mbari/utils'
 import { useChartData } from '@mbari/api-client'
-import { AccordionCells } from '@mbari/react-ui'
 import clsx from 'clsx'
 
 const LineChart: any = dynamic(
@@ -53,6 +52,23 @@ export const ScienceCell: React.FC<{
   }, [ready, timeout, setReady, timeoutms])
 
   const metric = `${capitalize(name)} (${unit})`
+  const chart = useMemo(() => {
+    return ready ? (
+      <LineChart
+        data={values?.map((v, i) => ({
+          timestamp: times?.[i],
+          value: v,
+        }))}
+        title={humanize(metric)}
+        color={color}
+        name={metric}
+        className="absolute inset-0 w-full"
+        inverted={name === 'depth'}
+      />
+    ) : (
+      <AbsoluteOverlay />
+    )
+  }, [values, times, color, metric, name, ready])
   return (
     <div
       className={clsx(
@@ -61,21 +77,7 @@ export const ScienceCell: React.FC<{
       )}
     >
       <div className={clsx(chartHeightClassname, 'relative my-auto')}>
-        {values && times && ready ? (
-          <LineChart
-            data={values?.map((v, i) => ({
-              timestamp: times?.[i],
-              value: v,
-            }))}
-            title={humanize(metric)}
-            color={color}
-            name={metric}
-            className="absolute inset-0 w-full"
-            inverted={name === 'depth'}
-          />
-        ) : (
-          <AbsoluteOverlay />
-        )}
+        {chart}
       </div>
     </div>
   )

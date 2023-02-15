@@ -18,6 +18,7 @@ export type ModalId =
   | 'vehicleDocs'
   | 'vehicleCharts'
   | 'vehicleComms'
+  | 'battery'
   | null
 
 export interface GlobalModalMetaData {
@@ -29,6 +30,10 @@ export interface GlobalModalMetaData {
   documentName?: string | null
   duplicate?: boolean
   attachmentType?: 'deployment' | 'vehicle'
+  eventId?: number | null
+  command?: string | null
+  mission?: string | null
+  params?: string | null
 }
 
 export interface GlobalModalState {

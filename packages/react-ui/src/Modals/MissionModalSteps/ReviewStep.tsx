@@ -53,7 +53,7 @@ export const ReviewStep: React.FC<ReviewProps> = ({
   )
 
   const safetyCommsRows = safetyCommsParams.map(
-    ({ name, unit, value, overrideValue, dvlOff }) => {
+    ({ name, unit, value, overrideValue, overrideUnit, dvlOff }) => {
       // highlighted cell style is teal if it's an override or orange if dvl is off
       const customCellStyle = overrideValue
         ? 'text-teal-500'
@@ -70,7 +70,7 @@ export const ReviewStep: React.FC<ReviewProps> = ({
             label: (
               <span className="text-base">
                 {overrideValue
-                  ? makeValueUnitString(overrideValue, unit)
+                  ? makeValueUnitString(overrideValue, overrideUnit ?? unit)
                   : makeValueUnitString(value, unit)}
               </span>
             ),
@@ -83,7 +83,7 @@ export const ReviewStep: React.FC<ReviewProps> = ({
   )
 
   const missionParamRows = overriddenMissionParams.map(
-    ({ name, overrideValue, unit }) => ({
+    ({ name, overrideValue, overrideUnit, unit }) => ({
       cells: [
         {
           label: <span>{name}</span>,
@@ -91,7 +91,9 @@ export const ReviewStep: React.FC<ReviewProps> = ({
         {
           label: (
             <span className="text-base">
-              {overrideValue ? makeValueUnitString(overrideValue, unit) : ''}
+              {overrideValue
+                ? makeValueUnitString(overrideValue, overrideUnit ?? unit)
+                : ''}
             </span>
           ),
         },
