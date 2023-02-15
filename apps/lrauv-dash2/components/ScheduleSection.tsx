@@ -44,9 +44,6 @@ export const ScheduleSection: React.FC<ScheduleSectionProps> = ({
   activeDeployment,
 }) => {
   const { setGlobalModalId } = useGlobalModalId()
-  const [scheduleStatus, setScheduleStatus] = useState<
-    ScheduleCellProps['scheduleStatus'] | null
-  >('running')
   const [scheduleFilter, setScheduleFilter] = useState<string>('')
   const [scheduleSearch, setScheduleSearch] = useState<string>('')
 
@@ -61,8 +58,14 @@ export const ScheduleSection: React.FC<ScheduleSectionProps> = ({
 
   const vehicleName = deploymentCommands?.deploymentInfo?.vehicleName ?? '...'
 
-  const toggleSchedule = () =>
-    setScheduleStatus(scheduleStatus === 'paused' ? 'running' : 'paused')
+  const toggleSchedule = () => {
+    setGlobalModalId({
+      id: 'newCommand',
+      meta: {
+        command: scheduleStatus === 'paused' ? 'sched resume' : 'sched pause',
+      },
+    })
+  }
 
   const missions = deploymentCommands?.commandStatuses
 
@@ -119,6 +122,9 @@ export const ScheduleSection: React.FC<ScheduleSectionProps> = ({
       setCurrentMoreMenu({ ...target, rect })
     }
   }
+
+  const scheduleStatus: ScheduleCellProps['scheduleStatus'] | null =
+    missions?.[0].event.data === 'sched pause' ? 'paused' : 'running'
 
   const cellAtIndex = (index: number) => {
     if (index === 0 && activeDeployment) {
@@ -238,7 +244,6 @@ export const ScheduleSection: React.FC<ScheduleSectionProps> = ({
 
   const handleDuplicate = ({
     eventId,
-    commandType,
   }: {
     eventId: number
     commandType: string
