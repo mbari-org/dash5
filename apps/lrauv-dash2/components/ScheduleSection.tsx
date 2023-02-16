@@ -124,7 +124,7 @@ export const ScheduleSection: React.FC<ScheduleSectionProps> = ({
   }
 
   const scheduleStatus: ScheduleCellProps['scheduleStatus'] | null =
-    missions?.[0].event.data === 'sched pause' ? 'paused' : 'running'
+    missions?.[0]?.event?.data === 'sched pause' ? 'paused' : 'running'
 
   const cellAtIndex = (index: number) => {
     if (index === 0 && activeDeployment) {

@@ -5,9 +5,7 @@ import { DateTime } from 'luxon'
 import {
   Tab,
   TabGroup,
-  CommsIcon,
   DeploymentInfo,
-  StatusIcon,
   UnderwaterIcon,
   SurfacedIcon,
   ConnectedIcon,
