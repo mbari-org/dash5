@@ -1,4 +1,9 @@
-import { TileLayer, MapContainer, LayersControl } from 'react-leaflet'
+import {
+  TileLayer,
+  MapContainer,
+  WMSTileLayer,
+  LayersControl,
+} from 'react-leaflet'
 import React from 'react'
 import { useMapBaseLayer, BaseLayerOption } from './useMapBaseLayer'
 
@@ -15,8 +20,8 @@ export interface MapProps {
 const Map: React.FC<MapProps> = ({
   className,
   style,
-  center = [36.618264, -121.9017919],
-  zoom = 13,
+  center = [36.7849, -122.12097],
+  zoom = 11,
   minZoom = 4,
   maxZoom = 16,
   children,
@@ -36,15 +41,15 @@ const Map: React.FC<MapProps> = ({
       maxZoom={maxZoom}
     >
       <LayersControl position="topright">
-        <LayersControl.BaseLayer
-          name="ESRI Oceans/Labels"
-          checked={baseLayer === 'ESRI Oceans/Labels'}
-        >
-          <TileLayer
-            url="https://server.arcgisonline.com/ArcGIS/rest/services/Ocean_Basemap/MapServer/tile/{z}/{y}/{x}"
-            attribution='&copy; <a href="https://developers.arcgis.com/">ArcGIS</a>'
+        <LayersControl.BaseLayer name="GMRT" checked={baseLayer === 'GMRT'}>
+          <WMSTileLayer
+            params={{
+              layers: 'GMRT',
+              format: 'image/png',
+            }}
+            url="http://www.gmrt.org/services/mapserver/wms_merc?"
             eventHandlers={{
-              add: addBaseLayerHandler('ESRI Oceans/Labels'),
+              add: addBaseLayerHandler('GMRT'),
             }}
           />
         </LayersControl.BaseLayer>
@@ -57,6 +62,18 @@ const Map: React.FC<MapProps> = ({
             url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
             eventHandlers={{
               add: addBaseLayerHandler('OpenStreetmaps'),
+            }}
+          />
+        </LayersControl.BaseLayer>
+        <LayersControl.BaseLayer
+          name="ESRI Oceans/Labels"
+          checked={baseLayer === 'ESRI Oceans/Labels'}
+        >
+          <TileLayer
+            url="https://server.arcgisonline.com/ArcGIS/rest/services/Ocean_Basemap/MapServer/tile/{z}/{y}/{x}"
+            attribution='&copy; <a href="https://developers.arcgis.com/">ArcGIS</a>'
+            eventHandlers={{
+              add: addBaseLayerHandler('ESRI Oceans/Labels'),
             }}
           />
         </LayersControl.BaseLayer>
