@@ -47,7 +47,7 @@ const Map: React.FC<MapProps> = ({
               layers: 'GMRT',
               format: 'image/png',
             }}
-            url="http://www.gmrt.org/services/mapserver/wms_merc?"
+            url="https://www.gmrt.org/services/mapserver/wms_merc?"
             eventHandlers={{
               add: addBaseLayerHandler('GMRT'),
             }}
