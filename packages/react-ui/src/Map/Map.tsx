@@ -5,6 +5,7 @@ import {
   LayersControl,
 } from 'react-leaflet'
 import React from 'react'
+import { useMemo } from 'react'
 import { useMapBaseLayer, BaseLayerOption } from './useMapBaseLayer'
 
 export interface MapProps {
@@ -30,6 +31,24 @@ const Map: React.FC<MapProps> = ({
   const addBaseLayerHandler = (layer: BaseLayerOption) => () => {
     setBaseLayer(layer)
   }
+
+  const gmrtLayer = useMemo(
+    () => (
+      <LayersControl.BaseLayer name="GMRT" checked={baseLayer === 'GMRT'}>
+        <WMSTileLayer
+          params={{
+            layers: 'GMRT',
+            format: 'image/png',
+          }}
+          url="https://www.gmrt.org/services/mapserver/wms_merc?"
+          eventHandlers={{
+            add: addBaseLayerHandler('GMRT'),
+          }}
+        />{' '}
+      </LayersControl.BaseLayer>
+    ),
+    [baseLayer]
+  )
   return (
     <MapContainer
       center={center}
@@ -41,18 +60,7 @@ const Map: React.FC<MapProps> = ({
       maxZoom={maxZoom}
     >
       <LayersControl position="topright">
-        <LayersControl.BaseLayer name="GMRT" checked={baseLayer === 'GMRT'}>
-          <WMSTileLayer
-            params={{
-              layers: 'GMRT',
-              format: 'image/png',
-            }}
-            url="https://www.gmrt.org/services/mapserver/wms_merc?"
-            eventHandlers={{
-              add: addBaseLayerHandler('GMRT'),
-            }}
-          />
-        </LayersControl.BaseLayer>
+        {gmrtLayer}
         <LayersControl.BaseLayer
           name="OpenStreetmaps"
           checked={baseLayer === 'OpenStreetmaps'}
