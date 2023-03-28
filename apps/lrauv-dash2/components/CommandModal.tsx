@@ -164,7 +164,6 @@ export const CommandModal: React.FC<CommandModalProps> = ({
     createCommand({
       vehicle: confirmedVehicle?.toLowerCase() ?? '',
       commandNote: notes ?? '',
-      runCommand: 'y',
       schedDate: specifiedTime ?? 'asap',
       destinationAddress: alternateAddress ?? undefined,
       commandText:
