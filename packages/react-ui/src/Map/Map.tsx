@@ -16,6 +16,7 @@ export interface MapProps {
   minZoom?: number
   maxZoom?: number
   maxNativeZoom?: number
+  scrollWheelZoom?: boolean
   children?: React.ReactNode
 }
 
@@ -56,7 +57,7 @@ const Map: React.FC<MapProps> = ({
     <MapContainer
       center={center}
       zoom={zoom}
-      scrollWheelZoom={false}
+      scrollWheelZoom={true}
       className={className}
       style={style}
       minZoom={minZoom}
