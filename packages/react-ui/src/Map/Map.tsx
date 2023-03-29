@@ -34,7 +34,7 @@ const Map: React.FC<MapProps> = ({
 
   const gmrtLayer = useMemo(
     () => (
-      <LayersControl.BaseLayer name="GMRT" checked={baseLayer === 'GMRT'}>
+      <LayersControl.BaseLayer name="GMRT">
         <WMSTileLayer
           params={{
             layers: 'GMRT',
@@ -60,28 +60,28 @@ const Map: React.FC<MapProps> = ({
       maxZoom={maxZoom}
     >
       <LayersControl position="topright">
+        <LayersControl.BaseLayer
+          name="ESRI Oceans/Labels"
+          checked={baseLayer === 'ESRI Oceans/Labels'}
+        >
+          <TileLayer
+            url="https://ibasemaps-api.arcgis.com/arcgis/rest/services/Ocean/World_Ocean_Base/MapServer/tile/{z}/{y}/{x}?//token=<ACCESS_TOKEN>process.env.REACT_APP_ESRI_API_KEY</ACCESS_TOKEN>"
+            attribution='&copy; <a href="https://developers.arcgis.com/">ArcGIS</a>'
+            eventHandlers={{
+              add: addBaseLayerHandler('ESRI Oceans/Labels'),
+            }}
+          />
+        </LayersControl.BaseLayer>
         {gmrtLayer}
         <LayersControl.BaseLayer
           name="OpenStreetmaps"
-          checked={baseLayer === 'OpenStreetmaps'}
+          //checked={baseLayer === 'OpenStreetmaps'}
         >
           <TileLayer
             attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
             url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
             eventHandlers={{
               add: addBaseLayerHandler('OpenStreetmaps'),
-            }}
-          />
-        </LayersControl.BaseLayer>
-        <LayersControl.BaseLayer
-          name="ESRI Oceans/Labels"
-          checked={baseLayer === 'ESRI Oceans/Labels'}
-        >
-          <TileLayer
-            url="https://server.arcgisonline.com/ArcGIS/rest/services/Ocean_Basemap/MapServer/tile/{z}/{y}/{x}"
-            attribution='&copy; <a href="https://developers.arcgis.com/">ArcGIS</a>'
-            eventHandlers={{
-              add: addBaseLayerHandler('ESRI Oceans/Labels'),
             }}
           />
         </LayersControl.BaseLayer>
