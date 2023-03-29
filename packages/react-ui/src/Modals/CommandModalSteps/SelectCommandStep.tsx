@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react'
+import React, { useEffect, useState, useRef } from 'react'
 import { SelectOption } from '../../Fields/Select'
 import { SortDirection } from '../../Data/TableHeader'
 import { faInfoCircle } from '@fortawesome/pro-regular-svg-icons'
@@ -120,9 +120,13 @@ export const SelectCommandStep: React.FC<SelectCommandStepProps> = ({
     onSelectCommandId,
   ])
 
+  const lastSelectedFilter = useRef(selectedFilter)
   useEffect(() => {
     if (selectedFilter) {
-      setSearchTerm('')
+      if (selectedFilter !== lastSelectedFilter.current) {
+        lastSelectedFilter.current = selectedFilter
+      }
+      //setSearchTerm('')
       setSortDirection(null)
       switch (selectedFilter) {
         case 'recent':
