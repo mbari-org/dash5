@@ -52,6 +52,7 @@
     "@tanstack/react-virtual": "^3.0.0-beta.39",
     "clsx": "^1.1.1",
     "immutability-helper": "^3.1.1",
+    "esri-leaflet": "^3.0.10",
     "leaflet": "^1.8.0",
     "luxon": "^2.3.1",
     "next": "^12.1.4",
