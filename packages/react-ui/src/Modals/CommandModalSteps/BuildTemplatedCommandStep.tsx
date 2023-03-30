@@ -359,7 +359,8 @@ export const BuildTemplatedCommandStep: React.FC<
     .replace(/\s+/g, ' ')
     .trim()
 
-  const persistedCommand = useRef(argumentAsCommand)
+  // Ensure this is blank on first render so that the side effect below runs.
+  const persistedCommand = useRef('')
   useEffect(() => {
     if (persistedCommand.current === argumentAsCommand) return
     persistedCommand.current = argumentAsCommand

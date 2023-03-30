@@ -1,6 +1,8 @@
 import { render, screen } from '@testing-library/react'
 import '@testing-library/jest-dom'
 import { CommandModal, CommandModalProps } from './CommandModal'
+import { syntaxVariations, commands } from './CommandModal.sampleProps'
+import userEvent from '@testing-library/user-event'
 
 const props: CommandModalProps = {
   steps: ['Command', 'Build', 'Schedule'],
@@ -8,51 +10,21 @@ const props: CommandModalProps = {
   vehicleName: 'Brizo',
   recentCommands: [
     {
-      id: '1',
+      id: 'restart',
       name: 'restart logs',
     },
     {
-      id: '2',
+      id: 'stop',
       name: 'stop',
     },
     {
-      id: '3',
+      id: 'schedule resume',
       name: 'schedule clear; schedule resume',
     },
   ],
   onCancel: () => console.log('cancel'),
-  commands: [
-    {
-      id: '1',
-      name: 'restart logs',
-      vehicle: 'Brizo',
-      description: 'Restart, from least impact (logs) to most impact (system)',
-    },
-    {
-      id: '2',
-      name: 'stop',
-      vehicle: 'Tethys',
-      description: 'Stop currently running mission',
-    },
-    {
-      id: '3',
-      name: 'schedule clear; schedule resume',
-      vehicle: 'Tethys',
-      description: 'Schedule commands for later execution',
-    },
-    {
-      id: '4',
-      name: 'restart app',
-      vehicle: 'Tethys',
-      description: 'Restart, from least impact (logs) to most impact (system)',
-    },
-    {
-      id: '5',
-      name: 'configSet CTD_Seabird.loadAtStartup 1 bool persist;',
-      vehicle: 'Brizo',
-      description: 'Set configuration variable value',
-    },
-  ],
+  commands,
+  syntaxVariations,
   onSortColumn: (col, isAsc) => {
     console.log(
       `Clicked column number ${col}, which is sorted ${
@@ -64,7 +36,7 @@ const props: CommandModalProps = {
     console.log(values)
     return undefined
   },
-  selectedId: '5',
+  selectedId: 'failComponent',
 }
 
 test('should render the component', async () => {
@@ -145,4 +117,41 @@ test('should render extra buttons and correct button text', () => {
   expect(
     screen.getByRole('button', { name: `Schedule ${props.vehicleName}` })
   ).toBeInTheDocument()
+})
+
+test('should schedule a complete command without making any changes to the default values', async () => {
+  const user = userEvent.setup()
+  var commandText = ''
+  render(
+    <CommandModal
+      {...props}
+      onSchedule={(args) => {
+        commandText = args.commandText
+      }}
+    />
+  )
+  // Navigate to failComponent for step 2
+  await user.click(screen.getByPlaceholderText(/search commands/i))
+  await user.type(screen.getByPlaceholderText(/search commands/i), 'fail')
+  await user.click(
+    screen.getByText('failComponent').closest('button') as Element
+  )
+  await user.click(screen.getByText(/next/i).closest('button') as Element)
+  expect(screen.getByText(/Build command/i)).toBeInTheDocument()
+  expect(screen.queryAllByText(/failComponent/i).length).toBe(2)
+
+  // Navigate to step 3
+  await user.click(screen.getByText(/next/i).closest('button') as Element)
+  expect(screen.getByText(/failComponent/i)).toBeInTheDocument()
+  expect(screen.getByText(/Brizo/i, { selector: 'span' })).toBeInTheDocument()
+
+  // Schedule command
+  await user.click(
+    screen.getByText(/Schedule Brizo/i).closest('button') as Element
+  )
+  expect(screen.getByText(/Brizo should do failComponent/i)).toBeInTheDocument()
+
+  // Confirm schedule
+  await user.click(screen.getByText(/confirm/i).closest('button') as Element)
+  expect(commandText).toBe('failComponent')
 })

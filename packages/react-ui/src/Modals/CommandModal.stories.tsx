@@ -4,6 +4,7 @@ import { Story, Meta } from '@storybook/react/types-6-0'
 import { CommandModal, CommandModalProps } from './CommandModal'
 import { CommandTableProps } from '../Tables/CommandTable'
 import { wait } from '@mbari/utils'
+import { syntaxVariations, commands } from './CommandModal.sampleProps'
 
 export default {
   title: 'Modals/CommandModal',
@@ -21,80 +22,7 @@ const Template: Story<CommandModalProps> = (args) => {
 }
 
 const commandTableArgs: CommandTableProps = {
-  commands: [
-    {
-      id: '1',
-      name: 'restart logs',
-      vehicle: 'Brizo',
-      description: 'Restart, from least impact (logs) to most impact (system)',
-    },
-    {
-      id: '2',
-      name: 'stop',
-      vehicle: 'Tethys',
-      description: 'Stop currently running mission',
-    },
-    {
-      id: '3',
-      name: 'schedule clear; schedule resume',
-      vehicle: 'Tethys',
-      description: 'Schedule commands for later execution',
-    },
-    {
-      id: '4',
-      name: 'restart app',
-      vehicle: 'Tethys',
-      description: 'Restart, from least impact (logs) to most impact (system)',
-    },
-    {
-      id: '5',
-      name: 'configSet CTD_Seabird.loadAtStartup 1 bool persist;',
-      vehicle: 'Brizo',
-      description: 'Set configuration variable value',
-    },
-    {
-      id: '6',
-      name: 'configSet list',
-      vehicle: 'Brizo',
-      description: 'Set configuration variable value',
-    },
-    {
-      id: '7',
-      name: 'strobe off',
-      vehicle: 'Brizo',
-      description: 'Enable (or disable) the strobe',
-    },
-    {
-      id: '8',
-      name: 'ibit',
-      vehicle: 'Brizo',
-      description: 'Run initiated built in test',
-    },
-    {
-      id: '9',
-      name: 'configSet CTD_Seabird.loadAtStartup 1 bool persist;',
-      vehicle: 'Brizo',
-      description: 'Set configuration variable value',
-    },
-    {
-      id: '10',
-      name: 'configSet list',
-      vehicle: 'Brizo',
-      description: 'Set configuration variable value',
-    },
-    {
-      id: '11',
-      name: 'strobe off',
-      vehicle: 'Brizo',
-      description: 'Enable (or disable) the strobe',
-    },
-    {
-      id: '12',
-      name: 'ibit',
-      vehicle: 'Brizo',
-      description: 'Run initiated built in test',
-    },
-  ],
+  commands,
   onSortColumn: (col, isAsc) => {
     console.log(
       `Clicked column number ${col}, which is sorted ${
@@ -108,6 +36,7 @@ const commandTableArgs: CommandTableProps = {
 const args: Omit<CommandModalProps, 'onSubmit'> = {
   steps: ['Command', 'Build', 'Schedule'],
   currentStepIndex: 0,
+  syntaxVariations,
   vehicleName: 'Brizo',
   recentCommands: [
     {
@@ -123,7 +52,7 @@ const args: Omit<CommandModalProps, 'onSubmit'> = {
       name: 'schedule clear; schedule resume',
     },
   ],
-  onSchedule: () => console.log('schedule'),
+  onSchedule: () => undefined,
   onCancel: () => console.log('cancel'),
   ...commandTableArgs,
 }
