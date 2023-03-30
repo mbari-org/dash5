@@ -175,7 +175,9 @@ export const CommandModal: React.FC<CommandModalProps> = ({
   const [commandText, setCommandText] = useState<string | null>(null)
 
   // Templated Command State
-  const [selectedSyntax, setSelectedSyntax] = useState<string | null>(null)
+  const [selectedSyntax, setSelectedSyntax] = useState<string | null>(
+    syntaxVariations?.[0]?.help ?? null
+  )
   const [selectedParameters, setSelectedParameters] = useState<{
     [key: string]: string
   }>({})
