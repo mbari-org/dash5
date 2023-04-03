@@ -20,8 +20,8 @@ const CommsSection: React.FC<CommsSectionProps> = ({
   const { data, isLoading, isFetching } = useEvents({
     vehicles: [vehicleName],
     eventTypes: ['command', 'run'],
-    from,
-    to,
+    from: '',
+    to: '',
   })
   const lastCommsMillis = useLastCommsTime(
     vehicleName,
