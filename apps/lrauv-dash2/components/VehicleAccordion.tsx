@@ -47,11 +47,11 @@ const VehicleAccordion: React.FC<VehicleAccordionProps> = ({
   activeDeployment,
   currentDeploymentId,
 }) => {
-  // const { data: relatedLogs, isLoading: logsLoading } = useEvents({
-  //   vehicles: [vehicleName],
-  //   from,
-  //   to,
-  // })
+  const { data: relatedLogs, isLoading: logsLoading } = useEvents({
+    vehicles: [vehicleName],
+    from: '',
+    to: '',
+  })
   const { data: commsLogs, isLoading: commsLoading } = useEvents({
     vehicles: [vehicleName],
     eventTypes: ['command', 'run'],
@@ -82,6 +82,11 @@ const VehicleAccordion: React.FC<VehicleAccordionProps> = ({
   const handleToggleForSection =
     (currentSection: VehicleAccordionSection) => (open: boolean) =>
       setSection(open ? currentSection : null)
+  if (!currentMission) {
+    ;(currentSection: VehicleAccordionSection) => (open: boolean) =>
+      setSection(open ? currentSection : 'comms')
+  }
+
   const { data: picAndOnCall, isLoading: loadingPic } = usePicAndOnCall({
     vehicleName,
   })
