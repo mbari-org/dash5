@@ -133,8 +133,8 @@ export const ScheduleSection: React.FC<ScheduleSectionProps> = ({
         <div className="flex border-b border-stone-200 py-2 px-4 text-sm">
           <p className="flex-grow text-xs">
             {/* {capitalize(vehicleName)} is scheduled until */}
-            {capitalize(vehicleName)} is NOT yet scheduled.
-            <br /> Deployment: TBD
+            {/* {capitalize(vehicleName)} is NOT yet scheduled.
+            <br /> Deployment: TBD */}
           </p>
           <AccessoryButton
             label="Mission"
