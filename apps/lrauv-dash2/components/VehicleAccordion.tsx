@@ -78,11 +78,13 @@ const VehicleAccordion: React.FC<VehicleAccordionProps> = ({
   //   ? `started ${DateTime.fromISO(earliestLog).toRelative()}`
   //   : 'no logs yet'
 
-  const [section, setSection] = useState<VehicleAccordionSection>('schedule')
+  //const [section, setSection] = useState<VehicleAccordionSection>('schedule')
+  const [section, setSection] = useState<VehicleAccordionSection>(null)
   const handleToggleForSection =
     (currentSection: VehicleAccordionSection) => (open: boolean) =>
       setSection(open ? currentSection : null)
-  if (!currentMission) {
+
+  if (!currentMission || !activeDeployment) {
     ;(currentSection: VehicleAccordionSection) => (open: boolean) =>
       setSection(open ? currentSection : 'comms')
   }
