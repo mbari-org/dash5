@@ -106,7 +106,7 @@ export const MissionModal: React.FC<MissionModalProps> = ({
   const [showAlternateAddress, setShowAlternateAddress] = useState(false)
   const [alternateAddress, setAlternateAddress] = useState<string | null>(null)
   const [scheduleOption, setScheduleOption] = useState<ScheduleOption | null>(
-    null
+    'ASAP'
   )
   const [customScheduleId, setCustomScheduleId] = useState<string | null>(null)
   const [notes, setNotes] = useState<string | null>(null)

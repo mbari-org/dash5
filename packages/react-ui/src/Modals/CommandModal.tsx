@@ -143,7 +143,7 @@ export const CommandModal: React.FC<CommandModalProps> = ({
   const [confirmedVehicle, setConfirmedVehicle] = useState<string | null>(null)
   const [showAlternateAddress, setShowAlternateAddress] = useState(false)
   const [scheduleOption, setScheduleOption] = useState<ScheduleOption | null>(
-    null
+    'ASAP'
   )
   const [customScheduleId, setCustomScheduleId] = useState<string | null>(null)
   const [notes, setNotes] = useState<string | null>(null)
