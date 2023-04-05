@@ -3,9 +3,9 @@ import {
   MapContainer,
   WMSTileLayer,
   LayersControl,
+  ScaleControl,
 } from 'react-leaflet'
-import React from 'react'
-import { useMemo } from 'react'
+import React, { useMemo } from 'react'
 import { useMapBaseLayer, BaseLayerOption } from './useMapBaseLayer'
 
 export interface MapProps {
@@ -34,6 +34,7 @@ const Map: React.FC<MapProps> = ({
   const addBaseLayerHandler = (layer: BaseLayerOption) => () => {
     setBaseLayer(layer)
   }
+  //const esriVectorLayerRef = useRef();
 
   const gmrtLayer = useMemo(
     () => (
@@ -45,6 +46,8 @@ const Map: React.FC<MapProps> = ({
           }}
           url="https://www.gmrt.org/services/mapserver/wms_merc?"
           maxNativeZoom={maxNativeZoom}
+          minZoom={minZoom}
+          maxZoom={maxZoom}
           eventHandlers={{
             add: addBaseLayerHandler('GMRT'),
           }}
@@ -64,6 +67,8 @@ const Map: React.FC<MapProps> = ({
       maxZoom={maxZoom}
       // @ts-ignore
       maxNativeZoom={maxNativeZoom}
+      // @ts-ignore
+      // easyBtn={easyBtn}
     >
       <LayersControl position="topright">
         <LayersControl.BaseLayer
@@ -73,7 +78,7 @@ const Map: React.FC<MapProps> = ({
           <TileLayer
             url="https://ibasemaps-api.arcgis.com/arcgis/rest/services/Ocean/World_Ocean_Base/MapServer/tile/{z}/{y}/{x}?//token=<ACCESS_TOKEN>process.env.REACT_APP_ESRI_API_KEY</ACCESS_TOKEN>"
             attribution='&copy; <a href="https://developers.arcgis.com/">ArcGIS</a>'
-            maxNativeZoom={maxNativeZoom}
+            maxNativeZoom={13}
             eventHandlers={{
               add: addBaseLayerHandler('ESRI Oceans/Labels'),
             }}
@@ -103,6 +108,11 @@ const Map: React.FC<MapProps> = ({
         </LayersControl.BaseLayer>
       </LayersControl>
       {children}
+      <ScaleControl position="topright" />
+      <div className={'leaflet-control'}>{children}</div>
+      <button className="font-bold bg-blue-600 px-6 py-3 text-white rounded-md">
+        Blue button
+      </button>
     </MapContainer>
   )
 }
