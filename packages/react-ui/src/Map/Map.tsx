@@ -5,8 +5,12 @@ import {
   LayersControl,
   ScaleControl,
 } from 'react-leaflet'
+import Control from 'react-leaflet-custom-control'
 import React, { useMemo } from 'react'
+import MouseCoordinates from './MouseCoordinates'
 import { useMapBaseLayer, BaseLayerOption } from './useMapBaseLayer'
+import 'leaflet/dist/leaflet.css'
+import 'leaflet-mouse-position'
 
 export interface MapProps {
   className?: string
@@ -34,7 +38,6 @@ const Map: React.FC<MapProps> = ({
   const addBaseLayerHandler = (layer: BaseLayerOption) => () => {
     setBaseLayer(layer)
   }
-  //const esriVectorLayerRef = useRef();
 
   const gmrtLayer = useMemo(
     () => (
@@ -67,8 +70,6 @@ const Map: React.FC<MapProps> = ({
       maxZoom={maxZoom}
       // @ts-ignore
       maxNativeZoom={maxNativeZoom}
-      // @ts-ignore
-      // easyBtn={easyBtn}
     >
       <LayersControl position="topright">
         <LayersControl.BaseLayer
@@ -110,9 +111,9 @@ const Map: React.FC<MapProps> = ({
       {children}
       <ScaleControl position="topright" />
       <div className={'leaflet-control'}>{children}</div>
-      <button className="font-bold bg-blue-600 px-6 py-3 text-white rounded-md">
-        Blue button
-      </button>
+      <Control prepend position="topright">
+        <MouseCoordinates />
+      </Control>
     </MapContainer>
   )
 }

@@ -33,6 +33,7 @@
   },
   "devDependencies": {
     "@sumocreations/scaffolds": "^1.1.6",
+    "@types/leaflet-mouse-position": "^1.2.1",
     "eslint": "^8.11",
     "eslint-config-next": "^12.1.5",
     "eslint-config-prettier": "^8.5.0",
