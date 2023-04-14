@@ -31,6 +31,8 @@
     "react-esri-leaflet": "^2.0.1",
     "react-leaflet": "^4.2.1",
     "react-leaflet-google-layer": "^2.2.0",
+    "react-leaflet-googlemutant": "^0.1.20",
+    "react-leaflet-measure": "^2.1.1",
     "react-google-recaptcha": "^2.1.0",
     "react-hot-toast": "^2.2.0",
     "react-query": "^3.34.19",
