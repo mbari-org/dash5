@@ -6,10 +6,11 @@ import {
   ScaleControl,
 } from 'react-leaflet'
 import Control from 'react-leaflet-custom-control'
+import 'leaflet/dist/leaflet.css'
 import React, { useMemo } from 'react'
+import ReactLeafletGoogleLayer from 'react-leaflet-google-layer'
 import MouseCoordinates from './MouseCoordinates'
 import { useMapBaseLayer, BaseLayerOption } from './useMapBaseLayer'
-import 'leaflet/dist/leaflet.css'
 import 'leaflet-mouse-position'
 
 export interface MapProps {
@@ -73,6 +74,17 @@ const Map: React.FC<MapProps> = ({
     >
       <LayersControl position="topright">
         <LayersControl.BaseLayer
+          name="Google Hybrid"
+          checked={baseLayer === 'Google Hybrid'}
+        >
+          <ReactLeafletGoogleLayer
+            type="hybrid"
+            eventHandlers={{
+              add: addBaseLayerHandler('Google Hybrid'),
+            }}
+          />
+        </LayersControl.BaseLayer>
+        <LayersControl.BaseLayer
           name="ESRI Oceans/Labels"
           checked={baseLayer === 'ESRI Oceans/Labels'}
         >
@@ -86,7 +98,10 @@ const Map: React.FC<MapProps> = ({
           />
         </LayersControl.BaseLayer>
         {gmrtLayer}
-        <LayersControl.BaseLayer name="OpenStreetmaps">
+        <LayersControl.BaseLayer
+          name="OpenStreetmaps"
+          checked={baseLayer === 'OpenStreetmaps'}
+        >
           <TileLayer
             attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
             url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
