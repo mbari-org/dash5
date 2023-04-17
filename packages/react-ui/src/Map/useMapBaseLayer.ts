@@ -1,8 +1,11 @@
 import { atom, useRecoilState } from 'recoil'
 
 export type BaseLayerOption =
-  // | 'Google Hybrid'
-  'ESRI Oceans/Labels' | 'GMRT' | 'OpenStreetmaps' | 'Dark Layer (CARTO)'
+  | 'Google Hybrid'
+  | 'ESRI Oceans/Labels'
+  | 'GMRT'
+  | 'OpenStreetmaps'
+  | 'Dark Layer (CARTO)'
 
 export interface UseMapBaseLayerState {
   baseLayer: BaseLayerOption
@@ -10,7 +13,7 @@ export interface UseMapBaseLayerState {
 
 const baseLayerState = atom<UseMapBaseLayerState | null>({
   key: 'baseLayerState',
-  default: { baseLayer: 'ESRI Oceans/Labels' },
+  default: { baseLayer: 'Google Hybrid' },
 })
 
 export const useMapBaseLayer = () => {

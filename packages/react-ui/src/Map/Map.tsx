@@ -73,7 +73,7 @@ const Map: React.FC<MapProps> = ({
       maxNativeZoom={maxNativeZoom}
     >
       <LayersControl position="topright">
-        {/* <LayersControl.BaseLayer
+        <LayersControl.BaseLayer
           name="Google Hybrid"
           checked={baseLayer === 'Google Hybrid'}
         >
@@ -83,7 +83,7 @@ const Map: React.FC<MapProps> = ({
               add: addBaseLayerHandler('Google Hybrid'),
             }}
           />
-        </LayersControl.BaseLayer> */}
+        </LayersControl.BaseLayer>
         <LayersControl.BaseLayer
           name="ESRI Oceans/Labels"
           checked={baseLayer === 'ESRI Oceans/Labels'}
