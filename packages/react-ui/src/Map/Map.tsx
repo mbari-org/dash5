@@ -29,10 +29,10 @@ const Map: React.FC<MapProps> = ({
   className,
   style,
   center = [36.7849, -122.12097],
-  zoom = 18,
+  zoom = 17,
   minZoom = 4,
-  maxZoom = 18,
-  maxNativeZoom = 11,
+  maxZoom = 17,
+  maxNativeZoom = 13,
   children,
 }) => {
   const { baseLayer, setBaseLayer } = useMapBaseLayer()
