@@ -91,7 +91,7 @@ const Map: React.FC<MapProps> = ({
           <TileLayer
             url="https://ibasemaps-api.arcgis.com/arcgis/rest/services/Ocean/World_Ocean_Base/MapServer/tile/{z}/{y}/{x}?//token=<ACCESS_TOKEN>process.env.REACT_APP_ESRI_API_KEY</ACCESS_TOKEN>"
             attribution='&copy; <a href="https://developers.arcgis.com/">ArcGIS</a>'
-            maxNativeZoom={13}
+            maxNativeZoom={maxNativeZoom}
             eventHandlers={{
               add: addBaseLayerHandler('ESRI Oceans/Labels'),
             }}
