@@ -56,7 +56,7 @@ const DeploymentMap: React.FC<DeploymentMapProps> = ({
   )
 
   return (
-    <Map className="h-full w-full" maxZoom={13}>
+    <Map className="h-full w-full" maxZoom={17}>
       {plottedWaypoints?.length ? (
         <>
           {plottedWaypoints.map((m, i) => {
