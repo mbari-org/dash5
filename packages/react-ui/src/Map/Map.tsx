@@ -6,10 +6,11 @@ import {
   ScaleControl,
 } from 'react-leaflet'
 import Control from 'react-leaflet-custom-control'
+import 'leaflet/dist/leaflet.css'
 import React, { useMemo } from 'react'
+import ReactLeafletGoogleLayer from 'react-leaflet-google-layer'
 import MouseCoordinates from './MouseCoordinates'
 import { useMapBaseLayer, BaseLayerOption } from './useMapBaseLayer'
-import 'leaflet/dist/leaflet.css'
 import 'leaflet-mouse-position'
 
 export interface MapProps {
@@ -28,10 +29,10 @@ const Map: React.FC<MapProps> = ({
   className,
   style,
   center = [36.7849, -122.12097],
-  zoom = 17,
+  zoom = 18,
   minZoom = 4,
-  maxZoom = 17,
-  maxNativeZoom = 13,
+  maxZoom = 18,
+  maxNativeZoom = 11,
   children,
 }) => {
   const { baseLayer, setBaseLayer } = useMapBaseLayer()
@@ -73,20 +74,34 @@ const Map: React.FC<MapProps> = ({
     >
       <LayersControl position="topright">
         <LayersControl.BaseLayer
+          name="Google Hybrid"
+          checked={baseLayer === 'Google Hybrid'}
+        >
+          <ReactLeafletGoogleLayer
+            type="hybrid"
+            eventHandlers={{
+              add: addBaseLayerHandler('Google Hybrid'),
+            }}
+          />
+        </LayersControl.BaseLayer>
+        <LayersControl.BaseLayer
           name="ESRI Oceans/Labels"
           checked={baseLayer === 'ESRI Oceans/Labels'}
         >
           <TileLayer
             url="https://ibasemaps-api.arcgis.com/arcgis/rest/services/Ocean/World_Ocean_Base/MapServer/tile/{z}/{y}/{x}?//token=<ACCESS_TOKEN>process.env.REACT_APP_ESRI_API_KEY</ACCESS_TOKEN>"
             attribution='&copy; <a href="https://developers.arcgis.com/">ArcGIS</a>'
-            maxNativeZoom={13}
+            maxNativeZoom={maxNativeZoom}
             eventHandlers={{
               add: addBaseLayerHandler('ESRI Oceans/Labels'),
             }}
           />
         </LayersControl.BaseLayer>
         {gmrtLayer}
-        <LayersControl.BaseLayer name="OpenStreetmaps">
+        <LayersControl.BaseLayer
+          name="OpenStreetmaps"
+          checked={baseLayer === 'OpenStreetmaps'}
+        >
           <TileLayer
             attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
             url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"

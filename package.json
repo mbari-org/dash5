@@ -48,5 +48,8 @@
   "volta": {
     "node": "16.18.1",
     "yarn": "1.22.19"
+  },
+  "dependencies": {
+    "@types/leaflet.gridlayer.googlemutant": "^0.4.6"
   }
 }

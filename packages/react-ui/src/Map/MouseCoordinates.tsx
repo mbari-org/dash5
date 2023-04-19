@@ -1,4 +1,5 @@
 // @ts-nocheck
+// jshint esversion:6
 import React from 'react'
 import { useMapEvents } from 'react-leaflet'
 import 'leaflet/dist/leaflet.css'
@@ -16,43 +17,29 @@ const POSITION_CLASSES = {
 
 const BOUNDS_STYLE = { weight: 1 }
 
-const divStyle = {
+let divStyle = {
   color: 'darkblue',
-  borderStyle: 'solid',
-  // borderWidth: 'medium',
-  borderColor: 'black',
-  width: 'auto',
-  margin: 'auto',
-  border: '1px solid rgba(0,0,0,0.2)',
+  fontFamily: 'monospace, serif',
+  fontSize: 'small',
+  backgroundColor: 'rgba(255, 255, 255, 0.75)',
+  padding: '0 4px 0 4p',
+  border: '1px solid lightgray',
   borderRadius: '4px',
-  backgroundColor: 'rgba(255, 255, 255, 0.7)',
-  outline: '1px',
-  fontSize: '12px',
-  fontFamily: 'courier, monospace',
-  boxShadow: 'none',
-  // color: '#333',
-  padding: '0.5px 0.5px',
-  minHeight: '14px',
+  boxShadow:
+    '0 5px 5px -3px rgba(0, 0, 0, 0.2), 0 8px 10px 1px rgba(0, 0, 0, 0.14), 0 3px 14px 2px rgba(0, 0, 0, 0.12)',
   cursor: 'pointer',
 }
 
 export type MouseCoordinatesProps = Control.MouseCoordinatesOptions
 
-function round(number, precision = 0) {
-  return (
-    Math.round(number * Math.pow(10, precision) + Number.EPSILON) /
-    Math.pow(10, precision)
-  )
-}
-
 function formatLatitude(latitude) {
-  const direction = latitude > 0 ? 'N' : 'S'
-  return `${round(Math.abs(latitude), 4)}° ${direction}`
+  latitude = `${latitude.toFixed(5)}`
+  return `${latitude}`
 }
 
 function formatLongitude(longitude) {
-  const direction = longitude > 0 ? 'E' : 'W'
-  return `${round(Math.abs(longitude), 4)}° ${direction}`
+  longitude = `${longitude.toFixed(5)}`
+  return `${longitude}`
 }
 
 function MouseCoordinates(props) {
@@ -90,7 +77,7 @@ function MouseCoordinates(props) {
       setMousePoint(event.latlng)
     },
     mouseout() {
-      setMousePoint(null)
+      // setMousePoint(null)
     },
   })
 
