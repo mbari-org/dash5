@@ -338,20 +338,20 @@ const MissionModal: React.FC<MissionModalProps> = ({
     notes,
     preview,
   }) => {
-    const missionCommand = makeMissionCommand({
+    const { commandText, schedDate, previewSbd } = makeMissionCommand({
       mission: selectedMissionId as string,
       parameterOverrides,
       scheduleMethod: scheduleMethod as ScheduleOption,
       specifiedTime: specifiedTime ?? undefined,
     })
-    setCommandText(missionCommand)
+    setCommandText(previewSbd)
     if (!preview) {
       createCommand({
         vehicle: confirmedVehicle?.toLowerCase() ?? '',
         path: selectedMission as string,
         commandNote: notes ?? '',
         runCommand: 'y',
-        schedDate: specifiedTime ?? 'asap',
+        schedDate,
         destinationAddress: alternateAddress ?? undefined,
         commandText: commandText ?? '',
       })

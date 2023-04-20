@@ -24,17 +24,32 @@ export const makeCommand = ({
 }) => {
   switch (scheduleMethod) {
     case 'ASAP':
-      return `sched asap "${commandText}"`
+      return {
+        commandText,
+        schedDate: 'asap',
+        previewSbd: `sched asap "${commandText}"`,
+      }
     case 'time':
       if (!specifiedTime) {
-        return ''
+        return {
+          commandText,
+          schedDate: '',
+          previewSbd: `sched "${commandText}"`,
+        }
       }
       const t = DateTime.fromISO(specifiedTime)
-      return `sched ${t.toFormat('yyyyMMdd')}T${t.toFormat(
-        'HHmm'
-      )} "${commandText}"`
+      const schedDate = `${t.toFormat('yyyyMMdd')}}T${t.toFormat('HHmm')}`
+      return {
+        commandText,
+        schedDate,
+        previewSbd: `sched ${schedDate} "${commandText}"`,
+      }
     default:
-      return `sched "${commandText}"`
+      return {
+        commandText,
+        schedDate: '',
+        previewSbd: `sched "${commandText}"`,
+      }
   }
 }
 

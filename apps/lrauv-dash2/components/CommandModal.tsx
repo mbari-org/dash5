@@ -161,13 +161,17 @@ export const CommandModal: React.FC<CommandModalProps> = ({
     alternateAddress,
     notes,
   }) => {
+    const { schedDate } = makeCommand({
+      commandText,
+      scheduleMethod,
+      specifiedTime,
+    })
     createCommand({
       vehicle: confirmedVehicle?.toLowerCase() ?? '',
       commandNote: notes ?? '',
-      schedDate: specifiedTime ?? 'asap',
+      schedDate,
       destinationAddress: alternateAddress ?? undefined,
-      commandText:
-        makeCommand({ commandText, scheduleMethod, specifiedTime }) ?? '',
+      commandText,
     })
   }
 
