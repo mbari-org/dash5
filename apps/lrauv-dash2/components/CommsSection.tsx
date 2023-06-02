@@ -94,7 +94,6 @@ const CommsSection: React.FC<CommsSectionProps> = ({
           icon={!allLogs ? faFilter : faPersonRunning}
           ariaLabel="download"
           tooltipAlignment="right"
-          tooltipPosition="left"
           tooltip={!allLogs ? 'Historic Logs' : 'Realtime'}
           className="my-auto"
           onClick={toggleAllLogs}
