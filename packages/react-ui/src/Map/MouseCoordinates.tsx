@@ -15,15 +15,8 @@ let divStyle = {
     '0 5px 5px -3px rgba(0, 0, 0, 0.2), 0 8px 10px 1px rgba(0, 0, 0, 0.14), 0 3px 14px 2px rgba(0, 0, 0, 0.12)',
   cursor: 'pointer',
 }
-
-function formatLatitude(latitude) {
-  latitude = `${latitude.toFixed(5)}`
-  return `${latitude}`
-}
-
-function formatLongitude(longitude) {
-  longitude = `${longitude.toFixed(5)}`
-  return `${longitude}`
+function formatCoordinate(latitude: number) {
+  return `${latitude.toFixed(5)}`
 }
 
 function MouseCoordinates(props) {
@@ -32,7 +25,9 @@ function MouseCoordinates(props) {
   const formattedCoordinates =
     mousePoint === null
       ? ''
-      : `${formatLatitude(mousePoint.lat)}, ${formatLongitude(mousePoint.lng)}`
+      : `${formatCoordinate(mousePoint.lat)}, ${formatCoordinate(
+          mousePoint.lng
+        )}`
 
   React.useEffect(
     function copyToClipboard() {
