@@ -8,13 +8,19 @@ import {
   Input,
   Dropdown,
   ScheduleCellStatus,
+  IconButton,
+  Select,
 } from '@mbari/react-ui'
 import { DateTime } from 'luxon'
-import { faPlus } from '@fortawesome/pro-regular-svg-icons'
+import {
+  faPlus,
+  faFilter,
+  faPersonRunning,
+  faSync,
+} from '@fortawesome/pro-regular-svg-icons'
 import clsx from 'clsx'
-import { Select } from '@mbari/react-ui/dist/Fields/Select'
+// import { Select } from '@mbari/react-ui/dist/Fields/Select'
 import { useDeploymentCommandStatus } from '@mbari/api-client'
-import { capitalize } from '@mbari/utils'
 import useGlobalModalId from '../lib/useGlobalModalId'
 import { toast } from 'react-hot-toast'
 
@@ -44,19 +50,30 @@ export const ScheduleSection: React.FC<ScheduleSectionProps> = ({
   activeDeployment,
 }) => {
   const { setGlobalModalId } = useGlobalModalId()
+  const [allLogs, setAllLogs] = useState(false)
+  const toggleAllLogs = () => {
+    setAllLogs((prev) => !prev)
+  }
   const [scheduleFilter, setScheduleFilter] = useState<string>('')
   const [scheduleSearch, setScheduleSearch] = useState<string>('')
 
-  const { data: deploymentCommands } = useDeploymentCommandStatus(
+  const {
+    data: deploymentCommands,
+    isLoading,
+    isFetching,
+    refetch,
+  } = useDeploymentCommandStatus(
     {
-      deploymentId: currentDeploymentId ?? 0,
+      deploymentId: allLogs ? 0 : currentDeploymentId ?? 0,
     },
     {
       enabled: !!currentDeploymentId,
     }
   )
 
-  const vehicleName = deploymentCommands?.deploymentInfo?.vehicleName ?? '...'
+  const handleRefresh = () => {
+    refetch()
+  }
 
   const toggleSchedule = () => {
     setGlobalModalId({
@@ -153,6 +170,24 @@ export const ScheduleSection: React.FC<ScheduleSectionProps> = ({
               setGlobalModalId({ id: 'newCommand' })
             }}
           />
+          <IconButton
+            icon={faSync}
+            ariaLabel="reload"
+            tooltipAlignment="right"
+            tooltip="Reload"
+            className="my-auto"
+            disabled={isLoading || isFetching}
+            onClick={handleRefresh}
+          />
+          <IconButton
+            icon={!allLogs ? faFilter : faPersonRunning}
+            ariaLabel="download"
+            tooltipAlignment="right"
+            tooltipPosition="left"
+            tooltip={!allLogs ? 'Historic Logs' : 'Realtime'}
+            className="my-auto"
+            onClick={toggleAllLogs}
+          />
         </div>
       )
     }
@@ -209,7 +244,6 @@ export const ScheduleSection: React.FC<ScheduleSectionProps> = ({
     const mission = results[index + indexOffset]
     const { name: missionName, parameters: missionParams } =
       parseMissionCommand(mission?.event.data ?? '')
-    console.log(missionName, missionParams)
     return mission ? (
       <ScheduleCell
         label={missionName ?? 'Unknown'}
