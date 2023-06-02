@@ -14,7 +14,11 @@ import formatEvent, {
   eventFilters,
   isUploadEvent,
 } from '../lib/formatEvent'
-import { faSync } from '@fortawesome/pro-regular-svg-icons'
+import {
+  faSync,
+  faFilter,
+  faPersonRunning,
+} from '@fortawesome/pro-regular-svg-icons'
 import { SelectOption } from '@mbari/react-ui/dist/Fields/Select'
 
 export interface LogsSectionProps {
@@ -26,6 +30,11 @@ export interface LogsSectionProps {
 }
 
 const LogsSection: React.FC<LogsSectionProps> = ({ vehicleName, from, to }) => {
+  const [allLogs, setAllLogs] = useState(false)
+  const toggleAllLogs = () => {
+    setAllLogs((prev) => !prev)
+  }
+
   const { siteConfig } = useTethysApiContext()
   const [filters, setFilters] = useState<MultiValue<SelectOption>>([])
   const eventTypes = filters.length
@@ -37,8 +46,8 @@ const LogsSection: React.FC<LogsSectionProps> = ({ vehicleName, from, to }) => {
 
   const { data, isLoading, isFetching, refetch } = useEvents({
     vehicles: [vehicleName],
-    from,
-    to,
+    from: allLogs ? DateTime.now().minus({ years: 2 }).toISODate() : from,
+    to: allLogs ? undefined : to,
     eventTypes,
   })
 
@@ -95,6 +104,15 @@ const LogsSection: React.FC<LogsSectionProps> = ({ vehicleName, from, to }) => {
           className="my-auto"
           disabled={isLoading || isFetching}
           onClick={handleRefresh}
+        />
+        <IconButton
+          icon={!allLogs ? faFilter : faPersonRunning}
+          ariaLabel="download"
+          tooltipAlignment="right"
+          tooltipPosition="left"
+          tooltip={!allLogs ? 'Historic Logs' : 'Realtime'}
+          className="my-auto"
+          onClick={toggleAllLogs}
         />
       </header>
       <AccordionCells
