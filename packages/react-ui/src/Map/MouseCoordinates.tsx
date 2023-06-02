@@ -1,4 +1,3 @@
-// @ts-nocheck
 // jshint esversion:6
 import React from 'react'
 import { useMapEvents } from 'react-leaflet'
