@@ -19,8 +19,8 @@ function formatCoordinate(latitude: number) {
   return `${latitude.toFixed(5)}`
 }
 
-function MouseCoordinates(props) {
-  const [mousePoint, setMousePoint] = React.useState(null)
+const MouseCoordinates: React.FC = () => {
+  const [mousePoint, setMousePoint] = React.useState(null as null | L.LatLng)
 
   const formattedCoordinates =
     mousePoint === null
@@ -31,7 +31,7 @@ function MouseCoordinates(props) {
 
   React.useEffect(
     function copyToClipboard() {
-      function handleCtrlCKeydown(event) {
+      function handleCtrlCKeydown(event: KeyboardEvent) {
         if (
           event.key === 'c' &&
           event.ctrlKey &&
