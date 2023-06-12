@@ -9,7 +9,7 @@ import Control from 'react-leaflet-custom-control'
 import 'leaflet/dist/leaflet.css'
 import React, { useMemo } from 'react'
 import ReactLeafletGoogleLayer from 'react-leaflet-google-layer'
-import MouseCoordinates from './MouseCoordinates'
+import MouseCoordinates, { MouseCoordinatesProps } from './MouseCoordinates'
 import { useMapBaseLayer, BaseLayerOption } from './useMapBaseLayer'
 import 'leaflet-mouse-position'
 
@@ -22,6 +22,7 @@ export interface MapProps {
   maxZoom?: number
   maxNativeZoom?: number
   scrollWheelZoom?: boolean
+  onRequestDepth: MouseCoordinatesProps['onRequestDepth']
   children?: React.ReactNode
 }
 
@@ -34,6 +35,7 @@ const Map: React.FC<MapProps> = ({
   maxZoom = 17,
   maxNativeZoom = 13,
   children,
+  onRequestDepth,
 }) => {
   const { baseLayer, setBaseLayer } = useMapBaseLayer()
   const addBaseLayerHandler = (layer: BaseLayerOption) => () => {
@@ -127,7 +129,7 @@ const Map: React.FC<MapProps> = ({
       <ScaleControl position="topright" />
       <div className={'leaflet-control'}>{children}</div>
       <Control prepend position="topright">
-        <MouseCoordinates />
+        <MouseCoordinates onRequestDepth={onRequestDepth} />
       </Control>
     </MapContainer>
   )
