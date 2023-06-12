@@ -22,7 +22,7 @@ export interface MapProps {
   maxZoom?: number
   maxNativeZoom?: number
   scrollWheelZoom?: boolean
-  onRequestDepth: MouseCoordinatesProps['onRequestDepth']
+  onRequestDepth?: MouseCoordinatesProps['onRequestDepth']
   children?: React.ReactNode
 }
 
