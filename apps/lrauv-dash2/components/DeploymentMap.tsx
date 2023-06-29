@@ -1,7 +1,7 @@
 import dynamic from 'next/dynamic'
-import { useCallback } from 'react'
+import { useCallback, useRef } from 'react'
 import { useManagedWaypoints } from '@mbari/react-ui'
-import { useSiteConfig } from 'api-client'
+import { useJsApiLoader } from '@react-google-maps/api'
 
 // This is a tricky workaround to prevent leaflet from crashing next.js
 // SSR. If we don't do this, the leaflet map will be loaded server side
@@ -28,6 +28,7 @@ interface DeploymentMapProps {
   onScrub?: (time?: number | null) => void
   startTime?: number | null
   endTime?: number | null
+  googleMapsApiKey: string
 }
 
 // Define a type for the LatLng input to the function
@@ -65,6 +66,7 @@ const DeploymentMap: React.FC<DeploymentMapProps> = ({
   onScrub: handleScrub,
   startTime,
   endTime,
+  googleMapsApiKey,
 }) => {
   const {
     updatedWaypoints,
@@ -85,21 +87,31 @@ const DeploymentMap: React.FC<DeploymentMapProps> = ({
     (wp) => ![wp.lat?.toLowerCase(), wp.lon?.toLowerCase()].includes('nan')
   )
 
-  const { data } = useSiteConfig({})
-  const googleApiKey = data?.appConfig.googleApiKey
+  const { isLoaded } = useJsApiLoader({
+    googleMapsApiKey,
+  })
+  const elevator = isLoaded ? new google.maps.ElevationService() : null
 
+  const depthLoading = useRef(false)
+  const lastKnownDepth = useRef<number | null>(null)
   const handleDepthRequest = useCallback(
     async (lat: number, lng: number) => {
-      if (!googleApiKey) {
-        return 0
+      if (depthLoading.current) return lastKnownDepth.current
+      const r: google.maps.LocationElevationRequest = {
+        locations: [
+          {
+            lat,
+            lng,
+          },
+        ],
       }
-      const elevation = await getElevation(
-        { latitude: lat, longitude: lng },
-        googleApiKey
-      )
-      return elevation ?? 0
+      depthLoading.current = true
+      const result = await elevator?.getElevationForLocations(r)
+      lastKnownDepth.current = result?.results[0].elevation ?? null
+      depthLoading.current = false
+      return lastKnownDepth.current
     },
-    [googleApiKey]
+    [elevator, lastKnownDepth.current, depthLoading.current]
   )
 
   return (

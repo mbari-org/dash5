@@ -22,7 +22,7 @@ const formatCoordinate = (latitude: number) => {
 }
 
 export interface MouseCoordinatesProps {
-  onRequestDepth: (lat: number, lng: number) => Promise<number>
+  onRequestDepth?: (lat: number, lng: number) => Promise<number>
 }
 
 const MouseCoordinates: React.FC<MouseCoordinatesProps> = ({
@@ -40,7 +40,7 @@ const MouseCoordinates: React.FC<MouseCoordinatesProps> = ({
 
   const handleDepth = useCallback(() => {
     if (mousePoint?.lat && mousePoint.lng) {
-      onRequestDepth(mousePoint?.lat, mousePoint?.lng).then(setDepth)
+      onRequestDepth?.(mousePoint?.lat, mousePoint?.lng).then(setDepth)
     }
   }, [mousePoint, onRequestDepth])
 
@@ -55,7 +55,7 @@ const MouseCoordinates: React.FC<MouseCoordinatesProps> = ({
           formattedCoordinates.length > 0 &&
           navigator.clipboard
         ) {
-          navigator.clipboard.writeText(formattedCoordinates)
+          navigator.clipboard?.writeText(formattedCoordinates)
         }
       }
 
