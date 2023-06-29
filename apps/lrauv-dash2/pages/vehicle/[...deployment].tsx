@@ -21,7 +21,7 @@ import {
   useTethysApiContext,
   useChartData,
   usePicAndOnCall,
-  useEvents,
+  useSiteConfig,
 } from '@mbari/api-client'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { faChevronDown, faChevronUp } from '@fortawesome/pro-solid-svg-icons'
@@ -77,6 +77,9 @@ const Vehicle: NextPage = () => {
   const params = (router.query?.deployment ?? []) as string[]
   const vehicleName = params[0]
   const deploymentId = parseInt(params[1] ?? '0', 10)
+
+  const { data } = useSiteConfig({})
+  const googleMapsApiKey = data?.appConfig.googleApiKey
 
   const { data: picAndOnCall, isLoading: loadingPic } = usePicAndOnCall({
     vehicleName,
@@ -266,13 +269,16 @@ const Vehicle: NextPage = () => {
             indicatorTime={indicatorTime}
           />
           <div className={styles.mapContainer}>
-            <DeploymentMap
-              vehicleName={vehicleName}
-              indicatorTime={indicatorTime}
-              startTime={startTime}
-              endTime={endTime}
-              onScrub={handleTimeScrub}
-            />
+            {googleMapsApiKey && (
+              <DeploymentMap
+                vehicleName={vehicleName}
+                indicatorTime={indicatorTime}
+                startTime={startTime}
+                endTime={endTime}
+                onScrub={handleTimeScrub}
+                googleMapsApiKey={googleMapsApiKey}
+              />
+            )}
             <div className="absolute bottom-0 z-[1001] flex w-full flex-col">
               <TabGroup className="w-full px-8">
                 <Tab

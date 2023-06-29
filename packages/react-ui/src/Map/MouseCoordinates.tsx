@@ -55,7 +55,7 @@ const MouseCoordinates: React.FC<MouseCoordinatesProps> = ({
           formattedCoordinates.length > 0 &&
           navigator.clipboard
         ) {
-          navigator.clipboard.writeText(formattedCoordinates)
+          navigator.clipboard?.writeText(formattedCoordinates)
         }
       }
 
