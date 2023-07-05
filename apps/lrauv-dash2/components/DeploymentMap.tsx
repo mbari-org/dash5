@@ -1,7 +1,7 @@
 import dynamic from 'next/dynamic'
-import { useCallback, useRef, useMemo } from 'react'
+import { useCallback } from 'react'
 import { useManagedWaypoints } from '@mbari/react-ui'
-import { useJsApiLoader } from '@react-google-maps/api'
+import { useGoogleElevator } from '../lib/useGoogleElevator'
 
 // This is a tricky workaround to prevent leaflet from crashing next.js
 // SSR. If we don't do this, the leaflet map will be loaded server side
@@ -58,35 +58,7 @@ const DeploymentMap: React.FC<DeploymentMapProps> = ({
     (wp) => ![wp.lat?.toLowerCase(), wp.lon?.toLowerCase()].includes('nan')
   )
 
-  const { isLoaded } = useJsApiLoader({
-    googleMapsApiKey,
-  })
-  const elevator = useMemo(
-    () => (isLoaded ? new google.maps.ElevationService() : null),
-    [isLoaded]
-  )
-
-  const depthLoading = useRef(false)
-  const lastKnownDepth = useRef<number | null>(null)
-  const handleDepthRequest = useCallback(
-    async (lat: number, lng: number) => {
-      if (depthLoading.current) return lastKnownDepth.current ?? 0
-      const r: google.maps.LocationElevationRequest = {
-        locations: [
-          {
-            lat,
-            lng,
-          },
-        ],
-      }
-      depthLoading.current = true
-      const result = await elevator?.getElevationForLocations(r)
-      lastKnownDepth.current = result?.results[0].elevation ?? null
-      depthLoading.current = false
-      return lastKnownDepth.current ?? 0
-    },
-    [elevator, lastKnownDepth, depthLoading]
-  )
+  const { handleDepthRequest } = useGoogleElevator(googleMapsApiKey)
 
   return (
     <Map
