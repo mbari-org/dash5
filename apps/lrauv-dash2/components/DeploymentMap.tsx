@@ -61,13 +61,16 @@ const DeploymentMap: React.FC<DeploymentMapProps> = ({
   const { isLoaded } = useJsApiLoader({
     googleMapsApiKey,
   })
-  const elevator = isLoaded ? new google.maps.ElevationService() : null
+  const elevator = useMemo(
+    () => (isLoaded ? new google.maps.ElevationService() : null),
+    [isLoaded]
+  )
 
   const depthLoading = useRef(false)
   const lastKnownDepth = useRef<number | null>(null)
   const handleDepthRequest = useCallback(
     async (lat: number, lng: number) => {
-      if (depthLoading.current) return lastKnownDepth.current
+      if (depthLoading.current) return lastKnownDepth.current ?? 0
       const r: google.maps.LocationElevationRequest = {
         locations: [
           {
@@ -80,9 +83,9 @@ const DeploymentMap: React.FC<DeploymentMapProps> = ({
       const result = await elevator?.getElevationForLocations(r)
       lastKnownDepth.current = result?.results[0].elevation ?? null
       depthLoading.current = false
-      return lastKnownDepth.current
+      return lastKnownDepth.current ?? 0
     },
-    [elevator, lastKnownDepth.current, depthLoading.current]
+    [elevator, lastKnownDepth, depthLoading]
   )
 
   return (
