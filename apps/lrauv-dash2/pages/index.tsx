@@ -9,6 +9,8 @@ import useTrackedVehicles from '../lib/useTrackedVehicles'
 import { SharedPathContextProvider } from '../components/SharedPathContextProvider'
 import { useRouter } from 'next/router'
 import useGlobalModalId from '../lib/useGlobalModalId'
+import { useGoogleElevator } from '../lib/useGoogleElevator'
+import { useTethysApiContext } from 'api-client'
 
 // This is a tricky workaround to prevent leaflet from crashing next.js
 // SSR. If we don't do this, the leaflet map will be loaded server side
@@ -29,6 +31,23 @@ const styles = {
     'flex w-[438px] flex-shrink-0 flex-col bg-white border-t-2 border-secondary-300/60',
 }
 
+const OverViewMap: React.FC<{
+  trackedVehicles: string[]
+  googleApiKey: string
+}> = ({ trackedVehicles, googleApiKey }) => {
+  const { handleDepthRequest } = useGoogleElevator(googleApiKey)
+
+  return (
+    <SharedPathContextProvider>
+      <Map className="h-full w-full" onRequestDepth={handleDepthRequest}>
+        {trackedVehicles.map((name) => (
+          <VehiclePath name={name} key={`path${name}`} grouped />
+        ))}
+      </Map>
+    </SharedPathContextProvider>
+  )
+}
+
 const OverviewPage: NextPage = () => {
   const router = useRouter()
   const { trackedVehicles } = useTrackedVehicles()
@@ -40,10 +59,12 @@ const OverviewPage: NextPage = () => {
       setGlobalModalId(null)
     }
   })
-
+  const { siteConfig } = useTethysApiContext()
+  const googleApiKey = siteConfig?.appConfig.googleApiKey
   const handleSelectedVehicle = (vehicle: string) => {
     router.push(`/vehicle/${vehicle}`)
   }
+
   return (
     <Layout>
       {trackedVehicles?.length ? (
@@ -52,13 +73,12 @@ const OverviewPage: NextPage = () => {
           <div className={styles.content} data-testid="vehicle-dashboard">
             <section className={styles.primary}>
               <div className={styles.mapContainer}>
-                <SharedPathContextProvider>
-                  <Map className="h-full w-full">
-                    {trackedVehicles.map((name) => (
-                      <VehiclePath name={name} key={`path${name}`} grouped />
-                    ))}
-                  </Map>
-                </SharedPathContextProvider>
+                {googleApiKey && (
+                  <OverViewMap
+                    trackedVehicles={trackedVehicles}
+                    googleApiKey={googleApiKey}
+                  />
+                )}
               </div>
             </section>
             <section className={styles.secondary}>

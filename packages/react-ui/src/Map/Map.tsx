@@ -7,7 +7,7 @@ import {
 } from 'react-leaflet'
 import Control from 'react-leaflet-custom-control'
 import 'leaflet/dist/leaflet.css'
-import React, { useMemo } from 'react'
+import React, { useCallback, useMemo } from 'react'
 import ReactLeafletGoogleLayer from 'react-leaflet-google-layer'
 import MouseCoordinates, { MouseCoordinatesProps } from './MouseCoordinates'
 import { useMapBaseLayer, BaseLayerOption } from './useMapBaseLayer'
@@ -38,9 +38,12 @@ const Map: React.FC<MapProps> = ({
   onRequestDepth,
 }) => {
   const { baseLayer, setBaseLayer } = useMapBaseLayer()
-  const addBaseLayerHandler = (layer: BaseLayerOption) => () => {
-    setBaseLayer(layer)
-  }
+  const addBaseLayerHandler = useCallback(
+    (layer: BaseLayerOption) => () => {
+      setBaseLayer(layer)
+    },
+    [setBaseLayer]
+  )
 
   const gmrtLayer = useMemo(
     () => (
@@ -60,7 +63,7 @@ const Map: React.FC<MapProps> = ({
         />{' '}
       </LayersControl.BaseLayer>
     ),
-    [baseLayer]
+    [addBaseLayerHandler, maxNativeZoom, minZoom, maxZoom]
   )
   return (
     <MapContainer

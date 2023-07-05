@@ -1,7 +1,7 @@
 import React, { useEffect } from 'react'
 import Head from 'next/head'
 import { PrimaryToolbar, ProfileDropdown } from '@mbari/react-ui'
-import { useSiteConfig, useTethysApiContext } from '@mbari/api-client'
+import { useTethysApiContext } from '@mbari/api-client'
 import { useState } from 'react'
 import Image from 'next/image'
 import VehicleDeploymentDropdown from '../components/VehicleDeploymentDropdown'

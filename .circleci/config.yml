@@ -105,7 +105,7 @@ jobs:
       - build-monorepo
 
   lint:
-    resource_class: xlarge
+    resource_class: large
     parallelism: 1
     executor:
       name: node/default
@@ -121,7 +121,7 @@ jobs:
           name: Run eslint across all projects.
 
   test_ui:
-    resource_class: xlarge
+    resource_class: large
     parallelism: 1
     executor:
       name: node/default
@@ -190,7 +190,7 @@ jobs:
           when: always
 
   deploy_ui:
-    resource_class: xlarge
+    resource_class: large
     executor:
       name: node/default
       tag: '16.18.1'

@@ -62,7 +62,7 @@ export const TethysApiProvider: React.FC<TethysApiProviderProps> = ({
     setSessionToken,
   })
 
-  const siteInfo = useSiteConfig({}, {}, instance.current)
+  const { data: siteInfo } = useSiteConfig({}, {}, instance.current)
 
   // We'll update the current user state from the refreshed session
   // response. The TethysDash API will return a user object that
@@ -75,7 +75,13 @@ export const TethysApiProvider: React.FC<TethysApiProviderProps> = ({
     ) {
       setCurrentUser(refreshedSession.data)
     }
-  }, [refreshedSession.data?.token, lastInitialToken.current, existingToken])
+  }, [
+    refreshedSession.data,
+    lastInitialToken,
+    existingToken,
+    loggedOut,
+    setCurrentUser,
+  ])
 
   // This handler is available in theTethysApiContext for use in components
   const login = React.useCallback(
@@ -90,7 +96,7 @@ export const TethysApiProvider: React.FC<TethysApiProviderProps> = ({
         setError((e as Error).message)
       }
     },
-    [setCurrentUser, setError, loginUser]
+    [setCurrentUser, setError, loginUser, onSessionStart]
   )
 
   // This handler is available in theTethysApiContext for use in components
@@ -99,7 +105,7 @@ export const TethysApiProvider: React.FC<TethysApiProviderProps> = ({
     setError(undefined)
     setLoggedOut(true)
     onSessionEnd?.()
-  }, [setCurrentUser, setError])
+  }, [setCurrentUser, setError, setLoggedOut, onSessionEnd])
 
   return (
     <TethysApiContext.Provider
@@ -112,7 +118,7 @@ export const TethysApiProvider: React.FC<TethysApiProviderProps> = ({
         profile: currentUser,
         loading: loginUser.isLoading,
         axiosInstance: instance.current,
-        siteConfig: siteInfo.data,
+        siteConfig: siteInfo,
       }}
     >
       {children}

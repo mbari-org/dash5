@@ -21,7 +21,6 @@ import {
   useTethysApiContext,
   useChartData,
   usePicAndOnCall,
-  useSiteConfig,
 } from '@mbari/api-client'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { faChevronDown, faChevronUp } from '@fortawesome/pro-solid-svg-icons'
@@ -65,7 +64,7 @@ const Vehicle: NextPage = () => {
   }, [mounted, setMounted])
 
   const { drawerOpen, setDrawerOpen } = useGlobalDrawerState()
-  const { authenticated } = useTethysApiContext()
+  const { authenticated, siteConfig } = useTethysApiContext()
   const { setGlobalModalId } = useGlobalModalId()
   const router = useRouter()
   const [currentTab, setTab] = useState<AvailableTab>('vehicle')
@@ -78,8 +77,9 @@ const Vehicle: NextPage = () => {
   const vehicleName = params[0]
   const deploymentId = parseInt(params[1] ?? '0', 10)
 
-  const { data } = useSiteConfig({})
-  const googleMapsApiKey = data?.appConfig.googleApiKey
+  const googleMapsApiKey =
+    process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY ??
+    siteConfig?.appConfig.googleApiKey
 
   const { data: picAndOnCall, isLoading: loadingPic } = usePicAndOnCall({
     vehicleName,
@@ -192,7 +192,6 @@ const Vehicle: NextPage = () => {
   }
 
   const pingEvent = useTethysSubscriptionEvent('VehiclePingResult', vehicleName)
-
   return (
     <Layout>
       <OverviewToolbar
