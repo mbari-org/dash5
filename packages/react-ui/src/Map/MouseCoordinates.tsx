@@ -91,10 +91,8 @@ const MouseCoordinates: React.FC<MouseCoordinatesProps> = ({
 
   return (
     <div className="leaflet-control leaflet-bar" style={divStyle}>
+      {depth?.depth && ` ${depth.depth.toPrecision(4)}m at `}
       {formattedCoordinates}
-      {depth?.depth &&
-        depth.coordinate === formattedCoordinates &&
-        `, ${depth.depth.toPrecision(5)}m`}
     </div>
   )
 }
