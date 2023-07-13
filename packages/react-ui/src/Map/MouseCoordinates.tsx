@@ -2,7 +2,8 @@
 import React, { useState, useEffect, useCallback } from 'react'
 import { useMapEvents } from 'react-leaflet'
 import 'leaflet/dist/leaflet.css'
-import { useThrottledEffect } from '@mbari/utils'
+import { useDebouncedEffect } from '@mbari/utils'
+import { toast } from 'react-hot-toast'
 
 const divStyle = {
   color: 'darkblue',
@@ -29,7 +30,9 @@ const MouseCoordinates: React.FC<MouseCoordinatesProps> = ({
   onRequestDepth,
 }) => {
   const [mousePoint, setMousePoint] = useState(null as null | L.LatLng)
-  const [depth, setDepth] = useState(null as null | number)
+  const [depth, setDepth] = useState(
+    null as null | { depth: number; coordinate: string }
+  )
 
   const formattedCoordinates =
     mousePoint === null
@@ -39,12 +42,22 @@ const MouseCoordinates: React.FC<MouseCoordinatesProps> = ({
         )}`
 
   const handleDepth = useCallback(() => {
-    if (mousePoint?.lat && mousePoint.lng) {
-      onRequestDepth?.(mousePoint?.lat, mousePoint?.lng).then(setDepth)
+    if (window.location.hostname.match(/localhost/i)) {
+      toast(
+        `Developer debug generating example depth for ${formattedCoordinates}`,
+        { icon: '⚠️', position: 'bottom-right' }
+      )
+      setDepth({ depth: Math.random() * 100, coordinate: formattedCoordinates })
+      return
     }
-  }, [mousePoint, onRequestDepth])
+    if (mousePoint?.lat && mousePoint.lng) {
+      onRequestDepth?.(mousePoint?.lat, mousePoint?.lng).then((depth) =>
+        setDepth({ depth, coordinate: formattedCoordinates })
+      )
+    }
+  }, [mousePoint, onRequestDepth, formattedCoordinates])
 
-  useThrottledEffect(handleDepth, 500, [setDepth, onRequestDepth, mousePoint])
+  useDebouncedEffect(handleDepth, 1000, [setDepth, onRequestDepth, mousePoint])
 
   useEffect(
     function copyToClipboard() {
@@ -79,7 +92,9 @@ const MouseCoordinates: React.FC<MouseCoordinatesProps> = ({
   return (
     <div className="leaflet-control leaflet-bar" style={divStyle}>
       {formattedCoordinates}
-      {depth && `, ${depth.toPrecision(5)}m`}
+      {depth?.depth &&
+        depth.coordinate === formattedCoordinates &&
+        `, ${depth.depth.toPrecision(5)}m`}
     </div>
   )
 }
