@@ -50,6 +50,9 @@
     "yarn": "1.22.19"
   },
   "dependencies": {
-    "@types/leaflet.gridlayer.googlemutant": "^0.4.6"
+    "@types/leaflet.gridlayer.googlemutant": "^0.4.6",
+    "d3-color": "3.1.0",
+    "semver": "7.5.2",
+    "trim-newlines": "3.0.1"
   }
 }
