@@ -11,6 +11,8 @@ import { useRouter } from 'next/router'
 import useGlobalModalId from '../lib/useGlobalModalId'
 import { useGoogleElevator } from '../lib/useGoogleElevator'
 import { useTethysApiContext } from 'api-client'
+import { Allotment, LayoutPriority } from 'allotment'
+import 'allotment/dist/style.css'
 
 // This is a tricky workaround to prevent leaflet from crashing next.js
 // SSR. If we don't do this, the leaflet map will be loaded server side
@@ -25,10 +27,10 @@ const VehiclePath = dynamic(() => import('../components/VehiclePath'), {
 
 const styles = {
   content: 'flex flex-shrink flex-grow flex-row overflow-hidden',
-  primary: 'flex w-3/4 flex-shrink flex-grow flex-col',
-  mapContainer: 'flex flex-shrink flex-grow bg-blue-300',
+  primary: 'flex flex-shrink flex-grow flex-col h-full',
+  mapContainer: 'flex flex-shrink flex-grow bg-blue-300 h-full',
   secondary:
-    'flex w-[438px] flex-shrink-0 flex-col bg-white border-t-2 border-secondary-300/60',
+    'flex w-full flex-shrink-0 flex-col bg-white border-t-2 border-secondary-300/60',
 }
 
 const OverViewMap: React.FC<{
@@ -70,20 +72,32 @@ const OverviewPage: NextPage = () => {
       {trackedVehicles?.length ? (
         <>
           <OverviewToolbar deployment={{ name: 'Overview', id: '0' }} />
+
           <div className={styles.content} data-testid="vehicle-dashboard">
-            <section className={styles.primary}>
-              <div className={styles.mapContainer}>
-                {googleApiKey && (
-                  <OverViewMap
-                    trackedVehicles={trackedVehicles}
-                    googleApiKey={googleApiKey}
-                  />
-                )}
-              </div>
-            </section>
-            <section className={styles.secondary}>
-              <VehicleList onSelectVehicle={handleSelectedVehicle} />
-            </section>
+            <Allotment
+              separator
+              snap
+              defaultSizes={[75, 25]}
+              proportionalLayout
+            >
+              <Allotment.Pane>
+                <section className={styles.primary}>
+                  <div className={styles.mapContainer}>
+                    {googleApiKey && (
+                      <OverViewMap
+                        trackedVehicles={trackedVehicles}
+                        googleApiKey={googleApiKey}
+                      />
+                    )}
+                  </div>
+                </section>
+              </Allotment.Pane>
+              <Allotment.Pane priority={LayoutPriority.High}>
+                <section className={styles.secondary}>
+                  <VehicleList onSelectVehicle={handleSelectedVehicle} />
+                </section>
+              </Allotment.Pane>
+            </Allotment>
           </div>
         </>
       ) : (
