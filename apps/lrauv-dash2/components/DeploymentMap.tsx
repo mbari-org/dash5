@@ -28,7 +28,6 @@ interface DeploymentMapProps {
   onScrub?: (time?: number | null) => void
   startTime?: number | null
   endTime?: number | null
-  googleMapsApiKey: string
 }
 
 const DeploymentMap: React.FC<DeploymentMapProps> = ({
@@ -37,7 +36,6 @@ const DeploymentMap: React.FC<DeploymentMapProps> = ({
   onScrub: handleScrub,
   startTime,
   endTime,
-  googleMapsApiKey,
 }) => {
   const {
     updatedWaypoints,
@@ -58,7 +56,7 @@ const DeploymentMap: React.FC<DeploymentMapProps> = ({
     (wp) => ![wp.lat?.toLowerCase(), wp.lon?.toLowerCase()].includes('nan')
   )
 
-  const { handleDepthRequest } = useGoogleElevator(googleMapsApiKey)
+  const { handleDepthRequest } = useGoogleElevator()
 
   return (
     <Map

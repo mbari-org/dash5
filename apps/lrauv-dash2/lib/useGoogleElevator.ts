@@ -1,15 +1,9 @@
 import { useCallback, useRef, useMemo } from 'react'
-import { useJsApiLoader } from '@react-google-maps/api'
 
-export const useGoogleElevator = (googleMapsApiKey: string) => {
-  const { isLoaded } = useJsApiLoader({
-    googleMapsApiKey:
-      process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY ?? googleMapsApiKey,
-  })
-
+export const useGoogleElevator = () => {
   const elevator = useMemo(
-    () => (isLoaded ? new google.maps.ElevationService() : null),
-    [isLoaded]
+    () => (!!google ? new google.maps.ElevationService() : null),
+    [google]
   )
 
   const depthLoading = useRef(false)
