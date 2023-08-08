@@ -10,8 +10,8 @@ import { SharedPathContextProvider } from '../components/SharedPathContextProvid
 import { useRouter } from 'next/router'
 import useGlobalModalId from '../lib/useGlobalModalId'
 import { useGoogleElevator } from '../lib/useGoogleElevator'
-import { useTethysApiContext } from 'api-client'
 import { Allotment, LayoutPriority } from 'allotment'
+import { useGoogleMaps } from '../lib/useGoogleMaps'
 import 'allotment/dist/style.css'
 
 // This is a tricky workaround to prevent leaflet from crashing next.js
@@ -35,9 +35,8 @@ const styles = {
 
 const OverViewMap: React.FC<{
   trackedVehicles: string[]
-  googleApiKey: string
-}> = ({ trackedVehicles, googleApiKey }) => {
-  const { handleDepthRequest } = useGoogleElevator(googleApiKey)
+}> = ({ trackedVehicles }) => {
+  const { handleDepthRequest } = useGoogleElevator()
 
   return (
     <SharedPathContextProvider>
@@ -51,6 +50,7 @@ const OverViewMap: React.FC<{
 }
 
 const OverviewPage: NextPage = () => {
+  const { mapsLoaded } = useGoogleMaps()
   const router = useRouter()
   const { trackedVehicles } = useTrackedVehicles()
   const mounted = useRef(false)
@@ -61,8 +61,6 @@ const OverviewPage: NextPage = () => {
       setGlobalModalId(null)
     }
   })
-  const { siteConfig } = useTethysApiContext()
-  const googleApiKey = siteConfig?.appConfig.googleApiKey
   const handleSelectedVehicle = (vehicle: string) => {
     router.push(`/vehicle/${vehicle}`)
   }
@@ -83,11 +81,8 @@ const OverviewPage: NextPage = () => {
               <Allotment.Pane>
                 <section className={styles.primary}>
                   <div className={styles.mapContainer}>
-                    {googleApiKey && (
-                      <OverViewMap
-                        trackedVehicles={trackedVehicles}
-                        googleApiKey={googleApiKey}
-                      />
+                    {mapsLoaded && (
+                      <OverViewMap trackedVehicles={trackedVehicles} />
                     )}
                   </div>
                 </section>

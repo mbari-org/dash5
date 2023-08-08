@@ -35,8 +35,9 @@ import useGlobalDrawerState from '../../lib/useGlobalDrawerState'
 import dynamic from 'next/dynamic'
 import { useTethysSubscriptionEvent } from '../../lib/useWebSocketListeners'
 import { useLastCommsTime } from '../../lib/useLastCommsTime'
-import { Allotment, LayoutPriority } from 'allotment'
+import { Allotment } from 'allotment'
 import 'allotment/dist/style.css'
+import { useGoogleMaps } from '../../lib/useGoogleMaps'
 
 const styles = {
   content: 'flex flex-shrink flex-grow flex-row overflow-hidden',
@@ -61,13 +62,15 @@ const DeploymentMap = dynamic(() => import('../../components/DeploymentMap'), {
 type AvailableTab = 'vehicle' | 'depth' | null
 
 const Vehicle: NextPage = () => {
+  const { authenticated } = useTethysApiContext()
+  const { mapsLoaded } = useGoogleMaps()
+
   const [mounted, setMounted] = useState(false)
   useEffect(() => {
     mounted || setMounted(true)
   }, [mounted, setMounted])
 
   const { drawerOpen, setDrawerOpen } = useGlobalDrawerState()
-  const { authenticated, siteConfig } = useTethysApiContext()
   const { setGlobalModalId } = useGlobalModalId()
   const router = useRouter()
   const [currentTab, setTab] = useState<AvailableTab>('vehicle')
@@ -79,10 +82,6 @@ const Vehicle: NextPage = () => {
   const params = (router.query?.deployment ?? []) as string[]
   const vehicleName = params[0]
   const deploymentId = parseInt(params[1] ?? '0', 10)
-
-  const googleMapsApiKey =
-    process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY ??
-    siteConfig?.appConfig.googleApiKey
 
   const { data: picAndOnCall, isLoading: loadingPic } = usePicAndOnCall({
     vehicleName,
@@ -272,14 +271,13 @@ const Vehicle: NextPage = () => {
               indicatorTime={indicatorTime}
             />
             <div className={styles.mapContainer}>
-              {googleMapsApiKey && (
+              {mapsLoaded && (
                 <DeploymentMap
                   vehicleName={vehicleName}
                   indicatorTime={indicatorTime}
                   startTime={startTime}
                   endTime={endTime}
                   onScrub={handleTimeScrub}
-                  googleMapsApiKey={googleMapsApiKey}
                 />
               )}
               <div className="absolute bottom-0 z-[1001] flex w-full flex-col">
