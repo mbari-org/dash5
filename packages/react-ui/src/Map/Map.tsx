@@ -83,6 +83,7 @@ const Map: React.FC<MapProps> = ({
           checked={baseLayer === 'Google Hybrid'}
         >
           <ReactLeafletGoogleLayer
+            useGoogMapsLoader={false}
             type="hybrid"
             eventHandlers={{
               add: addBaseLayerHandler('Google Hybrid'),
