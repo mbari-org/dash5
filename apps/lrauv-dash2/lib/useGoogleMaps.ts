@@ -10,7 +10,10 @@ export const useGoogleMaps = () => {
 
   const [mapsLoaded, setMapsLoaded] = useState(false)
   useEffect(() => {
-    if (!googleMapsApiKey || mapsLoaded) return
+    if (typeof google !== 'undefined' && !mapsLoaded) {
+      setMapsLoaded(true)
+    }
+    if (!googleMapsApiKey || mapsLoaded || typeof google !== 'undefined') return
     new Loader({
       apiKey: googleMapsApiKey,
       version: 'weekly',
