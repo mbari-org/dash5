@@ -3,7 +3,7 @@ import React from 'react'
 import { Story, Meta } from '@storybook/react/types-6-0'
 import { Dropdown, DropdownProps } from './Dropdown'
 import { IconDefinition } from '@fortawesome/fontawesome-svg-core'
-import { faPlus } from '@fortawesome/pro-regular-svg-icons'
+import { faPlus } from '@fortawesome/free-solid-svg-icons'
 import { Button } from './Button'
 
 export default {

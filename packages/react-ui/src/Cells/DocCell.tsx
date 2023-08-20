@@ -1,7 +1,7 @@
 import React, { useRef } from 'react'
 import clsx from 'clsx'
 import { swallow } from '@mbari/utils'
-import { faEllipsisV, faTimes } from '@fortawesome/pro-regular-svg-icons'
+import { faEllipsisV, faTimes } from '@fortawesome/free-solid-svg-icons'
 import { IconProp } from '@fortawesome/fontawesome-svg-core'
 import { AccessoryButton } from '../Navigation/AccessoryButton'
 import { IconButton } from '../Navigation'

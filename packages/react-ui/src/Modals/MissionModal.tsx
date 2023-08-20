@@ -3,7 +3,7 @@ import { Modal } from '../Modal/Modal'
 import { StepProgress, StepProgressProps } from '../Navigation/StepProgress'
 import { SelectOption } from '../Fields/Select'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
-import { faChevronDoubleRight } from '@fortawesome/pro-solid-svg-icons'
+import { faAnglesRight } from '@fortawesome/free-solid-svg-icons'
 import { MissionTableProps } from '../Tables/MissionTable'
 import { MissionStep } from './MissionModalSteps/MissionStep'
 import { WaypointTableProps } from '../Tables/WaypointTable'
@@ -158,7 +158,7 @@ export const MissionModal: React.FC<MissionModalProps> = ({
   ) : (
     <div>
       <span className="pr-2">Next</span>{' '}
-      <FontAwesomeIcon icon={faChevronDoubleRight} />
+      <FontAwesomeIcon icon={faAnglesRight} />
     </div>
   )
 

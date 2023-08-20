@@ -18,7 +18,7 @@ import {
   faSync,
   faFilter,
   faPersonRunning,
-} from '@fortawesome/pro-regular-svg-icons'
+} from '@fortawesome/free-solid-svg-icons'
 import { SelectOption } from '@mbari/react-ui/dist/Fields/Select'
 
 export interface LogsSectionProps {

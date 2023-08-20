@@ -10,11 +10,10 @@ import {
   ScheduleCellStatus,
 } from '@mbari/react-ui'
 import { DateTime } from 'luxon'
-import { faPlus } from '@fortawesome/pro-regular-svg-icons'
+import { faPlus } from '@fortawesome/free-solid-svg-icons'
 import clsx from 'clsx'
 import { Select } from '@mbari/react-ui/dist/Fields/Select'
 import { useDeploymentCommandStatus } from '@mbari/api-client'
-import { capitalize } from '@mbari/utils'
 import useGlobalModalId from '../lib/useGlobalModalId'
 import { toast } from 'react-hot-toast'
 

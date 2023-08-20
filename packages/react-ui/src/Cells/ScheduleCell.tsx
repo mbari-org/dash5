@@ -8,8 +8,8 @@ import {
   faCheck,
   faTimes,
   faPauseCircle,
-} from '@fortawesome/pro-regular-svg-icons'
-import { faSync } from '@fortawesome/pro-light-svg-icons'
+  faSync,
+} from '@fortawesome/free-solid-svg-icons'
 import { IconProp } from '@fortawesome/fontawesome-svg-core'
 import { IconButton } from '../Navigation'
 

@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react'
-import { faClock } from '@fortawesome/pro-regular-svg-icons'
+import { faClock } from '@fortawesome/free-regular-svg-icons'
 import { Field, FieldProps, getErrorMessage } from './Field'
 import { Input } from './Input'
 import { DateTime } from 'luxon'

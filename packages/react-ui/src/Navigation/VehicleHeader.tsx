@@ -1,10 +1,7 @@
 import React from 'react'
 import clsx from 'clsx'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
-import {
-  faChevronDown,
-  faChevronLeft,
-} from '@fortawesome/pro-regular-svg-icons'
+import { faChevronDown, faChevronLeft } from '@fortawesome/free-solid-svg-icons'
 import { DateTime } from 'luxon'
 
 export interface VehicleHeaderProps {

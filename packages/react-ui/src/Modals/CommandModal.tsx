@@ -1,8 +1,8 @@
-import React, { useCallback, useEffect, useRef, useState } from 'react'
+import React, { useEffect, useRef, useState } from 'react'
 import { Modal } from '../Modal/Modal'
 import { StepProgress, StepProgressProps } from '../Navigation/StepProgress'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
-import { faChevronDoubleRight } from '@fortawesome/pro-solid-svg-icons'
+import { faAnglesRight } from '@fortawesome/free-solid-svg-icons'
 import { ConfirmVehicleDialog } from './ConfirmVehicleDialog'
 
 // Special reuse of MissionModalStep which is identical here.
@@ -111,7 +111,7 @@ export const CommandModal: React.FC<CommandModalProps> = ({
   ) : (
     <div>
       <span className="pr-2">Next</span>{' '}
-      <FontAwesomeIcon icon={faChevronDoubleRight} />
+      <FontAwesomeIcon icon={faAnglesRight} />
     </div>
   )
 

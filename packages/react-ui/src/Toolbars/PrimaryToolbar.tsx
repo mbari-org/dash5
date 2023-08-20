@@ -3,8 +3,8 @@ import clsx from 'clsx'
 import { Logo as DefaultLogo } from './Logo'
 import { Button, IconButton } from '../Navigation'
 import { Avatar } from '../Navigation/Avatar'
-import { faPlus, faSignIn, faTimes } from '@fortawesome/pro-regular-svg-icons'
-import { faUser } from '@fortawesome/pro-solid-svg-icons'
+import { faPlus, faSignIn, faTimes } from '@fortawesome/free-solid-svg-icons'
+import { faUser } from '@fortawesome/free-solid-svg-icons'
 
 const styles = {
   bar: 'w-full flex flex-row bg-secondary-300 px-8 py-4',

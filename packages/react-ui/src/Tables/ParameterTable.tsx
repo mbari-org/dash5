@@ -3,7 +3,7 @@ import clsx from 'clsx'
 import { Table } from '../Data/Table'
 import { ParameterField, ParameterFieldUnit } from './ParameterField'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
-import { faInfoCircle } from '@fortawesome/pro-regular-svg-icons'
+import { faInfoCircle } from '@fortawesome/free-solid-svg-icons'
 import { IconProp } from '@fortawesome/fontawesome-svg-core'
 import { makeValueUnitString } from '@mbari/utils'
 

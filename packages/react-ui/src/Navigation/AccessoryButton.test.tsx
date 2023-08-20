@@ -2,7 +2,7 @@ import React from 'react'
 import { render, screen } from '@testing-library/react'
 import '@testing-library/jest-dom'
 import { AccessoryButton } from './AccessoryButton'
-import { faPlus } from '@fortawesome/pro-solid-svg-icons'
+import { faPlus } from '@fortawesome/free-solid-svg-icons'
 import { IconProp } from '@fortawesome/fontawesome-svg-core'
 
 test('should render child content', async () => {

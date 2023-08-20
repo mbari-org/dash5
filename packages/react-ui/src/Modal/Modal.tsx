@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react'
-import { faTimes } from '@fortawesome/pro-light-svg-icons'
+import { faTimes } from '@fortawesome/free-solid-svg-icons'
 import { AbsoluteOverlay as LoadingOverlay } from '../Indicators'
 import { IconButton } from '../Navigation'
 import { useEventListener } from '@mbari/utils'

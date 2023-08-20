@@ -19,7 +19,7 @@ import useTrackedVehicles from '../lib/useTrackedVehicles'
 import axios from 'axios'
 import { DateTime } from 'luxon'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
-import { faCheck, faSync } from '@fortawesome/pro-regular-svg-icons'
+import { faCheck, faSync } from '@fortawesome/free-solid-svg-icons'
 
 const parsePos = (pos: string | number) => parseFloat(`${pos}`).toFixed(3)
 const calcPosition = (lat?: number | string, long?: number | string) =>

@@ -2,7 +2,7 @@ import React from 'react'
 import clsx from 'clsx'
 import { DateTime } from 'luxon'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
-import { faTriangleExclamation } from '@fortawesome/pro-regular-svg-icons'
+import { faTriangleExclamation } from '@fortawesome/free-solid-svg-icons'
 
 export interface HandoffCellProps {
   className?: string

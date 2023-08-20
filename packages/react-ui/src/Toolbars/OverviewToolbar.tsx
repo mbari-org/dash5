@@ -5,7 +5,7 @@ import {
   faChevronDown,
   faClipboardList,
   faPlus,
-} from '@fortawesome/pro-regular-svg-icons'
+} from '@fortawesome/free-solid-svg-icons'
 import { IconDefinition, IconProp } from '@fortawesome/fontawesome-svg-core'
 import { AccessoryButton } from '../Navigation/AccessoryButton'
 import { capitalize, swallow } from '@mbari/utils'

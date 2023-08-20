@@ -1,8 +1,7 @@
-import React from 'react'
 // also exported from '@storybook/react' if you can deal with breaking changes in 6.1
 import { Story, Meta } from '@storybook/react/types-6-0'
 import { AccessoryButton, AccessoryButtonProps } from './AccessoryButton'
-import { faEye } from '@fortawesome/pro-light-svg-icons'
+import { faEye } from '@fortawesome/free-regular-svg-icons'
 import { IconProp } from '@fortawesome/fontawesome-svg-core'
 
 export default {

@@ -1,6 +1,6 @@
 import React, { useState } from 'react'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
-import { IconDefinition } from '@fortawesome/pro-regular-svg-icons'
+import { IconDefinition } from '@fortawesome/free-regular-svg-icons'
 import { ToolTip, ToolTipAlignment, ToolTipDirection } from './ToolTip'
 import clsx from 'clsx'
 import { IconProp } from '@fortawesome/fontawesome-svg-core'
