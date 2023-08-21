@@ -3,10 +3,9 @@ import React from 'react'
 import { Story, Meta } from '@storybook/react/types-6-0'
 import { Table, TableProps } from './Table'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
-import { faInfoCircle } from '@fortawesome/pro-regular-svg-icons'
-import { faMapMarker } from '@fortawesome/pro-solid-svg-icons'
+import { faInfoCircle, faMapPin } from '@fortawesome/free-solid-svg-icons'
+import { faMapMarker } from '@fortawesome/free-solid-svg-icons'
 import { IconProp } from '@fortawesome/fontawesome-svg-core'
-import { faMapMarkerAlt } from '@fortawesome/pro-light-svg-icons'
 
 export default {
   title: 'Data/Table',
@@ -355,7 +354,7 @@ Scrollable.args = {
                 <option>Set waypoint</option>
               </select>
               <div className="ml-2 rounded border-2 border-solid p-2">
-                <FontAwesomeIcon icon={faMapMarkerAlt as IconProp} />
+                <FontAwesomeIcon icon={faMapPin as IconProp} />
               </div>
             </div>
           ),
@@ -382,7 +381,7 @@ Scrollable.args = {
                 <option>Set waypoint</option>
               </select>
               <div className="ml-2 rounded border-2 border-solid p-2">
-                <FontAwesomeIcon icon={faMapMarkerAlt as IconProp} />
+                <FontAwesomeIcon icon={faMapPin as IconProp} />
               </div>
             </div>
           ),
@@ -409,7 +408,7 @@ Scrollable.args = {
                 <option>Set waypoint</option>
               </select>
               <div className="ml-2 rounded border-2 border-solid p-2">
-                <FontAwesomeIcon icon={faMapMarkerAlt as IconProp} />
+                <FontAwesomeIcon icon={faMapPin as IconProp} />
               </div>
             </div>
           ),
@@ -436,7 +435,7 @@ Scrollable.args = {
                 <option>Set waypoint</option>
               </select>
               <div className="ml-2 rounded border-2 border-solid p-2">
-                <FontAwesomeIcon icon={faMapMarkerAlt as IconProp} />
+                <FontAwesomeIcon icon={faMapPin as IconProp} />
               </div>
             </div>
           ),

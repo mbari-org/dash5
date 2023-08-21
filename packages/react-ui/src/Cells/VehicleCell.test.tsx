@@ -1,10 +1,9 @@
-import React from 'react'
 import { render, screen } from '@testing-library/react'
 import '@testing-library/jest-dom'
 import { VehicleCell, VehicleCellProps } from './VehicleCell'
 
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
-import { faSync } from '@fortawesome/pro-light-svg-icons'
+import { faSync } from '@fortawesome/free-solid-svg-icons'
 import { IconProp } from '@fortawesome/fontawesome-svg-core'
 import { VehicleProps } from '../Diagrams'
 

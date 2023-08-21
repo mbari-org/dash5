@@ -3,8 +3,7 @@ import clsx from 'clsx'
 import { Table } from '../Data/Table'
 import { Select } from '../Fields/Select'
 import { Button, IconButton } from '../Navigation'
-import { faMapMarkerAlt } from '@fortawesome/pro-regular-svg-icons'
-import { faMapMarker } from '@fortawesome/pro-solid-svg-icons'
+import { faLocationDot, faLocationPin } from '@fortawesome/free-solid-svg-icons'
 import { IconProp } from '@fortawesome/fontawesome-svg-core'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { swallow } from '@mbari/utils'
@@ -61,7 +60,7 @@ const NumberedMarker: React.FC<{ num: number; isActive?: boolean }> = ({
     >
       <div className={styles.absoluteAndCentered}>
         <FontAwesomeIcon
-          icon={faMapMarker as IconProp}
+          icon={faLocationPin as IconProp}
           data-testid="map marker icon"
           className={clsx(isActive ? 'text-purple-700' : 'opacity-60')}
         />
@@ -230,7 +229,7 @@ export const WaypointTable: React.FC<WaypointTableProps> = ({
                 </div>
                 <div className="mr-4 flex w-1/12 items-center">
                   <IconButton
-                    icon={faMapMarkerAlt}
+                    icon={faLocationDot}
                     ariaLabel={'Map marker button'}
                     className={clsx(styles.iconButton, 'rounded-lg')}
                     style={{ height: '2.5rem', width: '2.5rem' }}

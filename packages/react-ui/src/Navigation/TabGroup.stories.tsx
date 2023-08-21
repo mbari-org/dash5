@@ -4,12 +4,6 @@ import { Story, Meta } from '@storybook/react/types-6-0'
 import { Tab } from './Tab'
 import { TabGroup } from './TabGroup'
 
-import {
-  faCamera,
-  faVideo,
-  faSpeaker,
-} from '@fortawesome/pro-regular-svg-icons'
-
 export default {
   title: 'Navigation/Tab Group',
   component: TabGroup,

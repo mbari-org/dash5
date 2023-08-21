@@ -6,7 +6,7 @@ import {
   FullWidthVehicleDiagramProps,
 } from '@mbari/react-ui'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
-import { faTriangleExclamation } from '@fortawesome/pro-solid-svg-icons'
+import { faTriangleExclamation } from '@fortawesome/free-solid-svg-icons'
 import clsx from 'clsx'
 
 const VehicleDiagram: React.FC<{

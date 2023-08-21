@@ -1,7 +1,7 @@
 import React, { useEffect, useState, useRef } from 'react'
 import { SelectOption } from '../../Fields/Select'
 import { SortDirection } from '../../Data/TableHeader'
-import { faInfoCircle } from '@fortawesome/pro-regular-svg-icons'
+import { faInfoCircle } from '@fortawesome/free-solid-svg-icons'
 import { IconButton } from '../../Navigation'
 import { Input, SelectField } from '../../Fields'
 import { sortByProperty } from '@mbari/utils'

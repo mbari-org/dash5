@@ -1,6 +1,6 @@
 import React from 'react'
 import { IconButton } from '../../Navigation/IconButton'
-import { faSync } from '@fortawesome/pro-solid-svg-icons'
+import { faSync } from '@fortawesome/free-solid-svg-icons'
 import clsx from 'clsx'
 
 export interface StatProps {

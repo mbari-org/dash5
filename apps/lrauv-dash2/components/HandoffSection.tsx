@@ -1,7 +1,7 @@
 import { HandoffCell, Virtualizer } from '@mbari/react-ui'
 import { useEvents } from '@mbari/api-client'
 import { AccessoryButton, AccordionCells } from '@mbari/react-ui'
-import { faPlus } from '@fortawesome/pro-regular-svg-icons'
+import { faPlus } from '@fortawesome/free-solid-svg-icons'
 import useGlobalModalId from '../lib/useGlobalModalId'
 
 const PIC_NOTE = 'Signing in as PIC'

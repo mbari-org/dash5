@@ -5,7 +5,7 @@ import { UnderwaterIcon } from '../Icons/UnderwaterIcon'
 import { RecoveredIcon } from '../Icons/RecoveredIcon'
 import { Table } from '../Data/Table'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
-import { faExpandArrows, faPen } from '@fortawesome/pro-regular-svg-icons'
+import { faMaximize, faPen } from '@fortawesome/free-solid-svg-icons'
 import { StartIcon } from '../Icons/StartIcon'
 import { EndIcon } from '../Icons/EndIcon'
 import { SummaryList } from '../Data/SummaryList'
@@ -355,7 +355,7 @@ export const DeploymentDetailsPopUp: React.FC<DeploymentDetailsPopUpProps> = ({
                       {onExpand && (
                         <button onClick={swallow(onExpand)}>
                           <FontAwesomeIcon
-                            icon={faExpandArrows}
+                            icon={faMaximize}
                             title="expand icon"
                           />
                         </button>

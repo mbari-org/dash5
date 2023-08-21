@@ -1,5 +1,5 @@
-import { faCheckSquare } from '@fortawesome/pro-solid-svg-icons'
-import { faSquare } from '@fortawesome/pro-regular-svg-icons'
+import { faCheckSquare } from '@fortawesome/free-solid-svg-icons'
+import { faSquare } from '@fortawesome/free-regular-svg-icons'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import React, { MouseEvent, useEffect, useState } from 'react'
 import { Input, Select } from '../Fields'

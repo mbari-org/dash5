@@ -10,7 +10,7 @@ import {
   faFilter,
   faPersonRunning,
   faSync,
-} from '@fortawesome/pro-regular-svg-icons'
+} from '@fortawesome/free-solid-svg-icons'
 import { DateTime } from 'luxon'
 import { useLastCommsTime } from '../lib/useLastCommsTime'
 

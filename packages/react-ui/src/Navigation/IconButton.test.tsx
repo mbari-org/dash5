@@ -1,8 +1,7 @@
-import React from 'react'
 import { render, screen } from '@testing-library/react'
 import '@testing-library/jest-dom'
 import { IconButton } from './IconButton'
-import { faHome } from '@fortawesome/pro-regular-svg-icons'
+import { faHome } from '@fortawesome/free-solid-svg-icons'
 
 test('should support disabled state', async () => {
   render(<IconButton ariaLabel="home" icon={faHome} disabled />)
