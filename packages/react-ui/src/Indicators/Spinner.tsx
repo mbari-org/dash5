@@ -1,5 +1,5 @@
 import { IconProp, SizeProp } from '@fortawesome/fontawesome-svg-core'
-import { faSpinner } from '@fortawesome/free-solid-svg-icons'
+import { faCircleNotch } from '@fortawesome/free-solid-svg-icons'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import * as React from 'react'
 import clsx from 'clsx'
@@ -18,7 +18,7 @@ export interface SpinnerProps {
 export const Spinner: React.FC<SpinnerProps> = ({ className, size = '1x' }) => (
   <p className={clsx(className, 'flex flex-shrink flex-grow-0')}>
     <span className="m-auto block animate-spin">
-      <FontAwesomeIcon icon={faSpinner as IconProp} size={size} />
+      <FontAwesomeIcon icon={faCircleNotch as IconProp} size={size} />
     </span>
   </p>
 )
