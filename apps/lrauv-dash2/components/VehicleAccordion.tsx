@@ -49,8 +49,8 @@ const VehicleAccordion: React.FC<VehicleAccordionProps> = ({
 }) => {
   const { data: relatedLogs, isLoading: logsLoading } = useEvents({
     vehicles: [vehicleName],
-    from,
-    to,
+    from: '',
+    to: '',
   })
   const { data: commsLogs, isLoading: commsLoading } = useEvents({
     vehicles: [vehicleName],
@@ -71,17 +71,24 @@ const VehicleAccordion: React.FC<VehicleAccordionProps> = ({
     ?.filter((s) => s.event.eventType === 'run')
     ?.sort((a, b) => a.event.unixTime - b.event.unixTime)?.[0]
 
-  const earliestLog = relatedLogs?.[(relatedLogs?.length ?? 0) - 1]?.isoTime
-  const logsSummary = logsLoading
-    ? 'loading...'
-    : earliestLog
-    ? `started ${DateTime.fromISO(earliestLog).toRelative()}`
-    : 'no logs yet'
+  // const earliestLog = relatedLogs?.[(relatedLogs?.length ?? 0) - 1]?.isoTime
+  // const logsSummary = logsLoading
+  //   ? 'loading...'
+  //   : earliestLog
+  //   ? `started ${DateTime.fromISO(earliestLog).toRelative()}`
+  //   : 'no logs yet'
 
-  const [section, setSection] = useState<VehicleAccordionSection>('schedule')
+  //const [section, setSection] = useState<VehicleAccordionSection>('schedule')
+  const [section, setSection] = useState<VehicleAccordionSection>(null)
   const handleToggleForSection =
     (currentSection: VehicleAccordionSection) => (open: boolean) =>
       setSection(open ? currentSection : null)
+
+  if (!currentMission || !activeDeployment) {
+    ;(currentSection: VehicleAccordionSection) => (open: boolean) =>
+      setSection(open ? currentSection : 'comms')
+  }
+
   const { data: picAndOnCall, isLoading: loadingPic } = usePicAndOnCall({
     vehicleName,
   })
@@ -183,7 +190,7 @@ const VehicleAccordion: React.FC<VehicleAccordionProps> = ({
       )}
       <AccordionHeader
         label="Log"
-        secondaryLabel={activeDeployment ? logsSummary : ''}
+        // secondaryLabel={activeDeployment ? logsSummary : ''}
         onToggle={handleToggleForSection('log')}
         open={section === 'log'}
         className="flex flex-shrink-0"

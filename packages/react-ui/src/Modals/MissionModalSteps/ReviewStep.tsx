@@ -6,7 +6,7 @@ import { Table } from '../../Data/Table'
 import { WaypointProps } from '../../Tables/WaypointTable'
 import { makeValueUnitString } from '@mbari/utils'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
-import { faInfoCircle } from '@fortawesome/pro-regular-svg-icons'
+import { faInfoCircle } from '@fortawesome/free-solid-svg-icons'
 import { IconProp } from '@fortawesome/fontawesome-svg-core'
 
 export interface ReviewProps {

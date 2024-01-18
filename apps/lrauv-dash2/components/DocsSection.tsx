@@ -6,7 +6,7 @@ import {
   useDeleteDocument,
 } from '@mbari/api-client'
 import { DateTime } from 'luxon'
-import { faPlus } from '@fortawesome/pro-regular-svg-icons'
+import { faPlus } from '@fortawesome/free-solid-svg-icons'
 import { AccessoryButton, Dropdown, Attachment } from '@mbari/react-ui'
 import filterDocuments, {
   DOCUMENT_FILTER_TYPES,
@@ -33,8 +33,9 @@ const DocsSection: React.FC<DocsSectionProps> = ({
   const { setGlobalModalId } = useGlobalModalId()
   const [selectedType, setSelectedType] =
     useState<DocumentFilterType>('All Documents')
-  const [selectedDeployment, setSelectedDeployment] =
-    useState<null | string>(null)
+  const [selectedDeployment, setSelectedDeployment] = useState<null | string>(
+    null
+  )
   const isFilteringDeployment = selectedType === 'By Deployment'
 
   const { data: documentData, isLoading, isFetching } = useDocuments()
@@ -55,12 +56,11 @@ const DocsSection: React.FC<DocsSectionProps> = ({
     })
   )
 
-  const [currentMoreMenu, setCurrentMoreMenu] =
-    useState<{
-      docId: number
-      docInstanceId: number
-      rect: DOMRect
-    } | null>(null)
+  const [currentMoreMenu, setCurrentMoreMenu] = useState<{
+    docId: number
+    docInstanceId: number
+    rect: DOMRect
+  } | null>(null)
   const closeMoreMenu = () => setCurrentMoreMenu(null)
   const openMoreMenu = (
     target: { docId: number; docInstanceId: number },

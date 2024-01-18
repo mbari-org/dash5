@@ -1,4 +1,3 @@
-import React from 'react'
 import { Story, Meta } from '@storybook/react'
 import Map, { MapProps } from './Map'
 
@@ -17,6 +16,9 @@ const Template: Story<MapProps> = (args) => {
 const args: MapProps = {
   center: [37.7749, -122.4194],
   zoom: 10,
+  onRequestDepth: async () => {
+    return (Math.random() * 10000.0) / 100.0
+  },
 }
 
 export const Primary = Template.bind({})

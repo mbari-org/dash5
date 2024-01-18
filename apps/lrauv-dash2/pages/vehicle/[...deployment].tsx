@@ -21,10 +21,9 @@ import {
   useTethysApiContext,
   useChartData,
   usePicAndOnCall,
-  useEvents,
 } from '@mbari/api-client'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
-import { faChevronDown, faChevronUp } from '@fortawesome/pro-solid-svg-icons'
+import { faChevronDown, faChevronUp } from '@fortawesome/free-solid-svg-icons'
 import clsx from 'clsx'
 import Layout from '../../components/Layout'
 import VehicleDiagram from '../../components/VehicleDiagram'
@@ -36,13 +35,17 @@ import useGlobalDrawerState from '../../lib/useGlobalDrawerState'
 import dynamic from 'next/dynamic'
 import { useTethysSubscriptionEvent } from '../../lib/useWebSocketListeners'
 import { useLastCommsTime } from '../../lib/useLastCommsTime'
+import { Allotment } from 'allotment'
+import 'allotment/dist/style.css'
+import { useGoogleMaps } from '../../lib/useGoogleMaps'
 
 const styles = {
   content: 'flex flex-shrink flex-grow flex-row overflow-hidden',
-  primary: 'flex w-3/4 flex-shrink flex-grow flex-col',
-  mapContainer: 'flex flex-shrink flex-col flex-grow bg-blue-300 relative',
+  primary: 'flex h-full flex-shrink flex-grow flex-col',
+  mapContainer:
+    'flex flex-shrink flex-col flex-grow bg-blue-300 relative h-full',
   secondary:
-    'flex w-[438px] flex-shrink-0 flex-col bg-white border-t-2 border-t-secondary-300/60 border-l border-l-slate-300',
+    'flex w-full h-full flex-shrink-0 flex-col bg-white border-t-2 border-t-secondary-300/60 border-l border-l-slate-300',
 }
 
 const LineChart = dynamic(
@@ -59,13 +62,15 @@ const DeploymentMap = dynamic(() => import('../../components/DeploymentMap'), {
 type AvailableTab = 'vehicle' | 'depth' | null
 
 const Vehicle: NextPage = () => {
+  const { authenticated } = useTethysApiContext()
+  const { mapsLoaded } = useGoogleMaps()
+
   const [mounted, setMounted] = useState(false)
   useEffect(() => {
     mounted || setMounted(true)
   }, [mounted, setMounted])
 
   const { drawerOpen, setDrawerOpen } = useGlobalDrawerState()
-  const { authenticated } = useTethysApiContext()
   const { setGlobalModalId } = useGlobalModalId()
   const router = useRouter()
   const [currentTab, setTab] = useState<AvailableTab>('vehicle')
@@ -189,7 +194,6 @@ const Vehicle: NextPage = () => {
   }
 
   const pingEvent = useTethysSubscriptionEvent('VehiclePingResult', vehicleName)
-
   return (
     <Layout>
       <OverviewToolbar
@@ -255,95 +259,99 @@ const Vehicle: NextPage = () => {
         )}
       />
       <div className={styles.content}>
-        <section className={styles.primary}>
-          <MissionProgressToolbar
-            startTime={DateTime.fromMillis(startTime).toISO()}
-            endTime={DateTime.fromMillis(endTime).toISO()}
-            ticks={6}
-            ariaLabel="Mission Progress"
-            className="bg-secondary-300/60"
-            onScrub={handleTimeScrub}
-            indicatorTime={indicatorTime}
-          />
-          <div className={styles.mapContainer}>
-            <DeploymentMap
-              vehicleName={vehicleName}
-              indicatorTime={indicatorTime}
-              startTime={startTime}
-              endTime={endTime}
+        <Allotment separator defaultSizes={[75, 25]}>
+          <section className={styles.primary}>
+            <MissionProgressToolbar
+              startTime={DateTime.fromMillis(startTime).toISO()}
+              endTime={DateTime.fromMillis(endTime).toISO()}
+              ticks={6}
+              ariaLabel="Mission Progress"
+              className="bg-secondary-300/60"
               onScrub={handleTimeScrub}
+              indicatorTime={indicatorTime}
             />
-            <div className="absolute bottom-0 z-[1001] flex w-full flex-col">
-              <TabGroup className="w-full px-8">
-                <Tab
-                  onClick={toggleDrawer}
-                  label={
-                    <FontAwesomeIcon
-                      icon={drawerOpen ? faChevronDown : faChevronUp}
-                      size="1x"
-                    />
-                  }
-                  selected
-                  className="mr-auto"
+            <div className={styles.mapContainer}>
+              {mapsLoaded && (
+                <DeploymentMap
+                  vehicleName={vehicleName}
+                  indicatorTime={indicatorTime}
+                  startTime={startTime}
+                  endTime={endTime}
+                  onScrub={handleTimeScrub}
                 />
-                <Tab
-                  label="Vehicle State"
-                  onClick={setCurrentTab('vehicle')}
-                  selected={currentTab === 'vehicle'}
-                />
-                <Tab
-                  label="Depth Data"
-                  onClick={setCurrentTab('depth')}
-                  selected={currentTab === 'depth'}
-                  className="mr-auto"
-                />
-              </TabGroup>
-              <div
-                className={clsx(
-                  'flex w-full bg-white',
-                  drawerOpen ? 'h-80' : 'h-12'
-                )}
-              >
-                {currentTab === 'vehicle' && (
-                  <VehicleDiagram
-                    name={vehicleName as string}
-                    className="m-auto flex h-full w-full"
-                    onBatteryClick={handleBatteryClick}
+              )}
+              <div className="absolute bottom-0 z-[1001] flex w-full flex-col">
+                <TabGroup className="w-full px-8">
+                  <Tab
+                    onClick={toggleDrawer}
+                    label={
+                      <FontAwesomeIcon
+                        icon={drawerOpen ? faChevronDown : faChevronUp}
+                        size="1x"
+                      />
+                    }
+                    selected
+                    className="mr-auto"
                   />
-                )}
-                {currentTab === 'depth' && (
-                  <div className="flex h-full w-full overflow-hidden px-4">
-                    {depthChart}
-                    {chartLoading && (
-                      <p className="text-md m-auto font-bold">
-                        Loading Depth Data
-                      </p>
-                    )}
-                    {chartError && (
-                      <p className="text-md m-auto font-bold">
-                        Depth Data Could Not Be Loaded
-                      </p>
-                    )}
-                  </div>
-                )}
+                  <Tab
+                    label="Vehicle State"
+                    onClick={setCurrentTab('vehicle')}
+                    selected={currentTab === 'vehicle'}
+                  />
+                  <Tab
+                    label="Depth Data"
+                    onClick={setCurrentTab('depth')}
+                    selected={currentTab === 'depth'}
+                    className="mr-auto"
+                  />
+                </TabGroup>
+                <div
+                  className={clsx(
+                    'flex w-full bg-white',
+                    drawerOpen ? 'h-80' : 'h-12'
+                  )}
+                >
+                  {currentTab === 'vehicle' && (
+                    <VehicleDiagram
+                      name={vehicleName as string}
+                      className="m-auto flex h-full w-full"
+                      onBatteryClick={handleBatteryClick}
+                    />
+                  )}
+                  {currentTab === 'depth' && (
+                    <div className="flex h-full w-full overflow-hidden px-4">
+                      {depthChart}
+                      {chartLoading && (
+                        <p className="text-md m-auto font-bold">
+                          Loading Depth Data
+                        </p>
+                      )}
+                      {chartError && (
+                        <p className="text-md m-auto font-bold">
+                          Depth Data Could Not Be Loaded
+                        </p>
+                      )}
+                    </div>
+                  )}
+                </div>
               </div>
             </div>
-          </div>
-        </section>
-        <section className={styles.secondary}>
-          {deployment && (
-            <VehicleAccordion
-              authenticated={authenticated}
-              vehicleName={vehicleName}
-              from={DateTime.fromMillis(deploymentStartTime)
-                .minus({ days: deployment.active ? 1 : 0 })
-                .toISO()}
-              to={DateTime.fromMillis(endTime).toISO()}
-              activeDeployment={deployment.active}
-              currentDeploymentId={deployment.deploymentId as number}
-            />
-          )}
-        </section>
+          </section>
+          <section className={styles.secondary}>
+            {deployment && (
+              <VehicleAccordion
+                authenticated={authenticated}
+                vehicleName={vehicleName}
+                from={DateTime.fromMillis(deploymentStartTime)
+                  .minus({ days: deployment.active ? 1 : 0 })
+                  .toISO()}
+                to={DateTime.fromMillis(endTime).toISO()}
+                activeDeployment={deployment.active}
+                currentDeploymentId={deployment.deploymentId as number}
+              />
+            )}
+          </section>
+        </Allotment>
       </div>
     </Layout>
   )

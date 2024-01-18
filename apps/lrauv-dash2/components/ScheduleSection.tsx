@@ -10,11 +10,10 @@ import {
   ScheduleCellStatus,
 } from '@mbari/react-ui'
 import { DateTime } from 'luxon'
-import { faPlus } from '@fortawesome/pro-regular-svg-icons'
+import { faPlus } from '@fortawesome/free-solid-svg-icons'
 import clsx from 'clsx'
 import { Select } from '@mbari/react-ui/dist/Fields/Select'
 import { useDeploymentCommandStatus } from '@mbari/api-client'
-import { capitalize } from '@mbari/utils'
 import useGlobalModalId from '../lib/useGlobalModalId'
 import { toast } from 'react-hot-toast'
 
@@ -127,12 +126,14 @@ export const ScheduleSection: React.FC<ScheduleSectionProps> = ({
     missions?.[0]?.event?.data === 'sched pause' ? 'paused' : 'running'
 
   const cellAtIndex = (index: number) => {
-    if (index === 0 && activeDeployment) {
+    // if (index === 0 && activeDeployment) {
+    if (index === 0) {
       return (
         <div className="flex border-b border-stone-200 py-2 px-4 text-sm">
           <p className="flex-grow text-xs">
-            {capitalize(vehicleName)} is scheduled until
-            <br /> TBD
+            {/* {capitalize(vehicleName)} is scheduled until */}
+            {/* {capitalize(vehicleName)} is NOT yet scheduled.
+            <br /> Deployment: TBD */}
           </p>
           <AccessoryButton
             label="Mission"

@@ -1,8 +1,8 @@
-import React, { useCallback, useEffect, useRef, useState } from 'react'
+import React, { useEffect, useRef, useState } from 'react'
 import { Modal } from '../Modal/Modal'
 import { StepProgress, StepProgressProps } from '../Navigation/StepProgress'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
-import { faChevronDoubleRight } from '@fortawesome/pro-solid-svg-icons'
+import { faAnglesRight } from '@fortawesome/free-solid-svg-icons'
 import { ConfirmVehicleDialog } from './ConfirmVehicleDialog'
 
 // Special reuse of MissionModalStep which is identical here.
@@ -111,7 +111,7 @@ export const CommandModal: React.FC<CommandModalProps> = ({
   ) : (
     <div>
       <span className="pr-2">Next</span>{' '}
-      <FontAwesomeIcon icon={faChevronDoubleRight} />
+      <FontAwesomeIcon icon={faAnglesRight} />
     </div>
   )
 
@@ -143,7 +143,7 @@ export const CommandModal: React.FC<CommandModalProps> = ({
   const [confirmedVehicle, setConfirmedVehicle] = useState<string | null>(null)
   const [showAlternateAddress, setShowAlternateAddress] = useState(false)
   const [scheduleOption, setScheduleOption] = useState<ScheduleOption | null>(
-    null
+    'ASAP'
   )
   const [customScheduleId, setCustomScheduleId] = useState<string | null>(null)
   const [notes, setNotes] = useState<string | null>(null)
@@ -175,7 +175,9 @@ export const CommandModal: React.FC<CommandModalProps> = ({
   const [commandText, setCommandText] = useState<string | null>(null)
 
   // Templated Command State
-  const [selectedSyntax, setSelectedSyntax] = useState<string | null>(null)
+  const [selectedSyntax, setSelectedSyntax] = useState<string | null>(
+    syntaxVariations?.[0]?.help ?? null
+  )
   const [selectedParameters, setSelectedParameters] = useState<{
     [key: string]: string
   }>({})

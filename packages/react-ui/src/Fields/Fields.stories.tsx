@@ -1,15 +1,14 @@
-import React from 'react'
 // also exported from '@storybook/react' if you can deal with breaking changes in 6.1
 import { Story, Meta } from '@storybook/react/types-6-0'
 import { Fields, FieldsProps } from './Fields'
 import { TextField } from './TextField'
 import { DateField } from './DateField'
-import { faBarcode } from '@fortawesome/pro-solid-svg-icons/faBarcode'
-import { faCity } from '@fortawesome/pro-solid-svg-icons/faCity'
-import { faEnvelope } from '@fortawesome/pro-solid-svg-icons/faEnvelope'
-import { faPhone } from '@fortawesome/pro-solid-svg-icons/faPhone'
-import { faUserCircle } from '@fortawesome/pro-solid-svg-icons/faUserCircle'
-import { faLockAlt } from '@fortawesome/pro-solid-svg-icons/faLockAlt'
+import { faBarcode } from '@fortawesome/free-solid-svg-icons/faBarcode'
+import { faCity } from '@fortawesome/free-solid-svg-icons/faCity'
+import { faEnvelope } from '@fortawesome/free-solid-svg-icons/faEnvelope'
+import { faPhone } from '@fortawesome/free-solid-svg-icons/faPhone'
+import { faUserCircle } from '@fortawesome/free-solid-svg-icons/faUserCircle'
+import { faLock } from '@fortawesome/free-solid-svg-icons'
 import { SelectField } from './SelectField'
 
 export default {
@@ -75,7 +74,7 @@ const Template: Story<FieldsProps> = (args) => (
           label="Password"
           className="w-full"
           type="password"
-          icon={faLockAlt}
+          icon={faLock}
           required
         />
         <TextField

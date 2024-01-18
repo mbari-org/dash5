@@ -4,8 +4,7 @@ import { Story, Meta } from '@storybook/react/types-6-0'
 import { VehicleCell, VehicleCellProps } from './VehicleCell'
 
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
-import { faSync } from '@fortawesome/pro-light-svg-icons'
-import { faCheck } from '@fortawesome/pro-regular-svg-icons'
+import { faSync, faCheck } from '@fortawesome/free-solid-svg-icons'
 import { IconProp } from '@fortawesome/fontawesome-svg-core'
 import { PluggedInIcon } from '../Icons/PluggedInIcon'
 

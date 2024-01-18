@@ -1,6 +1,7 @@
 import dynamic from 'next/dynamic'
 import { useCallback } from 'react'
 import { useManagedWaypoints } from '@mbari/react-ui'
+import { useGoogleElevator } from '../lib/useGoogleElevator'
 
 // This is a tricky workaround to prevent leaflet from crashing next.js
 // SSR. If we don't do this, the leaflet map will be loaded server side
@@ -55,8 +56,14 @@ const DeploymentMap: React.FC<DeploymentMapProps> = ({
     (wp) => ![wp.lat?.toLowerCase(), wp.lon?.toLowerCase()].includes('nan')
   )
 
+  const { handleDepthRequest } = useGoogleElevator()
+
   return (
-    <Map className="h-full w-full" maxZoom={13}>
+    <Map
+      className="h-full w-full"
+      maxZoom={17}
+      onRequestDepth={handleDepthRequest}
+    >
       {plottedWaypoints?.length ? (
         <>
           {plottedWaypoints.map((m, i) => {

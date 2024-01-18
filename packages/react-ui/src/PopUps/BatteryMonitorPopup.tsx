@@ -3,10 +3,7 @@ import clsx from 'clsx'
 import { Modal } from '../Modal'
 import { Table } from '../Data/Table'
 import { IconButton } from '../Navigation'
-import {
-  faExternalLink,
-  faInfoCircle,
-} from '@fortawesome/pro-regular-svg-icons'
+import { faExternalLink, faInfoCircle } from '@fortawesome/free-solid-svg-icons'
 
 export interface BatteryMonitorPopupProps {
   className?: string

@@ -35,7 +35,7 @@ export const usePicAndOnCall = (
         ]
       } else {
         result = await Promise.all(
-          params.vehicleName.map((vehicleName) =>
+          params?.vehicleName?.map((vehicleName) =>
             getPicAndOnCall({ ...params, vehicleName }, config)
           )
         )

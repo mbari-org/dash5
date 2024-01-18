@@ -1,6 +1,16 @@
-import React from 'react'
+import React, { useState } from 'react'
 import { useEvents } from '@mbari/api-client'
-import { AccordionCells, Virtualizer, CommsCell } from '@mbari/react-ui'
+import {
+  AccordionCells,
+  Virtualizer,
+  CommsCell,
+  IconButton,
+} from '@mbari/react-ui'
+import {
+  faFilter,
+  faPersonRunning,
+  faSync,
+} from '@fortawesome/free-solid-svg-icons'
 import { DateTime } from 'luxon'
 import { useLastCommsTime } from '../lib/useLastCommsTime'
 
@@ -17,11 +27,16 @@ const CommsSection: React.FC<CommsSectionProps> = ({
   from,
   to,
 }) => {
-  const { data, isLoading, isFetching } = useEvents({
+  const [allLogs, setAllLogs] = useState(false)
+  const toggleAllLogs = () => {
+    setAllLogs((prev) => !prev)
+  }
+
+  const { data, isLoading, isFetching, refetch } = useEvents({
     vehicles: [vehicleName],
     eventTypes: ['command', 'run'],
-    from,
-    to,
+    from: allLogs ? DateTime.now().minus({ years: 2 }).toISODate() : from,
+    to: allLogs ? undefined : to,
   })
   const lastCommsMillis = useLastCommsTime(
     vehicleName,
@@ -59,12 +74,37 @@ const CommsSection: React.FC<CommsSectionProps> = ({
     )
   }
 
+  const handleRefresh = () => {
+    refetch()
+  }
+
   return (
-    <AccordionCells
-      cellAtIndex={cellAtIndex}
-      count={data?.length}
-      loading={isLoading || isFetching}
-    />
+    <>
+      <header className="flex justify-end p-2">
+        <IconButton
+          icon={faSync}
+          ariaLabel="reload"
+          tooltipAlignment="right"
+          tooltip="Reload"
+          className="my-auto"
+          disabled={isLoading || isFetching}
+          onClick={handleRefresh}
+        />
+        <IconButton
+          icon={!allLogs ? faFilter : faPersonRunning}
+          ariaLabel="download"
+          tooltipAlignment="right"
+          tooltip={!allLogs ? 'Historic Logs' : 'Realtime'}
+          className="my-auto"
+          onClick={toggleAllLogs}
+        />
+      </header>
+      <AccordionCells
+        cellAtIndex={cellAtIndex}
+        count={data?.length}
+        loading={isLoading || isFetching}
+      />
+    </>
   )
 }
 

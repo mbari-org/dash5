@@ -1,9 +1,8 @@
-import React from 'react'
 import { render, screen } from '@testing-library/react'
 import '@testing-library/jest-dom'
 import { Dropdown, DropdownProps } from './Dropdown'
 import { IconDefinition } from '@fortawesome/fontawesome-svg-core'
-import { faPlus } from '@fortawesome/pro-regular-svg-icons'
+import { faPlus } from '@fortawesome/free-solid-svg-icons'
 
 const props: DropdownProps = {
   header: (

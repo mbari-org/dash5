@@ -1,21 +1,27 @@
 {
   "$schema": "https://turborepo.org/schema.json",
-  "globalDependencies": [
-    "$NEXT_PUBLIC_BASE_URL",
-    "$NEXT_PUBLIC_API_HOST",
-    "$NEXT_PUBLIC_WEBSOCKET_URL",
-    "$NODE_ENV",
-    "$PORT",
-    "$CI"
+  "globalEnv": [
+    "NEXT_PUBLIC_BASE_URL",
+    "NEXT_PUBLIC_API_HOST",
+    "NEXT_PUBLIC_WEBSOCKET_URL",
+    "NEXT_PUBLIC_GOOGLE_MAPS_API_KEY",
+    "NODE_ENV",
+    "PORT",
+    "CI",
+    "REACT_APP_GOOGLE_API_KEY",
+    "REACT_APP_ESRI_API_KEY"
   ],
   "pipeline": {
     "build": {
-      "dependsOn": [
-        "^build",
-        "$NEXT_PUBLIC_BASE_URL",
-        "$NEXT_PUBLIC_API_HOST",
-        "$NEXT_PUBLIC_WEBSOCKET_URL",
-        "$NODE_ENV"
+      "dependsOn": ["^build"],
+      "env": [
+        "NEXT_PUBLIC_BASE_URL",
+        "NEXT_PUBLIC_API_HOST",
+        "NEXT_PUBLIC_WEBSOCKET_URL",
+        "NEXT_PUBLIC_GOOGLE_MAPS_API_KEY",
+        "NODE_ENV",
+        "REACT_APP_GOOGLE_API_KEY",
+        "REACT_APP_ESRI_API_KEY"
       ],
       "outputs": [".next/**", "dist/**", "lib/**"]
     },

@@ -1,7 +1,7 @@
 import React from 'react'
 import clsx from 'clsx'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
-import { faBuilding } from '@fortawesome/pro-regular-svg-icons'
+import { faBuilding } from '@fortawesome/free-regular-svg-icons'
 import { IconProp } from '@fortawesome/fontawesome-svg-core'
 import { swallow, truncate } from '@mbari/utils'
 import { AcknowledgeIcon } from '../Icons/AcknowledgeIcon'

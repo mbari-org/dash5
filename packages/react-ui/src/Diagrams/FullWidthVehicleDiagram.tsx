@@ -16,7 +16,7 @@ import { Note } from './VehicleAssets/Note'
 import { VehicleProps } from './Vehicle'
 import { useResizeObserver } from '@mbari/utils'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
-import { faArrowUp } from '@fortawesome/pro-light-svg-icons'
+import { faArrowUp } from '@fortawesome/free-solid-svg-icons'
 import { Leak } from './VehicleAssets/Leak'
 
 export interface FullWidthVehicleDiagramProps extends VehicleProps {

@@ -1,8 +1,8 @@
 /* eslint @next/next/no-img-element: "off" */
 import { Modal, Spinner } from '@mbari/react-ui'
 import { capitalize } from '@mbari/utils'
-import { useSiteConfig } from '@mbari/api-client'
 import { useState } from 'react'
+import { useTethysApiContext } from 'api-client'
 
 export interface ESPModalProps {
   vehicleName: string
@@ -17,9 +17,9 @@ export const ESPModal: React.FC<ESPModalProps> = ({
   style,
   onClose,
 }) => {
-  const { data } = useSiteConfig({})
+  const { siteConfig } = useTethysApiContext()
   const svgUrl = `
-    ${data?.appConfig.external.statusWidgets.espStatusWidgetUrlPattern.replace(
+    ${siteConfig?.appConfig.external.statusWidgets.espStatusWidgetUrlPattern.replace(
       '<vehicleName>',
       vehicleName
     )}?x=${Date.now()}`

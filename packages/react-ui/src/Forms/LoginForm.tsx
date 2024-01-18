@@ -13,7 +13,7 @@ import { camelCase } from 'lodash'
 import { TextField, Fields, ErrorList } from '../Fields'
 import { Button } from '../Navigation'
 import { AbsoluteOverlay } from '../Indicators'
-import { faEnvelope, faEyeSlash } from '@fortawesome/pro-regular-svg-icons'
+import { faEnvelope, faEyeSlash } from '@fortawesome/free-regular-svg-icons'
 
 export type LoginFormValues = {
   email: string
