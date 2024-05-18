@@ -14,12 +14,14 @@ import {
   Virtualizer,
 } from '@mbari/react-ui'
 import { capitalize } from '@mbari/utils'
-import React, { useEffect } from 'react'
+import React, { useEffect, useState } from 'react'
 import useTrackedVehicles from '../lib/useTrackedVehicles'
 import axios from 'axios'
 import { DateTime } from 'luxon'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { faCheck, faSync } from '@fortawesome/free-solid-svg-icons'
+import { useCookies } from 'react-cookie'
+import useGlobalModalId from '../lib/useGlobalModalId'
 
 const parsePos = (pos: string | number) => parseFloat(`${pos}`).toFixed(3)
 const calcPosition = (lat?: number | string, long?: number | string) =>
@@ -32,6 +34,7 @@ const ConnectedVehicleCell: React.FC<{
   open: boolean
   onToggle: (open: boolean, name: string) => void
   onSelect: () => void
+  onColorChange?: (color: string, vehicle: string) => void
 }> = ({
   name,
   virtualizer,
@@ -104,6 +107,10 @@ const ConnectedVehicleCell: React.FC<{
   const recovered = lastDeployment?.recoverEvent?.eventId && true
   const active = lastDeployment?.active
 
+  const { setGlobalModalId } = useGlobalModalId()
+  const onColorChange = (_: string, _v: string) => {
+    setGlobalModalId({ id: 'color', meta: { vehicleName: name, color } })
+  }
   return (
     <>
       <VehicleHeader
@@ -121,6 +128,7 @@ const ConnectedVehicleCell: React.FC<{
         }
         onToggle={handleToggle}
         open={isOpen}
+        onChangeColor={onColorChange}
       />
       {isOpen && (
         <VehicleCell
@@ -265,6 +273,18 @@ const VehicleList: React.FC<{
     })
   }
 
+  // const [setColor, color] = useState({ color: '', vehicle: '' })
+  // const [cookies, setCookie] = useCookies(['vehicleColors'])
+
+  // function onChange(newName) {
+  //   setCookie('name', newName)
+  // }
+
+  // const handleColorChange = (color: string, vehicle: string) => {
+  //   console.log('color changed', color, vehicle)
+  //   setColor({ color, vehicle })
+  // }
+
   const cellAtIndex = (index: number, virtualizer: Virtualizer) => {
     const color = vehicles.data?.find(
       (v) => v.vehicleName === trackedVehicles[index]
@@ -272,6 +292,7 @@ const VehicleList: React.FC<{
     const handleSelect = () => {
       handleSelectVehicle?.(trackedVehicles[index])
     }
+
     return (
       <div className="border-b border-stone-400">
         <ConnectedVehicleCell
@@ -281,6 +302,7 @@ const VehicleList: React.FC<{
           open={accordionState[trackedVehicles[index]] !== 'closed'}
           onToggle={handleToggle}
           onSelect={handleSelect}
+          // onColorChange={handleColorChange}
         />
       </div>
     )

@@ -117,8 +117,17 @@ const VehiclePath: React.FC<{
       map.fitBounds(coords)
     }
   }, [sharedPath, grouped, map])
+
+  // This would be stored as state via useCookie library.
+  const customColors: { [key: string]: string | null } = {
+    Ahi: '#FF0000',
+    daphne: '#FFA500',
+    pontus: '#FFFF00',
+  }
   const color =
-    vehicleData?.find((v) => v.vehicleName === name)?.color ?? '#ccc'
+    customColors[name] ??
+    vehicleData?.find((v) => v.vehicleName === name)?.color ??
+    '#ccc'
 
   return route ? (
     <>
