@@ -3,6 +3,7 @@ import {
   useLastDeployment,
   useVehiclePos,
   useVehicles,
+  usePlatforms,
   useMissionStartedEvent,
   GetVehicleInfoResponse,
 } from '@mbari/api-client'
@@ -77,6 +78,13 @@ const ConnectedVehicleCell: React.FC<{
       enabled: !!name && !!lastDeployment?.lastEvent,
     }
   )
+
+  // TODO: Remove this demonstations of 'usePlatforms'
+  const { data: platforms } = usePlatforms(
+    { refresh: true },
+    { baseUrl: process.env.NEXT_PUBLIC_ODSS2BASE_URL }
+  )
+  console.log('platforms', platforms)
 
   const mission = missionStartedEvent?.[0]?.text.replace(/started mission/i, '')
   const isLoading = positionLoading || vehicleInfoLoading
