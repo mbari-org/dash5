@@ -154,9 +154,24 @@ const VehiclePath: React.FC<{
     vehicleData?.find((v) => v.vehicleName === name)?.color ??
     '#ccc'
 
+  const latest = vehiclePosition?.gpsFixes?.[0]
+
   return route ? (
     <>
       <Polyline pathOptions={{ color }} positions={activeRoute ?? route} />
+      {latest && (
+        <Circle
+          center={{ lat: latest.latitude, lng: latest.longitude }}
+          pathOptions={{
+            color,
+            fillColor: color,
+            fillOpacity: 0.1,
+            weight: 1,
+            dashArray: '4, 4',
+          }}
+          radius={1500}
+        />
+      )}
       {indicatorCoord && (
         <Circle
           center={{
