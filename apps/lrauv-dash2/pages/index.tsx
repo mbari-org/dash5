@@ -41,45 +41,44 @@ const styles = {
     'flex w-full flex-shrink-0 flex-col bg-white border-t-2 border-secondary-300/60',
 }
 
-const CustomMarkerSet: React.FC = () => {
-  const [markers, setMarkers] = React.useState<
-    { lat: number; lng: number; label: string }[]
-  >([])
-  const [markerIndex, setMarkerIndex] = React.useState(0)
-  const handleNewMarker = useCallback(
-    (lat: number, lng: number) => {
-      console.log('new marker', lat, lng)
-      setMarkers([
-        ...markers,
-        { lat, lng, label: `Marker ${markers.length + 1}` },
-      ])
-      setMarkerIndex(markerIndex + 1)
-    },
-    [setMarkerIndex, markers, setMarkers]
-  )
-  console.log('MARKERS', markers)
-  return (
-    <>
-      <ClickableMapPoint onClick={handleNewMarker} />
-      {markers.map((marker, index) => (
-        <DraggableMarker
-          lat={marker.lat}
-          lng={marker.lng}
-          index={index}
-          key={[marker.label, index].join('-')}
-          draggable
-          onDragEnd={(index, latlng) => {
-            setMarkers(
-              markers.map((m, i) =>
-                i === index ? { ...m, lat: latlng.lat, lng: latlng.lng } : m
-              )
-            )
-          }}
-        />
-      ))}
-    </>
-  )
-}
+// const CustomMarkerSet: React.FC = () => {
+//   const [markers, setMarkers] = React.useState<
+//     { lat: number; lng: number; label: string }[]
+//   >([])
+//   const [markerIndex, setMarkerIndex] = React.useState(0)
+//   const handleNewMarker = useCallback(
+//     (lat: number, lng: number) => {
+//       console.log('new marker', lat, lng)
+//       setMarkers([
+//         ...markers,
+//         { lat, lng, label: `Marker ${markers.length + 1}` },
+//       ])
+//       setMarkerIndex(markerIndex + 1)
+//     },
+//     [setMarkerIndex, markers, setMarkers]
+//   )
+//   return (
+//     <>
+//       <ClickableMapPoint onClick={handleNewMarker} />
+//       {markers.map((marker, index) => (
+//         <DraggableMarker
+//           lat={marker.lat}
+//           lng={marker.lng}
+//           index={index}
+//           key={[marker.label, index].join('-')}
+//           draggable
+//           onDragEnd={(index, latlng) => {
+//             setMarkers(
+//               markers.map((m, i) =>
+//                 i === index ? { ...m, lat: latlng.lat, lng: latlng.lng } : m
+//               )
+//             )
+//           }}
+//         />
+//       ))}
+//     </>
+//   )
+// }
 
 const OverViewMap: React.FC<{
   trackedVehicles: string[]
@@ -91,7 +90,6 @@ const OverViewMap: React.FC<{
         {trackedVehicles.map((name) => (
           <VehiclePath name={name} key={`path${name}`} grouped />
         ))}
-        <CustomMarkerSet />
       </Map>
     </SharedPathContextProvider>
   )
