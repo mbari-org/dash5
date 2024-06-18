@@ -84,11 +84,40 @@ const OverViewMap: React.FC<{
   trackedVehicles: string[]
 }> = ({ trackedVehicles }) => {
   const { handleDepthRequest } = useGoogleElevator()
+  const [center, setCenter] = useState<undefined | [number, number]>()
+  const [latestGPS, setLatestGPS] = useState<VPosDetail | undefined>()
+
+  const handleGPSFix = useCallback(
+    (gps: VPosDetail) => {
+      console.log('GPS Fix', gps.isoTime, 'vs', latestGPS?.isoTime)
+      if ((latestGPS?.isoTime ?? 0) > gps.isoTime || !latestGPS) {
+        setLatestGPS(gps)
+      }
+    },
+    [latestGPS, setLatestGPS]
+  )
+
+  const handleCoordinateRequest = useCallback(() => {
+    if (latestGPS) {
+      setCenter([latestGPS?.latitude, latestGPS?.longitude])
+    }
+  }, [latestGPS, setCenter])
+
   return (
     <SharedPathContextProvider>
-      <Map className="h-full w-full" onRequestDepth={handleDepthRequest}>
+      <Map
+        className="h-full w-full"
+        onRequestDepth={handleDepthRequest}
+        onRequestCoordinate={handleCoordinateRequest}
+        center={center}
+      >
         {trackedVehicles.map((name) => (
-          <VehiclePath name={name} key={`path${name}`} grouped />
+          <VehiclePath
+            name={name}
+            key={`path${name}`}
+            onGPSFix={handleGPSFix}
+            grouped
+          />
         ))}
       </Map>
     </SharedPathContextProvider>
