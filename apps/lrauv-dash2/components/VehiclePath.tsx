@@ -21,7 +21,16 @@ const VehiclePath: React.FC<{
   to?: number
   indicatorTime?: number | null
   onScrub?: (millis?: number | null) => void
-}> = ({ name, grouped, to, from, indicatorTime, onScrub: handleScrub }) => {
+  onGPSFix?: (gps: VPosDetail) => void
+}> = ({
+  name,
+  grouped,
+  to,
+  from,
+  indicatorTime,
+  onScrub: handleScrub,
+  onGPSFix: handleGPSFix,
+}) => {
   const map = useMap()
   const { sharedPath, dispatch } = useSharedPath()
   const { data: vehicleData } = useVehicles({})
@@ -44,6 +53,22 @@ const VehiclePath: React.FC<{
       enabled: !!from || !!lastDeployment?.startEvent?.unixTime,
     }
   )
+
+  const latestGPS = useRef<[number, number] | undefined>()
+  useEffect(() => {
+    if (vehiclePosition?.gpsFixes) {
+      const latest = vehiclePosition.gpsFixes[0]
+      if (
+        latestGPS.current &&
+        latestGPS.current[0] === latest.longitude &&
+        latestGPS.current[1] === latest.longitude
+      ) {
+        return
+      }
+      latestGPS.current = [latest.latitude, latest.longitude]
+      handleGPSFix?.(latest)
+    }
+  }, [vehiclePosition, handleScrub])
 
   const timeout = useRef<ReturnType<typeof setTimeout> | null>(null)
 
