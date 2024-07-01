@@ -1,8 +1,9 @@
 import dynamic from 'next/dynamic'
-import { useCallback, useState, useRef, useEffect } from 'react'
+// import { useCallback, useState, useRef, useEffect } from 'react'
+import { useCallback } from 'react'
 import { useManagedWaypoints } from '@mbari/react-ui'
 import { useGoogleElevator } from '../lib/useGoogleElevator'
-import { VPosDetail } from '@mbari/api-client'
+// import { VPosDetail } from '@mbari/api-client'
 
 // This is a tricky workaround to prevent leaflet from crashing next.js
 // SSR. If we don't do this, the leaflet map will be loaded server side
@@ -59,40 +60,40 @@ const DeploymentMap: React.FC<DeploymentMapProps> = ({
 
   const { handleDepthRequest } = useGoogleElevator()
 
-  const [center, setCenter] = useState<undefined | [number, number]>()
-  const [latestGPS, setLatestGPS] = useState<VPosDetail | undefined>()
+  // const [center, setCenter] = useState<undefined | [number, number]>()
+  // const [latestGPS, setLatestGPS] = useState<VPosDetail | undefined>()
 
-  const latestVehicle = useRef(vehicleName)
-  useEffect(() => {
-    if (vehicleName !== latestVehicle.current) {
-      setLatestGPS(undefined)
-      setCenter(undefined)
-      latestVehicle.current = vehicleName
-    }
-  }, [vehicleName, setLatestGPS])
+  // const latestVehicle = useRef(vehicleName)
+  // useEffect(() => {
+  //   if (vehicleName !== latestVehicle.current) {
+  //     setLatestGPS(undefined)
+  //     setCenter(undefined)
+  //     latestVehicle.current = vehicleName
+  //   }
+  // }, [vehicleName, setLatestGPS])
 
-  const handleGPSFix = useCallback(
-    (gps: VPosDetail) => {
-      if ((latestGPS?.isoTime ?? 0) > gps.isoTime || !latestGPS) {
-        setLatestGPS(gps)
-      }
-    },
-    [latestGPS, setLatestGPS]
-  )
+  // const handleGPSFix = useCallback(
+  //   (gps: VPosDetail) => {
+  //     if ((latestGPS?.isoTime ?? 0) > gps.isoTime || !latestGPS) {
+  //       setLatestGPS(gps)
+  //     }
+  //   },
+  //   [latestGPS, setLatestGPS]
+  // )
 
-  const handleCoordinateRequest = useCallback(() => {
-    if (latestGPS) {
-      setCenter([latestGPS?.latitude, latestGPS?.longitude])
-    }
-  }, [latestGPS, setCenter])
+  // const handleCoordinateRequest = useCallback(() => {
+  //   if (latestGPS) {
+  //     setCenter([latestGPS?.latitude, latestGPS?.longitude])
+  //   }
+  // }, [latestGPS, setCenter])
 
   return (
     <Map
       className="h-full w-full"
       maxZoom={17}
       onRequestDepth={handleDepthRequest}
-      center={center}
-      onRequestCoordinate={handleCoordinateRequest}
+      // center={center}
+      // onRequestCoordinate={handleCoordinateRequest}
     >
       {plottedWaypoints?.length ? (
         <>
@@ -124,7 +125,7 @@ const DeploymentMap: React.FC<DeploymentMapProps> = ({
           to={endTime as number}
           indicatorTime={indicatorTime}
           onScrub={handleScrub}
-          onGPSFix={handleGPSFix}
+          // onGPSFix={handleGPSFix}
         />
       )}
     </Map>
