@@ -1,0 +1,59 @@
+a:hover {
+  cursor: pointer;
+  color: #5e66cc;
+}
+li:hover {
+  cursor: pointer;
+}
+.mousechange:hover {
+  cursor: pointer;
+}
+.leaflet-pointer {
+  cursor: pointer;
+}
+.leaflet-grab {
+  cursor: pointer;
+}
+.leaflet-container a {
+  color: #5e66cc;
+}
+.leaflet-container a:hover {
+  color: #00008b;
+}
+#coords {
+  color: #00008b;
+}
+.button {
+  z-index: 100;
+}
+#xMark {
+  color: #5e66cc;
+  right: 0;
+  margin-right: 0;
+}
+#xMark:hover {
+  color: red;
+}
+.button #cancelMeas {
+  right: 0;
+  margin-right: 0;
+  border-right: none;
+  padding-right: 0;
+}
+#measStyle {
+  color: '#00008b';
+  font-family: 'Helvetica Neue, Arial, Helvetica, sans- serif';
+  font-size: '12px';
+}
+#coordDivider {
+  color: '#999';
+}
+.button #measBtn {
+  background: 'none !important';
+  border: 'none';
+  padding: '0!important';
+  font-family: 'Helvetica Neue, Arial, Helvetica, sans- serif';
+  color: '#00008b';
+  text-decoration: 'underline';
+  cursor: 'pointer';
+}
