@@ -4,6 +4,7 @@ import {
   WMSTileLayer,
   LayersControl,
   ScaleControl,
+  useMap,
 } from 'react-leaflet'
 import Control from 'react-leaflet-custom-control'
 import 'leaflet/dist/leaflet.css'
@@ -13,7 +14,10 @@ import MouseCoordinates, { MouseCoordinatesProps } from './MouseCoordinates'
 import { useMapBaseLayer, BaseLayerOption } from './useMapBaseLayer'
 import 'leaflet-mouse-position'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
-import { faRulerCombined } from '@fortawesome/free-solid-svg-icons'
+import {
+  faArrowsToDot,
+  faRulerCombined,
+} from '@fortawesome/free-solid-svg-icons'
 import { Measurement } from './Measurement'
 
 export interface MapProps {
@@ -26,10 +30,23 @@ export interface MapProps {
   maxNativeZoom?: number
   scrollWheelZoom?: boolean
   onRequestDepth?: MouseCoordinatesProps['onRequestDepth']
+  onRequestCoordinate?: () => void
   children?: React.ReactNode
 }
 
 export type MeasureMode = 'closed' | 'open' | 'measuring'
+
+// Special component to center the map to a specific location
+// when we change the center prop on the parent map.
+const CenterView: React.FC<{ coords: [number, number] }> = ({ coords }) => {
+  const map = useMap()
+
+  useEffect(() => {
+    map.setView(coords, map.getZoom())
+  }, [coords, map])
+
+  return null
+}
 
 const Map: React.FC<MapProps> = ({
   className,
@@ -41,6 +58,7 @@ const Map: React.FC<MapProps> = ({
   maxNativeZoom = 13,
   children,
   onRequestDepth,
+  onRequestCoordinate,
 }) => {
   const { baseLayer, setBaseLayer } = useMapBaseLayer()
   const addBaseLayerHandler = useCallback(
@@ -87,6 +105,12 @@ const Map: React.FC<MapProps> = ({
       setMeasurements((prev) => prev.map((p) => ({ ...p, editing: false })))
     }
     setMeasureMode(mode)
+  }
+
+  const handleRequestCoordinate = (e: React.MouseEvent) => {
+    e.preventDefault()
+    e.stopPropagation()
+    onRequestCoordinate?.()
   }
 
   const removeMeasurment = (id: string) => () => {
@@ -233,6 +257,22 @@ const Map: React.FC<MapProps> = ({
       <Control prepend position="topright">
         <MouseCoordinates onRequestDepth={onRequestDepth} />
       </Control>
+      {onRequestCoordinate ? (
+        <Control position="topright">
+          <button
+            className="rounded bg-white p-2 text-stone-500"
+            style={{
+              border: '2px solid rgba(0,0,0,0.2)',
+              backgroundClip: 'padding-box',
+              width: 48,
+            }}
+            onClick={handleRequestCoordinate}
+          >
+            <FontAwesomeIcon icon={faArrowsToDot} size="2xl" />
+          </button>
+        </Control>
+      ) : null}
+      <CenterView coords={center} />
     </MapContainer>
   )
 }
