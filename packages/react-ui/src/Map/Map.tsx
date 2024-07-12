@@ -5,27 +5,30 @@ import {
   LayersControl,
   ScaleControl,
   useMapEvents,
+  useMap,
 } from 'react-leaflet'
 import Control from 'react-leaflet-custom-control'
 import 'leaflet/dist/leaflet.css'
 import 'leaflet-measure/dist/leaflet-measure.css'
-import '../css/geoManControl.css'
+// import '../css/geoManControl.css'
 import 'react-tooltip/dist/react-tooltip.css'
-import React, { useCallback, useMemo, useState } from 'react'
-import Symbology, { SymbologyProps } from './Symbology'
+import React, { useCallback, useEffect, useMemo, useState } from 'react'
+// import Symbology, { SymbologyProps } from './Symbology'
 import ReactLeafletGoogleLayer from 'react-leaflet-google-layer'
 import MouseCoordinates, { MouseCoordinatesProps } from './MouseCoordinates'
 import { useMapBaseLayer, BaseLayerOption } from './useMapBaseLayer'
 import 'leaflet-mouse-position'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import {
+  faArrowsToCircle,
   faCircleCheck,
   faRulerCombined,
+  faLayerGroup,
 } from '@fortawesome/free-solid-svg-icons'
 import { faCircleXmark } from '@fortawesome/free-regular-svg-icons'
 import { Measurement } from './Measurement'
 import { Tooltip } from 'react-tooltip'
-import { GeomanControl } from './GeomanControl'
+// import { GeomanControl } from './GeomanControl'
 import MovingDot from './MovingDot'
 import { AreaComponent, PathComponent, MeasurementProps } from './Measurement'
 
@@ -43,12 +46,25 @@ export interface MapProps {
   maxNativeZoom?: number
   scrollWheelZoom?: boolean
   onRequestDepth?: MouseCoordinatesProps['onRequestDepth']
+  onRequestCoordinate?: () => void
   dmsCoord?: string
   mapCoord?: string
   children?: React.ReactNode
 }
 
 export type MeasureMode = 'open' | 'measuring' | 'closed' | 'cancelled'
+
+// Special component to center the map to a specific location
+// when we change the center prop on the parent map.
+const CenterView: React.FC<{ coords: [number, number] }> = ({ coords }) => {
+  const map = useMap()
+
+  useEffect(() => {
+    map.setView(coords, map.getZoom())
+  }, [coords, map])
+
+  return null
+}
 
 const Map: React.FC<MapProps> = ({
   className,
@@ -60,6 +76,7 @@ const Map: React.FC<MapProps> = ({
   maxNativeZoom = 13,
   children,
   onRequestDepth,
+  onRequestCoordinate,
 }) => {
   const { baseLayer, setBaseLayer } = useMapBaseLayer()
   const addBaseLayerHandler = useCallback(
@@ -78,7 +95,7 @@ const Map: React.FC<MapProps> = ({
 
   const [count, setCount] = useState(0)
   const [isHovering, setIsHovering] = useState(false)
-  const symbols = new Symbology({})
+  // const symbols = new Symbology({})
 
   const measStyle = {
     color: '#00008b',
@@ -234,7 +251,6 @@ const Map: React.FC<MapProps> = ({
     e.preventDefault()
     e.stopPropagation()
 
-    // console.log('MeasureMode is set to: ' + mode)
     if (mode === 'open') {
       setCount(0)
     }
@@ -242,7 +258,6 @@ const Map: React.FC<MapProps> = ({
       setCount(0)
       setMeasurements((prev) => [
         ...prev,
-        // { id: measurements.length.toString(), editing: true },
         { id: Date.now().toLocaleString(), editing: true },
       ])
     }
@@ -254,14 +269,18 @@ const Map: React.FC<MapProps> = ({
           editing: false,
         }))
       )
-      // setMeasureMode('cancelled')
     }
     if (mode === 'cancelled') {
       setCount(0)
       setMeasurements((prev) => [])
     }
-    // setCount(0)
     setMeasureMode(mode)
+  }
+
+  const handleRequestCoordinate = (e: React.MouseEvent) => {
+    e.preventDefault()
+    e.stopPropagation()
+    onRequestCoordinate?.()
   }
 
   const HandleMouseOver = () => {
@@ -272,7 +291,6 @@ const Map: React.FC<MapProps> = ({
   const removeMeasurement = useCallback(
     (id: string) => () => {
       setMeasurements((prev) => prev.filter((m) => m.id !== id))
-      console.log(measurements, id)
     },
     [measurements, setMeasurements]
   )
@@ -289,6 +307,7 @@ const Map: React.FC<MapProps> = ({
       // @ts-ignore
       maxNativeZoom={maxNativeZoom}
     >
+      {/* <ZoomControl zoomInText="🧐" zoomOutText="🗺️" /> */}
       <ScaleControl position="topright" />
       <LayersControl position="topright">
         <LayersControl.BaseLayer
@@ -345,6 +364,52 @@ const Map: React.FC<MapProps> = ({
       <Control prepend position="topright">
         <MouseCoordinates onRequestDepth={onRequestDepth} />
       </Control>
+      {onRequestCoordinate ? (
+        <Control position="topleft">
+          <button
+            id="vehicle-center"
+            className="vehicle-center rounded"
+            onMouseOver={HandleMouseOver}
+            style={{
+              position: 'relative',
+              zIndex: isHovering ? 900 : 10,
+              border: '0px solid rgba(0,0,0,0.2)',
+              backgroundClip: 'padding-box',
+              width: 42,
+              height: 42,
+            }}
+            onClick={handleRequestCoordinate}
+          >
+            <a
+              data-tooltip-id="vehicle-center-tooltip"
+              data-tooltip-content="Center map on centroid of latest GPS Fix positions (one per vehicle)"
+              data-tooltip-place="bottom-end"
+            >
+              <FontAwesomeIcon
+                icon={faArrowsToCircle}
+                size="2xl"
+                color="#ffffff"
+              />
+            </a>
+            <Tooltip
+              id="vehicle-center-tooltip"
+              style={{
+                paddingLeft: 4,
+                paddingRight: 4,
+                paddingTop: 2,
+                paddingBottom: 2,
+                backgroundColor: '#D3D3D3',
+                color: '#312e2b',
+                fontWeight: 'normal',
+                fontSize: '14px',
+              }}
+            />
+            {/* TODO
+            <FontAwesomeIcon icon={faArrowsToDot} size="2xl" /> */}
+          </button>
+        </Control>
+      ) : null}
+      <CenterView coords={center} />
       <div className={'leaflet-control'}>{children}</div>
       <Control position="topright">
         {children}
@@ -359,7 +424,8 @@ const Map: React.FC<MapProps> = ({
         ))}
         {measureMode === 'open' ? (
           <div
-            className="leaflet-grab rounded bg-white p-2 text-stone-500"
+            id="measModeOpen"
+            className="leaflet-pointer rounded bg-white text-stone-500"
             onDragStart={() => setCursor('pointer')}
             style={{
               border: '2px solid rgba(0,0,0,0.2)',
@@ -370,26 +436,36 @@ const Map: React.FC<MapProps> = ({
           >
             <p className="measure-info" cursor-pointer>
               <a
-                id="createMeas"
-                className="mousechange:hover leaflet-grab w-full bg-white p-1 text-primary-600"
+                id="createMeasLink"
+                className="mousechange:hover cursor-pointer:onHover leaflet-pointer text-bg-blue-600 hover:text-bg-blue-800 w-full bg-white"
                 onClick={changeMeasureMode('measuring')}
               >
                 <FontAwesomeIcon
                   icon={faCircleCheck}
-                  size="lg"
+                  size="xl"
                   id="circleCheck"
+                  style={{
+                    marginLeft: '.5rem',
+                    marginRight: '0.25rem',
+                  }}
                 />
                 {'    '} Create A New Measurement {'    '}
               </a>
               <button
-                onClick={changeMeasureMode('cancelled')}
+                id="ceaseMeasBtn"
                 className="mousechange:hover cursor-pointer:onHover p-1"
+                onClick={changeMeasureMode('cancelled')}
+                onMouseOver={HandleMouseOver}
+                style={{
+                  position: 'relative',
+                  zIndex: isHovering ? 900 : 10,
+                }}
               >
                 <FontAwesomeIcon
                   icon={faCircleXmark}
-                  size="lg"
+                  size="xl"
                   id="xMark"
-                  style={{ marginLeft: '.5rem' }}
+                  style={{ marginLeft: '1rem' }}
                 />
               </button>
             </p>
@@ -397,6 +473,7 @@ const Map: React.FC<MapProps> = ({
         ) : null}
         {measureMode === 'measuring' ? (
           <div
+            id="measModeMeasuring"
             className="cursor-pointer:onHover rounded bg-white p-2 text-stone-500"
             style={{
               border: '2px solid rgba(0,0,0,0.2)',
@@ -408,7 +485,7 @@ const Map: React.FC<MapProps> = ({
             <p className="measure-info cursor-pointer:onHover">
               <br />
               <h6>
-                <span className="font-bold text-blue-800">
+                <span className="font-normal text-blue-600">
                   Measure Distances and Areas
                 </span>
               </h6>
@@ -417,10 +494,10 @@ const Map: React.FC<MapProps> = ({
               <br />
               {element}
             </p>
-            <ul className="mousechange leaflet-grab grid">
+            <ul className="mousechange leaflet-pointer grid">
               <button
-                id="finishMeas"
-                className="leaflet-grab w-full rounded border bg-blue-600 p-1 text-white hover:bg-blue-800"
+                id="finishMeasBtn"
+                className="leaflet-pointer w-full rounded border bg-blue-600 p-1 text-white hover:bg-blue-800"
                 onMouseOver={HandleMouseOver}
                 style={{
                   position: 'relative',
@@ -432,8 +509,8 @@ const Map: React.FC<MapProps> = ({
               </button>
               <br />
               <button
-                id="cancelMeas"
-                className="leaflet-grab w-full rounded border bg-white p-1 text-primary-600 hover:bg-gray-100"
+                id="cancelMeasBtn"
+                className="leaflet-poiner w-full rounded border bg-white p-1 text-primary-600 hover:bg-gray-100"
                 onMouseOver={HandleMouseOver}
                 style={{
                   position: 'relative',
@@ -447,74 +524,87 @@ const Map: React.FC<MapProps> = ({
           </div>
         ) : null}
         {measureMode === 'closed' ? (
-          <button
-            className="mousechange rounded bg-white p-2 text-stone-500"
-            onDragEnd={() => setCursor('default')}
-            style={{
-              border: '2px solid rgba(0,0,0,0.2)',
-              backgroundClip: 'padding-box',
-              width: 48,
-            }}
-            onClick={changeMeasureMode('open')}
-          >
-            <a
-              data-tooltip-id="measure-tooltip"
-              data-tooltip-content="Measure Distances and Areas"
-              data-tooltip-place="bottom-end"
-            >
-              <FontAwesomeIcon
-                icon={faRulerCombined}
-                size="2xl"
-                color="#046B04"
-              />
-            </a>
-            <Tooltip
-              id="measure-tooltip"
+          <div id="measModeClosed">
+            <button
+              id="openMeasBtn"
+              className="openMeasBtn rounded"
+              onDragEnd={() => setCursor('pointer')}
+              onMouseOver={HandleMouseOver}
               style={{
-                backgroundColor: 'rgb(255,255,255)',
-                color: 'blue',
-                fontWeight: 'bold',
-                fontSize: '12px',
+                position: 'relative',
+                zIndex: isHovering ? 900 : 10,
+                border: '0px solid rgba(0,0,0,0.2)',
+                backgroundClip: 'padding-box',
+                width: 42,
+                height: 42,
               }}
-            ></Tooltip>
-          </button>
+              onClick={changeMeasureMode('open')}
+            >
+              <a
+                data-tooltip-id="measure-tooltip"
+                data-tooltip-content="Measure Distances and Areas"
+                data-tooltip-place="bottom-end"
+              >
+                <FontAwesomeIcon
+                  icon={faRulerCombined}
+                  size="2xl"
+                  color="#FFFFFF"
+                />
+              </a>
+              <Tooltip
+                id="measure-tooltip"
+                style={{
+                  paddingLeft: 4,
+                  paddingRight: 4,
+                  paddingTop: 2,
+                  paddingBottom: 2,
+                  backgroundColor: '#D3D3D3',
+                  color: '#312e2b',
+                  fontWeight: 'normal',
+                  fontSize: '14px',
+                }}
+              ></Tooltip>
+            </button>
+          </div>
         ) : null}
         {measureMode === 'cancelled' ? (
           <button
-            className="mousechange rounded bg-white p-2 text-stone-500"
-            onDragEnd={() => setCursor('default')}
+            id="measBtn"
+            className="measBtn rounded"
+            onDragEnd={() => setCursor('pointer')}
+            onMouseOver={HandleMouseOver}
             style={{
-              border: '2px solid rgba(0,0,0,0.2)',
+              position: 'relative',
+              zIndex: isHovering ? 900 : 10,
+              border: '0px solid rgba(0,0,0,0.2)',
               backgroundClip: 'padding-box',
-              width: 48,
+              width: 42,
+              height: 42,
             }}
-            // onClick={changeMeasureMode('open')}
           >
             <a
               data-tooltip-id="measure-tooltip"
               data-tooltip-content="Measure Distances and Areas"
               data-tooltip-place="bottom-end"
-            >
-              <FontAwesomeIcon
-                icon={faRulerCombined}
-                size="2xl"
-                color="#046B04"
-              />
-            </a>
+            ></a>
             <Tooltip
               id="measure-tooltip"
               style={{
-                backgroundColor: 'rgb(255,255,255)',
-                color: 'blue',
-                fontWeight: 'bold',
-                fontSize: '12px',
+                paddingLeft: 4,
+                paddingRight: 4,
+                paddingTop: 2,
+                paddingBottom: 2,
+                backgroundColor: '#D3D3D3',
+                color: '#312e2b',
+                fontWeight: 'normal',
+                fontSize: '14px',
               }}
             ></Tooltip>
           </button>
         ) : null}
       </Control>
       <MeasureEvents />
-      <GeomanControl position="topleft" drawCircle={true} oneBlock={true} />
+      {/* TODO <GeomanControl position="bottomleft" drawCircle={true} oneBlock={true} /> */}
     </MapContainer>
   )
 }
