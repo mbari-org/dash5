@@ -5,6 +5,5 @@ const withTM = require('next-transpile-modules')([
 ])
 
 module.exports = withTM({
-  basePath: '/dash5',
   reactStrictMode: true,
 })
