@@ -9,7 +9,7 @@ import {
 } from 'react-leaflet'
 import L, { LatLng, LatLngExpression, latLng } from 'leaflet'
 import { point, distance, polygon, area } from '@turf/turf'
-import '../css/Measurement.css'
+// import '../css/Measurement.css'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { faArrowsToCircle, faTrashAlt } from '@fortawesome/free-solid-svg-icons'
 
@@ -142,42 +142,13 @@ export const Measurement: React.FC<MeasurementProps> = ({
   // Finished Measuring
   useEffect(() => {
     if (!editing && wasEditing.current) {
-      const finalMeasurements = [...measurements]
-      setMeasurements(finalMeasurements)
-      countArray == 0
-      finalMeasurements.pop()
-    }
-    wasEditing.current = editing
-  }, [countArray, editing, map, measurements, setMeasurements])
-
-  const handleCenterClick = () => {
-    map.fitBounds(
-      measurements.map((fb) => [fb.lat, fb.lng]) as [number, number][]
-    )
-  }
-
-  // Measuring
-  useMapEvents({
-    mouseup(event) {
-      if (!editing) return
-      console.log('Measurements length: ' + measurements.length)
-      countArray = measurements.length
-      console.log('Count Array: ' + countArray)
-      setCounter((prevCount) => prevCount + 1)
-      console.log('Counter: ' + counter)
-      // setPointCoords(event.latlng)
-      setMeasurements([...measurements, event.latlng])
-      console.log('setMeasurements: ' + [...measurements])
-
-      clickCounter.current = countArray
-      // Determine if linear or Area Measurement - account for initial click
+      // Determine if linear or Area Measurement
       // Must account for last "click" not being real.....
+      clickCounter.current = clickCounter.current - 1
       if (clickCounter.current === 1) {
         isPoint.current = true
         isLine.current = false
         feature.current = 'point'
-        console.log('Point')
-        // handlePointEvents(event.latlng)
       } else if (clickCounter.current === 2) {
         isLine.current = true
         isPoint.current = false
@@ -187,25 +158,42 @@ export const Measurement: React.FC<MeasurementProps> = ({
         isLine.current = false
         isPoint.current = false
         feature.current = 'area'
-        console.log('Area')
       }
+      const finalMeasurements = [...measurements]
+      setMeasurements(finalMeasurements)
+      countArray == 0
+      finalMeasurements.pop()
+    }
 
-      if (measurements.length === 0) {
-        console.log('0')
-      } else if (measurements.length === 1) {
-        console.log('1')
-      } else if (measurements.length === 2) {
-        console.log('2')
-      } else if (measurements.length >= 3) {
-        console.log('3')
-      }
+    wasEditing.current = editing
+  }, [countArray, editing, map, measurements, setMeasurements])
+
+  const handleCenterClick = () => {
+    map.fitBounds(
+      measurements.map((fb) => [fb.lat, fb.lng]) as [number, number][]
+    )
+  }
+
+  const handleClickCounter = (arg0: number) => {
+    clickCounter.current = clickCounter.current - 1
+    return clickCounter.current
+  }
+
+  // Measuring
+  useMapEvents({
+    mouseup(event) {
+      if (!editing) return
+      countArray = measurements.length
+      setCounter((prevCount) => prevCount + 1)
+      setMeasurements([...measurements, event.latlng])
+      clickCounter.current = countArray + 1 // !!!!Need to draw lines and areas. Will remove at end.
+      handlePointEvents(event.latlng)
     },
   })
 
   const handlePointEvents = (e: L.LatLng) => {
     let lat = e.lat
     let lng = e.lng
-    console.log({ lat }, { lng })
     let dir = true
     mapC = e.lat.toFixed(6) + '  /  ' + e.lng.toFixed(6)
     let dmsLat = ConvertDEGToDMS(e.lat, dir)
@@ -236,7 +224,7 @@ export const Measurement: React.FC<MeasurementProps> = ({
   let km = pathDist.toFixed(2)
   let m2 = sfcArea.toFixed(2)
 
-  // Point Component
+  // TODO!!! Point Component currently not working
   const PointComponent = () => (
     <Circle center={measurements[0]} radius={25} color={color}>
       <Popup>
@@ -262,7 +250,6 @@ export const Measurement: React.FC<MeasurementProps> = ({
                 {mapC}
                 <br />
               </span>
-              <br />
               <br />
               <hr></hr>
               <br />
