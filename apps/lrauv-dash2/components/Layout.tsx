@@ -205,9 +205,9 @@ const Layout: React.FC<{ children?: React.ReactNode }> = ({ children }) => {
       {globalModalId?.id === 'battery' && vehicleName.length > 0 && (
         <BatteryModal vehicleName={vehicleName} onClose={setModal(null)} />
       )}
-      {globalModalId?.id === 'color' && vehicleName.length > 0 ? (
+      {/* {globalModalId?.id === 'color' && vehicleName.length > 0 ? (
         <ColorModal name={trackedVehicles[index]} color={color} />
-      ) : null}
+      ) : null} */}
     </div>
   )
 }
