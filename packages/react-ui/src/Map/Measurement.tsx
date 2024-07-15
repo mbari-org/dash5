@@ -168,15 +168,11 @@ export const Measurement: React.FC<MeasurementProps> = ({
     wasEditing.current = editing
   }, [countArray, editing, map, measurements, setMeasurements])
 
+  // Center on Bounds
   const handleCenterClick = () => {
     map.fitBounds(
       measurements.map((fb) => [fb.lat, fb.lng]) as [number, number][]
     )
-  }
-
-  const handleClickCounter = (arg0: number) => {
-    clickCounter.current = clickCounter.current - 1
-    return clickCounter.current
   }
 
   // Measuring
@@ -224,7 +220,7 @@ export const Measurement: React.FC<MeasurementProps> = ({
   let km = pathDist.toFixed(2)
   let m2 = sfcArea.toFixed(2)
 
-  // TODO!!! Point Component currently not working
+  // Point Component
   const PointComponent = () => (
     <Circle center={measurements[0]} radius={25} color={color}>
       <Popup>
@@ -283,7 +279,6 @@ export const Measurement: React.FC<MeasurementProps> = ({
               <span style={measStyle}>
                 {m.toString().replace(regex, ',')} Meters ({km} Kilometers)
               </span>
-              <br />
               <br />
               <hr></hr>
               <br />
