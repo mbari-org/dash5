@@ -1,5 +1,6 @@
 import dynamic from 'next/dynamic'
 import { useCallback, useState, useRef, useEffect } from 'react'
+import { useCallback } from 'react'
 import { useManagedWaypoints } from '@mbari/react-ui'
 import { useGoogleElevator } from '../lib/useGoogleElevator'
 import { VPosDetail } from '@mbari/api-client'
@@ -62,7 +63,7 @@ const DeploymentMap: React.FC<DeploymentMapProps> = ({
   const [center, setCenter] = useState<undefined | [number, number]>()
   const [latestGPS, setLatestGPS] = useState<VPosDetail | undefined>()
 
-  const latestVehicle = useRef(vehicleName)
+const latestVehicle = useRef(vehicleName)
   useEffect(() => {
     if (vehicleName !== latestVehicle.current) {
       setLatestGPS(undefined)
@@ -124,7 +125,7 @@ const DeploymentMap: React.FC<DeploymentMapProps> = ({
           to={endTime as number}
           indicatorTime={indicatorTime}
           onScrub={handleScrub}
-          onGPSFix={handleGPSFix}
+          // onGPSFix={handleGPSFix}
         />
       )}
     </Map>
