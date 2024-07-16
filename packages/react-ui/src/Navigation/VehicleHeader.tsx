@@ -1,12 +1,8 @@
-import React, { useCallback } from 'react'
-import { useState } from 'react'
+import React from 'react'
 import clsx from 'clsx'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { faChevronDown, faChevronLeft } from '@fortawesome/free-solid-svg-icons'
 import { DateTime } from 'luxon'
-import { Modal } from '../Modal'
-import { HexColorPicker } from 'react-colorful'
-import { ToolTip } from '../Navigation'
 
 export interface VehicleHeaderProps {
   className?: string
@@ -17,7 +13,6 @@ export interface VehicleHeaderProps {
   onToggle: () => void
   open?: boolean
   deployedAt?: number
-  onChangeColor?: (color: string, vehicle: string) => void
 }
 
 const styles = {
@@ -38,17 +33,7 @@ export const VehicleHeader: React.FC<VehicleHeaderProps> = ({
   onToggle,
   open,
   deployedAt,
-  onChangeColor,
 }) => {
-  const handleChangeColor = useCallback(
-    (e: React.MouseEvent) => {
-      e.stopPropagation()
-      onChangeColor?.(color, name)
-    },
-    [onChangeColor]
-  )
-
-  const [showColorPicker, setShowColorPicker] = useState(false)
   return (
     <div className={clsx('', className)} style={style}>
       <button
@@ -57,29 +42,11 @@ export const VehicleHeader: React.FC<VehicleHeaderProps> = ({
         onClick={onToggle}
         data-testid="vehicleHeaderButton"
       >
-        <div
-          className={clsx(styles.color, 'relative')}
+        <span
+          className={styles.color}
           style={{ backgroundColor: color }}
           data-testid="color"
-          onMouseOver={(e) => {
-            e.stopPropagation()
-            setShowColorPicker(true)
-            console.log('Mouse over')
-          }}
-          onMouseOut={(e) => {
-            e.stopPropagation()
-            setShowColorPicker(false)
-            console.log('Mouse out')
-          }}
-        >
-          <ToolTip
-            active={showColorPicker}
-            label="Change Color"
-            align="left"
-            direction="below"
-          />
-          <span className={styles.color} onClick={handleChangeColor} />
-        </div>
+        />
         <span className={styles.label}>
           {name}: {deployment}
         </span>

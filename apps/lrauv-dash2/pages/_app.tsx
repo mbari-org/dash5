@@ -9,7 +9,6 @@ import { TethysApiProvider } from '@mbari/api-client'
 import { UIProvider } from '@mbari/react-ui'
 import { ReactQueryDevtools } from 'react-query/devtools'
 import { Toaster } from 'react-hot-toast'
-import { CookiesProvider } from 'react-cookie'
 import useSessionToken from '../lib/useSessionToken'
 import '../styles/vehicle.css'
 
@@ -25,18 +24,16 @@ function MyApp({ Component, pageProps }: AppProps) {
   const handleSessionEnd = () => setSessionToken('')
   return (
     <QueryClientProvider client={queryClient}>
-      <CookiesProvider defaultSetOptions={{ path: '/' }}>
-        <UIProvider>
-          <TethysApiProvider
-            baseURL={process.env.NEXT_PUBLIC_BASE_URL}
-            sessionToken={sessionToken}
-            setSessionToken={setSessionToken}
-            onSessionEnd={handleSessionEnd}
-          >
-            <Component {...pageProps} />
-          </TethysApiProvider>
-        </UIProvider>
-      </CookiesProvider>
+      <UIProvider>
+        <TethysApiProvider
+          baseURL={process.env.NEXT_PUBLIC_BASE_URL}
+          sessionToken={sessionToken}
+          setSessionToken={setSessionToken}
+          onSessionEnd={handleSessionEnd}
+        >
+          <Component {...pageProps} />
+        </TethysApiProvider>
+      </UIProvider>
       <Toaster />
       <ReactQueryDevtools initialIsOpen={false} />
     </QueryClientProvider>

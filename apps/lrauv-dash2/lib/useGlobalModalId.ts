@@ -19,7 +19,6 @@ export type ModalId =
   | 'vehicleCharts'
   | 'vehicleComms'
   | 'battery'
-  | 'color'
   | null
 
 export interface GlobalModalMetaData {
@@ -27,7 +26,6 @@ export interface GlobalModalMetaData {
   docInstanceId?: number | null
   deploymentId?: number | null
   vehicleName?: string | null
-  color?: string | null
   deploymentName?: string | null
   documentName?: string | null
   duplicate?: boolean
