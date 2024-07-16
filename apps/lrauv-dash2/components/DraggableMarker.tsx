@@ -66,7 +66,6 @@ const DraggableMarker: React.FC<{
     [handleDragEnd, index, setPosition]
   )
   const icon = mapMarkerIcons[index] ?? mapMarker
-  console.log('DRAGGABLE MARKER', icon, index, lat, lng)
 
   return (
     <Marker
