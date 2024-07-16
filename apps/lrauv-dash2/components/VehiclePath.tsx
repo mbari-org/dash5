@@ -21,7 +21,16 @@ const VehiclePath: React.FC<{
   to?: number
   indicatorTime?: number | null
   onScrub?: (millis?: number | null) => void
-}> = ({ name, grouped, to, from, indicatorTime, onScrub: handleScrub }) => {
+  // onGPSFix?: (gps: VPosDetail) => void
+}> = ({
+  name,
+  grouped,
+  to,
+  from,
+  indicatorTime,
+  onScrub: handleScrub,
+  // onGPSFix: handleGPSFix,
+}) => {
   const map = useMap()
   const { sharedPath, dispatch } = useSharedPath()
   const { data: vehicleData } = useVehicles({})
@@ -44,6 +53,22 @@ const VehiclePath: React.FC<{
       enabled: !!from || !!lastDeployment?.startEvent?.unixTime,
     }
   )
+
+  // const latestGPS = useRef<[number, number] | undefined>()
+  // useEffect(() => {
+  //   if (vehiclePosition?.gpsFixes) {
+  //     const latest = vehiclePosition.gpsFixes[0]
+  //     if (
+  //       latestGPS.current &&
+  //       latestGPS.current[0] === latest.longitude &&
+  //       latestGPS.current[1] === latest.longitude
+  //     ) {
+  //       return
+  //     }
+  //     latestGPS.current = [latest.latitude, latest.longitude]
+  //     // handleGPSFix?.(latest)
+  //   }
+  // }, [vehiclePosition, handleScrub])
 
   const timeout = useRef<ReturnType<typeof setTimeout> | null>(null)
 
@@ -117,12 +142,36 @@ const VehiclePath: React.FC<{
       map.fitBounds(coords)
     }
   }, [sharedPath, grouped, map])
+
+  // This would be stored as state via useCookie library.
+  const customColors: { [key: string]: string | null } = {
+    Ahi: '#FF0000',
+    daphne: '#FFA500',
+    pontus: '#FFFF00',
+  }
   const color =
-    vehicleData?.find((v) => v.vehicleName === name)?.color ?? '#ccc'
+    customColors[name] ??
+    vehicleData?.find((v) => v.vehicleName === name)?.color ??
+    '#ccc'
+
+  // const latest = vehiclePosition?.gpsFixes?.[0]
 
   return route ? (
     <>
       <Polyline pathOptions={{ color }} positions={activeRoute ?? route} />
+      {/* {latest && (
+        <Circle
+          center={{ lat: latest.latitude, lng: latest.longitude }}
+          pathOptions={{
+            color,
+            fillColor: color,
+            fillOpacity: 0.1,
+            weight: 1,
+            dashArray: '4, 4',
+          }}
+          radius={1500}
+        />
+      )} */}
       {indicatorCoord && (
         <Circle
           center={{

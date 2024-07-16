@@ -1,7 +1,7 @@
 import { OverviewToolbar } from '@mbari/react-ui'
 import { NextPage } from 'next'
 import Layout from '../components/Layout'
-import { useEffect, useRef } from 'react'
+import React, { useCallback, useEffect, useRef, useState } from 'react'
 import dynamic from 'next/dynamic'
 import VehicleDeploymentDropdown from '../components/VehicleDeploymentDropdown'
 import VehicleList from '../components/VehicleList'
@@ -13,6 +13,7 @@ import { useGoogleElevator } from '../lib/useGoogleElevator'
 import { Allotment, LayoutPriority } from 'allotment'
 import { useGoogleMaps } from '../lib/useGoogleMaps'
 import 'allotment/dist/style.css'
+import toast from 'react-hot-toast'
 
 // This is a tricky workaround to prevent leaflet from crashing next.js
 // SSR. If we don't do this, the leaflet map will be loaded server side
@@ -24,6 +25,13 @@ const Map = dynamic(() => import('@mbari/react-ui/dist/Map/Map'), {
 const VehiclePath = dynamic(() => import('../components/VehiclePath'), {
   ssr: false,
 })
+const DraggableMarker = dynamic(() => import('../components/DraggableMarker'), {
+  ssr: false,
+})
+const ClickableMapPoint = dynamic(
+  () => import('../components/ClickableMapPoint'),
+  { ssr: false }
+)
 
 const styles = {
   content: 'flex flex-shrink flex-grow flex-row overflow-hidden',
@@ -33,16 +41,83 @@ const styles = {
     'flex w-full flex-shrink-0 flex-col bg-white border-t-2 border-secondary-300/60',
 }
 
+// const CustomMarkerSet: React.FC = () => {
+//   const [markers, setMarkers] = React.useState<
+//     { lat: number; lng: number; label: string }[]
+//   >([])
+//   const [markerIndex, setMarkerIndex] = React.useState(0)
+//   const handleNewMarker = useCallback(
+//     (lat: number, lng: number) => {
+//       console.log('new marker', lat, lng)
+//       setMarkers([
+//         ...markers,
+//         { lat, lng, label: `Marker ${markers.length + 1}` },
+//       ])
+//       setMarkerIndex(markerIndex + 1)
+//     },
+//     [setMarkerIndex, markers, setMarkers]
+//   )
+//   return (
+//     <>
+//       <ClickableMapPoint onClick={handleNewMarker} />
+//       {markers.map((marker, index) => (
+//         <DraggableMarker
+//           lat={marker.lat}
+//           lng={marker.lng}
+//           index={index}
+//           key={[marker.label, index].join('-')}
+//           draggable
+//           onDragEnd={(index, latlng) => {
+//             setMarkers(
+//               markers.map((m, i) =>
+//                 i === index ? { ...m, lat: latlng.lat, lng: latlng.lng } : m
+//               )
+//             )
+//           }}
+//         />
+//       ))}
+//     </>
+//   )
+// }
+
 const OverViewMap: React.FC<{
   trackedVehicles: string[]
 }> = ({ trackedVehicles }) => {
   const { handleDepthRequest } = useGoogleElevator()
+  // const [center, setCenter] = useState<undefined | [number, number]>()
+  // const [latestGPS, setLatestGPS] = useState<VPosDetail | undefined>()
+
+  // const handleGPSFix = useCallback(
+  //   (gps: VPosDetail) => {
+  //     console.log('GPS Fix', gps.isoTime, 'vs', latestGPS?.isoTime)
+  //     if ((latestGPS?.isoTime ?? 0) > gps.isoTime || !latestGPS) {
+  //       setLatestGPS(gps)
+  //     }
+  //   },
+  //   [latestGPS, setLatestGPS]
+  // )
+
+  // const handleCoordinateRequest = useCallback(() => {
+  //   if (latestGPS) {
+  //     setCenter([latestGPS?.latitude, latestGPS?.longitude])
+  //   }
+  // }, [latestGPS, setCenter])
 
   return (
     <SharedPathContextProvider>
-      <Map className="h-full w-full" onRequestDepth={handleDepthRequest}>
+      <Map
+        className="h-full w-full"
+        onRequestDepth={handleDepthRequest}
+        // onRequestCoordinate={handleCoordinateRequest}
+        // center={center}
+      >
         {trackedVehicles.map((name) => (
-          <VehiclePath name={name} key={`path${name}`} grouped />
+          <VehiclePath
+            name={name}
+            key={`path${name}`}
+            // onGPSFix={handleGPSFix}
+            grouped
+          />
         ))}
       </Map>
     </SharedPathContextProvider>

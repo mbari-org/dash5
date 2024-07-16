@@ -1,6 +1,6 @@
 import React, { useEffect } from 'react'
 import Head from 'next/head'
-import { PrimaryToolbar, ProfileDropdown } from '@mbari/react-ui'
+import { PrimaryToolbar, ProfileDropdown, Modal } from '@mbari/react-ui'
 import { useTethysApiContext } from '@mbari/api-client'
 import { useState } from 'react'
 import Image from 'next/image'
@@ -28,6 +28,8 @@ import { CommsModal } from './CommsModal'
 import { ESPModal } from './ESPModal'
 import { BatteryModal } from './BatteryModal'
 import { useTethysSubscription } from '../lib/useWebSocketListeners'
+import { HexColorPicker } from 'react-colorful'
+import { useCookies } from 'react-cookie'
 
 const Layout: React.FC<{ children?: React.ReactNode }> = ({ children }) => {
   const [showLogin, setLogin] = useState(false)
@@ -203,7 +205,34 @@ const Layout: React.FC<{ children?: React.ReactNode }> = ({ children }) => {
       {globalModalId?.id === 'battery' && vehicleName.length > 0 && (
         <BatteryModal vehicleName={vehicleName} onClose={setModal(null)} />
       )}
+      {/* {globalModalId?.id === 'color' && vehicleName.length > 0 ? (
+        <ColorModal name={trackedVehicles[index]} color={color} />
+      ) : null} */}
     </div>
+  )
+}
+
+const ColorModal: React.FC<{ name: string; color: string }> = ({
+  name,
+  color: initialColor,
+}) => {
+  const [color, setColor] = useState(initialColor)
+  return (
+    <Modal
+      title={'Change color of ' + name}
+      extraWideModal
+      bodyOverflowHidden
+      snapTo="top-right"
+      open
+    >
+      <div className="flex flex-col">
+        <div className="flex flex-row items-center">
+          <div className="h-[400px] w-[512px]">
+            <HexColorPicker color={color} onChange={setColor} />;
+          </div>
+        </div>
+      </div>
+    </Modal>
   )
 }
 
