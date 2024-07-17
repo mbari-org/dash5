@@ -80,11 +80,11 @@ const ConnectedVehicleCell: React.FC<{
   )
 
   // TODO: Remove this demonstations of 'usePlatforms'
-  const { data: platforms } = usePlatforms(
-    { refresh: true },
-    { baseUrl: process.env.NEXT_PUBLIC_ODSS2BASE_URL }
-  )
-  console.log('platforms', platforms)
+  // const { data: platforms } = usePlatforms(
+  // { refresh: 'y' },
+  // { baseUrl: process.env.NEXT_PUBLIC_ODSS2BASE_URL }
+  // )
+  // console.log('platformsTest', platforms)
 
   const mission = missionStartedEvent?.[0]?.text.replace(/started mission/i, '')
   const isLoading = positionLoading || vehicleInfoLoading
@@ -281,11 +281,12 @@ const VehicleList: React.FC<{
     })
   }
 
-  // const [setColor, color] = useState({ color: '', vehicle: '' })
+  // Initialize Cookies
   // const [cookies, setCookie] = useCookies(['vehicleColors'])
+  // const [color, setColor] = useState({ color: '', vehicle: '' })
 
-  // function onChange(newName) {
-  //   setCookie('name', newName)
+  // function onChange(newColor: any) {
+  //   setCookie('vehicleColors', newColor)
   // }
 
   // const handleColorChange = (color: string, vehicle: string) => {
@@ -310,7 +311,7 @@ const VehicleList: React.FC<{
           open={accordionState[trackedVehicles[index]] !== 'closed'}
           onToggle={handleToggle}
           onSelect={handleSelect}
-          // onColorChange={handleColorChange}
+          //onColorChange={handleColorChange}
         />
       </div>
     )

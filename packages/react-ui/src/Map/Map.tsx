@@ -283,7 +283,9 @@ const Map: React.FC<MapProps> = ({
     onRequestCoordinate?.()
   }
 
-  const HandleMouseOver = () => {
+  const handleMouseOver = (e: React.MouseEvent) => {
+    e.preventDefault()
+    e.stopPropagation()
     setVisibleDot('hidden')
   }
 
@@ -369,7 +371,7 @@ const Map: React.FC<MapProps> = ({
           <button
             id="vehicle-center"
             className="vehicle-center rounded"
-            onMouseOver={HandleMouseOver}
+            onMouseOver={handleMouseOver}
             style={{
               position: 'relative',
               zIndex: isHovering ? 900 : 10,
@@ -409,7 +411,7 @@ const Map: React.FC<MapProps> = ({
           </button>
         </Control>
       ) : null}
-      <CenterView coords={center} />
+      {/* <CenterView coords={center} /> */}
       <div className={'leaflet-control'}>{children}</div>
       <Control position="topright">
         {children}
@@ -452,10 +454,10 @@ const Map: React.FC<MapProps> = ({
                 {'    '} Create A New Measurement {'    '}
               </a>
               <button
-                id="ceaseMeasBtn"
+                id="closeMeasBtn"
                 className="mousechange:hover cursor-pointer:onHover p-1"
-                onClick={changeMeasureMode('cancelled')}
-                onMouseOver={HandleMouseOver}
+                onClick={changeMeasureMode('closed')}
+                onMouseOver={handleMouseOver}
                 style={{
                   position: 'relative',
                   zIndex: isHovering ? 900 : 10,
@@ -485,7 +487,7 @@ const Map: React.FC<MapProps> = ({
             <p className="measure-info cursor-pointer:onHover">
               <br />
               <h6>
-                <span className="font-normal text-blue-600">
+                <span className="font-bold text-blue-600">
                   Measure Distances and Areas
                 </span>
               </h6>
@@ -498,7 +500,7 @@ const Map: React.FC<MapProps> = ({
               <button
                 id="finishMeasBtn"
                 className="leaflet-pointer w-full rounded border bg-blue-600 p-1 text-white hover:bg-blue-800"
-                onMouseOver={HandleMouseOver}
+                onMouseOver={handleMouseOver}
                 style={{
                   position: 'relative',
                   zIndex: isHovering ? 900 : 10,
@@ -511,12 +513,12 @@ const Map: React.FC<MapProps> = ({
               <button
                 id="cancelMeasBtn"
                 className="leaflet-poiner w-full rounded border bg-white p-1 text-primary-600 hover:bg-gray-100"
-                onMouseOver={HandleMouseOver}
+                onMouseOver={handleMouseOver}
                 style={{
                   position: 'relative',
                   zIndex: isHovering ? 900 : 10,
                 }}
-                onClick={changeMeasureMode('cancelled')}
+                onClick={changeMeasureMode('closed')}
               >
                 <FontAwesomeIcon icon={faCircleXmark} /> Cancel
               </button>
@@ -529,7 +531,7 @@ const Map: React.FC<MapProps> = ({
               id="openMeasBtn"
               className="openMeasBtn rounded"
               onDragEnd={() => setCursor('pointer')}
-              onMouseOver={HandleMouseOver}
+              onMouseOver={handleMouseOver}
               style={{
                 position: 'relative',
                 zIndex: isHovering ? 900 : 10,
@@ -572,7 +574,7 @@ const Map: React.FC<MapProps> = ({
             id="measBtn"
             className="measBtn rounded"
             onDragEnd={() => setCursor('pointer')}
-            onMouseOver={HandleMouseOver}
+            onMouseOver={handleMouseOver}
             style={{
               position: 'relative',
               zIndex: isHovering ? 900 : 10,
@@ -581,14 +583,20 @@ const Map: React.FC<MapProps> = ({
               width: 42,
               height: 42,
             }}
+            onClick={changeMeasureMode('closed')}
           >
             <a
-              data-tooltip-id="measure-tooltip"
+              data-tooltip-id="measure-new-tooltip"
               data-tooltip-content="Measure Distances and Areas"
               data-tooltip-place="bottom-end"
             ></a>
+            <FontAwesomeIcon
+              icon={faRulerCombined}
+              size="2xl"
+              color="#FFFFFF"
+            />
             <Tooltip
-              id="measure-tooltip"
+              id="measure-new-tooltip"
               style={{
                 paddingLeft: 4,
                 paddingRight: 4,

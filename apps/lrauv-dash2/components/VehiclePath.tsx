@@ -21,7 +21,7 @@ const VehiclePath: React.FC<{
   to?: number
   indicatorTime?: number | null
   onScrub?: (millis?: number | null) => void
-  // onGPSFix?: (gps: VPosDetail) => void
+  onGPSFix?: (gps: VPosDetail) => void
 }> = ({
   name,
   grouped,
@@ -29,7 +29,7 @@ const VehiclePath: React.FC<{
   from,
   indicatorTime,
   onScrub: handleScrub,
-  // onGPSFix: handleGPSFix,
+  onGPSFix: handleGPSFix,
 }) => {
   const map = useMap()
   const { sharedPath, dispatch } = useSharedPath()
@@ -54,21 +54,21 @@ const VehiclePath: React.FC<{
     }
   )
 
-  // const latestGPS = useRef<[number, number] | undefined>()
-  // useEffect(() => {
-  //   if (vehiclePosition?.gpsFixes) {
-  //     const latest = vehiclePosition.gpsFixes[0]
-  //     if (
-  //       latestGPS.current &&
-  //       latestGPS.current[0] === latest.longitude &&
-  //       latestGPS.current[1] === latest.longitude
-  //     ) {
-  //       return
-  //     }
-  //     latestGPS.current = [latest.latitude, latest.longitude]
-  //     // handleGPSFix?.(latest)
-  //   }
-  // }, [vehiclePosition, handleScrub])
+  const latestGPS = useRef<[number, number] | undefined>()
+  useEffect(() => {
+    if (vehiclePosition?.gpsFixes) {
+      const latest = vehiclePosition.gpsFixes[0]
+      if (
+        latestGPS.current &&
+        latestGPS.current[0] === latest.longitude &&
+        latestGPS.current[1] === latest.longitude
+      ) {
+        return
+      }
+      latestGPS.current = [latest.latitude, latest.longitude]
+      handleGPSFix?.(latest)
+    }
+  }, [vehiclePosition, handleScrub, handleGPSFix])
 
   const timeout = useRef<ReturnType<typeof setTimeout> | null>(null)
 
@@ -149,17 +149,18 @@ const VehiclePath: React.FC<{
     daphne: '#FFA500',
     pontus: '#FFFF00',
   }
+
   const color =
     customColors[name] ??
     vehicleData?.find((v) => v.vehicleName === name)?.color ??
     '#ccc'
 
-  // const latest = vehiclePosition?.gpsFixes?.[0]
+  const latest = vehiclePosition?.gpsFixes?.[0]
 
   return route ? (
     <>
       <Polyline pathOptions={{ color }} positions={activeRoute ?? route} />
-      {/* {latest && (
+      {latest && (
         <Circle
           center={{ lat: latest.latitude, lng: latest.longitude }}
           pathOptions={{
@@ -171,7 +172,7 @@ const VehiclePath: React.FC<{
           }}
           radius={1500}
         />
-      )} */}
+      )}
       {indicatorCoord && (
         <Circle
           center={{
