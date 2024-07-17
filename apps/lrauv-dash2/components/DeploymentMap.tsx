@@ -1,6 +1,5 @@
 import dynamic from 'next/dynamic'
 import { useCallback, useState, useRef, useEffect } from 'react'
-import { useCallback } from 'react'
 import { useManagedWaypoints } from '@mbari/react-ui'
 import { useGoogleElevator } from '../lib/useGoogleElevator'
 import { VPosDetail } from '@mbari/api-client'

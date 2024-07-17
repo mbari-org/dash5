@@ -80,11 +80,11 @@ const ConnectedVehicleCell: React.FC<{
   )
 
   // TODO: Remove this demonstations of 'usePlatforms'
-  const { data: platforms } = usePlatforms(
-    { refresh: true },
-    { baseUrl: process.env.NEXT_PUBLIC_ODSS2BASE_URL }
-  )
-  console.log('platforms', platforms)
+  // const { data: platforms } = usePlatforms(
+  //  { refresh: true },
+  //  { baseUrl: process.env.NEXT_PUBLIC_ODSS2BASE_URL }
+  //)
+  // console.log('platforms', platforms)
 
   const mission = missionStartedEvent?.[0]?.text.replace(/started mission/i, '')
   const isLoading = positionLoading || vehicleInfoLoading
@@ -281,6 +281,7 @@ const VehicleList: React.FC<{
     })
   }
 
+  // Initialize Cookies 
   // const [setColor, color] = useState({ color: '', vehicle: '' })
   // const [cookies, setCookie] = useCookies(['vehicleColors'])
 
