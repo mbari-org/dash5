@@ -149,6 +149,7 @@ const VehiclePath: React.FC<{
     daphne: '#FFA500',
     pontus: '#FFFF00',
   }
+
   const color =
     customColors[name] ??
     vehicleData?.find((v) => v.vehicleName === name)?.color ??
@@ -159,7 +160,7 @@ const VehiclePath: React.FC<{
   return route ? (
     <>
       <Polyline pathOptions={{ color }} positions={activeRoute ?? route} />
-      {/* {latest && (
+      {latest && (
         <Circle
           center={{ lat: latest.latitude, lng: latest.longitude }}
           pathOptions={{
@@ -171,7 +172,7 @@ const VehiclePath: React.FC<{
           }}
           radius={1500}
         />
-      )} */}
+      )}
       {indicatorCoord && (
         <Circle
           center={{
