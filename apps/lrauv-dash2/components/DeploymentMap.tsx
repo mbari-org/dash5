@@ -62,7 +62,7 @@ const DeploymentMap: React.FC<DeploymentMapProps> = ({
   const [center, setCenter] = useState<undefined | [number, number]>()
   const [latestGPS, setLatestGPS] = useState<VPosDetail | undefined>()
 
-const latestVehicle = useRef(vehicleName)
+  const latestVehicle = useRef(vehicleName)
   useEffect(() => {
     if (vehicleName !== latestVehicle.current) {
       setLatestGPS(undefined)
@@ -124,7 +124,7 @@ const latestVehicle = useRef(vehicleName)
           to={endTime as number}
           indicatorTime={indicatorTime}
           onScrub={handleScrub}
-          // onGPSFix={handleGPSFix}
+          onGPSFix={handleGPSFix}
         />
       )}
     </Map>
