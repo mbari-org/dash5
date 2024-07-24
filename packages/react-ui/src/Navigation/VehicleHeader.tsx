@@ -1,5 +1,4 @@
-import React, { useCallback } from 'react'
-import { useState } from 'react'
+import React, { useCallback, useState } from 'react'
 import clsx from 'clsx'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { faChevronDown, faChevronLeft } from '@fortawesome/free-solid-svg-icons'
@@ -64,12 +63,12 @@ export const VehicleHeader: React.FC<VehicleHeaderProps> = ({
           onMouseOver={(e) => {
             e.stopPropagation()
             setShowColorPicker(true)
-            console.log('Mouse over')
+            console.log('VehicleHeader - Mouse over')
           }}
           onMouseOut={(e) => {
             e.stopPropagation()
             setShowColorPicker(false)
-            console.log('Mouse out')
+            console.log('VehicleHeader - Mouse out')
           }}
         >
           <ToolTip

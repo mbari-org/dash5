@@ -404,6 +404,8 @@ const Map: React.FC<MapProps> = ({
                 color: '#312e2b',
                 fontWeight: 'normal',
                 fontSize: '14px',
+                width: '240px',
+                height: 'max-content',
               }}
             />
             {/* TODO
