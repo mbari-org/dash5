@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useCallback } from 'react'
+import React, { useEffect, useRef, useCallback, useState } from 'react'
 import { DateTime } from 'luxon'
 import {
   useVehiclePos,
@@ -6,7 +6,7 @@ import {
   useLastDeployment,
   VPosDetail,
 } from '@mbari/api-client'
-import { Polyline, useMap, Circle } from 'react-leaflet'
+import { Polyline, useMap, Circle, Tooltip } from 'react-leaflet'
 import { LatLng, LeafletMouseEventHandlerFn } from 'leaflet'
 import { useSharedPath } from './SharedPathContextProvider'
 import { distance } from '@turf/turf'
@@ -72,6 +72,7 @@ const VehiclePath: React.FC<{
 
   const timeout = useRef<ReturnType<typeof setTimeout> | null>(null)
 
+  // handleCoord
   const handleCoord: LeafletMouseEventHandlerFn = useCallback(
     (e) => {
       if (timeout.current) {
@@ -85,6 +86,7 @@ const VehiclePath: React.FC<{
     [timeout, handleScrub, vehiclePosition?.gpsFixes]
   )
 
+  // handleMouseOut
   const handleMouseOut: LeafletMouseEventHandlerFn = useCallback(() => {
     if (timeout.current) {
       clearTimeout(timeout.current)
@@ -94,6 +96,7 @@ const VehiclePath: React.FC<{
     }, 1000)
   }, [timeout, handleScrub])
 
+  // route
   const route = vehiclePosition?.gpsFixes?.map(
     (g) => [g.latitude, g.longitude] as [number, number]
   )
@@ -161,17 +164,29 @@ const VehiclePath: React.FC<{
     <>
       <Polyline pathOptions={{ color }} positions={activeRoute ?? route} />
       {latest && (
-        <Circle
-          center={{ lat: latest.latitude, lng: latest.longitude }}
-          pathOptions={{
-            color,
-            fillColor: color,
-            fillOpacity: 0.1,
-            weight: 1,
-            dashArray: '4, 4',
-          }}
-          radius={1500}
-        />
+        <>
+          <Circle
+            center={{ lat: latest.latitude, lng: latest.longitude }}
+            pathOptions={{
+              color,
+              fillColor: color,
+              fillOpacity: 0.1,
+              weight: 1,
+              dashArray: '4, 4',
+            }}
+            radius={300}
+          >
+            <Tooltip
+              className="custom-tooltip"
+              direction="right"
+              offset={[10, 0]}
+              opacity={0.5}
+              permanent
+            >
+              {name}
+            </Tooltip>
+          </Circle>
+        </>
       )}
       {indicatorCoord && (
         <Circle
@@ -183,21 +198,34 @@ const VehiclePath: React.FC<{
           fillOpacity={1}
           color={color}
           radius={100}
-        />
+        >
+          <Tooltip
+            className="custom-tooltip"
+            direction="right"
+            offset={[10, 0]}
+            opacity={0.5}
+          >
+            {name}{' '}
+          </Tooltip>
+        </Circle>
       )}
       {(activeRoute ?? route).map((r) => (
-        <Circle
-          key={`preview${r.join()}`}
-          center={{
-            lat: r[0],
-            lng: r[1],
-          }}
-          fillColor={color}
-          radius={10}
-          fillOpacity={1}
-          color={color}
-          opacity={1}
-        />
+        <>
+          <Circle
+            key={`preview${r.join()}`}
+            center={{
+              lat: r[0],
+              lng: r[1],
+            }}
+            fillColor={color}
+            radius={10}
+            fillOpacity={1}
+            color={color}
+            opacity={1}
+          >
+            <Tooltip>{name}</Tooltip>
+          </Circle>
+        </>
       ))}
       {inactiveRoute && (
         <Polyline

@@ -153,7 +153,6 @@ export const Measurement: React.FC<MeasurementProps> = ({
         isLine.current = true
         isPoint.current = false
         feature.current = 'line'
-        console.log('Line')
       } else if (clickCounter.current >= 3) {
         isLine.current = false
         isPoint.current = false

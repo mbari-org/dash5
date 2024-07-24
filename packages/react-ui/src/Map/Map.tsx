@@ -404,6 +404,8 @@ const Map: React.FC<MapProps> = ({
                 color: '#312e2b',
                 fontWeight: 'normal',
                 fontSize: '14px',
+                width: '240px',
+                height: 'max-content',
               }}
             />
             {/* TODO
@@ -411,7 +413,7 @@ const Map: React.FC<MapProps> = ({
           </button>
         </Control>
       ) : null}
-      {/* <CenterView coords={center} /> */}
+      <CenterView coords={center} />
       <div className={'leaflet-control'}>{children}</div>
       <Control position="topright">
         {children}
