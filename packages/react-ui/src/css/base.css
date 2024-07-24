@@ -52,6 +52,26 @@ li:hover {
 .button {
   z-index: 100;
 }
+path.leaflet-interactive:hover {
+  stroke-width: 6px;
+}
+#custom-tooltip .leaflet-tooltip {
+  position: absolute;
+  padding: 6px;
+  background-color: #fff;
+  border: 1px solid #fff;
+  border-radius: 5px;
+  color: purple;
+  font-weight: 800;
+  font-size: 16px;
+  white-space: nowrap;
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+  user-select: all;
+  pointer-events: stroke;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.4);
+}
 #xMark {
   color: #5e66cc;
   right: 0;
