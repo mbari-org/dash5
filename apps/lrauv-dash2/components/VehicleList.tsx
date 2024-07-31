@@ -281,19 +281,24 @@ const VehicleList: React.FC<{
     })
   }
 
+  {
+    /* TODO:    **** Color Picker */
+  }
   // Initialize Cookies
-  // const [cookies, setCookie] = useCookies(['vehicleColors'])
-  // const [color, setColor] = useState({ color: '', vehicle: '' })
+  const [cookies, setCookie] = useCookies(['vehicleColors'])
+  const [color, setColor] = useState({ color: '', vehicle: '' })
 
-  // function onChange(newColor: any) {
-  //   setCookie('vehicleColors', newColor)
-  // }
+  function onChange(newColor: any) {
+    setCookie('vehicleColors', newColor)
+  }
 
-  // const handleColorChange = (color: string, vehicle: string) => {
-  //   console.log('color changed', color, vehicle)
-  //   setColor({ color, vehicle })
-  // }
-
+  const handleColorChange = (color: string, vehicle: string) => {
+    console.log('color changed', color, vehicle)
+    setColor({ color, vehicle })
+  }
+  {
+    /*  **** Color Picker */
+  }
   const cellAtIndex = (index: number, virtualizer: Virtualizer) => {
     const color = vehicles.data?.find(
       (v) => v.vehicleName === trackedVehicles[index]
@@ -311,7 +316,7 @@ const VehicleList: React.FC<{
           open={accordionState[trackedVehicles[index]] !== 'closed'}
           onToggle={handleToggle}
           onSelect={handleSelect}
-          //onColorChange={handleColorChange}
+          onColorChange={handleColorChange}
         />
       </div>
     )
