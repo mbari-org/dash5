@@ -77,6 +77,16 @@ path.leaflet-interactive:hover {
   right: 0;
   margin-right: 0;
 }
+.text-bold {
+  font-weight: 700;
+}
+.text-purple {
+  color: #9c27b0 !important;
+}
+.leaflet-tooltip .leaflet-zoom-animated .leaflet-tooltip-right {
+  transform: translate3d(3784px, 257px, 0px);
+  padding: 5px;
+}
 #xMark:hover {
   size: '2xl';
   color: red;

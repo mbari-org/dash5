@@ -1,4 +1,5 @@
-import React, { useEffect, useRef, useCallback, useState } from 'react'
+
+import React, { useEffect, useRef, useCallback, useState, useMemo } from 'react'
 import { DateTime } from 'luxon'
 import {
   useVehiclePos,
@@ -7,9 +8,19 @@ import {
   VPosDetail,
 } from '@mbari/api-client'
 import { Polyline, useMap, Circle, Tooltip } from 'react-leaflet'
-import { LatLng, LeafletMouseEventHandlerFn } from 'leaflet'
+import {
+  LatLng,
+  LeafletMouseEventHandlerFn,
+  Popup,
+  circle,
+  icon,
+} from 'leaflet'
 import { useSharedPath } from './SharedPathContextProvider'
 import { distance } from '@turf/turf'
+import { parseISO, getTime } from 'date-fns'
+
+let timeSinceFix
+let hours: number, minutes: number
 
 const getDistance = (a: VPosDetail, b: LatLng) =>
   distance([a.latitude, a.longitude], [b.lat, b.lng])
@@ -96,22 +107,53 @@ const VehiclePath: React.FC<{
     }, 1000)
   }, [timeout, handleScrub])
 
+  // Convert minutes to hours, minutes
+  const convertMin2HrMin = (timeDiff: number) => {
+    // Get total hours and minutes
+    const hours = Math.floor(timeDiff / 60)
+    const minutes = Math.round(timeDiff % 60)
+
+    if (hours != 0) {
+      timeSinceFix = hours + 'hr' + ', ' + minutes + 'min'
+    } else {
+      timeSinceFix = minutes + 'min'
+    }
+    return { hours, minutes, timeSinceFix }
+  }
+
+  const [tooltipVisible, setTooltipVisible] = useState(false)
+  const handleTTVisible = () => {
+    setTooltipVisible(true)
+  }
+  const handleTTHidden = () => {
+    setTooltipVisible(false)
+  }
+      
   // route
   const route = vehiclePosition?.gpsFixes?.map(
     (g) => [g.latitude, g.longitude] as [number, number]
   )
+
+  // DEPLOYMENT MAP
+  // activePoints - Deployment Map
   const activePoints =
     indicatorTime && indicatorTime > 0
       ? vehiclePosition?.gpsFixes.filter(
           (fix) => fix.unixTime <= (indicatorTime ?? 0)
         )
       : null
+
+  // activeRoute
   const activeRoute = activePoints?.map(
     (g) => [g.latitude, g.longitude] as [number, number]
   )
+
+  // indicatorCoord - Deployment Map
   const indicatorCoord = indicatorTime
     ? activePoints?.sort((a, b) => b.unixTime - a.unixTime)[0]
     : null
+
+  // inactiveRoute - Deployment Map
   const inactiveRoute =
     indicatorTime &&
     [
@@ -122,9 +164,12 @@ const VehiclePath: React.FC<{
         ) ?? []
       ).sort((a, b) => a.unixTime - b.unixTime),
     ].map((g) => [g?.latitude ?? 0, g?.longitude ?? 0] as [number, number])
-
+  // fit
   const fit = useRef<string | null | undefined>(null)
+  // routeAsString
   const routeAsString = route?.flat().join()
+
+  // Fit bounds for Deployment Map
   useEffect(() => {
     if (fit.current !== routeAsString && route) {
       if (!grouped) {
@@ -139,6 +184,8 @@ const VehiclePath: React.FC<{
     }
   }, [route, map, dispatch, name, grouped, routeAsString])
 
+  // OVERVIEW MAP
+  // Fit bounds for OverViewMap
   useEffect(() => {
     const coords = Object.values(sharedPath).flat()
     if (grouped && coords.length > 1) {
@@ -147,6 +194,7 @@ const VehiclePath: React.FC<{
   }, [sharedPath, grouped, map])
 
   // This would be stored as state via useCookie library.
+  // Path Stylization
   const customColors: { [key: string]: string | null } = {
     Ahi: '#FF0000',
     daphne: '#FFA500',
@@ -158,13 +206,45 @@ const VehiclePath: React.FC<{
     vehicleData?.find((v) => v.vehicleName === name)?.color ??
     '#ccc'
 
+  const [lineStyle, setLineStyle] = useState({
+    color,
+    weight: 3,
+  })
+
+  // Determine Time Difference since last gpsFix
   const latest = vehiclePosition?.gpsFixes?.[0]
+  // IsoTime as a string
+  const latestTimeFix = latest?.isoTime.toString()
+  let [timeSinceFix, setTimeSinceFix] = useState('')
+
+  if (latestTimeFix) {
+    const parsedDate = parseISO(latestTimeFix)
+    const epochMSeconds = getTime(parsedDate)
+
+    if (epochMSeconds) {
+      const timeDiff = (Date.now() - epochMSeconds) / 60000
+      convertMin2HrMin(timeDiff)
+    }
+  }
 
   return route ? (
     <>
-      <Polyline pathOptions={{ color }} positions={activeRoute ?? route} />
+      <Polyline
+        pathOptions={lineStyle}
+        positions={activeRoute ?? route}
+        eventHandlers={{
+          mouseover: () => {
+            setLineStyle({ color, weight: 5 })
+          },
+          mouseout: () => {
+            setLineStyle({ color, weight: 3 })
+          },
+        }}
+      />
       {latest && (
         <>
+          {/* DEPLOYMENT AND OVERVIEW PAGE */}
+          {/* Circle = large dotted indicator circle. */}
           <Circle
             center={{ lat: latest.latitude, lng: latest.longitude }}
             pathOptions={{
@@ -174,13 +254,13 @@ const VehiclePath: React.FC<{
               weight: 1,
               dashArray: '4, 4',
             }}
-            radius={300}
+            radius={200}
           >
             <Tooltip
-              className="custom-tooltip"
+              className="text-bold text-purple"
               direction="right"
               offset={[10, 0]}
-              opacity={0.5}
+              opacity={0.4}
               permanent
             >
               {name}
@@ -188,26 +268,45 @@ const VehiclePath: React.FC<{
           </Circle>
         </>
       )}
+      {/* DEPLOYMENT MAP VEHICLE VIEW */}
       {indicatorCoord && (
-        <Circle
-          center={{
-            lat: indicatorCoord.latitude,
-            lng: indicatorCoord.longitude,
-          }}
-          fillColor={color}
-          fillOpacity={1}
-          color={color}
-          radius={100}
-        >
-          <Tooltip
-            className="custom-tooltip"
-            direction="right"
-            offset={[10, 0]}
-            opacity={0.5}
+        <>
+          {/* This Circle is the actual point per GPS fix */}
+          <Circle
+            pathOptions={{ color }}
+            center={{
+              lat: indicatorCoord.latitude,
+              lng: indicatorCoord.longitude,
+            }}
+            fillColor={color}
+            fillOpacity={1}
+            color={color}
+            // Sets the center dot radius of latest fix on hover
+            radius={60}
+            eventHandlers={{
+              mouseover: handleTTVisible,
+              mouseout: handleTTHidden,
+            }}
           >
-            {name}{' '}
-          </Tooltip>
-        </Circle>
+            {tooltipVisible && (
+              <Tooltip direction="right" offset={[10, 0]} opacity={0.9}>
+                <span>
+                  <div className="text-purple text-bold">
+                    {name} <br />
+                  </div>
+                  Latest position: {indicatorCoord.latitude.toFixed(5)},{' '}
+                  {indicatorCoord.longitude.toFixed(5)}
+                  <br />
+                  {indicatorCoord.isoTime.split('T')[0] +
+                    ' ' +
+                    indicatorCoord.isoTime.split('T')[1].split('Z')[0]}
+                  {' - '}
+                  {timeSinceFix}
+                </span>
+              </Tooltip>
+            )}
+          </Circle>
+        </>
       )}
       {(activeRoute ?? route).map((r) => (
         <>
@@ -222,9 +321,7 @@ const VehiclePath: React.FC<{
             fillOpacity={1}
             color={color}
             opacity={1}
-          >
-            <Tooltip>{name}</Tooltip>
-          </Circle>
+          ></Circle>
         </>
       ))}
       {inactiveRoute && (
@@ -248,6 +345,7 @@ const VehiclePath: React.FC<{
             opacity={0.25}
           />
         ))}
+      {/* This handles the Scrub Timeline route */}
       {route.map((r) => (
         <Circle
           key={`touch${r.join()}`}
@@ -256,7 +354,7 @@ const VehiclePath: React.FC<{
             lng: r[1],
           }}
           fillColor={color}
-          radius={100}
+          radius={200}
           fillOpacity={0}
           color={color}
           opacity={0}
