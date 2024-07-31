@@ -1,3 +1,4 @@
+
 import React, { useEffect, useRef, useCallback, useState, useMemo } from 'react'
 import { DateTime } from 'luxon'
 import {
@@ -127,7 +128,7 @@ const VehiclePath: React.FC<{
   const handleTTHidden = () => {
     setTooltipVisible(false)
   }
-
+      
   // route
   const route = vehiclePosition?.gpsFixes?.map(
     (g) => [g.latitude, g.longitude] as [number, number]
