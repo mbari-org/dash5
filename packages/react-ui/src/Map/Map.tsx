@@ -50,6 +50,7 @@ export interface MapProps {
   dmsCoord?: string
   mapCoord?: string
   children?: React.ReactNode
+  onRequestPlatforms?: () => React.ReactNode
 }
 
 export type MeasureMode = 'open' | 'measuring' | 'closed' | 'cancelled'
@@ -77,6 +78,7 @@ const Map: React.FC<MapProps> = ({
   children,
   onRequestDepth,
   onRequestCoordinate,
+  onRequestPlatforms,
 }) => {
   const { baseLayer, setBaseLayer } = useMapBaseLayer()
   const addBaseLayerHandler = useCallback(
@@ -475,6 +477,46 @@ const Map: React.FC<MapProps> = ({
             </p>
           </div>
         ) : null}
+
+        <Control position="topleft">
+          <button
+            id="vehicle-center"
+            className="vehicle-center rounded"
+            onMouseOver={handleMouseOver}
+            style={{
+              position: 'relative',
+              zIndex: isHovering ? 900 : 10,
+              border: '0px solid rgba(0,0,0,0.2)',
+              backgroundClip: 'padding-box',
+              width: 42,
+              height: 42,
+            }}
+            onClick={onRequestPlatforms}
+          >
+            <a
+              data-tooltip-id="trackdb"
+              data-tooltip-content="Track Database"
+              data-tooltip-place="bottom-end"
+            >
+              <FontAwesomeIcon icon={faLayerGroup} size="2xl" />
+            </a>
+            <Tooltip
+              id="trackdb"
+              style={{
+                paddingLeft: 4,
+                paddingRight: 4,
+                paddingTop: 2,
+                paddingBottom: 2,
+                backgroundColor: '#D3D3D3',
+                color: '#312e2b',
+                fontWeight: 'normal',
+                fontSize: '14px',
+                width: '240px',
+                height: 'max-content',
+              }}
+            />
+          </button>
+        </Control>
         {measureMode === 'measuring' ? (
           <div
             id="measModeMeasuring"

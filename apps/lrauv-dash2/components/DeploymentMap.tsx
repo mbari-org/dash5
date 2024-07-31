@@ -3,6 +3,7 @@ import { useCallback, useState, useRef, useEffect } from 'react'
 import { useManagedWaypoints } from '@mbari/react-ui'
 import { useGoogleElevator } from '../lib/useGoogleElevator'
 import { VPosDetail } from '@mbari/api-client'
+import { PlatformsListModal } from './PlatformsListModal'
 
 // This is a tricky workaround to prevent leaflet from crashing next.js
 // SSR. If we don't do this, the leaflet map will be loaded server side
@@ -86,48 +87,63 @@ const DeploymentMap: React.FC<DeploymentMapProps> = ({
     }
   }, [latestGPS, setCenter])
 
+  const [showPlatforms, setShowPlatforms] = useState(false)
+  const handlePlatformsRequest = useCallback(() => {
+    setShowPlatforms(true)
+  }, [setShowPlatforms])
+
+  const handleClosePlatforms = useCallback(() => {
+    setShowPlatforms(false)
+  }, [setShowPlatforms])
+
   return (
-    <Map
-      className="h-full w-full"
-      maxZoom={17}
-      onRequestDepth={handleDepthRequest}
-      center={center}
-      onRequestCoordinate={handleCoordinateRequest}
-    >
-      {plottedWaypoints?.length ? (
-        <>
-          {plottedWaypoints.map((m, i) => {
-            const index = Number(m.latName.match(/\d+/)?.[0] ?? i)
-            return (
-              <DraggableMarker
-                lat={Number(m.lat)}
-                lng={Number(m.lon)}
-                key={`${m.latName}-${m.lonName}-${m.lat}-${m.lon}`}
-                index={index - 1}
-                draggable={editable && !focusedWaypointIndex}
-                onDragEnd={handleDragEnd}
-              />
-            )
-          })}
-          {!!focusedWaypointIndex && <ClickableMapPoint />}
-          <WaypointPreviewPath
-            waypoints={plottedWaypoints.map((wp) => ({
-              lat: Number(wp.lat),
-              lon: Number(wp.lon),
-            }))}
+    <>
+      {showPlatforms ? (
+        <PlatformsListModal onClose={handleClosePlatforms} />
+      ) : null}
+      <Map
+        className="h-full w-full"
+        maxZoom={17}
+        onRequestDepth={handleDepthRequest}
+        center={center}
+        onRequestCoordinate={handleCoordinateRequest}
+        onRequestPlatforms={handlePlatformsRequest}
+      >
+        {plottedWaypoints?.length ? (
+          <>
+            {plottedWaypoints.map((m, i) => {
+              const index = Number(m.latName.match(/\d+/)?.[0] ?? i)
+              return (
+                <DraggableMarker
+                  lat={Number(m.lat)}
+                  lng={Number(m.lon)}
+                  key={`${m.latName}-${m.lonName}-${m.lat}-${m.lon}`}
+                  index={index - 1}
+                  draggable={editable && !focusedWaypointIndex}
+                  onDragEnd={handleDragEnd}
+                />
+              )
+            })}
+            {!!focusedWaypointIndex && <ClickableMapPoint />}
+            <WaypointPreviewPath
+              waypoints={plottedWaypoints.map((wp) => ({
+                lat: Number(wp.lat),
+                lon: Number(wp.lon),
+              }))}
+            />
+          </>
+        ) : (
+          <VehiclePath
+            name={vehicleName as string}
+            from={startTime as number}
+            to={endTime as number}
+            indicatorTime={indicatorTime}
+            onScrub={handleScrub}
+            onGPSFix={handleGPSFix}
           />
-        </>
-      ) : (
-        <VehiclePath
-          name={vehicleName as string}
-          from={startTime as number}
-          to={endTime as number}
-          indicatorTime={indicatorTime}
-          onScrub={handleScrub}
-          onGPSFix={handleGPSFix}
-        />
-      )}
-    </Map>
+        )}
+      </Map>
+    </>
   )
 }
 
