@@ -50,7 +50,7 @@ export interface MapProps {
   dmsCoord?: string
   mapCoord?: string
   children?: React.ReactNode
-  onRequestPlatforms?: () => React.ReactNode
+  onRequestPlatforms?: () => void
 }
 
 export type MeasureMode = 'open' | 'measuring' | 'closed' | 'cancelled'
