@@ -55,9 +55,9 @@ const CustomMarkerSet: React.FC = () => {
         ...markers,
         { lat, lng, label: `Marker ${markers.length + 1}` },
       ])
-      setMarkerIndex(markerIndex + 1)
+      setMarkerIndex((prevIndex) => prevIndex + 1)
     },
-    [setMarkerIndex, markers, setMarkers]
+    [markers, setMarkers]
   )
   return (
     <>
