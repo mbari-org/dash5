@@ -1,0 +1,4198 @@
+{
+  "numFailedTestSuites": 0,
+  "numFailedTests": 0,
+  "numPassedTestSuites": 74,
+  "numPassedTests": 426,
+  "numPendingTestSuites": 0,
+  "numPendingTests": 0,
+  "numRuntimeErrorTestSuites": 0,
+  "numTodoTests": 2,
+  "numTotalTestSuites": 74,
+  "numTotalTests": 428,
+  "openHandles": [],
+  "snapshot": {
+    "added": 0,
+    "didUpdate": false,
+    "failure": false,
+    "filesAdded": 0,
+    "filesRemoved": 0,
+    "filesRemovedList": [],
+    "filesUnmatched": 0,
+    "filesUpdated": 0,
+    "matched": 0,
+    "total": 0,
+    "unchecked": 0,
+    "uncheckedKeysByFile": [],
+    "unmatched": 0,
+    "updated": 0
+  },
+  "startTime": 1741031617870,
+  "success": true,
+  "testResults": [
+    {
+      "assertionResults": [
+        {
+          "ancestorTitles": [],
+          "failureMessages": [],
+          "fullName": "should render deployment name to the screen",
+          "location": null,
+          "status": "passed",
+          "title": "should render deployment name to the screen"
+        },
+        {
+          "ancestorTitles": [],
+          "failureMessages": [],
+          "fullName": "should render deployment list toggle to the screen",
+          "location": null,
+          "status": "passed",
+          "title": "should render deployment list toggle to the screen"
+        },
+        {
+          "ancestorTitles": [],
+          "failureMessages": [],
+          "fullName": "should render the deployment dropdown when selecting the toggle",
+          "location": null,
+          "status": "passed",
+          "title": "should render the deployment dropdown when selecting the toggle"
+        },
+        {
+          "ancestorTitles": [],
+          "failureMessages": [],
+          "fullName": "should disable the new deployment dropdown if no handler is present",
+          "location": null,
+          "status": "passed",
+          "title": "should disable the new deployment dropdown if no handler is present"
+        },
+        {
+          "ancestorTitles": [],
+          "failureMessages": [],
+          "fullName": "should render the icon1 hover popup",
+          "location": null,
+          "status": "passed",
+          "title": "should render the icon1 hover popup"
+        },
+        {
+          "ancestorTitles": [],
+          "failureMessages": [],
+          "fullName": "should render the icon2 hover popup",
+          "location": null,
+          "status": "passed",
+          "title": "should render the icon2 hover popup"
+        },
+        {
+          "ancestorTitles": [],
+          "failureMessages": [],
+          "fullName": "should not render deployment list toggle to the screen if there are no deployments or handlers",
+          "location": null,
+          "status": "passed",
+          "title": "should not render deployment list toggle to the screen if there are no deployments or handlers"
+        },
+        {
+          "ancestorTitles": [],
+          "failureMessages": [],
+          "fullName": "should render the pilot button labels",
+          "location": null,
+          "status": "passed",
+          "title": "should render the pilot button labels"
+        },
+        {
+          "ancestorTitles": [],
+          "failureMessages": [],
+          "fullName": "should not render the pilot button labels if no click handler is provided for PIC",
+          "location": null,
+          "status": "passed",
+          "title": "should not render the pilot button labels if no click handler is provided for PIC"
+        },
+        {
+          "ancestorTitles": [],
+          "failureMessages": [],
+          "fullName": "should render the mission button if the handler is present",
+          "location": null,
+          "status": "passed",
+          "title": "should render the mission button if the handler is present"
+        },
+        {
+          "ancestorTitles": [],
+          "failureMessages": [],
+          "fullName": "should not render the mission button if no handler is present",
+          "location": null,
+          "status": "passed",
+          "title": "should not render the mission button if no handler is present"
+        },
+        {
+          "ancestorTitles": [],
+          "failureMessages": [],
+          "fullName": "should render the deployment toggle if the handler is present",
+          "location": null,
+          "status": "passed",
+          "title": "should render the deployment toggle if the handler is present"
+        },
+        {
+          "ancestorTitles": [],
+          "failureMessages": [],
+          "fullName": "should not render the deployment toggle if no handler is present",
+          "location": null,
+          "status": "passed",
+          "title": "should not render the deployment toggle if no handler is present"
+        },
+        {
+          "ancestorTitles": [],
+          "failureMessages": [],
+          "fullName": "should render the first support icon if the handler is present",
+          "location": null,
+          "status": "passed",
+          "title": "should render the first support icon if the handler is present"
+        },
+        {
+          "ancestorTitles": [],
+          "failureMessages": [],
+          "fullName": "should not render the first support icon if no handler is present",
+          "location": null,
+          "status": "passed",
+          "title": "should not render the first support icon if no handler is present"
+        },
+        {
+          "ancestorTitles": [],
+          "failureMessages": [],
+          "fullName": "should not render the first support icon if no icon is present",
+          "location": null,
+          "status": "passed",
+          "title": "should not render the first support icon if no icon is present"
+        },
+        {
+          "ancestorTitles": [],
+          "failureMessages": [],
+          "fullName": "should render the second support icon if the handler is present",
+          "location": null,
+          "status": "passed",
+          "title": "should render the second support icon if the handler is present"
+        },
+        {
+          "ancestorTitles": [],
+          "failureMessages": [],
+          "fullName": "should not render the second support icon if no handler is present",
+          "location": null,
+          "status": "passed",
+          "title": "should not render the second support icon if no handler is present"
+        },
+        {
+          "ancestorTitles": [],
+          "failureMessages": [],
+          "fullName": "should not render the second support icon if no icon is present",
+          "location": null,
+          "status": "passed",
+          "title": "should not render the second support icon if no icon is present"
+        }
+      ],
+      "endTime": 1741031619790,
+      "message": "",
+      "name": "/Users/jimjeffers/Sites/dash5/packages/react-ui/src/Toolbars/OverviewToolbar.test.tsx",
+      "startTime": 1741031618162,
+      "status": "passed",
+      "summary": ""
+    },
+    {
+      "assertionResults": [
+        {
+          "ancestorTitles": [],
+          "failureMessages": [],
+          "fullName": "should render the component",
+          "location": null,
+          "status": "passed",
+          "title": "should render the component"
+        },
+        {
+          "ancestorTitles": [],
+          "failureMessages": [],
+          "fullName": "should display the command name",
+          "location": null,
+          "status": "passed",
+          "title": "should display the command name"
+        },
+        {
+          "ancestorTitles": [],
+          "failureMessages": [],
+          "fullName": "should display the command description",
+          "location": null,
+          "status": "passed",
+          "title": "should display the command description"
+        },
+        {
+          "ancestorTitles": [],
+          "failureMessages": [],
+          "fullName": "should display the pre-populated value in the dropdown if provided",
+          "location": null,
+          "status": "passed",
+          "title": "should display the pre-populated value in the dropdown if provided"
+        },
+        {
+          "ancestorTitles": [],
+          "failureMessages": [],
+          "fullName": "should display a checkbox if no parameter options are provided",
+          "location": null,
+          "status": "passed",
+          "title": "should display a checkbox if no parameter options are provided"
+        },
+        {
+          "ancestorTitles": ["getValues"],
+          "failureMessages": [],
+          "fullName": "getValues should extract the values",
+          "location": null,
+          "status": "passed",
+          "title": "should extract the values"
+        },
+        {
+          "ancestorTitles": ["scopedValues"],
+          "failureMessages": [],
+          "fullName": "scopedValues should extract the values",
+          "location": null,
+          "status": "passed",
+          "title": "should extract the values"
+        },
+        {
+          "ancestorTitles": ["scopedSelectOptions"],
+          "failureMessages": [],
+          "fullName": "scopedSelectOptions should only extract an option set for the first level if no value is present",
+          "location": null,
+          "status": "passed",
+          "title": "should only extract an option set for the first level if no value is present"
+        },
+        {
+          "ancestorTitles": ["scopedSelectOptions"],
+          "failureMessages": [],
+          "fullName": "scopedSelectOptions should only extract the sets for the first two levels if only the first option is selected",
+          "location": null,
+          "status": "passed",
+          "title": "should only extract the sets for the first two levels if only the first option is selected"
+        },
+        {
+          "ancestorTitles": ["scopedSelectOptions"],
+          "failureMessages": [],
+          "fullName": "scopedSelectOptions should extract the sets for all three levels if the first two options are selected",
+          "location": null,
+          "status": "passed",
+          "title": "should extract the sets for all three levels if the first two options are selected"
+        }
+      ],
+      "endTime": 1741031619941,
+      "message": "",
+      "name": "/Users/jimjeffers/Sites/dash5/packages/react-ui/src/Tables/CommandDetailTable.test.tsx",
+      "startTime": 1741031619797,
+      "status": "passed",
+      "summary": ""
+    },
+    {
+      "assertionResults": [
+        {
+          "ancestorTitles": [],
+          "failureMessages": [],
+          "fullName": "should render the component",
+          "location": null,
+          "status": "passed",
+          "title": "should render the component"
+        },
+        {
+          "ancestorTitles": [],
+          "failureMessages": [],
+          "fullName": "should display mission name",
+          "location": null,
+          "status": "passed",
+          "title": "should display mission name"
+        },
+        {
+          "ancestorTitles": [],
+          "failureMessages": [],
+          "fullName": "should display number of missions in queue",
+          "location": null,
+          "status": "passed",
+          "title": "should display number of missions in queue"
+        },
+        {
+          "ancestorTitles": [],
+          "failureMessages": [],
+          "fullName": "should display provided git tag",
+          "location": null,
+          "status": "passed",
+          "title": "should display provided git tag"
+        },
+        {
+          "ancestorTitles": [],
+          "failureMessages": [],
+          "fullName": "should display vehicle underwater icon when mission is in progress",
+          "location": null,
+          "status": "passed",
+          "title": "should display vehicle underwater icon when mission is in progress"
+        },
+        {
+          "ancestorTitles": [],
+          "failureMessages": [],
+          "fullName": "should display vehicle recovered icon when mission is completed",
+          "location": null,
+          "status": "passed",
+          "title": "should display vehicle recovered icon when mission is completed"
+        },
+        {
+          "ancestorTitles": [],
+          "failureMessages": [],
+          "fullName": "should display mission start date in local time when selected",
+          "location": null,
+          "status": "passed",
+          "title": "should display mission start date in local time when selected"
+        },
+        {
+          "ancestorTitles": [],
+          "failureMessages": [],
+          "fullName": "should display mark recovery time now button if a recovery time is not provided",
+          "location": null,
+          "status": "passed",
+          "title": "should display mark recovery time now button if a recovery time is not provided"
+        },
+        {
+          "ancestorTitles": [],
+          "failureMessages": [],
+          "fullName": "should display date selectors if edit dates button is clicked",
+          "location": null,
+          "status": "passed",
+          "title": "should display date selectors if edit dates button is clicked"
+        },
+        {
+          "ancestorTitles": [],
+          "failureMessages": [],
+          "fullName": "should display number of log files",
+          "location": null,
+          "status": "passed",
+          "title": "should display number of log files"
+        },
+        {
+          "ancestorTitles": [],
+          "failureMessages": [],
+          "fullName": "should display directory list filepath when provided",
+          "location": null,
+          "status": "passed",
+          "title": "should display directory list filepath when provided"
+        },
+        {
+          "ancestorTitles": [],
+          "failureMessages": [],
+          "fullName": "should display log files when provided",
+          "location": null,
+          "status": "passed",
+          "title": "should display log files when provided"
+        }
+      ],
+      "endTime": 1741031619959,
+      "message": "",
+      "name": "/Users/jimjeffers/Sites/dash5/packages/react-ui/src/PopUps/DeploymentDetailsPopUp.test.tsx",
+      "startTime": 1741031618162,
+      "status": "passed",
+      "summary": ""
+    },
+    {
+      "assertionResults": [
+        {
+          "ancestorTitles": [],
+          "failureMessages": [],
+          "fullName": "should render the component",
+          "location": null,
+          "status": "passed",
+          "title": "should render the component"
+        },
+        {
+          "ancestorTitles": [],
+          "failureMessages": [],
+          "fullName": "should display header labels",
+          "location": null,
+          "status": "passed",
+          "title": "should display header labels"
+        },
+        {
+          "ancestorTitles": [],
+          "failureMessages": [],
+          "fullName": "should display accessory header when provided",
+          "location": null,
+          "status": "passed",
+          "title": "should display accessory header when provided"
+        },
+        {
+          "ancestorTitles": [],
+          "failureMessages": [],
+          "fullName": "should style highlighted cells with provided highlighted styling",
+          "location": null,
+          "status": "passed",
+          "title": "should style highlighted cells with provided highlighted styling"
+        },
+        {
+          "ancestorTitles": [],
+          "failureMessages": [],
+          "fullName": "should style unhighlighted cells as a lighter color",
+          "location": null,
+          "status": "passed",
+          "title": "should style unhighlighted cells as a lighter color"
+        },
+        {
+          "ancestorTitles": [],
+          "failureMessages": [],
+          "fullName": "should apply style with 2 grid columns if two values are provided for the content rows",
+          "location": null,
+          "status": "passed",
+          "title": "should apply style with 2 grid columns if two values are provided for the content rows"
+        },
+        {
+          "ancestorTitles": [],
+          "failureMessages": [],
+          "fullName": "should apply style with 2 grid columns if two values are provided for the content rows",
+          "location": null,
+          "status": "passed",
+          "title": "should apply style with 2 grid columns if two values are provided for the content rows"
+        },
+        {
+          "ancestorTitles": [],
+          "failureMessages": [],
+          "fullName": "should apply no top border style to a stackable table instance",
+          "location": null,
+          "status": "passed",
+          "title": "should apply no top border style to a stackable table instance"
+        },
+        {
+          "ancestorTitles": [],
+          "failureMessages": [],
+          "fullName": "should display secondary label in table cell",
+          "location": null,
+          "status": "passed",
+          "title": "should display secondary label in table cell"
+        },
+        {
+          "ancestorTitles": [],
+          "failureMessages": [],
+          "fullName": "should display secondary label in table header",
+          "location": null,
+          "status": "passed",
+          "title": "should display secondary label in table header"
+        },
+        {
+          "ancestorTitles": [],
+          "failureMessages": [],
+          "fullName": "should display sort icon on hover in header cell when sort function is provided",
+          "location": null,
+          "status": "passed",
+          "title": "should display sort icon on hover in header cell when sort function is provided"
+        },
+        {
+          "ancestorTitles": [],
+          "failureMessages": [],
+          "fullName": "should display sort up icon in header cell when sort direction is ascending",
+          "location": null,
+          "status": "passed",
+          "title": "should display sort up icon in header cell when sort direction is ascending"
+        },
+        {
+          "ancestorTitles": [],
+          "failureMessages": [],
+          "fullName": "should display sort up icon in header cell when sort direction is descending",
+          "location": null,
+          "status": "passed",
+          "title": "should display sort up icon in header cell when sort direction is descending"
+        },
+        {
+          "ancestorTitles": [],
+          "failureMessages": [],
+          "fullName": "should style selected row with blue background",
+          "location": null,
+          "status": "passed",
+          "title": "should style selected row with blue background"
+        }
+      ],
+      "endTime": 1741031620061,
+      "message": "",
+      "name": "/Users/jimjeffers/Sites/dash5/packages/react-ui/src/Data/Table.test.tsx",
+      "startTime": 1741031619975,
+      "status": "passed",
+      "summary": ""
+    },
+    {
+      "assertionResults": [
+        {
+          "ancestorTitles": [],
+          "failureMessages": [],
+          "fullName": "should render the component",
+          "location": null,
+          "status": "passed",
+          "title": "should render the component"
+        },
+        {
+          "ancestorTitles": [],
+          "failureMessages": [],
+          "fullName": "should display arrive station text when it is provided",
+          "location": null,
+          "status": "passed",
+          "title": "should display arrive station text when it is provided"
+        },
+        {
+          "ancestorTitles": [],
+          "failureMessages": [],
+          "fullName": "should display station arrival distance when it is provided",
+          "location": null,
+          "status": "passed",
+          "title": "should display station arrival distance when it is provided"
+        },
+        {
+          "ancestorTitles": [],
+          "failureMessages": [],
+          "fullName": "should display current distance text when it is provided",
+          "location": null,
+          "status": "passed",
+          "title": "should display current distance text when it is provided"
+        },
+        {
+          "ancestorTitles": [],
+          "failureMessages": [],
+          "fullName": "should make the arrive station label invisible when not on a mission",
+          "location": null,
+          "status": "passed",
+          "title": "should make the arrive station label invisible when not on a mission"
+        },
+        {
+          "ancestorTitles": [],
+          "failureMessages": [],
+          "fullName": "should display background wave when wavecolor is provided",
+          "location": null,
+          "status": "passed",
+          "title": "should display background wave when wavecolor is provided"
+        },
+        {
+          "ancestorTitles": [],
+          "failureMessages": [],
+          "fullName": "should display sandy ground background when dirt box color is provided",
+          "location": null,
+          "status": "passed",
+          "title": "should display sandy ground background when dirt box color is provided"
+        },
+        {
+          "ancestorTitles": [],
+          "failureMessages": [],
+          "fullName": "should display battery 1 color as teal when provided",
+          "location": null,
+          "status": "passed",
+          "title": "should display battery 1 color as teal when provided"
+        },
+        {
+          "ancestorTitles": [],
+          "failureMessages": [],
+          "fullName": "should display battery 2 color as dark gray when provided",
+          "location": null,
+          "status": "passed",
+          "title": "should display battery 2 color as dark gray when provided"
+        },
+        {
+          "ancestorTitles": [],
+          "failureMessages": [],
+          "fullName": "should display amp color as provided color",
+          "location": null,
+          "status": "passed",
+          "title": "should display amp color as provided color"
+        },
+        {
+          "ancestorTitles": [],
+          "failureMessages": [],
+          "fullName": "should display volt color as provided color",
+          "location": null,
+          "status": "passed",
+          "title": "should display volt color as provided color"
+        },
+        {
+          "ancestorTitles": [],
+          "failureMessages": [],
+          "fullName": "should display volts when provided",
+          "location": null,
+          "status": "passed",
+          "title": "should display volts when provided"
+        },
+        {
+          "ancestorTitles": [],
+          "failureMessages": [],
+          "fullName": "should display amps when provided",
+          "location": null,
+          "status": "passed",
+          "title": "should display amps when provided"
+        },
+        {
+          "ancestorTitles": [],
+          "failureMessages": [],
+          "fullName": "should display amps ago text when provided",
+          "location": null,
+          "status": "passed",
+          "title": "should display amps ago text when provided"
+        },
+        {
+          "ancestorTitles": [],
+          "failureMessages": [],
+          "fullName": "should display the cart and associated circles as provided colors",
+          "location": null,
+          "status": "passed",
+          "title": "should display the cart and associated circles as provided colors"
+        },
+        {
+          "ancestorTitles": [],
+          "failureMessages": [],
+          "fullName": "should display the charging cable as provided colors",
+          "location": null,
+          "status": "passed",
+          "title": "should display the charging cable as provided colors"
+        },
+        {
+          "ancestorTitles": [],
+          "failureMessages": [],
+          "fullName": "should display the sat comms color as provided color",
+          "location": null,
+          "status": "passed",
+          "title": "should display the sat comms color as provided color"
+        },
+        {
+          "ancestorTitles": [],
+          "failureMessages": [],
+          "fullName": "should display the cell comms color as provided color",
+          "location": null,
+          "status": "passed",
+          "title": "should display the cell comms color as provided color"
+        },
+        {
+          "ancestorTitles": [],
+          "failureMessages": [],
+          "fullName": "should display sat comms text when provided",
+          "location": null,
+          "status": "passed",
+          "title": "should display sat comms text when provided"
+        },
+        {
+          "ancestorTitles": [],
+          "failureMessages": [],
+          "fullName": "should display cell comms text when provided",
+          "location": null,
+          "status": "passed",
+          "title": "should display cell comms text when provided"
+        },
+        {
+          "ancestorTitles": [],
+          "failureMessages": [],
+          "fullName": "should display time since last sat comms text when provided",
+          "location": null,
+          "status": "passed",
+          "title": "should display time since last sat comms text when provided"
+        },
+        {
+          "ancestorTitles": [],
+          "failureMessages": [],
+          "fullName": "should display time since last cell comms text when provided",
+          "location": null,
+          "status": "passed",
+          "title": "should display time since last cell comms text when provided"
+        },
+        {
+          "ancestorTitles": [],
+          "failureMessages": [],
+          "fullName": "should display drop weight indicator color as provided color",
+          "location": null,
+          "status": "passed",
+          "title": "should display drop weight indicator color as provided color"
+        },
+        {
+          "ancestorTitles": [],
+          "failureMessages": [],
+          "fullName": "should display time since last drop weight text when provided",
+          "location": null,
+          "status": "passed",
+          "title": "should display time since last drop weight text when provided"
+        },
+        {
+          "ancestorTitles": [],
+          "failureMessages": [],
+          "fullName": "should display dvl indicator color as provided color",
+          "location": null,
+          "status": "passed",
+          "title": "should display dvl indicator color as provided color"
+        },
+        {
+          "ancestorTitles": [],
+          "failureMessages": [],
+          "fullName": "should display DVL status text when provided",
+          "location": null,
+          "status": "passed",
+          "title": "should display DVL status text when provided"
+        },
+        {
+          "ancestorTitles": [],
+          "failureMessages": [],
+          "fullName": "should display critical error text when provided",
+          "location": null,
+          "status": "passed",
+          "title": "should display critical error text when provided"
+        },
+        {
+          "ancestorTitles": [],
+          "failureMessages": [],
+          "fullName": "should display critical error time when provided",
+          "location": null,
+          "status": "passed",
+          "title": "should display critical error time when provided"
+        },
+        {
+          "ancestorTitles": [],
+          "failureMessages": [],
+          "fullName": "should display gps text box background color as provided color",
+          "location": null,
+          "status": "passed",
+          "title": "should display gps text box background color as provided color"
+        },
+        {
+          "ancestorTitles": [],
+          "failureMessages": [],
+          "fullName": "should display GPS text when provided",
+          "location": null,
+          "status": "passed",
+          "title": "should display GPS text when provided"
+        },
+        {
+          "ancestorTitles": [],
+          "failureMessages": [],
+          "fullName": "should display time since last GPS text when provided",
+          "location": null,
+          "status": "passed",
+          "title": "should display time since last GPS text when provided"
+        },
+        {
+          "ancestorTitles": [],
+          "failureMessages": [],
+          "fullName": "should display ground fault text box background color as provided color",
+          "location": null,
+          "status": "passed",
+          "title": "should display ground fault text box background color as provided color"
+        },
+        {
+          "ancestorTitles": [],
+          "failureMessages": [],
+          "fullName": "should display ground fault text when provided",
+          "location": null,
+          "status": "passed",
+          "title": "should display ground fault text when provided"
+        },
+        {
+          "ancestorTitles": [],
+          "failureMessages": [],
+          "fullName": "should display time since last ground fault text when provided",
+          "location": null,
+          "status": "passed",
+          "title": "should display time since last ground fault text when provided"
+        },
+        {
+          "ancestorTitles": [],
+          "failureMessages": [],
+          "fullName": "should display bearing text in degrees when provided",
+          "location": null,
+          "status": "passed",
+          "title": "should display bearing text in degrees when provided"
+        },
+        {
+          "ancestorTitles": [],
+          "failureMessages": [],
+          "fullName": "should display thrust time when provided",
+          "location": null,
+          "status": "passed",
+          "title": "should display thrust time when provided"
+        },
+        {
+          "ancestorTitles": [],
+          "failureMessages": [],
+          "fullName": "should display reckoned distance when provided",
+          "location": null,
+          "status": "passed",
+          "title": "should display reckoned distance when provided"
+        },
+        {
+          "ancestorTitles": [],
+          "failureMessages": [],
+          "fullName": "should display thruster speed text when provided",
+          "location": null,
+          "status": "passed",
+          "title": "should display thruster speed text when provided"
+        },
+        {
+          "ancestorTitles": [],
+          "failureMessages": [],
+          "fullName": "should display thruster indicator color as provided color",
+          "location": null,
+          "status": "passed",
+          "title": "should display thruster indicator color as provided color"
+        },
+        {
+          "ancestorTitles": [],
+          "failureMessages": [],
+          "fullName": "should display HW indicator color as provided color",
+          "location": null,
+          "status": "passed",
+          "title": "should display HW indicator color as provided color"
+        },
+        {
+          "ancestorTitles": [],
+          "failureMessages": [],
+          "fullName": "should display SW indicator color as provided color",
+          "location": null,
+          "status": "passed",
+          "title": "should display SW indicator color as provided color"
+        },
+        {
+          "ancestorTitles": [],
+          "failureMessages": [],
+          "fullName": "should display OT indicator color as provided color",
+          "location": null,
+          "status": "passed",
+          "title": "should display OT indicator color as provided color"
+        },
+        {
+          "ancestorTitles": [],
+          "failureMessages": [],
+          "fullName": "should display vehicle name",
+          "location": null,
+          "status": "passed",
+          "title": "should display vehicle name"
+        },
+        {
+          "ancestorTitles": [],
+          "failureMessages": [],
+          "fullName": "should display the vehicle's last update ",
+          "location": null,
+          "status": "passed",
+          "title": "should display the vehicle's last update "
+        },
+        {
+          "ancestorTitles": [],
+          "failureMessages": [],
+          "fullName": "should display heading label",
+          "location": null,
+          "status": "passed",
+          "title": "should display heading label"
+        },
+        {
+          "ancestorTitles": [],
+          "failureMessages": [],
+          "fullName": "should display speed label",
+          "location": null,
+          "status": "passed",
+          "title": "should display speed label"
+        }
+      ],
+      "endTime": 1741031620165,
+      "message": "",
+      "name": "/Users/jimjeffers/Sites/dash5/packages/react-ui/src/Diagrams/FullWidthVehicleDiagram.test.tsx",
+      "startTime": 1741031619946,
+      "status": "passed",
+      "summary": ""
+    },
+    {
+      "assertionResults": [
+        {
+          "ancestorTitles": [],
+          "failureMessages": [],
+          "fullName": "should render the component",
+          "location": null,
+          "status": "passed",
+          "title": "should render the component"
+        },
+        {
+          "ancestorTitles": [],
+          "failureMessages": [],
+          "fullName": "should display command names",
+          "location": null,
+          "status": "passed",
+          "title": "should display command names"
+        },
+        {
+          "ancestorTitles": [],
+          "failureMessages": [],
+          "fullName": "should display command descriptions",
+          "location": null,
+          "status": "passed",
+          "title": "should display command descriptions"
+        },
+        {
+          "ancestorTitles": [],
+          "failureMessages": [],
+          "fullName": "should display vehicle name in teal",
+          "location": null,
+          "status": "passed",
+          "title": "should display vehicle name in teal"
+        },
+        {
+          "ancestorTitles": [],
+          "failureMessages": [],
+          "fullName": "should display progress bar steps",
+          "location": null,
+          "status": "passed",
+          "title": "should display progress bar steps"
+        },
+        {
+          "ancestorTitles": [],
+          "failureMessages": [],
+          "fullName": "should display template commands placeholder text",
+          "location": null,
+          "status": "passed",
+          "title": "should display template commands placeholder text"
+        },
+        {
+          "ancestorTitles": [],
+          "failureMessages": [],
+          "fullName": "should display search commands placeholder text",
+          "location": null,
+          "status": "passed",
+          "title": "should display search commands placeholder text"
+        },
+        {
+          "ancestorTitles": [],
+          "failureMessages": [],
+          "fullName": "should render command",
+          "location": null,
+          "status": "passed",
+          "title": "should render command"
+        },
+        {
+          "ancestorTitles": [],
+          "failureMessages": [],
+          "fullName": "should render vehicle name",
+          "location": null,
+          "status": "passed",
+          "title": "should render vehicle name"
+        },
+        {
+          "ancestorTitles": [],
+          "failureMessages": [],
+          "fullName": "should render extra buttons and correct button text",
+          "location": null,
+          "status": "passed",
+          "title": "should render extra buttons and correct button text"
+        },
+        {
+          "ancestorTitles": [],
+          "failureMessages": [],
+          "fullName": "should schedule a complete command without making any changes to the default values",
+          "location": null,
+          "status": "passed",
+          "title": "should schedule a complete command without making any changes to the default values"
+        }
+      ],
+      "endTime": 1741031620223,
+      "message": "",
+      "name": "/Users/jimjeffers/Sites/dash5/packages/react-ui/src/Modals/CommandModal.test.tsx",
+      "startTime": 1741031618162,
+      "status": "passed",
+      "summary": ""
+    },
+    {
+      "assertionResults": [
+        {
+          "ancestorTitles": [],
+          "failureMessages": [],
+          "fullName": "should render the component",
+          "location": null,
+          "status": "passed",
+          "title": "should render the component"
+        },
+        {
+          "ancestorTitles": [],
+          "failureMessages": [],
+          "fullName": "should display mission tasks",
+          "location": null,
+          "status": "passed",
+          "title": "should display mission tasks"
+        },
+        {
+          "ancestorTitles": [],
+          "failureMessages": [],
+          "fullName": "should display mission category and name labels",
+          "location": null,
+          "status": "passed",
+          "title": "should display mission category and name labels"
+        },
+        {
+          "ancestorTitles": [],
+          "failureMessages": [],
+          "fullName": "should display mission descriptions",
+          "location": null,
+          "status": "passed",
+          "title": "should display mission descriptions"
+        },
+        {
+          "ancestorTitles": [],
+          "failureMessages": [],
+          "fullName": "should not display missions that do not match the current category filter",
+          "location": null,
+          "status": "passed",
+          "title": "should not display missions that do not match the current category filter"
+        },
+        {
+          "ancestorTitles": [],
+          "failureMessages": [],
+          "fullName": "should display vehicle name in teal",
+          "location": null,
+          "status": "passed",
+          "title": "should display vehicle name in teal"
+        },
+        {
+          "ancestorTitles": [],
+          "failureMessages": [],
+          "fullName": "should display mission name in teal",
+          "location": null,
+          "status": "passed",
+          "title": "should display mission name in teal"
+        },
+        {
+          "ancestorTitles": [],
+          "failureMessages": [],
+          "fullName": "should display number of available waypoint to set up and vehicle name",
+          "location": null,
+          "status": "passed",
+          "title": "should display number of available waypoint to set up and vehicle name"
+        },
+        {
+          "ancestorTitles": [],
+          "failureMessages": [],
+          "fullName": "should display stat labels",
+          "location": null,
+          "status": "passed",
+          "title": "should display stat labels"
+        },
+        {
+          "ancestorTitles": [],
+          "failureMessages": [],
+          "fullName": "should display NaN all and Reset all buttons",
+          "location": null,
+          "status": "passed",
+          "title": "should display NaN all and Reset all buttons"
+        },
+        {
+          "ancestorTitles": [],
+          "failureMessages": [],
+          "fullName": "should display Waypoint Summary when Next button is clicked after selecting waypoints",
+          "location": null,
+          "status": "passed",
+          "title": "should display Waypoint Summary when Next button is clicked after selecting waypoints"
+        },
+        {
+          "ancestorTitles": [],
+          "failureMessages": [],
+          "fullName": "should display parameter names",
+          "location": null,
+          "status": "passed",
+          "title": "should display parameter names"
+        },
+        {
+          "ancestorTitles": [],
+          "failureMessages": [],
+          "fullName": "should display parameter descriptions",
+          "location": null,
+          "status": "passed",
+          "title": "should display parameter descriptions"
+        },
+        {
+          "ancestorTitles": [],
+          "failureMessages": [],
+          "fullName": "should display default values",
+          "location": null,
+          "status": "passed",
+          "title": "should display default values"
+        },
+        {
+          "ancestorTitles": [],
+          "failureMessages": [],
+          "fullName": "should display Parameters Summary when Next button is clicked after selecting parameterss",
+          "location": null,
+          "status": "passed",
+          "title": "should display Parameters Summary when Next button is clicked after selecting parameterss"
+        },
+        {
+          "ancestorTitles": [],
+          "failureMessages": [],
+          "fullName": "should display safety parameter names",
+          "location": null,
+          "status": "passed",
+          "title": "should display safety parameter names"
+        },
+        {
+          "ancestorTitles": [],
+          "failureMessages": [],
+          "fullName": "should display comms parameter names",
+          "location": null,
+          "status": "passed",
+          "title": "should display comms parameter names"
+        },
+        {
+          "ancestorTitles": [],
+          "failureMessages": [],
+          "fullName": "should display safety parameter default values",
+          "location": null,
+          "status": "passed",
+          "title": "should display safety parameter default values"
+        },
+        {
+          "ancestorTitles": [],
+          "failureMessages": [],
+          "fullName": "should display comms parameter default values",
+          "location": null,
+          "status": "passed",
+          "title": "should display comms parameter default values"
+        },
+        {
+          "ancestorTitles": [],
+          "failureMessages": [],
+          "fullName": "should display review mission summary",
+          "location": null,
+          "status": "passed",
+          "title": "should display review mission summary"
+        },
+        {
+          "ancestorTitles": [],
+          "failureMessages": [],
+          "fullName": "should display safety parameters",
+          "location": null,
+          "status": "passed",
+          "title": "should display safety parameters"
+        },
+        {
+          "ancestorTitles": [],
+          "failureMessages": [],
+          "fullName": "should display comms parameters",
+          "location": null,
+          "status": "passed",
+          "title": "should display comms parameters"
+        },
+        {
+          "ancestorTitles": [],
+          "failureMessages": [],
+          "fullName": "should display only mission parameters with overrides",
+          "location": null,
+          "status": "passed",
+          "title": "should display only mission parameters with overrides"
+        },
+        {
+          "ancestorTitles": [],
+          "failureMessages": [],
+          "fullName": "should display safety parameters",
+          "location": null,
+          "status": "passed",
+          "title": "should display safety parameters"
+        },
+        {
+          "ancestorTitles": [],
+          "failureMessages": [],
+          "fullName": "should display only plotted waypoints (i.e. ones that do not have NaN as a value)",
+          "location": null,
+          "status": "passed",
+          "title": "should display only plotted waypoints (i.e. ones that do not have NaN as a value)"
+        }
+      ],
+      "endTime": 1741031620286,
+      "message": "",
+      "name": "/Users/jimjeffers/Sites/dash5/packages/react-ui/src/Modals/MissionModal.test.tsx",
+      "startTime": 1741031618162,
+      "status": "passed",
+      "summary": ""
+    },
+    {
+      "assertionResults": [
+        {
+          "ancestorTitles": [],
+          "failureMessages": [],
+          "fullName": "should render the component",
+          "location": null,
+          "status": "passed",
+          "title": "should render the component"
+        },
+        {
+          "ancestorTitles": [],
+          "failureMessages": [],
+          "fullName": "should display arrive station text when it is provided",
+          "location": null,
+          "status": "passed",
+          "title": "should display arrive station text when it is provided"
+        },
+        {
+          "ancestorTitles": [],
+          "failureMessages": [],
+          "fullName": "should display station arrival distance when it is provided",
+          "location": null,
+          "status": "passed",
+          "title": "should display station arrival distance when it is provided"
+        },
+        {
+          "ancestorTitles": [],
+          "failureMessages": [],
+          "fullName": "should display current distance text when it is provided",
+          "location": null,
+          "status": "passed",
+          "title": "should display current distance text when it is provided"
+        },
+        {
+          "ancestorTitles": [],
+          "failureMessages": [],
+          "fullName": "should make the arrive station label invisible when not on a mission",
+          "location": null,
+          "status": "passed",
+          "title": "should make the arrive station label invisible when not on a mission"
+        },
+        {
+          "ancestorTitles": [],
+          "failureMessages": [],
+          "fullName": "should display background wave when wavecolor is provided",
+          "location": null,
+          "status": "passed",
+          "title": "should display background wave when wavecolor is provided"
+        },
+        {
+          "ancestorTitles": [],
+          "failureMessages": [],
+          "fullName": "should display sandy ground background when dirt box color is provided",
+          "location": null,
+          "status": "passed",
+          "title": "should display sandy ground background when dirt box color is provided"
+        },
+        {
+          "ancestorTitles": [],
+          "failureMessages": [],
+          "fullName": "should display battery 1 color as teal when provided",
+          "location": null,
+          "status": "passed",
+          "title": "should display battery 1 color as teal when provided"
+        },
+        {
+          "ancestorTitles": [],
+          "failureMessages": [],
+          "fullName": "should display battery 2 color as dark gray when provided",
+          "location": null,
+          "status": "passed",
+          "title": "should display battery 2 color as dark gray when provided"
+        },
+        {
+          "ancestorTitles": [],
+          "failureMessages": [],
+          "fullName": "should display amp color as provided color",
+          "location": null,
+          "status": "passed",
+          "title": "should display amp color as provided color"
+        },
+        {
+          "ancestorTitles": [],
+          "failureMessages": [],
+          "fullName": "should display volt color as provided color",
+          "location": null,
+          "status": "passed",
+          "title": "should display volt color as provided color"
+        },
+        {
+          "ancestorTitles": [],
+          "failureMessages": [],
+          "fullName": "should display volts when provided",
+          "location": null,
+          "status": "passed",
+          "title": "should display volts when provided"
+        },
+        {
+          "ancestorTitles": [],
+          "failureMessages": [],
+          "fullName": "should display amps when provided",
+          "location": null,
+          "status": "passed",
+          "title": "should display amps when provided"
+        },
+        {
+          "ancestorTitles": [],
+          "failureMessages": [],
+          "fullName": "should display amps ago text when provided",
+          "location": null,
+          "status": "passed",
+          "title": "should display amps ago text when provided"
+        },
+        {
+          "ancestorTitles": [],
+          "failureMessages": [],
+          "fullName": "should display the cart and associated circles as provided colors",
+          "location": null,
+          "status": "passed",
+          "title": "should display the cart and associated circles as provided colors"
+        },
+        {
+          "ancestorTitles": [],
+          "failureMessages": [],
+          "fullName": "should display the charging cable as provided colors",
+          "location": null,
+          "status": "passed",
+          "title": "should display the charging cable as provided colors"
+        },
+        {
+          "ancestorTitles": [],
+          "failureMessages": [],
+          "fullName": "should display the sat comms color as provided color",
+          "location": null,
+          "status": "passed",
+          "title": "should display the sat comms color as provided color"
+        },
+        {
+          "ancestorTitles": [],
+          "failureMessages": [],
+          "fullName": "should display the cell comms color as provided color",
+          "location": null,
+          "status": "passed",
+          "title": "should display the cell comms color as provided color"
+        },
+        {
+          "ancestorTitles": [],
+          "failureMessages": [],
+          "fullName": "should display sat comms text when provided",
+          "location": null,
+          "status": "passed",
+          "title": "should display sat comms text when provided"
+        },
+        {
+          "ancestorTitles": [],
+          "failureMessages": [],
+          "fullName": "should display cell comms text when provided",
+          "location": null,
+          "status": "passed",
+          "title": "should display cell comms text when provided"
+        },
+        {
+          "ancestorTitles": [],
+          "failureMessages": [],
+          "fullName": "should display time since last sat comms text when provided",
+          "location": null,
+          "status": "passed",
+          "title": "should display time since last sat comms text when provided"
+        },
+        {
+          "ancestorTitles": [],
+          "failureMessages": [],
+          "fullName": "should display time since last cell comms text when provided",
+          "location": null,
+          "status": "passed",
+          "title": "should display time since last cell comms text when provided"
+        },
+        {
+          "ancestorTitles": [],
+          "failureMessages": [],
+          "fullName": "should display drop weight indicator color as provided color",
+          "location": null,
+          "status": "passed",
+          "title": "should display drop weight indicator color as provided color"
+        },
+        {
+          "ancestorTitles": [],
+          "failureMessages": [],
+          "fullName": "should display time since last drop weight text when provided",
+          "location": null,
+          "status": "passed",
+          "title": "should display time since last drop weight text when provided"
+        },
+        {
+          "ancestorTitles": [],
+          "failureMessages": [],
+          "fullName": "should display dvl indicator color as provided color",
+          "location": null,
+          "status": "passed",
+          "title": "should display dvl indicator color as provided color"
+        },
+        {
+          "ancestorTitles": [],
+          "failureMessages": [],
+          "fullName": "should display DVL status text when provided",
+          "location": null,
+          "status": "passed",
+          "title": "should display DVL status text when provided"
+        },
+        {
+          "ancestorTitles": [],
+          "failureMessages": [],
+          "fullName": "should display critical error text when provided",
+          "location": null,
+          "status": "passed",
+          "title": "should display critical error text when provided"
+        },
+        {
+          "ancestorTitles": [],
+          "failureMessages": [],
+          "fullName": "should display critical error time when provided",
+          "location": null,
+          "status": "passed",
+          "title": "should display critical error time when provided"
+        },
+        {
+          "ancestorTitles": [],
+          "failureMessages": [],
+          "fullName": "should display gps text box background color as provided color",
+          "location": null,
+          "status": "passed",
+          "title": "should display gps text box background color as provided color"
+        },
+        {
+          "ancestorTitles": [],
+          "failureMessages": [],
+          "fullName": "should display GPS text when provided",
+          "location": null,
+          "status": "passed",
+          "title": "should display GPS text when provided"
+        },
+        {
+          "ancestorTitles": [],
+          "failureMessages": [],
+          "fullName": "should display time since last GPS text when provided",
+          "location": null,
+          "status": "passed",
+          "title": "should display time since last GPS text when provided"
+        },
+        {
+          "ancestorTitles": [],
+          "failureMessages": [],
+          "fullName": "should display ground fault text box background color as provided color",
+          "location": null,
+          "status": "passed",
+          "title": "should display ground fault text box background color as provided color"
+        },
+        {
+          "ancestorTitles": [],
+          "failureMessages": [],
+          "fullName": "should display ground fault text when provided",
+          "location": null,
+          "status": "passed",
+          "title": "should display ground fault text when provided"
+        },
+        {
+          "ancestorTitles": [],
+          "failureMessages": [],
+          "fullName": "should display time since last ground fault text when provided",
+          "location": null,
+          "status": "passed",
+          "title": "should display time since last ground fault text when provided"
+        },
+        {
+          "ancestorTitles": [],
+          "failureMessages": [],
+          "fullName": "should display arrow color as provided color",
+          "location": null,
+          "status": "passed",
+          "title": "should display arrow color as provided color"
+        },
+        {
+          "ancestorTitles": [],
+          "failureMessages": [],
+          "fullName": "should display bearing text in degrees when provided",
+          "location": null,
+          "status": "passed",
+          "title": "should display bearing text in degrees when provided"
+        },
+        {
+          "ancestorTitles": [],
+          "failureMessages": [],
+          "fullName": "should display thrust time when provided",
+          "location": null,
+          "status": "passed",
+          "title": "should display thrust time when provided"
+        },
+        {
+          "ancestorTitles": [],
+          "failureMessages": [],
+          "fullName": "should display reckoned distance when provided",
+          "location": null,
+          "status": "passed",
+          "title": "should display reckoned distance when provided"
+        },
+        {
+          "ancestorTitles": [],
+          "failureMessages": [],
+          "fullName": "should display log time text when provided",
+          "location": null,
+          "status": "passed",
+          "title": "should display log time text when provided"
+        },
+        {
+          "ancestorTitles": [],
+          "failureMessages": [],
+          "fullName": "should display time since last Log text when provided",
+          "location": null,
+          "status": "passed",
+          "title": "should display time since last Log text when provided"
+        },
+        {
+          "ancestorTitles": [],
+          "failureMessages": [],
+          "fullName": "should display mission status indicator color as provided color",
+          "location": null,
+          "status": "passed",
+          "title": "should display mission status indicator color as provided color"
+        },
+        {
+          "ancestorTitles": [],
+          "failureMessages": [],
+          "fullName": "should display mission text when provided",
+          "location": null,
+          "status": "passed",
+          "title": "should display mission text when provided"
+        },
+        {
+          "ancestorTitles": [],
+          "failureMessages": [],
+          "fullName": "should display next comm indicator color as provided color",
+          "location": null,
+          "status": "passed",
+          "title": "should display next comm indicator color as provided color"
+        },
+        {
+          "ancestorTitles": [],
+          "failureMessages": [],
+          "fullName": "should display next comm text when provided",
+          "location": null,
+          "status": "passed",
+          "title": "should display next comm text when provided"
+        },
+        {
+          "ancestorTitles": [],
+          "failureMessages": [],
+          "fullName": "should display note text when provided",
+          "location": null,
+          "status": "passed",
+          "title": "should display note text when provided"
+        },
+        {
+          "ancestorTitles": [],
+          "failureMessages": [],
+          "fullName": "should display note time when provided",
+          "location": null,
+          "status": "passed",
+          "title": "should display note time when provided"
+        },
+        {
+          "ancestorTitles": [],
+          "failureMessages": [],
+          "fullName": "should display scheduled indicator color as provided color",
+          "location": null,
+          "status": "passed",
+          "title": "should display scheduled indicator color as provided color"
+        },
+        {
+          "ancestorTitles": [],
+          "failureMessages": [],
+          "fullName": "should display scheduled text when provided",
+          "location": null,
+          "status": "passed",
+          "title": "should display scheduled text when provided"
+        },
+        {
+          "ancestorTitles": [],
+          "failureMessages": [],
+          "fullName": "should display thruster speed text when provided",
+          "location": null,
+          "status": "passed",
+          "title": "should display thruster speed text when provided"
+        },
+        {
+          "ancestorTitles": [],
+          "failureMessages": [],
+          "fullName": "should display thruster indicator color as provided color",
+          "location": null,
+          "status": "passed",
+          "title": "should display thruster indicator color as provided color"
+        },
+        {
+          "ancestorTitles": [],
+          "failureMessages": [],
+          "fullName": "should display HW indicator color as provided color",
+          "location": null,
+          "status": "passed",
+          "title": "should display HW indicator color as provided color"
+        },
+        {
+          "ancestorTitles": [],
+          "failureMessages": [],
+          "fullName": "should display SW indicator color as provided color",
+          "location": null,
+          "status": "passed",
+          "title": "should display SW indicator color as provided color"
+        },
+        {
+          "ancestorTitles": [],
+          "failureMessages": [],
+          "fullName": "should display OT indicator color as provided color",
+          "location": null,
+          "status": "passed",
+          "title": "should display OT indicator color as provided color"
+        },
+        {
+          "ancestorTitles": [],
+          "failureMessages": [],
+          "fullName": "should display timeout text when provided",
+          "location": null,
+          "status": "passed",
+          "title": "should display timeout text when provided"
+        },
+        {
+          "ancestorTitles": [],
+          "failureMessages": [],
+          "fullName": "should display timeout indicator color as provided color",
+          "location": null,
+          "status": "passed",
+          "title": "should display timeout indicator color as provided color"
+        },
+        {
+          "ancestorTitles": [],
+          "failureMessages": [],
+          "fullName": "should display vehicle name",
+          "location": null,
+          "status": "passed",
+          "title": "should display vehicle name"
+        },
+        {
+          "ancestorTitles": [],
+          "failureMessages": [],
+          "fullName": "should display the vehicle's last update ",
+          "location": null,
+          "status": "passed",
+          "title": "should display the vehicle's last update "
+        }
+      ],
+      "endTime": 1741031620315,
+      "message": "",
+      "name": "/Users/jimjeffers/Sites/dash5/packages/react-ui/src/Diagrams/Vehicle.test.tsx",
+      "startTime": 1741031620066,
+      "status": "passed",
+      "summary": ""
+    },
+    {
+      "assertionResults": [
+        {
+          "ancestorTitles": [],
+          "failureMessages": [],
+          "fullName": "should render override names and values",
+          "location": null,
+          "status": "passed",
+          "title": "should render override names and values"
+        },
+        {
+          "ancestorTitles": [],
+          "failureMessages": [],
+          "fullName": "should render override header label followed by the number of values associated with the override ",
+          "location": null,
+          "status": "passed",
+          "title": "should render override header label followed by the number of values associated with the override "
+        },
+        {
+          "ancestorTitles": [],
+          "failureMessages": [],
+          "fullName": "should render mission names and values",
+          "location": null,
+          "status": "passed",
+          "title": "should render mission names and values"
+        },
+        {
+          "ancestorTitles": [],
+          "failureMessages": [],
+          "fullName": "should render the component",
+          "location": null,
+          "status": "passed",
+          "title": "should render the component"
+        },
+        {
+          "ancestorTitles": [],
+          "failureMessages": [],
+          "fullName": "should render mission name",
+          "location": null,
+          "status": "passed",
+          "title": "should render mission name"
+        },
+        {
+          "ancestorTitles": [],
+          "failureMessages": [],
+          "fullName": "should render command name",
+          "location": null,
+          "status": "passed",
+          "title": "should render command name"
+        },
+        {
+          "ancestorTitles": [],
+          "failureMessages": [],
+          "fullName": "should render queue text when provided",
+          "location": null,
+          "status": "passed",
+          "title": "should render queue text when provided"
+        },
+        {
+          "ancestorTitles": [],
+          "failureMessages": [],
+          "fullName": "should render transmission text when provided",
+          "location": null,
+          "status": "passed",
+          "title": "should render transmission text when provided"
+        },
+        {
+          "ancestorTitles": [],
+          "failureMessages": [],
+          "fullName": "should render acknowledge text when provided",
+          "location": null,
+          "status": "passed",
+          "title": "should render acknowledge text when provided"
+        },
+        {
+          "ancestorTitles": [],
+          "failureMessages": [],
+          "fullName": "should render vehicle name in acknowledge label when provided",
+          "location": null,
+          "status": "passed",
+          "title": "should render vehicle name in acknowledge label when provided"
+        },
+        {
+          "ancestorTitles": [],
+          "failureMessages": [],
+          "fullName": "should render appropriate mission status and start time labels when status is waiting",
+          "location": null,
+          "status": "passed",
+          "title": "should render appropriate mission status and start time labels when status is waiting"
+        },
+        {
+          "ancestorTitles": [],
+          "failureMessages": [],
+          "fullName": "should render appropriate mission status label when status is in progress",
+          "location": null,
+          "status": "passed",
+          "title": "should render appropriate mission status label when status is in progress"
+        },
+        {
+          "ancestorTitles": [],
+          "failureMessages": [],
+          "fullName": "should render appropriate mission status and table header labels when status is completed",
+          "location": null,
+          "status": "passed",
+          "title": "should render appropriate mission status and table header labels when status is completed"
+        }
+      ],
+      "endTime": 1741031620349,
+      "message": "",
+      "name": "/Users/jimjeffers/Sites/dash5/packages/react-ui/src/PopUps/MissionDetailsPopUp.test.tsx",
+      "startTime": 1741031620236,
+      "status": "passed",
+      "summary": ""
+    },
+    {
+      "assertionResults": [
+        {
+          "ancestorTitles": [],
+          "failureMessages": [],
+          "fullName": "should render the component",
+          "location": null,
+          "status": "passed",
+          "title": "should render the component"
+        },
+        {
+          "ancestorTitles": [],
+          "failureMessages": [],
+          "fullName": "should display the waypoint title",
+          "location": null,
+          "status": "passed",
+          "title": "should display the waypoint title"
+        },
+        {
+          "ancestorTitles": [],
+          "failureMessages": [],
+          "fullName": "should display the waypoint description",
+          "location": null,
+          "status": "passed",
+          "title": "should display the waypoint description"
+        },
+        {
+          "ancestorTitles": [],
+          "failureMessages": [],
+          "fullName": "should display the numbered waypoint map marker icon",
+          "location": null,
+          "status": "passed",
+          "title": "should display the numbered waypoint map marker icon"
+        },
+        {
+          "ancestorTitles": [],
+          "failureMessages": [],
+          "fullName": "should display the map marker icon with opacity 60 when not in focus mode",
+          "location": null,
+          "status": "passed",
+          "title": "should display the map marker icon with opacity 60 when not in focus mode"
+        },
+        {
+          "ancestorTitles": [],
+          "failureMessages": [],
+          "fullName": "should display alternative focus mode view if focusedWaypointIndex prop is provided",
+          "location": null,
+          "status": "passed",
+          "title": "should display alternative focus mode view if focusedWaypointIndex prop is provided"
+        },
+        {
+          "ancestorTitles": [],
+          "failureMessages": [],
+          "fullName": "should display the numbered waypoint map marker icon in purple when in focus mode",
+          "location": null,
+          "status": "passed",
+          "title": "should display the numbered waypoint map marker icon in purple when in focus mode"
+        },
+        {
+          "ancestorTitles": [],
+          "failureMessages": [],
+          "fullName": "should display a selected waypoint",
+          "location": null,
+          "status": "passed",
+          "title": "should display a selected waypoint"
+        },
+        {
+          "ancestorTitles": [],
+          "failureMessages": [],
+          "fullName": "should display the numbered waypoint map marker icon in purple when a waypoint is selected",
+          "location": null,
+          "status": "passed",
+          "title": "should display the numbered waypoint map marker icon in purple when a waypoint is selected"
+        },
+        {
+          "ancestorTitles": [],
+          "failureMessages": [],
+          "fullName": "should display +/- error warning if custom coordinate is out of range",
+          "location": null,
+          "status": "passed",
+          "title": "should display +/- error warning if custom coordinate is out of range"
+        }
+      ],
+      "endTime": 1741031620451,
+      "message": "",
+      "name": "/Users/jimjeffers/Sites/dash5/packages/react-ui/src/Tables/WaypointTable.test.tsx",
+      "startTime": 1741031620170,
+      "status": "passed",
+      "summary": ""
+    },
+    {
+      "assertionResults": [
+        {
+          "ancestorTitles": [],
+          "failureMessages": [],
+          "fullName": "should render the initial value",
+          "location": null,
+          "status": "passed",
+          "title": "should render the initial value"
+        },
+        {
+          "ancestorTitles": [],
+          "failureMessages": [],
+          "fullName": "should uncheck checkboxes",
+          "location": null,
+          "status": "passed",
+          "title": "should uncheck checkboxes"
+        },
+        {
+          "ancestorTitles": [],
+          "failureMessages": [],
+          "fullName": "should submit with correct values",
+          "location": null,
+          "status": "passed",
+          "title": "should submit with correct values"
+        }
+      ],
+      "endTime": 1741031620473,
+      "message": "",
+      "name": "/Users/jimjeffers/Sites/dash5/packages/react-ui/src/Forms/SendNoteForm.test.tsx",
+      "startTime": 1741031620322,
+      "status": "passed",
+      "summary": ""
+    },
+    {
+      "assertionResults": [
+        {
+          "ancestorTitles": [],
+          "failureMessages": [],
+          "fullName": "should render the component",
+          "location": null,
+          "status": "passed",
+          "title": "should render the component"
+        },
+        {
+          "ancestorTitles": [],
+          "failureMessages": [],
+          "fullName": "should display login title",
+          "location": null,
+          "status": "passed",
+          "title": "should display login title"
+        },
+        {
+          "ancestorTitles": [],
+          "failureMessages": [],
+          "fullName": "should display forgot password",
+          "location": null,
+          "status": "passed",
+          "title": "should display forgot password"
+        },
+        {
+          "ancestorTitles": [],
+          "failureMessages": [],
+          "fullName": "should display create account",
+          "location": null,
+          "status": "passed",
+          "title": "should display create account"
+        }
+      ],
+      "endTime": 1741031620539,
+      "message": "",
+      "name": "/Users/jimjeffers/Sites/dash5/packages/react-ui/src/Modals/LoginModal.test.tsx",
+      "startTime": 1741031620354,
+      "status": "passed",
+      "summary": ""
+    },
+    {
+      "assertionResults": [
+        {
+          "ancestorTitles": [],
+          "failureMessages": [],
+          "fullName": "should render the initial value",
+          "location": null,
+          "status": "passed",
+          "title": "should render the initial value"
+        }
+      ],
+      "endTime": 1741031620557,
+      "message": "",
+      "name": "/Users/jimjeffers/Sites/dash5/packages/react-ui/src/Forms/ForgotPasswordForm.test.tsx",
+      "startTime": 1741031620481,
+      "status": "passed",
+      "summary": ""
+    },
+    {
+      "assertionResults": [
+        {
+          "ancestorTitles": [],
+          "failureMessages": [],
+          "fullName": "should render title with vehicle name",
+          "location": null,
+          "status": "passed",
+          "title": "should render title with vehicle name"
+        },
+        {
+          "ancestorTitles": [],
+          "failureMessages": [],
+          "fullName": "should render vehicle name in title in teal",
+          "location": null,
+          "status": "passed",
+          "title": "should render vehicle name in title in teal"
+        },
+        {
+          "ancestorTitles": [],
+          "failureMessages": [],
+          "fullName": "should render command name when provided",
+          "location": null,
+          "status": "passed",
+          "title": "should render command name when provided"
+        },
+        {
+          "ancestorTitles": [],
+          "failureMessages": [],
+          "fullName": "should render mission name when provided",
+          "location": null,
+          "status": "passed",
+          "title": "should render mission name when provided"
+        },
+        {
+          "ancestorTitles": [],
+          "failureMessages": [],
+          "fullName": "should check radio buttons",
+          "location": null,
+          "status": "passed",
+          "title": "should check radio buttons"
+        },
+        {
+          "ancestorTitles": [],
+          "failureMessages": [],
+          "fullName": "should disable Confirm button when No is checked and an alternate vehicle has not been selected",
+          "location": null,
+          "status": "passed",
+          "title": "should disable Confirm button when No is checked and an alternate vehicle has not been selected"
+        }
+      ],
+      "endTime": 1741031620656,
+      "message": "",
+      "name": "/Users/jimjeffers/Sites/dash5/packages/react-ui/src/Modals/ConfirmVehicleDialog.test.tsx",
+      "startTime": 1741031620546,
+      "status": "passed",
+      "summary": ""
+    },
+    {
+      "assertionResults": [
+        {
+          "ancestorTitles": [],
+          "failureMessages": [],
+          "fullName": "should render the component",
+          "location": null,
+          "status": "passed",
+          "title": "should render the component"
+        }
+      ],
+      "endTime": 1741031620658,
+      "message": "",
+      "name": "/Users/jimjeffers/Sites/dash5/packages/react-ui/src/Charts/LineChart.test.tsx",
+      "startTime": 1741031620292,
+      "status": "passed",
+      "summary": ""
+    },
+    {
+      "assertionResults": [
+        {
+          "ancestorTitles": ["ReassignmentForm"],
+          "failureMessages": [],
+          "fullName": "ReassignmentForm should render the vehicles",
+          "location": null,
+          "status": "passed",
+          "title": "should render the vehicles"
+        }
+      ],
+      "endTime": 1741031620669,
+      "message": "",
+      "name": "/Users/jimjeffers/Sites/dash5/packages/react-ui/src/Forms/ReassignmentForm.test.tsx",
+      "startTime": 1741031620562,
+      "status": "passed",
+      "summary": ""
+    },
+    {
+      "assertionResults": [
+        {
+          "ancestorTitles": ["NewDeploymentForm"],
+          "failureMessages": [],
+          "fullName": "NewDeploymentForm should render the initial value",
+          "location": null,
+          "status": "passed",
+          "title": "should render the initial value"
+        }
+      ],
+      "endTime": 1741031620672,
+      "message": "",
+      "name": "/Users/jimjeffers/Sites/dash5/packages/react-ui/src/Forms/NewDeploymentForm.test.tsx",
+      "startTime": 1741031620459,
+      "status": "passed",
+      "summary": ""
+    },
+    {
+      "assertionResults": [
+        {
+          "ancestorTitles": [],
+          "failureMessages": [],
+          "fullName": "should render the component",
+          "location": null,
+          "status": "passed",
+          "title": "should render the component"
+        },
+        {
+          "ancestorTitles": [],
+          "failureMessages": [],
+          "fullName": "should display battery percentage",
+          "location": null,
+          "status": "passed",
+          "title": "should display battery percentage"
+        },
+        {
+          "ancestorTitles": [],
+          "failureMessages": [],
+          "fullName": "should display battery remaining",
+          "location": null,
+          "status": "passed",
+          "title": "should display battery remaining"
+        },
+        {
+          "ancestorTitles": [],
+          "failureMessages": [],
+          "fullName": "should display mission remaining",
+          "location": null,
+          "status": "passed",
+          "title": "should display mission remaining"
+        },
+        {
+          "ancestorTitles": [],
+          "failureMessages": [],
+          "fullName": "should display suggestion headline",
+          "location": null,
+          "status": "passed",
+          "title": "should display suggestion headline"
+        },
+        {
+          "ancestorTitles": [],
+          "failureMessages": [],
+          "fullName": "should display suggestion headline in medium bold font if important",
+          "location": null,
+          "status": "passed",
+          "title": "should display suggestion headline in medium bold font if important"
+        },
+        {
+          "ancestorTitles": [],
+          "failureMessages": [],
+          "fullName": "should display external link icon if onExternalInfoClick prop is present",
+          "location": null,
+          "status": "passed",
+          "title": "should display external link icon if onExternalInfoClick prop is present"
+        },
+        {
+          "ancestorTitles": [],
+          "failureMessages": [],
+          "fullName": "should display battery life improvement",
+          "location": null,
+          "status": "passed",
+          "title": "should display battery life improvement"
+        },
+        {
+          "ancestorTitles": [],
+          "failureMessages": [],
+          "fullName": "should description after more info button is clicked",
+          "location": null,
+          "status": "passed",
+          "title": "should description after more info button is clicked"
+        },
+        {
+          "ancestorTitles": [],
+          "failureMessages": [],
+          "fullName": "should display no current suggestions headline if no suggestions are available",
+          "location": null,
+          "status": "passed",
+          "title": "should display no current suggestions headline if no suggestions are available"
+        }
+      ],
+      "endTime": 1741031620766,
+      "message": "",
+      "name": "/Users/jimjeffers/Sites/dash5/packages/react-ui/src/PopUps/BatteryMonitorPopup.test.tsx",
+      "startTime": 1741031620677,
+      "status": "passed",
+      "summary": ""
+    },
+    {
+      "assertionResults": [
+        {
+          "ancestorTitles": ["ReassignmentModal"],
+          "failureMessages": [],
+          "fullName": "ReassignmentModal should render the vehicles",
+          "location": null,
+          "status": "passed",
+          "title": "should render the vehicles"
+        }
+      ],
+      "endTime": 1741031620775,
+      "message": "",
+      "name": "/Users/jimjeffers/Sites/dash5/packages/react-ui/src/Modals/ReassignmentModal.test.tsx",
+      "startTime": 1741031620672,
+      "status": "passed",
+      "summary": ""
+    },
+    {
+      "assertionResults": [
+        {
+          "ancestorTitles": [],
+          "failureMessages": [],
+          "fullName": "should render the component",
+          "location": null,
+          "status": "passed",
+          "title": "should render the component"
+        },
+        {
+          "ancestorTitles": [],
+          "failureMessages": [],
+          "fullName": "should display parameter name",
+          "location": null,
+          "status": "passed",
+          "title": "should display parameter name"
+        },
+        {
+          "ancestorTitles": [],
+          "failureMessages": [],
+          "fullName": "should display parameter description",
+          "location": null,
+          "status": "passed",
+          "title": "should display parameter description"
+        },
+        {
+          "ancestorTitles": [],
+          "failureMessages": [],
+          "fullName": "should display the parameter's default value",
+          "location": null,
+          "status": "passed",
+          "title": "should display the parameter's default value"
+        },
+        {
+          "ancestorTitles": [],
+          "failureMessages": [],
+          "fullName": "should display the parameter's override value if provided",
+          "location": null,
+          "status": "passed",
+          "title": "should display the parameter's override value if provided"
+        },
+        {
+          "ancestorTitles": [],
+          "failureMessages": [],
+          "fullName": "should display dvl is off message if dvlOff flag is true",
+          "location": null,
+          "status": "passed",
+          "title": "should display dvl is off message if dvlOff flag is true"
+        },
+        {
+          "ancestorTitles": [],
+          "failureMessages": [],
+          "fullName": "should display parameter name in teal if override value is provided",
+          "location": null,
+          "status": "passed",
+          "title": "should display parameter name in teal if override value is provided"
+        },
+        {
+          "ancestorTitles": [],
+          "failureMessages": [],
+          "fullName": "should display parameter name in orange if dvlOff flag is true",
+          "location": null,
+          "status": "passed",
+          "title": "should display parameter name in orange if dvlOff flag is true"
+        }
+      ],
+      "endTime": 1741031620776,
+      "message": "",
+      "name": "/Users/jimjeffers/Sites/dash5/packages/react-ui/src/Tables/ParameterTable.test.tsx",
+      "startTime": 1741031620673,
+      "status": "passed",
+      "summary": ""
+    },
+    {
+      "assertionResults": [
+        {
+          "ancestorTitles": [],
+          "failureMessages": [],
+          "fullName": "should render the component",
+          "location": null,
+          "status": "passed",
+          "title": "should render the component"
+        }
+      ],
+      "endTime": 1741031620784,
+      "message": "",
+      "name": "/Users/jimjeffers/Sites/dash5/packages/react-ui/src/Modals/CreateAccountModal.test.tsx",
+      "startTime": 1741031620672,
+      "status": "passed",
+      "summary": ""
+    },
+    {
+      "assertionResults": [
+        {
+          "ancestorTitles": [],
+          "failureMessages": [],
+          "fullName": "should render the component",
+          "location": null,
+          "status": "passed",
+          "title": "should render the component"
+        },
+        {
+          "ancestorTitles": [],
+          "failureMessages": [],
+          "fullName": "should render 5 tick marks",
+          "location": null,
+          "status": "passed",
+          "title": "should render 5 tick marks"
+        },
+        {
+          "ancestorTitles": [],
+          "failureMessages": [],
+          "fullName": "should render absolute dates when mission started longer than a week ago",
+          "location": null,
+          "status": "passed",
+          "title": "should render absolute dates when mission started longer than a week ago"
+        },
+        {
+          "ancestorTitles": [],
+          "failureMessages": [],
+          "fullName": "should render the launch and projected points",
+          "location": null,
+          "status": "passed",
+          "title": "should render the launch and projected points"
+        }
+      ],
+      "endTime": 1741031620855,
+      "message": "",
+      "name": "/Users/jimjeffers/Sites/dash5/packages/react-ui/src/Toolbars/MissionProgressToolbar.test.tsx",
+      "startTime": 1741031620783,
+      "status": "passed",
+      "summary": ""
+    },
+    {
+      "assertionResults": [
+        {
+          "ancestorTitles": [],
+          "failureMessages": [],
+          "fullName": "should render the initial value",
+          "location": null,
+          "status": "passed",
+          "title": "should render the initial value"
+        }
+      ],
+      "endTime": 1741031620866,
+      "message": "",
+      "name": "/Users/jimjeffers/Sites/dash5/packages/react-ui/src/Forms/CreateAccountForm.test.tsx",
+      "startTime": 1741031620772,
+      "status": "passed",
+      "summary": ""
+    },
+    {
+      "assertionResults": [
+        {
+          "ancestorTitles": [],
+          "failureMessages": [],
+          "fullName": "should render the vehicle name",
+          "location": null,
+          "status": "passed",
+          "title": "should render the vehicle name"
+        },
+        {
+          "ancestorTitles": [],
+          "failureMessages": [],
+          "fullName": "should not render the vehicle name if blank",
+          "location": null,
+          "status": "passed",
+          "title": "should not render the vehicle name if blank"
+        },
+        {
+          "ancestorTitles": [],
+          "failureMessages": [],
+          "fullName": "should throw an error if the default submit handler is used",
+          "location": null,
+          "status": "passed",
+          "title": "should throw an error if the default submit handler is used"
+        },
+        {
+          "ancestorTitles": [],
+          "failureMessages": [],
+          "fullName": "should not allow the user to confirm until a value has been selected",
+          "location": null,
+          "status": "passed",
+          "title": "should not allow the user to confirm until a value has been selected"
+        }
+      ],
+      "endTime": 1741031620887,
+      "message": "",
+      "name": "/Users/jimjeffers/Sites/dash5/packages/react-ui/src/Modals/ConfirmStopModal.test.tsx",
+      "startTime": 1741031620789,
+      "status": "passed",
+      "summary": ""
+    },
+    {
+      "assertionResults": [
+        {
+          "ancestorTitles": [],
+          "failureMessages": [],
+          "fullName": "should render the component",
+          "location": null,
+          "status": "passed",
+          "title": "should render the component"
+        },
+        {
+          "ancestorTitles": [],
+          "failureMessages": [],
+          "fullName": "should render the headline",
+          "location": null,
+          "status": "passed",
+          "title": "should render the headline"
+        },
+        {
+          "ancestorTitles": [],
+          "failureMessages": [],
+          "fullName": "should render last position info when supplied",
+          "location": null,
+          "status": "passed",
+          "title": "should render last position info when supplied"
+        },
+        {
+          "ancestorTitles": [],
+          "failureMessages": [],
+          "fullName": "should render last satellite info when supplied",
+          "location": null,
+          "status": "passed",
+          "title": "should render last satellite info when supplied"
+        },
+        {
+          "ancestorTitles": [],
+          "failureMessages": [],
+          "fullName": "should render last cell info when supplied",
+          "location": null,
+          "status": "passed",
+          "title": "should render last cell info when supplied"
+        },
+        {
+          "ancestorTitles": [],
+          "failureMessages": [],
+          "fullName": "should render last gps info when supplied",
+          "location": null,
+          "status": "passed",
+          "title": "should render last gps info when supplied"
+        },
+        {
+          "ancestorTitles": [],
+          "failureMessages": [],
+          "fullName": "should render last communication info when supplied",
+          "location": null,
+          "status": "passed",
+          "title": "should render last communication info when supplied"
+        },
+        {
+          "ancestorTitles": [],
+          "failureMessages": [],
+          "fullName": "should display vehicle diagram when supplied",
+          "location": null,
+          "status": "passed",
+          "title": "should display vehicle diagram when supplied"
+        },
+        {
+          "ancestorTitles": [],
+          "failureMessages": [],
+          "fullName": "should display notification when vehicle prop is not supplied",
+          "location": null,
+          "status": "passed",
+          "title": "should display notification when vehicle prop is not supplied"
+        }
+      ],
+      "endTime": 1741031620890,
+      "message": "",
+      "name": "/Users/jimjeffers/Sites/dash5/packages/react-ui/src/Cells/VehicleCell.test.tsx",
+      "startTime": 1741031620780,
+      "status": "passed",
+      "summary": ""
+    },
+    {
+      "assertionResults": [
+        {
+          "ancestorTitles": [],
+          "failureMessages": [],
+          "fullName": "should render the specified options",
+          "location": null,
+          "status": "passed",
+          "title": "should render the specified options"
+        },
+        {
+          "ancestorTitles": [],
+          "failureMessages": [],
+          "fullName": "should render the selected option",
+          "location": null,
+          "status": "passed",
+          "title": "should render the selected option"
+        },
+        {
+          "ancestorTitles": [],
+          "failureMessages": [],
+          "fullName": "should render the add button if a handler is present",
+          "location": null,
+          "status": "passed",
+          "title": "should render the add button if a handler is present"
+        },
+        {
+          "ancestorTitles": [],
+          "failureMessages": [],
+          "fullName": "should not render the add button if a handler is not present",
+          "location": null,
+          "status": "passed",
+          "title": "should not render the add button if a handler is not present"
+        },
+        {
+          "ancestorTitles": [],
+          "failureMessages": [],
+          "fullName": "should render the login button if the toolbar is not signed in",
+          "location": null,
+          "status": "passed",
+          "title": "should render the login button if the toolbar is not signed in"
+        },
+        {
+          "ancestorTitles": [],
+          "failureMessages": [],
+          "fullName": "should not render the login button if the toolbar is signed in",
+          "location": null,
+          "status": "passed",
+          "title": "should not render the login button if the toolbar is signed in"
+        },
+        {
+          "ancestorTitles": [],
+          "failureMessages": [],
+          "fullName": "should render a generic profile button if there are no profile credentials",
+          "location": null,
+          "status": "passed",
+          "title": "should render a generic profile button if there are no profile credentials"
+        },
+        {
+          "ancestorTitles": [],
+          "failureMessages": [],
+          "fullName": "should not render a generic profile button if there are profile credentials",
+          "location": null,
+          "status": "passed",
+          "title": "should not render a generic profile button if there are profile credentials"
+        }
+      ],
+      "endTime": 1741031620937,
+      "message": "",
+      "name": "/Users/jimjeffers/Sites/dash5/packages/react-ui/src/Toolbars/PrimaryToolbar.test.tsx",
+      "startTime": 1741031620873,
+      "status": "passed",
+      "summary": ""
+    },
+    {
+      "assertionResults": [
+        {
+          "ancestorTitles": [],
+          "failureMessages": [],
+          "fullName": "should render the placeholder value",
+          "location": null,
+          "status": "passed",
+          "title": "should render the placeholder value"
+        }
+      ],
+      "endTime": 1741031620940,
+      "message": "",
+      "name": "/Users/jimjeffers/Sites/dash5/packages/react-ui/src/Forms/LoginForm.test.tsx",
+      "startTime": 1741031620864,
+      "status": "passed",
+      "summary": ""
+    },
+    {
+      "assertionResults": [
+        {
+          "ancestorTitles": [],
+          "failureMessages": [],
+          "fullName": "should render the component",
+          "location": null,
+          "status": "passed",
+          "title": "should render the component"
+        },
+        {
+          "ancestorTitles": [],
+          "failureMessages": [],
+          "fullName": "should display header",
+          "location": null,
+          "status": "passed",
+          "title": "should display header"
+        },
+        {
+          "ancestorTitles": [],
+          "failureMessages": [],
+          "fullName": "should display provided option",
+          "location": null,
+          "status": "passed",
+          "title": "should display provided option"
+        },
+        {
+          "ancestorTitles": [],
+          "failureMessages": [],
+          "fullName": "should display red status indicator icon if ended",
+          "location": null,
+          "status": "passed",
+          "title": "should display red status indicator icon if ended"
+        },
+        {
+          "ancestorTitles": [],
+          "failureMessages": [],
+          "fullName": "should display red status indicator icon if status is not ended",
+          "location": null,
+          "status": "passed",
+          "title": "should display red status indicator icon if status is not ended"
+        }
+      ],
+      "endTime": 1741031620963,
+      "message": "",
+      "name": "/Users/jimjeffers/Sites/dash5/packages/react-ui/src/Dropdowns/VehicleDropdown.test.tsx",
+      "startTime": 1741031620895,
+      "status": "passed",
+      "summary": ""
+    },
+    {
+      "assertionResults": [
+        {
+          "ancestorTitles": [],
+          "failureMessages": [],
+          "fullName": "should render the component",
+          "location": null,
+          "status": "passed",
+          "title": "should render the component"
+        }
+      ],
+      "endTime": 1741031620980,
+      "message": "",
+      "name": "/Users/jimjeffers/Sites/dash5/packages/react-ui/src/Modals/SendNoteModal.test.tsx",
+      "startTime": 1741031620895,
+      "status": "passed",
+      "summary": ""
+    },
+    {
+      "assertionResults": [
+        {
+          "ancestorTitles": [],
+          "failureMessages": [],
+          "fullName": "should render the component",
+          "location": null,
+          "status": "passed",
+          "title": "should render the component"
+        },
+        {
+          "ancestorTitles": [],
+          "failureMessages": [],
+          "fullName": "should display the set up header with correct maximum number of waypoints",
+          "location": null,
+          "status": "passed",
+          "title": "should display the set up header with correct maximum number of waypoints"
+        },
+        {
+          "ancestorTitles": [],
+          "failureMessages": [],
+          "fullName": "should display the summary header with the correct number of existing waypoints",
+          "location": null,
+          "status": "passed",
+          "title": "should display the summary header with the correct number of existing waypoints"
+        }
+      ],
+      "endTime": 1741031621009,
+      "message": "",
+      "name": "/Users/jimjeffers/Sites/dash5/packages/react-ui/src/Views/WaypointSummaryView.test.tsx",
+      "startTime": 1741031620947,
+      "status": "passed",
+      "summary": ""
+    },
+    {
+      "assertionResults": [
+        {
+          "ancestorTitles": [],
+          "failureMessages": [],
+          "fullName": "should render the component",
+          "location": null,
+          "status": "passed",
+          "title": "should render the component"
+        }
+      ],
+      "endTime": 1741031621029,
+      "message": "",
+      "name": "/Users/jimjeffers/Sites/dash5/packages/react-ui/src/Modals/ForgotPasswordModal.test.tsx",
+      "startTime": 1741031620944,
+      "status": "passed",
+      "summary": ""
+    },
+    {
+      "assertionResults": [
+        {
+          "ancestorTitles": [],
+          "failureMessages": [],
+          "fullName": "should render the component",
+          "location": null,
+          "status": "passed",
+          "title": "should render the component"
+        },
+        {
+          "ancestorTitles": [],
+          "failureMessages": [],
+          "fullName": "should render child content",
+          "location": null,
+          "status": "passed",
+          "title": "should render child content"
+        }
+      ],
+      "endTime": 1741031621040,
+      "message": "",
+      "name": "/Users/jimjeffers/Sites/dash5/packages/react-ui/src/Views/SampleCollectionView.test.tsx",
+      "startTime": 1741031620986,
+      "status": "passed",
+      "summary": ""
+    },
+    {
+      "assertionResults": [
+        {
+          "ancestorTitles": [],
+          "failureMessages": [],
+          "fullName": "should render the label",
+          "location": null,
+          "status": "passed",
+          "title": "should render the label"
+        },
+        {
+          "ancestorTitles": [],
+          "failureMessages": [],
+          "fullName": "should render the appropriate icon",
+          "location": null,
+          "status": "passed",
+          "title": "should render the appropriate icon"
+        },
+        {
+          "ancestorTitles": [],
+          "failureMessages": [],
+          "fullName": "should have blue background when running",
+          "location": null,
+          "status": "passed",
+          "title": "should have blue background when running"
+        },
+        {
+          "ancestorTitles": [],
+          "failureMessages": [],
+          "fullName": "should have blue background when pending but the schedule is running",
+          "location": null,
+          "status": "passed",
+          "title": "should have blue background when pending but the schedule is running"
+        },
+        {
+          "ancestorTitles": [],
+          "failureMessages": [],
+          "fullName": "should have orange background when paused",
+          "location": null,
+          "status": "passed",
+          "title": "should have orange background when paused"
+        },
+        {
+          "ancestorTitles": [],
+          "failureMessages": [],
+          "fullName": "should have orange background when pending and the schedule is paused",
+          "location": null,
+          "status": "passed",
+          "title": "should have orange background when pending and the schedule is paused"
+        },
+        {
+          "ancestorTitles": [],
+          "failureMessages": [],
+          "fullName": "should have white background when scheduled",
+          "location": null,
+          "status": "passed",
+          "title": "should have white background when scheduled"
+        },
+        {
+          "ancestorTitles": [],
+          "failureMessages": [],
+          "fullName": "should have teal label when completed",
+          "location": null,
+          "status": "passed",
+          "title": "should have teal label when completed"
+        },
+        {
+          "ancestorTitles": [],
+          "failureMessages": [],
+          "fullName": "should have orange label when paused",
+          "location": null,
+          "status": "passed",
+          "title": "should have orange label when paused"
+        },
+        {
+          "ancestorTitles": [],
+          "failureMessages": [],
+          "fullName": "should have orange label when pending and the schedule is paused",
+          "location": null,
+          "status": "passed",
+          "title": "should have orange label when pending and the schedule is paused"
+        }
+      ],
+      "endTime": 1741031621040,
+      "message": "",
+      "name": "/Users/jimjeffers/Sites/dash5/packages/react-ui/src/Cells/ScheduleCell.test.tsx",
+      "startTime": 1741031620968,
+      "status": "passed",
+      "summary": ""
+    },
+    {
+      "assertionResults": [
+        {
+          "ancestorTitles": [],
+          "failureMessages": [],
+          "fullName": "should render the component",
+          "location": null,
+          "status": "passed",
+          "title": "should render the component"
+        },
+        {
+          "ancestorTitles": [],
+          "failureMessages": [],
+          "fullName": "should display options",
+          "location": null,
+          "status": "passed",
+          "title": "should display options"
+        },
+        {
+          "ancestorTitles": [],
+          "failureMessages": [],
+          "fullName": "should display profile name",
+          "location": null,
+          "status": "passed",
+          "title": "should display profile name"
+        },
+        {
+          "ancestorTitles": [],
+          "failureMessages": [],
+          "fullName": "should display email address",
+          "location": null,
+          "status": "passed",
+          "title": "should display email address"
+        }
+      ],
+      "endTime": 1741031621069,
+      "message": "",
+      "name": "/Users/jimjeffers/Sites/dash5/packages/react-ui/src/Dropdowns/ProfileDropdown.test.tsx",
+      "startTime": 1741031621016,
+      "status": "passed",
+      "summary": ""
+    },
+    {
+      "assertionResults": [
+        {
+          "ancestorTitles": [],
+          "failureMessages": [],
+          "fullName": "should render command to the screen",
+          "location": null,
+          "status": "passed",
+          "title": "should render command to the screen"
+        },
+        {
+          "ancestorTitles": [],
+          "failureMessages": [],
+          "fullName": "should have purple command text if scheduled",
+          "location": null,
+          "status": "passed",
+          "title": "should have purple command text if scheduled"
+        },
+        {
+          "ancestorTitles": [],
+          "failureMessages": [],
+          "fullName": "should have green command text if any state other than scheduled",
+          "location": null,
+          "status": "passed",
+          "title": "should have green command text if any state other than scheduled"
+        },
+        {
+          "ancestorTitles": [],
+          "failureMessages": [],
+          "fullName": "should display transmitting icon when uploading",
+          "location": null,
+          "status": "passed",
+          "title": "should display transmitting icon when uploading"
+        },
+        {
+          "ancestorTitles": [],
+          "failureMessages": [],
+          "fullName": "should display acknowledge icon when appropriate",
+          "location": null,
+          "status": "passed",
+          "title": "should display acknowledge icon when appropriate"
+        }
+      ],
+      "endTime": 1741031621094,
+      "message": "",
+      "name": "/Users/jimjeffers/Sites/dash5/packages/react-ui/src/Cells/CommsCell.test.tsx",
+      "startTime": 1741031621038,
+      "status": "passed",
+      "summary": ""
+    },
+    {
+      "assertionResults": [
+        {
+          "ancestorTitles": [],
+          "failureMessages": [],
+          "fullName": "should render the component",
+          "location": null,
+          "status": "passed",
+          "title": "should render the component"
+        },
+        {
+          "ancestorTitles": [],
+          "failureMessages": [],
+          "fullName": "should display the headline",
+          "location": null,
+          "status": "passed",
+          "title": "should display the headline"
+        },
+        {
+          "ancestorTitles": [],
+          "failureMessages": [],
+          "fullName": "should display the subtitle",
+          "location": null,
+          "status": "passed",
+          "title": "should display the subtitle"
+        },
+        {
+          "ancestorTitles": [],
+          "failureMessages": [],
+          "fullName": "should display the estimate text when provided",
+          "location": null,
+          "status": "passed",
+          "title": "should display the estimate text when provided"
+        },
+        {
+          "ancestorTitles": [],
+          "failureMessages": [],
+          "fullName": "should display the last comms text when provided",
+          "location": null,
+          "status": "passed",
+          "title": "should display the last comms text when provided"
+        },
+        {
+          "ancestorTitles": [],
+          "failureMessages": [],
+          "fullName": "should not display the last comms text when it is not provided",
+          "location": null,
+          "status": "passed",
+          "title": "should not display the last comms text when it is not provided"
+        }
+      ],
+      "endTime": 1741031621100,
+      "message": "",
+      "name": "/Users/jimjeffers/Sites/dash5/packages/react-ui/src/Cells/VehicleInfoCell.test.tsx",
+      "startTime": 1741031621048,
+      "status": "passed",
+      "summary": ""
+    },
+    {
+      "assertionResults": [
+        {
+          "ancestorTitles": [],
+          "failureMessages": [],
+          "fullName": "should render the label",
+          "location": null,
+          "status": "passed",
+          "title": "should render the label"
+        },
+        {
+          "ancestorTitles": [],
+          "failureMessages": [],
+          "fullName": "should render the date and time",
+          "location": null,
+          "status": "passed",
+          "title": "should render the date and time"
+        },
+        {
+          "ancestorTitles": [],
+          "failureMessages": [],
+          "fullName": "should render the mission tag",
+          "location": null,
+          "status": "passed",
+          "title": "should render the mission tag"
+        },
+        {
+          "ancestorTitles": [],
+          "failureMessages": [],
+          "fullName": "should render the more options button",
+          "location": null,
+          "status": "passed",
+          "title": "should render the more options button"
+        }
+      ],
+      "endTime": 1741031621101,
+      "message": "",
+      "name": "/Users/jimjeffers/Sites/dash5/packages/react-ui/src/Cells/DocCell.test.tsx",
+      "startTime": 1741031621044,
+      "status": "passed",
+      "summary": ""
+    },
+    {
+      "assertionResults": [
+        {
+          "ancestorTitles": [],
+          "failureMessages": [],
+          "fullName": "should display header when provided",
+          "location": null,
+          "status": "passed",
+          "title": "should display header when provided"
+        },
+        {
+          "ancestorTitles": [],
+          "failureMessages": [],
+          "fullName": "should render disabled options with lighter text",
+          "location": null,
+          "status": "passed",
+          "title": "should render disabled options with lighter text"
+        }
+      ],
+      "endTime": 1741031621127,
+      "message": "",
+      "name": "/Users/jimjeffers/Sites/dash5/packages/react-ui/src/Navigation/Dropdown.test.tsx",
+      "startTime": 1741031621074,
+      "status": "passed",
+      "summary": ""
+    },
+    {
+      "assertionResults": [
+        {
+          "ancestorTitles": [],
+          "failureMessages": [],
+          "fullName": "should render the component",
+          "location": null,
+          "status": "passed",
+          "title": "should render the component"
+        },
+        {
+          "ancestorTitles": [],
+          "failureMessages": [],
+          "fullName": "should render the note text",
+          "location": null,
+          "status": "passed",
+          "title": "should render the note text"
+        },
+        {
+          "ancestorTitles": [],
+          "failureMessages": [],
+          "fullName": "should render the pilot name text",
+          "location": null,
+          "status": "passed",
+          "title": "should render the pilot name text"
+        },
+        {
+          "ancestorTitles": [],
+          "failureMessages": [],
+          "fullName": "should render the PIC container if in PIC mode",
+          "location": null,
+          "status": "passed",
+          "title": "should render the PIC container if in PIC mode"
+        },
+        {
+          "ancestorTitles": [],
+          "failureMessages": [],
+          "fullName": "should NOT render the PIC container if NOT in PIC mode",
+          "location": null,
+          "status": "passed",
+          "title": "should NOT render the PIC container if NOT in PIC mode"
+        },
+        {
+          "ancestorTitles": [],
+          "failureMessages": [],
+          "fullName": "should have a strong border if unread",
+          "location": null,
+          "status": "passed",
+          "title": "should have a strong border if unread"
+        },
+        {
+          "ancestorTitles": [],
+          "failureMessages": [],
+          "fullName": "should NOT have a strong border if NOT unread",
+          "location": null,
+          "status": "passed",
+          "title": "should NOT have a strong border if NOT unread"
+        }
+      ],
+      "endTime": 1741031621160,
+      "message": "",
+      "name": "/Users/jimjeffers/Sites/dash5/packages/react-ui/src/Cells/HandoffCell.test.tsx",
+      "startTime": 1741031621106,
+      "status": "passed",
+      "summary": ""
+    },
+    {
+      "assertionResults": [
+        {
+          "ancestorTitles": [],
+          "failureMessages": [],
+          "fullName": "should support disabled state",
+          "location": null,
+          "status": "passed",
+          "title": "should support disabled state"
+        },
+        {
+          "ancestorTitles": [],
+          "failureMessages": [],
+          "fullName": "should be large by default",
+          "location": null,
+          "status": "passed",
+          "title": "should be large by default"
+        },
+        {
+          "ancestorTitles": [],
+          "failureMessages": [],
+          "fullName": "should adjust for text-xs",
+          "location": null,
+          "status": "passed",
+          "title": "should adjust for text-xs"
+        },
+        {
+          "ancestorTitles": [],
+          "failureMessages": [],
+          "fullName": "should adjust for text-sm",
+          "location": null,
+          "status": "passed",
+          "title": "should adjust for text-sm"
+        },
+        {
+          "ancestorTitles": [],
+          "failureMessages": [],
+          "fullName": "should adjust for text-md",
+          "location": null,
+          "status": "passed",
+          "title": "should adjust for text-md"
+        },
+        {
+          "ancestorTitles": [],
+          "failureMessages": [],
+          "fullName": "should adjust for text-xl",
+          "location": null,
+          "status": "passed",
+          "title": "should adjust for text-xl"
+        },
+        {
+          "ancestorTitles": [],
+          "failureMessages": [],
+          "fullName": "should adjust for text-2xl",
+          "location": null,
+          "status": "passed",
+          "title": "should adjust for text-2xl"
+        },
+        {
+          "ancestorTitles": [],
+          "failureMessages": [],
+          "fullName": "should adjust for text-3xl",
+          "location": null,
+          "status": "passed",
+          "title": "should adjust for text-3xl"
+        }
+      ],
+      "endTime": 1741031621161,
+      "message": "",
+      "name": "/Users/jimjeffers/Sites/dash5/packages/react-ui/src/Navigation/IconButton.test.tsx",
+      "startTime": 1741031621106,
+      "status": "passed",
+      "summary": ""
+    },
+    {
+      "assertionResults": [
+        {
+          "ancestorTitles": [],
+          "failureMessages": [],
+          "fullName": "should render the component",
+          "location": null,
+          "status": "passed",
+          "title": "should render the component"
+        },
+        {
+          "ancestorTitles": [],
+          "failureMessages": [],
+          "fullName": "should display header labels",
+          "location": null,
+          "status": "passed",
+          "title": "should display header labels"
+        },
+        {
+          "ancestorTitles": [],
+          "failureMessages": [],
+          "fullName": "should display category and name labels",
+          "location": null,
+          "status": "passed",
+          "title": "should display category and name labels"
+        },
+        {
+          "ancestorTitles": [],
+          "failureMessages": [],
+          "fullName": "should display mission task label",
+          "location": null,
+          "status": "passed",
+          "title": "should display mission task label"
+        },
+        {
+          "ancestorTitles": [],
+          "failureMessages": [],
+          "fullName": "should display the vehicle label if a recent run is present",
+          "location": null,
+          "status": "passed",
+          "title": "should display the vehicle label if a recent run is present"
+        },
+        {
+          "ancestorTitles": [],
+          "failureMessages": [],
+          "fullName": "should not display the vehicle label",
+          "location": null,
+          "status": "passed",
+          "title": "should not display the vehicle label"
+        },
+        {
+          "ancestorTitles": [],
+          "failureMessages": [],
+          "fullName": "should display No description label when description is not provided",
+          "location": null,
+          "status": "passed",
+          "title": "should display No description label when description is not provided"
+        },
+        {
+          "ancestorTitles": [],
+          "failureMessages": [],
+          "fullName": "should display description label when description is provided",
+          "location": null,
+          "status": "passed",
+          "title": "should display description label when description is provided"
+        },
+        {
+          "ancestorTitles": [],
+          "failureMessages": [],
+          "fullName": "should display run details including pilot and run date",
+          "location": null,
+          "status": "passed",
+          "title": "should display run details including pilot and run date"
+        },
+        {
+          "ancestorTitles": [],
+          "failureMessages": [],
+          "fullName": "should display run details including number of waypoints when provided",
+          "location": null,
+          "status": "passed",
+          "title": "should display run details including number of waypoints when provided"
+        },
+        {
+          "ancestorTitles": [],
+          "failureMessages": [],
+          "fullName": "should display run details including number run location when provided",
+          "location": null,
+          "status": "passed",
+          "title": "should display run details including number run location when provided"
+        }
+      ],
+      "endTime": 1741031621166,
+      "message": "",
+      "name": "/Users/jimjeffers/Sites/dash5/packages/react-ui/src/Tables/MissionTable.test.tsx",
+      "startTime": 1741031621101,
+      "status": "passed",
+      "summary": ""
+    },
+    {
+      "assertionResults": [
+        {
+          "ancestorTitles": [],
+          "failureMessages": [],
+          "fullName": "should render the placeholder value",
+          "location": null,
+          "status": "passed",
+          "title": "should render the placeholder value"
+        },
+        {
+          "ancestorTitles": [],
+          "failureMessages": [],
+          "fullName": "should indicate a disabled state",
+          "location": null,
+          "status": "passed",
+          "title": "should indicate a disabled state"
+        },
+        {
+          "ancestorTitles": [],
+          "failureMessages": [],
+          "fullName": "should not render the date picker by default",
+          "location": null,
+          "status": "passed",
+          "title": "should not render the date picker by default"
+        }
+      ],
+      "endTime": 1741031621201,
+      "message": "",
+      "name": "/Users/jimjeffers/Sites/dash5/packages/react-ui/src/Fields/DateField.test.tsx",
+      "startTime": 1741031621133,
+      "status": "passed",
+      "summary": ""
+    },
+    {
+      "assertionResults": [
+        {
+          "ancestorTitles": [],
+          "failureMessages": [],
+          "fullName": "should not render cancel button if a handler has not been specified",
+          "location": null,
+          "status": "passed",
+          "title": "should not render cancel button if a handler has not been specified"
+        },
+        {
+          "ancestorTitles": [],
+          "failureMessages": [],
+          "fullName": "should render cancel button if a handler has been specified",
+          "location": null,
+          "status": "passed",
+          "title": "should render cancel button if a handler has been specified"
+        },
+        {
+          "ancestorTitles": [],
+          "failureMessages": [],
+          "fullName": "should not render confirm button if a handler has not been specified",
+          "location": null,
+          "status": "passed",
+          "title": "should not render confirm button if a handler has not been specified"
+        },
+        {
+          "ancestorTitles": [],
+          "failureMessages": [],
+          "fullName": "should render confirm button if a handler has been specified",
+          "location": null,
+          "status": "passed",
+          "title": "should render confirm button if a handler has been specified"
+        },
+        {
+          "ancestorTitles": [],
+          "failureMessages": [],
+          "fullName": "should render confirm button if an external form has been specified",
+          "location": null,
+          "status": "passed",
+          "title": "should render confirm button if an external form has been specified"
+        }
+      ],
+      "endTime": 1741031621222,
+      "message": "",
+      "name": "/Users/jimjeffers/Sites/dash5/packages/react-ui/src/Modal/Footer.test.tsx",
+      "startTime": 1741031621166,
+      "status": "passed",
+      "summary": ""
+    },
+    {
+      "assertionResults": [
+        {
+          "ancestorTitles": [],
+          "failureMessages": [],
+          "fullName": "should render child content",
+          "location": null,
+          "status": "passed",
+          "title": "should render child content"
+        },
+        {
+          "ancestorTitles": [],
+          "failureMessages": [],
+          "fullName": "should render an icon if specified",
+          "location": null,
+          "status": "passed",
+          "title": "should render an icon if specified"
+        },
+        {
+          "ancestorTitles": [],
+          "failureMessages": [],
+          "fullName": "should not render an icon if none was specified",
+          "location": null,
+          "status": "passed",
+          "title": "should not render an icon if none was specified"
+        },
+        {
+          "ancestorTitles": [],
+          "failureMessages": [],
+          "fullName": "should display label in teal if active",
+          "location": null,
+          "status": "passed",
+          "title": "should display label in teal if active"
+        }
+      ],
+      "endTime": 1741031621222,
+      "message": "",
+      "name": "/Users/jimjeffers/Sites/dash5/packages/react-ui/src/Navigation/AccessoryButton.test.tsx",
+      "startTime": 1741031621170,
+      "status": "passed",
+      "summary": ""
+    },
+    {
+      "assertionResults": [
+        {
+          "ancestorTitles": [],
+          "failureMessages": [],
+          "fullName": "should render the component",
+          "location": null,
+          "status": "passed",
+          "title": "should render the component"
+        },
+        {
+          "ancestorTitles": [],
+          "failureMessages": [],
+          "fullName": "should render the vehicle and the deployment",
+          "location": null,
+          "status": "passed",
+          "title": "should render the vehicle and the deployment"
+        },
+        {
+          "ancestorTitles": [],
+          "failureMessages": [],
+          "fullName": "should render the relative date is was deployed at",
+          "location": null,
+          "status": "passed",
+          "title": "should render the relative date is was deployed at"
+        },
+        {
+          "ancestorTitles": [],
+          "failureMessages": [],
+          "fullName": "should render the color",
+          "location": null,
+          "status": "passed",
+          "title": "should render the color"
+        }
+      ],
+      "endTime": 1741031621230,
+      "message": "",
+      "name": "/Users/jimjeffers/Sites/dash5/packages/react-ui/src/Navigation/VehicleHeader.test.tsx",
+      "startTime": 1741031621172,
+      "status": "passed",
+      "summary": ""
+    },
+    {
+      "assertionResults": [
+        {
+          "ancestorTitles": [],
+          "failureMessages": [],
+          "fullName": "should render the label",
+          "location": null,
+          "status": "passed",
+          "title": "should render the label"
+        },
+        {
+          "ancestorTitles": [],
+          "failureMessages": [],
+          "fullName": "should render the secondary label when supplied",
+          "location": null,
+          "status": "passed",
+          "title": "should render the secondary label when supplied"
+        },
+        {
+          "ancestorTitles": [],
+          "failureMessages": [],
+          "fullName": "should render the header with a white background when closed",
+          "location": null,
+          "status": "passed",
+          "title": "should render the header with a white background when closed"
+        },
+        {
+          "ancestorTitles": [],
+          "failureMessages": [],
+          "fullName": "should render the header with a blue background when open",
+          "location": null,
+          "status": "passed",
+          "title": "should render the header with a blue background when open"
+        },
+        {
+          "ancestorTitles": [],
+          "failureMessages": [],
+          "fullName": "should render the expand icon when appropriate",
+          "location": null,
+          "status": "passed",
+          "title": "should render the expand icon when appropriate"
+        }
+      ],
+      "endTime": 1741031621261,
+      "message": "",
+      "name": "/Users/jimjeffers/Sites/dash5/packages/react-ui/src/Navigation/AccordionHeader.test.tsx",
+      "startTime": 1741031621208,
+      "status": "passed",
+      "summary": ""
+    },
+    {
+      "assertionResults": [
+        {
+          "ancestorTitles": [],
+          "failureMessages": [],
+          "fullName": "should render the virtual container",
+          "location": null,
+          "status": "passed",
+          "title": "should render the virtual container"
+        }
+      ],
+      "endTime": 1741031621274,
+      "message": "",
+      "name": "/Users/jimjeffers/Sites/dash5/packages/react-ui/src/Cells/CellVirtualizer.test.tsx",
+      "startTime": 1741031621228,
+      "status": "passed",
+      "summary": ""
+    },
+    {
+      "assertionResults": [
+        {
+          "ancestorTitles": [],
+          "failureMessages": [],
+          "fullName": "should render the component",
+          "location": null,
+          "status": "passed",
+          "title": "should render the component"
+        }
+      ],
+      "endTime": 1741031621280,
+      "message": "",
+      "name": "/Users/jimjeffers/Sites/dash5/packages/react-ui/src/Cells/AccordionCells.test.tsx",
+      "startTime": 1741031621229,
+      "status": "passed",
+      "summary": ""
+    },
+    {
+      "assertionResults": [
+        {
+          "ancestorTitles": [],
+          "failureMessages": [],
+          "fullName": "should render the title",
+          "location": null,
+          "status": "passed",
+          "title": "should render the title"
+        },
+        {
+          "ancestorTitles": [],
+          "failureMessages": [],
+          "fullName": "should render the message",
+          "location": null,
+          "status": "passed",
+          "title": "should render the message"
+        },
+        {
+          "ancestorTitles": [],
+          "failureMessages": [],
+          "fullName": "should render the confirm button",
+          "location": null,
+          "status": "passed",
+          "title": "should render the confirm button"
+        },
+        {
+          "ancestorTitles": [],
+          "failureMessages": [],
+          "fullName": "should render the confirm button if an external form has been specified",
+          "location": null,
+          "status": "passed",
+          "title": "should render the confirm button if an external form has been specified"
+        },
+        {
+          "ancestorTitles": [],
+          "failureMessages": [],
+          "fullName": "should not render the confirm button",
+          "location": null,
+          "status": "passed",
+          "title": "should not render the confirm button"
+        },
+        {
+          "ancestorTitles": [],
+          "failureMessages": [],
+          "fullName": "should render the cancel button",
+          "location": null,
+          "status": "passed",
+          "title": "should render the cancel button"
+        },
+        {
+          "ancestorTitles": [],
+          "failureMessages": [],
+          "fullName": "should not render the cancel button",
+          "location": null,
+          "status": "passed",
+          "title": "should not render the cancel button"
+        }
+      ],
+      "endTime": 1741031621285,
+      "message": "",
+      "name": "/Users/jimjeffers/Sites/dash5/packages/react-ui/src/Modal/Dialog.test.tsx",
+      "startTime": 1741031621234,
+      "status": "passed",
+      "summary": ""
+    },
+    {
+      "assertionResults": [
+        {
+          "ancestorTitles": [],
+          "failureMessages": [],
+          "fullName": "should render step title",
+          "location": null,
+          "status": "passed",
+          "title": "should render step title"
+        },
+        {
+          "ancestorTitles": [],
+          "failureMessages": [],
+          "fullName": "should display step with white text when in progress",
+          "location": null,
+          "status": "passed",
+          "title": "should display step with white text when in progress"
+        },
+        {
+          "ancestorTitles": [],
+          "failureMessages": [],
+          "fullName": "should display step with gray text when in progress",
+          "location": null,
+          "status": "passed",
+          "title": "should display step with gray text when in progress"
+        },
+        {
+          "ancestorTitles": [],
+          "failureMessages": [],
+          "fullName": "should display step with a light gray background and dark gray text when in progress",
+          "location": null,
+          "status": "passed",
+          "title": "should display step with a light gray background and dark gray text when in progress"
+        },
+        {
+          "ancestorTitles": [],
+          "failureMessages": [],
+          "fullName": "should display step with a light gray background and dark gray text when in progress",
+          "location": null,
+          "status": "passed",
+          "title": "should display step with a light gray background and dark gray text when in progress"
+        }
+      ],
+      "endTime": 1741031621316,
+      "message": "",
+      "name": "/Users/jimjeffers/Sites/dash5/packages/react-ui/src/Navigation/StepProgress.test.tsx",
+      "startTime": 1741031621266,
+      "status": "passed",
+      "summary": ""
+    },
+    {
+      "assertionResults": [
+        {
+          "ancestorTitles": [],
+          "failureMessages": [],
+          "fullName": "should render the component",
+          "location": null,
+          "status": "passed",
+          "title": "should render the component"
+        },
+        {
+          "ancestorTitles": [],
+          "failureMessages": [],
+          "fullName": "should display header labels",
+          "location": null,
+          "status": "passed",
+          "title": "should display header labels"
+        },
+        {
+          "ancestorTitles": [],
+          "failureMessages": [],
+          "fullName": "should display mission name label",
+          "location": null,
+          "status": "passed",
+          "title": "should display mission name label"
+        },
+        {
+          "ancestorTitles": [],
+          "failureMessages": [],
+          "fullName": "should display description label when description is provided",
+          "location": null,
+          "status": "passed",
+          "title": "should display description label when description is provided"
+        }
+      ],
+      "endTime": 1741031621331,
+      "message": "",
+      "name": "/Users/jimjeffers/Sites/dash5/packages/react-ui/src/Tables/CommandTable.test.tsx",
+      "startTime": 1741031621280,
+      "status": "passed",
+      "summary": ""
+    },
+    {
+      "assertionResults": [
+        {
+          "ancestorTitles": [],
+          "failureMessages": [],
+          "fullName": "should render the label",
+          "location": null,
+          "status": "passed",
+          "title": "should render the label"
+        },
+        {
+          "ancestorTitles": [],
+          "failureMessages": [],
+          "fullName": "should have lighter text on time and date",
+          "location": null,
+          "status": "passed",
+          "title": "should have lighter text on time and date"
+        },
+        {
+          "ancestorTitles": [],
+          "failureMessages": [],
+          "fullName": "should contain the upload data icon when uploading data",
+          "location": null,
+          "status": "passed",
+          "title": "should contain the upload data icon when uploading data"
+        },
+        {
+          "ancestorTitles": [],
+          "failureMessages": [],
+          "fullName": "should contain the download data icon when downloading data",
+          "location": null,
+          "status": "passed",
+          "title": "should contain the download data icon when downloading data"
+        }
+      ],
+      "endTime": 1741031621336,
+      "message": "",
+      "name": "/Users/jimjeffers/Sites/dash5/packages/react-ui/src/Cells/LogCell.test.tsx",
+      "startTime": 1741031621285,
+      "status": "passed",
+      "summary": ""
+    },
+    {
+      "assertionResults": [
+        {
+          "ancestorTitles": [],
+          "failureMessages": [],
+          "fullName": "should render the component",
+          "location": null,
+          "status": "passed",
+          "title": "should render the component"
+        },
+        {
+          "ancestorTitles": [],
+          "failureMessages": [],
+          "fullName": "should display headline",
+          "location": null,
+          "status": "passed",
+          "title": "should display headline"
+        },
+        {
+          "ancestorTitles": [],
+          "failureMessages": [],
+          "fullName": "should display host text when provided",
+          "location": null,
+          "status": "passed",
+          "title": "should display host text when provided"
+        },
+        {
+          "ancestorTitles": [],
+          "failureMessages": [],
+          "fullName": "should not display next comms when it is not provided",
+          "location": null,
+          "status": "passed",
+          "title": "should not display next comms when it is not provided"
+        }
+      ],
+      "endTime": 1741031621338,
+      "message": "",
+      "name": "/Users/jimjeffers/Sites/dash5/packages/react-ui/src/Cells/VehicleCommsCell.test.tsx",
+      "startTime": 1741031621291,
+      "status": "passed",
+      "summary": ""
+    },
+    {
+      "assertionResults": [
+        {
+          "ancestorTitles": [],
+          "failureMessages": [],
+          "fullName": "should render the icon",
+          "location": null,
+          "status": "passed",
+          "title": "should render the icon"
+        }
+      ],
+      "endTime": 1741031621359,
+      "message": "",
+      "name": "/Users/jimjeffers/Sites/dash5/packages/react-ui/src/Icons/UnderwaterIcon.test.tsx",
+      "startTime": 1741031621320,
+      "status": "passed",
+      "summary": ""
+    },
+    {
+      "assertionResults": [
+        {
+          "ancestorTitles": [],
+          "failureMessages": [],
+          "fullName": "should render the component",
+          "location": null,
+          "status": "passed",
+          "title": "should render the component"
+        }
+      ],
+      "endTime": 1741031621378,
+      "message": "",
+      "name": "/Users/jimjeffers/Sites/dash5/packages/react-ui/src/Icons/CommsIcon.test.tsx",
+      "startTime": 1741031621335,
+      "status": "passed",
+      "summary": ""
+    },
+    {
+      "assertionResults": [
+        {
+          "ancestorTitles": [],
+          "failureMessages": [],
+          "fullName": "should render the component",
+          "location": null,
+          "status": "passed",
+          "title": "should render the component"
+        }
+      ],
+      "endTime": 1741031621380,
+      "message": "",
+      "name": "/Users/jimjeffers/Sites/dash5/packages/react-ui/src/Icons/StatusIcon.test.tsx",
+      "startTime": 1741031621342,
+      "status": "passed",
+      "summary": ""
+    },
+    {
+      "assertionResults": [
+        {
+          "ancestorTitles": [],
+          "failureMessages": [],
+          "fullName": "should render the icon",
+          "location": null,
+          "status": "passed",
+          "title": "should render the icon"
+        }
+      ],
+      "endTime": 1741031621381,
+      "message": "",
+      "name": "/Users/jimjeffers/Sites/dash5/packages/react-ui/src/Icons/InProgressIcon.test.tsx",
+      "startTime": 1741031621341,
+      "status": "passed",
+      "summary": ""
+    },
+    {
+      "assertionResults": [
+        {
+          "ancestorTitles": [],
+          "failureMessages": [],
+          "fullName": "should render the icon",
+          "location": null,
+          "status": "passed",
+          "title": "should render the icon"
+        },
+        {
+          "ancestorTitles": [],
+          "failureMessages": [],
+          "fullName": "should apply lower opacity to parts of icon when waiting",
+          "location": null,
+          "status": "passed",
+          "title": "should apply lower opacity to parts of icon when waiting"
+        }
+      ],
+      "endTime": 1741031621404,
+      "message": "",
+      "name": "/Users/jimjeffers/Sites/dash5/packages/react-ui/src/Icons/ShoreToShipIcon.test.tsx",
+      "startTime": 1741031621362,
+      "status": "passed",
+      "summary": ""
+    },
+    {
+      "assertionResults": [
+        {
+          "ancestorTitles": [],
+          "failureMessages": [],
+          "fullName": "should render the icon",
+          "location": null,
+          "status": "passed",
+          "title": "should render the icon"
+        }
+      ],
+      "endTime": 1741031621418,
+      "message": "",
+      "name": "/Users/jimjeffers/Sites/dash5/packages/react-ui/src/Icons/ConnectedIcon.test.tsx",
+      "startTime": 1741031621382,
+      "status": "passed",
+      "summary": ""
+    },
+    {
+      "assertionResults": [
+        {
+          "ancestorTitles": [],
+          "failureMessages": [],
+          "fullName": "should render the icon",
+          "location": null,
+          "status": "passed",
+          "title": "should render the icon"
+        }
+      ],
+      "endTime": 1741031621424,
+      "message": "",
+      "name": "/Users/jimjeffers/Sites/dash5/packages/react-ui/src/Icons/AcknowledgeIcon.test.tsx",
+      "startTime": 1741031621385,
+      "status": "passed",
+      "summary": ""
+    },
+    {
+      "assertionResults": [
+        {
+          "ancestorTitles": [],
+          "failureMessages": [],
+          "fullName": "should render the icon",
+          "location": null,
+          "status": "passed",
+          "title": "should render the icon"
+        }
+      ],
+      "endTime": 1741031621425,
+      "message": "",
+      "name": "/Users/jimjeffers/Sites/dash5/packages/react-ui/src/Icons/PluggedInIcon.test.tsx",
+      "startTime": 1741031621384,
+      "status": "passed",
+      "summary": ""
+    },
+    {
+      "assertionResults": [
+        {
+          "ancestorTitles": [],
+          "failureMessages": [],
+          "fullName": "should render the placeholder value",
+          "location": null,
+          "status": "passed",
+          "title": "should render the placeholder value"
+        },
+        {
+          "ancestorTitles": [],
+          "failureMessages": [],
+          "fullName": "should render the label",
+          "location": null,
+          "status": "passed",
+          "title": "should render the label"
+        },
+        {
+          "ancestorTitles": [],
+          "failureMessages": [],
+          "fullName": "should disable the field",
+          "location": null,
+          "status": "passed",
+          "title": "should disable the field"
+        }
+      ],
+      "endTime": 1741031621452,
+      "message": "",
+      "name": "/Users/jimjeffers/Sites/dash5/packages/react-ui/src/Fields/TextField.test.tsx",
+      "startTime": 1741031621409,
+      "status": "passed",
+      "summary": ""
+    },
+    {
+      "assertionResults": [
+        {
+          "ancestorTitles": [],
+          "failureMessages": [],
+          "fullName": "should render the child as a label",
+          "location": null,
+          "status": "passed",
+          "title": "should render the child as a label"
+        },
+        {
+          "ancestorTitles": [],
+          "failureMessages": [],
+          "fullName": "should be disabled when specified",
+          "location": null,
+          "status": "passed",
+          "title": "should be disabled when specified"
+        },
+        {
+          "ancestorTitles": [],
+          "failureMessages": [],
+          "fullName": "should have normal padding by default",
+          "location": null,
+          "status": "passed",
+          "title": "should have normal padding by default"
+        },
+        {
+          "ancestorTitles": [],
+          "failureMessages": [],
+          "fullName": "should have tight padding when specified",
+          "location": null,
+          "status": "passed",
+          "title": "should have tight padding when specified"
+        }
+      ],
+      "endTime": 1741031621467,
+      "message": "",
+      "name": "/Users/jimjeffers/Sites/dash5/packages/react-ui/src/Navigation/Button.test.tsx",
+      "startTime": 1741031621422,
+      "status": "passed",
+      "summary": ""
+    },
+    {
+      "assertionResults": [
+        {
+          "ancestorTitles": [],
+          "failureMessages": [],
+          "fullName": "should render the icon",
+          "location": null,
+          "status": "passed",
+          "title": "should render the icon"
+        }
+      ],
+      "endTime": 1741031621473,
+      "message": "",
+      "name": "/Users/jimjeffers/Sites/dash5/packages/react-ui/src/Icons/NotConnectedIcon.test.tsx",
+      "startTime": 1741031621431,
+      "status": "passed",
+      "summary": ""
+    },
+    {
+      "assertionResults": [
+        {
+          "ancestorTitles": [],
+          "failureMessages": [],
+          "fullName": "should render the component",
+          "location": null,
+          "status": "passed",
+          "title": "should render the component"
+        },
+        {
+          "ancestorTitles": [],
+          "failureMessages": [],
+          "fullName": "should display the header",
+          "location": null,
+          "status": "passed",
+          "title": "should display the header"
+        },
+        {
+          "ancestorTitles": [],
+          "failureMessages": [],
+          "fullName": "should display supplied values",
+          "location": null,
+          "status": "passed",
+          "title": "should display supplied values"
+        }
+      ],
+      "endTime": 1741031621475,
+      "message": "",
+      "name": "/Users/jimjeffers/Sites/dash5/packages/react-ui/src/Data/SummaryList.test.tsx",
+      "startTime": 1741031621429,
+      "status": "passed",
+      "summary": ""
+    },
+    {
+      "assertionResults": [
+        {
+          "ancestorTitles": [],
+          "failureMessages": [],
+          "fullName": "should render the placeholder value",
+          "location": null,
+          "status": "passed",
+          "title": "should render the placeholder value"
+        },
+        {
+          "ancestorTitles": [],
+          "failureMessages": [],
+          "fullName": "should indicate an error",
+          "location": null,
+          "status": "passed",
+          "title": "should indicate an error"
+        },
+        {
+          "ancestorTitles": [],
+          "failureMessages": [],
+          "fullName": "should indicate a disabled state",
+          "location": null,
+          "status": "passed",
+          "title": "should indicate a disabled state"
+        }
+      ],
+      "endTime": 1741031621500,
+      "message": "",
+      "name": "/Users/jimjeffers/Sites/dash5/packages/react-ui/src/Fields/Input.test.tsx",
+      "startTime": 1741031621459,
+      "status": "passed",
+      "summary": ""
+    },
+    {
+      "assertionResults": [
+        {
+          "ancestorTitles": [],
+          "failureMessages": [],
+          "fullName": "should render the icon",
+          "location": null,
+          "status": "passed",
+          "title": "should render the icon"
+        }
+      ],
+      "endTime": 1741031621518,
+      "message": "",
+      "name": "/Users/jimjeffers/Sites/dash5/packages/react-ui/src/Icons/DownloadIcon.test.tsx",
+      "startTime": 1741031621471,
+      "status": "passed",
+      "summary": ""
+    },
+    {
+      "assertionResults": [
+        {
+          "ancestorTitles": [],
+          "failureMessages": [],
+          "fullName": "should render the icon",
+          "location": null,
+          "status": "passed",
+          "title": "should render the icon"
+        }
+      ],
+      "endTime": 1741031621524,
+      "message": "",
+      "name": "/Users/jimjeffers/Sites/dash5/packages/react-ui/src/Icons/SurfacedIcon.test.tsx",
+      "startTime": 1741031621477,
+      "status": "passed",
+      "summary": ""
+    },
+    {
+      "assertionResults": [
+        {
+          "ancestorTitles": [],
+          "failureMessages": [],
+          "fullName": "should render the icon",
+          "location": null,
+          "status": "passed",
+          "title": "should render the icon"
+        }
+      ],
+      "endTime": 1741031621525,
+      "message": "",
+      "name": "/Users/jimjeffers/Sites/dash5/packages/react-ui/src/Icons/RecoveredIcon.test.tsx",
+      "startTime": 1741031621479,
+      "status": "passed",
+      "summary": ""
+    },
+    {
+      "assertionResults": [
+        {
+          "ancestorTitles": [],
+          "failureMessages": [],
+          "fullName": "should render the icon",
+          "location": null,
+          "status": "passed",
+          "title": "should render the icon"
+        }
+      ],
+      "endTime": 1741031621552,
+      "message": "",
+      "name": "/Users/jimjeffers/Sites/dash5/packages/react-ui/src/Icons/UploadIcon.test.tsx",
+      "startTime": 1741031621503,
+      "status": "passed",
+      "summary": ""
+    },
+    {
+      "assertionResults": [
+        {
+          "ancestorTitles": [],
+          "failureMessages": [],
+          "fullName": "should render child content",
+          "location": null,
+          "status": "todo",
+          "title": "should render child content"
+        }
+      ],
+      "endTime": 1741031621566,
+      "message": "",
+      "name": "/Users/jimjeffers/Sites/dash5/packages/react-ui/src/Modals/NewDeploymentModal.test.tsx",
+      "startTime": 1741031621531,
+      "status": "passed",
+      "summary": ""
+    },
+    {
+      "assertionResults": [
+        {
+          "ancestorTitles": [],
+          "failureMessages": [],
+          "fullName": "should render the icon",
+          "location": null,
+          "status": "passed",
+          "title": "should render the icon"
+        }
+      ],
+      "endTime": 1741031621566,
+      "message": "",
+      "name": "/Users/jimjeffers/Sites/dash5/packages/react-ui/src/Icons/EndIcon.test.tsx",
+      "startTime": 1741031621523,
+      "status": "passed",
+      "summary": ""
+    },
+    {
+      "assertionResults": [
+        {
+          "ancestorTitles": [],
+          "failureMessages": [],
+          "fullName": "should render the icon",
+          "location": null,
+          "status": "passed",
+          "title": "should render the icon"
+        }
+      ],
+      "endTime": 1741031621575,
+      "message": "",
+      "name": "/Users/jimjeffers/Sites/dash5/packages/react-ui/src/Icons/StartIcon.test.tsx",
+      "startTime": 1741031621529,
+      "status": "passed",
+      "summary": ""
+    },
+    {
+      "assertionResults": [
+        {
+          "ancestorTitles": [],
+          "failureMessages": [],
+          "fullName": "forego testing on the Map component unless we want to troubleshoot webpack, jest, and leaflet which is going to be can of worms.",
+          "location": null,
+          "status": "todo",
+          "title": "forego testing on the Map component unless we want to troubleshoot webpack, jest, and leaflet which is going to be can of worms."
+        }
+      ],
+      "endTime": 1741031621587,
+      "message": "",
+      "name": "/Users/jimjeffers/Sites/dash5/packages/react-ui/src/Map/Map.test.tsx",
+      "startTime": 1741031621557,
+      "status": "passed",
+      "summary": ""
+    }
+  ],
+  "wasInterrupted": false
+}
