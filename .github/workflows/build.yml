@@ -1,4 +1,4 @@
-name: Build
+name: Build and Test
 
 on:
   push:
@@ -31,3 +31,12 @@ jobs:
         
       - name: Lint
         run: yarn lint
+        
+      - name: Run React UI Tests
+        run: yarn workspace @mbari/react-ui test
+        
+      - name: Run API Client Tests
+        run: yarn workspace @mbari/api-client test
+        
+      - name: Run LRAUV Dashboard Tests
+        run: yarn workspace @mbari/lrauv-dash2 test
