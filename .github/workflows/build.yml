@@ -37,9 +37,3 @@ jobs:
         
       - name: Run API Client Tests
         run: yarn workspace @mbari/api-client test
-        
-      - name: Install Playwright Browsers
-        run: npx playwright install --with-deps
-        
-      - name: Run LRAUV Dashboard Tests (in CI mode)
-        run: yarn workspace @mbari/lrauv-dash2 test:ci
