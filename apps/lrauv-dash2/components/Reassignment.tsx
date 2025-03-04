@@ -6,10 +6,12 @@ import {
 import { ReassignmentModal, ReassignmentModalProps } from '@mbari/react-ui'
 import useGlobalModalId from '../lib/useGlobalModalId'
 import { capitalize } from '@mbari/utils'
+import { useQueryClient } from 'react-query'
 
 const Reassignment: React.FC<{ vehicleNames: string[] }> = ({
   vehicleNames,
 }) => {
+  const queryClient = useQueryClient()
   const { data, isLoading } = usePicAndOnCall({
     vehicleName: vehicleNames,
   })
@@ -42,6 +44,8 @@ const Reassignment: React.FC<{ vehicleNames: string[] }> = ({
         })
       })
     )
+    queryClient.invalidateQueries(['users', 'picAndOnCall'])
+    queryClient.invalidateQueries(['users', 'role'])
     handleClose()
     return undefined
   }
