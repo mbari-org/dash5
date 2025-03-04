@@ -22,12 +22,12 @@ const Reassignment: React.FC<{ vehicleNames: string[] }> = ({
   const { mutate: assignPicAndOnCall, isLoading: loadingAssignPicAndOnCall } =
     useAssignPicAndOnCall()
   const handleReassignmentSubmit: ReassignmentModalProps['onSubmit'] = async ({
-    vehicleName: selectedVehicles,
+    vehicleNames: selectedVehicles,
     pic,
     onCall,
   }) => {
     await Promise.all(
-      selectedVehicles.map(async (vehicleName) => {
+      selectedVehicles.map(async (vehicleName: string) => {
         await assignPicAndOnCall({
           vehicleName,
           sign: 'in',
