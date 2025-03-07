@@ -7,4 +7,21 @@ const withTM = require('next-transpile-modules')([
 module.exports = withTM({
   basePath: '/dash5',
   reactStrictMode: true,
+  async redirects() {
+    return [
+      {
+        source: '/',
+        destination: '/dash5',
+        basePath: false,
+        permanent: true,
+        has: [
+          {
+            type: 'header',
+            key: 'host',
+            value: '^(localhost:3000|localhost:3001)$',
+          },
+        ],
+      },
+    ]
+  },
 })
