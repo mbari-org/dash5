@@ -48,7 +48,6 @@ const ConnectedVehicleCell: React.FC<{
   const { data: lastDeployment } = useLastDeployment(
     {
       vehicle: name,
-      to: new Date().toISOString(),
     },
     { staleTime: 5 * 60 * 1000 }
   )
