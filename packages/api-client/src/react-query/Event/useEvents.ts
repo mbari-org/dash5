@@ -38,7 +38,15 @@ export const useEvents = (
         )
 
         // If we've reached or gone past the from date, we're done
+        // Make sure the comparison is correct - we want to keep fetching until
+        // the oldest event we've found is older than or equal to the fromDate
         if (earliestEvent.unixTime <= fromDate) {
+          console.log(
+            'Breaking recursive fetch because earliest event timestamp',
+            earliestEvent.unixTime,
+            'is earlier than or equal to fromDate',
+            fromDate
+          )
           break
         }
 
