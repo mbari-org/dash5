@@ -21,8 +21,8 @@ afterAll(() => server.close())
 const MockVehiclePosition: React.FC = () => {
   const query = useEvents({
     vehicles: ['pontus'],
-    from: '123',
-    to: '',
+    from: 1710095743191,
+    to: 1740767743191,
     eventTypes: ['note'],
     limit: 1000,
     noteMatches: '',
