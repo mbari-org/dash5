@@ -10,6 +10,7 @@ import {
 import {
   capitalize,
   capitalizeEach,
+  getAdjustedUnixTime,
   makeOrdinal,
   sortByProperty,
 } from '@mbari/utils'
@@ -140,10 +141,14 @@ const MissionModal: React.FC<MissionModalProps> = ({
     },
     { enabled: !!vehicleName }
   )
+  const last60Days = getAdjustedUnixTime({
+    unixTime: DateTime.now().toMillis(),
+    offsetDays: -60,
+  })
   const { data: recentRunsData } = useRecentRuns(
     {
       vehicles: vehicles ?? [],
-      from: DateTime.now().minus({ days: 60 }).toISODate(),
+      from: last60Days,
     },
     { enabled: !!vehicles }
   )

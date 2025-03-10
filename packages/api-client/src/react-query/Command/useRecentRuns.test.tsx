@@ -54,7 +54,7 @@ afterEach(() => server.resetHandlers())
 afterAll(() => server.close())
 
 const MockCommands: React.FC = () => {
-  const query = useRecentRuns({ vehicles: ['sim'], from: '2022-08-01' })
+  const query = useRecentRuns({ vehicles: ['sim'], from: 1710095743191 })
 
   return query.isLoading ? null : (
     <div>
