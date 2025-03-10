@@ -23,7 +23,7 @@ import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { faCheck, faSync } from '@fortawesome/free-solid-svg-icons'
 import { useCookies } from 'react-cookie'
 import useGlobalModalId from '../lib/useGlobalModalId'
-
+import { useTethysSubscriptionEvent } from '../lib/useWebSocketListeners'
 const parsePos = (pos: string | number) => parseFloat(`${pos}`).toFixed(3)
 const calcPosition = (lat?: number | string, long?: number | string) =>
   lat && long ? [parsePos(lat), parsePos(long)].join(', ') : undefined
@@ -78,6 +78,7 @@ const ConnectedVehicleCell: React.FC<{
       enabled: !!name && !!lastDeployment?.lastEvent,
     }
   )
+  const pingEvent = useTethysSubscriptionEvent('VehiclePingResult', name)
 
   // TODO: Remove this demonstations of 'usePlatforms'
   // const { data: platforms } = usePlatforms(
@@ -175,7 +176,9 @@ const ConnectedVehicleCell: React.FC<{
           )}
           lastSatellite={
             vehicle?.text_gpsago.length
-              ? `${vehicle.text_gpsago}, likely on surface`
+              ? `${vehicle.text_gpsago}${
+                  pingEvent?.reachable ? ', likely on surface' : ''
+                }`
               : undefined
           }
           lastCell={
