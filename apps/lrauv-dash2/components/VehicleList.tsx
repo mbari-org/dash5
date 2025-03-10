@@ -116,6 +116,12 @@ const ConnectedVehicleCell: React.FC<{
   const recovered = lastDeployment?.recoverEvent?.eventId && true
   const active = lastDeployment?.active
 
+  const timeSpanSinceDeployment =
+    DateTime.fromMillis(
+      missionStartedEvent?.[0]?.unixTime ??
+        lastDeployment?.startEvent?.unixTime ??
+        0
+    ).toRelative() ?? undefined
   const { setGlobalModalId } = useGlobalModalId()
   const onColorChange = (_: string, _v: string) => {
     setGlobalModalId({ id: 'color', meta: { vehicleName: name, color } })
@@ -126,15 +132,7 @@ const ConnectedVehicleCell: React.FC<{
         name={capitalize(name)}
         deployment={active ? lastDeployment?.name ?? 'loading' : 'Not Deployed'}
         color={color}
-        deployedAt={
-          active
-            ? Math.round(
-                (missionStartedEvent?.[0]?.unixTime ??
-                  lastDeployment?.startEvent?.unixTime ??
-                  0) / 1000
-              )
-            : undefined
-        }
+        timeSpanSinceDeployment={active ? timeSpanSinceDeployment : undefined}
         onToggle={handleToggle}
         open={isOpen}
         onChangeColor={onColorChange}
