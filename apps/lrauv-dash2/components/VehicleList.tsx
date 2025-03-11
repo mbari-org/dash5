@@ -121,7 +121,13 @@ const ConnectedVehicleCell: React.FC<{
       missionStartedEvent?.[0]?.unixTime ??
         lastDeployment?.startEvent?.unixTime ??
         0
-    ).toRelative() ?? undefined
+    ).toRelative() ?? ''
+
+  const timeSpanSinceRecovery =
+    DateTime.fromMillis(
+      lastDeployment?.recoverEvent?.unixTime ?? 0
+    ).toRelative() ?? ''
+
   const { setGlobalModalId } = useGlobalModalId()
   const onColorChange = (_: string, _v: string) => {
     setGlobalModalId({ id: 'color', meta: { vehicleName: name, color } })
@@ -143,9 +149,7 @@ const ConnectedVehicleCell: React.FC<{
           headline={
             <div>
               <span className="font-semibold text-purple-600">{status}</span>{' '}
-              {lastDeployment?.lastEvent
-                ? DateTime.fromMillis(lastDeployment.lastEvent).toRelative()
-                : ''}
+              {recovered ? timeSpanSinceRecovery : timeSpanSinceDeployment}
             </div>
           }
           headline2={

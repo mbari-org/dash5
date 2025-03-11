@@ -84,7 +84,6 @@ export const VehicleHeader: React.FC<VehicleHeaderProps> = ({
         </span>
         {timeSpanSinceDeployment ? (
           <span className={styles.secondary}>
-            {/* began {DateTime.fromSeconds(deployedAt).toRelative()} */}
             began {timeSpanSinceDeployment}
           </span>
         ) : null}
