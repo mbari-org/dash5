@@ -1,4 +1,3 @@
-
 import React, { useEffect, useRef, useCallback, useState, useMemo } from 'react'
 import { DateTime } from 'luxon'
 import {
@@ -48,17 +47,14 @@ const VehiclePath: React.FC<{
   const { data: lastDeployment } = useLastDeployment(
     {
       vehicle: name,
-      to: new Date().toISOString(),
     },
     { staleTime: 5 * 60 * 1000 }
   )
   const { data: vehiclePosition } = useVehiclePos(
     {
       vehicle: name as string,
-      from: DateTime.fromMillis(
-        from ?? lastDeployment?.startEvent?.unixTime ?? 0
-      ).toISO(),
-      to: to?.toString(),
+      from: lastDeployment?.startEvent?.unixTime ?? 0,
+      to: to,
     },
     {
       enabled: !!from || !!lastDeployment?.startEvent?.unixTime,
@@ -128,7 +124,7 @@ const VehiclePath: React.FC<{
   const handleTTHidden = () => {
     setTooltipVisible(false)
   }
-      
+
   // route
   const route = vehiclePosition?.gpsFixes?.map(
     (g) => [g.latitude, g.longitude] as [number, number]
@@ -212,9 +208,10 @@ const VehiclePath: React.FC<{
   })
 
   // Determine Time Difference since last gpsFix
-  const latest = vehiclePosition?.gpsFixes && vehiclePosition.gpsFixes.length > 0 
-    ? vehiclePosition.gpsFixes[0] 
-    : null
+  const latest =
+    vehiclePosition?.gpsFixes && vehiclePosition.gpsFixes.length > 0
+      ? vehiclePosition.gpsFixes[0]
+      : null
   // IsoTime as a string
   const latestTimeFix = latest?.isoTime?.toString()
   let [timeSinceFix, setTimeSinceFix] = useState('')

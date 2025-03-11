@@ -25,6 +25,7 @@ export const CommsModal: React.FC<CommsModalProps> = ({
   const formattedEnd = deploymentEndTime
     ? DateTime.fromMillis(deploymentEndTime).toFormat('h:mm a MMM d, yyyy')
     : 'Present'
+
   return (
     <Modal
       className={className}
@@ -42,16 +43,8 @@ export const CommsModal: React.FC<CommsModalProps> = ({
       <div className="flex flex-grow flex-col rounded border border-stone-200">
         <CommsSection
           vehicleName={vehicleName}
-          from={DateTime.fromMillis(deploymentStartTime)
-            .minus({ days: 1 })
-            .toISO()}
-          to={
-            deploymentEndTime
-              ? DateTime.fromMillis(deploymentEndTime)
-                  .minus({ days: 1 })
-                  .toISO()
-              : undefined
-          }
+          from={deploymentStartTime}
+          to={deploymentEndTime}
         />
       </div>
     </Modal>

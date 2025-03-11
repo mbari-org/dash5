@@ -45,7 +45,6 @@ afterAll(() => server.close())
 const MockVehicleList: React.FC = () => {
   const query = useLastDeployment({
     vehicle: 'ahi',
-    to: '2022-05-20T01:14:10.290Z',
   })
   return query.isLoading ? null : (
     <div data-testid="result">{query.data?.name ?? 'Not logged in'}</div>

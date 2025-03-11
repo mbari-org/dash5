@@ -13,13 +13,14 @@ import {
 } from '@fortawesome/free-solid-svg-icons'
 import { DateTime } from 'luxon'
 import { useLastCommsTime } from '../lib/useLastCommsTime'
+import { getAdjustedUnixTime } from '@mbari/utils'
 
 export interface CommsSectionProps {
   className?: string
   style?: React.CSSProperties
   vehicleName: string
-  from: string
-  to?: string
+  from: number // milliseconds since epoch
+  to?: number // milliseconds since epoch
 }
 
 const CommsSection: React.FC<CommsSectionProps> = ({
@@ -32,16 +33,18 @@ const CommsSection: React.FC<CommsSectionProps> = ({
     setAllLogs((prev) => !prev)
   }
 
+  const twoYearsAgo = getAdjustedUnixTime({
+    unixTime: DateTime.now().toMillis(),
+    offsetYears: -2,
+  })
+
   const { data, isLoading, isFetching, refetch } = useEvents({
     vehicles: [vehicleName],
     eventTypes: ['command', 'run'],
-    from: allLogs ? DateTime.now().minus({ years: 2 }).toISODate() : from,
+    from: allLogs ? twoYearsAgo : from,
     to: allLogs ? undefined : to,
   })
-  const lastCommsMillis = useLastCommsTime(
-    vehicleName,
-    DateTime.fromISO(from).toMillis()
-  )
+  const lastCommsMillis = useLastCommsTime(vehicleName, from)
 
   const cellAtIndex = (index: number, _virtualizer: Virtualizer) => {
     const item = data?.[index]

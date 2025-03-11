@@ -26,8 +26,8 @@ export type VehicleAccordionSection =
 
 export interface VehicleAccordionProps {
   vehicleName: string
-  from: string
-  to?: string
+  from: number // milliseconds since epoch
+  to?: number
   authenticated?: boolean
   activeDeployment?: boolean
   currentDeploymentId?: number
@@ -47,11 +47,11 @@ const VehicleAccordion: React.FC<VehicleAccordionProps> = ({
   activeDeployment,
   currentDeploymentId,
 }) => {
-  const { data: relatedLogs, isLoading: logsLoading } = useEvents({
-    vehicles: [vehicleName],
-    from: '',
-    to: '',
-  })
+  // const { data: relatedLogs, isLoading: logsLoading } = useEvents({
+  //   vehicles: [vehicleName],
+  //   from: '',
+  //   to: '',
+  // })
   const { data: commsLogs, isLoading: commsLoading } = useEvents({
     vehicles: [vehicleName],
     eventTypes: ['command', 'run'],

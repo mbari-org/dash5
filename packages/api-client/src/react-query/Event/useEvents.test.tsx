@@ -56,7 +56,7 @@ const server = setupServer(
     const fromParam = req.url.searchParams.get('from')
 
     // If this is for the recursive test, we need special handling
-    if (fromParam && new Date(fromParam).getTime() < 1656335000000) {
+    if (fromParam && parseInt(fromParam, 10) < 1656335000000) {
       console.log('Recursive test detected')
 
       // First request - return first batch
@@ -83,11 +83,13 @@ afterEach(() => {
 })
 afterAll(() => server.close())
 
-const MockVehiclePosition: React.FC<{ from?: string }> = ({ from = '123' }) => {
+const MockVehiclePosition: React.FC<{ from?: number }> = ({
+  from = 1710095743191,
+}) => {
   const query = useEvents({
     vehicles: ['pontus'],
     from,
-    to: '',
+    to: 1740767743191,
     eventTypes: ['note'],
     limit: 1000,
     noteMatches: '',
@@ -179,8 +181,8 @@ describe('useEvents', () => {
     const fetchEventsWithRecursion = async () => {
       const params = {
         vehicles: ['pontus'],
-        from: new Date(1656330000000).toISOString(), // Early enough to trigger recursive fetching
-        to: '',
+        from: 1656330000000, // Early enough to trigger recursive fetching
+        to: undefined,
         eventTypes: ['note' as EventType],
         limit: 1000,
         noteMatches: '',
@@ -201,7 +203,7 @@ describe('useEvents', () => {
         // Make the second request
         const nextParams = {
           ...params,
-          to: new Date(earliestEvent.unixTime - 1).toISOString(),
+          to: earliestEvent.unixTime - 1,
         }
 
         const moreResults = await getEvents(nextParams)
