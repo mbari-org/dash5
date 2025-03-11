@@ -3,7 +3,7 @@ import { useCallback, useRef, useMemo } from 'react'
 export const useGoogleElevator = () => {
   const elevator = useMemo(
     () => (!!google ? new google.maps.ElevationService() : null),
-    [google]
+    []
   )
 
   const depthLoading = useRef(false)

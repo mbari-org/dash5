@@ -38,13 +38,20 @@ interface Vehicle {
 export type Vehicles = Vehicle[]
 
 export type ReassignmentFormValues = {
-  vehicleName: string[]
+  vehicleNames: string[]
   pic: string
   onCall: string
 }
 
+// checkbox inputs return a string if only one is selected, and an array if multiple are selected, so we need to transform the value to an array
 const schema = yup.object({
-  vehicleName: yup.array().of(yup.string()).required('cannot be blank'),
+  vehicleNames: yup
+    .array()
+    .transform((value, originalValue) => {
+      if (!originalValue) return []
+      return typeof originalValue === 'string' ? [originalValue] : originalValue
+    })
+    .min(1, 'A vehicle must be selected'),
   pic: yup.string().required('cannot be blank'),
   onCall: yup.string().required('cannot be blank'),
 })
@@ -82,7 +89,7 @@ const VehicleField: React.FC<VehicleProps> = ({
           id={`${vehicleName}_${vehicleId}`}
           value={vehicleId}
           data-testid={`input_${vehicleId}`}
-          {...register('vehicleName')}
+          {...register('vehicleNames')}
         />{' '}
         <span className="ml-1 text-lg font-medium">{vehicleName}</span>
       </label>

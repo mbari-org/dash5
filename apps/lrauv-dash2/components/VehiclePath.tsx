@@ -67,7 +67,7 @@ const VehiclePath: React.FC<{
 
   const latestGPS = useRef<[number, number] | undefined>()
   useEffect(() => {
-    if (vehiclePosition?.gpsFixes) {
+    if (vehiclePosition?.gpsFixes && vehiclePosition.gpsFixes.length > 0) {
       const latest = vehiclePosition.gpsFixes[0]
       if (
         latestGPS.current &&
@@ -212,9 +212,11 @@ const VehiclePath: React.FC<{
   })
 
   // Determine Time Difference since last gpsFix
-  const latest = vehiclePosition?.gpsFixes?.[0]
+  const latest = vehiclePosition?.gpsFixes && vehiclePosition.gpsFixes.length > 0 
+    ? vehiclePosition.gpsFixes[0] 
+    : null
   // IsoTime as a string
-  const latestTimeFix = latest?.isoTime.toString()
+  const latestTimeFix = latest?.isoTime?.toString()
   let [timeSinceFix, setTimeSinceFix] = useState('')
 
   if (latestTimeFix) {
