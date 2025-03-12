@@ -163,7 +163,9 @@ const VehiclePath: React.FC<{
           (fix) => fix.unixTime >= (indicatorTime ?? 0)
         ) ?? []
       ).sort((a, b) => a.unixTime - b.unixTime),
-    ].map((g) => [g?.latitude ?? 0, g?.longitude ?? 0] as [number, number])
+    ]
+      ?.filter((g) => g && g.latitude != null && g.longitude != null)
+      .map((g) => [g?.latitude ?? 0, g?.longitude ?? 0] as [number, number])
   // fit
   const fit = useRef<string | null | undefined>(null)
   // routeAsString
