@@ -1,10 +1,16 @@
 import { useCallback, useRef, useMemo } from 'react'
 
 export const useGoogleElevator = () => {
-  const elevator = useMemo(
-    () => (!!google ? new google.maps.ElevationService() : null),
-    []
-  )
+  const elevator = useMemo(() => {
+    if (
+      typeof google !== 'undefined' &&
+      google.maps &&
+      google.maps.ElevationService
+    ) {
+      return new google.maps.ElevationService()
+    }
+    return null
+  }, [])
 
   const depthLoading = useRef(false)
   const lastKnownDepth = useRef<number | null>(null)

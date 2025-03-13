@@ -1,5 +1,5 @@
 import React from 'react'
-import { useSelectedStations } from './SelectedStationsContext'
+import { useSelectedStations } from './SelectedStationContext'
 
 // Define proper types for your station objects
 interface StationGeometry {

@@ -7,6 +7,8 @@ import VehicleDeploymentDropdown from '../components/VehicleDeploymentDropdown'
 import VehicleList from '../components/VehicleList'
 import useTrackedVehicles from '../lib/useTrackedVehicles'
 import { SharedPathContextProvider } from '../components/SharedPathContextProvider'
+import { SelectedPlatformsProvider } from '../components/SelectedPlatformContext'
+import { SelectedStationsProvider } from '../components/SelectedStationContext'
 import { useRouter } from 'next/router'
 import useGlobalModalId from '../lib/useGlobalModalId'
 import { useGoogleElevator } from '../lib/useGoogleElevator'
@@ -107,22 +109,26 @@ const OverViewMap: React.FC<{
 
   return (
     <SharedPathContextProvider>
-      <Map
-        className="h-full w-full"
-        onRequestDepth={handleDepthRequest}
-        onRequestCoordinate={handleCoordinateRequest}
-        center={center}
-      >
-        {trackedVehicles.map((name) => (
-          <VehiclePath
-            name={name}
-            key={`path${name}`}
-            onGPSFix={handleGPSFix}
-            grouped
-          />
-        ))}
-        <CustomMarkerSet />
-      </Map>
+      <SelectedPlatformsProvider>
+        <SelectedStationsProvider>
+          <Map
+            className="h-full w-full"
+            onRequestDepth={handleDepthRequest}
+            onRequestCoordinate={handleCoordinateRequest}
+            center={center}
+          >
+            {trackedVehicles.map((name) => (
+              <VehiclePath
+                name={name}
+                key={`path${name}`}
+                onGPSFix={handleGPSFix}
+                grouped
+              />
+            ))}
+            <CustomMarkerSet />
+          </Map>
+        </SelectedStationsProvider>
+      </SelectedPlatformsProvider>
     </SharedPathContextProvider>
   )
 }
@@ -144,47 +150,53 @@ const OverviewPage: NextPage = () => {
   }
 
   return (
-    <Layout>
-      {trackedVehicles?.length ? (
-        <>
-          <OverviewToolbar deployment={{ name: 'Overview', id: '0' }} />
+    <SelectedPlatformsProvider>
+      <SelectedStationsProvider>
+        <div className={styles.content}>
+          <Layout>
+            {trackedVehicles?.length ? (
+              <>
+                <OverviewToolbar deployment={{ name: 'Overview', id: '0' }} />
 
-          <div className={styles.content} data-testid="vehicle-dashboard">
-            <Allotment
-              separator
-              snap
-              defaultSizes={[75, 25]}
-              proportionalLayout
-            >
-              <Allotment.Pane>
-                <section className={styles.primary}>
-                  <div className={styles.mapContainer}>
-                    {mapsLoaded && (
-                      <OverViewMap trackedVehicles={trackedVehicles} />
-                    )}
-                  </div>
-                </section>
-              </Allotment.Pane>
-              <Allotment.Pane priority={LayoutPriority.High}>
-                <section className={styles.secondary}>
-                  <VehicleList onSelectVehicle={handleSelectedVehicle} />
-                </section>
-              </Allotment.Pane>
-            </Allotment>
-          </div>
-        </>
-      ) : (
-        <>
-          <p className="p-6 text-xl" aria-label="get started">
-            To get started you must add at least one vehicle to track.
-          </p>
-          <VehicleDeploymentDropdown
-            className="mx-6 max-h-96 w-96"
-            scrollable
-          />
-        </>
-      )}
-    </Layout>
+                <div className={styles.content} data-testid="vehicle-dashboard">
+                  <Allotment
+                    separator
+                    snap
+                    defaultSizes={[75, 25]}
+                    proportionalLayout
+                  >
+                    <Allotment.Pane>
+                      <section className={styles.primary}>
+                        <div className={styles.mapContainer}>
+                          {mapsLoaded && (
+                            <OverViewMap trackedVehicles={trackedVehicles} />
+                          )}
+                        </div>
+                      </section>
+                    </Allotment.Pane>
+                    <Allotment.Pane priority={LayoutPriority.High}>
+                      <section className={styles.secondary}>
+                        <VehicleList onSelectVehicle={handleSelectedVehicle} />
+                      </section>
+                    </Allotment.Pane>
+                  </Allotment>
+                </div>
+              </>
+            ) : (
+              <>
+                <p className="p-6 text-xl" aria-label="get started">
+                  To get started you must add at least one vehicle to track.
+                </p>
+                <VehicleDeploymentDropdown
+                  className="mx-6 max-h-96 w-96"
+                  scrollable
+                />
+              </>
+            )}
+          </Layout>
+        </div>
+      </SelectedStationsProvider>
+    </SelectedPlatformsProvider>
   )
 }
 

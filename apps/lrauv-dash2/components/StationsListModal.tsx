@@ -2,7 +2,7 @@ import React, { useCallback, useState } from 'react'
 import { useStations } from '@mbari/api-client'
 import { Modal } from '@mbari/react-ui'
 import { StationSection } from './StationSection'
-import { useSelectedStations } from './SelectedStationsContext'
+import { useSelectedStations } from './SelectedStationContext'
 
 export const StationsListModal: React.FC<{ onClose: () => void }> = ({
   onClose,
