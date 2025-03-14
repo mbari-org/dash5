@@ -1,3 +1,4 @@
+import React, { useCallback, useEffect, useMemo, useState, useRef } from 'react'
 import {
   TileLayer,
   MapContainer,
@@ -7,14 +8,12 @@ import {
   useMapEvents,
   useMap,
 } from 'react-leaflet'
+import ReactLeafletGoogleLayer from 'react-leaflet-google-layer'
 import Control from 'react-leaflet-custom-control'
 import 'leaflet/dist/leaflet.css'
 import 'leaflet-measure/dist/leaflet-measure.css'
-// import '../css/geoManControl.css'
+import '@mbari/react-ui/dist/mbari-ui.css'
 import 'react-tooltip/dist/react-tooltip.css'
-import React, { useCallback, useEffect, useMemo, useState } from 'react'
-// import Symbology, { SymbologyProps } from './Symbology'
-import ReactLeafletGoogleLayer from 'react-leaflet-google-layer'
 import MouseCoordinates, { MouseCoordinatesProps } from './MouseCoordinates'
 import { useMapBaseLayer, BaseLayerOption } from './useMapBaseLayer'
 import 'leaflet-mouse-position'
@@ -28,7 +27,6 @@ import {
 import { faCircleXmark } from '@fortawesome/free-regular-svg-icons'
 import { Measurement } from './Measurement'
 import { Tooltip } from 'react-tooltip'
-// import { GeomanControl } from './GeomanControl'
 import MovingDot from './MovingDot'
 import { AreaComponent, PathComponent, MeasurementProps } from './Measurement'
 
@@ -47,10 +45,11 @@ export interface MapProps {
   scrollWheelZoom?: boolean
   onRequestDepth?: MouseCoordinatesProps['onRequestDepth']
   onRequestCoordinate?: () => void
+  onRequestPlatforms?: () => void
+  onRequestStations?: () => void
   dmsCoord?: string
   mapCoord?: string
   children?: React.ReactNode
-  onRequestPlatforms?: () => void
 }
 
 export type MeasureMode = 'open' | 'measuring' | 'closed' | 'cancelled'
@@ -79,7 +78,9 @@ const Map: React.FC<MapProps> = ({
   onRequestDepth,
   onRequestCoordinate,
   onRequestPlatforms,
+  onRequestStations,
 }) => {
+  const originalCenter = useRef(center)
   const { baseLayer, setBaseLayer } = useMapBaseLayer()
   const addBaseLayerHandler = useCallback(
     (layer: BaseLayerOption) => () => {
@@ -87,6 +88,7 @@ const Map: React.FC<MapProps> = ({
     },
     [setBaseLayer]
   )
+
   // Create measurements
   const [measurements, setMeasurements] = useState<
     {
@@ -95,6 +97,12 @@ const Map: React.FC<MapProps> = ({
     }[]
   >([])
 
+  const handleLayersClick = () => {
+    // Save current map center so CenterView doesn't change it
+    originalCenter.current = center
+    // Call the handler without changing the center
+    onRequestStations?.()
+  }
   const [count, setCount] = useState(0)
   const [isHovering, setIsHovering] = useState(false)
   // const symbols = new Symbology({})
@@ -296,7 +304,7 @@ const Map: React.FC<MapProps> = ({
     (id: string) => () => {
       setMeasurements((prev) => prev.filter((m) => m.id !== id))
     },
-    [measurements, setMeasurements]
+    []
   )
 
   return (
@@ -368,6 +376,7 @@ const Map: React.FC<MapProps> = ({
       <Control prepend position="topright">
         <MouseCoordinates onRequestDepth={onRequestDepth} />
       </Control>
+      {children}
       {onRequestCoordinate ? (
         <Control position="topleft">
           <button
@@ -387,7 +396,7 @@ const Map: React.FC<MapProps> = ({
             <a
               data-tooltip-id="vehicle-center-tooltip"
               data-tooltip-content="Center map on centroid of latest GPS Fix positions (one per vehicle)"
-              data-tooltip-place="bottom-end"
+              data-tooltip-place="right-start"
             >
               <FontAwesomeIcon
                 icon={faArrowsToCircle}
@@ -415,7 +424,7 @@ const Map: React.FC<MapProps> = ({
           </button>
         </Control>
       ) : null}
-      <CenterView coords={center} />
+      <CenterView coords={originalCenter.current} />
       <div className={'leaflet-control'}>{children}</div>
       <Control position="topright">
         {children}
@@ -477,31 +486,31 @@ const Map: React.FC<MapProps> = ({
             </p>
           </div>
         ) : null}
-
         <Control position="topleft">
           <button
-            id="vehicle-center"
-            className="vehicle-center rounded"
+            id="trackdb"
+            className="trackdb rounded"
             onMouseOver={handleMouseOver}
             style={{
               position: 'relative',
               zIndex: isHovering ? 900 : 10,
               border: '0px solid rgba(0,0,0,0.2)',
               backgroundClip: 'padding-box',
-              width: 42,
-              height: 42,
+              width: 55,
+              height: 30,
             }}
             onClick={onRequestPlatforms}
           >
             <a
-              data-tooltip-id="trackdb"
+              data-tooltip-id="trackdb-tooltip"
               data-tooltip-content="Track Database"
-              data-tooltip-place="bottom-end"
+              data-tooltip-place="right-start"
             >
-              <FontAwesomeIcon icon={faLayerGroup} size="2xl" />
+              <span style={{ color: '#FFFFFF' }}>TrackDB</span>
+              {/* <FontAwesomeIcon icon={faLayerGroup} size="2xl" /> */}
             </a>
             <Tooltip
-              id="trackdb"
+              id="trackdb-tooltip"
               style={{
                 paddingLeft: 4,
                 paddingRight: 4,
@@ -511,7 +520,47 @@ const Map: React.FC<MapProps> = ({
                 color: '#312e2b',
                 fontWeight: 'normal',
                 fontSize: '14px',
-                width: '240px',
+                width: 'max-content',
+                height: 'max-content',
+              }}
+            />
+          </button>
+          <br />
+          <br />
+          <button
+            id="stationsdb"
+            className="stationsdb rounded"
+            onMouseOver={handleMouseOver}
+            style={{
+              position: 'relative',
+              zIndex: isHovering ? 900 : 10,
+              border: '0px solid rgba(0,0,0,0.2)',
+              backgroundClip: 'padding-box',
+              width: 55,
+              height: 30,
+            }}
+            onClick={onRequestStations}
+          >
+            <a
+              data-tooltip-id="stationsdb-tooltip"
+              data-tooltip-content="Choose map layers to display"
+              data-tooltip-place="right-start"
+            >
+              <span style={{ color: '#FFFFFF' }}>Layers</span>
+              {/* <FontAwesomeIcon icon={faLayerGroup} size="2xl" /> */}
+            </a>
+            <Tooltip
+              id="stationsdb-tooltip"
+              style={{
+                paddingLeft: 4,
+                paddingRight: 4,
+                paddingTop: 2,
+                paddingBottom: 2,
+                backgroundColor: '#D3D3D3',
+                color: '#312e2b',
+                fontWeight: 'normal',
+                fontSize: '14px',
+                width: 'max-content',
                 height: 'max-content',
               }}
             />
@@ -541,31 +590,37 @@ const Map: React.FC<MapProps> = ({
               {element}
             </p>
             <ul className="mousechange leaflet-pointer grid">
-              <button
-                id="finishMeasBtn"
-                className="leaflet-pointer w-full rounded border bg-blue-600 p-1 text-white hover:bg-blue-800"
-                onMouseOver={handleMouseOver}
-                style={{
-                  position: 'relative',
-                  zIndex: isHovering ? 900 : 10,
-                }}
-                onClick={changeMeasureMode('closed')}
-              >
-                <FontAwesomeIcon icon={faCircleCheck} /> Finish Measurement
-              </button>
-              <br />
-              <button
-                id="cancelMeasBtn"
-                className="leaflet-poiner w-full rounded border bg-white p-1 text-primary-600 hover:bg-gray-100"
-                onMouseOver={handleMouseOver}
-                style={{
-                  position: 'relative',
-                  zIndex: isHovering ? 900 : 10,
-                }}
-                onClick={changeMeasureMode('closed')}
-              >
-                <FontAwesomeIcon icon={faCircleXmark} /> Cancel
-              </button>
+              <li>
+                <button
+                  id="finishMeasBtn"
+                  className="leaflet-pointer w-full rounded border bg-blue-600 p-1 text-white hover:bg-blue-800"
+                  onMouseOver={handleMouseOver}
+                  style={{
+                    position: 'relative',
+                    zIndex: isHovering ? 900 : 10,
+                  }}
+                  onClick={changeMeasureMode('closed')}
+                >
+                  <FontAwesomeIcon icon={faCircleCheck} /> Finish Measurement
+                </button>
+              </li>
+              <li>
+                <br />
+              </li>
+              <li>
+                <button
+                  id="cancelMeasBtn"
+                  className="leaflet-poiner w-full rounded border bg-white p-1 text-primary-600 hover:bg-gray-100"
+                  onMouseOver={handleMouseOver}
+                  style={{
+                    position: 'relative',
+                    zIndex: isHovering ? 900 : 10,
+                  }}
+                  onClick={changeMeasureMode('closed')}
+                >
+                  <FontAwesomeIcon icon={faCircleXmark} /> Cancel
+                </button>
+              </li>
             </ul>
           </div>
         ) : null}
@@ -656,7 +711,7 @@ const Map: React.FC<MapProps> = ({
         ) : null}
       </Control>
       <MeasureEvents />
-      {/* TODO <GeomanControl position="bottomleft" drawCircle={true} oneBlock={true} /> */}
+      {/* TODO <GeomanControl position="bottomleft" drawCircle={true} oneBlock={true}/> */}
     </MapContainer>
   )
 }

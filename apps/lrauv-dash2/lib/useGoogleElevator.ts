@@ -1,16 +1,16 @@
 import { useCallback, useRef, useMemo } from 'react'
 
 export const useGoogleElevator = () => {
-  const isGoogleMapsAvailable = typeof google !== 'undefined' && !!google.maps
-
   const elevator = useMemo(() => {
-    try {
-      return isGoogleMapsAvailable ? new google.maps.ElevationService() : null
-    } catch (error) {
-      console.error('Google Maps API not initialized:', error)
-      return null
+    if (
+      typeof google !== 'undefined' &&
+      google.maps &&
+      google.maps.ElevationService
+    ) {
+      return new google.maps.ElevationService()
     }
-  }, [isGoogleMapsAvailable])
+    return null
+  }, [])
 
   const depthLoading = useRef(false)
   const lastKnownDepth = useRef<number | null>(null)
