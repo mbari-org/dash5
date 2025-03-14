@@ -5,18 +5,9 @@ import { useGoogleElevator } from '../lib/useGoogleElevator'
 import { VPosDetail } from '@mbari/api-client'
 import { PlatformsListModal } from './PlatformsListModal'
 import { StationsListModal } from './StationsListModal'
-import {
-  MapContainer,
-  TileLayer,
-  GeoJSON,
-  CircleMarker,
-  Tooltip,
-} from 'react-leaflet'
 import { useSelectedStations } from './SelectedStationContext'
 import { useSelectedPlatforms } from './SelectedPlatformContext'
 // import { CenterViewComponent } from 'react-ui/dist/Map/MapViews'
-
-let indexPage: boolean
 
 // This is a tricky workaround to prevent leaflet from crashing next.js
 // SSR. If we don't do this, the leaflet map will be loaded server side
@@ -34,6 +25,9 @@ const VehiclePath = dynamic(() => import('./VehiclePath'), {
   ssr: false,
 })
 const WaypointPreviewPath = dynamic(() => import('./WaypointPreviewPath'), {
+  ssr: false,
+})
+const StationMarker = dynamic(() => import('../components/StationMarker'), {
   ssr: false,
 })
 
@@ -72,9 +66,10 @@ const DeploymentMap: React.FC<DeploymentMapProps> = ({
   )
 
   const { handleDepthRequest } = useGoogleElevator()
-
   const [center, setCenter] = useState<undefined | [number, number]>()
   const [latestGPS, setLatestGPS] = useState<VPosDetail | undefined>()
+  const [showStations, setShowStations] = useState(false)
+  const { selectedStations } = useSelectedStations()
 
   const latestVehicle = useRef(vehicleName)
   useEffect(() => {
@@ -85,22 +80,31 @@ const DeploymentMap: React.FC<DeploymentMapProps> = ({
     }
   }, [vehicleName, setLatestGPS])
 
-  // useEffect(() => {
-  //   const pathName = window.location.pathname
-  //   console.log('DeploymentMap.tsx - Pathname: ', pathName)
-  //   if (pathName === '/dash5' || pathName === '/') {
-  //     indexPage = true
-  //     console.log('DeploymentMap.tsx - Index Page: ', indexPage)
-  //   } else {
-  //     indexPage = false
-  //     console.log('DeploymentMap.tsx - Index Page: ', indexPage)
-  //   }
-  // }, [])
+  useEffect(() => {
+    if (latestGPS) {
+      console.log(
+        'Setting center to latest GPS:',
+        latestGPS.latitude,
+        latestGPS.longitude
+      )
+      setCenter([latestGPS.latitude, latestGPS.longitude])
+    }
+  }, [latestGPS])
+
+  // Store positions of all vehicles to calculate center
+  const vehiclePosition = useRef<Array<[number, number]>>([])
+
   const handleGPSFix = useCallback(
     (gps: VPosDetail) => {
+      // Reset the array if this is a different vehicle
       if ((latestGPS?.isoTime ?? 0) > gps.isoTime || !latestGPS) {
+        vehiclePosition.current = []
         setLatestGPS(gps)
       }
+
+      // Store position for centering
+      const position: [number, number] = [gps.latitude, gps.longitude]
+      vehiclePosition.current.push(position)
     },
     [latestGPS, setLatestGPS]
   )
@@ -111,6 +115,25 @@ const DeploymentMap: React.FC<DeploymentMapProps> = ({
     }
   }, [latestGPS, setCenter])
 
+  // Function to calculate the center of all vehicle positions
+  const calculateCenter = useCallback((): [number, number] => {
+    if (vehiclePosition.current.length === 0) {
+      // Default center if no positions
+      return [36.7849, -122.12097]
+    }
+
+    // Calculate the average latitude and longitude
+    const sum = vehiclePosition.current.reduce(
+      (acc, pos) => [acc[0] + pos[0], acc[1] + pos[1]],
+      [0, 0]
+    )
+
+    return [
+      sum[0] / vehiclePosition.current.length,
+      sum[1] / vehiclePosition.current.length,
+    ]
+  }, [])
+
   const [showPlatforms, setShowPlatforms] = useState(false)
   const { selectedPlatforms } = useSelectedPlatforms()
   const handlePlatformsRequest = useCallback(() => {
@@ -120,10 +143,6 @@ const DeploymentMap: React.FC<DeploymentMapProps> = ({
   const handleClosePlatforms = useCallback(() => {
     setShowPlatforms(false)
   }, [setShowPlatforms])
-
-  /******* */
-  const [showStations, setShowStations] = useState(false)
-  const { selectedStations } = useSelectedStations()
 
   const handleStationsRequest = useCallback(() => {
     console.log('DeploymentMap.tsx - Stations Request Clicked')
@@ -140,9 +159,7 @@ const DeploymentMap: React.FC<DeploymentMapProps> = ({
         <PlatformsListModal onClose={handleClosePlatforms} />
       ) : null}
       {showStations ? (
-        <>
-          <StationsListModal onClose={handleCloseStations} />
-        </>
+        <StationsListModal onClose={handleCloseStations} />
       ) : null}
       <Map
         className="h-full w-full"
@@ -153,58 +170,21 @@ const DeploymentMap: React.FC<DeploymentMapProps> = ({
         onRequestPlatforms={handlePlatformsRequest}
         onRequestStations={handleStationsRequest}
       >
-        {selectedPlatforms.map((platform) => {
-          const lng = platform.geojson.geometry.coordinates[0]
-          const lat = platform.geojson.geometry.coordinates[1]
-
-          console.log('Valid coordinates found:', lat, lng)
-
-          return (
-            <CircleMarker
-              key={platform.name}
-              center={[lat, lng]}
-              radius={5}
-              fillColor="transparent"
-              color="red"
-              fillOpacity={1}
-            >
-              <Tooltip>
-                <span>
-                  {platform.name}
-                  <br />
-                  Latitude: {lat}
-                  <br />
-                  Longitude: {lng}
-                </span>
-              </Tooltip>
-            </CircleMarker>
-          )
-        })}
         {selectedStations.map((station) => {
           const lng = station.geojson.geometry.coordinates[0]
           const lat = station.geojson.geometry.coordinates[1]
 
-          console.log('Valid coordinates found:', lat, lng)
+          if (!lng || !lat) return null
+
+          console.log('Stations: Valid coordinates found:', lat, lng)
 
           return (
-            <CircleMarker
+            <StationMarker
               key={station.name}
-              center={[lat, lng]}
-              radius={5}
-              fillColor="transparent"
-              color="yellow"
-              fillOpacity={1}
-            >
-              <Tooltip>
-                <span>
-                  {station.name}
-                  <br />
-                  Latitude: {lat}
-                  <br />
-                  Longitude: {lng}
-                </span>
-              </Tooltip>
-            </CircleMarker>
+              name={station.name}
+              lat={lat}
+              lng={lng}
+            />
           )
         })}
         {plottedWaypoints?.length ? (

@@ -1,4 +1,4 @@
-import React, { useCallback, useState } from 'react'
+import React, { useCallback } from 'react'
 import { useStations } from '@mbari/api-client'
 import { Modal } from '@mbari/react-ui'
 import { StationSection } from './StationSection'
@@ -8,6 +8,7 @@ export const StationsListModal: React.FC<{ onClose: () => void }> = ({
   onClose,
   ...modalProps
 }) => {
+  console.log('StationsListModal rendering')
   const { data: stations } = useStations()
   const { selectedStations, setSelectedStations } = useSelectedStations()
 

@@ -1,3 +1,4 @@
+import React, { useCallback, useEffect, useMemo, useState, useRef } from 'react'
 import {
   TileLayer,
   MapContainer,
@@ -7,13 +8,12 @@ import {
   useMapEvents,
   useMap,
 } from 'react-leaflet'
+import ReactLeafletGoogleLayer from 'react-leaflet-google-layer'
 import Control from 'react-leaflet-custom-control'
 import 'leaflet/dist/leaflet.css'
 import 'leaflet-measure/dist/leaflet-measure.css'
 import '@mbari/react-ui/dist/mbari-ui.css'
 import 'react-tooltip/dist/react-tooltip.css'
-import React, { useCallback, useEffect, useMemo, useState } from 'react'
-import ReactLeafletGoogleLayer from 'react-leaflet-google-layer'
 import MouseCoordinates, { MouseCoordinatesProps } from './MouseCoordinates'
 import { useMapBaseLayer, BaseLayerOption } from './useMapBaseLayer'
 import 'leaflet-mouse-position'
@@ -80,6 +80,7 @@ const Map: React.FC<MapProps> = ({
   onRequestPlatforms,
   onRequestStations,
 }) => {
+  const originalCenter = useRef(center)
   const { baseLayer, setBaseLayer } = useMapBaseLayer()
   const addBaseLayerHandler = useCallback(
     (layer: BaseLayerOption) => () => {
@@ -87,6 +88,7 @@ const Map: React.FC<MapProps> = ({
     },
     [setBaseLayer]
   )
+
   // Create measurements
   const [measurements, setMeasurements] = useState<
     {
@@ -95,6 +97,12 @@ const Map: React.FC<MapProps> = ({
     }[]
   >([])
 
+  const handleLayersClick = () => {
+    // Save current map center so CenterView doesn't change it
+    originalCenter.current = center
+    // Call the handler without changing the center
+    onRequestStations?.()
+  }
   const [count, setCount] = useState(0)
   const [isHovering, setIsHovering] = useState(false)
   // const symbols = new Symbology({})
@@ -368,6 +376,7 @@ const Map: React.FC<MapProps> = ({
       <Control prepend position="topright">
         <MouseCoordinates onRequestDepth={onRequestDepth} />
       </Control>
+      {children}
       {onRequestCoordinate ? (
         <Control position="topleft">
           <button
@@ -415,7 +424,7 @@ const Map: React.FC<MapProps> = ({
           </button>
         </Control>
       ) : null}
-      <CenterView coords={center} />
+      <CenterView coords={originalCenter.current} />
       <div className={'leaflet-control'}>{children}</div>
       <Control position="topright">
         {children}
@@ -477,7 +486,6 @@ const Map: React.FC<MapProps> = ({
             </p>
           </div>
         ) : null}
-
         <Control position="topleft">
           <button
             id="trackdb"
@@ -703,7 +711,7 @@ const Map: React.FC<MapProps> = ({
         ) : null}
       </Control>
       <MeasureEvents />
-      {/* TODO <GeomanControl position="bottomleft" drawCircle={true} oneBlock={true} /> */}
+      {/* TODO <GeomanControl position="bottomleft" drawCircle={true} oneBlock={true}/> */}
     </MapContainer>
   )
 }
