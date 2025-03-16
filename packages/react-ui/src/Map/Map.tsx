@@ -13,7 +13,9 @@ import Control from 'react-leaflet-custom-control'
 import 'leaflet/dist/leaflet.css'
 import 'leaflet-measure/dist/leaflet-measure.css'
 import '@mbari/react-ui/dist/mbari-ui.css'
-import 'react-tooltip/dist/react-tooltip.css'
+import Tippy from '@tippyjs/react'
+import 'tippy.js/dist/tippy.css'
+// import 'react-tooltip/dist/react-tooltip.css'
 import MouseCoordinates, { MouseCoordinatesProps } from './MouseCoordinates'
 import { useMapBaseLayer, BaseLayerOption } from './useMapBaseLayer'
 import 'leaflet-mouse-position'
@@ -22,11 +24,13 @@ import {
   faArrowsToCircle,
   faCircleCheck,
   faRulerCombined,
+  faArrowsUpDownLeftRight,
   faLayerGroup,
 } from '@fortawesome/free-solid-svg-icons'
 import { faCircleXmark } from '@fortawesome/free-regular-svg-icons'
 import { Measurement } from './Measurement'
-import { Tooltip } from 'react-tooltip'
+// Remove the ReactTooltip import and use native tooltips
+// import { Tooltip } from 'react-tooltip'
 import MovingDot from './MovingDot'
 import { AreaComponent, PathComponent, MeasurementProps } from './Measurement'
 
@@ -49,19 +53,27 @@ export interface MapProps {
   onRequestStations?: () => void
   dmsCoord?: string
   mapCoord?: string
+  fitBounds?: [[number, number], [number, number]]
   children?: React.ReactNode
 }
 
 export type MeasureMode = 'open' | 'measuring' | 'closed' | 'cancelled'
 
-// Special component to center the map to a specific location
-// when we change the center prop on the parent map.
-const CenterView: React.FC<{ coords: [number, number] }> = ({ coords }) => {
+const CenterView: React.FC<{
+  coords: [number, number]
+  bounds?: [[number, number], [number, number]]
+}> = ({ coords, bounds }) => {
   const map = useMap()
 
   useEffect(() => {
-    map.setView(coords, map.getZoom())
-  }, [coords, map])
+    if (bounds) {
+      console.log('Fitting map to bounds:', bounds)
+      map.fitBounds(bounds, { padding: [50, 50] })
+    } else if (coords) {
+      console.log('Setting map view to coords:', coords)
+      map.setView(coords, map.getZoom())
+    }
+  }, [coords, bounds, map])
 
   return null
 }
@@ -74,6 +86,7 @@ const Map: React.FC<MapProps> = ({
   minZoom = 4,
   maxZoom = 17,
   maxNativeZoom = 13,
+  fitBounds,
   children,
   onRequestDepth,
   onRequestCoordinate,
@@ -99,13 +112,12 @@ const Map: React.FC<MapProps> = ({
 
   const handleLayersClick = () => {
     // Save current map center so CenterView doesn't change it
-    originalCenter.current = center
+    // originalCenter.current = center
     // Call the handler without changing the center
     onRequestStations?.()
   }
   const [count, setCount] = useState(0)
   const [isHovering, setIsHovering] = useState(false)
-  // const symbols = new Symbology({})
 
   const measStyle = {
     color: '#00008b',
@@ -253,7 +265,6 @@ const Map: React.FC<MapProps> = ({
   const [visibleDot, setVisibleDot] = useState('hidden')
   // Set the default cursor
   const [cursor, setCursor] = useState('default')
-  const [tooltipOpen, setTooltipOpen] = useState(false)
 
   ///////////////////////////////////////////
   //  changeMeasureMode
@@ -290,6 +301,7 @@ const Map: React.FC<MapProps> = ({
   const handleRequestCoordinate = (e: React.MouseEvent) => {
     e.preventDefault()
     e.stopPropagation()
+    console.log('Map.tsx - handleRequestCoordinate')
     onRequestCoordinate?.()
   }
 
@@ -319,7 +331,6 @@ const Map: React.FC<MapProps> = ({
       // @ts-ignore
       maxNativeZoom={maxNativeZoom}
     >
-      {/* <ZoomControl zoomInText="🧐" zoomOutText="🗺️" /> */}
       <ScaleControl position="topright" />
       <LayersControl position="topright">
         <LayersControl.BaseLayer
@@ -377,57 +388,120 @@ const Map: React.FC<MapProps> = ({
         <MouseCoordinates onRequestDepth={onRequestDepth} />
       </Control>
       {children}
+
+      {/* COORDINATE CONTROLS - Separate from other controls */}
       {onRequestCoordinate ? (
         <Control position="topleft">
-          <button
-            id="vehicle-center"
-            className="vehicle-center rounded"
-            onMouseOver={handleMouseOver}
-            style={{
-              position: 'relative',
-              zIndex: isHovering ? 900 : 10,
-              border: '0px solid rgba(0,0,0,0.2)',
-              backgroundClip: 'padding-box',
-              width: 42,
-              height: 42,
-            }}
-            onClick={handleRequestCoordinate}
+          <Tippy
+            content="Center map on centroid of latest GPS Fix positions"
+            placement="right-start"
+            theme="mapBtnTT"
           >
-            <a
-              data-tooltip-id="vehicle-center-tooltip"
-              data-tooltip-content="Center map on centroid of latest GPS Fix positions (one per vehicle)"
-              data-tooltip-place="right-start"
+            <button
+              id="vehicle-center"
+              className="vehicle-center rounded"
+              onMouseOver={handleMouseOver}
+              style={{
+                position: 'relative',
+                zIndex: isHovering ? 900 : 10,
+                border: '0px solid rgba(0,0,0,0.2)',
+                backgroundClip: 'padding-box',
+                width: 42,
+                height: 42,
+              }}
+              onClick={handleRequestCoordinate}
             >
               <FontAwesomeIcon
                 icon={faArrowsToCircle}
                 size="2xl"
                 color="#ffffff"
               />
-            </a>
-            <Tooltip
-              id="vehicle-center-tooltip"
+            </button>
+          </Tippy>
+          <hr style={{ height: '8pt', visibility: 'hidden' }} />
+          <Tippy
+            content="Zoom to all available/selected vehicles"
+            placement="right-start"
+            theme="mapBtnTT"
+          >
+            <button
+              id="allVehicles-center"
+              className="allVehicles-center rounded"
+              onMouseOver={handleMouseOver}
               style={{
-                paddingLeft: 4,
-                paddingRight: 4,
-                paddingTop: 2,
-                paddingBottom: 2,
-                backgroundColor: '#D3D3D3',
-                color: '#312e2b',
-                fontWeight: 'normal',
-                fontSize: '14px',
-                width: '240px',
-                height: 'max-content',
+                position: 'relative',
+                zIndex: isHovering ? 900 : 10,
+                border: '0px solid rgba(0,0,0,0.2)',
+                backgroundClip: 'padding-box',
+                width: 42,
+                height: 42,
               }}
-            />
-            {/* TODO
-            <FontAwesomeIcon icon={faArrowsToDot} size="2xl" /> */}
-          </button>
+              onClick={handleRequestCoordinate}
+            >
+              <FontAwesomeIcon
+                icon={faArrowsUpDownLeftRight}
+                size="2xl"
+                color="#ffffff"
+              />
+            </button>
+          </Tippy>
         </Control>
       ) : null}
-      <CenterView coords={originalCenter.current} />
-      <div className={'leaflet-control'}>{children}</div>
+
+      {/* TRACKDB/STATIONS CONTROLS - Now in separate Control component */}
+      <Control position="topleft">
+        <Tippy
+          content="Track Database"
+          placement="right-start"
+          theme="mapBtnTT"
+        >
+          <button
+            id="trackdb"
+            className="trackdb rounded"
+            onMouseOver={handleMouseOver}
+            style={{
+              position: 'relative',
+              zIndex: isHovering ? 900 : 10,
+              border: '0px solid rgba(0,0,0,0.2)',
+              backgroundClip: 'padding-box',
+              width: 55,
+              height: 30,
+            }}
+            onClick={onRequestPlatforms}
+          >
+            <span style={{ color: '#FFFFFF' }}>TrackDB</span>
+          </button>
+        </Tippy>
+        <hr style={{ height: '8pt', visibility: 'hidden' }} />
+        <Tippy
+          content="Stations Database"
+          placement="right-start"
+          theme="mapBtnTT"
+        >
+          <button
+            id="stationsdb"
+            className="stationsdb rounded"
+            onMouseOver={handleMouseOver}
+            style={{
+              position: 'relative',
+              zIndex: isHovering ? 900 : 10,
+              border: '0px solid rgba(0,0,0,0.2)',
+              backgroundClip: 'padding-box',
+              width: 55,
+              height: 30,
+            }}
+            onClick={handleLayersClick}
+          >
+            <span style={{ color: '#FFFFFF' }}>Layers</span>
+          </button>
+        </Tippy>
+      </Control>
+
+      {/* CENTER VIEW - Supports both center and bounds */}
+      <CenterView coords={originalCenter.current} bounds={fitBounds} />
+
+      {/* MEASUREMENT CONTROLS - In a separate Control component */}
       <Control position="topright">
-        {children}
         {measurements.map((m) => (
           <React.Fragment key={m.id}>
             <Measurement
@@ -437,6 +511,8 @@ const Map: React.FC<MapProps> = ({
             <MovingDot editing={m.editing} />
           </React.Fragment>
         ))}
+
+        {/* Measurement mode: OPEN */}
         {measureMode === 'open' ? (
           <div
             id="measModeOpen"
@@ -453,7 +529,7 @@ const Map: React.FC<MapProps> = ({
               <a
                 id="createMeasLink"
                 className="mousechange:hover cursor-pointer:onHover leaflet-pointer text-bg-blue-600 hover:text-bg-blue-800 w-full bg-white"
-                onClick={changeMeasureMode('measuring')}
+                onClick={(e) => changeMeasureMode('measuring')(e)}
               >
                 <FontAwesomeIcon
                   icon={faCircleCheck}
@@ -469,7 +545,7 @@ const Map: React.FC<MapProps> = ({
               <button
                 id="closeMeasBtn"
                 className="mousechange:hover cursor-pointer:onHover p-1"
-                onClick={changeMeasureMode('closed')}
+                onClick={(e) => changeMeasureMode('closed')(e)}
                 onMouseOver={handleMouseOver}
                 style={{
                   position: 'relative',
@@ -486,86 +562,8 @@ const Map: React.FC<MapProps> = ({
             </p>
           </div>
         ) : null}
-        <Control position="topleft">
-          <button
-            id="trackdb"
-            className="trackdb rounded"
-            onMouseOver={handleMouseOver}
-            style={{
-              position: 'relative',
-              zIndex: isHovering ? 900 : 10,
-              border: '0px solid rgba(0,0,0,0.2)',
-              backgroundClip: 'padding-box',
-              width: 55,
-              height: 30,
-            }}
-            onClick={onRequestPlatforms}
-          >
-            <a
-              data-tooltip-id="trackdb-tooltip"
-              data-tooltip-content="Track Database"
-              data-tooltip-place="right-start"
-            >
-              <span style={{ color: '#FFFFFF' }}>TrackDB</span>
-              {/* <FontAwesomeIcon icon={faLayerGroup} size="2xl" /> */}
-            </a>
-            <Tooltip
-              id="trackdb-tooltip"
-              style={{
-                paddingLeft: 4,
-                paddingRight: 4,
-                paddingTop: 2,
-                paddingBottom: 2,
-                backgroundColor: '#D3D3D3',
-                color: '#312e2b',
-                fontWeight: 'normal',
-                fontSize: '14px',
-                width: 'max-content',
-                height: 'max-content',
-              }}
-            />
-          </button>
-          <br />
-          <br />
-          <button
-            id="stationsdb"
-            className="stationsdb rounded"
-            onMouseOver={handleMouseOver}
-            style={{
-              position: 'relative',
-              zIndex: isHovering ? 900 : 10,
-              border: '0px solid rgba(0,0,0,0.2)',
-              backgroundClip: 'padding-box',
-              width: 55,
-              height: 30,
-            }}
-            onClick={onRequestStations}
-          >
-            <a
-              data-tooltip-id="stationsdb-tooltip"
-              data-tooltip-content="Choose map layers to display"
-              data-tooltip-place="right-start"
-            >
-              <span style={{ color: '#FFFFFF' }}>Layers</span>
-              {/* <FontAwesomeIcon icon={faLayerGroup} size="2xl" /> */}
-            </a>
-            <Tooltip
-              id="stationsdb-tooltip"
-              style={{
-                paddingLeft: 4,
-                paddingRight: 4,
-                paddingTop: 2,
-                paddingBottom: 2,
-                backgroundColor: '#D3D3D3',
-                color: '#312e2b',
-                fontWeight: 'normal',
-                fontSize: '14px',
-                width: 'max-content',
-                height: 'max-content',
-              }}
-            />
-          </button>
-        </Control>
+
+        {/* Measurement mode: MEASURING */}
         {measureMode === 'measuring' ? (
           <div
             id="measModeMeasuring"
@@ -599,7 +597,7 @@ const Map: React.FC<MapProps> = ({
                     position: 'relative',
                     zIndex: isHovering ? 900 : 10,
                   }}
-                  onClick={changeMeasureMode('closed')}
+                  onClick={(e) => changeMeasureMode('closed')(e)}
                 >
                   <FontAwesomeIcon icon={faCircleCheck} /> Finish Measurement
                 </button>
@@ -616,7 +614,7 @@ const Map: React.FC<MapProps> = ({
                     position: 'relative',
                     zIndex: isHovering ? 900 : 10,
                   }}
-                  onClick={changeMeasureMode('closed')}
+                  onClick={(e) => changeMeasureMode('closed')(e)}
                 >
                   <FontAwesomeIcon icon={faCircleXmark} /> Cancel
                 </button>
@@ -624,11 +622,46 @@ const Map: React.FC<MapProps> = ({
             </ul>
           </div>
         ) : null}
+      </Control>
+
+      {/* MEASUREMENT BUTTON - In a separate Control component */}
+      <Control position="topright">
         {measureMode === 'closed' ? (
           <div id="measModeClosed">
+            <Tippy
+              content="Measure Distances and Areas"
+              placement="left-start"
+              theme="mapBtnTT"
+            >
+              <button
+                id="openMeasBtn"
+                className="openMeasBtn rounded"
+                onDragEnd={() => setCursor('pointer')}
+                onMouseOver={handleMouseOver}
+                style={{
+                  position: 'relative',
+                  zIndex: isHovering ? 900 : 10,
+                  border: '0px solid rgba(0,0,0,0.2)',
+                  backgroundClip: 'padding-box',
+                  width: 42,
+                  height: 42,
+                }}
+                onClick={(e) => changeMeasureMode('open')(e)}
+              >
+                <FontAwesomeIcon
+                  icon={faRulerCombined}
+                  size="2xl"
+                  color="#FFFFFF"
+                />
+              </button>
+            </Tippy>
+          </div>
+        ) : null}
+        {measureMode === 'cancelled' ? (
+          <Tippy content="Measure Distances and Areas" placement="left-start">
             <button
-              id="openMeasBtn"
-              className="openMeasBtn rounded"
+              id="measBtn"
+              className="measBtn rounded"
               onDragEnd={() => setCursor('pointer')}
               onMouseOver={handleMouseOver}
               style={{
@@ -639,79 +672,18 @@ const Map: React.FC<MapProps> = ({
                 width: 42,
                 height: 42,
               }}
-              onClick={changeMeasureMode('open')}
+              onClick={(e) => changeMeasureMode('closed')(e)}
             >
-              <a
-                data-tooltip-id="measure-tooltip"
-                data-tooltip-content="Measure Distances and Areas"
-                data-tooltip-place="bottom-end"
-              >
-                <FontAwesomeIcon
-                  icon={faRulerCombined}
-                  size="2xl"
-                  color="#FFFFFF"
-                />
-              </a>
-              <Tooltip
-                id="measure-tooltip"
-                style={{
-                  paddingLeft: 4,
-                  paddingRight: 4,
-                  paddingTop: 2,
-                  paddingBottom: 2,
-                  backgroundColor: '#D3D3D3',
-                  color: '#312e2b',
-                  fontWeight: 'normal',
-                  fontSize: '14px',
-                }}
-              ></Tooltip>
+              <FontAwesomeIcon
+                icon={faRulerCombined}
+                size="2xl"
+                color="#FFFFFF"
+              />
             </button>
-          </div>
-        ) : null}
-        {measureMode === 'cancelled' ? (
-          <button
-            id="measBtn"
-            className="measBtn rounded"
-            onDragEnd={() => setCursor('pointer')}
-            onMouseOver={handleMouseOver}
-            style={{
-              position: 'relative',
-              zIndex: isHovering ? 900 : 10,
-              border: '0px solid rgba(0,0,0,0.2)',
-              backgroundClip: 'padding-box',
-              width: 42,
-              height: 42,
-            }}
-            onClick={changeMeasureMode('closed')}
-          >
-            <a
-              data-tooltip-id="measure-new-tooltip"
-              data-tooltip-content="Measure Distances and Areas"
-              data-tooltip-place="bottom-end"
-            ></a>
-            <FontAwesomeIcon
-              icon={faRulerCombined}
-              size="2xl"
-              color="#FFFFFF"
-            />
-            <Tooltip
-              id="measure-new-tooltip"
-              style={{
-                paddingLeft: 4,
-                paddingRight: 4,
-                paddingTop: 2,
-                paddingBottom: 2,
-                backgroundColor: '#D3D3D3',
-                color: '#312e2b',
-                fontWeight: 'normal',
-                fontSize: '14px',
-              }}
-            ></Tooltip>
-          </button>
+          </Tippy>
         ) : null}
       </Control>
       <MeasureEvents />
-      {/* TODO <GeomanControl position="bottomleft" drawCircle={true} oneBlock={true}/> */}
     </MapContainer>
   )
 }
