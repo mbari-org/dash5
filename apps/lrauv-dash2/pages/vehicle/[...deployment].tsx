@@ -355,23 +355,6 @@ const Vehicle: NextPage = () => {
                     </div>
                   </div>
                 </section>
-                {/* <section className={styles.secondary}>
-                  {deployment && (
-                    <VehicleAccordion
-                      authenticated={authenticated}
-                      vehicleName={vehicleName}
-                      from={DateTime.fromMillis(deploymentStartTime)
-                        .minus({ days: deployment.active ? 1 : 0 })
-                        .toISO()}
-                      to={DateTime.fromMillis(endTime).toISO()}
-                      activeDeployment={deployment.active}
-                      currentDeploymentId={deployment.deploymentId as number}
-                    />
-                  )}
-                </section> */}
-                {/* </Allotment> */}
-                {/* </div> */}
-                {/* </section> */}
                 <section className={styles.secondary}>
                   {deployment && (
                     <VehicleAccordion
@@ -386,7 +369,6 @@ const Vehicle: NextPage = () => {
                 </section>
               </Allotment>
             </div>
-            {/* </Layout> */}
           </Layout>
         </div>
       </SelectedStationsProvider>
