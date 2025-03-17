@@ -40,6 +40,8 @@ import { useLastCommsTime } from '../../lib/useLastCommsTime'
 import { Allotment } from 'allotment'
 import 'allotment/dist/style.css'
 import { useGoogleMaps } from '../../lib/useGoogleMaps'
+import { SelectedStationsProvider } from '../../components/SelectedStationContext'
+import { SelectedPlatformsProvider } from '../../components/SelectedPlatformContext'
 
 const styles = {
   content: 'flex flex-shrink flex-grow flex-row overflow-hidden',
@@ -202,163 +204,193 @@ const Vehicle: NextPage = () => {
 
   const pingEvent = useTethysSubscriptionEvent('VehiclePingResult', vehicleName)
   return (
-    <Layout>
-      <OverviewToolbar
-        vehicleName={vehicleName}
-        pilotInCharge={picAndOnCall?.[0].pic?.user}
-        pilotOnCall={picAndOnCall?.[0].onCall?.user}
-        deployment={
-          isLoading
-            ? { name: '...', id: '0' }
-            : {
-                name: (deployment?.name ?? '...') as string,
-                id: (deployment?.deploymentId as string) ?? '0',
-                unixTime: deployment?.startEvent?.unixTime,
+    <SelectedPlatformsProvider>
+      <SelectedStationsProvider>
+        <div className={styles.content}>
+          <Layout>
+            <OverviewToolbar
+              vehicleName={vehicleName}
+              pilotInCharge={picAndOnCall?.[0].pic?.user}
+              pilotOnCall={picAndOnCall?.[0].onCall?.user}
+              deployment={
+                isLoading
+                  ? { name: '...', id: '0' }
+                  : {
+                      name: (deployment?.name ?? '...') as string,
+                      id: (deployment?.deploymentId as string) ?? '0',
+                      unixTime: deployment?.startEvent?.unixTime,
+                    }
               }
-        }
-        onClickPilot={loadingPic ? undefined : handleClickPilot}
-        supportIcon1={
-          pingEvent?.reachable ? <ConnectedIcon /> : <NotConnectedIcon />
-        }
-        supportIcon2={
-          pingEvent?.reachable ? <SurfacedIcon /> : <UnderwaterIcon />
-        }
-        onSelectNewDeployment={handleNewDeployment}
-        deployments={deployments}
-        onEditDeployment={handleEditDeployment}
-        onSelectDeployment={handleSelectDeployment}
-        onIcon1hover={() => (
-          <VehicleCommsCell
-            icon={
-              pingEvent?.reachable ? <ConnectedIcon /> : <NotConnectedIcon />
-            }
-            headline={`Cell Comms: ${
-              pingEvent?.reachable ? 'Connected' : 'Not Connected'
-            }`}
-            host={pingEvent?.hostName ?? 'Not available'}
-            lastPing={
-              ((pingEvent?.checkedAt &&
-                DateTime.fromMillis(
-                  pingEvent?.checkedAt
-                ).toRelative()) as string) ?? 'Not available'
-            }
-            nextComms={`${nextCommsTime?.toFormat(
-              'hh:mm'
-            )} (in ${nextCommsTime?.toRelative()})`}
-          />
-        )}
-        onIcon2hover={() => (
-          <VehicleInfoCell
-            icon={pingEvent?.reachable ? <SurfacedIcon /> : <UnderwaterIcon />}
-            headline="Likely underwater"
-            subtitle="Last comms over satellite"
-            lastCommsOverSat={`${
-              lastCommsTime?.day === DateTime.now().day
-                ? 'Today'
-                : lastCommsTime?.toFormat('mmm, d')
-            } at ${lastCommsTime?.toFormat(
-              'hh:mm:ss'
-            )} (${lastCommsTime?.toRelative()})`}
-            estimate={`Est. to surface in ${nextCommsTime?.toRelative()} at ~${nextCommsTime?.toFormat(
-              'hh:mm'
-            )}`}
-          />
-        )}
-      />
-      <div className={styles.content}>
-        <Allotment separator defaultSizes={[75, 25]}>
-          <section className={styles.primary}>
-            <MissionProgressToolbar
-              startTime={DateTime.fromMillis(startTime).toISO()}
-              endTime={DateTime.fromMillis(endTime).toISO()}
-              ticks={6}
-              ariaLabel="Mission Progress"
-              className="bg-secondary-300/60"
-              onScrub={handleTimeScrub}
-              indicatorTime={indicatorTime}
-            />
-            <div className={styles.mapContainer}>
-              {mapsLoaded && (
-                <DeploymentMap
-                  vehicleName={vehicleName}
-                  indicatorTime={indicatorTime}
-                  startTime={startTime}
-                  endTime={endTime}
-                  onScrub={handleTimeScrub}
+              onClickPilot={loadingPic ? undefined : handleClickPilot}
+              supportIcon1={
+                pingEvent?.reachable ? <ConnectedIcon /> : <NotConnectedIcon />
+              }
+              supportIcon2={
+                pingEvent?.reachable ? <SurfacedIcon /> : <UnderwaterIcon />
+              }
+              onSelectNewDeployment={handleNewDeployment}
+              deployments={deployments}
+              onEditDeployment={handleEditDeployment}
+              onSelectDeployment={handleSelectDeployment}
+              onIcon1hover={() => (
+                <VehicleCommsCell
+                  icon={
+                    pingEvent?.reachable ? (
+                      <ConnectedIcon />
+                    ) : (
+                      <NotConnectedIcon />
+                    )
+                  }
+                  headline={`Cell Comms: ${
+                    pingEvent?.reachable ? 'Connected' : 'Not Connected'
+                  }`}
+                  host={pingEvent?.hostName ?? 'Not available'}
+                  lastPing={
+                    ((pingEvent?.checkedAt &&
+                      DateTime.fromMillis(
+                        pingEvent?.checkedAt
+                      ).toRelative()) as string) ?? 'Not available'
+                  }
+                  nextComms={`${nextCommsTime?.toFormat(
+                    'hh:mm'
+                  )} (in ${nextCommsTime?.toRelative()})`}
                 />
               )}
-              <div className="absolute bottom-0 z-[1001] flex w-full flex-col">
-                <TabGroup className="w-full px-8">
-                  <Tab
-                    onClick={toggleDrawer}
-                    label={
-                      <FontAwesomeIcon
-                        icon={drawerOpen ? faChevronDown : faChevronUp}
-                        size="1x"
+              onIcon2hover={() => (
+                <VehicleInfoCell
+                  icon={
+                    pingEvent?.reachable ? <SurfacedIcon /> : <UnderwaterIcon />
+                  }
+                  headline="Likely underwater"
+                  subtitle="Last comms over satellite"
+                  lastCommsOverSat={`${
+                    lastCommsTime?.day === DateTime.now().day
+                      ? 'Today'
+                      : lastCommsTime?.toFormat('mmm, d')
+                  } at ${lastCommsTime?.toFormat(
+                    'hh:mm:ss'
+                  )} (${lastCommsTime?.toRelative()})`}
+                  estimate={`Est. to surface in ${nextCommsTime?.toRelative()} at ~${nextCommsTime?.toFormat(
+                    'hh:mm'
+                  )}`}
+                />
+              )}
+            />
+            <div className={styles.content}>
+              <Allotment separator defaultSizes={[75, 25]}>
+                <section className={styles.primary}>
+                  <MissionProgressToolbar
+                    startTime={DateTime.fromMillis(startTime).toISO()}
+                    endTime={DateTime.fromMillis(endTime).toISO()}
+                    ticks={6}
+                    ariaLabel="Mission Progress"
+                    className="bg-secondary-300/60"
+                    onScrub={handleTimeScrub}
+                    indicatorTime={indicatorTime}
+                  />
+                  <div className={styles.mapContainer}>
+                    {mapsLoaded && (
+                      <DeploymentMap
+                        vehicleName={vehicleName}
+                        indicatorTime={indicatorTime}
+                        startTime={startTime}
+                        endTime={endTime}
+                        onScrub={handleTimeScrub}
                       />
-                    }
-                    selected
-                    className="mr-auto"
-                  />
-                  <Tab
-                    label="Vehicle State"
-                    onClick={setCurrentTab('vehicle')}
-                    selected={currentTab === 'vehicle'}
-                  />
-                  <Tab
-                    label="Depth Data"
-                    onClick={setCurrentTab('depth')}
-                    selected={currentTab === 'depth'}
-                    className="mr-auto"
-                  />
-                </TabGroup>
-                <div
-                  className={clsx(
-                    'flex w-full bg-white',
-                    drawerOpen ? 'h-80' : 'h-12'
-                  )}
-                >
-                  {currentTab === 'vehicle' && (
-                    <VehicleDiagram
-                      name={vehicleName as string}
-                      className="m-auto flex h-full w-full"
-                      onBatteryClick={handleBatteryClick}
+                    )}
+                    <div className="absolute bottom-0 z-[1001] flex w-full flex-col">
+                      <TabGroup className="w-full px-8">
+                        <Tab
+                          onClick={toggleDrawer}
+                          label={
+                            <FontAwesomeIcon
+                              icon={drawerOpen ? faChevronDown : faChevronUp}
+                              size="1x"
+                            />
+                          }
+                          selected
+                          className="mr-auto"
+                        />
+                        <Tab
+                          label="Vehicle State"
+                          onClick={setCurrentTab('vehicle')}
+                          selected={currentTab === 'vehicle'}
+                        />
+                        <Tab
+                          label="Depth Data"
+                          onClick={setCurrentTab('depth')}
+                          selected={currentTab === 'depth'}
+                          className="mr-auto"
+                        />
+                      </TabGroup>
+                      <div
+                        className={clsx(
+                          'flex w-full bg-white',
+                          drawerOpen ? 'h-80' : 'h-12'
+                        )}
+                      >
+                        {currentTab === 'vehicle' && (
+                          <VehicleDiagram
+                            name={vehicleName as string}
+                            className="m-auto flex h-full w-full"
+                            onBatteryClick={handleBatteryClick}
+                          />
+                        )}
+                        {currentTab === 'depth' && (
+                          <div className="flex h-full w-full overflow-hidden px-4">
+                            {depthChart}
+                            {chartLoading && (
+                              <p className="text-md m-auto font-bold">
+                                Loading Depth Data
+                              </p>
+                            )}
+                            {chartError && (
+                              <p className="text-md m-auto font-bold">
+                                Depth Data Could Not Be Loaded
+                              </p>
+                            )}
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                </section>
+                {/* <section className={styles.secondary}>
+                  {deployment && (
+                    <VehicleAccordion
+                      authenticated={authenticated}
+                      vehicleName={vehicleName}
+                      from={DateTime.fromMillis(deploymentStartTime)
+                        .minus({ days: deployment.active ? 1 : 0 })
+                        .toISO()}
+                      to={DateTime.fromMillis(endTime).toISO()}
+                      activeDeployment={deployment.active}
+                      currentDeploymentId={deployment.deploymentId as number}
                     />
                   )}
-                  {currentTab === 'depth' && (
-                    <div className="flex h-full w-full overflow-hidden px-4">
-                      {depthChart}
-                      {chartLoading && (
-                        <p className="text-md m-auto font-bold">
-                          Loading Depth Data
-                        </p>
-                      )}
-                      {chartError && (
-                        <p className="text-md m-auto font-bold">
-                          Depth Data Could Not Be Loaded
-                        </p>
-                      )}
-                    </div>
+                </section> */}
+                {/* </Allotment> */}
+                {/* </div> */}
+                {/* </section> */}
+                <section className={styles.secondary}>
+                  {deployment && (
+                    <VehicleAccordion
+                      authenticated={authenticated}
+                      vehicleName={vehicleName}
+                      from={adjustedDeploymentStartTime}
+                      to={endTime}
+                      activeDeployment={deployment.active}
+                      currentDeploymentId={deployment.deploymentId as number}
+                    />
                   )}
-                </div>
-              </div>
+                </section>
+              </Allotment>
             </div>
-          </section>
-          <section className={styles.secondary}>
-            {deployment && (
-              <VehicleAccordion
-                authenticated={authenticated}
-                vehicleName={vehicleName}
-                from={adjustedDeploymentStartTime}
-                to={endTime}
-                activeDeployment={deployment.active}
-                currentDeploymentId={deployment.deploymentId as number}
-              />
-            )}
-          </section>
-        </Allotment>
-      </div>
-    </Layout>
+            {/* </Layout> */}
+          </Layout>
+        </div>
+      </SelectedStationsProvider>
+    </SelectedPlatformsProvider>
   )
 }
 

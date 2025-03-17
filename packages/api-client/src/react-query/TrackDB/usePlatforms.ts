@@ -2,7 +2,6 @@ import { useQuery } from 'react-query'
 import { getPlatforms, GetPlatformsParams } from '../../axios'
 import { useTethysApiContext } from '../TethysApiProvider'
 import { SupportedQueryOptions } from '../types'
-import axios, { AxiosInstance } from 'axios'
 
 export const usePlatforms = (
   params: GetPlatformsParams,
