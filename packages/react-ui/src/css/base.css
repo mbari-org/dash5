@@ -181,6 +181,17 @@ ul.tree input[type='checkbox'] {
   transform: translate3d(3784px, 257px, 0px);
   padding: 5px;
 }
+
+/* Tippy Tooltip styling */
+.tippy-box[data-theme~='mapBtnTT'] {
+  background-color: #e5e7eb;
+  color: #000;
+}
+.tippy-box[data-theme~='mapBtnTT'] .tippy-arrow {
+  background-color: #e5e7eb;
+  color: #e5e7eb;
+}
+
 #xMark:hover {
   size: '2xl';
   color: red;
@@ -231,6 +242,7 @@ ul.tree input[type='checkbox'] {
 /* Custom Map Buttons - Vehicle-Center Button CSS control */
 #trackdb,
 #vehicle-center,
+#allVehicles-center,
 #stationsdb {
   color: #fff !important;
   background-color: #8c9eff !important;
@@ -363,23 +375,7 @@ a.leaflet-control-layers-toggle {
 .leaflet-control-container
   .leaflet-top
   .leaflet-control-zoom
-  a.leaflet-control-zoom-in {
-  color: #fff !important;
-  background-color: #8c9eff !important;
-  box-shadow: 0 3px 5px -1px rgba(0, 0, 0, 0.2), 0 5px 8px rgba(0, 0, 0, 0.14),
-    0 1px 14px rgba(0, 0, 0, 0.12);
-  background-image: linear-gradient(
-    180deg,
-    hsla(0, 0%, 100%, 0.3),
-    hsla(0, 0%, 100%, 0) 50%,
-    rgba(0, 0, 0, 0.12) 51%,
-    rgba(0, 0, 0, 0.04)
-  ) !important;
-  width: 40px;
-  height: 40px;
-  line-height: 40px;
-  border-radius: 0.25rem;
-}
+  a.leaflet-control-zoom-in,
 .leaflet-control-container
   .leaflet-top
   .leaflet-control-zoom
