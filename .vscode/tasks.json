@@ -62,6 +62,21 @@
       }
     },
     {
+      "label": "[utils]: Tests",
+      "type": "shell",
+      "command": "yarn workspace @mbari/utils test:watch",
+      "presentation": {
+        "reveal": "always",
+        "panel": "new",
+        "group": "utils-tests"
+      },
+      "options": {
+        "statusbar": {
+          "label": "$(test-view-icon) Utils Tests"
+        }
+      }
+    },
+    {
       "label": "[lrauv-dash2]: Tests",
       "type": "shell",
       "command": "yarn workspace @mbari/lrauv-dash2 test",

@@ -46,9 +46,9 @@ export const getDeployments = async (
         result.launchEvent,
         result.startEvent,
       ]
-        .filter((i) => i)
-        .map((i) => i?.unixTime)
-        .sort()
+        .filter((i) => i?.unixTime)
+        .map((i) => i!.unixTime)
+        .sort((a, b) => a - b)
         .reverse()[0],
     })) as GetDeploymentsResponse[]
 }

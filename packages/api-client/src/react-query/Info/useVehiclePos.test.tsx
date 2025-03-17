@@ -73,7 +73,7 @@ afterAll(() => server.close())
 const MockVehiclePosition: React.FC = () => {
   const query = useVehiclePos({
     vehicle: 'pontus',
-    from: '2022-06-16',
+    from: 1710095743191,
   })
   return query.isLoading ? null : (
     <div>

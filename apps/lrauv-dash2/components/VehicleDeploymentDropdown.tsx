@@ -13,7 +13,6 @@ const LastDeploymentOption: React.FC<{ vehicleName: string }> = ({
   const lastDeployment = useLastDeployment(
     {
       vehicle: vehicleName,
-      to: new Date().toISOString(),
     },
     {
       enabled: vehicleName !== '',

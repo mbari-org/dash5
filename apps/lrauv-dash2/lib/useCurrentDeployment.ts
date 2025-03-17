@@ -11,7 +11,6 @@ const useCurrentDeployment = () => {
   const { data: lastDeployment, isLoading } = useLastDeployment(
     {
       vehicle: vehicle as string,
-      to: new Date().toISOString(),
     },
     { staleTime: 5 * 60 * 1000, enabled: !!vehicle && !deploymentId }
   )

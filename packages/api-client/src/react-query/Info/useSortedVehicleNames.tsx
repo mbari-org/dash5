@@ -17,7 +17,6 @@ export const useSortedVehicleNames = (params: GetVehiclesParams) => {
 
   const fetchSortedDeployments = useCallback(async () => {
     setLoadingDeployments(true)
-    const to = new Date().toISOString()
     await Promise.all(
       vehicles.map(
         async ({ vehicleName }) =>
@@ -25,7 +24,7 @@ export const useSortedVehicleNames = (params: GetVehiclesParams) => {
             ['deployment', 'last', vehicleName],
             () => {
               return getLastDeployment(
-                { vehicle: vehicleName, to },
+                { vehicle: vehicleName },
                 {
                   instance: axiosInstance,
                 }
