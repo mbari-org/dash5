@@ -16,8 +16,8 @@ export const useChartData = (
     ...params
   }: {
     vehicle: string
-    from: string
-    to?: string
+    from: number // milliseconds since epoch
+    to?: number // milliseconds since epoch
   },
   options?: SupportedQueryOptions
 ) => {

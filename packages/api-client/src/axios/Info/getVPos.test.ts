@@ -4,8 +4,8 @@ import { getVPos, GetVPosParams } from './getVPos'
 
 let params: GetVPosParams = {
   vehicle: 'test vehicle',
-  to: 'test destination',
-  from: 'test departure',
+  from: 1710095743191,
+  to: 1740767743191,
   limit: 1,
 }
 

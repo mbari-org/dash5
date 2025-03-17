@@ -85,8 +85,8 @@ export const ScienceCell: React.FC<{
 
 const ScienceDataSection: React.FC<{
   vehicleName: string
-  from: string
-  to?: string
+  from: number // milliseconds since epoch
+  to?: number // milliseconds since epoch
 }> = ({ vehicleName, from, to }) => {
   const { setGlobalModalId } = useGlobalModalId()
   const {

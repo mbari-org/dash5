@@ -21,8 +21,8 @@ export const useEvents = (
         return initialResults
       }
 
-      // Parse the from date to determine when to stop fetching
-      const fromDate = new Date(params.from).getTime()
+      // Get the from timestamp - params.from is already a number now
+      const fromTimestamp = params.from
 
       let allResults = [...initialResults]
       let currentResults = initialResults
@@ -40,12 +40,12 @@ export const useEvents = (
         // If we've reached or gone past the from date, we're done
         // Make sure the comparison is correct - we want to keep fetching until
         // the oldest event we've found is older than or equal to the fromDate
-        if (earliestEvent.unixTime <= fromDate) {
+        if (earliestEvent.unixTime <= fromTimestamp) {
           console.log(
             'Breaking recursive fetch because earliest event timestamp',
             earliestEvent.unixTime,
-            'is earlier than or equal to fromDate',
-            fromDate
+            'is earlier than or equal to fromTimestamp',
+            fromTimestamp
           )
           break
         }
@@ -55,7 +55,7 @@ export const useEvents = (
         const nextTime = earliestEvent.unixTime - 1
         const nextParams: GetEventsParams = {
           ...params,
-          to: new Date(nextTime).toISOString(),
+          to: nextTime,
         }
 
         // Fetch the next batch of results

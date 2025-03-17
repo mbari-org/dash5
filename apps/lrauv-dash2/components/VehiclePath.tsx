@@ -47,17 +47,14 @@ const VehiclePath: React.FC<{
   const { data: lastDeployment } = useLastDeployment(
     {
       vehicle: name,
-      to: new Date().toISOString(),
     },
     { staleTime: 5 * 60 * 1000 }
   )
   const { data: vehiclePosition } = useVehiclePos(
     {
       vehicle: name as string,
-      from: DateTime.fromMillis(
-        from ?? lastDeployment?.startEvent?.unixTime ?? 0
-      ).toISO(),
-      to: to?.toString(),
+      from: lastDeployment?.startEvent?.unixTime ?? 0,
+      to: to,
     },
     {
       enabled: !!from || !!lastDeployment?.startEvent?.unixTime,

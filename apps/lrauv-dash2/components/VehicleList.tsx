@@ -48,16 +48,13 @@ const ConnectedVehicleCell: React.FC<{
   const { data: lastDeployment } = useLastDeployment(
     {
       vehicle: name,
-      to: new Date().toISOString(),
     },
     { staleTime: 5 * 60 * 1000 }
   )
   const { data: vehiclePosition, isLoading: positionLoading } = useVehiclePos(
     {
       vehicle: name,
-      from: lastDeployment?.lastEvent
-        ? DateTime.fromMillis(lastDeployment?.lastEvent).toISO()
-        : '',
+      from: lastDeployment?.lastEvent ?? 0,
     },
     {
       enabled: !!lastDeployment?.lastEvent,

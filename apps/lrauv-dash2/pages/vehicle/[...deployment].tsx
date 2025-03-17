@@ -2,6 +2,8 @@ import { useEffect, useMemo, useState } from 'react'
 import { NextPage } from 'next'
 import { useRouter } from 'next/router'
 import { DateTime } from 'luxon'
+import { getAdjustedUnixTime } from '@mbari/utils'
+
 import {
   Tab,
   TabGroup,
@@ -128,6 +130,11 @@ const Vehicle: NextPage = () => {
       ? missionStartedEvent?.[0]?.unixTime
       : deploymentStartTime
 
+  const adjustedDeploymentStartTime = getAdjustedUnixTime({
+    unixTime: deploymentStartTime,
+    offsetDays: deployment?.active ? -1 : 0,
+  })
+
   const endTime = deployment?.active
     ? DateTime.utc().plus({ hours: 4 }).endOf('day').toMillis()
     : deployment?.lastEvent ?? 0
@@ -157,8 +164,8 @@ const Vehicle: NextPage = () => {
   } = useChartData(
     {
       vehicle: vehicleName as string,
-      from: DateTime.fromMillis(startTime).toISO(),
-      to: endTime ? DateTime.fromMillis(endTime).toISO() : undefined,
+      from: startTime,
+      to: endTime ? endTime : undefined,
     },
     {
       enabled: currentTab === 'depth' && startTime > 0,
@@ -353,10 +360,8 @@ const Vehicle: NextPage = () => {
                     <VehicleAccordion
                       authenticated={authenticated}
                       vehicleName={vehicleName}
-                      from={DateTime.fromMillis(deploymentStartTime)
-                        .minus({ days: deployment.active ? 1 : 0 })
-                        .toISO()}
-                      to={DateTime.fromMillis(endTime).toISO()}
+                      from={adjustedDeploymentStartTime}
+                      to={endTime}
                       activeDeployment={deployment.active}
                       currentDeploymentId={deployment.deploymentId as number}
                     />

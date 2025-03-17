@@ -7,10 +7,6 @@ export interface GetLastDeploymentParams {
    * The name of the vehicle.
    */
   vehicle: string
-  /**
-   * An ISO 8601 formatted date string.
-   */
-  to: string
 }
 
 export interface DeploymentEvent {
