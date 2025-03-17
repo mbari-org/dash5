@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import React, { useMemo, useState } from 'react'
 import { useEvents, useTethysApiContext } from '@mbari/api-client'
 import {
   Virtualizer,
@@ -30,6 +30,11 @@ export interface LogsSectionProps {
   to?: number
 }
 
+const TWO_YEARS_AGO = getAdjustedUnixTime({
+  unixTime: DateTime.now().toMillis(),
+  offsetYears: -2,
+})
+
 const LogsSection: React.FC<LogsSectionProps> = ({ vehicleName, from, to }) => {
   const [allLogs, setAllLogs] = useState(false)
   const toggleAllLogs = () => {
@@ -38,24 +43,27 @@ const LogsSection: React.FC<LogsSectionProps> = ({ vehicleName, from, to }) => {
 
   const { siteConfig } = useTethysApiContext()
   const [filters, setFilters] = useState<MultiValue<SelectOption>>([])
-  const eventTypes = filters.length
-    ? filters
-        .map(({ id }) => eventFilters[id].eventTypes)
-        .flat()
-        .filter((k, i, a) => a.indexOf(k) === i)
-    : undefined
 
-  const twoYearsAgo = getAdjustedUnixTime({
-    unixTime: DateTime.now().toMillis(),
-    offsetYears: -2,
-  })
+  const eventTypes = useMemo(() => {
+    return filters.length
+      ? filters
+          .map(({ id }) => eventFilters[id].eventTypes)
+          .flat()
+          .filter((k, i, a) => a.indexOf(k) === i)
+      : undefined
+  }, [filters])
 
-  const { data, isLoading, isFetching, refetch } = useEvents({
-    vehicles: [vehicleName],
-    from: allLogs ? twoYearsAgo : from,
-    to: allLogs ? undefined : to,
-    eventTypes,
-  })
+  const queryParams = useMemo(
+    () => ({
+      vehicles: [vehicleName],
+      eventTypes,
+      from: allLogs ? TWO_YEARS_AGO : from, // TODO: implement pagination to get all logs
+      to: allLogs ? undefined : to,
+    }),
+    [vehicleName, allLogs, from, to, eventTypes]
+  )
+
+  const { data, isLoading, isFetching, refetch } = useEvents(queryParams)
 
   const cellAtIndex = (index: number, _virtualizer: Virtualizer) => {
     const item = data?.[index]
