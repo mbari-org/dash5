@@ -73,7 +73,7 @@ const VehicleDiagram: React.FC<{
         colorGf={vehicle?.color_gf}
         textGf={vehicle?.text_gf}
         colorFlow={vehicle?.color_flow}
-        colorWavecolor={'st0' ?? vehicle?.color_wavecolor}
+        colorWavecolor={vehicle?.color_wavecolor ?? 'st0'}
         textAmps={vehicle?.text_amps}
         colorAmps={vehicle?.color_amps}
         colorDvl={vehicle?.color_dvl}
