@@ -181,6 +181,7 @@ ul.tree input[type='checkbox'] {
   transform: translate3d(3784px, 257px, 0px);
   padding: 5px;
 }
+
 /* Tippy Tooltip styling */
 .tippy-box[data-theme~='mapBtnTT'] {
   background-color: #e5e7eb;
