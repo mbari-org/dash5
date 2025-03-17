@@ -52,30 +52,10 @@ export interface MapProps {
   onRequestStations?: () => void
   dmsCoord?: string
   mapCoord?: string
-  fitBounds?: [[number, number], [number, number]]
   children?: React.ReactNode
 }
 
 export type MeasureMode = 'open' | 'measuring' | 'closed' | 'cancelled'
-
-const CenterView: React.FC<{
-  coords: [number, number]
-  bounds?: [[number, number], [number, number]]
-}> = ({ coords, bounds }) => {
-  const map = useMap()
-
-  useEffect(() => {
-    if (bounds) {
-      console.log('Fitting map to bounds:', bounds)
-      map.fitBounds(bounds, { padding: [50, 50] })
-    } else if (coords) {
-      console.log('Setting map view to coords:', coords)
-      map.setView(coords, map.getZoom())
-    }
-  }, [coords, bounds, map])
-
-  return null
-}
 
 const Map: React.FC<MapProps> = ({
   className,
@@ -85,7 +65,6 @@ const Map: React.FC<MapProps> = ({
   minZoom = 4,
   maxZoom = 17,
   maxNativeZoom = 13,
-  fitBounds,
   children,
   onRequestDepth,
   onRequestCoordinate,
@@ -110,8 +89,6 @@ const Map: React.FC<MapProps> = ({
   >([])
 
   const handleLayersClick = () => {
-    // Save current map center so CenterView doesn't change it
-    // originalCenter.current = center
     // Call the handler without changing the center
     onRequestStations?.()
   }
@@ -495,9 +472,6 @@ const Map: React.FC<MapProps> = ({
           </button>
         </Tippy>
       </Control>
-
-      {/* CENTER VIEW - Supports both center and bounds */}
-      <CenterView coords={originalCenter.current} bounds={fitBounds} />
 
       {/* MEASUREMENT CONTROLS - In a separate Control component */}
       <Control position="topright">
