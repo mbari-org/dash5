@@ -81,15 +81,16 @@ const DeploymentMap: React.FC<DeploymentMapProps> = ({
   }, [vehicleName, setLatestGPS])
 
   useEffect(() => {
-    if (latestGPS) {
-      console.log(
-        'Setting center to latest GPS:',
-        latestGPS.latitude,
-        latestGPS.longitude
-      )
+    if (!latestGPS?.latitude || !latestGPS?.longitude) return
+
+    if (
+      !center ||
+      center[0] !== latestGPS.latitude ||
+      center[1] !== latestGPS.longitude
+    ) {
       setCenter([latestGPS.latitude, latestGPS.longitude])
     }
-  }, [latestGPS])
+  }, [latestGPS]) // Intentionally omitting center from dependencies to avoid infinite loop
 
   // Store positions of all vehicles to calculate center
   const vehiclePosition = useRef<Array<[number, number]>>([])
