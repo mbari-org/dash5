@@ -59,6 +59,7 @@ const LogsSection: React.FC<LogsSectionProps> = ({ vehicleName, from, to }) => {
       eventTypes,
       from: allLogs ? TWO_YEARS_AGO : from, // TODO: implement pagination to get all logs
       to: allLogs ? undefined : to,
+      limit: 10000, // this limit affects chunk size, not the total number of logs returned
     }),
     [vehicleName, allLogs, from, to, eventTypes]
   )
