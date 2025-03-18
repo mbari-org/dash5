@@ -6,7 +6,6 @@ import {
   LayersControl,
   ScaleControl,
   useMapEvents,
-  useMap,
 } from 'react-leaflet'
 import ReactLeafletGoogleLayer from 'react-leaflet-google-layer'
 import Control from 'react-leaflet-custom-control'
@@ -24,14 +23,12 @@ import {
   faCircleCheck,
   faRulerCombined,
   faArrowsUpDownLeftRight,
-  faLayerGroup,
 } from '@fortawesome/free-solid-svg-icons'
 import { faCircleXmark } from '@fortawesome/free-regular-svg-icons'
 import { Measurement } from './Measurement'
-// Remove the ReactTooltip import and use native tooltips
-// import { Tooltip } from 'react-tooltip'
 import MovingDot from './MovingDot'
 import { AreaComponent, PathComponent, MeasurementProps } from './Measurement'
+import { CenterView } from './MapViews'
 
 const regex = /\B(?=(\d{3})+(?!\d))/g
 let mapCoord: String
@@ -277,7 +274,7 @@ const Map: React.FC<MapProps> = ({
   const handleRequestCoordinate = (e: React.MouseEvent) => {
     e.preventDefault()
     e.stopPropagation()
-    console.log('Map.tsx - handleRequestCoordinate')
+    console.log('Map.tsx - Vehicle center button clicked')
     onRequestCoordinate?.()
   }
 
@@ -307,6 +304,7 @@ const Map: React.FC<MapProps> = ({
       // @ts-ignore
       maxNativeZoom={maxNativeZoom}
     >
+      {center && <CenterView coords={center} />}
       <ScaleControl position="topright" />
       <LayersControl position="topright">
         <LayersControl.BaseLayer

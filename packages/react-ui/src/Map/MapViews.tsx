@@ -3,7 +3,7 @@ import { useMap } from 'react-leaflet'
 
 let coords: [number, number]
 
-export const CenterViewComponent: React.FC<{ coords: [number, number] }> = ({
+export const CenterView: React.FC<{ coords: [number, number] }> = ({
   coords,
 }) => {
   const map = useMap()
