@@ -127,8 +127,8 @@ jobs:
       - name: Trigger Watchtower to update container
         shell: bash
         run: |
-          if [ -n "${{ secrets.WATCHTOWER_HTTP_API_TOKEN }}" ] && [ -n "${{ secrets.TETHYSDASH_STATIC_WATCHTOWER_ENDPOINT }}" ]; then
-            curl -H "Authorization: Bearer ${{ secrets.WATCHTOWER_HTTP_API_TOKEN }}" ${{ secrets.TETHYSDASH_STATIC_WATCHTOWER_ENDPOINT }}
+          if [ -n "${{ secrets.WATCHTOWER_HTTP_API_TOKEN }}" ] && [ -n "${{ secrets.TETHYSDASH2_WATCHTOWER_ENDPOINT }}" ]; then
+            curl -H "Authorization: Bearer ${{ secrets.WATCHTOWER_HTTP_API_TOKEN }}" ${{ secrets.TETHYSDASH2_WATCHTOWER_ENDPOINT }}
             echo "Watchtower update triggered successfully"
           else
             echo "Skipping Watchtower update - required secrets not configured"
