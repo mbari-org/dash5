@@ -62,6 +62,7 @@ const VehiclePath: React.FC<{
   )
 
   const latestGPS = useRef<[number, number] | undefined>()
+
   useEffect(() => {
     if (vehiclePosition?.gpsFixes && vehiclePosition.gpsFixes.length > 0) {
       const latest = vehiclePosition?.gpsFixes[0]

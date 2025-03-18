@@ -1,13 +1,10 @@
 import dynamic from 'next/dynamic'
 import React, { useCallback, useState, useRef, useEffect } from 'react'
-import { useManagedWaypoints, Station } from '@mbari/react-ui'
+import { useManagedWaypoints } from '@mbari/react-ui'
 import { useGoogleElevator } from '../lib/useGoogleElevator'
 import { VPosDetail } from '@mbari/api-client'
-import { PlatformsListModal } from './PlatformsListModal'
 import { StationsListModal } from './StationsListModal'
 import { useSelectedStations } from './SelectedStationContext'
-import { useSelectedPlatforms } from './SelectedPlatformContext'
-// import { CenterViewComponent } from 'react-ui/dist/Map/MapViews'
 
 // This is a tricky workaround to prevent leaflet from crashing next.js
 // SSR. If we don't do this, the leaflet map will be loaded server side
@@ -67,7 +64,12 @@ const DeploymentMap: React.FC<DeploymentMapProps> = ({
 
   const { handleDepthRequest } = useGoogleElevator()
   const [center, setCenter] = useState<undefined | [number, number]>()
+  const [centerZoom, setCenterZoom] = useState<number | undefined>(undefined)
+  const [bounds, setBounds] = useState<
+    [[number, number], [number, number]] | undefined
+  >()
   const [latestGPS, setLatestGPS] = useState<VPosDetail | undefined>()
+  const [viewMode, setViewMode] = useState<'center' | 'bounds' | null>(null)
   const [showStations, setShowStations] = useState(false)
   const { selectedStations } = useSelectedStations()
 
@@ -94,6 +96,8 @@ const DeploymentMap: React.FC<DeploymentMapProps> = ({
 
   // Store positions of all vehicles to calculate center
   const vehiclePosition = useRef<Array<[number, number]>>([])
+  // Track vehicle path points for bounds calculation
+  const pathPoints = useRef<Array<[number, number]>>([])
 
   const handleGPSFix = useCallback(
     (gps: VPosDetail) => {
@@ -102,7 +106,14 @@ const DeploymentMap: React.FC<DeploymentMapProps> = ({
         vehiclePosition.current = []
         setLatestGPS(gps)
       }
-
+      // Store position for path bounds calculation
+      if (gps.latitude && gps.longitude) {
+        pathPoints.current.push([gps.latitude, gps.longitude])
+      }
+      // Limit stored positions to prevent memory issues
+      if (pathPoints.current.length > 1000) {
+        pathPoints.current = pathPoints.current.slice(-1000)
+      }
       // Store position for centering
       const position: [number, number] = [gps.latitude, gps.longitude]
       vehiclePosition.current.push(position)
@@ -110,55 +121,81 @@ const DeploymentMap: React.FC<DeploymentMapProps> = ({
     [latestGPS, setLatestGPS]
   )
 
-  const handleCoordinateRequest = useCallback(() => {
-    if (latestGPS) {
-      setCenter([latestGPS?.latitude, latestGPS?.longitude])
-    }
-  }, [latestGPS, setCenter])
-
-  // Function to calculate the center of all vehicle positions
-  const calculateCenter = useCallback((): [number, number] => {
-    if (vehiclePosition.current.length === 0) {
-      // Default center if no positions
-      return [36.7849, -122.12097]
+  // Calculate bounds for the entire vehicle path
+  const calculatePathBounds = useCallback(() => {
+    if (pathPoints.current.length === 0) {
+      console.warn('No path points available for bounds calculation')
+      return
     }
 
-    // Calculate the average latitude and longitude
-    const sum = vehiclePosition.current.reduce(
-      (acc, pos) => [acc[0] + pos[0], acc[1] + pos[1]],
-      [0, 0]
-    )
+    // Find min/max lat/lon
+    let minLat = 90,
+      maxLat = -90,
+      minLng = 180,
+      maxLng = -180
 
-    return [
-      sum[0] / vehiclePosition.current.length,
-      sum[1] / vehiclePosition.current.length,
+    pathPoints.current.forEach((pos) => {
+      minLat = Math.min(minLat, pos[0])
+      maxLat = Math.max(maxLat, pos[0])
+      minLng = Math.min(minLng, pos[1])
+      maxLng = Math.max(maxLng, pos[1])
+    })
+
+    // Add padding (0.05 degrees)
+    const padding = 0.05
+    const newBounds: [[number, number], [number, number]] = [
+      [minLat - padding, minLng - padding],
+      [maxLat + padding, maxLng + padding],
     ]
+
+    setBounds(newBounds)
+    setCenter(undefined) // Clear center when using bounds
+    // Set the view mode to force a re-render
+    setViewMode('bounds')
   }, [])
 
-  const [showPlatforms, setShowPlatforms] = useState(false)
-  const { selectedPlatforms } = useSelectedPlatforms()
-  const handlePlatformsRequest = useCallback(() => {
-    setShowPlatforms(true)
-  }, [setShowPlatforms])
+  const handleCoordinateRequest = useCallback(() => {
+    if (latestGPS) {
+      setCenter([latestGPS.latitude, latestGPS.longitude])
+      setCenterZoom(17)
+      setBounds(undefined)
+      setViewMode('center')
+    } else {
+      // If no latestGPS, try to use the last point in pathPoints if available
+      const lastPoint = pathPoints.current[pathPoints.current.length - 1]
+      if (lastPoint) {
+        setCenter(lastPoint)
+        setCenterZoom(17)
+        setBounds(undefined)
+        setViewMode('center')
+      } else {
+        console.warn('DeploymentMap - No position available to center on')
+      }
+    }
+  }, [latestGPS])
 
-  const handleClosePlatforms = useCallback(() => {
-    setShowPlatforms(false)
-  }, [setShowPlatforms])
+  // Handler for fitting bounds to entire path
+  const handleFitBoundsRequest = useCallback(() => {
+    calculatePathBounds()
+  }, [calculatePathBounds])
 
   const handleStationsRequest = useCallback(() => {
-    console.log('DeploymentMap.tsx - Stations Request Clicked')
     setShowStations(true)
-  }, [setShowStations])
+  }, [])
 
   const handleCloseStations = useCallback(() => {
     setShowStations(false)
-  }, [setShowStations])
+  }, [])
+
+  const handlePlatformsRequest = useCallback(() => {
+    console.log('Platforms request initiated')
+    // Implement the logic to handle platform requests here
+    // This could involve fetching platform data from an API or other data source
+    // For now, we'll just log a message to indicate the function was called
+  }, [])
 
   return (
     <>
-      {showPlatforms ? (
-        <PlatformsListModal onClose={handleClosePlatforms} />
-      ) : null}
       {showStations ? (
         <StationsListModal onClose={handleCloseStations} />
       ) : null}
@@ -167,8 +204,12 @@ const DeploymentMap: React.FC<DeploymentMapProps> = ({
         maxZoom={17}
         onRequestDepth={handleDepthRequest}
         center={center}
+        centerZoom={centerZoom}
+        fitBounds={bounds}
+        viewMode={viewMode}
         onRequestCoordinate={handleCoordinateRequest}
         onRequestPlatforms={handlePlatformsRequest}
+        onRequestFitBounds={handleFitBoundsRequest}
         onRequestStations={handleStationsRequest}
       >
         {selectedStations.map((station) => {
@@ -176,9 +217,6 @@ const DeploymentMap: React.FC<DeploymentMapProps> = ({
           const lat = station.geojson.geometry.coordinates[1]
 
           if (!lng || !lat) return null
-
-          console.log('Stations: Valid coordinates found:', lat, lng)
-
           return (
             <StationMarker
               key={station.name}
@@ -214,12 +252,12 @@ const DeploymentMap: React.FC<DeploymentMapProps> = ({
         ) : (
           <VehiclePath
             name={vehicleName as string}
+            key={`path${vehicleName}`}
             from={startTime as number}
             to={endTime as number}
             indicatorTime={indicatorTime}
             onScrub={handleScrub}
             onGPSFix={handleGPSFix}
-            // onCenter={handleCoordinateRequest}
           />
         )}
       </Map>

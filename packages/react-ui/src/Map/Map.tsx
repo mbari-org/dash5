@@ -6,7 +6,6 @@ import {
   LayersControl,
   ScaleControl,
   useMapEvents,
-  useMap,
 } from 'react-leaflet'
 import ReactLeafletGoogleLayer from 'react-leaflet-google-layer'
 import Control from 'react-leaflet-custom-control'
@@ -24,14 +23,12 @@ import {
   faCircleCheck,
   faRulerCombined,
   faArrowsUpDownLeftRight,
-  faLayerGroup,
 } from '@fortawesome/free-solid-svg-icons'
 import { faCircleXmark } from '@fortawesome/free-regular-svg-icons'
 import { Measurement } from './Measurement'
-// Remove the ReactTooltip import and use native tooltips
-// import { Tooltip } from 'react-tooltip'
 import MovingDot from './MovingDot'
 import { AreaComponent, PathComponent, MeasurementProps } from './Measurement'
+import { CenterView } from './MapViews'
 
 const regex = /\B(?=(\d{3})+(?!\d))/g
 let mapCoord: String
@@ -41,13 +38,17 @@ export interface MapProps {
   className?: string
   style?: React.CSSProperties
   center?: [number, number]
+  centerZoom?: number
   zoom?: number
   minZoom?: number
   maxZoom?: number
   maxNativeZoom?: number
+  fitBounds?: [[number, number], [number, number]]
+  viewMode?: 'center' | 'bounds' | null
   scrollWheelZoom?: boolean
   onRequestDepth?: MouseCoordinatesProps['onRequestDepth']
   onRequestCoordinate?: () => void
+  onRequestFitBounds?: () => void
   onRequestPlatforms?: () => void
   onRequestStations?: () => void
   dmsCoord?: string
@@ -61,13 +62,17 @@ const Map: React.FC<MapProps> = ({
   className,
   style,
   center = [36.7849, -122.12097],
+  centerZoom,
   zoom = 17,
   minZoom = 4,
   maxZoom = 17,
   maxNativeZoom = 13,
+  fitBounds,
+  viewMode,
   children,
   onRequestDepth,
   onRequestCoordinate,
+  onRequestFitBounds,
   onRequestPlatforms,
   onRequestStations,
 }) => {
@@ -277,8 +282,13 @@ const Map: React.FC<MapProps> = ({
   const handleRequestCoordinate = (e: React.MouseEvent) => {
     e.preventDefault()
     e.stopPropagation()
-    console.log('Map.tsx - handleRequestCoordinate')
     onRequestCoordinate?.()
+  }
+
+  const handleRequestFitBounds = (e: React.MouseEvent) => {
+    e.preventDefault()
+    e.stopPropagation()
+    onRequestFitBounds?.()
   }
 
   const handleMouseOver = (e: React.MouseEvent) => {
@@ -307,6 +317,14 @@ const Map: React.FC<MapProps> = ({
       // @ts-ignore
       maxNativeZoom={maxNativeZoom}
     >
+      {
+        <CenterView
+          coords={center}
+          bounds={fitBounds}
+          zoom={centerZoom}
+          viewMode={viewMode} // Pass this through
+        />
+      }
       <ScaleControl position="topright" />
       <LayersControl position="topright">
         <LayersControl.BaseLayer
@@ -365,65 +383,71 @@ const Map: React.FC<MapProps> = ({
       </Control>
       {children}
 
-      {/* COORDINATE CONTROLS - Separate from other controls */}
-      {onRequestCoordinate ? (
+      {/* COORDINATE CONTROLS */}
+      {onRequestCoordinate || onRequestFitBounds ? (
         <Control position="topleft">
-          <Tippy
-            content="Center map on centroid of latest GPS Fix positions"
-            placement="right-start"
-            theme="mapBtnTT"
-          >
-            <button
-              id="vehicle-center"
-              className="vehicle-center rounded"
-              onMouseOver={handleMouseOver}
-              style={{
-                position: 'relative',
-                zIndex: isHovering ? 900 : 10,
-                border: '0px solid rgba(0,0,0,0.2)',
-                backgroundClip: 'padding-box',
-                width: 42,
-                height: 42,
-              }}
-              onClick={handleRequestCoordinate}
+          {onRequestCoordinate && (
+            <>
+              <Tippy
+                content="Center map on centroid of latest GPS Fix positions"
+                placement="right-start"
+                theme="mapBtnTT"
+              >
+                <button
+                  id="vehicle-center"
+                  className="vehicle-center rounded"
+                  onMouseOver={handleMouseOver}
+                  style={{
+                    position: 'relative',
+                    zIndex: isHovering ? 900 : 10,
+                    border: '0px solid rgba(0,0,0,0.2)',
+                    backgroundClip: 'padding-box',
+                    width: 42,
+                    height: 42,
+                  }}
+                  onClick={handleRequestCoordinate}
+                >
+                  <FontAwesomeIcon
+                    icon={faArrowsToCircle}
+                    size="2xl"
+                    color="#ffffff"
+                  />
+                </button>
+              </Tippy>
+              <hr style={{ height: '8pt', visibility: 'hidden' }} />
+            </>
+          )}
+
+          {onRequestFitBounds && (
+            <Tippy
+              content="Zoom to all available/selected vehicles"
+              placement="right-start"
+              theme="mapBtnTT"
             >
-              <FontAwesomeIcon
-                icon={faArrowsToCircle}
-                size="2xl"
-                color="#ffffff"
-              />
-            </button>
-          </Tippy>
-          <hr style={{ height: '8pt', visibility: 'hidden' }} />
-          <Tippy
-            content="Zoom to all available/selected vehicles"
-            placement="right-start"
-            theme="mapBtnTT"
-          >
-            <button
-              id="allVehicles-center"
-              className="allVehicles-center rounded"
-              onMouseOver={handleMouseOver}
-              style={{
-                position: 'relative',
-                zIndex: isHovering ? 900 : 10,
-                border: '0px solid rgba(0,0,0,0.2)',
-                backgroundClip: 'padding-box',
-                width: 42,
-                height: 42,
-              }}
-              onClick={handleRequestCoordinate}
-            >
-              <FontAwesomeIcon
-                icon={faArrowsUpDownLeftRight}
-                size="2xl"
-                color="#ffffff"
-              />
-            </button>
-          </Tippy>
+              <button
+                id="allVehicles-center"
+                className="allVehicles-center rounded"
+                onMouseOver={handleMouseOver}
+                style={{
+                  position: 'relative',
+                  zIndex: isHovering ? 900 : 10,
+                  border: '0px solid rgba(0,0,0,0.2)',
+                  backgroundClip: 'padding-box',
+                  width: 42,
+                  height: 42,
+                }}
+                onClick={handleRequestFitBounds}
+              >
+                <FontAwesomeIcon
+                  icon={faArrowsUpDownLeftRight}
+                  size="2xl"
+                  color="#ffffff"
+                />
+              </button>
+            </Tippy>
+          )}
         </Control>
       ) : null}
-
       {/* TRACKDB/STATIONS CONTROLS - Now in separate Control component */}
       <Control position="topleft">
         <Tippy
