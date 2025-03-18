@@ -187,6 +187,12 @@ const DeploymentMap: React.FC<DeploymentMapProps> = ({
   const handleCloseStations = useCallback(() => {
     setShowStations(false)
   }, [setShowStations])
+  const handlePlatformsRequest = useCallback(() => {
+    console.log('Platforms request initiated')
+    // Implement the logic to handle platform requests here
+    // This could involve fetching platform data from an API or other data source
+    // For now, we'll just log a message to indicate the function was called
+  }, [])
 
   return (
     <>
