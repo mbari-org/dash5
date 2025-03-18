@@ -7,7 +7,7 @@ import {
 import {
   DeploymentDetailsPopUp,
   EventType,
-  DeploymentDetails,
+  DeploymentDetails as DeploymentDetailsType,
 } from '@mbari/react-ui'
 import { DateTime } from 'luxon'
 import useCurrentDeployment from '../lib/useCurrentDeployment'
@@ -69,7 +69,7 @@ const DeploymentDetails: React.FC<{
     endDate,
     launchDate,
     recoverDate,
-  }: DeploymentDetails) => {
+  }: DeploymentDetailsType) => {
     if (deployment?.deploymentId) {
       updateDeployment({
         deploymentId: deployment.deploymentId as number,

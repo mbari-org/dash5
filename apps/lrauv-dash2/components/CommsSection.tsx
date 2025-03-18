@@ -23,6 +23,11 @@ export interface CommsSectionProps {
   to?: number // milliseconds since epoch
 }
 
+const TWO_YEARS_AGO = getAdjustedUnixTime({
+  unixTime: DateTime.now().toMillis(),
+  offsetYears: -2,
+})
+
 const CommsSection: React.FC<CommsSectionProps> = ({
   vehicleName,
   from,
@@ -33,15 +38,10 @@ const CommsSection: React.FC<CommsSectionProps> = ({
     setAllLogs((prev) => !prev)
   }
 
-  const twoYearsAgo = getAdjustedUnixTime({
-    unixTime: DateTime.now().toMillis(),
-    offsetYears: -2,
-  })
-
   const { data, isLoading, isFetching, refetch } = useEvents({
     vehicles: [vehicleName],
     eventTypes: ['command', 'run'],
-    from: allLogs ? twoYearsAgo : from,
+    from: allLogs ? TWO_YEARS_AGO : from, // TODO: implement pagination to get all logs
     to: allLogs ? undefined : to,
   })
   const lastCommsMillis = useLastCommsTime(vehicleName, from)
