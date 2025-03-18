@@ -6,7 +6,6 @@ import {
   LayersControl,
   ScaleControl,
   useMapEvents,
-  useMap,
 } from 'react-leaflet'
 import ReactLeafletGoogleLayer from 'react-leaflet-google-layer'
 import Control from 'react-leaflet-custom-control'
@@ -24,7 +23,6 @@ import {
   faCircleCheck,
   faRulerCombined,
   faArrowsUpDownLeftRight,
-  faLayerGroup,
 } from '@fortawesome/free-solid-svg-icons'
 import { faCircleXmark } from '@fortawesome/free-regular-svg-icons'
 import { Measurement } from './Measurement'

@@ -1,13 +1,10 @@
 import dynamic from 'next/dynamic'
 import React, { useCallback, useState, useRef, useEffect } from 'react'
-import { useManagedWaypoints, Station } from '@mbari/react-ui'
+import { useManagedWaypoints } from '@mbari/react-ui'
 import { useGoogleElevator } from '../lib/useGoogleElevator'
 import { VPosDetail } from '@mbari/api-client'
-import { PlatformsListModal } from './PlatformsListModal'
 import { StationsListModal } from './StationsListModal'
 import { useSelectedStations } from './SelectedStationContext'
-import { useSelectedPlatforms } from './SelectedPlatformContext'
-// import { CenterViewComponent } from 'react-ui/dist/Map/MapViews'
 
 // This is a tricky workaround to prevent leaflet from crashing next.js
 // SSR. If we don't do this, the leaflet map will be loaded server side
@@ -95,6 +92,9 @@ const DeploymentMap: React.FC<DeploymentMapProps> = ({
     }
   }, [latestGPS]) // Intentionally omitting center from dependencies to avoid infinite loop
 
+  useEffect(() => {
+    console.log(`Center changed to: ${center?.[0]}, ${center?.[1]}`)
+  }, [center])
   // Store positions of all vehicles to calculate center
   const vehiclePosition = useRef<Array<[number, number]>>([])
   // Track vehicle path points for bounds calculation
@@ -149,7 +149,10 @@ const DeploymentMap: React.FC<DeploymentMapProps> = ({
 
   const handleCoordinateRequest = useCallback(() => {
     if (latestGPS) {
-      setCenter([latestGPS?.latitude, latestGPS?.longitude])
+      // Force a new array to ensure React detects the change
+      setCenter([latestGPS.latitude, latestGPS.longitude])
+    } else {
+      console.log('No latest GPS position available to center on')
     }
   }, [latestGPS, setCenter])
 
@@ -177,18 +180,7 @@ const DeploymentMap: React.FC<DeploymentMapProps> = ({
     ]
   }, [])
 
-  const [showPlatforms, setShowPlatforms] = useState(false)
-  const { selectedPlatforms } = useSelectedPlatforms()
-  const handlePlatformsRequest = useCallback(() => {
-    setShowPlatforms(true)
-  }, [setShowPlatforms])
-
-  const handleClosePlatforms = useCallback(() => {
-    setShowPlatforms(false)
-  }, [setShowPlatforms])
-
   const handleStationsRequest = useCallback(() => {
-    console.log('DeploymentMap.tsx - Stations Request Clicked')
     setShowStations(true)
   }, [setShowStations])
 
@@ -198,9 +190,6 @@ const DeploymentMap: React.FC<DeploymentMapProps> = ({
 
   return (
     <>
-      {showPlatforms ? (
-        <PlatformsListModal onClose={handleClosePlatforms} />
-      ) : null}
       {showStations ? (
         <StationsListModal onClose={handleCloseStations} />
       ) : null}
@@ -264,7 +253,6 @@ const DeploymentMap: React.FC<DeploymentMapProps> = ({
             indicatorTime={indicatorTime}
             onScrub={handleScrub}
             onGPSFix={handleGPSFix}
-            // onCenter={handleCoordinateRequest}
           />
         )}
       </Map>
