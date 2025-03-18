@@ -25,10 +25,8 @@ export const ChartsModal: React.FC<ChartsModalProps> = ({
 
   const { data: chartData } = useChartData({
     vehicle: vehicleName,
-    from: DateTime.fromMillis(deploymentStartTime).toISO(),
-    to: deploymentEndTime
-      ? DateTime.fromMillis(deploymentEndTime).toISO()
-      : undefined,
+    from: deploymentStartTime,
+    to: deploymentEndTime ? deploymentEndTime : undefined,
   })
   const [chart, setChart] = useState<string | null>(null)
   const data = chartData?.find((c) => c.name === chart)

@@ -47,17 +47,14 @@ const VehiclePath: React.FC<{
   const { data: lastDeployment } = useLastDeployment(
     {
       vehicle: name,
-      to: new Date().toISOString(),
     },
     { staleTime: 5 * 60 * 1000 }
   )
   const { data: vehiclePosition } = useVehiclePos(
     {
       vehicle: name as string,
-      from: DateTime.fromMillis(
-        from ?? lastDeployment?.startEvent?.unixTime ?? 0
-      ).toISO(),
-      to: to?.toString(),
+      from: lastDeployment?.startEvent?.unixTime ?? 0,
+      to: to,
     },
     {
       enabled: !!from || !!lastDeployment?.startEvent?.unixTime,
@@ -66,13 +63,14 @@ const VehiclePath: React.FC<{
 
   const latestGPS = useRef<[number, number] | undefined>()
   useEffect(() => {
-    if (vehiclePosition?.gpsFixes) {
-      const latest = vehiclePosition.gpsFixes[0]
-      if (
+    if (vehiclePosition?.gpsFixes && vehiclePosition.gpsFixes.length > 0) {
+      const latest = vehiclePosition?.gpsFixes[0]
+      const latestCoordNotAvailable = !latest?.latitude || !latest?.longitude
+      const coordinatesAlreadyCurrent =
         latestGPS.current &&
-        latestGPS.current[0] === latest.longitude &&
-        latestGPS.current[1] === latest.longitude
-      ) {
+        latestGPS.current[0] === latest?.latitude &&
+        latestGPS.current[1] === latest?.longitude
+      if (latestCoordNotAvailable || coordinatesAlreadyCurrent) {
         return
       }
       latestGPS.current = [latest.latitude, latest.longitude]
@@ -162,7 +160,9 @@ const VehiclePath: React.FC<{
           (fix) => fix.unixTime >= (indicatorTime ?? 0)
         ) ?? []
       ).sort((a, b) => a.unixTime - b.unixTime),
-    ].map((g) => [g?.latitude ?? 0, g?.longitude ?? 0] as [number, number])
+    ]
+      ?.filter((g) => g && g.latitude != null && g.longitude != null)
+      .map((g) => [g?.latitude ?? 0, g?.longitude ?? 0] as [number, number])
   // fit
   const fit = useRef<string | null | undefined>(null)
   // routeAsString
@@ -211,9 +211,12 @@ const VehiclePath: React.FC<{
   })
 
   // Determine Time Difference since last gpsFix
-  const latest = vehiclePosition?.gpsFixes?.[0]
+  const latest =
+    vehiclePosition?.gpsFixes && vehiclePosition.gpsFixes.length > 0
+      ? vehiclePosition.gpsFixes[0]
+      : null
   // IsoTime as a string
-  const latestTimeFix = latest?.isoTime.toString()
+  const latestTimeFix = latest?.isoTime?.toString()
   let [timeSinceFix, setTimeSinceFix] = useState('')
 
   if (latestTimeFix) {

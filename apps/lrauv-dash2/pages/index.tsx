@@ -7,6 +7,8 @@ import VehicleDeploymentDropdown from '../components/VehicleDeploymentDropdown'
 import VehicleList from '../components/VehicleList'
 import useTrackedVehicles from '../lib/useTrackedVehicles'
 import { SharedPathContextProvider } from '../components/SharedPathContextProvider'
+import { SelectedPlatformsProvider } from '../components/SelectedPlatformContext'
+import { SelectedStationsProvider } from '../components/SelectedStationContext'
 import { useRouter } from 'next/router'
 import useGlobalModalId from '../lib/useGlobalModalId'
 import { useGoogleElevator } from '../lib/useGoogleElevator'
@@ -15,6 +17,9 @@ import { useGoogleMaps } from '../lib/useGoogleMaps'
 import { VPosDetail } from '@mbari/api-client'
 import 'allotment/dist/style.css'
 import toast from 'react-hot-toast'
+import { StationsListModal } from '../components/StationsListModal'
+import { useSelectedStations } from '../components/SelectedStationContext'
+// import { useSelectedPlatforms } from '../components/SelectedPlatformContext'
 
 // This is a tricky workaround to prevent leaflet from crashing next.js
 // SSR. If we don't do this, the leaflet map will be loaded server side
@@ -24,6 +29,10 @@ const Map = dynamic(() => import('@mbari/react-ui/dist/Map/Map'), {
 })
 
 const VehiclePath = dynamic(() => import('../components/VehiclePath'), {
+  ssr: false,
+})
+
+const StationMarker = dynamic(() => import('../components/StationMarker'), {
   ssr: false,
 })
 // TODO: Set up Draggable Marker and ClickableMapPoint
@@ -55,9 +64,9 @@ const CustomMarkerSet: React.FC = () => {
         ...markers,
         { lat, lng, label: `Marker ${markers.length + 1}` },
       ])
-      setMarkerIndex(markerIndex + 1)
+      setMarkerIndex((prevIndex) => prevIndex + 1)
     },
-    [setMarkerIndex, markers, setMarkers]
+    [markers, setMarkers]
   )
   return (
     <>
@@ -88,6 +97,8 @@ const OverViewMap: React.FC<{
   const { handleDepthRequest } = useGoogleElevator()
   const [center, setCenter] = useState<undefined | [number, number]>()
   const [latestGPS, setLatestGPS] = useState<VPosDetail | undefined>()
+  const [showStations, setShowStations] = useState(false)
+  const { selectedStations } = useSelectedStations()
 
   const handleGPSFix = useCallback(
     (gps: VPosDetail) => {
@@ -105,13 +116,31 @@ const OverViewMap: React.FC<{
     }
   }, [latestGPS, setCenter])
 
+  const handleStationsRequest = useCallback(() => {
+    setShowStations(true)
+  }, [setShowStations])
+
+  // Add this handler to close the modal
+  const handleCloseStations = useCallback(() => {
+    setShowStations(false)
+  }, [setShowStations])
+
   return (
-    <SharedPathContextProvider>
+    <>
+      {/* {showPlatforms ? (
+        <PlatformsListModal onClose={handleClosePlatforms} />
+      ) : null} */}
+      {showStations ? (
+        <StationsListModal onClose={handleCloseStations} />
+      ) : null}
+
       <Map
         className="h-full w-full"
         onRequestDepth={handleDepthRequest}
-        onRequestCoordinate={handleCoordinateRequest}
         center={center}
+        onRequestCoordinate={handleCoordinateRequest}
+        // onRequestPlatforms={handlePlatformsRequest}
+        onRequestStations={handleStationsRequest}
       >
         {trackedVehicles.map((name) => (
           <VehiclePath
@@ -121,9 +150,26 @@ const OverViewMap: React.FC<{
             grouped
           />
         ))}
+        {selectedStations.map((station) => {
+          const lng = station.geojson?.geometry?.coordinates[0]
+          const lat = station.geojson?.geometry?.coordinates[1]
+
+          if (!lng || !lat) return null
+
+          console.log('Stations: Valid coordinates found:', lat, lng)
+
+          return (
+            <StationMarker
+              key={station.name}
+              name={station.name}
+              lat={lat}
+              lng={lng}
+            />
+          )
+        })}
         <CustomMarkerSet />
       </Map>
-    </SharedPathContextProvider>
+    </>
   )
 }
 
@@ -144,47 +190,60 @@ const OverviewPage: NextPage = () => {
   }
 
   return (
-    <Layout>
-      {trackedVehicles?.length ? (
-        <>
-          <OverviewToolbar deployment={{ name: 'Overview', id: '0' }} />
+    <SharedPathContextProvider>
+      <SelectedPlatformsProvider>
+        <SelectedStationsProvider>
+          <div className={styles.content}>
+            <Layout>
+              {trackedVehicles?.length ? (
+                <>
+                  <OverviewToolbar deployment={{ name: 'Overview', id: '0' }} />
 
-          <div className={styles.content} data-testid="vehicle-dashboard">
-            <Allotment
-              separator
-              snap
-              defaultSizes={[75, 25]}
-              proportionalLayout
-            >
-              <Allotment.Pane>
-                <section className={styles.primary}>
-                  <div className={styles.mapContainer}>
-                    {mapsLoaded && (
-                      <OverViewMap trackedVehicles={trackedVehicles} />
-                    )}
+                  <div
+                    className={styles.content}
+                    data-testid="vehicle-dashboard"
+                  >
+                    <Allotment
+                      separator
+                      snap
+                      defaultSizes={[75, 25]}
+                      proportionalLayout
+                    >
+                      <Allotment.Pane>
+                        <section className={styles.primary}>
+                          <div className={styles.mapContainer}>
+                            {mapsLoaded && (
+                              <OverViewMap trackedVehicles={trackedVehicles} />
+                            )}
+                          </div>
+                        </section>
+                      </Allotment.Pane>
+                      <Allotment.Pane priority={LayoutPriority.High}>
+                        <section className={styles.secondary}>
+                          <VehicleList
+                            onSelectVehicle={handleSelectedVehicle}
+                          />
+                        </section>
+                      </Allotment.Pane>
+                    </Allotment>
                   </div>
-                </section>
-              </Allotment.Pane>
-              <Allotment.Pane priority={LayoutPriority.High}>
-                <section className={styles.secondary}>
-                  <VehicleList onSelectVehicle={handleSelectedVehicle} />
-                </section>
-              </Allotment.Pane>
-            </Allotment>
+                </>
+              ) : (
+                <>
+                  <p className="p-6 text-xl" aria-label="get started">
+                    To get started you must add at least one vehicle to track.
+                  </p>
+                  <VehicleDeploymentDropdown
+                    className="mx-6 max-h-96 w-96"
+                    scrollable
+                  />
+                </>
+              )}
+            </Layout>
           </div>
-        </>
-      ) : (
-        <>
-          <p className="p-6 text-xl" aria-label="get started">
-            To get started you must add at least one vehicle to track.
-          </p>
-          <VehicleDeploymentDropdown
-            className="mx-6 max-h-96 w-96"
-            scrollable
-          />
-        </>
-      )}
-    </Layout>
+        </SelectedStationsProvider>
+      </SelectedPlatformsProvider>
+    </SharedPathContextProvider>
   )
 }
 

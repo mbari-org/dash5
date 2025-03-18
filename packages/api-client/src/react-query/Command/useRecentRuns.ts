@@ -2,7 +2,7 @@ import { useEvents } from '../Event/useEvents'
 import { SupportedQueryOptions } from '../types'
 
 export const useRecentRuns = (
-  params: { vehicles: string[]; from: string; to?: string; limit?: number },
+  params: { vehicles: string[]; from: number; to?: number; limit?: number },
   options?: SupportedQueryOptions
 ) => {
   const query = useEvents(

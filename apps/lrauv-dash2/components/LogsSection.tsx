@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import React, { useMemo, useState } from 'react'
 import { useEvents, useTethysApiContext } from '@mbari/api-client'
 import {
   Virtualizer,
@@ -20,14 +20,20 @@ import {
   faPersonRunning,
 } from '@fortawesome/free-solid-svg-icons'
 import { SelectOption } from '@mbari/react-ui/dist/Fields/Select'
+import { getAdjustedUnixTime } from '@mbari/utils'
 
 export interface LogsSectionProps {
   className?: string
   style?: React.CSSProperties
   vehicleName: string
-  from: string
-  to?: string
+  from: number // milliseconds since epoch
+  to?: number
 }
+
+const TWO_YEARS_AGO = getAdjustedUnixTime({
+  unixTime: DateTime.now().toMillis(),
+  offsetYears: -2,
+})
 
 const LogsSection: React.FC<LogsSectionProps> = ({ vehicleName, from, to }) => {
   const [allLogs, setAllLogs] = useState(false)
@@ -37,19 +43,28 @@ const LogsSection: React.FC<LogsSectionProps> = ({ vehicleName, from, to }) => {
 
   const { siteConfig } = useTethysApiContext()
   const [filters, setFilters] = useState<MultiValue<SelectOption>>([])
-  const eventTypes = filters.length
-    ? filters
-        .map(({ id }) => eventFilters[id].eventTypes)
-        .flat()
-        .filter((k, i, a) => a.indexOf(k) === i)
-    : undefined
 
-  const { data, isLoading, isFetching, refetch } = useEvents({
-    vehicles: [vehicleName],
-    from: allLogs ? DateTime.now().minus({ years: 2 }).toISODate() : from,
-    to: allLogs ? undefined : to,
-    eventTypes,
-  })
+  const eventTypes = useMemo(() => {
+    return filters.length
+      ? filters
+          .map(({ id }) => eventFilters[id].eventTypes)
+          .flat()
+          .filter((k, i, a) => a.indexOf(k) === i)
+      : undefined
+  }, [filters])
+
+  const queryParams = useMemo(
+    () => ({
+      vehicles: [vehicleName],
+      eventTypes,
+      from: allLogs ? TWO_YEARS_AGO : from, // TODO: implement pagination to get all logs
+      to: allLogs ? undefined : to,
+      limit: 10000, // this limit affects chunk size, not the total number of logs returned
+    }),
+    [vehicleName, allLogs, from, to, eventTypes]
+  )
+
+  const { data, isLoading, isFetching, refetch } = useEvents(queryParams)
 
   const cellAtIndex = (index: number, _virtualizer: Virtualizer) => {
     const item = data?.[index]

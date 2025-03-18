@@ -23,7 +23,7 @@ import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { faCheck, faSync } from '@fortawesome/free-solid-svg-icons'
 import { useCookies } from 'react-cookie'
 import useGlobalModalId from '../lib/useGlobalModalId'
-
+import { useTethysSubscriptionEvent } from '../lib/useWebSocketListeners'
 const parsePos = (pos: string | number) => parseFloat(`${pos}`).toFixed(3)
 const calcPosition = (lat?: number | string, long?: number | string) =>
   lat && long ? [parsePos(lat), parsePos(long)].join(', ') : undefined
@@ -48,16 +48,13 @@ const ConnectedVehicleCell: React.FC<{
   const { data: lastDeployment } = useLastDeployment(
     {
       vehicle: name,
-      to: new Date().toISOString(),
     },
     { staleTime: 5 * 60 * 1000 }
   )
   const { data: vehiclePosition, isLoading: positionLoading } = useVehiclePos(
     {
       vehicle: name,
-      from: lastDeployment?.lastEvent
-        ? DateTime.fromMillis(lastDeployment?.lastEvent).toISO()
-        : '',
+      from: lastDeployment?.lastEvent ?? 0,
     },
     {
       enabled: !!lastDeployment?.lastEvent,
@@ -78,6 +75,7 @@ const ConnectedVehicleCell: React.FC<{
       enabled: !!name && !!lastDeployment?.lastEvent,
     }
   )
+  const pingEvent = useTethysSubscriptionEvent('VehiclePingResult', name)
 
   // TODO: Remove this demonstations of 'usePlatforms'
   // const { data: platforms } = usePlatforms(
@@ -115,6 +113,18 @@ const ConnectedVehicleCell: React.FC<{
   const recovered = lastDeployment?.recoverEvent?.eventId && true
   const active = lastDeployment?.active
 
+  const timeSpanSinceDeployment =
+    DateTime.fromMillis(
+      missionStartedEvent?.[0]?.unixTime ??
+        lastDeployment?.startEvent?.unixTime ??
+        0
+    ).toRelative() ?? ''
+
+  const timeSpanSinceRecovery =
+    DateTime.fromMillis(
+      lastDeployment?.recoverEvent?.unixTime ?? 0
+    ).toRelative() ?? ''
+
   const { setGlobalModalId } = useGlobalModalId()
   const onColorChange = (_: string, _v: string) => {
     setGlobalModalId({ id: 'color', meta: { vehicleName: name, color } })
@@ -125,15 +135,7 @@ const ConnectedVehicleCell: React.FC<{
         name={capitalize(name)}
         deployment={active ? lastDeployment?.name ?? 'loading' : 'Not Deployed'}
         color={color}
-        deployedAt={
-          active
-            ? Math.round(
-                (missionStartedEvent?.[0]?.unixTime ??
-                  lastDeployment?.startEvent?.unixTime ??
-                  0) / 1000
-              )
-            : undefined
-        }
+        timeSpanSinceDeployment={active ? timeSpanSinceDeployment : undefined}
         onToggle={handleToggle}
         open={isOpen}
         onChangeColor={onColorChange}
@@ -144,9 +146,7 @@ const ConnectedVehicleCell: React.FC<{
           headline={
             <div>
               <span className="font-semibold text-purple-600">{status}</span>{' '}
-              {lastDeployment?.lastEvent
-                ? DateTime.fromMillis(lastDeployment.lastEvent).toRelative()
-                : ''}
+              {recovered ? timeSpanSinceRecovery : timeSpanSinceDeployment}
             </div>
           }
           headline2={
@@ -175,7 +175,9 @@ const ConnectedVehicleCell: React.FC<{
           )}
           lastSatellite={
             vehicle?.text_gpsago.length
-              ? `${vehicle.text_gpsago}, likely on surface`
+              ? `${vehicle.text_gpsago}${
+                  pingEvent?.reachable ? ', likely on surface' : ''
+                }`
               : undefined
           }
           lastCell={

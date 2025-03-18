@@ -8,13 +8,14 @@
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
-    "test": "playwright test"
+    "test": "playwright test",
+    "test:ci": "jest"
   },
   "dependencies": {
     "@fortawesome/fontawesome-svg-core": "^6.4.2",
     "@fortawesome/free-regular-svg-icons": "^6.4.2",
     "@fortawesome/free-solid-svg-icons": "^6.4.2",
-    "@fortawesome/react-fontawesome": "^0.1.18",
+    "@fortawesome/react-fontawesome": "^0.2.2",
     "@googlemaps/js-api-loader": "^1.16.2",
     "@mbari/api-client": "*",
     "@mbari/react-ui": "*",

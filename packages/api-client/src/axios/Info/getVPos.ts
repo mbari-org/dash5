@@ -5,8 +5,8 @@ import { RequestConfig } from '../types'
 export interface GetVPosParams {
   [key: string]: string | number | undefined
   vehicle: string
-  to?: string
-  from: string
+  to?: number
+  from: number
   limit?: number
 }
 

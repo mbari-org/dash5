@@ -42,14 +42,8 @@ export const LogsModal: React.FC<LogsModalProps> = ({
       <div className="flex flex-grow flex-col rounded border border-stone-200">
         <LogsSection
           vehicleName={vehicleName}
-          from={DateTime.fromMillis(deploymentStartTime)
-            .minus({ days: 1 })
-            .toISO()}
-          to={
-            deploymentEndTime
-              ? DateTime.fromMillis(deploymentEndTime).toISO()
-              : undefined
-          }
+          from={deploymentStartTime}
+          to={deploymentEndTime}
         />
       </div>
     </Modal>
