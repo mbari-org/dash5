@@ -67,6 +67,9 @@ const DeploymentMap: React.FC<DeploymentMapProps> = ({
 
   const { handleDepthRequest } = useGoogleElevator()
   const [center, setCenter] = useState<undefined | [number, number]>()
+  const [bounds, setBounds] = useState<
+    [[number, number], [number, number]] | undefined
+  >()
   const [latestGPS, setLatestGPS] = useState<VPosDetail | undefined>()
   const [showStations, setShowStations] = useState(false)
   const { selectedStations } = useSelectedStations()
@@ -94,6 +97,8 @@ const DeploymentMap: React.FC<DeploymentMapProps> = ({
 
   // Store positions of all vehicles to calculate center
   const vehiclePosition = useRef<Array<[number, number]>>([])
+  // Track vehicle path points for bounds calculation
+  const pathPoints = useRef<Array<[number, number]>>([])
 
   const handleGPSFix = useCallback(
     (gps: VPosDetail) => {
@@ -102,7 +107,8 @@ const DeploymentMap: React.FC<DeploymentMapProps> = ({
         vehiclePosition.current = []
         setLatestGPS(gps)
       }
-
+      // Store all points for path bounds calculation
+      pathPoints.current.push([gps.latitude, gps.longitude])
       // Store position for centering
       const position: [number, number] = [gps.latitude, gps.longitude]
       vehiclePosition.current.push(position)
@@ -110,11 +116,47 @@ const DeploymentMap: React.FC<DeploymentMapProps> = ({
     [latestGPS, setLatestGPS]
   )
 
+  // Calculate bounds for the entire vehicle path
+  const calculatePathBounds = useCallback(() => {
+    if (pathPoints.current.length === 0) {
+      console.warn('No path points available for bounds calculation')
+      return
+    }
+
+    // Find min/max lat/lon
+    let minLat = 90,
+      maxLat = -90,
+      minLng = 180,
+      maxLng = -180
+
+    pathPoints.current.forEach((pos) => {
+      minLat = Math.min(minLat, pos[0])
+      maxLat = Math.max(maxLat, pos[0])
+      minLng = Math.min(minLng, pos[1])
+      maxLng = Math.max(maxLng, pos[1])
+    })
+
+    // Add padding (0.05 degrees)
+    const padding = 0.05
+    const newBounds: [[number, number], [number, number]] = [
+      [minLat - padding, minLng - padding],
+      [maxLat + padding, maxLng + padding],
+    ]
+
+    console.log('Calculated path bounds:', newBounds)
+    setBounds(newBounds)
+  }, [])
+
   const handleCoordinateRequest = useCallback(() => {
     if (latestGPS) {
       setCenter([latestGPS?.latitude, latestGPS?.longitude])
     }
   }, [latestGPS, setCenter])
+
+  // Handler for fitting bounds to entire path
+  const handleFitBoundsRequest = useCallback(() => {
+    calculatePathBounds()
+  }, [calculatePathBounds])
 
   // Function to calculate the center of all vehicle positions
   const calculateCenter = useCallback((): [number, number] => {
@@ -167,8 +209,10 @@ const DeploymentMap: React.FC<DeploymentMapProps> = ({
         maxZoom={17}
         onRequestDepth={handleDepthRequest}
         center={center}
+        fitBounds={bounds}
         onRequestCoordinate={handleCoordinateRequest}
         onRequestPlatforms={handlePlatformsRequest}
+        onRequestFitBounds={handleFitBoundsRequest}
         onRequestStations={handleStationsRequest}
       >
         {selectedStations.map((station) => {
@@ -214,6 +258,7 @@ const DeploymentMap: React.FC<DeploymentMapProps> = ({
         ) : (
           <VehiclePath
             name={vehicleName as string}
+            key={`path${vehicleName}`}
             from={startTime as number}
             to={endTime as number}
             indicatorTime={indicatorTime}

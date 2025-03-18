@@ -96,25 +96,69 @@ const OverViewMap: React.FC<{
 }> = ({ trackedVehicles }) => {
   const { handleDepthRequest } = useGoogleElevator()
   const [center, setCenter] = useState<undefined | [number, number]>()
+  const [bounds, setBounds] = useState<
+    [[number, number], [number, number]] | undefined
+  >()
   const [latestGPS, setLatestGPS] = useState<VPosDetail | undefined>()
   const [showStations, setShowStations] = useState(false)
   const { selectedStations } = useSelectedStations()
 
+  // Store all vehicle positions for bounds calculation
+  const vehiclePositions = useRef<Array<[number, number]>>([])
+
   const handleGPSFix = useCallback(
     (gps: VPosDetail) => {
-      // console.log('Index.tsx - GPS Fix', gps.isoTime, 'vs', latestGPS?.isoTime)
       if ((latestGPS?.isoTime ?? 0) > gps.isoTime || !latestGPS) {
         setLatestGPS(gps)
       }
+      // Store position for bounds calculation
+      vehiclePositions.current.push([gps.latitude, gps.longitude])
     },
     [latestGPS, setLatestGPS]
   )
 
+  // Calculate bounds from all tracked vehicle positions
+  const calculateBounds = useCallback(() => {
+    if (vehiclePositions.current.length === 0) {
+      console.warn('No vehicle positions available for bounds calculation')
+      return
+    }
+
+    // Find min/max lat/lon
+    let minLat = 90,
+      maxLat = -90,
+      minLng = 180,
+      maxLng = -180
+
+    vehiclePositions.current.forEach((pos) => {
+      minLat = Math.min(minLat, pos[0])
+      maxLat = Math.max(maxLat, pos[0])
+      minLng = Math.min(minLng, pos[1])
+      maxLng = Math.max(maxLng, pos[1])
+    })
+
+    // Add padding (0.1 degrees)
+    const padding = 0.1
+    const newBounds: [[number, number], [number, number]] = [
+      [minLat - padding, minLng - padding],
+      [maxLat + padding, maxLng + padding],
+    ]
+
+    console.log('Calculated bounds:', newBounds)
+    setBounds(newBounds)
+  }, [])
+
+  // Handler for centering on latest position
   const handleCoordinateRequest = useCallback(() => {
     if (latestGPS) {
-      setCenter([latestGPS?.latitude, latestGPS?.longitude])
+      setCenter([latestGPS.latitude, latestGPS.longitude])
     }
   }, [latestGPS, setCenter])
+
+  // Handler for fitting bounds to all vehicles
+  const handleFitBoundsRequest = useCallback(() => {
+    calculateBounds()
+  }, [calculateBounds])
 
   const handleStationsRequest = useCallback(() => {
     setShowStations(true)
@@ -127,9 +171,6 @@ const OverViewMap: React.FC<{
 
   return (
     <>
-      {/* {showPlatforms ? (
-        <PlatformsListModal onClose={handleClosePlatforms} />
-      ) : null} */}
       {showStations ? (
         <StationsListModal onClose={handleCloseStations} />
       ) : null}
@@ -138,8 +179,9 @@ const OverViewMap: React.FC<{
         className="h-full w-full"
         onRequestDepth={handleDepthRequest}
         center={center}
+        fitBounds={bounds}
         onRequestCoordinate={handleCoordinateRequest}
-        // onRequestPlatforms={handlePlatformsRequest}
+        onRequestFitBounds={handleFitBoundsRequest}
         onRequestStations={handleStationsRequest}
       >
         {trackedVehicles.map((name) => (
