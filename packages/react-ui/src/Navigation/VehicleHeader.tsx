@@ -15,7 +15,7 @@ export interface VehicleHeaderProps {
   color: string
   onToggle: () => void
   open?: boolean
-  deployedAt?: number
+  timeSpanSinceDeployment?: string
   onChangeColor?: (color: string, vehicle: string) => void
 }
 
@@ -36,7 +36,7 @@ export const VehicleHeader: React.FC<VehicleHeaderProps> = ({
   deployment,
   onToggle,
   open,
-  deployedAt,
+  timeSpanSinceDeployment,
   onChangeColor,
 }) => {
   const handleChangeColor = useCallback(
@@ -82,9 +82,9 @@ export const VehicleHeader: React.FC<VehicleHeaderProps> = ({
         <span className={styles.label}>
           {name}: {deployment}
         </span>
-        {deployedAt ? (
+        {timeSpanSinceDeployment ? (
           <span className={styles.secondary}>
-            began {DateTime.fromSeconds(deployedAt).toRelative()}
+            began {timeSpanSinceDeployment}
           </span>
         ) : null}
         <FontAwesomeIcon

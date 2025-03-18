@@ -10,7 +10,8 @@ const props: VehicleHeaderProps = {
   color: '#00ff00',
   onToggle: () => undefined,
   open: true,
-  deployedAt: DateTime.now().minus({ days: 3, hours: 4 }).toSeconds(),
+  timeSpanSinceDeployment:
+    DateTime.now().minus({ days: 3, hours: 4 }).toRelative() ?? undefined,
 }
 
 test('should render the component', async () => {

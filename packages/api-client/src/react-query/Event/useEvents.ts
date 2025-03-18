@@ -1,5 +1,5 @@
 import { useQuery } from 'react-query'
-import { getEvents, GetEventsParams, GetEventsResponse } from '../../axios'
+import { getEvents, GetEventsParams } from '../../axios'
 import { useTethysApiContext } from '../TethysApiProvider'
 import { SupportedQueryOptions } from '../types'
 

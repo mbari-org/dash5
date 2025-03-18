@@ -13,13 +13,16 @@ const Template: Story<VehicleHeaderProps> = (args) => (
   <VehicleHeader {...args} />
 )
 
+const timeSpanSinceDeployment =
+  DateTime.now().minus({ days: 3, hours: 4 }).toRelative() ?? undefined
+
 const args: VehicleHeaderProps = {
   name: 'Brizo',
   deployment: 'Brizo 7 Ecohab',
   color: '#00ff00',
   onToggle: () => undefined,
   open: false,
-  deployedAt: DateTime.now().minus({ days: 3, hours: 4 }).toSeconds(),
+  timeSpanSinceDeployment,
 }
 
 export const Standard = Template.bind({})
