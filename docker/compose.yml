@@ -1,0 +1,13 @@
+services:
+  dash4:
+    ports:
+      - '80:80'
+    image: index.docker.io/mbari/lrauv-dash:5
+    command:
+      - '-g'
+      - 'info'
+    init: true
+    container_name: dash5
+    restart: always
+    labels:
+      - 'com.centurylinklabs.watchtower.enable=true'

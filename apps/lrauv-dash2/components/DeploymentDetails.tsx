@@ -4,11 +4,8 @@ import {
   useUpdateDeployment,
   useAlterDeployment,
 } from '@mbari/api-client'
-import {
-  DeploymentDetailsPopUp,
-  EventType,
-  DeploymentDetails as DeploymentDetailsType,
-} from '@mbari/react-ui'
+import { DeploymentDetailsPopUp, EventType } from '@mbari/react-ui'
+import type { DeploymentDetails as DeploymentDetailsType } from '@mbari/react-ui'
 import { DateTime } from 'luxon'
 import useCurrentDeployment from '../lib/useCurrentDeployment'
 import toast from 'react-hot-toast'
