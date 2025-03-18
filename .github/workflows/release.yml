@@ -41,7 +41,7 @@ jobs:
           echo "NEXT_PUBLIC_WEBSOCKET_URL: $NEXT_PUBLIC_WEBSOCKET_URL"
           echo "NEXT_PUBLIC_GOOGLE_MAPS_API_KEY: [REDACTED]"
           
-          yarn workspace @mbari/lrauv-dash2 build
+          yarn build
       
       - name: Pack output directory
         run: |
