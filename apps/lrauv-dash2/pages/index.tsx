@@ -19,7 +19,6 @@ import 'allotment/dist/style.css'
 import toast from 'react-hot-toast'
 import { StationsListModal } from '../components/StationsListModal'
 import { useSelectedStations } from '../components/SelectedStationContext'
-// import { useSelectedPlatforms } from '../components/SelectedPlatformContext'
 
 // This is a tricky workaround to prevent leaflet from crashing next.js
 // SSR. If we don't do this, the leaflet map will be loaded server side
@@ -59,7 +58,6 @@ const CustomMarkerSet: React.FC = () => {
   const [markerIndex, setMarkerIndex] = React.useState(0)
   const handleNewMarker = useCallback(
     (lat: number, lng: number) => {
-      console.log('new marker', lat, lng)
       setMarkers([
         ...markers,
         { lat, lng, label: `Marker ${markers.length + 1}` },
@@ -68,9 +66,12 @@ const CustomMarkerSet: React.FC = () => {
     },
     [markers, setMarkers]
   )
-  return (
-    <>
-      {/* <ClickableMapPoint onClick={handleNewMarker} />
+  return null
+  // TO-DO: Implement DraggableMarker and ClickableMapPoint
+  // return (
+  //   <>
+
+  /* <ClickableMapPoint onClick={handleNewMarker} />
       {markers.map((marker, index) => (
         <DraggableMarker
           lat={marker.lat}
@@ -86,9 +87,7 @@ const CustomMarkerSet: React.FC = () => {
             )
           }}
         />
-      ))} */}
-    </>
-  )
+      ))} */
 }
 
 const OverViewMap: React.FC<{
@@ -96,15 +95,25 @@ const OverViewMap: React.FC<{
 }> = ({ trackedVehicles }) => {
   const { handleDepthRequest } = useGoogleElevator()
   const [center, setCenter] = useState<undefined | [number, number]>()
+  const [centerZoom, setCenterZoom] = useState<number | undefined>(undefined)
   const [bounds, setBounds] = useState<
     [[number, number], [number, number]] | undefined
   >()
   const [latestGPS, setLatestGPS] = useState<VPosDetail | undefined>()
   const [showStations, setShowStations] = useState(false)
+  const [viewMode, setViewMode] = useState<'center' | 'bounds' | null>(null)
   const { selectedStations } = useSelectedStations()
 
   // Store all vehicle positions for bounds calculation
   const vehiclePositions = useRef<Array<[number, number]>>([])
+
+  // Add at the start of the component:
+  useEffect(() => {
+    // Reset positions when component unmounts or tracked vehicles change
+    return () => {
+      vehiclePositions.current = []
+    }
+  }, [trackedVehicles])
 
   const handleGPSFix = useCallback(
     (gps: VPosDetail) => {
@@ -113,6 +122,10 @@ const OverViewMap: React.FC<{
       }
       // Store position for bounds calculation
       vehiclePositions.current.push([gps.latitude, gps.longitude])
+      // Limit stored positions to prevent memory issues
+      if (vehiclePositions.current.length > 1000) {
+        vehiclePositions.current = vehiclePositions.current.slice(-1000)
+      }
     },
     [latestGPS, setLatestGPS]
   )
@@ -143,8 +156,6 @@ const OverViewMap: React.FC<{
       [minLat - padding, minLng - padding],
       [maxLat + padding, maxLng + padding],
     ]
-
-    console.log('Calculated bounds:', newBounds)
     setBounds(newBounds)
   }, [])
 
@@ -152,12 +163,19 @@ const OverViewMap: React.FC<{
   const handleCoordinateRequest = useCallback(() => {
     if (latestGPS) {
       setCenter([latestGPS.latitude, latestGPS.longitude])
+      setCenterZoom(15)
+      setBounds(undefined)
+      // Set the view mode to force a re-render even if coordinates haven't changed
+      setViewMode('center')
     }
-  }, [latestGPS, setCenter])
+  }, [latestGPS])
 
   // Handler for fitting bounds to all vehicles
   const handleFitBoundsRequest = useCallback(() => {
     calculateBounds()
+    setCenter(undefined) // Clear center when using bounds
+    // Set the view mode to force a re-render
+    setViewMode('bounds')
   }, [calculateBounds])
 
   const handleStationsRequest = useCallback(() => {
@@ -179,7 +197,9 @@ const OverViewMap: React.FC<{
         className="h-full w-full"
         onRequestDepth={handleDepthRequest}
         center={center}
+        centerZoom={centerZoom}
         fitBounds={bounds}
+        viewMode={viewMode}
         onRequestCoordinate={handleCoordinateRequest}
         onRequestFitBounds={handleFitBoundsRequest}
         onRequestStations={handleStationsRequest}
@@ -197,9 +217,6 @@ const OverViewMap: React.FC<{
           const lat = station.geojson?.geometry?.coordinates[1]
 
           if (!lng || !lat) return null
-
-          console.log('Stations: Valid coordinates found:', lat, lng)
-
           return (
             <StationMarker
               key={station.name}

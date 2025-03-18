@@ -38,11 +38,13 @@ export interface MapProps {
   className?: string
   style?: React.CSSProperties
   center?: [number, number]
+  centerZoom?: number
   zoom?: number
   minZoom?: number
   maxZoom?: number
   maxNativeZoom?: number
   fitBounds?: [[number, number], [number, number]]
+  viewMode?: 'center' | 'bounds' | null
   scrollWheelZoom?: boolean
   onRequestDepth?: MouseCoordinatesProps['onRequestDepth']
   onRequestCoordinate?: () => void
@@ -60,11 +62,13 @@ const Map: React.FC<MapProps> = ({
   className,
   style,
   center = [36.7849, -122.12097],
+  centerZoom,
   zoom = 17,
   minZoom = 4,
   maxZoom = 17,
   maxNativeZoom = 13,
   fitBounds,
+  viewMode,
   children,
   onRequestDepth,
   onRequestCoordinate,
@@ -284,7 +288,6 @@ const Map: React.FC<MapProps> = ({
   const handleRequestFitBounds = (e: React.MouseEvent) => {
     e.preventDefault()
     e.stopPropagation()
-    console.log('Map.tsx - All vehicles fit bounds button clicked')
     onRequestFitBounds?.()
   }
 
@@ -314,7 +317,14 @@ const Map: React.FC<MapProps> = ({
       // @ts-ignore
       maxNativeZoom={maxNativeZoom}
     >
-      {center && <CenterView coords={center} bounds={fitBounds} />}
+      {
+        <CenterView
+          coords={center}
+          bounds={fitBounds}
+          zoom={centerZoom}
+          viewMode={viewMode} // Pass this through
+        />
+      }
       <ScaleControl position="topright" />
       <LayersControl position="topright">
         <LayersControl.BaseLayer
