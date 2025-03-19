@@ -41,6 +41,10 @@ jobs:
           echo "NEXT_PUBLIC_WEBSOCKET_URL: $NEXT_PUBLIC_WEBSOCKET_URL"
           echo "NEXT_PUBLIC_GOOGLE_MAPS_API_KEY: [REDACTED]"
           
+          # Uncomment the assetPrefix and output lines for production build
+          sed -i 's/\/\/ assetPrefix: '\''\.'\''/'assetPrefix: '\''\.'\''/' apps/lrauv-dash2/next.config.js
+          sed -i 's/\/\/ output: '\''export'\''/'output: '\''export'\''/' apps/lrauv-dash2/next.config.js
+          
           yarn build
       
       - name: Pack output directory
