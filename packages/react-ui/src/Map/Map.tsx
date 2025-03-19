@@ -90,6 +90,7 @@ const Map: React.FC<MapProps> = ({
     {
       id: string
       editing?: boolean
+      showPopup?: boolean
     }[]
   >([])
 
@@ -260,7 +261,7 @@ const Map: React.FC<MapProps> = ({
       setCount(0)
       setMeasurements((prev) => [
         ...prev,
-        { id: Date.now().toLocaleString(), editing: true },
+        { id: Date.now().toLocaleString(), editing: true, showPopup: false },
       ])
     }
     if (mode === 'closed') {
@@ -269,6 +270,7 @@ const Map: React.FC<MapProps> = ({
         prev.map((p) => ({
           ...p,
           editing: false,
+          showPopup: true, // Set this to true when finishing
         }))
       )
     }
@@ -503,6 +505,7 @@ const Map: React.FC<MapProps> = ({
           <React.Fragment key={m.id}>
             <Measurement
               editing={m.editing}
+              showPopup={m.showPopup} // Pass the flag here
               onDelete={removeMeasurement(m.id)}
             />
             <MovingDot editing={m.editing} />
