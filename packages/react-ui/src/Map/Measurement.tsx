@@ -9,7 +9,6 @@ import {
 } from 'react-leaflet'
 import L, { LatLng, LatLngExpression, latLng } from 'leaflet'
 import { point, distance, polygon, area } from '@turf/turf'
-// import '../css/Measurement.css'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { faArrowsToCircle, faTrashAlt } from '@fortawesome/free-solid-svg-icons'
 
@@ -110,6 +109,7 @@ export type SymbolFeature = 'point' | 'line' | 'area'
 export interface MeasurementProps {
   key?: string
   editing?: boolean
+  showPopup?: boolean
   onDelete?: () => void
 }
 
@@ -118,13 +118,18 @@ export interface MeasurementProps {
 ////////////////////////////////////////////////////////
 export const Measurement: React.FC<MeasurementProps> = ({
   editing,
+  showPopup = false,
   onDelete: handleDelete,
 }) => {
   const map = useMap()
   const feature = useRef('')
   const isLine = useRef(false)
   const isPoint = useRef(false)
-  const polygonRef = useRef(null)
+  // Create refs for each component type
+  const circleRef = useRef<L.Circle | null>(null)
+  const polylineRef = useRef<L.Polyline | null>(null)
+  const polygonRef = useRef<L.Polygon | null>(null)
+
   const clickCounter = useRef(0)
   // Construct measurements into an array
   const [measurements, setMeasurements] = useState([] as L.LatLng[])
@@ -135,15 +140,40 @@ export const Measurement: React.FC<MeasurementProps> = ({
   const [counter, setCounter] = useState(1)
   let countArray: string | SetStateAction<number> = 0
 
+  // Add an effect to handle popup opening
+  useEffect(() => {
+    // If popup should be shown and we're not in edit mode
+    if (showPopup && !editing && measurements.length > 0) {
+      setTimeout(() => {
+        // Open popup on the appropriate component
+        if (isPoint.current && circleRef.current) {
+          circleRef.current.openPopup()
+        } else if (isLine.current && polylineRef.current) {
+          polylineRef.current.openPopup()
+        } else if (feature.current === 'area' && polygonRef.current) {
+          polygonRef.current.openPopup()
+        }
+      }, 100) // Small delay to ensure component is mounted
+
+      // Set local state so we know popup is open
+      setIsPopupOpen(true)
+    }
+  }, [showPopup, editing, measurements, isPoint, isLine, feature])
+
   // Remove the last measurement when editing is toggled to false as the useMapEvent handler
   // will fire when the user clicks the done button on the map control.
   const wasEditing = useRef(editing)
+  const shouldShowPopupRef = useRef(showPopup)
+
+  // Update the ref when prop changes
+  useEffect(() => {
+    shouldShowPopupRef.current = showPopup
+  }, [showPopup])
 
   // Finished Measuring
   useEffect(() => {
     if (!editing && wasEditing.current) {
-      // Determine if linear or Area Measurement
-      // Must account for last "click" not being real.....
+      // Your existing code for determining measurement type
       clickCounter.current = clickCounter.current - 1
       if (clickCounter.current === 1) {
         isPoint.current = true
@@ -158,10 +188,16 @@ export const Measurement: React.FC<MeasurementProps> = ({
         isPoint.current = false
         feature.current = 'area'
       }
+
       const finalMeasurements = [...measurements]
       setMeasurements(finalMeasurements)
       countArray == 0
       finalMeasurements.pop()
+
+      // Auto-open popup when measurement is finished and showPopup is true
+      if (shouldShowPopupRef.current) {
+        setIsPopupOpen(true)
+      }
     }
 
     wasEditing.current = editing
@@ -357,6 +393,7 @@ export const Measurement: React.FC<MeasurementProps> = ({
     </li>
   )
 
+  // Modify your component rendering to use the isPopupOpen state directly
   return (
     <>
       {measurements.map((m) => (
@@ -379,18 +416,147 @@ export const Measurement: React.FC<MeasurementProps> = ({
         </>
       ))}
 
-      {/* {isPoint.current && isPopupOpen ? ( */}
-      {isPoint.current && !isPopupOpen ? (
+      {isPoint.current ? (
         <>
-          <PointComponent />
+          <Circle
+            ref={circleRef}
+            center={measurements[0]}
+            radius={25}
+            color={color}
+            eventHandlers={{
+              click: () => {
+                setIsPopupOpen(true)
+              },
+            }}
+          >
+            <Popup>
+              <ul className="flex flex-col">
+                <>
+                  <h6>
+                    <span
+                      className="width=100% text-align=center font-bold text-blue-800"
+                      justify-content="center"
+                    >
+                      Point Location
+                    </span>
+                  </h6>
+                  <br />
+                  <hr />
+                  <br />
+                  <li>
+                    Point Coordinate:
+                    <br />
+                    <span style={measStyle}>
+                      {dmsC}
+                      <br />
+                      {mapC}
+                      <br />
+                    </span>
+                    <br />
+                    <hr></hr>
+                    <br />
+                  </li>
+                </>
+                <ClickOptions />
+              </ul>
+            </Popup>
+          </Circle>
         </>
       ) : isLine.current ? (
         <>
-          <PolylineComponent />
+          <Polyline
+            ref={polylineRef}
+            positions={measurements}
+            color={color}
+            eventHandlers={{
+              click: () => {
+                setIsPopupOpen(true)
+              },
+            }}
+          >
+            <Popup>
+              <ul className="flex flex-col">
+                <>
+                  <h6>
+                    <span
+                      className="width=100% text-align=center font-bold text-blue-800"
+                      justify-content="center"
+                    >
+                      Linear Measurement
+                    </span>
+                  </h6>
+                  <br />
+                  <hr />
+                  <br />
+                  <li>
+                    Path Distance:
+                    <br />
+                    <span style={measStyle}>
+                      {m.toString().replace(regex, ',')} Meters ({km}{' '}
+                      Kilometers)
+                    </span>
+                    <br />
+                    <hr></hr>
+                    <br />
+                  </li>
+                </>
+                <ClickOptions />
+              </ul>
+            </Popup>
+          </Polyline>
         </>
       ) : (
         <>
-          <PolygonComponent />
+          <Polygon
+            ref={polygonRef}
+            positions={measurements}
+            color={color}
+            eventHandlers={{
+              click: () => {
+                setIsPopupOpen(true)
+              },
+            }}
+          >
+            <Popup>
+              <ul className="flex flex-col">
+                <>
+                  <h6>
+                    <span
+                      className="width=100% text-align=center font-bold text-blue-800"
+                      justify-content="center"
+                    >
+                      Area Measurement
+                    </span>
+                  </h6>
+                  <br />
+                  <hr />
+                  <br />
+                  <li>
+                    <span className="text-gray-600">Perimeter Distance:</span>
+                    <br />
+                    <span style={measStyle}>
+                      {m.toString().replace(regex, ',')} Meters ({km}{' '}
+                      Kilometers)
+                    </span>
+                    <br />
+                    <hr></hr>
+                    <br />
+                  </li>
+                  <li>
+                    <span className="text-gray-600">Area:</span>
+                    <br />
+                    <span style={measStyle}>
+                      {m2.toString().replace(regex, ',')} Sq. Meters{' '}
+                    </span>
+                    <br />
+                    <hr></hr>
+                    <br />
+                  </li>
+                </>
+                <ClickOptions />
+              </ul>
+            </Popup>
+          </Polygon>
         </>
       )}
     </>
