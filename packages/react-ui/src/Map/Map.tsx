@@ -29,6 +29,7 @@ import { Measurement } from './Measurement'
 import MovingDot from './MovingDot'
 import { AreaComponent, PathComponent, MeasurementProps } from './Measurement'
 import { CenterView } from './MapViews'
+import { map } from 'leaflet'
 
 const regex = /\B(?=(\d{3})+(?!\d))/g
 let mapCoord: String
@@ -76,6 +77,7 @@ const Map: React.FC<MapProps> = ({
   onRequestPlatforms,
   onRequestStations,
 }) => {
+  const [mapReady, setMapReady] = useState(false)
   const originalCenter = useRef(center)
   const { baseLayer, setBaseLayer } = useMapBaseLayer()
   const addBaseLayerHandler = useCallback(
@@ -307,6 +309,15 @@ const Map: React.FC<MapProps> = ({
     []
   )
 
+  useEffect(() => {
+    // Wait for map to be fully initialized
+    const timer = setTimeout(() => {
+      setMapReady(true)
+    }, 1000)
+
+    return () => clearTimeout(timer)
+  }, [])
+
   return (
     <MapContainer
       center={center}
@@ -329,56 +340,64 @@ const Map: React.FC<MapProps> = ({
       }
       <ScaleControl position="topright" />
       <LayersControl position="topright">
-        <LayersControl.BaseLayer
-          name="Google Hybrid"
-          checked={baseLayer === 'Google Hybrid'}
-        >
-          <ReactLeafletGoogleLayer
-            useGoogMapsLoader={false}
-            type="hybrid"
-            eventHandlers={{
-              add: addBaseLayerHandler('Google Hybrid'),
-            }}
-          />
-        </LayersControl.BaseLayer>
-        <LayersControl.BaseLayer
-          name="ESRI Oceans/Labels"
-          checked={baseLayer === 'ESRI Oceans/Labels'}
-        >
-          <TileLayer
-            url="https://ibasemaps-api.arcgis.com/arcgis/rest/services/Ocean/World_Ocean_Base/MapServer/tile/{z}/{y}/{x}?//token=<ACCESS_TOKEN>process.env.REACT_APP_ESRI_API_KEY</ACCESS_TOKEN>"
-            attribution='&copy; <a href="https://developers.arcgis.com/">ArcGIS</a>'
-            maxNativeZoom={maxNativeZoom}
-            eventHandlers={{
-              add: addBaseLayerHandler('ESRI Oceans/Labels'),
-            }}
-          />
-        </LayersControl.BaseLayer>
+        {mapReady && (
+          <LayersControl.BaseLayer
+            name="Google Hybrid"
+            checked={baseLayer === 'Google Hybrid'}
+          >
+            <ReactLeafletGoogleLayer
+              useGoogMapsLoader={false}
+              type="hybrid"
+              eventHandlers={{
+                add: addBaseLayerHandler('Google Hybrid'),
+              }}
+            />
+          </LayersControl.BaseLayer>
+        )}
+        {mapReady && (
+          <LayersControl.BaseLayer
+            name="ESRI Oceans/Labels"
+            checked={baseLayer === 'ESRI Oceans/Labels'}
+          >
+            <TileLayer
+              url="https://ibasemaps-api.arcgis.com/arcgis/rest/services/Ocean/World_Ocean_Base/MapServer/tile/{z}/{y}/{x}?//token=<ACCESS_TOKEN>process.env.REACT_APP_ESRI_API_KEY</ACCESS_TOKEN>"
+              attribution='&copy; <a href="https://developers.arcgis.com/">ArcGIS</a>'
+              maxNativeZoom={maxNativeZoom}
+              eventHandlers={{
+                add: addBaseLayerHandler('ESRI Oceans/Labels'),
+              }}
+            />
+          </LayersControl.BaseLayer>
+        )}
         {gmrtLayer}
-        <LayersControl.BaseLayer
-          name="OpenStreetmaps"
-          checked={baseLayer === 'OpenStreetmaps'}
-        >
-          <TileLayer
-            attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-            url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-            eventHandlers={{
-              add: addBaseLayerHandler('OpenStreetmaps'),
-            }}
-          />
-        </LayersControl.BaseLayer>
-        <LayersControl.BaseLayer
-          name="Dark Layer (CARTO)"
-          checked={baseLayer === 'Dark Layer (CARTO)'}
-        >
-          <TileLayer
-            attribution='&copy; <a href="http://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors, &copy; <a href="https://carto.com/attributions">CARTO</a>'
-            url="https://cartodb-basemaps-{s}.global.ssl.fastly.net/dark_nolabels/{z}/{x}/{y}.png"
-            eventHandlers={{
-              add: addBaseLayerHandler('Dark Layer (CARTO)'),
-            }}
-          />
-        </LayersControl.BaseLayer>
+        {mapReady && (
+          <LayersControl.BaseLayer
+            name="OpenStreetmaps"
+            checked={baseLayer === 'OpenStreetmaps'}
+          >
+            <TileLayer
+              attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+              url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+              eventHandlers={{
+                add: addBaseLayerHandler('OpenStreetmaps'),
+              }}
+            />
+          </LayersControl.BaseLayer>
+        )}
+        {mapReady && (
+          <LayersControl.BaseLayer
+            name="Dark Layer (CARTO)"
+            checked={baseLayer === 'Dark Layer (CARTO)'}
+          >
+            <TileLayer
+              attribution='&copy; <a href="http://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors, &copy; <a href="https://carto.com/attributions">CARTO</a>'
+              url="https://cartodb-basemaps-{s}.global.ssl.fastly.net/dark_nolabels/{z}/{x}/{y}.png"
+              eventHandlers={{
+                add: addBaseLayerHandler('Dark Layer (CARTO)'),
+              }}
+            />
+          </LayersControl.BaseLayer>
+        )}
       </LayersControl>
       <Control prepend position="topright">
         <MouseCoordinates onRequestDepth={onRequestDepth} />
