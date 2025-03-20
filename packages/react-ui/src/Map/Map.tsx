@@ -78,6 +78,7 @@ const Map: React.FC<MapProps> = ({
   onRequestStations,
 }) => {
   const [mapReady, setMapReady] = useState(false)
+  const [isMeasuring, setIsMeasuring] = useState(false)
   const originalCenter = useRef(center)
   const { baseLayer, setBaseLayer } = useMapBaseLayer()
   const addBaseLayerHandler = useCallback(
@@ -255,6 +256,12 @@ const Map: React.FC<MapProps> = ({
   const changeMeasureMode = (mode: MeasureMode) => (e: React.MouseEvent) => {
     e.preventDefault()
     e.stopPropagation()
+    // Set flag to prevent centering during measurements
+    if (mode === 'open' || mode === 'measuring') {
+      setIsMeasuring(true)
+    } else {
+      setIsMeasuring(false)
+    }
 
     if (mode === 'open') {
       setCount(0)
@@ -330,14 +337,14 @@ const Map: React.FC<MapProps> = ({
       // @ts-ignore
       maxNativeZoom={maxNativeZoom}
     >
-      {
+      {!isMeasuring && (
         <CenterView
           coords={center}
           bounds={fitBounds}
           zoom={centerZoom}
           viewMode={viewMode} // Pass this through
         />
-      }
+      )}
       <ScaleControl position="topright" />
       <LayersControl position="topright">
         {mapReady && (
