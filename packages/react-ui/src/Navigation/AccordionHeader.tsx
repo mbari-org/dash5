@@ -20,8 +20,9 @@ const styles = {
   container: 'flex font-display',
   open: 'bg-primary-600 text-white',
   closed: 'bg-white text-stone-800',
-  secondary: 'my-auto ml-3 text-sm italic truncate flex-shrink',
-  textButton: 'text-md flex flex-grow px-3 py-2',
+  secondary:
+    'ml-5 text-sm italic truncate flex-shrink font-thin font-sans mt-0.5',
+  textButton: 'text-md flex flex-grow items-center px-3 py-2',
   expandButton: 'pl-6 pr-2 flex-shrink-0',
   chevronButton: 'pl-2 pr-4 flex-shrink-0',
 }
