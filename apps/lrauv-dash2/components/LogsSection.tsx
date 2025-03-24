@@ -6,19 +6,19 @@ import {
   IconButton,
   MultiSelectField,
   AccordionCells,
+  HistoricalListIcon,
+  IconToggle,
+  SubIcon,
 } from '@mbari/react-ui'
 import { MultiValue } from 'react-select'
 import { DateTime } from 'luxon'
+import clsx from 'clsx'
 import formatEvent, {
   displayNameForEventType,
   eventFilters,
   isUploadEvent,
 } from '../lib/formatEvent'
-import {
-  faSync,
-  faFilter,
-  faPersonRunning,
-} from '@fortawesome/free-solid-svg-icons'
+import { faSync } from '@fortawesome/free-solid-svg-icons'
 import { SelectOption } from '@mbari/react-ui/dist/Fields/Select'
 import { getAdjustedUnixTime } from '@mbari/utils'
 
@@ -28,6 +28,8 @@ export interface LogsSectionProps {
   vehicleName: string
   from: number // milliseconds since epoch
   to?: number
+  deploymentLogsOnly: boolean
+  setDeploymentLogsOnly: (value: boolean) => void
 }
 
 const TWO_YEARS_AGO = getAdjustedUnixTime({
@@ -35,10 +37,15 @@ const TWO_YEARS_AGO = getAdjustedUnixTime({
   offsetYears: -2,
 })
 
-const LogsSection: React.FC<LogsSectionProps> = ({ vehicleName, from, to }) => {
-  const [allLogs, setAllLogs] = useState(false)
-  const toggleAllLogs = () => {
-    setAllLogs((prev) => !prev)
+const LogsSection: React.FC<LogsSectionProps> = ({
+  vehicleName,
+  from,
+  to,
+  deploymentLogsOnly,
+  setDeploymentLogsOnly,
+}) => {
+  const toggleDeploymentLogsOnly = () => {
+    setDeploymentLogsOnly(!deploymentLogsOnly)
   }
 
   const { siteConfig } = useTethysApiContext()
@@ -53,18 +60,57 @@ const LogsSection: React.FC<LogsSectionProps> = ({ vehicleName, from, to }) => {
       : undefined
   }, [filters])
 
-  const queryParams = useMemo(
+  // Query params for deployment logs (limited to deployment timeframe)
+  const deploymentQueryParams = useMemo(
     () => ({
       vehicles: [vehicleName],
       eventTypes,
-      from: allLogs ? TWO_YEARS_AGO : from, // TODO: implement pagination to get all logs
-      to: allLogs ? undefined : to,
-      limit: 10000, // this limit affects chunk size, not the total number of logs returned
+      from: from,
+      to: to,
+      limit: 10000,
     }),
-    [vehicleName, allLogs, from, to, eventTypes]
+    [vehicleName, from, to, eventTypes]
   )
 
-  const { data, isLoading, isFetching, refetch } = useEvents(queryParams)
+  // Query params for all logs (going back two years)
+  const allLogsQueryParams = useMemo(
+    () => ({
+      vehicles: [vehicleName],
+      eventTypes,
+      from: TWO_YEARS_AGO,
+      to: undefined,
+      limit: 10000,
+    }),
+    [vehicleName, eventTypes]
+  )
+
+  // Two separate queries that will be cached independently
+  const {
+    data: deploymentLogsData,
+    isLoading: isDeploymentLogsLoading,
+    isFetching: isDeploymentLogsFetching,
+    refetch: refetchDeploymentLogs,
+  } = useEvents(deploymentQueryParams)
+
+  const {
+    data: allLogsData,
+    isLoading: isAllLogsLoading,
+    isFetching: isAllLogsFetching,
+    refetch: refetchAllLogs,
+  } = useEvents(allLogsQueryParams)
+
+  // Use the appropriate data based on the current mode
+  const data = useMemo(
+    () => (deploymentLogsOnly ? deploymentLogsData : allLogsData),
+    [deploymentLogsOnly, deploymentLogsData, allLogsData]
+  )
+
+  const isLoading = deploymentLogsOnly
+    ? isDeploymentLogsLoading
+    : isAllLogsLoading
+  const isFetching = deploymentLogsOnly
+    ? isDeploymentLogsFetching
+    : isAllLogsFetching
 
   const cellAtIndex = (index: number, _virtualizer: Virtualizer) => {
     const item = data?.[index]
@@ -90,12 +136,16 @@ const LogsSection: React.FC<LogsSectionProps> = ({ vehicleName, from, to }) => {
   }
 
   const handleRefresh = () => {
-    refetch()
+    if (deploymentLogsOnly) {
+      refetchDeploymentLogs()
+    } else {
+      refetchAllLogs()
+    }
   }
 
   return (
     <>
-      <header className="flex p-2">
+      <header className="flex justify-between p-2">
         <MultiSelectField
           name="filters"
           value={filters}
@@ -105,29 +155,53 @@ const LogsSection: React.FC<LogsSectionProps> = ({ vehicleName, from, to }) => {
           }))}
           placeholder="Filter by event type"
           onSelect={(selection) => {
-            console.log(selection)
             setFilters(selection ?? [])
           }}
-          className="my-auto mr-2"
+          className="my-auto mr-2 max-w-xs"
           grow
         />
-        <IconButton
-          icon={faSync}
-          ariaLabel="reload"
-          tooltipAlignment="right"
-          tooltip="Reload"
-          className="my-auto"
-          disabled={isLoading || isFetching}
-          onClick={handleRefresh}
-        />
-        <IconButton
-          icon={!allLogs ? faFilter : faPersonRunning}
-          ariaLabel="download"
-          tooltipAlignment="right"
-          tooltip={!allLogs ? 'Historic Logs' : 'Realtime'}
-          className="my-auto"
-          onClick={toggleAllLogs}
-        />
+        <div className="flex items-center">
+          <IconToggle
+            iconLeft={
+              <HistoricalListIcon
+                className={clsx(
+                  'transition-colors duration-300',
+                  deploymentLogsOnly ? 'text-gray-400' : 'text-black'
+                )}
+              />
+            }
+            iconRight={
+              <SubIcon
+                className={clsx(
+                  'transition-colors duration-300',
+                  deploymentLogsOnly ? 'text-black' : 'text-gray-400'
+                )}
+              />
+            }
+            isToggled={deploymentLogsOnly}
+            onToggle={toggleDeploymentLogsOnly}
+            tooltip={
+              deploymentLogsOnly
+                ? 'Displaying deployment logs'
+                : 'Displaying all logs'
+            }
+            tooltipAlignment="right"
+            ariaLabelLeft="Displaying all logs"
+            ariaLabelRight="Displaying deployment logs"
+            className="mr-4"
+          />
+          <IconButton
+            icon={faSync}
+            ariaLabel="reload"
+            tooltipAlignment="right"
+            tooltip="Refresh logs"
+            disabled={isLoading || isFetching}
+            onClick={handleRefresh}
+            size="text-md"
+            iconClassName="text-xl"
+            className="flex items-center justify-center rounded-full border-2 border-blue-400 text-blue-400"
+          />
+        </div>
       </header>
       <AccordionCells
         cellAtIndex={cellAtIndex}

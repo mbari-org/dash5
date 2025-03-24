@@ -124,6 +124,8 @@ const VehicleAccordion: React.FC<VehicleAccordionProps> = ({
     }
   }
 
+  const [deploymentLogsOnly, setDeploymentLogsOnly] = useState(false)
+
   return (
     <div className="flex h-full flex-col divide-y divide-solid divide-stone-200">
       <AccordionHeader
@@ -190,14 +192,26 @@ const VehicleAccordion: React.FC<VehicleAccordionProps> = ({
       )}
       <AccordionHeader
         label="Log"
-        // secondaryLabel={activeDeployment ? logsSummary : ''}
+        secondaryLabel={
+          section === 'log'
+            ? deploymentLogsOnly
+              ? 'showing deployment logs'
+              : 'showing all logs'
+            : ''
+        }
         onToggle={handleToggleForSection('log')}
         open={section === 'log'}
         className="flex flex-shrink-0"
         onExpand={handleExpand('logs')}
       />
       {section === 'log' && (
-        <LogsSection vehicleName={vehicleName} from={from} to={to} />
+        <LogsSection
+          vehicleName={vehicleName}
+          from={from}
+          to={to}
+          deploymentLogsOnly={deploymentLogsOnly}
+          setDeploymentLogsOnly={setDeploymentLogsOnly}
+        />
       )}
       <AccordionHeader
         label="Docs"

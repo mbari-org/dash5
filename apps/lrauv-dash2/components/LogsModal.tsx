@@ -3,6 +3,7 @@ import LogsSection from './LogsSection'
 import { DateTime } from 'luxon'
 import { capitalize } from '@mbari/utils'
 import useCurrentDeployment from '../lib/useCurrentDeployment'
+import { useState } from 'react'
 
 export interface LogsModalProps {
   vehicleName: string
@@ -25,6 +26,7 @@ export const LogsModal: React.FC<LogsModalProps> = ({
   const formattedEnd = deploymentEndTime
     ? DateTime.fromMillis(deploymentEndTime).toFormat('h:mm a MMM d, yyyy')
     : 'Present'
+  const [deploymentLogsOnly, setDeploymentLogsOnly] = useState(false)
   return (
     <Modal
       className={className}
@@ -44,6 +46,8 @@ export const LogsModal: React.FC<LogsModalProps> = ({
           vehicleName={vehicleName}
           from={deploymentStartTime}
           to={deploymentEndTime}
+          deploymentLogsOnly={deploymentLogsOnly}
+          setDeploymentLogsOnly={setDeploymentLogsOnly}
         />
       </div>
     </Modal>
