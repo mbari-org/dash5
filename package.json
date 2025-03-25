@@ -21,7 +21,11 @@
     "prepare": "husky install",
     "lint": "eslint --quiet --fix ./packages/*/src/**/*.{ts,tsx}",
     "lint:watch": "esw --quiet --fix --watch ./packages/*/src/**/*.{ts,tsx}",
-    "lint:staged": "lint-staged"
+    "lint:staged": "lint-staged",
+    "version:patch": "./scripts/bump-version.sh --patch",
+    "version:minor": "./scripts/bump-version.sh --minor",
+    "version:major": "./scripts/bump-version.sh --major",
+    "version:dry-run": "./scripts/bump-version.sh --dry-run"
   },
   "lint-staged": {
     "*.{js,ts,tsx, jsx}": [
