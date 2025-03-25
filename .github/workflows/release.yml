@@ -192,8 +192,8 @@ jobs:
         if: needs.determine-environment.outputs.is_production == 'false'
         shell: bash
         run: |
-          if [ -n "${{ secrets.WATCHTOWER_HTTP_API_TOKEN }}" ] && [ -n "${{ secrets.TETHYSDASH2_STAGING_WATCHTOWER_ENDPOINT }}" ]; then
-            curl -H "Authorization: Bearer ${{ secrets.WATCHTOWER_HTTP_API_TOKEN }}" ${{ secrets.TETHYSDASH2_STAGING_WATCHTOWER_ENDPOINT }}
+          if [ -n "${{ secrets.WATCHTOWER_HTTP_API_TOKEN }}" ] && [ -n "${{ secrets.TETHYSDASH2_WATCHTOWER_ENDPOINT }}" ]; then
+            curl -H "Authorization: Bearer ${{ secrets.WATCHTOWER_HTTP_API_TOKEN }}" ${{ secrets.TETHYSDASH2_WATCHTOWER_ENDPOINT }}
             echo "Watchtower update triggered successfully for STAGING"
           else
             echo "Skipping Watchtower update - required secrets not configured"
