@@ -13,7 +13,8 @@ env:
   NEXT_PUBLIC_BASE_URL: ${{ vars.NEXT_PUBLIC_BASE_URL || 'https://okeanids.mbari.org//TethysDash/api' }}
   NEXT_PUBLIC_ODSS2BASE_URL: ${{ vars.NEXT_PUBLIC_ODSS2BASE_URL || 'http://okeanids.mbari.org//odss2dash/api' }}
   NEXT_PUBLIC_WEBSOCKET_URL: ${{ vars.NEXT_PUBLIC_WEBSOCKET_URL || 'wss://okeanids.mbari.org/ws/' }}
-  NEXT_PUBLIC_GOOGLE_MAPS_API_KEY: ${{ secrets.GOOGLE_MAPS_API_KEY || 'placeholder-api-key' }}
+  NEXT_PUBLIC_GOOGLE_MAPS_API_KEY: ${{ secrets.GOOGLE_MAPS_API_KEY || 'AIzaSyDO_3Gw18SsOaBGD7DWquQj4wRIHxKY77A' }}
+  NEXT_PUBLIC_REACT_APP_ESRI_API_KEY: ${{'AAPK4f2bc64881714cb2b03b1b5798dd2b740wn2YfXp7EZuoC_GggsJw92b06Ou-ZhL1i0CU-haX0JwKr9Ve9ned4wNTOYlGu1x' }}
 
 jobs:
   build-static:
