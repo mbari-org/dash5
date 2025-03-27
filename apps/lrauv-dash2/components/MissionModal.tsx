@@ -50,6 +50,11 @@ const insertForParameter = (
   return null
 }
 
+const LAST_60_DAYS = getAdjustedUnixTime({
+  unixTime: DateTime.now().toMillis(),
+  offsetDays: -60,
+})
+
 export interface MissionModalProps {
   onClose: () => void
   className?: string
@@ -141,14 +146,11 @@ const MissionModal: React.FC<MissionModalProps> = ({
     },
     { enabled: !!vehicleName }
   )
-  const last60Days = getAdjustedUnixTime({
-    unixTime: DateTime.now().toMillis(),
-    offsetDays: -60,
-  })
+
   const { data: recentRunsData } = useRecentRuns(
     {
       vehicles: vehicles ?? [],
-      from: last60Days,
+      from: LAST_60_DAYS,
     },
     { enabled: !!vehicles }
   )
