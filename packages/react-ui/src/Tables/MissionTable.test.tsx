@@ -9,7 +9,7 @@ const props: MissionTableProps = {
       id: '1',
       category: 'Science',
       name: 'sci2',
-      task: 'Test mission',
+      note: 'Test mission',
       vehicle: 'Brizo',
       ranBy: 'Jordan Caress',
       ranOn: 'Dec. 10, 2021',

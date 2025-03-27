@@ -19,7 +19,7 @@ export interface Mission {
   id: string
   category: string
   name: string
-  task?: string
+  note?: string
   description?: string
   vehicle?: string
   ranBy?: string
@@ -45,7 +45,7 @@ export const MissionTable: React.FC<MissionTableProps> = ({
     ({
       category,
       name,
-      task,
+      note,
       description,
       ranBy,
       ranOn,
@@ -56,7 +56,8 @@ export const MissionTable: React.FC<MissionTableProps> = ({
       cells: [
         {
           label: category ? `${category}: ${name}` : `${name}`,
-          secondary: task,
+          secondary: note,
+          span: 2,
         },
         shouldShowVehicleColumn
           ? {
@@ -83,6 +84,7 @@ export const MissionTable: React.FC<MissionTableProps> = ({
       {
         label: 'MISSION NAME',
         onSort: onSortColumn,
+        span: 2,
       },
       shouldShowVehicleColumn
         ? {
@@ -90,7 +92,7 @@ export const MissionTable: React.FC<MissionTableProps> = ({
             onSort: onSortColumn,
           }
         : null,
-      { label: 'DESCRIPTION', onSort: onSortColumn },
+      { label: 'DESCRIPTION', onSort: onSortColumn, span: 3 },
     ].filter((i) => i),
     activeSortColumn: sortColumn,
     activeSortDirection: sortDirection,
@@ -111,6 +113,7 @@ export const MissionTable: React.FC<MissionTableProps> = ({
       selectedIndex={
         selectedId ? missions.findIndex(({ id }) => id === selectedId) : null
       }
+      colInRow={6}
     />
   )
 }

@@ -37,7 +37,7 @@ const args: MissionTableProps = {
       id: '1',
       category: 'Science',
       name: 'sci2',
-      task: 'Test mission',
+      note: 'Test mission',
       description:
         "Vehicle yo-yo's to the specified waypoints, with science turned on.",
       vehicle: 'Brizo',
@@ -50,7 +50,7 @@ const args: MissionTableProps = {
       category: 'Science',
       name: 'sci2',
 
-      task: 'Test mission',
+      note: 'Test mission',
       description:
         "Vehicle yo-yo's to the specified waypoints, with science turned on.",
       vehicle: 'Tethys',
@@ -62,7 +62,7 @@ const args: MissionTableProps = {
       id: '3',
       category: 'Science',
       name: 'profile_station',
-      task: 'Profile station at C1 for the night',
+      note: 'Profile station at C1 for the night',
       description:
         'This mission yoyos in a circle around a specified location.',
       vehicle: 'Tethys',
@@ -74,7 +74,7 @@ const args: MissionTableProps = {
       id: '4',
       category: 'Science',
       name: 'sci2',
-      task: 'more okeanids testing',
+      note: 'more okeanids testing',
       description:
         "Vehicle yo-yo's to the specified waypoints, with science turned on.",
       vehicle: 'Tethys',
@@ -86,7 +86,7 @@ const args: MissionTableProps = {
       id: '5',
       category: 'Science',
       name: 'esp_sample_at_depth',
-      task: 'sending final doublet sampling mission',
+      note: 'sending final doublet sampling mission',
       description: 'This mission takes ESP samples at the designated depth.',
       vehicle: 'Brizo',
       ranBy: 'Greg Doucette',
@@ -96,7 +96,7 @@ const args: MissionTableProps = {
       id: '6',
       category: 'Maintenance',
       name: 'ballast_and_trim',
-      task: 'running B&T until next sampling',
+      note: 'running B&T until next sampling',
       vehicle: 'Brizo',
       ranBy: 'Greg Doucette',
       ranOn: 'Aug. 16, 2021',
