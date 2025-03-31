@@ -44,7 +44,7 @@ const props: MissionModalProps = {
       id: '1',
       category: 'Science',
       name: 'sci2',
-      task: 'Test mission',
+      note: 'Test mission',
       description:
         "Vehicle yo-yo's to the specified waypoints, with science turned on.",
       vehicle: 'Brizo',
@@ -57,7 +57,7 @@ const props: MissionModalProps = {
       id: '2',
       category: 'Maintenance',
       name: 'sci2',
-      task: 'Mission 2',
+      note: 'Mission 2',
       description:
         "Another mission where a vehicle yo-yo's to the specified waypoints, with science turned on.",
       vehicle: 'Tethys',
@@ -70,7 +70,7 @@ const props: MissionModalProps = {
       id: '3',
       category: 'Science',
       name: 'profile_station',
-      task: 'Profile station at C1 for the night',
+      note: 'Profile station at C1 for the night',
       description:
         'This mission yoyos in a circle around a specified location.',
       vehicle: 'Tethys',
@@ -180,7 +180,7 @@ test('should display mission tasks', async () => {
       <MissionModal {...props} />
     </RecoilRoot>
   )
-  expect(screen.queryByText(props.missions[0].task ?? '')).toBeInTheDocument()
+  expect(screen.queryByText(props.missions[0].note ?? '')).toBeInTheDocument()
 })
 
 test('should display mission category and name labels', async () => {

@@ -50,6 +50,11 @@ const insertForParameter = (
   return null
 }
 
+const LAST_60_DAYS = getAdjustedUnixTime({
+  unixTime: DateTime.now().toMillis(),
+  offsetDays: -60,
+})
+
 export interface MissionModalProps {
   onClose: () => void
   className?: string
@@ -141,14 +146,11 @@ const MissionModal: React.FC<MissionModalProps> = ({
     },
     { enabled: !!vehicleName }
   )
-  const last60Days = getAdjustedUnixTime({
-    unixTime: DateTime.now().toMillis(),
-    offsetDays: -60,
-  })
+
   const { data: recentRunsData } = useRecentRuns(
     {
       vehicles: vehicles ?? [],
-      from: last60Days,
+      from: LAST_60_DAYS,
     },
     { enabled: !!vehicles }
   )
@@ -203,19 +205,37 @@ const MissionModal: React.FC<MissionModalProps> = ({
 
   const recentRuns: MissionTableProps['missions'] =
     recentRunsData
-      ?.map(({ mission, vehicleName: vehicle, isoTime, user }) => {
-        const { category, name } = parseMissionPath(mission)
-        return {
-          id: mission,
-          category,
-          name,
-          description: mission,
-          vehicle,
-          ranOn: capitalize(DateTime.fromISO(isoTime).toFormat('MMM. d yyyy')),
-          ranBy: capitalizeEach(user ?? ''),
-          recentRun: true,
+      ?.map(
+        (
+          {
+            mission,
+            vehicleName: vehicle,
+            isoTime,
+            user,
+            note,
+            parameterOverrides,
+            waypointOverrides,
+          },
+          i
+        ) => {
+          const { category, name } = parseMissionPath(mission)
+          return {
+            id: mission,
+            category,
+            name,
+            description: mission,
+            vehicle,
+            ranOn: capitalize(
+              DateTime.fromISO(isoTime).toFormat('MMM. d yyyy')
+            ),
+            ranBy: capitalizeEach(user ?? ''),
+            recentRun: true,
+            note,
+            parameterCount: parameterOverrides.length,
+            waypointCount: waypointOverrides.length,
+          }
         }
-      })
+      )
       .filter(
         (mission, index, s) => s.findIndex((m) => m.id === mission.id) === index
       ) ?? []
