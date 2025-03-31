@@ -74,8 +74,9 @@ test('should display description label when description is provided', async () =
 
 test('should display run details including pilot and run date', async () => {
   render(<MissionTable {...props} />)
-  expect(screen.getByText(/Jordan Caress./i)).toBeInTheDocument()
-  expect(screen.getByText(/on Dec. 10, 2021./i)).toBeInTheDocument()
+  expect(
+    screen.getByText(/Last ran by Jordan Caress on Dec. 10, 2021/i)
+  ).toBeInTheDocument()
 })
 
 test('should display run details including number of waypoints when provided', async () => {
@@ -85,15 +86,45 @@ test('should display run details including number of waypoints when provided', a
       missions={[{ ...props.missions[0], waypointCount: 2 }]}
     />
   )
-  expect(screen.getByText(/This mission has 2 waypoints/i)).toBeInTheDocument()
+  expect(
+    screen.getByText(/This mission has 2 waypoint overrides/i)
+  ).toBeInTheDocument()
 })
 
-test('should display run details including number run location when provided', async () => {
+test('should display run details including number of parameters when provided', async () => {
+  render(
+    <MissionTable
+      {...props}
+      missions={[{ ...props.missions[0], parameterCount: 3 }]}
+    />
+  )
+  expect(
+    screen.getByText(/This mission has 3 parameter overrides/i)
+  ).toBeInTheDocument()
+})
+
+test('should display run details including number of waypoints and parameters when both are provided', async () => {
+  render(
+    <MissionTable
+      {...props}
+      missions={[{ ...props.missions[0], waypointCount: 2, parameterCount: 3 }]}
+    />
+  )
+  expect(
+    screen.getByText(
+      /This mission has 2 waypoint overrides and 3 parameter overrides/i
+    )
+  ).toBeInTheDocument()
+})
+
+test('should display run details including run location when provided', async () => {
   render(
     <MissionTable
       {...props}
       missions={[{ ...props.missions[0], ranAt: 'test location' }]}
     />
   )
-  expect(screen.getByText(/Last ran by Jordan Caress/i)).toBeInTheDocument()
+  expect(
+    screen.getByText(/Location ran at: test location/i)
+  ).toBeInTheDocument()
 })

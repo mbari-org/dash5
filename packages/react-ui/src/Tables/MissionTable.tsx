@@ -26,6 +26,7 @@ export interface Mission {
   ranOn?: string
   ranAt?: string
   waypointCount?: number
+  parameterCount?: number
   recentRun?: boolean
   frequentRun?: boolean
 }
@@ -51,12 +52,15 @@ export const MissionTable: React.FC<MissionTableProps> = ({
       ranOn,
       ranAt,
       waypointCount,
+      parameterCount,
       vehicle,
     }) => ({
       cells: [
         {
-          label: category ? `${category}: ${name}` : `${name}`,
-          secondary: note,
+          label: category
+            ? `${category}: ${name}`
+            : `${name !== '' && name ? name : 'Unnamed mission'}`,
+          secondary: note ? <span className="italic">{note}</span> : null,
           span: 2,
         },
         shouldShowVehicleColumn
@@ -66,14 +70,33 @@ export const MissionTable: React.FC<MissionTableProps> = ({
           : null,
         {
           label: description ? description : 'No description',
-          secondary: `${(ranBy && `Last ran by ${ranBy}`) ?? ''} 
-            ${(ranOn && `on ${ranOn}.`) ?? ''} 
-            ${(ranAt && `Location ran at: ${ranAt}.`) ?? ''}
-            ${
-              (waypointCount &&
-                `This mission has ${waypointCount} waypoints`) ??
-              ''
-            }`,
+          span: 3,
+          secondary: (
+            <ul className="">
+              <li className="flex">
+                {ranBy && `Last ran by ${ranBy}`}
+                {ranOn && ` on ${ranOn}`}
+              </li>
+              <li className="flex">{ranAt && `Location ran at: ${ranAt}`}</li>
+              {waypointCount || parameterCount ? (
+                <li className="flex">
+                  {`This mission has${
+                    waypointCount
+                      ? ` ${waypointCount} waypoint override${
+                          waypointCount !== 1 ? 's' : ''
+                        }`
+                      : ''
+                  }${waypointCount && parameterCount ? ' and' : ''}${
+                    parameterCount
+                      ? ` ${parameterCount} parameter override${
+                          parameterCount !== 1 ? 's' : ''
+                        }`
+                      : ''
+                  }`}
+                </li>
+              ) : null}
+            </ul>
+          ),
         },
       ].filter((i) => i),
     })

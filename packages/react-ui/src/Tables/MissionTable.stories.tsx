@@ -44,6 +44,7 @@ const args: MissionTableProps = {
       ranBy: 'Jordan Caress',
       ranOn: 'Dec. 10, 2021',
       waypointCount: 2,
+      parameterCount: 3,
     },
     {
       id: '2',

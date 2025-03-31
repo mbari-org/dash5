@@ -205,19 +205,37 @@ const MissionModal: React.FC<MissionModalProps> = ({
 
   const recentRuns: MissionTableProps['missions'] =
     recentRunsData
-      ?.map(({ mission, vehicleName: vehicle, isoTime, user }) => {
-        const { category, name } = parseMissionPath(mission)
-        return {
-          id: mission,
-          category,
-          name,
-          description: mission,
-          vehicle,
-          ranOn: capitalize(DateTime.fromISO(isoTime).toFormat('MMM. d yyyy')),
-          ranBy: capitalizeEach(user ?? ''),
-          recentRun: true,
+      ?.map(
+        (
+          {
+            mission,
+            vehicleName: vehicle,
+            isoTime,
+            user,
+            note,
+            parameterOverrides,
+            waypointOverrides,
+          },
+          i
+        ) => {
+          const { category, name } = parseMissionPath(mission)
+          return {
+            id: mission,
+            category,
+            name,
+            description: mission,
+            vehicle,
+            ranOn: capitalize(
+              DateTime.fromISO(isoTime).toFormat('MMM. d yyyy')
+            ),
+            ranBy: capitalizeEach(user ?? ''),
+            recentRun: true,
+            note,
+            parameterCount: parameterOverrides.length,
+            waypointCount: waypointOverrides.length,
+          }
         }
-      })
+      )
       .filter(
         (mission, index, s) => s.findIndex((m) => m.id === mission.id) === index
       ) ?? []
