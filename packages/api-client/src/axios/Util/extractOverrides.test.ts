@@ -2,7 +2,7 @@ import { extractOverrides } from './extractOverrides'
 
 describe('extractOverrides', () => {
   const baseMissionData = `sched asap "load Science/sci2_noyo_optim.tl;set sci2_noyo_optim.MissionTimeout 13 h;set sci2_noyo_optim.NeedCommsTime 90 min;set sci2_noyo_optim.Depth1 250 m;set sci2_noyo_optim.Depth2 250 m;set sci2_noyo_optim.Depth3 NaN m" 33c01 1 4
-sched asap "set sci2_noyo_optim.Repeat 12 count;set sci2_noyo_optim.Lat1 36.79279 degree;set sci2_noyo_optim.Lon1 -121.88919 degree;set sci2_noyo_optim.Lat2 36.78427 degree;set sci2_noyo_optim.Lon2 -121.91339 degree" 33c01 2 4
+sched asap "set sci2_noyo_optim.Repeat 12 count;set sci2_noyo_optim.Lat1 36.79279 degree;set sci2_noyo_optim.Lon1 -121.88919 degree;set sci2_noyo_optim.Lat2 36.78427 degree;set sci2_noyo_optim.Lon2 NaN degree" 33c01 2 4
 sched asap "set sci2_noyo_optim.ApproachDepth 10 m;set sci2_noyo_optim.ApproachSpeed 1.0 m/s;set sci2_noyo_optim.SlowSpeed 0.4 m/s;set sci2_noyo_optim.MinAltitude 10 m;set sci2_noyo_optim.MaxDepth 270 m" 33c01 3 4
 sched asap "set sci2_noyo_optim:PowerOnly.SampleLoad1 1 bool;run" 33c01 4 4`
 
@@ -14,7 +14,7 @@ sched asap "set sci2_noyo_optim:PowerOnly.SampleLoad1 1 bool;run" 33c01 4 4`
       { name: 'Lat1', value: '36.79279 degree' },
       { name: 'Lon1', value: '-121.88919 degree' },
       { name: 'Lat2', value: '36.78427 degree' },
-      { name: 'Lon2', value: '-121.91339 degree' },
+      { name: 'Lon2', value: 'NaN degree' },
     ])
 
     // Check parameter overrides (depths, timeouts, and other parameters)
