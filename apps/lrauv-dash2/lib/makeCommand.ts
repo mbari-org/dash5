@@ -13,14 +13,15 @@ const printUnit = (p: ParameterProps) => {
   return `${p.overrideValue} ${p.overrideUnit ?? p.unit}`
 }
 
+// Accepts a local time string and returns a formatted UTC time string
 export const makeCommand = ({
   commandText,
   scheduleMethod = 'end',
-  specifiedTime,
+  specifiedLocalTime,
 }: {
   commandText: string
   scheduleMethod?: ScheduleOption
-  specifiedTime?: string | null
+  specifiedLocalTime?: string | null
 }) => {
   switch (scheduleMethod) {
     case 'ASAP':
@@ -30,14 +31,14 @@ export const makeCommand = ({
         previewSbd: `sched asap "${commandText}"`,
       }
     case 'time':
-      if (!specifiedTime) {
+      if (!specifiedLocalTime) {
         return {
           commandText,
           schedDate: '',
           previewSbd: `sched "${commandText}"`,
         }
       }
-      const t = DateTime.fromISO(specifiedTime)
+      const t = DateTime.fromISO(specifiedLocalTime).toUTC()
       const schedDate = `${t.toFormat('yyyyMMdd')}}T${t.toFormat('HHmm')}`
       return {
         commandText,
@@ -53,16 +54,17 @@ export const makeCommand = ({
   }
 }
 
+// Accepts a local time string and returns a formatted UTC time string
 export const makeMissionCommand = ({
   mission,
   parameterOverrides,
   scheduleMethod,
-  specifiedTime,
+  specifiedLocalTime,
 }: {
   parameterOverrides: ParameterProps[]
   mission: string
   scheduleMethod: ScheduleOption
-  specifiedTime?: string
+  specifiedLocalTime?: string
 }) => {
   const missionName = mission.split('/').pop()?.split('.')[0]
   const commands: string[] = [`load ${mission}`]
@@ -77,6 +79,6 @@ export const makeMissionCommand = ({
   return makeCommand({
     commandText: commands.join('; '),
     scheduleMethod,
-    specifiedTime,
+    specifiedLocalTime,
   })
 }

@@ -164,7 +164,7 @@ export const CommandModal: React.FC<CommandModalProps> = ({
     const { schedDate } = makeCommand({
       commandText,
       scheduleMethod,
-      specifiedTime,
+      specifiedLocalTime: specifiedTime,
     })
     createCommand({
       vehicle: confirmedVehicle?.toLowerCase() ?? '',

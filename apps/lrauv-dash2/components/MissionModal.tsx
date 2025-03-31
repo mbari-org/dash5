@@ -347,7 +347,7 @@ const MissionModal: React.FC<MissionModalProps> = ({
       mission: selectedMissionId as string,
       parameterOverrides,
       scheduleMethod: scheduleMethod as ScheduleOption,
-      specifiedTime: specifiedTime ?? undefined,
+      specifiedLocalTime: specifiedTime ?? undefined,
     })
     setCommandText(previewSbd)
     if (!preview) {
