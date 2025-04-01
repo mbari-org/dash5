@@ -1,7 +1,5 @@
 // This is a workaround for Next.js 15 to handle TypeScript files in workspace packages
 const nextConfig = {
-  basePath: '/staging/dash5',
-  assetPrefix: '/staging/dash5',
   output: 'export',
   reactStrictMode: true,
   // Fix for Next.js 15 image optimization with static export
