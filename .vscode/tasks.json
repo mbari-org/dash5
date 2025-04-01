@@ -135,6 +135,28 @@
           "label": "$(run) Run"
         }
       }
+    },
+    {
+      "label": "nginx",
+      "type": "shell",
+      "command": "docker compose -f ./docker/compose.yml up",
+      "problemMatcher": [],
+      "options": {
+        "statusbar": {
+          "label": "$(run) nginx"
+        }
+      }
+    },
+    {
+      "label": "apache",
+      "type": "shell",
+      "command": "cd ./docker && docker compose -f compose.apache-test.yml up",
+      "problemMatcher": [],
+      "options": {
+        "statusbar": {
+          "label": "$(run) Apache"
+        }
+      }
     }
   ]
 }
