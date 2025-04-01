@@ -174,14 +174,16 @@ const ConnectedVehicleCell: React.FC<{
             vehiclePosition?.gpsFixes?.[0]?.longitude
           )}
           lastSatellite={
-            vehicle?.text_gpsago.length
+            vehicle?.text_gpsago?.length
               ? `${vehicle.text_gpsago}${
                   pingEvent?.reachable ? ', likely on surface' : ''
                 }`
               : undefined
           }
           lastCell={
-            vehicle?.text_cellago.length ? `${vehicle.text_cellago}` : undefined
+            vehicle?.text_cellago?.length
+              ? `${vehicle.text_cellago}`
+              : undefined
           }
           vehicle={
             vehicle && {

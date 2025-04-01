@@ -1,8 +1,10 @@
 services:
-  dash4:
+  dash5:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile
     ports:
-      - '80:80'
-    image: index.docker.io/mbari/lrauv-dash:5
+      - '8082:80'
     command:
       - '-g'
       - 'info'
