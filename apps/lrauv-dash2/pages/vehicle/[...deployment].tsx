@@ -23,6 +23,7 @@ import {
   useTethysApiContext,
   useChartData,
   usePicAndOnCall,
+  useVehiclePicAndOnCall,
 } from '@mbari/api-client'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { faChevronDown, faChevronUp } from '@fortawesome/free-solid-svg-icons'
@@ -87,9 +88,6 @@ const Vehicle: NextPage = () => {
   const vehicleName = params[0]
   const deploymentId = parseInt(params[1] ?? '0', 10)
 
-  const { data: picAndOnCall, isLoading: loadingPic } = usePicAndOnCall({
-    vehicleName,
-  })
   const { deployment, isLoading } = useCurrentDeployment()
   const { data: deploymentsData } = useDeployments(
     {
@@ -108,6 +106,22 @@ const Vehicle: NextPage = () => {
       enabled: !!vehicleName && !!deployment?.lastEvent,
     }
   )
+
+  const { data: picAndOnCall, isLoading: loadingPic } = usePicAndOnCall(
+    {
+      vehicleName,
+      from: deployment?.startEvent?.unixTime.toString(),
+    },
+    {
+      enabled: deployment?.active,
+    }
+  )
+
+  const inactivePicAndCall = useVehiclePicAndOnCall({
+    vehicleName,
+    from: deployment?.startEvent?.unixTime,
+    enabled: !deployment?.active,
+  })
 
   useEffect(() => {
     if (!!deployment?.deploymentId && !deploymentId) {
@@ -210,8 +224,13 @@ const Vehicle: NextPage = () => {
           <Layout>
             <OverviewToolbar
               vehicleName={vehicleName}
-              pilotInCharge={picAndOnCall?.[0].pic?.user}
-              pilotOnCall={picAndOnCall?.[0].onCall?.user}
+              pilotInCharge={
+                picAndOnCall?.[0]?.pic?.user ?? inactivePicAndCall.pic?.user
+              }
+              pilotOnCall={
+                picAndOnCall?.[0]?.onCall?.user ??
+                inactivePicAndCall.onCall?.user
+              }
               deployment={
                 isLoading
                   ? { name: '...', id: '0' }
@@ -221,7 +240,11 @@ const Vehicle: NextPage = () => {
                       unixTime: deployment?.startEvent?.unixTime,
                     }
               }
-              onClickPilot={loadingPic ? undefined : handleClickPilot}
+              onClickPilot={
+                loadingPic || inactivePicAndCall.isLoading
+                  ? undefined
+                  : handleClickPilot
+              }
               supportIcon1={
                 pingEvent?.reachable ? <ConnectedIcon /> : <NotConnectedIcon />
               }
