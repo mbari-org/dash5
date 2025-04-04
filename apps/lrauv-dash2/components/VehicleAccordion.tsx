@@ -10,6 +10,7 @@ import {
   usePicAndOnCall,
   useTethysApiContext,
   useDeploymentCommandStatus,
+  useVehiclePicAndOnCall,
 } from '@mbari/api-client'
 import { DateTime } from 'luxon'
 import { parseMissionCommand, ScheduleSection } from './ScheduleSection'
@@ -92,17 +93,31 @@ const VehicleAccordion: React.FC<VehicleAccordionProps> = ({
   const { data: picAndOnCall, isLoading: loadingPic } = usePicAndOnCall({
     vehicleName,
   })
+
+  const {
+    pic: inactivePic,
+    onCall: inactiveOnCall,
+    isLoading: loadingInactivePicAndOnCall,
+  } = useVehiclePicAndOnCall({
+    vehicleName,
+    from,
+    enabled: !activeDeployment,
+  })
+
   const { profile } = useTethysApiContext()
   const profileName = `${profile?.firstName} ${profile?.lastName}`
-  const pic = picAndOnCall?.[0].pic?.user
-  const onCall = picAndOnCall?.[0].onCall?.user
-  const handoffLabel = loadingPic
-    ? '...'
-    : `${shortenName(pic ?? 'Unassigned')}${
-        pic === profileName ? ' (you)' : ''
-      } / ${shortenName(onCall ?? 'Unassigned')}${
-        onCall === profileName ? ' (you)' : ''
-      }`
+  const pic = picAndOnCall?.[0].pic?.user ?? inactivePic?.user
+  const onCall = picAndOnCall?.[0].onCall?.user ?? inactiveOnCall?.user
+  const handoffLabel =
+    loadingPic || loadingInactivePicAndOnCall
+      ? '...'
+      : pic || onCall
+      ? `${shortenName(pic ?? 'Unassigned')}${
+          pic === profileName ? ' (you)' : ''
+        } / ${shortenName(onCall ?? 'Unassigned')}${
+          onCall === profileName ? ' (you)' : ''
+        }`
+      : undefined
 
   const { setGlobalModalId } = useGlobalModalId()
   const handleExpand = (section: string) => () => {
@@ -130,7 +145,7 @@ const VehicleAccordion: React.FC<VehicleAccordionProps> = ({
     <div className="flex h-full flex-col divide-y divide-solid divide-stone-200">
       <AccordionHeader
         label="Handoff / On Call"
-        secondaryLabel={activeDeployment ? handoffLabel : ''}
+        secondaryLabel={handoffLabel}
         onToggle={handleToggleForSection('handoff')}
         open={section === 'handoff'}
         className="flex flex-shrink-0"
