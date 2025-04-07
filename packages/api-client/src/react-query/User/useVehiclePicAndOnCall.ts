@@ -4,9 +4,9 @@ import { useEvents } from '../Event/useEvents'
 import { DateTime } from 'luxon'
 import { getAdjustedUnixTime } from '@mbari/utils'
 
-const TWO_YEARS_AGO = getAdjustedUnixTime({
+const THREE_MONTHS_AGO = getAdjustedUnixTime({
   unixTime: DateTime.now().toMillis(),
-  offsetYears: -2,
+  offsetMonths: -3,
 })
 
 export interface VehiclePicAndOnCallUser {
@@ -41,7 +41,7 @@ export const useVehiclePicAndOnCall = ({
   const { data: noteEvents, isLoading } = useEvents(
     {
       vehicles: [vehicleName],
-      from: from ?? TWO_YEARS_AGO,
+      from: from ?? THREE_MONTHS_AGO,
       eventTypes: ['note'],
       to,
       limit: 3000,
