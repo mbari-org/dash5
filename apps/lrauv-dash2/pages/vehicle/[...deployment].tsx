@@ -119,7 +119,6 @@ const Vehicle: NextPage = () => {
 
   const inactivePicAndCall = useVehiclePicAndOnCall({
     vehicleName,
-    from: deployment?.startEvent?.unixTime,
     enabled: !deployment?.active,
   })
 
