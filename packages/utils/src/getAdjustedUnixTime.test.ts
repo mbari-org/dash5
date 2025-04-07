@@ -91,6 +91,38 @@ describe('getAdjustedUnixTime', () => {
     ).toBe(expectedTime)
   })
 
+  it('should add months correctly', () => {
+    // Add 3 months
+    const expectedTime = DateTime.fromMillis(referenceTimestamp, {
+      zone: 'utc',
+    })
+      .plus({ months: 3 })
+      .toMillis()
+
+    expect(
+      getAdjustedUnixTime({
+        unixTime: referenceTimestamp,
+        offsetMonths: 3,
+      })
+    ).toBe(expectedTime)
+  })
+
+  it('should subtract months correctly', () => {
+    // Subtract 2 months
+    const expectedTime = DateTime.fromMillis(referenceTimestamp, {
+      zone: 'utc',
+    })
+      .plus({ months: -2 })
+      .toMillis()
+
+    expect(
+      getAdjustedUnixTime({
+        unixTime: referenceTimestamp,
+        offsetMonths: -2,
+      })
+    ).toBe(expectedTime)
+  })
+
   it('should combine multiple offsets correctly', () => {
     // Add 3 days, subtract 5 hours, add 1 year
     const expectedTime = DateTime.fromMillis(referenceTimestamp, {
