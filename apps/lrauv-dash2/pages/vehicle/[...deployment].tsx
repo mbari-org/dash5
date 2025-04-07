@@ -107,7 +107,7 @@ const Vehicle: NextPage = () => {
     }
   )
 
-  const { data: picAndOnCall, isLoading: loadingPic } = usePicAndOnCall(
+  const { data: picAndOnCall, isLoading: loadingActivePic } = usePicAndOnCall(
     {
       vehicleName,
       from: deployment?.startEvent?.unixTime.toString(),
@@ -117,10 +117,17 @@ const Vehicle: NextPage = () => {
     }
   )
 
-  const inactivePicAndCall = useVehiclePicAndOnCall({
+  const {
+    pic: inactivePic,
+    onCall: inactiveOnCall,
+    isLoading: loadingInactivePicAndOnCall,
+  } = useVehiclePicAndOnCall({
     vehicleName,
     enabled: !deployment?.active,
   })
+  const loadingPic = loadingActivePic || loadingInactivePicAndOnCall
+  const pic = picAndOnCall?.[0].pic?.user ?? inactivePic?.user
+  const onCall = picAndOnCall?.[0].onCall?.user ?? inactiveOnCall?.user
 
   useEffect(() => {
     if (!!deployment?.deploymentId && !deploymentId) {
@@ -223,13 +230,8 @@ const Vehicle: NextPage = () => {
           <Layout>
             <OverviewToolbar
               vehicleName={vehicleName}
-              pilotInCharge={
-                picAndOnCall?.[0]?.pic?.user ?? inactivePicAndCall.pic?.user
-              }
-              pilotOnCall={
-                picAndOnCall?.[0]?.onCall?.user ??
-                inactivePicAndCall.onCall?.user
-              }
+              pilotInCharge={pic}
+              pilotOnCall={onCall}
               deployment={
                 isLoading
                   ? { name: '...', id: '0' }
@@ -239,11 +241,7 @@ const Vehicle: NextPage = () => {
                       unixTime: deployment?.startEvent?.unixTime,
                     }
               }
-              onClickPilot={
-                loadingPic || inactivePicAndCall.isLoading
-                  ? undefined
-                  : handleClickPilot
-              }
+              onClickPilot={loadingPic ? undefined : handleClickPilot}
               supportIcon1={
                 pingEvent?.reachable ? <ConnectedIcon /> : <NotConnectedIcon />
               }
@@ -384,6 +382,8 @@ const Vehicle: NextPage = () => {
                       vehicleName={vehicleName}
                       from={adjustedDeploymentStartTime}
                       to={endTime}
+                      pic={loadingPic ? '...' : pic}
+                      onCall={loadingPic ? '...' : onCall}
                       activeDeployment={deployment.active}
                       currentDeploymentId={deployment.deploymentId as number}
                     />

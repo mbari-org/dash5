@@ -7,10 +7,8 @@ import LogsSection from './LogsSection'
 import ScienceDataSection from './ScienceDataSection'
 import {
   useEvents,
-  usePicAndOnCall,
   useTethysApiContext,
   useDeploymentCommandStatus,
-  useVehiclePicAndOnCall,
 } from '@mbari/api-client'
 import { DateTime } from 'luxon'
 import { parseMissionCommand, ScheduleSection } from './ScheduleSection'
@@ -29,6 +27,8 @@ export interface VehicleAccordionProps {
   vehicleName: string
   from: number // milliseconds since epoch
   to?: number
+  pic?: string
+  onCall?: string
   authenticated?: boolean
   activeDeployment?: boolean
   currentDeploymentId?: number
@@ -44,6 +44,8 @@ const VehicleAccordion: React.FC<VehicleAccordionProps> = ({
   from,
   to,
   vehicleName,
+  pic,
+  onCall,
   authenticated,
   activeDeployment,
   currentDeploymentId,
@@ -90,34 +92,18 @@ const VehicleAccordion: React.FC<VehicleAccordionProps> = ({
       setSection(open ? currentSection : 'comms')
   }
 
-  const { data: picAndOnCall, isLoading: loadingPic } = usePicAndOnCall({
-    vehicleName,
-  })
-
-  const {
-    pic: inactivePic,
-    onCall: inactiveOnCall,
-    isLoading: loadingInactivePicAndOnCall,
-  } = useVehiclePicAndOnCall({
-    vehicleName,
-    from,
-    enabled: !activeDeployment,
-  })
-
   const { profile } = useTethysApiContext()
   const profileName = `${profile?.firstName} ${profile?.lastName}`
-  const pic = picAndOnCall?.[0].pic?.user ?? inactivePic?.user
-  const onCall = picAndOnCall?.[0].onCall?.user ?? inactiveOnCall?.user
+
+  const resolvedPic = `${shortenName(pic ?? 'Unassigned')}${
+    pic === profileName ? ' (you)' : ''
+  }`
+  const resolvedOnCall = `${shortenName(onCall ?? 'Unassigned')}${
+    onCall === profileName ? ' (you)' : ''
+  }`
+
   const handoffLabel =
-    loadingPic || loadingInactivePicAndOnCall
-      ? '...'
-      : pic || onCall
-      ? `${shortenName(pic ?? 'Unassigned')}${
-          pic === profileName ? ' (you)' : ''
-        } / ${shortenName(onCall ?? 'Unassigned')}${
-          onCall === profileName ? ' (you)' : ''
-        }`
-      : undefined
+    pic || onCall ? `${resolvedPic} / ${resolvedOnCall}` : undefined
 
   const { setGlobalModalId } = useGlobalModalId()
   const handleExpand = (section: string) => () => {
