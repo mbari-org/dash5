@@ -12,11 +12,11 @@ const NOTE_REGEX =
 export const extractPicAndOnCallFromNotes = (
   noteEvents: GetEventsResponse[]
 ): {
-  pic: { user: string; unixTime: number } | null
-  onCall: { user: string; unixTime: number } | null
+  pics: { user: string; unixTime: number }[] | null
+  onCalls: { user: string; unixTime: number }[] | null
 } => {
   if (noteEvents.length === 0) {
-    return { pic: null, onCall: null }
+    return { pics: null, onCalls: null }
   }
 
   // Process note events to determine current PIC and On-Call operators
@@ -116,7 +116,7 @@ export const extractPicAndOnCallFromNotes = (
 
   // Return the most recent PIC and On-Call operators
   return {
-    pic: currentPilots.length > 0 ? currentPilots[0] : null,
-    onCall: currentOnCall.length > 0 ? currentOnCall[0] : null,
+    pics: currentPilots ?? null,
+    onCalls: currentOnCall ?? null,
   }
 }
