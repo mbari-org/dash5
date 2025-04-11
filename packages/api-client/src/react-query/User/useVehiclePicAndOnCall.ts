@@ -3,6 +3,7 @@ import { extractPicAndOnCallFromNotes } from '../../axios/Util/extractPicAndOnCa
 import { useEvents } from '../Event/useEvents'
 import { DateTime } from 'luxon'
 import { getAdjustedUnixTime } from '@mbari/utils'
+import { useLastDeployment } from '../Deployment/useLastDeployment'
 
 const THREE_MONTHS_AGO = getAdjustedUnixTime({
   unixTime: DateTime.now().toMillis(),
@@ -15,45 +16,44 @@ export interface VehiclePicAndOnCallUser {
 }
 
 export interface VehiclePicAndOnCallResponse {
-  pic: VehiclePicAndOnCallUser | null
-  onCall: VehiclePicAndOnCallUser | null
+  pics: VehiclePicAndOnCallUser[] | null
+  onCalls: VehiclePicAndOnCallUser[] | null
   isLoading: boolean
 }
 
 export interface UseVehiclePicAndOnCallParams {
   vehicleName: string
-  from?: number // milliseconds since epoch
-  to?: number // milliseconds since epoch
   enabled?: boolean
 }
 
 /**
- * Hook to get the PIC and OnCall users for a vehicle from note events (current endpoint for PIC and OnCall only retrieves roles from active deployments)
- * @param params Parameters including vehicleName and time range
+ * Hook to get the PIC and OnCall users for a vehicle from note events
+ * @param params Parameters including vehicleName and enabled flag
  * @returns The PIC and OnCall users found in the notes, with loading state
  */
 export const useVehiclePicAndOnCall = ({
   vehicleName,
-  from,
-  to,
   enabled = true,
 }: UseVehiclePicAndOnCallParams): VehiclePicAndOnCallResponse => {
-  const { data: noteEvents, isLoading } = useEvents(
+  // This mirrors the behavior of dash4 which uses the last deployment start time as the time frame for PIC and OnCall
+  const { data: lastDeployment, isLoading: isLoadingDeployment } =
+    useLastDeployment({ vehicle: vehicleName }, { enabled })
+
+  const { data: noteEvents, isLoading: isLoadingEvents } = useEvents(
     {
       vehicles: [vehicleName],
-      from: from ?? THREE_MONTHS_AGO,
+      from: lastDeployment?.startEvent?.unixTime ?? THREE_MONTHS_AGO,
       eventTypes: ['note'],
-      to,
       limit: 3000,
     },
     {
-      enabled,
+      enabled: enabled && !isLoadingDeployment,
     }
   )
 
   const picAndCall = useMemo(() => {
     if (!noteEvents?.length) {
-      return { pic: null, onCall: null }
+      return { pics: null, onCalls: null }
     }
 
     return extractPicAndOnCallFromNotes(noteEvents)
@@ -61,6 +61,6 @@ export const useVehiclePicAndOnCall = ({
 
   return {
     ...picAndCall,
-    isLoading,
+    isLoading: isLoadingDeployment || isLoadingEvents,
   }
 }
