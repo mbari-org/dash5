@@ -22,7 +22,6 @@ import {
   useMissionStartedEvent,
   useTethysApiContext,
   useChartData,
-  usePicAndOnCall,
   useVehiclePicAndOnCall,
 } from '@mbari/api-client'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
@@ -107,27 +106,17 @@ const Vehicle: NextPage = () => {
     }
   )
 
-  const { data: picAndOnCall, isLoading: loadingActivePic } = usePicAndOnCall(
-    {
-      vehicleName,
-      from: deployment?.startEvent?.unixTime.toString(),
-    },
-    {
-      enabled: deployment?.active,
-    }
-  )
-
   const {
-    pic: inactivePic,
-    onCall: inactiveOnCall,
-    isLoading: loadingInactivePicAndOnCall,
+    pics,
+    onCalls,
+    isLoading: loadingPicAndOnCall,
   } = useVehiclePicAndOnCall({
     vehicleName,
-    enabled: !deployment?.active,
+    enabled: true,
   })
-  const loadingPic = loadingActivePic || loadingInactivePicAndOnCall
-  const pic = picAndOnCall?.[0].pic?.user ?? inactivePic?.user
-  const onCall = picAndOnCall?.[0].onCall?.user ?? inactiveOnCall?.user
+
+  const pic = pics?.[0]?.user
+  const onCall = onCalls?.[0]?.user
 
   useEffect(() => {
     if (!!deployment?.deploymentId && !deploymentId) {
@@ -241,7 +230,7 @@ const Vehicle: NextPage = () => {
                       unixTime: deployment?.startEvent?.unixTime,
                     }
               }
-              onClickPilot={loadingPic ? undefined : handleClickPilot}
+              onClickPilot={loadingPicAndOnCall ? undefined : handleClickPilot}
               supportIcon1={
                 pingEvent?.reachable ? <ConnectedIcon /> : <NotConnectedIcon />
               }
@@ -382,8 +371,8 @@ const Vehicle: NextPage = () => {
                       vehicleName={vehicleName}
                       from={adjustedDeploymentStartTime}
                       to={endTime}
-                      pic={loadingPic ? '...' : pic}
-                      onCall={loadingPic ? '...' : onCall}
+                      pic={loadingPicAndOnCall ? '...' : pic}
+                      onCall={loadingPicAndOnCall ? '...' : onCall}
                       activeDeployment={deployment.active}
                       currentDeploymentId={deployment.deploymentId as number}
                     />
