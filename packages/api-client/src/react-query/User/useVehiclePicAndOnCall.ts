@@ -10,6 +10,8 @@ const THREE_MONTHS_AGO = getAdjustedUnixTime({
   offsetMonths: -3,
 })
 
+const STALE_TIME = 1000 * 60 * 30 // 30 minutes
+
 export interface VehiclePicAndOnCallUser {
   user: string
   unixTime: number
@@ -37,7 +39,13 @@ export const useVehiclePicAndOnCall = ({
 }: UseVehiclePicAndOnCallParams): VehiclePicAndOnCallResponse => {
   // This mirrors the behavior of dash4 which uses the last deployment start time as the time frame for PIC and OnCall
   const { data: lastDeployment, isLoading: isLoadingDeployment } =
-    useLastDeployment({ vehicle: vehicleName }, { enabled })
+    useLastDeployment(
+      { vehicle: vehicleName },
+      {
+        enabled,
+        staleTime: STALE_TIME,
+      }
+    )
 
   const { data: noteEvents, isLoading: isLoadingEvents } = useEvents(
     {
@@ -48,6 +56,7 @@ export const useVehiclePicAndOnCall = ({
     },
     {
       enabled: enabled && !isLoadingDeployment,
+      staleTime: STALE_TIME,
     }
   )
 
