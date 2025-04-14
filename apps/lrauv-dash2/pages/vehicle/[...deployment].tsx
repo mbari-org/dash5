@@ -106,17 +106,12 @@ const Vehicle: NextPage = () => {
     }
   )
 
-  const {
-    pics,
-    onCalls,
-    isLoading: loadingPicAndOnCall,
-  } = useVehiclePicAndOnCall({
+  const { data, isLoading: loadingPicAndOnCall } = useVehiclePicAndOnCall({
     vehicleName,
-    enabled: true,
   })
 
-  const pic = pics?.[0]?.user
-  const onCall = onCalls?.[0]?.user
+  const pic = data?.[0]?.pics[0]?.user
+  const onCall = data?.[0]?.onCalls[0]?.user
 
   useEffect(() => {
     if (!!deployment?.deploymentId && !deploymentId) {
