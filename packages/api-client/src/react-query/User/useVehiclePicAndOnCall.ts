@@ -1,0 +1,131 @@
+import { useMemo } from 'react'
+import { extractPicAndOnCallFromNotes } from '../../axios/Util/extractPicAndOnCallFromNotes'
+import { getEvents, GetEventsResponse } from '../../axios/Event/getEvents'
+import { getLastDeployment } from '../../axios/Deployment/getLastDeployment'
+import { useTethysApiContext } from '../TethysApiProvider'
+import { useQuery } from 'react-query'
+import { DateTime } from 'luxon'
+import { getAdjustedUnixTime } from '@mbari/utils'
+
+const THREE_MONTHS_AGO = getAdjustedUnixTime({
+  unixTime: DateTime.now().toMillis(),
+  offsetMonths: -3,
+})
+
+const STALE_TIME = 1000 * 60 * 30 // 30 minutes
+
+export interface VehiclePicAndOnCallUser {
+  user: string
+  unixTime: number
+}
+
+export interface VehiclePicAndOnCallResponse {
+  vehicleName: string
+  unixTime: number
+  pics: VehiclePicAndOnCallUser[]
+  onCalls: VehiclePicAndOnCallUser[]
+}
+
+export interface UseVehiclePicAndOnCallResult {
+  data: VehiclePicAndOnCallResponse[] | undefined
+  isLoading: boolean
+}
+
+export interface UseVehiclePicAndOnCallParams {
+  vehicleName: string | string[]
+  enabled?: boolean
+}
+
+/**
+ * Hook to get the PIC and OnCall users for a vehicle from note events
+ * @param params Parameters including vehicleName and enabled flag
+ * @returns The PIC and OnCall users found in the notes, with loading state
+ */
+export const useVehiclePicAndOnCall = ({
+  vehicleName,
+  enabled = true,
+}: UseVehiclePicAndOnCallParams): UseVehiclePicAndOnCallResult => {
+  const vehicleNames = Array.isArray(vehicleName) ? vehicleName : [vehicleName]
+  const { axiosInstance } = useTethysApiContext()
+
+  const query = useQuery(
+    ['users', 'picAndOnCall', vehicleNames],
+    async () => {
+      const results: GetEventsResponse[] = []
+
+      // Get events for each vehicle separately
+      for (const name of vehicleNames) {
+        // Get last deployment for this vehicle
+        const lastDeployment = await getLastDeployment(
+          { vehicle: name },
+          { instance: axiosInstance }
+        )
+
+        // Get events for this vehicle
+        const events = await getEvents(
+          {
+            vehicles: [name],
+            from: lastDeployment?.startEvent?.unixTime ?? THREE_MONTHS_AGO,
+            eventTypes: ['note'],
+            limit: 3000,
+          },
+          { instance: axiosInstance }
+        )
+
+        results.push(...events)
+      }
+
+      return results
+    },
+    {
+      staleTime: STALE_TIME,
+      enabled,
+    }
+  )
+
+  const data = useMemo(() => {
+    if (!query.data?.length) return undefined
+
+    // Group events by vehicle
+    const eventsByVehicle = query.data.reduce((acc, event) => {
+      if (!event.vehicleName) return acc
+      if (!acc[event.vehicleName]) {
+        acc[event.vehicleName] = []
+      }
+      acc[event.vehicleName].push(event)
+      return acc
+    }, {} as Record<string, GetEventsResponse[]>)
+
+    // Get PIC and OnCall for each vehicle
+    return Object.entries(eventsByVehicle).map(([vehicleName, events]) => {
+      const result = extractPicAndOnCallFromNotes(events)
+
+      // Sort PICs and OnCalls by most recent
+      const sortedPics =
+        result.pics?.sort((a, b) => b.unixTime - a.unixTime) ?? []
+      const sortedOnCalls =
+        result.onCalls?.sort((a, b) => b.unixTime - a.unixTime) ?? []
+
+      return {
+        vehicleName,
+        unixTime: Math.max(
+          sortedPics[0]?.unixTime ?? 0,
+          sortedOnCalls[0]?.unixTime ?? 0
+        ),
+        pics: sortedPics.map((pic) => ({
+          user: pic.user,
+          unixTime: pic.unixTime,
+        })),
+        onCalls: sortedOnCalls.map((onCall) => ({
+          user: onCall.user,
+          unixTime: onCall.unixTime,
+        })),
+      }
+    })
+  }, [query.data])
+
+  return {
+    data,
+    isLoading: query.isLoading,
+  }
+}

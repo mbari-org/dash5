@@ -7,7 +7,6 @@ import LogsSection from './LogsSection'
 import ScienceDataSection from './ScienceDataSection'
 import {
   useEvents,
-  usePicAndOnCall,
   useTethysApiContext,
   useDeploymentCommandStatus,
 } from '@mbari/api-client'
@@ -28,6 +27,8 @@ export interface VehicleAccordionProps {
   vehicleName: string
   from: number // milliseconds since epoch
   to?: number
+  pic?: string
+  onCall?: string
   authenticated?: boolean
   activeDeployment?: boolean
   currentDeploymentId?: number
@@ -43,6 +44,8 @@ const VehicleAccordion: React.FC<VehicleAccordionProps> = ({
   from,
   to,
   vehicleName,
+  pic,
+  onCall,
   authenticated,
   activeDeployment,
   currentDeploymentId,
@@ -89,20 +92,18 @@ const VehicleAccordion: React.FC<VehicleAccordionProps> = ({
       setSection(open ? currentSection : 'comms')
   }
 
-  const { data: picAndOnCall, isLoading: loadingPic } = usePicAndOnCall({
-    vehicleName,
-  })
   const { profile } = useTethysApiContext()
   const profileName = `${profile?.firstName} ${profile?.lastName}`
-  const pic = picAndOnCall?.[0].pic?.user
-  const onCall = picAndOnCall?.[0].onCall?.user
-  const handoffLabel = loadingPic
-    ? '...'
-    : `${shortenName(pic ?? 'Unassigned')}${
-        pic === profileName ? ' (you)' : ''
-      } / ${shortenName(onCall ?? 'Unassigned')}${
-        onCall === profileName ? ' (you)' : ''
-      }`
+
+  const resolvedPic = `${shortenName(pic ?? 'Unassigned')}${
+    pic === profileName ? ' (you)' : ''
+  }`
+  const resolvedOnCall = `${shortenName(onCall ?? 'Unassigned')}${
+    onCall === profileName ? ' (you)' : ''
+  }`
+
+  const handoffLabel =
+    pic || onCall ? `${resolvedPic} / ${resolvedOnCall}` : undefined
 
   const { setGlobalModalId } = useGlobalModalId()
   const handleExpand = (section: string) => () => {
@@ -130,7 +131,7 @@ const VehicleAccordion: React.FC<VehicleAccordionProps> = ({
     <div className="flex h-full flex-col divide-y divide-solid divide-stone-200">
       <AccordionHeader
         label="Handoff / On Call"
-        secondaryLabel={activeDeployment ? handoffLabel : ''}
+        secondaryLabel={handoffLabel}
         onToggle={handleToggleForSection('handoff')}
         open={section === 'handoff'}
         className="flex flex-shrink-0"

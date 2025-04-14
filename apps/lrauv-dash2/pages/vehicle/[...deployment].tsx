@@ -22,7 +22,7 @@ import {
   useMissionStartedEvent,
   useTethysApiContext,
   useChartData,
-  usePicAndOnCall,
+  useVehiclePicAndOnCall,
 } from '@mbari/api-client'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { faChevronDown, faChevronUp } from '@fortawesome/free-solid-svg-icons'
@@ -87,9 +87,6 @@ const Vehicle: NextPage = () => {
   const vehicleName = params[0]
   const deploymentId = parseInt(params[1] ?? '0', 10)
 
-  const { data: picAndOnCall, isLoading: loadingPic } = usePicAndOnCall({
-    vehicleName,
-  })
   const { deployment, isLoading } = useCurrentDeployment()
   const { data: deploymentsData } = useDeployments(
     {
@@ -108,6 +105,13 @@ const Vehicle: NextPage = () => {
       enabled: !!vehicleName && !!deployment?.lastEvent,
     }
   )
+
+  const { data, isLoading: loadingPicAndOnCall } = useVehiclePicAndOnCall({
+    vehicleName,
+  })
+
+  const pic = data?.[0]?.pics[0]?.user
+  const onCall = data?.[0]?.onCalls[0]?.user
 
   useEffect(() => {
     if (!!deployment?.deploymentId && !deploymentId) {
@@ -210,8 +214,8 @@ const Vehicle: NextPage = () => {
           <Layout>
             <OverviewToolbar
               vehicleName={vehicleName}
-              pilotInCharge={picAndOnCall?.[0].pic?.user}
-              pilotOnCall={picAndOnCall?.[0].onCall?.user}
+              pilotInCharge={pic}
+              pilotOnCall={onCall}
               deployment={
                 isLoading
                   ? { name: '...', id: '0' }
@@ -221,7 +225,7 @@ const Vehicle: NextPage = () => {
                       unixTime: deployment?.startEvent?.unixTime,
                     }
               }
-              onClickPilot={loadingPic ? undefined : handleClickPilot}
+              onClickPilot={loadingPicAndOnCall ? undefined : handleClickPilot}
               supportIcon1={
                 pingEvent?.reachable ? <ConnectedIcon /> : <NotConnectedIcon />
               }
@@ -362,6 +366,8 @@ const Vehicle: NextPage = () => {
                       vehicleName={vehicleName}
                       from={adjustedDeploymentStartTime}
                       to={endTime}
+                      pic={loadingPicAndOnCall ? '...' : pic}
+                      onCall={loadingPicAndOnCall ? '...' : onCall}
                       activeDeployment={deployment.active}
                       currentDeploymentId={deployment.deploymentId as number}
                     />
