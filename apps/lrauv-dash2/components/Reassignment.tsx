@@ -1,5 +1,5 @@
 import {
-  usePicAndOnCall,
+  useVehiclePicAndOnCall,
   useAssignPicAndOnCall,
   useUsersByRole,
 } from '@mbari/api-client'
@@ -12,7 +12,7 @@ const Reassignment: React.FC<{ vehicleNames: string[] }> = ({
   vehicleNames,
 }) => {
   const queryClient = useQueryClient()
-  const { data, isLoading } = usePicAndOnCall({
+  const { data, isLoading } = useVehiclePicAndOnCall({
     vehicleName: vehicleNames,
   })
   const { data: operators, isLoading: loadingOperators } = useUsersByRole({
@@ -56,8 +56,8 @@ const Reassignment: React.FC<{ vehicleNames: string[] }> = ({
       vehicles={data?.map((v) => ({
         vehicleName: capitalize(v.vehicleName),
         vehicleId: v.vehicleName,
-        pic: v.pic?.user ?? 'Not Assigned',
-        onCall: v.onCall?.user ?? 'Not Assigned',
+        pic: v.pics[0]?.user ?? 'Not Assigned',
+        onCall: v.onCalls[0]?.user ?? 'Not Assigned',
       }))}
       onSubmit={handleReassignmentSubmit}
       pics={operators?.map((u) => ({
