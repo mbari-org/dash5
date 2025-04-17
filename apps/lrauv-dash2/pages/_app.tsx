@@ -9,6 +9,7 @@ import { TethysApiProvider } from '@mbari/api-client'
 import { UIProvider } from '@mbari/react-ui'
 import { ReactQueryDevtools } from 'react-query/devtools'
 import { Toaster } from 'react-hot-toast'
+import { MarkerProvider } from '../components/MarkerContext'
 import { CookiesProvider } from 'react-cookie'
 import useSessionToken from '../lib/useSessionToken'
 import '../styles/vehicle.css'
@@ -27,14 +28,16 @@ function MyApp({ Component, pageProps }: AppProps) {
     <QueryClientProvider client={queryClient}>
       <CookiesProvider defaultSetOptions={{ path: '/' }}>
         <UIProvider>
-          <TethysApiProvider
-            baseURL={process.env.NEXT_PUBLIC_BASE_URL}
-            sessionToken={sessionToken}
-            setSessionToken={setSessionToken}
-            onSessionEnd={handleSessionEnd}
-          >
-            <Component {...pageProps} />
-          </TethysApiProvider>
+          <MarkerProvider>
+            <TethysApiProvider
+              baseURL={process.env.NEXT_PUBLIC_BASE_URL}
+              sessionToken={sessionToken}
+              setSessionToken={setSessionToken}
+              onSessionEnd={handleSessionEnd}
+            >
+              <Component {...pageProps} />
+            </TethysApiProvider>
+          </MarkerProvider>
         </UIProvider>
       </CookiesProvider>
       <Toaster />

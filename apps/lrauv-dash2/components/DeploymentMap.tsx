@@ -5,6 +5,8 @@ import { useGoogleElevator } from '../lib/useGoogleElevator'
 import { VPosDetail } from '@mbari/api-client'
 import { StationsListModal } from './StationsListModal'
 import { useSelectedStations } from './SelectedStationContext'
+import { useMarkers } from './MarkerContext'
+import { toast } from 'react-hot-toast'
 
 // This is a tricky workaround to prevent leaflet from crashing next.js
 // SSR. If we don't do this, the leaflet map will be loaded server side
@@ -25,6 +27,13 @@ const WaypointPreviewPath = dynamic(() => import('./WaypointPreviewPath'), {
   ssr: false,
 })
 const StationMarker = dynamic(() => import('../components/StationMarker'), {
+  ssr: false,
+})
+const MapClickHandler = dynamic(() => import('./MapClickHandler'), {
+  ssr: false,
+})
+
+const CustomMarkerSet = dynamic(() => import('./CustomMarkerSet'), {
   ssr: false,
 })
 
@@ -73,6 +82,21 @@ const DeploymentMap: React.FC<DeploymentMapProps> = ({
   const [showStations, setShowStations] = useState(false)
   const { selectedStations } = useSelectedStations()
 
+  const {
+    markers,
+    isAddingMarkers,
+    setIsAddingMarkers,
+    handleAddMarker,
+    handleMarkerLabelChange,
+    handleMarkerColorChange,
+    handleMarkerDelete,
+    handleMarkerDragEnd,
+    handleToggleMarkerMode,
+    handleMarkersRequest,
+    activeEditMarkerId,
+    setActiveEditMarkerId,
+  } = useMarkers()
+
   const latestVehicle = useRef(vehicleName)
   useEffect(() => {
     if (vehicleName !== latestVehicle.current) {
@@ -99,6 +123,8 @@ const DeploymentMap: React.FC<DeploymentMapProps> = ({
   // Track vehicle path points for bounds calculation
   const pathPoints = useRef<Array<[number, number]>>([])
 
+  // Handler for GPS fix updates
+  // This function is called when a new GPS fix is received
   const handleGPSFix = useCallback(
     (gps: VPosDetail) => {
       // Reset the array if this is a different vehicle
@@ -121,10 +147,11 @@ const DeploymentMap: React.FC<DeploymentMapProps> = ({
     [latestGPS, setLatestGPS]
   )
 
-  // Calculate bounds for the entire vehicle path
+  // Calculate bounds for the path
+  // This function is called to calculate the bounds of the path
   const calculatePathBounds = useCallback(() => {
     if (pathPoints.current.length === 0) {
-      console.warn('No path points available for bounds calculation')
+      toast('No path points available for bounds calculation')
       return
     }
 
@@ -154,6 +181,8 @@ const DeploymentMap: React.FC<DeploymentMapProps> = ({
     setViewMode('bounds')
   }, [])
 
+  // Handler for centering the map on the latest GPS fix
+  // This function is called when the user requests to center the map
   const handleCoordinateRequest = useCallback(() => {
     if (latestGPS) {
       setCenter([latestGPS.latitude, latestGPS.longitude])
@@ -169,7 +198,7 @@ const DeploymentMap: React.FC<DeploymentMapProps> = ({
         setBounds(undefined)
         setViewMode('center')
       } else {
-        console.warn('DeploymentMap - No position available to center on')
+        toast('DeploymentMap - No position available to center on')
       }
     }
   }, [latestGPS])
@@ -179,19 +208,26 @@ const DeploymentMap: React.FC<DeploymentMapProps> = ({
     calculatePathBounds()
   }, [calculatePathBounds])
 
+  // Handler for showing stations
+  // This function is called when the user requests to show stations
   const handleStationsRequest = useCallback(() => {
     setShowStations(true)
   }, [])
 
+  // Handler for closing the stations modal
+  // This function is called when the user closes the stations modal
   const handleCloseStations = useCallback(() => {
     setShowStations(false)
   }, [])
 
+  // Handler for showing platforms
+  // This function is called when the user requests to show platforms
+  // This is a placeholder function and should be implemented as needed
   const handlePlatformsRequest = useCallback(() => {
     console.log('Platforms request initiated')
-    // Implement the logic to handle platform requests here
-    // This could involve fetching platform data from an API or other data source
-    // For now, we'll just log a message to indicate the function was called
+    // TODO: Implement the logic to handle platform requests here
+    // This will involve fetching platform data source
+    // For now, logging a message to indicate the function was called
   }, [])
 
   return (
@@ -211,6 +247,53 @@ const DeploymentMap: React.FC<DeploymentMapProps> = ({
         onRequestPlatforms={handlePlatformsRequest}
         onRequestFitBounds={handleFitBoundsRequest}
         onRequestStations={handleStationsRequest}
+        isAddingMarkers={isAddingMarkers}
+        onToggleMarkerMode={handleToggleMarkerMode}
+        onRequestMarkers={handleMarkersRequest}
+        renderMapClickHandler={() => (
+          <MapClickHandler
+            isAddingMarkers={isAddingMarkers}
+            isEditingMarker={false}
+            onAddMarker={handleAddMarker}
+          />
+        )}
+        renderCustomMarkerSet={() => (
+          <CustomMarkerSet
+            isAddingMarkers={isAddingMarkers}
+            setIsAddingMarkers={(value) => setIsAddingMarkers(value)}
+          />
+        )}
+        renderDraggableMarkers={() =>
+          markers.map((marker) => (
+            <DraggableMarker
+              key={`marker-${marker.id}`}
+              id={marker.id.toString()}
+              position={[marker.lat, marker.lng]}
+              index={marker.index}
+              label={marker.label}
+              draggable={true}
+              isSelected={activeEditMarkerId === marker.id.toString()} // Pass active edit state
+              isNew={marker.isNew} // Pass new marker state
+              onDragEnd={(pos) =>
+                handleMarkerDragEnd(marker.id, {
+                  lat: pos[0],
+                  lng: pos[1],
+                })
+              }
+              iconColor={marker.iconColor}
+              onColorChange={(color) =>
+                handleMarkerColorChange(marker.id.toString(), color)
+              }
+              onDelete={() => handleMarkerDelete(marker.id.toString())}
+              onEdit={(newLabel) =>
+                handleMarkerLabelChange(marker.id.toString(), newLabel)
+              }
+              onEditStateChange={(isEditing) => {
+                setActiveEditMarkerId(isEditing ? marker.id.toString() : null)
+              }}
+            />
+          ))
+        }
       >
         {selectedStations.map((station) => {
           const lng = station.geojson.geometry.coordinates[0]
@@ -228,7 +311,7 @@ const DeploymentMap: React.FC<DeploymentMapProps> = ({
         })}
         {plottedWaypoints?.length ? (
           <>
-            {plottedWaypoints.map((m, i) => {
+            {/* TODO: {plottedWaypoints.map((m, i) => {
               const index = Number(m.latName.match(/\d+/)?.[0] ?? i)
               return (
                 <DraggableMarker
@@ -240,7 +323,7 @@ const DeploymentMap: React.FC<DeploymentMapProps> = ({
                   onDragEnd={handleDragEnd}
                 />
               )
-            })}
+            })} */}
             {!!focusedWaypointIndex && <ClickableMapPoint />}
             <WaypointPreviewPath
               waypoints={plottedWaypoints.map((wp) => ({
