@@ -220,8 +220,8 @@ const OverViewMap: React.FC<{
         {showStations ? (
           <StationsListModal onClose={handleCloseStations} />
         ) : null}
-
         <Map
+          ref={mapRef}
           className="h-full w-full"
           onRequestDepth={handleDepthRequest}
           center={center}
