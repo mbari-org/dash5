@@ -1,5 +1,6 @@
 import { useState, useEffect, useContext } from 'react'
 import { TethysApiContext } from '@mbari/api-client'
+import toast, { Toaster } from 'react-hot-toast'
 
 export function useGoogleMapsApiKey() {
   const [apiKey, setApiKey] = useState<string | null>(null)
@@ -50,7 +51,54 @@ export function useGoogleMapsApiKey() {
           throw new Error('Google Maps API key not found in response')
         }
 
-        setApiKey(googleApiKey)
+        // Add this debugging code here
+        if (googleApiKey) {
+          const obscuredKey =
+            googleApiKey.substring(0, 4) +
+            '...' +
+            googleApiKey.substring(googleApiKey.length - 4)
+          console.info(
+            `Retrieved Google Maps API key (obscured): ${obscuredKey}`
+          )
+
+          // Also log any domain restrictions from the response if available
+          if (response.data?.result?.appConfig?.googleApiRestrictions) {
+            console.info(
+              `API restrictions: ${JSON.stringify(
+                response.data.result.appConfig.googleApiRestrictions
+              )}`
+            )
+          }
+
+          // Check if we're in development or on a restricted domain
+          const hostname =
+            typeof window !== 'undefined' ? window.location.hostname : ''
+          const isDevelopment = process.env.NODE_ENV === 'development'
+          const isLocalhost =
+            hostname === 'localhost' || hostname === '127.0.0.1'
+
+          if (
+            isDevelopment &&
+            isLocalhost &&
+            process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY
+          ) {
+            setApiKey(process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY)
+            console.info('Using development API key for localhost', {
+              duration: 3000,
+            })
+          } else {
+            setApiKey(googleApiKey)
+            console.info('Using production API key from server', {
+              duration: 3000,
+            })
+          }
+          console.info(
+            `Environment: ${isDevelopment ? 'Development' : 'Production'}`
+          )
+          console.info(`Hostname: ${hostname}`)
+        }
+
+        // setApiKey(googleApiKey)
       } catch (err) {
         console.error('Error fetching Google Maps API key:', err)
 
