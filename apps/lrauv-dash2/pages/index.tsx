@@ -16,9 +16,11 @@ import { Allotment, LayoutPriority } from 'allotment'
 import { useGoogleMaps } from '../lib/useGoogleMaps'
 import { VPosDetail } from '@mbari/api-client'
 import 'allotment/dist/style.css'
-import toast from 'react-hot-toast'
 import { StationsListModal } from '../components/StationsListModal'
 import { useSelectedStations } from '../components/SelectedStationContext'
+import { useMarkers } from '../components/MarkerContext'
+import toast from 'react-hot-toast'
+import type { MapProps } from '@mbari/react-ui/dist/Map/Map'
 
 // This is a tricky workaround to prevent leaflet from crashing next.js
 // SSR. If we don't do this, the leaflet map will be loaded server side
@@ -34,14 +36,18 @@ const VehiclePath = dynamic(() => import('../components/VehiclePath'), {
 const StationMarker = dynamic(() => import('../components/StationMarker'), {
   ssr: false,
 })
-// TODO: Set up Draggable Marker and ClickableMapPoint
-// const DraggableMarker = dynamic(() => import('../components/DraggableMarker'), {
-//   ssr: false,
-// })
-// const ClickableMapPoint = dynamic(
-//   () => import('../components/ClickableMapPoint'),
-//   { ssr: false }
-// )
+
+const DraggableMarker = dynamic(() => import('../components/DraggableMarker'), {
+  ssr: false,
+})
+
+const CustomMarkerSet = dynamic(() => import('../components/CustomMarkerSet'), {
+  ssr: false,
+})
+
+const MapClickHandler = dynamic(() => import('../components/MapClickHandler'), {
+  ssr: false,
+})
 
 const styles = {
   content: 'flex flex-shrink flex-grow flex-row overflow-hidden',
@@ -51,48 +57,29 @@ const styles = {
     'flex w-full flex-shrink-0 flex-col bg-white border-t-2 border-secondary-300/60',
 }
 
-const CustomMarkerSet: React.FC = () => {
-  const [markers, setMarkers] = React.useState<
-    { lat: number; lng: number; label: string }[]
-  >([])
-  const [markerIndex, setMarkerIndex] = React.useState(0)
-  const handleNewMarker = useCallback(
-    (lat: number, lng: number) => {
-      setMarkers([
-        ...markers,
-        { lat, lng, label: `Marker ${markers.length + 1}` },
-      ])
-      setMarkerIndex((prevIndex) => prevIndex + 1)
-    },
-    [markers, setMarkers]
-  )
-  return null
-  // TO-DO: Implement DraggableMarker and ClickableMapPoint
-  // return (
-  //   <>
+// interface CustomMarkerProps {
+type CustomMapProps = MapProps &
+  React.RefAttributes<L.Map> & {
+    isAddingMarkers?: boolean
+    onToggleMarkerMode?: () => void
+  }
 
-  /* <ClickableMapPoint onClick={handleNewMarker} />
-      {markers.map((marker, index) => (
-        <DraggableMarker
-          lat={marker.lat}
-          lng={marker.lng}
-          index={index}
-          key={[marker.label, index].join('-')}
-          draggable
-          onDragEnd={(index, latlng) => {
-            setMarkers(
-              markers.map((m, i) =>
-                i === index ? { ...m, lat: latlng.lat, lng: latlng.lng } : m
-              )
-            )
-          }}
-        />
-      ))} */
+// interface MarkerData {
+interface MarkerData {
+  id: number
+  lat: number
+  lng: number
+  index: number
+  label: string
+  iconColor?: string
 }
 
+// OverviewMap component
 const OverViewMap: React.FC<{
   trackedVehicles: string[]
 }> = ({ trackedVehicles }) => {
+  // Add mapRef to store the Leaflet map instance
+  const mapRef = useRef<L.Map | null>(null)
   const { handleDepthRequest } = useGoogleElevator()
   const [center, setCenter] = useState<undefined | [number, number]>()
   const [centerZoom, setCenterZoom] = useState<number | undefined>(undefined)
@@ -104,10 +91,33 @@ const OverViewMap: React.FC<{
   const [viewMode, setViewMode] = useState<'center' | 'bounds' | null>(null)
   const { selectedStations } = useSelectedStations()
 
+  // Marker state
+  const {
+    markers,
+    isAddingMarkers,
+    setIsAddingMarkers,
+    handleAddMarker,
+    handleMarkerLabelChange,
+    handleMarkerColorChange,
+    handleMarkerDelete,
+    handleMarkerDragEnd,
+    handleToggleMarkerMode,
+    handleMarkersRequest,
+    activeEditMarkerId,
+    setActiveEditMarkerId,
+  } = useMarkers()
+
+  // Debugging: Log trackedVehicles
+  // console.log('Tracked vehicles:', trackedVehicles)
+
+  // Debugging: Ensure trackedVehicles contains unique values
+  const uniqueTrackedVehicles = Array.from(new Set(trackedVehicles))
+  console.log('Unique tracked vehicles:', uniqueTrackedVehicles)
+
   // Store all vehicle positions for bounds calculation
   const vehiclePositions = useRef<Array<[number, number]>>([])
 
-  // Add at the start of the component:
+  // Effect to handle vehicle positions
   useEffect(() => {
     // Reset positions when component unmounts or tracked vehicles change
     return () => {
@@ -115,10 +125,15 @@ const OverViewMap: React.FC<{
     }
   }, [trackedVehicles])
 
+  // handleGPSFix function
+  // This function is called when a GPS fix is received
   const handleGPSFix = useCallback(
     (gps: VPosDetail) => {
       if ((latestGPS?.isoTime ?? 0) > gps.isoTime || !latestGPS) {
         setLatestGPS(gps)
+        const coords: [number, number] = [gps.latitude, gps.longitude]
+        setCenter(coords)
+        setViewMode('center')
       }
       // Store position for bounds calculation
       vehiclePositions.current.push([gps.latitude, gps.longitude])
@@ -130,14 +145,15 @@ const OverViewMap: React.FC<{
     [latestGPS, setLatestGPS]
   )
 
-  // Calculate bounds from all tracked vehicle positions
+  // calculateBounds function
+  // This function calculates the bounds of all vehicle positions
+  // and sets the map bounds accordingly
   const calculateBounds = useCallback(() => {
     if (vehiclePositions.current.length === 0) {
-      console.warn('No vehicle positions available for bounds calculation')
+      toast('No vehicle positions available for bounds calculation')
       return
     }
 
-    // Find min/max lat/lon
     let minLat = 90,
       maxLat = -90,
       minLng = 180,
@@ -150,88 +166,151 @@ const OverViewMap: React.FC<{
       maxLng = Math.max(maxLng, pos[1])
     })
 
-    // Add padding (0.1 degrees)
     const padding = 0.1
     const newBounds: [[number, number], [number, number]] = [
       [minLat - padding, minLng - padding],
       [maxLat + padding, maxLng + padding],
     ]
     setBounds(newBounds)
+    return undefined
   }, [])
 
-  // Handler for centering on latest position
+  // handleCoordinateRequest
   const handleCoordinateRequest = useCallback(() => {
     if (latestGPS) {
       setCenter([latestGPS.latitude, latestGPS.longitude])
       setCenterZoom(15)
       setBounds(undefined)
-      // Set the view mode to force a re-render even if coordinates haven't changed
       setViewMode('center')
     }
   }, [latestGPS])
 
-  // Handler for fitting bounds to all vehicles
+  // handleFitBoundsRequest
+  // This function is called when the map requests to fit the bounds
   const handleFitBoundsRequest = useCallback(() => {
-    calculateBounds()
-    setCenter(undefined) // Clear center when using bounds
-    // Set the view mode to force a re-render
-    setViewMode('bounds')
+    const newBounds = calculateBounds()
+    if (newBounds) {
+      setBounds(newBounds)
+      setCenter(undefined)
+      setViewMode('bounds')
+    }
   }, [calculateBounds])
 
+  // handleStationsRequest
+  // This function is called when the map requests to show stations
   const handleStationsRequest = useCallback(() => {
     setShowStations(true)
-  }, [setShowStations])
+  }, [])
 
-  // Add this handler to close the modal
+  // handleMarkersRequest
+  // This function is called when the map requests to show markers
   const handleCloseStations = useCallback(() => {
     setShowStations(false)
-  }, [setShowStations])
+  }, [])
+
+  // Effect to handle map reference
+  useEffect(() => {
+    console.log('mapRef.current in OverViewMap:', mapRef.current)
+  }, [mapRef])
 
   return (
-    <>
-      {showStations ? (
-        <StationsListModal onClose={handleCloseStations} />
-      ) : null}
+    console.log('Rendering Map with children'),
+    (
+      <>
+        {showStations ? (
+          <StationsListModal onClose={handleCloseStations} />
+        ) : null}
 
-      <Map
-        className="h-full w-full"
-        onRequestDepth={handleDepthRequest}
-        center={center}
-        centerZoom={centerZoom}
-        fitBounds={bounds}
-        viewMode={viewMode}
-        onRequestCoordinate={handleCoordinateRequest}
-        onRequestFitBounds={handleFitBoundsRequest}
-        onRequestStations={handleStationsRequest}
-      >
-        {trackedVehicles.map((name) => (
-          <VehiclePath
-            name={name}
-            key={`path${name}`}
-            onGPSFix={handleGPSFix}
-            grouped
-          />
-        ))}
-        {selectedStations.map((station) => {
-          const lng = station.geojson?.geometry?.coordinates[0]
-          const lat = station.geojson?.geometry?.coordinates[1]
-
-          if (!lng || !lat) return null
-          return (
-            <StationMarker
-              key={station.name}
-              name={station.name}
-              lat={lat}
-              lng={lng}
+        <Map
+          className="h-full w-full"
+          onRequestDepth={handleDepthRequest}
+          center={center}
+          centerZoom={centerZoom}
+          fitBounds={bounds}
+          viewMode={viewMode}
+          onRequestCoordinate={handleCoordinateRequest}
+          onRequestFitBounds={handleFitBoundsRequest}
+          onRequestStations={handleStationsRequest}
+          onRequestMarkers={handleMarkersRequest}
+          isAddingMarkers={isAddingMarkers}
+          onToggleMarkerMode={handleToggleMarkerMode}
+          renderMapClickHandler={() => (
+            <MapClickHandler
+              isAddingMarkers={isAddingMarkers}
+              isEditingMarker={false}
+              onAddMarker={handleAddMarker}
             />
-          )
-        })}
-        <CustomMarkerSet />
-      </Map>
-    </>
+          )}
+          renderCustomMarkerSet={() => (
+            <CustomMarkerSet
+              isAddingMarkers={isAddingMarkers}
+              setIsAddingMarkers={(value) => setIsAddingMarkers(value)}
+            />
+          )}
+          renderDraggableMarkers={() =>
+            markers.map((marker) => (
+              <DraggableMarker
+                key={`marker-${marker.id}`}
+                id={marker.id.toString()}
+                position={[marker.lat, marker.lng]}
+                index={marker.index}
+                label={marker.label}
+                draggable={true}
+                isSelected={activeEditMarkerId === marker.id.toString()} // Pass active edit state
+                isNew={marker.isNew} // Pass new marker state
+                onDragEnd={(pos) =>
+                  handleMarkerDragEnd(marker.id, {
+                    lat: pos[0],
+                    lng: pos[1],
+                  })
+                }
+                iconColor={marker.iconColor}
+                onColorChange={(color) =>
+                  handleMarkerColorChange(marker.id.toString(), color)
+                }
+                onDelete={() => handleMarkerDelete(marker.id.toString())}
+                onEdit={(newLabel) =>
+                  handleMarkerLabelChange(marker.id.toString(), newLabel)
+                }
+                onEditStateChange={(isEditing) => {
+                  setActiveEditMarkerId(isEditing ? marker.id.toString() : null)
+                }}
+              />
+            ))
+          }
+        >
+          {uniqueTrackedVehicles.map((name, index) => (
+            <VehiclePath
+              name={name}
+              key={`path-${name}-${index}`}
+              onGPSFix={handleGPSFix}
+              grouped
+            />
+          ))}
+          {selectedStations.map((station) => {
+            const lng = station.geojson?.geometry?.coordinates[0]
+            const lat = station.geojson?.geometry?.coordinates[1]
+
+            if (!lng || !lat) {
+              return null
+            }
+
+            return (
+              <StationMarker
+                key={station.name}
+                name={station.name}
+                lat={lat}
+                lng={lng}
+              />
+            )
+          })}
+        </Map>
+      </>
+    )
   )
 }
 
+// OverviewPage: NextPage
 const OverviewPage: NextPage = () => {
   const { mapsLoaded } = useGoogleMaps()
   const router = useRouter()
