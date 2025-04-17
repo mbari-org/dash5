@@ -12,6 +12,7 @@ import { Toaster } from 'react-hot-toast'
 import { MarkerProvider } from '../components/MarkerContext'
 import { CookiesProvider } from 'react-cookie'
 import useSessionToken from '../lib/useSessionToken'
+import { GoogleMapsProvider } from '../components/GoogleMapsProvider'
 import '../styles/vehicle.css'
 
 // prevent font awesome from auto-adding styles.
@@ -29,14 +30,16 @@ function MyApp({ Component, pageProps }: AppProps) {
       <CookiesProvider defaultSetOptions={{ path: '/' }}>
         <UIProvider>
           <MarkerProvider>
-            <TethysApiProvider
-              baseURL={process.env.NEXT_PUBLIC_BASE_URL}
-              sessionToken={sessionToken}
-              setSessionToken={setSessionToken}
-              onSessionEnd={handleSessionEnd}
-            >
-              <Component {...pageProps} />
-            </TethysApiProvider>
+            <GoogleMapsProvider>
+              <TethysApiProvider
+                baseURL={process.env.NEXT_PUBLIC_BASE_URL}
+                sessionToken={sessionToken}
+                setSessionToken={setSessionToken}
+                onSessionEnd={handleSessionEnd}
+              >
+                <Component {...pageProps} />
+              </TethysApiProvider>
+            </GoogleMapsProvider>
           </MarkerProvider>
         </UIProvider>
       </CookiesProvider>
