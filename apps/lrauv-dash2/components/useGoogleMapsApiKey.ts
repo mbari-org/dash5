@@ -1,122 +1,86 @@
 import { useState, useEffect, useContext } from 'react'
 import { TethysApiContext } from '@mbari/api-client'
-import toast, { Toaster } from 'react-hot-toast'
+import toast from 'react-hot-toast'
 
 export function useGoogleMapsApiKey() {
   const [apiKey, setApiKey] = useState<string | null>(null)
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<Error | null>(null)
+  const [keySource, setKeySource] = useState<'server' | 'local' | 'none'>(
+    'none'
+  )
+
+  // Type assertion for the API context
   const tethysApi = useContext(TethysApiContext) as {
     client?: { get: (url: string) => Promise<any> }
   }
-  const configEndpoint =
-    process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY || '/api/info'
-  const retryAttempts = 3
 
   useEffect(() => {
     async function fetchApiKey() {
-      // If we're in production and have a build-time API key, use it directly
-      // This respects the key set in release.yml
-      if (
-        process.env.NODE_ENV === 'production' &&
-        process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY
-      ) {
-        setApiKey(process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY)
-        setIsLoading(false)
-        return
-      }
-      if (!tethysApi || !tethysApi.client) {
-        // Fall back to environment variable if available
-        if (process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY) {
-          setApiKey(process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY)
-          setIsLoading(false)
-        } else {
-          setError(new Error('Tethys API client not available'))
-          setIsLoading(false)
-        }
-        return
-      }
-
       try {
-        setIsLoading(true)
-        setError(null)
+        // FIRST PRIORITY: Try to fetch from the Tethys API
+        if (tethysApi && tethysApi.client) {
+          try {
+            console.log('🔍 Attempting to fetch API key from Tethys API...')
+            const response = await tethysApi.client.get('/api/info')
+            const googleApiKey = response.data?.result?.appConfig?.googleApiKey
 
-        // Fetch the config using the existing API client
-        const response = await tethysApi.client.get(configEndpoint)
-
-        // Extract the API key from the response
-        const googleApiKey = response.data?.result?.appConfig?.googleApiKey
-
-        if (!googleApiKey) {
-          throw new Error('Google Maps API key not found in response')
-        }
-
-        // Add this debugging code here
-        if (googleApiKey) {
-          const obscuredKey =
-            googleApiKey.substring(0, 4) +
-            '...' +
-            googleApiKey.substring(googleApiKey.length - 4)
-          console.info(
-            `Retrieved Google Maps API key (obscured): ${obscuredKey}`
-          )
-
-          // Also log any domain restrictions from the response if available
-          if (response.data?.result?.appConfig?.googleApiRestrictions) {
-            console.info(
-              `API restrictions: ${JSON.stringify(
-                response.data.result.appConfig.googleApiRestrictions
-              )}`
-            )
+            if (googleApiKey) {
+              console.log('✅ Successfully retrieved API key from server')
+              setApiKey(googleApiKey)
+              setKeySource('server')
+              setIsLoading(false)
+              return
+            } else {
+              console.log('⚠️ API key not found in server response')
+            }
+          } catch (apiError) {
+            console.error('⚠️ Error fetching from API:', apiError)
+            // Continue to fallback - don't throw here
           }
-
-          // Check if we're in development or on a restricted domain
-          const hostname =
-            typeof window !== 'undefined' ? window.location.hostname : ''
-          const isDevelopment = process.env.NODE_ENV === 'development'
-          const isLocalhost =
-            hostname === 'localhost' || hostname === '127.0.0.1'
-
-          if (
-            isDevelopment &&
-            isLocalhost &&
-            process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY
-          ) {
-            setApiKey(process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY)
-            console.info('Using development API key for localhost', {
-              duration: 3000,
-            })
-          } else {
-            setApiKey(googleApiKey)
-            console.info('Using production API key from server', {
-              duration: 3000,
-            })
-          }
-          console.info(
-            `Environment: ${isDevelopment ? 'Development' : 'Production'}`
-          )
-          console.info(`Hostname: ${hostname}`)
-        }
-
-        // setApiKey(googleApiKey)
-      } catch (err) {
-        console.error('Error fetching Google Maps API key:', err)
-
-        // Fall back to environment variable if available
-        if (process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY) {
-          setApiKey(process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY)
         } else {
-          setError(
-            err instanceof Error ? err : new Error('Failed to fetch API key')
-          )
+          console.log('ℹ️ Tethys API client not available')
         }
+
+        // SECOND PRIORITY: Fall back to environment variable
+        if (process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY) {
+          console.log('✅ Falling back to Google Maps API key from environment')
+          setApiKey(process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY)
+          setKeySource('local')
+          setIsLoading(false)
+          return
+        }
+
+        // If we get here, both methods failed - BUT DON'T THROW
+        console.warn('⚠️ No Google Maps API key available from any source')
+        setKeySource('none')
+        setError(
+          new Error('Unable to obtain Google Maps API key from any source')
+        )
+
+        // Silent notification instead of throwing
+        toast.error('Google Maps functionality limited', {
+          duration: 4000,
+          id: 'maps-api-missing',
+        })
+      } catch (err) {
+        // This catch block now only catches unexpected errors
+        console.error('❌ Error obtaining Google Maps API key:', err)
+        const errorMessage =
+          err instanceof Error ? err.message : 'Unknown error fetching API key'
+        setError(new Error(errorMessage))
+
+        toast.error('Maps API unavailable', {
+          duration: 4000,
+          id: 'maps-api-error',
+        })
       } finally {
         setIsLoading(false)
       }
     }
 
     fetchApiKey()
-  }, [tethysApi, configEndpoint])
+  }, [tethysApi])
 
-  return { apiKey, isLoading, error }
+  return { apiKey, isLoading, error, keySource }
 }

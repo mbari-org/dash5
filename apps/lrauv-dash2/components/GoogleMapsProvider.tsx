@@ -7,64 +7,83 @@ interface GoogleMapsProviderProps {
   children: React.ReactNode
 }
 
-// Track if script is already loaded to prevent duplicate loading
-let isScriptLoaded = false
-
 export const GoogleMapsProvider: React.FC<GoogleMapsProviderProps> = ({
   children,
 }) => {
-  const { apiKey, isLoading, error } = useGoogleMapsApiKey()
+  const { apiKey, isLoading, error, keySource } = useGoogleMapsApiKey()
   const [isLoaded, setIsLoaded] = useState(false)
 
-  // Check if Maps API is already available in window object
+  // Show toast notifications but don't block UI
+  useEffect(() => {
+    if (!isLoading) {
+      if (keySource === 'server') {
+        toast.success('🌐 Using Google Maps from Tethys API', {
+          duration: 4000,
+          id: 'maps-api-source',
+        })
+      } else if (keySource === 'local') {
+        toast.success('🏠 Using Google Maps from local .env', {
+          duration: 4000,
+          id: 'maps-api-source',
+        })
+      } else if (keySource === 'none' && !apiKey) {
+        // Notify but don't block interface
+        toast.error(
+          'Google Maps API unavailable - Google Hybrid map and elevation data unavailable‼️ ',
+          {
+            duration: 6000,
+            id: 'maps-api-missing',
+          }
+        )
+      }
+    }
+  }, [isLoading, keySource, apiKey])
+
+  // Check if Maps API is already available
   useEffect(() => {
     if (typeof window !== 'undefined' && window.google?.maps) {
-      console.log('📌 Google Maps already loaded in window object')
       setIsLoaded(true)
     }
   }, [])
 
+  // Just a minimal loading indicator that doesn't take much space
   if (isLoading) {
-    console.log('📌 Loading Google Maps API Key...')
-    return <div>Loading Maps configuration...</div>
+    return <div className="opacity-0">Loading maps...</div>
   }
 
-  // First check for error
+  // On error, just render children without blocking UI
   if (error) {
-    console.error('❌ Error loading Google Maps API key:', error)
-    toast.error(`Failed to load Google Maps: ${error.message}`)
+    console.warn('Maps API key error, using alternative maps:', error.message)
     return <>{children}</>
   }
 
-  // Then check if already loaded
+  // If already loaded, just render children
   if (isLoaded || (typeof window !== 'undefined' && window.google?.maps)) {
-    console.log('📌 Using existing Google Maps instance')
     return <>{children}</>
   }
 
-  // Check for missing API key
+  // If no API key, silently render children
   if (!apiKey) {
-    console.warn('❌ No Google Maps API key available')
-    toast.error('Google Maps API key not available')
+    console.warn('No Google Maps API key available, using alternative maps')
     return <>{children}</>
   }
 
-  // If we got here, we have a key and need to load the script
-  console.log('📌 Loading Google Maps with API key')
+  // Otherwise load scripts and render
   return (
     <LoadScriptNext
       googleMapsApiKey={apiKey}
-      loadingElement={<div>Loading Google Maps...</div>}
+      loadingElement={<>{children}</>} // Render children while loading
       onLoad={() => {
-        toast.success('Google Maps loaded successfully')
+        console.log('✅ Google Maps script loaded successfully')
         setIsLoaded(true)
-        isScriptLoaded = true
-        console.log('📌 Google Maps script loaded successfully')
       }}
       onError={(err) => {
-        const errorMsg = err instanceof Error ? err.message : String(err)
-        console.error('❌ Google Maps script loading error:', errorMsg)
-        toast.error(`Google Maps loading error: ${errorMsg}`)
+        console.error('❌ Google Maps loading error:', err)
+        // Toast notification but continue with app
+        toast.error('Google Hybrid map unavailable', {
+          duration: 3000,
+          id: 'maps-loading-error',
+        })
       }}
     >
       <>{children}</>
