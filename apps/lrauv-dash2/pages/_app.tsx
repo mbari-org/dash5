@@ -30,16 +30,16 @@ function MyApp({ Component, pageProps }: AppProps) {
       <CookiesProvider defaultSetOptions={{ path: '/' }}>
         <UIProvider>
           <MarkerProvider>
-            <GoogleMapsProvider>
-              <TethysApiProvider
-                baseURL={process.env.NEXT_PUBLIC_BASE_URL}
-                sessionToken={sessionToken}
-                setSessionToken={setSessionToken}
-                onSessionEnd={handleSessionEnd}
-              >
+            <TethysApiProvider
+              baseURL={process.env.NEXT_PUBLIC_BASE_URL}
+              sessionToken={sessionToken}
+              setSessionToken={setSessionToken}
+              onSessionEnd={handleSessionEnd}
+            >
+              <GoogleMapsProvider>
                 <Component {...pageProps} />
-              </TethysApiProvider>
-            </GoogleMapsProvider>
+              </GoogleMapsProvider>
+            </TethysApiProvider>
           </MarkerProvider>
         </UIProvider>
       </CookiesProvider>

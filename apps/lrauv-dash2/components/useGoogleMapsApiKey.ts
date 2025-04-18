@@ -40,6 +40,11 @@ export function useGoogleMapsApiKey() {
           }
         } else {
           console.log('ℹ️ Tethys API client not available')
+          console.log(
+            'Tethys API client check:',
+            !!tethysApi,
+            !!tethysApi?.client
+          )
         }
 
         // SECOND PRIORITY: Fall back to environment variable
@@ -59,10 +64,14 @@ export function useGoogleMapsApiKey() {
         )
 
         // Silent notification instead of throwing
-        toast.error('Google Maps functionality limited', {
-          duration: 4000,
-          id: 'maps-api-missing',
-        })
+        toast.error(
+          '⚠️ Google Maps API unavailable!\nMaps functionality limited',
+          {
+            duration: 4000,
+            id: 'maps-api-missing',
+            className: 'blue-toast',
+          }
+        )
       } catch (err) {
         // This catch block now only catches unexpected errors
         console.error('❌ Error obtaining Google Maps API key:', err)
