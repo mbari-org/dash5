@@ -311,10 +311,13 @@ const VehiclePath: React.FC<{
           </Circle>
         </>
       )}
-      {(activeRoute ?? route).map((r) => (
+      {(activeRoute ?? route).map((r, i) => (
         <>
           <Circle
-            key={`preview${r.join()}`}
+            key={`${name}:${
+              grouped ? 'overview' : 'detail'
+            }:preview:${i}:${r.join()}`}
+            // key={`preview${r.join()}`}
             center={{
               lat: r[0],
               lng: r[1],
@@ -336,7 +339,10 @@ const VehiclePath: React.FC<{
       {inactiveRoute &&
         inactiveRoute?.map((r, i) => (
           <Circle
-            key={`inactivePreview${i}${r.join()}`}
+            key={`${name}:${
+              grouped ? 'overview' : 'detail'
+            }:inactivePreview:${i}:${r.join()}`}
+            // key={`inactivePreview${i}${r.join()}`}
             center={{
               lat: r[0],
               lng: r[1],
@@ -349,9 +355,12 @@ const VehiclePath: React.FC<{
           />
         ))}
       {/* This handles the Scrub Timeline route */}
-      {route.map((r) => (
+      {route.map((r, index) => (
         <Circle
-          key={`touch${r.join()}`}
+          key={`${name}:${
+            grouped ? 'overview' : 'detail'
+          }:touch:${index}:${r.join()}`}
+          // key={`touch${r.join()}`}
           center={{
             lat: r[0],
             lng: r[1],
