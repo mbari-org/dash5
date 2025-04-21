@@ -17,17 +17,9 @@ export const GoogleMapsProvider: React.FC<GoogleMapsProviderProps> = ({
   useEffect(() => {
     if (!isLoading) {
       if (keySource === 'server') {
-        toast.success('Using Google Maps from Tethys API', {
-          duration: 4000,
-          id: 'maps-api-source',
-          className: 'blue-toast',
-        })
+        console.log('Using Google Maps from Tethys API')
       } else if (keySource === 'local') {
-        toast.success('Using Google Maps from local .env', {
-          duration: 4000,
-          id: 'maps-api-source',
-          className: 'blue-toast',
-        })
+        console.log('Using Google Maps from local .env')
       } else if (keySource === 'none' && !apiKey) {
         // Notify but don't block interface
         toast.error(
@@ -35,6 +27,7 @@ export const GoogleMapsProvider: React.FC<GoogleMapsProviderProps> = ({
           {
             duration: 6000,
             id: 'maps-api-missing',
+            className: 'blue-toast',
           }
         )
       }
