@@ -172,22 +172,11 @@ const DeploymentMap: React.FC<DeploymentMapProps> = ({
         // Show appropriate toast based on status
         toast.dismiss('depth-loading')
         if (result.status === 'success') {
-          // toast.success(
-          //   `Depth at this point: ${Math.abs(result.depth || 0).toFixed(1)}m`,
-          //   {
-          //     id: 'depth-result',
-          //     duration: 4000,
-          //   }
-          // )
         } else if (result.status === 'unavailable' || 'no-data') {
-          toast.error('Elevation data service unavailable', {
+          toast.error('⚠️ Elevation data service currently unavailable❗', {
             id: 'depth-result',
             className: 'blue-toast',
           })
-          // } else if (result.status === 'no-data') {
-          //   toast.error('No depth data available for this location', {
-          //     id: 'depth-result',
-          //   })
         }
 
         return result
