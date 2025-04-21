@@ -13,7 +13,7 @@ import {
 import { DateTime } from 'luxon'
 import { parseMissionCommand, ScheduleSection } from './ScheduleSection'
 import useGlobalModalId from '../lib/useGlobalModalId'
-
+import { shortenName } from '@mbari/utils'
 export type VehicleAccordionSection =
   | 'handoff'
   | 'data'
@@ -27,34 +27,23 @@ export interface VehicleAccordionProps {
   vehicleName: string
   from: number // milliseconds since epoch
   to?: number
-  pic?: string
-  onCall?: string
+  picLabel?: string
+  onCallLabel?: string
   authenticated?: boolean
   activeDeployment?: boolean
   currentDeploymentId?: number
 }
 
-const shortenName = (name: string) =>
-  name
-    .split(' ')
-    .reduce((acc, curr, idx) => `${acc} ${idx > 0 ? curr[0] : curr}.`, '')
-    .trim()
-
 const VehicleAccordion: React.FC<VehicleAccordionProps> = ({
   from,
   to,
   vehicleName,
-  pic,
-  onCall,
+  picLabel,
+  onCallLabel,
   authenticated,
   activeDeployment,
   currentDeploymentId,
 }) => {
-  // const { data: relatedLogs, isLoading: logsLoading } = useEvents({
-  //   vehicles: [vehicleName],
-  //   from: '',
-  //   to: '',
-  // })
   const { data: commsLogs, isLoading: commsLoading } = useEvents({
     vehicles: [vehicleName],
     eventTypes: ['command', 'run'],
@@ -74,14 +63,6 @@ const VehicleAccordion: React.FC<VehicleAccordionProps> = ({
     ?.filter((s) => s.event.eventType === 'run')
     ?.sort((a, b) => a.event.unixTime - b.event.unixTime)?.[0]
 
-  // const earliestLog = relatedLogs?.[(relatedLogs?.length ?? 0) - 1]?.isoTime
-  // const logsSummary = logsLoading
-  //   ? 'loading...'
-  //   : earliestLog
-  //   ? `started ${DateTime.fromISO(earliestLog).toRelative()}`
-  //   : 'no logs yet'
-
-  //const [section, setSection] = useState<VehicleAccordionSection>('schedule')
   const [section, setSection] = useState<VehicleAccordionSection>(null)
   const handleToggleForSection =
     (currentSection: VehicleAccordionSection) => (open: boolean) =>
@@ -92,18 +73,10 @@ const VehicleAccordion: React.FC<VehicleAccordionProps> = ({
       setSection(open ? currentSection : 'comms')
   }
 
-  const { profile } = useTethysApiContext()
-  const profileName = `${profile?.firstName} ${profile?.lastName}`
-
-  const resolvedPic = `${shortenName(pic ?? 'Unassigned')}${
-    pic === profileName ? ' (you)' : ''
-  }`
-  const resolvedOnCall = `${shortenName(onCall ?? 'Unassigned')}${
-    onCall === profileName ? ' (you)' : ''
-  }`
-
   const handoffLabel =
-    pic || onCall ? `${resolvedPic} / ${resolvedOnCall}` : undefined
+    picLabel || onCallLabel
+      ? `${picLabel ?? 'Unassigned'} / ${onCallLabel ?? 'Unassigned'}`
+      : undefined
 
   const { setGlobalModalId } = useGlobalModalId()
   const handleExpand = (section: string) => () => {
