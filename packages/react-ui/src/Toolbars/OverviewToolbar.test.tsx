@@ -2,8 +2,7 @@ import { render, screen, fireEvent } from '@testing-library/react'
 import '@testing-library/jest-dom'
 import { VehicleCommsCell, VehicleInfoCell } from '../Cells'
 import { OverviewToolbar, OverviewToolbarProps } from './OverviewToolbar'
-import { faEye } from '@fortawesome/free-regular-svg-icons'
-import { IconDefinition } from '@fortawesome/fontawesome-svg-core'
+
 import { UnderwaterIcon, ConnectedIcon } from '../Icons'
 import { DateTime } from 'luxon'
 
@@ -13,9 +12,9 @@ const props: OverviewToolbarProps = {
     id: '1',
     unixTime: DateTime.now().minus({ days: 3 }).toMillis(),
   },
-  pilotInCharge: 'Tanner P. (you)',
-  pilotOnCall: 'Brian K.',
-  btnIcon: faEye as IconDefinition,
+  pics: ['Tanner P.'],
+  onCalls: ['Brian K.'],
+  currentUserName: 'Tanner P.',
   vehicleName: 'Brizo',
   deployments: [
     {
@@ -44,7 +43,7 @@ const props: OverviewToolbarProps = {
   onEditDeployment: () => {
     console.log('event fired')
   },
-  onClickPilot: () => {
+  onRoleReassign: () => {
     console.log('event fired')
   },
   onIcon1hover: () => (
@@ -137,31 +136,32 @@ test('should not render deployment list toggle to the screen if there are no dep
   expect(screen.queryByTestId('deploymentToggle')).not.toBeInTheDocument()
 })
 
-test('should render the pilot button labels', async () => {
+test('should render the role reassign button with pic and oncall', async () => {
   render(
     <OverviewToolbar
       {...props}
-      pilotInCharge={'first pilot'}
-      pilotOnCall={'second pilot'}
+      pics={['First Pilot']}
+      onCalls={['Second Pilot']}
+      currentUserName="Current User"
     />
   )
 
-  expect(screen.getByText(/first pilot/i)).toBeInTheDocument()
-  expect(screen.getByText(/second pilot/i)).toBeInTheDocument()
+  expect(screen.getByText(/First P./i)).toBeInTheDocument()
+  expect(screen.getByText(/Second P./i)).toBeInTheDocument()
 })
 
-test('should not render the pilot button labels if no click handler is provided for PIC', async () => {
+test('should not render the role reassign button if no click handler is provided', async () => {
   render(
     <OverviewToolbar
       {...props}
-      onClickPilot={undefined}
-      pilotInCharge={'first pilot'}
-      pilotOnCall={'second pilot'}
+      onRoleReassign={undefined}
+      pics={['First Pilot']}
+      onCalls={['Second Pilot']}
     />
   )
 
-  expect(screen.queryByText(/first pilot/i)).not.toBeInTheDocument()
-  expect(screen.queryByText(/second pilot/i)).not.toBeInTheDocument()
+  expect(screen.queryByText(/First P./i)).not.toBeInTheDocument()
+  expect(screen.queryByText(/Second P./i)).not.toBeInTheDocument()
 })
 
 test('should render the mission button if the handler is present', async () => {

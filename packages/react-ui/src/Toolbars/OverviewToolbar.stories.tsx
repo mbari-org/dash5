@@ -3,8 +3,7 @@ import React from 'react'
 import { Story, Meta } from '@storybook/react/types-6-0'
 import { VehicleCommsCell, VehicleInfoCell } from '../Cells'
 import { OverviewToolbar, OverviewToolbarProps } from './OverviewToolbar'
-import { faEye } from '@fortawesome/free-regular-svg-icons'
-import { IconDefinition } from '@fortawesome/fontawesome-svg-core'
+
 import { ConnectedIcon, UnderwaterIcon, CommsIcon, StatusIcon } from '../Icons'
 import { DateTime } from 'luxon'
 
@@ -26,9 +25,9 @@ const args: OverviewToolbarProps = {
     id: '1',
     unixTime: DateTime.now().minus({ days: 3 }).toMillis(),
   },
-  pilotInCharge: 'Tanner P. (you)',
-  pilotOnCall: 'Brian K.',
-  btnIcon: faEye as IconDefinition,
+  pics: ['Tanner P.', 'Brian K.'],
+  onCalls: ['Brian K.', 'Mike M.'],
+  currentUserName: 'Tanner P.',
   open: false,
   supportIcon1: <CommsIcon />,
   supportIcon2: <StatusIcon />,
@@ -59,7 +58,7 @@ const args: OverviewToolbarProps = {
   onEditDeployment: () => {
     console.log('event fired')
   },
-  onClickPilot: () => {
+  onRoleReassign: () => {
     console.log('event fired')
   },
   onIcon1hover: () => (
