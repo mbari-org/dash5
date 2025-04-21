@@ -11,7 +11,7 @@ import { SelectedPlatformsProvider } from '../components/SelectedPlatformContext
 import { SelectedStationsProvider } from '../components/SelectedStationContext'
 import { useRouter } from 'next/router'
 import useGlobalModalId from '../lib/useGlobalModalId'
-import { useGoogleElevator } from '../lib/useGoogleElevator'
+import useGoogleElevator from '../lib/useGoogleElevator'
 import { Allotment, LayoutPriority } from 'allotment'
 import { useGoogleMaps } from '../lib/useGoogleMaps'
 import { VPosDetail } from '@mbari/api-client'
@@ -80,7 +80,9 @@ const OverViewMap: React.FC<{
 }> = ({ trackedVehicles }) => {
   // Add mapRef to store the Leaflet map instance
   const mapRef = useRef<L.Map | null>(null)
-  const { handleDepthRequest } = useGoogleElevator()
+  // Get the handleDepthRequest function from the hook
+  const { handleDepthRequest, elevationAvailable } = useGoogleElevator()
+  // const { handleDepthRequest } = useGoogleElevator()
   const [center, setCenter] = useState<undefined | [number, number]>()
   const [centerZoom, setCenterZoom] = useState<number | undefined>(undefined)
   const [bounds, setBounds] = useState<
@@ -90,6 +92,12 @@ const OverViewMap: React.FC<{
   const [showStations, setShowStations] = useState(false)
   const [viewMode, setViewMode] = useState<'center' | 'bounds' | null>(null)
   const { selectedStations } = useSelectedStations()
+  // Add state to track elevation data and loading state
+  const [elevationData, setElevationData] = useState<{
+    depth: number | null
+    status: string
+    position?: [number, number]
+  }>({ depth: null, status: 'none' })
 
   // Marker state
   const {
@@ -196,6 +204,42 @@ const OverViewMap: React.FC<{
     }
   }, [calculateBounds])
 
+  // Create a wrapper for the depth request that updates state
+  const handleDepthRequestWithFeedback = useCallback(
+    async (lat: number, lng: number) => {
+      // Show loading indicator
+      // toast.loading('Fetching depth data...', { id: 'depth-loading' })
+
+      try {
+        // Call the elevation service
+        const result = await handleDepthRequest(lat, lng)
+
+        // Update state with the result
+        setElevationData({
+          depth: result.depth,
+          status: result.status,
+          position: [lat, lng],
+        })
+
+        // Show appropriate toast based on status
+        toast.dismiss('depth-loading')
+        if (result.status === 'success') {
+        } else if (result.status === 'unavailable' || 'no-data') {
+          toast.error('⚠️ Elevation data service currently unavailable❗', {
+            id: 'depth-result',
+          })
+        }
+
+        return result
+      } catch (error) {
+        toast.dismiss('depth-loading')
+        toast.error('Error fetching depth data', { id: 'depth-result' })
+        return { depth: null, status: 'error' }
+      }
+    },
+    [handleDepthRequest]
+  )
+
   // handleStationsRequest
   // This function is called when the map requests to show stations
   const handleStationsRequest = useCallback(() => {
@@ -217,13 +261,33 @@ const OverViewMap: React.FC<{
     console.log('Rendering Map with children'),
     (
       <>
+        {/* Optional: Display current elevation data */}
+        {/* {elevationData.depth !== null && elevationData.status === 'success' && (
+          <div className="absolute top-4 right-4 z-10 rounded bg-white p-2 shadow">
+            <div className="font-bold">Depth Information</div>
+            <div>
+              Location: {elevationData.position?.[0].toFixed(5)},{' '}
+              {elevationData.position?.[1].toFixed(5)}
+            </div>
+            <div>Depth: {Math.abs(elevationData.depth).toFixed(1)} meters</div>
+          </div>
+        )} */}
         {showStations ? (
           <StationsListModal onClose={handleCloseStations} />
         ) : null}
         <Map
           ref={mapRef}
           className="h-full w-full"
-          onRequestDepth={handleDepthRequest}
+          onRequestDepth={async (lat, lng) => {
+            try {
+              const result = await handleDepthRequestWithFeedback(lat, lng)
+              return result.depth !== null ? result.depth : 0
+            } catch (error) {
+              console.warn('❌ Error in depth request:', error)
+              toast.error('Depth data unavailable', { id: 'depth-error' })
+              return 0
+            }
+          }}
           center={center}
           centerZoom={centerZoom}
           fitBounds={bounds}

@@ -665,7 +665,7 @@ const Map = React.forwardRef<L.Map, MapProps>(
             {onRequestFitBounds && (
               <>
                 <Tippy
-                  content="Zoom to all available/selected vehicles"
+                  content="Zoom out to all available/selected vehicles"
                   placement="right-start"
                   theme="mapBtnTT"
                 >
