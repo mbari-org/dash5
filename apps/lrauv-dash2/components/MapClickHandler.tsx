@@ -1,4 +1,4 @@
-import React, { useEffect, useRef } from 'react'
+import React, { useEffect, useRef, useCallback, useState } from 'react'
 import { useMapEvents } from 'react-leaflet'
 import L from 'leaflet'
 import toast from 'react-hot-toast'
@@ -6,13 +6,16 @@ import toast from 'react-hot-toast'
 interface MapClickHandlerProps {
   isAddingMarkers: boolean
   isEditingMarker?: boolean
-  onAddMarker: (lat: number, lng: number) => void
+  // onAddMarker: (lat: number, lng: number) => void
+  onAddMarker: (lat: number, lng: number, label?: string) => void
+  onCancelAdd?: () => void
 }
 /// Function to handle map clicks and add markers
 const MapClickHandler: React.FC<MapClickHandlerProps> = ({
   isAddingMarkers,
   isEditingMarker = false,
   onAddMarker,
+  onCancelAdd, //New
 }) => {
   // Use refs to track the latest values
   const isAddingMarkersRef = useRef(isAddingMarkers)
@@ -78,7 +81,8 @@ const MapClickHandler: React.FC<MapClickHandlerProps> = ({
         return
       }
 
-      onAddMarker(e.latlng.lat, e.latlng.lng)
+      // Create the marker with default or empty label
+      onAddMarker(e.latlng.lat, e.latlng.lng, '')
     },
   })
 

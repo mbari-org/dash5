@@ -149,6 +149,7 @@ export const MarkerProvider: React.FC<{ children: React.ReactNode }> = ({
             </div>,
             {
               duration: 3000,
+              className: 'blue-toast',
             }
           )
         }
@@ -168,7 +169,10 @@ export const MarkerProvider: React.FC<{ children: React.ReactNode }> = ({
       )
     ) {
       setMarkers([])
-      toast.success('All markers have been removed', { duration: 3000 })
+      toast.success('All markers have been removed', {
+        duration: 3000,
+        className: 'blue-toast',
+      })
     }
   }, [])
 
@@ -202,7 +206,7 @@ export const MarkerProvider: React.FC<{ children: React.ReactNode }> = ({
                 renamed to <b>{newLabel}</b>
               </div>
             </div>,
-            { duration: 3000 }
+            { duration: 3000, className: 'blue-toast' }
           )
         }
 
@@ -240,7 +244,7 @@ export const MarkerProvider: React.FC<{ children: React.ReactNode }> = ({
             Marker <b>{markerLabel}</b> has been deleted
           </div>
         </div>,
-        { duration: 3000 }
+        { duration: 3000, className: 'blue-toast' }
       )
 
       // If the deleted marker was being edited, reset active edit marker
@@ -280,7 +284,7 @@ export const MarkerProvider: React.FC<{ children: React.ReactNode }> = ({
               </b>
             </div>
           </div>,
-          { duration: 2000 }
+          { duration: 2000, className: 'blue-toast' }
         )
       }
     },

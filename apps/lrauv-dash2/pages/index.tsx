@@ -11,7 +11,7 @@ import { SelectedPlatformsProvider } from '../components/SelectedPlatformContext
 import { SelectedStationsProvider } from '../components/SelectedStationContext'
 import { useRouter } from 'next/router'
 import useGlobalModalId from '../lib/useGlobalModalId'
-import { useGoogleElevator } from '../lib/useGoogleElevator'
+import useGoogleElevator from '../lib/useGoogleElevator'
 import { Allotment, LayoutPriority } from 'allotment'
 import { useGoogleMaps } from '../lib/useGoogleMaps'
 import { VPosDetail } from '@mbari/api-client'
@@ -80,7 +80,9 @@ const OverViewMap: React.FC<{
 }> = ({ trackedVehicles }) => {
   // Add mapRef to store the Leaflet map instance
   const mapRef = useRef<L.Map | null>(null)
-  const { handleDepthRequest } = useGoogleElevator()
+  // Get the handleDepthRequest function from the hook
+  const { handleDepthRequest, elevationAvailable } = useGoogleElevator()
+  // const { handleDepthRequest } = useGoogleElevator()
   const [center, setCenter] = useState<undefined | [number, number]>()
   const [centerZoom, setCenterZoom] = useState<number | undefined>(undefined)
   const [bounds, setBounds] = useState<
@@ -90,6 +92,12 @@ const OverViewMap: React.FC<{
   const [showStations, setShowStations] = useState(false)
   const [viewMode, setViewMode] = useState<'center' | 'bounds' | null>(null)
   const { selectedStations } = useSelectedStations()
+  // Add state to track elevation data and loading state
+  const [elevationData, setElevationData] = useState<{
+    depth: number | null
+    status: string
+    position?: [number, number]
+  }>({ depth: null, status: 'none' })
 
   // Marker state
   const {
@@ -125,6 +133,27 @@ const OverViewMap: React.FC<{
     }
   }, [trackedVehicles])
 
+  // Force elevation service initialization when component mounts
+  useEffect(() => {
+    // Try to initialize the elevation service right away
+    if (
+      !elevationAvailable &&
+      typeof window !== 'undefined' &&
+      window.google?.maps
+    ) {
+      try {
+        // Make a dummy request to force initialization
+        handleDepthRequest(0, 0).catch(() => {
+          console.log('Initialized elevation service with dummy request')
+        })
+      } catch (error) {
+        console.warn(
+          'Could not pre-initialize elevation service in OverViewMap'
+        )
+      }
+    }
+  }, [elevationAvailable, handleDepthRequest])
+
   // handleGPSFix function
   // This function is called when a GPS fix is received
   const handleGPSFix = useCallback(
@@ -149,9 +178,17 @@ const OverViewMap: React.FC<{
   // This function calculates the bounds of all vehicle positions
   // and sets the map bounds accordingly
   const calculateBounds = useCallback(() => {
+    // First check if we have stored positions
     if (vehiclePositions.current.length === 0) {
-      toast('No vehicle positions available for bounds calculation')
-      return
+      // Try to get positions from rendered vehicle paths instead
+      const pathPositions = getAllVehiclePathPoints()
+
+      if (pathPositions.length === 0) {
+        toast('No vehicle positions available for bounds calculation')
+        return null
+      }
+
+      vehiclePositions.current = [...pathPositions]
     }
 
     let minLat = 90,
@@ -166,14 +203,36 @@ const OverViewMap: React.FC<{
       maxLng = Math.max(maxLng, pos[1])
     })
 
+    // Use a larger padding for better visibility
     const padding = 0.1
     const newBounds: [[number, number], [number, number]] = [
       [minLat - padding, minLng - padding],
       [maxLat + padding, maxLng + padding],
     ]
-    setBounds(newBounds)
-    return undefined
+
+    // Return the bounds instead of just setting them
+    return newBounds
   }, [])
+
+  // Add this helper function to access path points from all vehicle paths
+  const getAllVehiclePathPoints = () => {
+    const pathPoints: [number, number][] = []
+
+    // This accesses the shared path context, which contains all vehicle paths
+    if (mapRef.current) {
+      // Find all path layers in the map
+      mapRef.current.eachLayer((layer: any) => {
+        if (layer._latlngs && Array.isArray(layer._latlngs)) {
+          // Extract coordinates from polylines
+          layer._latlngs.forEach((latLng: L.LatLng) => {
+            pathPoints.push([latLng.lat, latLng.lng])
+          })
+        }
+      })
+    }
+
+    return pathPoints
+  }
 
   // handleCoordinateRequest
   const handleCoordinateRequest = useCallback(() => {
@@ -195,6 +254,39 @@ const OverViewMap: React.FC<{
       setViewMode('bounds')
     }
   }, [calculateBounds])
+
+  // Create a wrapper for the depth request that updates state
+  const handleDepthRequestWithFeedback = useCallback(
+    async (lat: number, lng: number) => {
+      try {
+        // Call the elevation service
+        const result = await handleDepthRequest(lat, lng)
+
+        // Update state with the result
+        setElevationData({
+          depth: result.depth,
+          status: result.status,
+          position: [lat, lng],
+        })
+
+        // Show appropriate toast based on status
+        toast.dismiss('depth-loading')
+        if (result.status === 'success') {
+        } else if (result.status === 'unavailable' || 'no-data') {
+          toast('⚠️ Maps Depth data currently unavailable❕', {
+            id: 'depth-result',
+            className: 'blue-toast',
+          })
+        }
+        return result
+      } catch (error) {
+        toast.dismiss('depth-loading')
+        toast.error('Error fetching depth data', { id: 'depth-result' })
+        return { depth: null, status: 'error' }
+      }
+    },
+    [handleDepthRequest]
+  )
 
   // handleStationsRequest
   // This function is called when the map requests to show stations
@@ -223,7 +315,22 @@ const OverViewMap: React.FC<{
         <Map
           ref={mapRef}
           className="h-full w-full"
-          onRequestDepth={handleDepthRequest}
+          onRequestDepth={async (lat, lng) => {
+            try {
+              // Format the latitude value immediately to remove any leading zeros
+              const formattedLat = parseFloat(String(lat).replace(/^0+/, ''))
+              // Use the formatted value in your depth request
+              const result = await handleDepthRequestWithFeedback(
+                formattedLat,
+                lng
+              )
+              return result.depth !== null ? result.depth : 0
+            } catch (error) {
+              console.warn('❌ Error in depth request:', error)
+              toast.error('Depth data unavailable', { id: 'depth-error' })
+              return 0
+            }
+          }}
           center={center}
           centerZoom={centerZoom}
           fitBounds={bounds}

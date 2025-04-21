@@ -165,7 +165,7 @@ const DraggableMarker: React.FC<DraggableMarkerProps> = ({
   useEffect(() => {
     if ((isNew || isSelected) && !editMode) {
       setEditMode(true)
-      setShowColorOptions(true)
+      setShowColorOptions(false) // Keep color options collapsed initially
     }
   }, [isNew, isSelected, editMode])
 
@@ -279,10 +279,48 @@ const DraggableMarker: React.FC<DraggableMarkerProps> = ({
 
   // Handle canceling edits
   const handleCancelEdit = useCallback(() => {
-    handleEditModeToggle(false)
-    setInputValue(label) // Reset to original value
-    setSelectedColor(iconColor || '#FF0000') // Reset to original color
-  }, [handleEditModeToggle, label, iconColor])
+    // If this is a new marker, show confirmation dialog
+    if (isNew) {
+      // You can use react-hot-toast for this simple confirmation
+      toast(
+        (t) => (
+          <div className="flex flex-col gap-2 p-2">
+            <div className="font-medium">Cancel editing and delete marker?</div>
+            <div className="flex justify-between gap-2">
+              <button
+                onClick={() => {
+                  toast.dismiss(t.id)
+                  onDelete?.() // Delete the marker
+                  markerRef.current?.closePopup()
+                }}
+                className="rounded bg-red-500 px-3 py-1 text-white hover:bg-red-600"
+              >
+                Yes
+              </button>
+              <button
+                onClick={() => toast.dismiss(t.id)}
+                className="rounded bg-gray-300 px-3 py-1 text-black hover:bg-gray-400"
+              >
+                No
+              </button>
+            </div>
+          </div>
+        ),
+        {
+          duration: Infinity,
+          position: 'top-center',
+          id: 'cancel-edit',
+          className: 'blue-toast',
+        }
+      )
+    } else {
+      // For existing markers, just close the popup
+      handleEditModeToggle(false)
+      setInputValue(label) // Reset to original value
+      setSelectedColor(iconColor || '#FF0000') // Reset color
+      markerRef.current?.closePopup()
+    }
+  }, [handleEditModeToggle, isNew, label, iconColor, onDelete])
 
   // Prevent popup from closing when clicking inside it
   const handleEditClick = useCallback(
@@ -317,6 +355,7 @@ const DraggableMarker: React.FC<DraggableMarkerProps> = ({
   // Handle canceling edits
   const handleCancelClick = useCallback(
     (e: React.MouseEvent) => {
+      console.log('🔴 Cancel button clicked')
       e.stopPropagation()
       e.preventDefault()
       handleCancelEdit()
