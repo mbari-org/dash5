@@ -23,7 +23,6 @@ export const ReassignmentModal: React.FC<ReassignmentModalProps> = ({
   <Modal
     {...modalProps}
     title="On watch/on call"
-    form="reassignmentForm"
     cancelButtonText="Cancel"
     confirmButtonText="Done"
     onClose={onClose}
