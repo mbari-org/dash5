@@ -133,6 +133,27 @@ const OverViewMap: React.FC<{
     }
   }, [trackedVehicles])
 
+  // Force elevation service initialization when component mounts
+  useEffect(() => {
+    // Try to initialize the elevation service right away
+    if (
+      !elevationAvailable &&
+      typeof window !== 'undefined' &&
+      window.google?.maps
+    ) {
+      try {
+        // Make a dummy request to force initialization
+        handleDepthRequest(0, 0).catch(() => {
+          console.log('Initialized elevation service with dummy request')
+        })
+      } catch (error) {
+        console.warn(
+          'Could not pre-initialize elevation service in OverViewMap'
+        )
+      }
+    }
+  }, [elevationAvailable, handleDepthRequest])
+
   // handleGPSFix function
   // This function is called when a GPS fix is received
   const handleGPSFix = useCallback(
