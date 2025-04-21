@@ -207,9 +207,6 @@ const OverViewMap: React.FC<{
   // Create a wrapper for the depth request that updates state
   const handleDepthRequestWithFeedback = useCallback(
     async (lat: number, lng: number) => {
-      // Show loading indicator
-      // toast.loading('Fetching depth data...', { id: 'depth-loading' })
-
       try {
         // Call the elevation service
         const result = await handleDepthRequest(lat, lng)
@@ -225,11 +222,11 @@ const OverViewMap: React.FC<{
         toast.dismiss('depth-loading')
         if (result.status === 'success') {
         } else if (result.status === 'unavailable' || 'no-data') {
-          toast.error('⚠️ Elevation data service currently unavailable❗', {
+          toast('⚠️ Maps Depth data currently unavailable❕', {
             id: 'depth-result',
+            className: 'blue-toast',
           })
         }
-
         return result
       } catch (error) {
         toast.dismiss('depth-loading')
@@ -261,17 +258,6 @@ const OverViewMap: React.FC<{
     console.log('Rendering Map with children'),
     (
       <>
-        {/* Optional: Display current elevation data */}
-        {/* {elevationData.depth !== null && elevationData.status === 'success' && (
-          <div className="absolute top-4 right-4 z-10 rounded bg-white p-2 shadow">
-            <div className="font-bold">Depth Information</div>
-            <div>
-              Location: {elevationData.position?.[0].toFixed(5)},{' '}
-              {elevationData.position?.[1].toFixed(5)}
-            </div>
-            <div>Depth: {Math.abs(elevationData.depth).toFixed(1)} meters</div>
-          </div>
-        )} */}
         {showStations ? (
           <StationsListModal onClose={handleCloseStations} />
         ) : null}
@@ -280,7 +266,13 @@ const OverViewMap: React.FC<{
           className="h-full w-full"
           onRequestDepth={async (lat, lng) => {
             try {
-              const result = await handleDepthRequestWithFeedback(lat, lng)
+              // Format the latitude value immediately to remove any leading zeros
+              const formattedLat = parseFloat(String(lat).replace(/^0+/, ''))
+              // Use the formatted value in your depth request
+              const result = await handleDepthRequestWithFeedback(
+                formattedLat,
+                lng
+              )
               return result.depth !== null ? result.depth : 0
             } catch (error) {
               console.warn('❌ Error in depth request:', error)

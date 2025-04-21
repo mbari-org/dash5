@@ -155,9 +155,6 @@ const DeploymentMap: React.FC<DeploymentMapProps> = ({
 
   const handleDepthRequestWithFeedback = useCallback(
     async (lat: number, lng: number) => {
-      // Show loading indicator
-      // toast.loading('Fetching depth data...', { id: 'depth-loading' })
-
       try {
         // Call the elevation service
         const result = await handleDepthRequest(lat, lng)
@@ -173,12 +170,11 @@ const DeploymentMap: React.FC<DeploymentMapProps> = ({
         toast.dismiss('depth-loading')
         if (result.status === 'success') {
         } else if (result.status === 'unavailable' || 'no-data') {
-          toast.error('⚠️ Elevation data service currently unavailable❗', {
+          toast('⚠️ Maps Depth data currently unavailable❕', {
             id: 'depth-result',
             className: 'blue-toast',
           })
         }
-
         return result
       } catch (error) {
         toast.dismiss('depth-loading')
@@ -274,16 +270,6 @@ const DeploymentMap: React.FC<DeploymentMapProps> = ({
 
   return (
     <>
-      {/* {elevationData.depth !== null && elevationData.status === 'success' && (
-        <div className="absolute top-4 right-4 z-10 rounded bg-white p-2 shadow">
-          <div className="font-bold">Depth Information</div>
-          <div>
-            Location: {elevationData.position?.[0].toFixed(5)},{' '}
-            {elevationData.position?.[1].toFixed(5)}
-          </div>
-          <div>Depth: {Math.abs(elevationData.depth).toFixed(1)} meters</div>
-        </div>
-      )} */}
       {showStations ? (
         <StationsListModal onClose={handleCloseStations} />
       ) : null}
