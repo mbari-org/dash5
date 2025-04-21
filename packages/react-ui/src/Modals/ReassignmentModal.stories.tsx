@@ -1,70 +1,77 @@
-import React, { useState } from 'react'
+import React from 'react'
 // also exported from '@storybook/react' if you can deal with breaking changes in 6.1
 import { Story, Meta } from '@storybook/react/types-6-0'
-import { ReassignmentModal, ReassignmentModalProps } from './ReassignmentModal'
-import { ReassignmentFormValues, Vehicles } from '../Forms/ReassignmentForm'
-import { wait } from '@mbari/utils'
+import {
+  ReassignmentModal,
+  ReassignmentModalProps,
+  RoleChangeType,
+} from './ReassignmentModal'
 import { action } from '@storybook/addon-actions'
 
 export default {
   title: 'Modals/ReassignmentModal',
   component: ReassignmentModal,
   args: {
-    onCancel: action('cancel'),
-    onConfirm: action('confirm'),
+    onClose: action('close'),
   },
 } as Meta<ReassignmentModalProps>
 
-const vehicles: Vehicles = [
+const vehicles = [
   {
-    vehicleId: '1200',
-    vehicleName: 'Brizo',
-    pic: 'Shannon Johnson',
-    onCall: 'Brian Kieft',
+    name: 'Brizo',
+    picOperators: ['Norville Rogers', 'Daphne Blake'],
+    onCallOperators: [],
   },
   {
-    vehicleId: '1201',
-    vehicleName: 'Aku',
-    pic: 'Shannon Johnson',
-    onCall: 'Brian Kieft',
+    name: 'Aku',
+    picOperators: ['Fred Jones'],
+    onCallOperators: ['Brian Kieft'],
   },
   {
-    vehicleId: '1202',
-    vehicleName: 'Pontus',
-    pic: 'Shannon Johnson',
-    onCall: 'Brian Kieft',
+    name: 'Pontus',
+    picOperators: ['Velma Dinkley'],
+    onCallOperators: ['Brian Kieft'],
   },
-]
-
-const pilots = [
-  { id: '1102', name: 'Carlos Rueda' },
-  { id: '1103', name: 'Karen Salemy' },
 ]
 
 const Template: Story<ReassignmentModalProps> = (args) => {
-  const [loading, setLoading] = useState(args.loading ?? false)
+  const [isLoading, setIsLoading] = React.useState(args.isLoading ?? false)
 
-  const onSubmit: any = async (values: ReassignmentFormValues) => {
-    setLoading(true)
-    await wait(1)
-    setLoading(false)
-    console.log('Submitted', values)
-    return undefined
+  const handleRoleChange = (
+    vehicleName: string,
+    roleChangeType: RoleChangeType,
+    isPic: boolean
+  ) => {
+    setIsLoading(true)
+    setTimeout(() => {
+      setIsLoading(false)
+      console.log(
+        `Signed ${roleChangeType} for ${vehicleName} as ${
+          isPic ? 'PIC' : 'On-Call'
+        }`
+      )
+    }, 1000)
   }
 
-  return <ReassignmentModal {...args} onSubmit={onSubmit} loading={loading} />
+  return (
+    <ReassignmentModal
+      {...args}
+      isLoading={isLoading}
+      onRoleChange={handleRoleChange}
+    />
+  )
 }
 
 const args: ReassignmentModalProps = {
   vehicles,
   open: true,
-  pics: pilots,
-  onCalls: pilots,
-  onSubmit: async (values: ReassignmentFormValues) => {
-    await wait(1)
-    console.log('Submitted', values)
-    return undefined
-  },
+  currentUserName: 'John Doe',
+  onRoleChange: (vehicleName, roleChangeType, isPic) =>
+    console.log(
+      `Role changed for ${vehicleName} to ${roleChangeType} as ${
+        isPic ? 'PIC' : 'On-Call'
+      }`
+    ),
 }
 
 export const Standard = Template.bind({})
@@ -74,4 +81,21 @@ Standard.parameters = {
     type: 'figma',
     url: 'https://www.figma.com/file/FtsKsOCBQ2YjTZlwezG6aI/MBARI-Components?node-id=752%3A709',
   },
+}
+
+export const UserInRole = Template.bind({})
+UserInRole.args = {
+  ...args,
+  currentUserName: 'Norville Rogers',
+}
+
+export const UnassignedRoles = Template.bind({})
+UnassignedRoles.args = {
+  ...args,
+  vehicles: vehicles.map((vehicle) => ({
+    ...vehicle,
+    picOperators: [],
+    onCallOperators: [],
+  })),
+  currentUserName: 'Shaggy Rogers',
 }
