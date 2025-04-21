@@ -84,15 +84,17 @@ export const Button: React.FC<ButtonProps> = ({
   }
   const brightness = focus ? 0.97 : hover ? 1.03 : 1
 
+  const isStandardButton = !['custom', 'link'].includes(appearance ?? '')
+
   return (
     <button
       className={clsx(
         appearance === 'link' && styles.link,
-        !['custom', 'link'].includes(appearance ?? '') && styles.button,
         backgroundStyles(appearance),
         alignmentStyles(align),
+        isStandardButton && styles.button,
+        isStandardButton && (tight ? styles.tight : styles.normal),
         disabled && styles.disabled,
-        tight ? styles.tight : styles.normal,
         className
       )}
       disabled={disabled}
