@@ -157,9 +157,17 @@ const OverViewMap: React.FC<{
   // This function calculates the bounds of all vehicle positions
   // and sets the map bounds accordingly
   const calculateBounds = useCallback(() => {
+    // First check if we have stored positions
     if (vehiclePositions.current.length === 0) {
-      toast('No vehicle positions available for bounds calculation')
-      return
+      // Try to get positions from rendered vehicle paths instead
+      const pathPositions = getAllVehiclePathPoints()
+
+      if (pathPositions.length === 0) {
+        toast('No vehicle positions available for bounds calculation')
+        return null
+      }
+
+      vehiclePositions.current = [...pathPositions]
     }
 
     let minLat = 90,
@@ -174,14 +182,36 @@ const OverViewMap: React.FC<{
       maxLng = Math.max(maxLng, pos[1])
     })
 
+    // Use a larger padding for better visibility
     const padding = 0.1
     const newBounds: [[number, number], [number, number]] = [
       [minLat - padding, minLng - padding],
       [maxLat + padding, maxLng + padding],
     ]
-    setBounds(newBounds)
-    return undefined
+
+    // Return the bounds instead of just setting them
+    return newBounds
   }, [])
+
+  // Add this helper function to access path points from all vehicle paths
+  const getAllVehiclePathPoints = () => {
+    const pathPoints: [number, number][] = []
+
+    // This accesses the shared path context, which contains all vehicle paths
+    if (mapRef.current) {
+      // Find all path layers in the map
+      mapRef.current.eachLayer((layer: any) => {
+        if (layer._latlngs && Array.isArray(layer._latlngs)) {
+          // Extract coordinates from polylines
+          layer._latlngs.forEach((latLng: L.LatLng) => {
+            pathPoints.push([latLng.lat, latLng.lng])
+          })
+        }
+      })
+    }
+
+    return pathPoints
+  }
 
   // handleCoordinateRequest
   const handleCoordinateRequest = useCallback(() => {
