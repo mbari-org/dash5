@@ -26,6 +26,7 @@ import {
   faRulerCombined,
   faArrowsUpDownLeftRight,
   faLocationDot,
+  faPaintBrush,
 } from '@fortawesome/free-solid-svg-icons'
 import { faCircleXmark } from '@fortawesome/free-regular-svg-icons'
 import { Measurement } from './Measurement'
@@ -33,8 +34,40 @@ import MovingDot from './MovingDot'
 import { AreaComponent, PathComponent, MeasurementProps } from './Measurement'
 import { CenterView } from './MapViews'
 import toast from 'react-hot-toast'
+import { createLogger, loadGoogleMapsOnce } from '@mbari/utils'
+
+const logger = createLogger('Map')
+
+// safeLogger wrapper that suppresses debug logs during critical operations
+const createSafeLogger = (
+  originalLogger: any,
+  disabledLevels: string[] = ['debug']
+) => {
+  // Copy of the original logger
+  const safeLogger = { ...originalLogger }
+
+  // Disable specified log levels by replacing them with no-op functions
+  disabledLevels.forEach((level) => {
+    if (level in safeLogger) {
+      safeLogger[level] = () => {} // No-op function
+    }
+  })
+
+  return safeLogger
+}
+
+// safeLogger instance that will be used during initialization
+const safeLogger = createSafeLogger(logger, ['debug'])
 
 const regex = /\B(?=(\d{3})+(?!\d))/g
+
+declare global {
+  interface Window {
+    _googleMapsLoaded?: boolean
+    google?: any
+  }
+}
+
 let mapCoord: String
 let dmsCoord: String
 
@@ -58,6 +91,7 @@ export interface MapProps extends React.HTMLAttributes<HTMLDivElement> {
   onRequestFitBounds?: () => void
   onRequestPlatforms?: () => void
   onRequestStations?: () => void
+  onRequestVehicleColors?: (vehicleName?: string) => void
   whenCreated?: (map: L.Map) => void
   onMapReady?: (map: L.Map) => void
   dmsCoord?: string
@@ -111,6 +145,8 @@ const Map = React.forwardRef<L.Map, MapProps>(
       onRequestFitBounds,
       onRequestPlatforms,
       onRequestStations,
+      onRequestVehicleColors,
+      onMapReady,
       renderMapClickHandler,
       renderCustomMarkerSet,
       renderDraggableMarkers,
@@ -119,6 +155,9 @@ const Map = React.forwardRef<L.Map, MapProps>(
   ) => {
     const mapRef = useRef<L.Map | null>(null)
     const [mapReady, setMapReady] = useState(false)
+    const [googleMapsStatus, setGoogleMapsStatus] = useState<
+      'pending' | 'loading' | 'loaded' | 'error'
+    >('pending')
     const [isMeasuring, setIsMeasuring] = useState(false)
     const [isAddingMarkersLocal, setIsAddingMarkersLocal] =
       useState(isAddingMarkers)
@@ -130,14 +169,86 @@ const Map = React.forwardRef<L.Map, MapProps>(
       [setBaseLayer]
     )
 
+    // Google Maps initialization
     useEffect(() => {
-      if (typeof window !== 'undefined' && mapRef.current) {
-        // Wait for mapRef to be available first
-        import('leaflet.gridlayer.googlemutant')
-          .then(() => console.log('Google Mutant loaded'))
-          .catch((err) => console.error('Failed to load Google Mutant:', err))
+      // Only initialize Google Maps after map is ready
+      const handleMapReady = async (event: CustomEvent) => {
+        // Extract the map instance from the event
+        const map = event.detail as L.Map
+        if (!map) {
+          logger.error('Map instance not found in mapready event')
+          setGoogleMapsStatus('error')
+          return
+        }
+
+        // Use safeLogger for non-critical logs
+        safeLogger.debug('Map ready event received, initializing Google Maps')
+        setGoogleMapsStatus('loading')
+
+        try {
+          safeLogger.debug('Loading leaflet.gridlayer.googlemutant...')
+
+          // Load Google Maps API first (this ensures custom elements are registered once)
+          await loadGoogleMapsOnce()
+
+          // Load the Leaflet plugin
+          let GoogleMutant
+          try {
+            GoogleMutant = await import('leaflet.gridlayer.googlemutant')
+          } catch (err) {
+            safeLogger.debug('Trying alternative import path...')
+            try {
+              GoogleMutant = await import('leaflet.gridlayer.googlemutant')
+            } catch (err2) {
+              logger.error('Failed to import from node_modules path:', err2)
+              throw err
+            }
+          }
+
+          if (!window.google) {
+            logger.error('Google Maps API still not available after loading')
+            setGoogleMapsStatus('error')
+            return
+          }
+
+          // Check if Google Maps is already loaded
+          safeLogger.debug('Creating Google Maps layer...')
+          const googleLayer = L.gridLayer.googleMutant({
+            type: 'hybrid',
+            maxZoom: maxZoom,
+            maxNativeZoom: maxNativeZoom,
+          })
+
+          safeLogger.debug('Adding Google Maps layer to map...')
+          googleLayer.addTo(map)
+
+          // Store the layer for future reference
+          // @ts-ignore - Adding custom property
+          map._googleLayer = googleLayer
+
+          setGoogleMapsStatus('loaded')
+          safeLogger.debug('✅ Google Maps layer added successfully!')
+        } catch (error) {
+          setGoogleMapsStatus('error')
+          logger.error('Failed to initialize Google Maps layer:', error)
+        }
       }
-    }, [mapRef.current])
+
+      // Listen for mapReady event
+      if (typeof window !== 'undefined') {
+        window.addEventListener(
+          'mapready',
+          handleMapReady as unknown as EventListener
+        )
+
+        return () => {
+          window.removeEventListener(
+            'mapready',
+            handleMapReady as unknown as EventListener
+          )
+        }
+      }
+    }, [maxZoom, maxNativeZoom])
 
     // Create measurements
     const [measurements, setMeasurements] = useState<
@@ -157,12 +268,10 @@ const Map = React.forwardRef<L.Map, MapProps>(
         label: string
       }>
     >([])
-    console.log('Markers:', markers)
 
     const [clickablePoints, setClickablePoints] = useState<
       Array<{ id: number; lat: number; lng: number }>
     >([])
-    console.log('Clickable points:', clickablePoints)
 
     const [count, setCount] = useState(0)
     const [isHovering, setIsHovering] = useState(false)
@@ -173,11 +282,17 @@ const Map = React.forwardRef<L.Map, MapProps>(
       fontSize: '12px',
     }
 
+    // Skip the log if ref is null - this is expected during initial render
     useEffect(() => {
-      console.log('MapContainer internal ref:', mapRef.current)
-      if (mapRef.current && typeof ref === 'function') {
+      if (ref && !mapRef.current) {
+        // Don't log every time - very noisy
+        return
+      }
+
+      // Forward the ref
+      if (typeof ref === 'function') {
         ref(mapRef.current)
-      } else if (mapRef.current && ref && typeof ref === 'object') {
+      } else if (ref && typeof ref === 'object') {
         ref.current = mapRef.current
       }
     }, [ref])
@@ -355,7 +470,7 @@ const Map = React.forwardRef<L.Map, MapProps>(
           prev.map((p) => ({
             ...p,
             editing: false,
-            showPopup: true, // Set this to true when finishing
+            showPopup: true, // true when finishing
           }))
         )
       }
@@ -393,9 +508,6 @@ const Map = React.forwardRef<L.Map, MapProps>(
             label: `Marker ${prev.length + 1}`,
           },
         ])
-
-        // Show success toast
-        toast.success(`Marker added at ${lat.toFixed(5)}, ${lng.toFixed(5)}`)
 
         // Still call onRequestMarkers for any additional functionality
         onRequestMarkers?.()
@@ -436,6 +548,14 @@ const Map = React.forwardRef<L.Map, MapProps>(
       onRequestStations?.()
     }
 
+    // Handle mouse over event for the Vehicle Colors button
+    const handleVehicleColorsClick = (e: React.MouseEvent) => {
+      e.preventDefault()
+      e.stopPropagation()
+      logger.debug('Vehicle Colors button clicked')
+      onRequestVehicleColors?.()
+    }
+
     // Remove Measurement
     const removeMeasurement = useCallback(
       (id: string) => () => {
@@ -471,7 +591,6 @@ const Map = React.forwardRef<L.Map, MapProps>(
         }
       }
     }, [isAddingMarkers])
-    console.log('Map ref:', ref)
 
     return (
       <MapContainer
@@ -485,13 +604,64 @@ const Map = React.forwardRef<L.Map, MapProps>(
         // @ts-ignore
         maxNativeZoom={maxNativeZoom}
         ref={mapRef}
+        whenCreated={(map: L.Map) => {
+          try {
+            if (!map) {
+              logger.warn('Map instance is null in whenCreated')
+              return
+            }
+
+            safeLogger.debug('Map instance created, initializing...')
+
+            // Store reference to actual Leaflet map
+            mapRef.current = map
+
+            // Forward the reference
+            if (ref) {
+              if (typeof ref === 'function') {
+                ref(map)
+              } else {
+                ref.current = map
+              }
+              safeLogger.debug('Map reference forwarded')
+            }
+
+            // Call onMapReady
+            if (onMapReady) {
+              safeLogger.debug('Calling onMapReady callback')
+              onMapReady(map)
+            }
+
+            // Dispatch with minimal delay
+            setTimeout(() => {
+              if (typeof window !== 'undefined') {
+                try {
+                  // Use safeLogger for this chatty operation
+                  safeLogger.debug('Creating mapready event')
+
+                  const mapReadyEvent = new CustomEvent('mapready', {
+                    detail: map,
+                  })
+                  window.dispatchEvent(mapReadyEvent)
+
+                  // This log is important enough to keep!
+                  logger.info('mapready event dispatched')
+                } catch (e) {
+                  logger.error('Error dispatching mapready event:', e)
+                }
+              }
+            }, 100)
+          } catch (err) {
+            logger.error('Error in map initialization:', err)
+          }
+        }}
       >
         {!isMeasuring && (
           <CenterView
-            coords={center}
-            bounds={fitBounds}
-            zoom={centerZoom}
-            viewMode={viewMode} // Pass this through
+            coords={center as [number, number]}
+            bounds={fitBounds as [[number, number], [number, number]]}
+            zoom={centerZoom as number}
+            viewMode={viewMode as 'center' | 'bounds' | null}
           />
         )}
         {renderMapClickHandler &&
@@ -577,6 +747,30 @@ const Map = React.forwardRef<L.Map, MapProps>(
         {children}
         {/* TRACKDB/STATIONS CONTROLS - Now in separate Control component */}
         <Control position="topleft">
+          <Tippy
+            content="Edit Vehicle Colors"
+            placement="right-start"
+            theme="mapBtnTT"
+          >
+            <button
+              id="vehicleColors"
+              className="vehicleColors rounded"
+              aria-label="Vehicle Colors"
+              onMouseOver={handleMouseOver}
+              style={{
+                position: 'relative',
+                zIndex: isHovering ? 900 : 10,
+                border: '0px solid rgba(0,0,0,0.2)',
+                backgroundClip: 'padding-box',
+                width: 35,
+                height: 35,
+              }}
+              onClick={handleVehicleColorsClick}
+            >
+              <FontAwesomeIcon icon={faPaintBrush} size="xl" color="#ffffff" />
+            </button>
+          </Tippy>
+          <hr style={{ height: '8pt', visibility: 'hidden' }} />
           <Tippy
             content="Track Database"
             placement="right-start"

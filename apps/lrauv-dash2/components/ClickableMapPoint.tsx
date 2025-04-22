@@ -1,7 +1,9 @@
 import { on } from 'events'
 import { useMapEvents } from 'react-leaflet'
 import { useManagedWaypoints } from 'react-ui/dist'
+import { createLogger } from '@mbari/utils'
 
+const logger = createLogger('ClickableMapPoint')
 const ClickableMapPoint: React.FC<{
   onClick?: (lat: number, lng: number) => void
 }> = ({ onClick }) => {
@@ -12,7 +14,7 @@ const ClickableMapPoint: React.FC<{
       if (onClick) {
         onClick?.(e.latlng.lat, e.latlng.lng)
       } else {
-        console.log(e.latlng)
+        logger.debug(`Lat: ${e.latlng.lat}, Lng: ${e.latlng.lng}`)
         handleWaypointsUpdate(
           updatedWaypoints.map((waypoint, index) => {
             if (index === focusedWaypointIndex) {

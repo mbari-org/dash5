@@ -24,6 +24,10 @@ import { faCheck, faSync } from '@fortawesome/free-solid-svg-icons'
 import { useCookies } from 'react-cookie'
 import useGlobalModalId from '../lib/useGlobalModalId'
 import { useTethysSubscriptionEvent } from '../lib/useWebSocketListeners'
+import { createLogger } from '@mbari/utils'
+
+const logger = createLogger('VehicleList')
+
 const parsePos = (pos: string | number) => parseFloat(`${pos}`).toFixed(3)
 const calcPosition = (lat?: number | string, long?: number | string) =>
   lat && long ? [parsePos(lat), parsePos(long)].join(', ') : undefined
@@ -82,7 +86,7 @@ const ConnectedVehicleCell: React.FC<{
   // { refresh: 'y' },
   // { baseUrl: process.env.NEXT_PUBLIC_ODSS2BASE_URL }
   // )
-  // console.log('platformsTest', platforms)
+  // logger.debug('platformsTest', platforms)
 
   const mission = missionStartedEvent?.[0]?.text.replace(/started mission/i, '')
   const isLoading = positionLoading || vehicleInfoLoading
@@ -297,7 +301,7 @@ const VehicleList: React.FC<{
   }
 
   const handleColorChange = (color: string, vehicle: string) => {
-    console.log('color changed', color, vehicle)
+    logger.debug('color changed', color, vehicle)
     setColor({ color, vehicle })
   }
   {

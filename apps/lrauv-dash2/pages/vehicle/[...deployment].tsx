@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useState, useCallback } from 'react'
 import { NextPage } from 'next'
 import { useRouter } from 'next/router'
 import { DateTime } from 'luxon'
@@ -180,6 +180,13 @@ const Vehicle: NextPage = () => {
   const chartAvailable =
     !!depthData && !chartLoading && !chartIdle && !chartError
 
+  const [indicatorTime, setIndicatorTime] = useState<number | null | undefined>(
+    null
+  )
+  const handleTimeScrub = useCallback((time?: number | null) => {
+    setIndicatorTime(time)
+  }, [])
+
   const depthChart = useMemo(() => {
     return chartAvailable ? (
       <LineChart
@@ -189,19 +196,13 @@ const Vehicle: NextPage = () => {
           timestamp: depthData.times[i],
         }))}
         yAxisLabel={`${humanize(depthData?.name)} (${depthData?.units})`}
-        onHover={handleTimeScrub}
+        onHover={handleTimeScrub} // Now this reference is valid
         inverted={depthData.name === 'depth'}
         className="h-[340px] w-full"
       />
     ) : null
-  }, [depthData, chartAvailable])
+  }, [depthData, chartAvailable, handleTimeScrub])
 
-  const [indicatorTime, setIndicatorTime] = useState<number | null | undefined>(
-    null
-  )
-  const handleTimeScrub = (time?: number | null) => {
-    setIndicatorTime(time)
-  }
   const handleBatteryClick = () => {
     setGlobalModalId({ id: 'battery' })
   }

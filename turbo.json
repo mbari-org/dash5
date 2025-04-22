@@ -23,7 +23,8 @@
         "NEXT_PUBLIC_GOOGLE_MAPS_API_KEY",
         "NODE_ENV",
         "REACT_APP_GOOGLE_API_KEY",
-        "REACT_APP_ESRI_API_KEY"
+        "REACT_APP_ESRI_API_KEY",
+        "REACT_APP_GOOGLE_MAPS_API_KEY"
       ],
       "outputs": [".next/**", "dist/**", "lib/**"]
     },

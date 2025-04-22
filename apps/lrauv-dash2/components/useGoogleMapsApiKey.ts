@@ -1,6 +1,9 @@
 import { useState, useEffect, useContext } from 'react'
 import { TethysApiContext } from '@mbari/api-client'
 import toast from 'react-hot-toast'
+import { createLogger } from '@mbari/utils'
+
+const logger = createLogger('useGoogleMapsApiKey')
 
 export function useGoogleMapsApiKey() {
   const [apiKey, setApiKey] = useState<string | null>(null)
@@ -21,26 +24,26 @@ export function useGoogleMapsApiKey() {
         // FIRST PRIORITY: Try to fetch from the Tethys API
         if (tethysApi && tethysApi.client) {
           try {
-            console.log('🔍 Attempting to fetch API key from Tethys API...')
+            logger.debug('🔍 Attempting to fetch API key from Tethys API...')
             const response = await tethysApi.client.get('/api/info')
             const googleApiKey = response.data?.result?.appConfig?.googleApiKey
 
             if (googleApiKey) {
-              console.log('✅ Successfully retrieved API key from server')
+              logger.debug('✅ Successfully retrieved API key from server')
               setApiKey(googleApiKey)
               setKeySource('server')
               setIsLoading(false)
               return
             } else {
-              console.log('⚠️ API key not found in server response')
+              logger.debug('⚠️ API key not found in server response')
             }
           } catch (apiError) {
-            console.error('⚠️ Error fetching from API:', apiError)
+            logger.error('⚠️ Error fetching from API:', apiError)
             // Continue to fallback - don't throw here
           }
         } else {
-          console.log('ℹ️ Tethys API client not available')
-          console.log(
+          logger.debug('ℹ️ Tethys API client not available')
+          logger.debug(
             'Tethys API client check:',
             !!tethysApi,
             !!tethysApi?.client
@@ -49,7 +52,9 @@ export function useGoogleMapsApiKey() {
 
         // SECOND PRIORITY: Fall back to environment variable
         if (process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY) {
-          console.log('✅ Falling back to Google Maps API key from environment')
+          logger.debug(
+            '✅ Falling back to Google Maps API key from environment'
+          )
           setApiKey(process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY)
           setKeySource('local')
           setIsLoading(false)
@@ -57,7 +62,7 @@ export function useGoogleMapsApiKey() {
         }
 
         // If we get here, both methods failed - BUT DON'T THROW
-        console.warn('⚠️ No Google Maps API key available from any source')
+        logger.warn('⚠️ No Google Maps API key available from any source')
         setKeySource('none')
         setError(
           new Error('Unable to obtain Google Maps API key from any source')
@@ -74,7 +79,7 @@ export function useGoogleMapsApiKey() {
         )
       } catch (err) {
         // This catch block now only catches unexpected errors
-        console.error('❌ Error obtaining Google Maps API key:', err)
+        logger.error('❌ Error obtaining Google Maps API key:', err)
         const errorMessage =
           err instanceof Error ? err.message : 'Unknown error fetching API key'
         setError(new Error(errorMessage))

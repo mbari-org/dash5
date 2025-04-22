@@ -5,6 +5,9 @@ import React, {
   useEffect,
   useRef,
 } from 'react'
+import { createLogger } from '@mbari/utils'
+
+const logger = createLogger('SelectedStationsContext')
 
 // Define or import the Station type
 interface Station {
@@ -49,7 +52,7 @@ export const SelectedStationsProvider: React.FC<{
         const storedValue = localStorage.getItem(STORAGE_KEY)
         return storedValue ? JSON.parse(storedValue) : []
       } catch (error) {
-        console.error('Failed to parse stored stations:', error)
+        logger.error('Failed to parse stored stations:', error)
         return []
       }
     }
@@ -77,15 +80,15 @@ export const SelectedStationsProvider: React.FC<{
     const handleStorageChange = (e: StorageEvent) => {
       if (e.key === STORAGE_KEY) {
         console.group(`📱 Storage change detected in (${providerId})`)
-        console.log('Old value:', e.oldValue)
-        console.log('New value:', e.newValue)
+        logger.debug('Old value:', e.oldValue)
+        logger.debug('New value:', e.newValue)
 
         try {
           const newValue = e.newValue ? JSON.parse(e.newValue) : []
           setSelectedStations(newValue)
-          console.log('Updated state with new value from another tab')
+          logger.debug('Updated state with new value from another tab')
         } catch (error) {
-          console.error('Failed to parse updated stations from storage:', error)
+          logger.error('Failed to parse updated stations from storage:', error)
         }
 
         console.groupEnd()
@@ -105,15 +108,17 @@ export const SelectedStationsProvider: React.FC<{
           if (
             JSON.stringify(parsedValue) !== JSON.stringify(selectedStations)
           ) {
-            console.log('Stored value differs from current state - updating')
-            console.log('Current state:', selectedStations)
-            console.log('Stored value:', parsedValue)
+            logger.debug('Stored value differs from current state - updating')
+            logger.debug('Current state:', selectedStations)
+            logger.debug('Stored value:', parsedValue)
             setSelectedStations(parsedValue)
           } else {
-            console.log('Stored value matches current state - no update needed')
+            logger.debug(
+              'Stored value matches current state - no update needed'
+            )
           }
         } catch (error) {
-          console.error('Failed to parse stored stations on focus:', error)
+          logger.error('Failed to parse stored stations on focus:', error)
         }
 
         console.groupEnd()
@@ -133,45 +138,45 @@ export const SelectedStationsProvider: React.FC<{
 
   // Log when provider is mounted
   useEffect(() => {
-    console.group(`🔵 SelectedStationsProvider (${providerId}) - Initialized`)
-    console.log('Initial state:', selectedStations)
-    console.log('Total provider instances:', instanceCounter)
-    console.groupEnd()
+    // console.group(`🔵 SelectedStationsProvider (${providerId}) - Initialized`)
+    // logger.debug('Initial state:', selectedStations)
+    // logger.debug('Total provider instances:', instanceCounter)
+    // console.groupEnd()
 
     return () => {
-      console.log(`🔴 SelectedStationsProvider (${providerId}) - Unmounted`)
+      // logger.debug(`🔴 SelectedStationsProvider (${providerId}) - Unmounted`)
     }
   }, [providerId, selectedStations])
 
   // Track state changes
   useEffect(() => {
-    console.group(`🔄 SelectedStationsProvider (${providerId}) - State Updated`)
-    console.log('Current stations:', selectedStations)
-    console.log('Station count:', selectedStations.length)
-    console.log(
-      'Station names:',
-      selectedStations.map((s) => s.name)
-    )
-    console.groupEnd()
+    // console.group(`🔄 SelectedStationsProvider (${providerId}) - State Updated`)
+    // logger.debug('Current stations:', selectedStations)
+    // logger.debug('Station count:', selectedStations.length)
+    // logger.debug(
+    //   'Station names:',
+    //   selectedStations.map((s) => s.name)
+    // )
+    // console.groupEnd()
   }, [selectedStations, providerId])
 
   const toggleStation = (station: Station) => {
-    console.group(`🔧 toggleStation called in provider (${providerId})`)
-    console.log('Station:', station)
+    // console.group(`🔧 toggleStation called in provider (${providerId})`)
+    // logger.debug('Station:', station)
 
     // Check if station is already selected
     const isAlreadySelected = selectedStations.some(
       (s) => s.name === station.name
     )
-    console.log('Is already selected:', isAlreadySelected)
+    // logger.debug('Is already selected:', isAlreadySelected)
 
     setSelectedStations((prev) => {
       const updated = isAlreadySelected
         ? prev.filter((s) => s.name !== station.name)
         : [...prev, station]
 
-      console.log('Updated stations:', updated)
-      console.log('New count:', updated.length)
+      // logger.debug('Updated stations:', updated)
+      // logger.debug('New count:', updated.length)
       return updated
     })
     console.groupEnd()
@@ -199,7 +204,7 @@ export const useSelectedStations = () => {
   const componentName = new Error().stack?.split('\n')[2]?.trim() || 'unknown'
 
   if (!context) {
-    console.error(
+    logger.error(
       `❌ useSelectedStations failed - No provider found in component: ${componentName}`
     )
     throw new Error(
@@ -208,10 +213,10 @@ export const useSelectedStations = () => {
   }
 
   // Log whenever the context is consumed
-  console.log(
-    `📌 useSelectedStations consumed in ${componentName} (from provider ${context.debug.providerId})`
-  )
-  console.log(`  - Has ${context.selectedStations.length} stations selected`)
+  // logger.debug(
+  //   `📌 useSelectedStations consumed in ${componentName} (from provider ${context.debug.providerId})`
+  // )
+  // logger.debug(`  - Has ${context.selectedStations.length} stations selected`)
 
   return context
 }

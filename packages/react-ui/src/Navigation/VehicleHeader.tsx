@@ -6,6 +6,9 @@ import { DateTime } from 'luxon'
 import { Modal } from '../Modal'
 import { HexColorPicker } from 'react-colorful'
 import { ToolTip } from '../Navigation'
+import { createLogger } from '@mbari/utils'
+
+const logger = createLogger('VehicleHeader')
 
 export interface VehicleHeaderProps {
   className?: string
@@ -63,12 +66,12 @@ export const VehicleHeader: React.FC<VehicleHeaderProps> = ({
           onMouseOver={(e) => {
             e.stopPropagation()
             setShowColorPicker(true)
-            console.log('VehicleHeader - Mouse over')
+            logger.debug('VehicleHeader - Mouse over')
           }}
           onMouseOut={(e) => {
             e.stopPropagation()
             setShowColorPicker(false)
-            console.log('VehicleHeader - Mouse out')
+            logger.debug('VehicleHeader - Mouse out')
           }}
         >
           <ToolTip

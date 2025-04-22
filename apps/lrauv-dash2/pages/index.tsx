@@ -21,6 +21,7 @@ import { useSelectedStations } from '../components/SelectedStationContext'
 import { useMarkers } from '../components/MarkerContext'
 import toast from 'react-hot-toast'
 import type { MapProps } from '@mbari/react-ui/dist/Map/Map'
+import { createLogger } from '@mbari/utils'
 
 // This is a tricky workaround to prevent leaflet from crashing next.js
 // SSR. If we don't do this, the leaflet map will be loaded server side
@@ -49,6 +50,7 @@ const MapClickHandler = dynamic(() => import('../components/MapClickHandler'), {
   ssr: false,
 })
 
+const logger = createLogger('OverviewPage')
 const styles = {
   content: 'flex flex-shrink flex-grow flex-row overflow-hidden',
   primary: 'flex flex-shrink flex-grow flex-col h-full',
@@ -57,14 +59,14 @@ const styles = {
     'flex w-full flex-shrink-0 flex-col bg-white border-t-2 border-secondary-300/60',
 }
 
-// interface CustomMarkerProps {
+// interface CustomMarkerProps
 type CustomMapProps = MapProps &
   React.RefAttributes<L.Map> & {
     isAddingMarkers?: boolean
     onToggleMarkerMode?: () => void
   }
 
-// interface MarkerData {
+// interface MarkerData
 interface MarkerData {
   id: number
   lat: number
@@ -80,9 +82,7 @@ const OverViewMap: React.FC<{
 }> = ({ trackedVehicles }) => {
   // Add mapRef to store the Leaflet map instance
   const mapRef = useRef<L.Map | null>(null)
-  // Get the handleDepthRequest function from the hook
   const { handleDepthRequest, elevationAvailable } = useGoogleElevator()
-  // const { handleDepthRequest } = useGoogleElevator()
   const [center, setCenter] = useState<undefined | [number, number]>()
   const [centerZoom, setCenterZoom] = useState<number | undefined>(undefined)
   const [bounds, setBounds] = useState<
@@ -90,6 +90,7 @@ const OverViewMap: React.FC<{
   >()
   const [latestGPS, setLatestGPS] = useState<VPosDetail | undefined>()
   const [showStations, setShowStations] = useState(false)
+  const [showVehicleColors, setShowVehicleColors] = useState(false)
   const [viewMode, setViewMode] = useState<'center' | 'bounds' | null>(null)
   const { selectedStations } = useSelectedStations()
   // Add state to track elevation data and loading state
@@ -115,13 +116,7 @@ const OverViewMap: React.FC<{
     setActiveEditMarkerId,
   } = useMarkers()
 
-  // Debugging: Log trackedVehicles
-  // console.log('Tracked vehicles:', trackedVehicles)
-
-  // Debugging: Ensure trackedVehicles contains unique values
   const uniqueTrackedVehicles = Array.from(new Set(trackedVehicles))
-  console.log('Unique tracked vehicles:', uniqueTrackedVehicles)
-
   // Store all vehicle positions for bounds calculation
   const vehiclePositions = useRef<Array<[number, number]>>([])
 
@@ -135,7 +130,7 @@ const OverViewMap: React.FC<{
 
   // Force elevation service initialization when component mounts
   useEffect(() => {
-    // Try to initialize the elevation service right away
+    // Try to initialize the elevation service right away - Important!
     if (
       !elevationAvailable &&
       typeof window !== 'undefined' &&
@@ -144,15 +139,52 @@ const OverViewMap: React.FC<{
       try {
         // Make a dummy request to force initialization
         handleDepthRequest(0, 0).catch(() => {
-          console.log('Initialized elevation service with dummy request')
+          logger.debug('Initialized elevation service with dummy request')
         })
       } catch (error) {
-        console.warn(
+        logger.error(
           'Could not pre-initialize elevation service in OverViewMap'
         )
       }
     }
   }, [elevationAvailable, handleDepthRequest])
+
+  useEffect(() => {
+    if (mapRef.current) {
+      // Add timeout to ensure map has initialized properly
+      setTimeout(() => {
+        try {
+          // Try multiple ways to access invalidateSize
+          if (typeof mapRef.current?.invalidateSize === 'function') {
+            mapRef.current.invalidateSize()
+            logger.debug('Map size invalidated directly')
+          } else if (
+            mapRef.current &&
+            // Use type assertion to access internal property
+            (mapRef.current as any)._leafletContainer?.invalidateSize
+          ) {
+            ;(mapRef.current as any)._leafletContainer.invalidateSize()
+            logger.debug('Map size invalidated via _leafletContainer')
+          } else if (mapRef.current?.getContainer?.()) {
+            // Try to access via container
+            const container = mapRef.current.getContainer()
+            if (container) {
+              // Trigger a resize event manually
+              const evt = new Event('resize')
+              window.dispatchEvent(evt)
+              logger.debug('Triggered resize event as fallback')
+            }
+          } else {
+            // Just log it once without the full error
+            logger.debug('Map layout update: invalidateSize not available yet')
+          }
+        } catch (err) {
+          // Log without the full error trace to reduce console noise
+          logger.debug('Could not update map layout yet')
+        }
+      }, 300)
+    }
+  }, [showVehicleColors])
 
   // handleGPSFix function
   // This function is called when a GPS fix is received
@@ -174,13 +206,11 @@ const OverViewMap: React.FC<{
     [latestGPS, setLatestGPS]
   )
 
-  // calculateBounds function
-  // This function calculates the bounds of all vehicle positions
-  // and sets the map bounds accordingly
+  // Calculate the bounds of all vehicle positions to set map bounds
   const calculateBounds = useCallback(() => {
-    // First check if we have stored positions
+    // First check for stored positions
     if (vehiclePositions.current.length === 0) {
-      // Try to get positions from rendered vehicle paths instead
+      // Try to get positions from rendered vehicle paths
       const pathPositions = getAllVehiclePathPoints()
 
       if (pathPositions.length === 0) {
@@ -188,7 +218,9 @@ const OverViewMap: React.FC<{
         return null
       }
 
-      vehiclePositions.current = [...pathPositions]
+      vehiclePositions.current = pathPositions.filter(
+        (pos): pos is [number, number] => pos.length === 2
+      )
     }
 
     let minLat = 90,
@@ -203,35 +235,55 @@ const OverViewMap: React.FC<{
       maxLng = Math.max(maxLng, pos[1])
     })
 
-    // Use a larger padding for better visibility
+    // Larger padding for better visibility
     const padding = 0.1
     const newBounds: [[number, number], [number, number]] = [
       [minLat - padding, minLng - padding],
       [maxLat + padding, maxLng + padding],
     ]
 
-    // Return the bounds instead of just setting them
+    // Return the bounds
     return newBounds
   }, [])
 
-  // Add this helper function to access path points from all vehicle paths
+  // Access path points from all vehicle paths
   const getAllVehiclePathPoints = () => {
     const pathPoints: [number, number][] = []
 
-    // This accesses the shared path context, which contains all vehicle paths
-    if (mapRef.current) {
-      // Find all path layers in the map
-      mapRef.current.eachLayer((layer: any) => {
-        if (layer._latlngs && Array.isArray(layer._latlngs)) {
-          // Extract coordinates from polylines
-          layer._latlngs.forEach((latLng: L.LatLng) => {
-            pathPoints.push([latLng.lat, latLng.lng])
-          })
-        }
-      })
+    // Access stored positions first if available
+    if (vehiclePositions.current.length > 0) {
+      return vehiclePositions.current
     }
 
-    return pathPoints
+    // Try to access layers if map reference exists
+    if (mapRef.current) {
+      try {
+        // Store the map reference
+        const leafletMap = mapRef.current
+
+        if (typeof leafletMap.eachLayer === 'function') {
+          // Use eachLayer to iterate over all layers
+          leafletMap.eachLayer((layer: any) => {
+            if (layer._latlngs && Array.isArray(layer._latlngs)) {
+              layer._latlngs.forEach((latLng: L.LatLng) => {
+                pathPoints.push([latLng.lat, latLng.lng])
+              })
+            }
+          })
+        } else {
+          logger.warn('Map layers not accessible via eachLayer')
+        }
+      } catch (e) {
+        logger.warn('Error accessing map layers:', e)
+      }
+    }
+
+    return pathPoints.length > 0
+      ? pathPoints
+      : [
+          [36.7, -122.0], // Default coordinates as fallback
+          [36.8, -121.9],
+        ]
   }
 
   // handleCoordinateRequest
@@ -244,8 +296,7 @@ const OverViewMap: React.FC<{
     }
   }, [latestGPS])
 
-  // handleFitBoundsRequest
-  // This function is called when the map requests to fit the bounds
+  // handleFitBoundsRequest - Map requests to fit the bounds
   const handleFitBoundsRequest = useCallback(() => {
     const newBounds = calculateBounds()
     if (newBounds) {
@@ -259,10 +310,10 @@ const OverViewMap: React.FC<{
   const handleDepthRequestWithFeedback = useCallback(
     async (lat: number, lng: number) => {
       try {
-        // Call the elevation service
+        // Call elevation service
         const result = await handleDepthRequest(lat, lng)
 
-        // Update state with the result
+        // Update state with result
         setElevationData({
           depth: result.depth,
           status: result.status,
@@ -273,10 +324,10 @@ const OverViewMap: React.FC<{
         toast.dismiss('depth-loading')
         if (result.status === 'success') {
         } else if (result.status === 'unavailable' || 'no-data') {
-          toast('⚠️ Maps Depth data currently unavailable❕', {
-            id: 'depth-result',
-            className: 'blue-toast',
-          })
+          // toast('⚠️ Maps Depth data currently unavailable❕', {
+          //   id: 'depth-result',
+          //   className: 'blue-toast',
+          // })
         }
         return result
       } catch (error) {
@@ -288,25 +339,80 @@ const OverViewMap: React.FC<{
     [handleDepthRequest]
   )
 
-  // handleStationsRequest
-  // This function is called when the map requests to show stations
+  // handleStationsRequest - Requests to show stations
   const handleStationsRequest = useCallback(() => {
     setShowStations(true)
   }, [])
 
-  // handleMarkersRequest
-  // This function is called when the map requests to show markers
+  // handleCloseStations - stations modal is closed
   const handleCloseStations = useCallback(() => {
     setShowStations(false)
   }, [])
 
-  // Effect to handle map reference
+  // handleVehicleColorRequest- Show vehicle colors
+  const handleVehicleColorRequest = useCallback((vehicleName?: string) => {
+    setShowVehicleColors(true)
+  }, [])
+
+  // handleCloseVehicleColors - vehicle colors modal is closed
+  const handleCloseVehicleColors = useCallback((vehicleName?: string) => {
+    setShowVehicleColors(false)
+
+    // Needed map time to adjust after modal closes
+    setTimeout(() => {
+      if (mapRef.current) {
+        try {
+          // Try invalidateSize method(s)
+          if (typeof mapRef.current.invalidateSize === 'function') {
+            mapRef.current.invalidateSize()
+          } else {
+            // Log what we have for debugging
+            logger.debug('Map reference type:', typeof mapRef.current)
+            logger.debug(
+              'Map reference properties:',
+              Object.keys(mapRef.current)
+            )
+          }
+          logger.debug('Map size invalidated after closing modal')
+        } catch (e) {
+          logger.warn('Error invalidating map size:', e)
+        }
+      }
+    }, 300) // Slightly longer timeout for modal animation to complete
+  }, [])
+
   useEffect(() => {
-    console.log('mapRef.current in OverViewMap:', mapRef.current)
+    // Log the map reference when it changes
+    logger.debug(
+      'Map reference type:',
+      mapRef.current ? typeof mapRef.current : 'null'
+    )
+    logger.debug(
+      'Map reference has invalidateSize:',
+      mapRef.current && typeof mapRef.current.invalidateSize === 'function'
+    )
+
+    if (mapRef.current) {
+      logger.debug(
+        'Available methods:',
+        Object.getOwnPropertyNames(mapRef.current).filter(
+          (prop) =>
+            mapRef.current &&
+            typeof (mapRef.current as unknown as Record<string, unknown>)[
+              prop
+            ] === 'function'
+        )
+      )
+    }
+  }, [])
+
+  // Handle map reference
+  useEffect(() => {
+    logger.debug('mapRef.current in OverViewMap:', mapRef.current)
   }, [mapRef])
 
   return (
-    console.log('Rendering Map with children'),
+    logger.debug('Rendering Map with children'),
     (
       <>
         {showStations ? (
@@ -315,18 +421,32 @@ const OverViewMap: React.FC<{
         <Map
           ref={mapRef}
           className="h-full w-full"
+          onMapReady={(map) => {
+            logger.debug('🌍 Map ready callback triggered in OverViewMap')
+            // Store the Leaflet instance
+            mapRef.current = map
+
+            // Force redraw - after map is ready
+            setTimeout(() => {
+              try {
+                map.invalidateSize()
+              } catch (e) {
+                logger.warn('Could not invalidate map size:', e)
+              }
+            }, 200)
+          }}
           onRequestDepth={async (lat, lng) => {
             try {
-              // Format the latitude value immediately to remove any leading zeros
+              // Try to remove any leading zeros
               const formattedLat = parseFloat(String(lat).replace(/^0+/, ''))
-              // Use the formatted value in your depth request
+              // Then use in depth request
               const result = await handleDepthRequestWithFeedback(
                 formattedLat,
                 lng
               )
               return result.depth !== null ? result.depth : 0
             } catch (error) {
-              console.warn('❌ Error in depth request:', error)
+              logger.warn('❌ Error in depth request:', error)
               toast.error('Depth data unavailable', { id: 'depth-error' })
               return 0
             }
@@ -338,6 +458,7 @@ const OverViewMap: React.FC<{
           onRequestCoordinate={handleCoordinateRequest}
           onRequestFitBounds={handleFitBoundsRequest}
           onRequestStations={handleStationsRequest}
+          onRequestVehicleColors={handleVehicleColorRequest}
           onRequestMarkers={handleMarkersRequest}
           isAddingMarkers={isAddingMarkers}
           onToggleMarkerMode={handleToggleMarkerMode}

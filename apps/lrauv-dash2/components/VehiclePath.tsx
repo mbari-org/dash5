@@ -81,7 +81,7 @@ const VehiclePath: React.FC<{
 
   const timeout = useRef<ReturnType<typeof setTimeout> | null>(null)
 
-  // handleCoord
+  // handleCoordinates
   const handleCoord: LeafletMouseEventHandlerFn = useCallback(
     (e) => {
       if (timeout.current) {
@@ -193,7 +193,6 @@ const VehiclePath: React.FC<{
     }
   }, [sharedPath, grouped, map])
 
-  // This would be stored as state via useCookie library.
   // Path Stylization
   const customColors: { [key: string]: string | null } = {
     Ahi: '#FF0000',
@@ -317,7 +316,6 @@ const VehiclePath: React.FC<{
             key={`${name}:${
               grouped ? 'overview' : 'detail'
             }:preview:${i}:${r.join()}`}
-            // key={`preview${r.join()}`}
             center={{
               lat: r[0],
               lng: r[1],
@@ -342,7 +340,6 @@ const VehiclePath: React.FC<{
             key={`${name}:${
               grouped ? 'overview' : 'detail'
             }:inactivePreview:${i}:${r.join()}`}
-            // key={`inactivePreview${i}${r.join()}`}
             center={{
               lat: r[0],
               lng: r[1],
@@ -360,7 +357,6 @@ const VehiclePath: React.FC<{
           key={`${name}:${
             grouped ? 'overview' : 'detail'
           }:touch:${index}:${r.join()}`}
-          // key={`touch${r.join()}`}
           center={{
             lat: r[0],
             lng: r[1],
