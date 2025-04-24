@@ -26,9 +26,12 @@ import { createLogger } from '@mbari/utils'
 // This is a tricky workaround to prevent leaflet from crashing next.js
 // SSR. If we don't do this, the leaflet map will be loaded server side
 // and throw a window error.
-const Map = dynamic(() => import('@mbari/react-ui/dist/Map/Map'), {
-  ssr: false,
-})
+const Map = dynamic<CustomMapProps>(
+  () => import('@mbari/react-ui/dist/Map/Map'),
+  {
+    ssr: false,
+  }
+)
 
 const VehiclePath = dynamic(() => import('../components/VehiclePath'), {
   ssr: false,
@@ -64,6 +67,7 @@ type CustomMapProps = MapProps &
   React.RefAttributes<L.Map> & {
     isAddingMarkers?: boolean
     onToggleMarkerMode?: () => void
+    trackedVehicles?: { name: string; id?: string }[] // Match the actual type being used
   }
 
 // interface MarkerData
@@ -78,7 +82,7 @@ interface MarkerData {
 
 // OverviewMap component
 const OverViewMap: React.FC<{
-  trackedVehicles: string[]
+  trackedVehicles: { name: string; id?: string }[]
 }> = ({ trackedVehicles }) => {
   // Add mapRef to store the Leaflet map instance
   const mapRef = useRef<L.Map | null>(null)
@@ -435,6 +439,10 @@ const OverViewMap: React.FC<{
               }
             }, 200)
           }}
+          trackedVehicles={trackedVehicles.map((vehicle) => ({
+            ...vehicle,
+            id: vehicle.id || vehicle.name, // Ensure id is always present
+          }))}
           onRequestDepth={async (lat, lng) => {
             try {
               // Try to remove any leading zeros
@@ -509,7 +517,7 @@ const OverViewMap: React.FC<{
         >
           {uniqueTrackedVehicles.map((name, index) => (
             <VehiclePath
-              name={name}
+              name={name.name}
               key={`path-${name}-${index}`}
               onGPSFix={handleGPSFix}
               grouped
@@ -579,7 +587,11 @@ const OverviewPage: NextPage = () => {
                         <section className={styles.primary}>
                           <div className={styles.mapContainer}>
                             {mapsLoaded && (
-                              <OverViewMap trackedVehicles={trackedVehicles} />
+                              <OverViewMap
+                                trackedVehicles={trackedVehicles.map(
+                                  (vehicle) => ({ name: vehicle })
+                                )}
+                              />
                             )}
                           </div>
                         </section>

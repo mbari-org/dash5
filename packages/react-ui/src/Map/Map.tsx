@@ -35,6 +35,7 @@ import { AreaComponent, PathComponent, MeasurementProps } from './Measurement'
 import { CenterView } from './MapViews'
 import toast from 'react-hot-toast'
 import { createLogger, loadGoogleMapsOnce } from '@mbari/utils'
+import VehicleColorsModal from '@mbari/lrauv-dash2/components/VehicleColorsModal'
 
 const logger = createLogger('Map')
 
@@ -94,6 +95,7 @@ export interface MapProps extends React.HTMLAttributes<HTMLDivElement> {
   onRequestVehicleColors?: (vehicleName?: string) => void
   whenCreated?: (map: L.Map) => void
   onMapReady?: (map: L.Map) => void
+  trackedVehicles?: Array<{ id: string; name: string }>
   dmsCoord?: string
   mapCoord?: string
   children?: React.ReactNode
@@ -136,6 +138,7 @@ const Map = React.forwardRef<L.Map, MapProps>(
       maxNativeZoom = 13,
       fitBounds,
       viewMode,
+      trackedVehicles = [],
       children,
       isAddingMarkers = false,
       onToggleMarkerMode,
@@ -153,8 +156,15 @@ const Map = React.forwardRef<L.Map, MapProps>(
     },
     ref
   ) => {
+    interface TrackedVehicle {
+      id: string
+      name: string
+      [key: string]: any // Add additional properties as needed
+    }
+
     const mapRef = useRef<L.Map | null>(null)
     const [mapReady, setMapReady] = useState(false)
+
     const [googleMapsStatus, setGoogleMapsStatus] = useState<
       'pending' | 'loading' | 'loaded' | 'error'
     >('pending')
@@ -168,6 +178,9 @@ const Map = React.forwardRef<L.Map, MapProps>(
       },
       [setBaseLayer]
     )
+    const [showVehicleColorsModal, setShowVehicleColorsModal] = useState(false)
+    const vehicleColorsButtonRef = useRef<HTMLButtonElement>(null)
+    const [modalPosition, setModalPosition] = useState({ top: 0, left: 0 })
 
     // Google Maps initialization
     useEffect(() => {
@@ -549,11 +562,15 @@ const Map = React.forwardRef<L.Map, MapProps>(
     }
 
     // Handle mouse over event for the Vehicle Colors button
-    const handleVehicleColorsClick = (e: React.MouseEvent) => {
-      e.preventDefault()
-      e.stopPropagation()
-      logger.debug('Vehicle Colors button clicked')
-      onRequestVehicleColors?.()
+    const handleVehicleColorsClick = () => {
+      if (vehicleColorsButtonRef.current) {
+        const rect = vehicleColorsButtonRef.current.getBoundingClientRect()
+        setModalPosition({
+          top: rect.bottom + 40,
+          left: rect.left,
+        })
+      }
+      setShowVehicleColorsModal(!showVehicleColorsModal)
     }
 
     // Remove Measurement
@@ -754,6 +771,7 @@ const Map = React.forwardRef<L.Map, MapProps>(
           >
             <button
               id="vehicleColors"
+              ref={vehicleColorsButtonRef}
               className="vehicleColors rounded"
               aria-label="Vehicle Colors"
               onMouseOver={handleMouseOver}
@@ -1116,7 +1134,29 @@ const Map = React.forwardRef<L.Map, MapProps>(
             </Tippy>
           ) : null}
         </Control>
+        {showVehicleColorsModal && (
+          <VehicleColorsModal
+            isOpen={showVehicleColorsModal}
+            onClose={() => setShowVehicleColorsModal(false)}
+            anchorPosition={modalPosition}
+            trackedVehicles={(trackedVehicles || []).map(
+              // If trackedVehicles is array of objects with name property:
+              (vehicle) =>
+                typeof vehicle === 'string' ? vehicle : vehicle.name
+            )}
+          />
+        )}
         <MeasureEvents />
+        {/* {showVehicleColorsModal && (
+          <VehicleColorsModal
+            isOpen={showVehicleColorsModal}
+            onClose={() => setShowVehicleColorsModal(false)}
+            anchorPosition={modalPosition}
+            trackedVehicles={(trackedVehicles || []).map(
+              (vehicle) => vehicle.name
+            )}
+          />
+        )} */}
       </MapContainer>
     )
   }

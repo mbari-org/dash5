@@ -8,6 +8,8 @@ import { useSelectedStations } from './SelectedStationContext'
 import { useMarkers } from './MarkerContext'
 import { toast } from 'react-hot-toast'
 import { createLogger } from '@mbari/utils'
+import VehicleColorsModal from './VehicleColorsModal'
+import useTrackedVehicles from '../lib/useTrackedVehicles'
 
 // This is a tricky workaround to prevent leaflet from crashing next.js
 // SSR. If we don't do this, the leaflet map will be loaded server side
@@ -78,6 +80,8 @@ const DeploymentMap: React.FC<DeploymentMapProps> = ({
     (wp) => ![wp.lat?.toLowerCase(), wp.lon?.toLowerCase()].includes('nan')
   )
 
+  const { trackedVehicles } = useTrackedVehicles()
+  const [showAll, setShowAll] = useState(true)
   const { handleDepthRequest, elevationAvailable } = useGoogleElevator()
   const [center, setCenter] = useState<undefined | [number, number]>()
   const [centerZoom, setCenterZoom] = useState<number | undefined>(undefined)
@@ -89,6 +93,11 @@ const DeploymentMap: React.FC<DeploymentMapProps> = ({
   const [showStations, setShowStations] = useState(false)
   const [showVehicleColors, setShowVehicleColors] = useState(false)
   const { selectedStations } = useSelectedStations()
+  const [colorModalOpen, setColorModalOpen] = useState(false)
+  const [colorModalPosition, setColorModalPosition] = useState<{
+    top: number
+    left: number
+  }>({ top: 0, left: 0 })
 
   const {
     markers,
@@ -146,6 +155,11 @@ const DeploymentMap: React.FC<DeploymentMapProps> = ({
   const vehiclePosition = useRef<Array<[number, number]>>([])
   // Vehicle path points for bounds calculation
   const pathPoints = useRef<Array<[number, number]>>([])
+
+  const handleOpenColorModal = () => {
+    setColorModalOpen(true)
+    setColorModalPosition({ top: 100, left: 100 }) // Adjust as needed
+  }
 
   // Handler for GPS fix updates
   const handleGPSFix = useCallback(
@@ -274,9 +288,23 @@ const DeploymentMap: React.FC<DeploymentMapProps> = ({
     setShowStations(false)
   }, [])
 
-  const handleVehicleColorRequest = useCallback((vehicleName?: string) => {
-    setShowVehicleColors(true)
-  }, [])
+  const handleVehicleColorRequest = useCallback(() => {
+    // Add debugging to verify values
+    logger.debug('Opening color modal with:', {
+      vehicleName,
+      trackedVehicles,
+      modalTrackedVehicles: vehicleName ? [vehicleName] : [],
+    })
+
+    setColorModalPosition({
+      top: 100,
+      left: 100,
+    })
+    setColorModalOpen(true)
+  }, [vehicleName, trackedVehicles])
+  // const handleVehicleColorRequest = useCallback((vehicleName?: string) => {
+  //   setShowVehicleColors(true)
+  // }, [])
 
   const handleCloseVehicleColors = useCallback((vehicleName?: string) => {
     setShowVehicleColors(false)
@@ -319,6 +347,14 @@ const DeploymentMap: React.FC<DeploymentMapProps> = ({
     // This will involve fetching platform data source
     // For now, logging a message to indicate the function was called
   }, [])
+
+  const modalTrackedVehicles = React.useMemo(() => {
+    if (!vehicleName) return trackedVehicles
+
+    // Create a new array with the current vehicle guaranteed
+    // Using Array.from instead of spread operator on the Set
+    return Array.from(new Set([...trackedVehicles, vehicleName]))
+  }, [trackedVehicles, vehicleName])
 
   return (
     <>
@@ -442,6 +478,14 @@ const DeploymentMap: React.FC<DeploymentMapProps> = ({
             onGPSFix={handleGPSFix}
           />
         )}
+        <VehicleColorsModal
+          isOpen={colorModalOpen}
+          onClose={() => setColorModalOpen(false)}
+          anchorPosition={colorModalPosition}
+          trackedVehicles={vehicleName ? [vehicleName] : []} // Force include current vehicle only
+          activeVehicle={vehicleName || undefined}
+          forceShowAll={true} // Add this prop
+        />
       </Map>
     </>
   )
