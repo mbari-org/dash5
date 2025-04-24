@@ -474,3 +474,21 @@ div[role='status'][aria-live='polite'] svg {
 .react-hot-toast-error {
   background-color: rgb(239, 68, 68) !important; /* Tailwind red-500 */
 }
+/* Add to your styles.css or equivalent */
+.custom-scrollbar::-webkit-scrollbar {
+  width: 8px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: #f1f1f1;
+  border-radius: 4px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background: #888;
+  border-radius: 4px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: #555;
+}
