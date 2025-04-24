@@ -12,6 +12,7 @@ import useGlobalModalId from '../lib/useGlobalModalId'
 import { capitalize } from '@mbari/utils'
 import { useQueryClient } from 'react-query'
 import { useTethysApiContext } from '@mbari/api-client'
+import toast from 'react-hot-toast'
 
 const Reassignment: React.FC<{ vehicleNames: string[] }> = ({
   vehicleNames,
@@ -37,14 +38,33 @@ const Reassignment: React.FC<{ vehicleNames: string[] }> = ({
     isPic: boolean
   ) => {
     if (profile?.email) {
-      await assignPicAndOnCall({
-        vehicleName: vehicleName.toLowerCase(),
-        email: profile.email,
-        sign: roleChangeType,
-        subRole: isPic ? 'PIC' : 'On-Call',
-      })
-      queryClient.invalidateQueries(['users', 'picAndOnCall'])
-      queryClient.invalidateQueries(['users', 'role'])
+      assignPicAndOnCall(
+        {
+          vehicleName: vehicleName.toLowerCase(),
+          email: profile.email,
+          sign: roleChangeType,
+          subRole: isPic ? 'PIC' : 'On-Call',
+        },
+        {
+          onSuccess: () => {
+            toast.success(
+              `Successfully ${
+                roleChangeType === 'in' ? 'signed in' : 'signed off'
+              } as ${isPic ? 'PIC' : 'On-Call'} for ${vehicleName}`
+            )
+
+            queryClient.invalidateQueries(['users', 'picAndOnCall'])
+            queryClient.invalidateQueries(['users', 'role'])
+          },
+          onError: () => {
+            toast.error(
+              `Failed to ${
+                roleChangeType === 'in' ? 'sign in' : 'sign off'
+              } as ${isPic ? 'PIC' : 'On-Call'} for ${vehicleName}`
+            )
+          },
+        }
+      )
     }
   }
 
