@@ -5,12 +5,12 @@ import { shortenName } from './shortenName'
  *
  * @param operators - Array of operator names assigned to the role
  * @param userIsOperator - Boolean indicating if the current user is one of the operators
- * @param role - The type of role, either 'PIC' (Person In Charge) or 'On Call'
+ * @param role - The type of role, either 'PIC' (Person In Charge) or 'On-Call'
  * @returns A string representing the role status in a user-friendly format
  */
 export const createRoleLabel = (
   operators: string[],
-  role: 'PIC' | 'On Call',
+  role: 'PIC' | 'On-Call',
   currentUser?: string
 ) => {
   const operatorCount = operators.length

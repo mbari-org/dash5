@@ -16,7 +16,7 @@ const Template: Story<AccordionHeaderProps> = (args) => (
 
 const args: AccordionHeaderProps = {
   className: '',
-  label: 'Handoff / On call',
+  label: 'Handoff / On-Call',
   secondaryLabel: 'Tanner P.(you) / Brian K.',
   onToggle: () => {
     console.log('event fired')

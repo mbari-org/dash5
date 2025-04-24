@@ -36,7 +36,7 @@ const defaultArgs: ReassignmentTableProps = {
   onRoleChange: (vehicleName, roleChangeType, isPic) =>
     console.log(
       `Role changed for ${vehicleName} to ${roleChangeType} as ${
-        isPic ? 'PIC' : 'On-call'
+        isPic ? 'PIC' : 'On-Call'
       }`
     ),
 }
