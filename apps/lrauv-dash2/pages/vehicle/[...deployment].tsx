@@ -42,6 +42,7 @@ import 'allotment/dist/style.css'
 import { useGoogleMaps } from '../../lib/useGoogleMaps'
 import { SelectedStationsProvider } from '../../components/SelectedStationContext'
 import { SelectedPlatformsProvider } from '../../components/SelectedPlatformContext'
+import { createRoleLabel } from '@mbari/utils'
 
 const styles = {
   content: 'flex flex-shrink flex-grow flex-row overflow-hidden',
@@ -110,8 +111,20 @@ const Vehicle: NextPage = () => {
     vehicleName,
   })
 
-  const pic = data?.[0]?.pics[0]?.user
-  const onCall = data?.[0]?.onCalls[0]?.user
+  const { profile } = useTethysApiContext()
+  const currentUserName = profile
+    ? `${profile.firstName} ${profile.lastName}`
+    : ''
+
+  const pics = data?.[0]?.pics.map((p) => p.user)
+  const onCalls = data?.[0]?.onCalls.map((o) => o.user)
+
+  const picLabel = pics?.length
+    ? createRoleLabel(pics, 'PIC', currentUserName)
+    : ''
+  const onCallLabel = onCalls?.length
+    ? createRoleLabel(onCalls, 'On Call', currentUserName)
+    : ''
 
   useEffect(() => {
     if (!!deployment?.deploymentId && !deploymentId) {
@@ -156,7 +169,7 @@ const Vehicle: NextPage = () => {
           5 * 60 * 1000, // Replacee w/ buffer time
       })
     : null
-  const handleClickPilot = () => setGlobalModalId({ id: 'reassign' })
+  const handleRoleReassign = () => setGlobalModalId({ id: 'reassign' })
   const handleNewDeployment = () => setGlobalModalId({ id: 'newDeployment' })
   const handleEditDeployment = () => setGlobalModalId({ id: 'editDeployment' })
 
@@ -214,8 +227,9 @@ const Vehicle: NextPage = () => {
           <Layout>
             <OverviewToolbar
               vehicleName={vehicleName}
-              pilotInCharge={pic}
-              pilotOnCall={onCall}
+              currentUserName={currentUserName}
+              pics={pics}
+              onCalls={onCalls}
               deployment={
                 isLoading
                   ? { name: '...', id: '0' }
@@ -225,7 +239,9 @@ const Vehicle: NextPage = () => {
                       unixTime: deployment?.startEvent?.unixTime,
                     }
               }
-              onClickPilot={loadingPicAndOnCall ? undefined : handleClickPilot}
+              onRoleReassign={
+                loadingPicAndOnCall ? undefined : handleRoleReassign
+              }
               supportIcon1={
                 pingEvent?.reachable ? <ConnectedIcon /> : <NotConnectedIcon />
               }
@@ -366,8 +382,8 @@ const Vehicle: NextPage = () => {
                       vehicleName={vehicleName}
                       from={adjustedDeploymentStartTime}
                       to={endTime}
-                      pic={loadingPicAndOnCall ? '...' : pic}
-                      onCall={loadingPicAndOnCall ? '...' : onCall}
+                      picLabel={loadingPicAndOnCall ? '...' : picLabel}
+                      onCallLabel={loadingPicAndOnCall ? '...' : onCallLabel}
                       activeDeployment={deployment.active}
                       currentDeploymentId={deployment.deploymentId as number}
                     />
