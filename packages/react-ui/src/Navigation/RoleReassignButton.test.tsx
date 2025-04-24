@@ -12,9 +12,9 @@ describe('RoleReassignButton', () => {
     expect(screen.getByText('No PIC')).toBeInTheDocument()
   })
 
-  test('should display "No On Call" when onCalls array is empty', () => {
+  test('should display "No On-Call" when onCalls array is empty', () => {
     render(<RoleReassignButton />)
-    expect(screen.getByText('No On Call')).toBeInTheDocument()
+    expect(screen.getByText('No On-Call')).toBeInTheDocument()
   })
 
   test('should display shortenedsingle PIC name when provided', () => {
@@ -71,7 +71,7 @@ describe('RoleReassignButton', () => {
     expect(element).toHaveClass('text-teal-500')
   })
 
-  test('should apply active style to onCall label when current user is on call', () => {
+  test('should apply active style to On-Call label when current user is On-Call', () => {
     render(
       <RoleReassignButton
         onCalls={['Alice Cooper']}
@@ -92,6 +92,6 @@ describe('RoleReassignButton', () => {
     render(
       <RoleReassignButton onCalls={['John Doe', 'Jane Smith', 'Bob Johnson']} />
     )
-    expect(screen.getByText('3 On Call')).toBeInTheDocument()
+    expect(screen.getByText('3 On-Call')).toBeInTheDocument()
   })
 })

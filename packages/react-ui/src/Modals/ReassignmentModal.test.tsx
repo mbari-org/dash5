@@ -13,12 +13,12 @@ describe('ReassignmentModal', () => {
           {
             name: 'Vehicle 1',
             picOperators: ['Pic 1'],
-            onCallOperators: ['On Call 1'],
+            onCallOperators: ['On-Call 1'],
           },
           {
             name: 'Vehicle 2',
             picOperators: ['Pic 2'],
-            onCallOperators: ['On Call 2'],
+            onCallOperators: ['On-Call 2'],
           },
         ]}
         currentUserName="Test User"
