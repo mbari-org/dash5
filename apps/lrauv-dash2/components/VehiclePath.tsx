@@ -17,6 +17,10 @@ import {
 import { useSharedPath } from './SharedPathContextProvider'
 import { distance } from '@turf/turf'
 import { parseISO, getTime } from 'date-fns'
+import { useVehicleColors } from './VehicleColorsContext'
+import { createLogger } from '@mbari/utils'
+
+const logger = createLogger('VehiclePath')
 
 let timeSinceFix
 let hours: number, minutes: number
@@ -24,6 +28,37 @@ let hours: number, minutes: number
 const getDistance = (a: VPosDetail, b: LatLng) =>
   distance([a.latitude, a.longitude], [b.lat, b.lng])
 
+// VehiclePoint component
+const VehiclePoint: React.FC<{
+  position: [number, number]
+  color: string
+  radius?: number
+  opacity?: number
+  fillOpacity?: number
+  eventHandlers?: any
+  children?: React.ReactNode
+}> = ({
+  position,
+  color,
+  radius = 10,
+  opacity = 1,
+  fillOpacity = 1,
+  eventHandlers,
+  children,
+}) => (
+  <Circle
+    center={{ lat: position[0], lng: position[1] }}
+    pathOptions={{ color, opacity }}
+    fillColor={color}
+    fillOpacity={fillOpacity}
+    radius={radius}
+    eventHandlers={eventHandlers}
+  >
+    {children}
+  </Circle>
+)
+
+// VehiclePath component
 const VehiclePath: React.FC<{
   name: string
   grouped?: boolean
@@ -44,6 +79,7 @@ const VehiclePath: React.FC<{
   const map = useMap()
   const { sharedPath, dispatch } = useSharedPath()
   const { data: vehicleData } = useVehicles({})
+
   const { data: lastDeployment } = useLastDeployment(
     {
       vehicle: name,
@@ -61,6 +97,31 @@ const VehiclePath: React.FC<{
     }
   )
 
+  // Path/Point Stylization
+  const { vehicleColors } = useVehicleColors()
+  const customColors: Record<string, string> = useMemo(() => ({}), [])
+  const [color, setColor] = useState(
+    vehicleColors[name] || customColors[name] || '#ccc'
+  )
+
+  const [lineStyle, setLineStyle] = useState({
+    color,
+    weight: 3,
+  })
+
+  useEffect(() => {
+    // Update line style whenever vehicleColors changes
+    setLineStyle({
+      color: vehicleColors[name] || customColors[name] || '#ccc',
+      weight: 3,
+    })
+  }, [vehicleColors, name, customColors])
+
+  useEffect(() => {
+    setColor(vehicleColors[name] || customColors[name] || '#ccc')
+  }, [vehicleColors, name, customColors])
+
+  // Handle GPS Fixes
   const latestGPS = useRef<[number, number] | undefined>()
 
   useEffect(() => {
@@ -81,7 +142,7 @@ const VehiclePath: React.FC<{
 
   const timeout = useRef<ReturnType<typeof setTimeout> | null>(null)
 
-  // handleCoord
+  // handleCoordinates
   const handleCoord: LeafletMouseEventHandlerFn = useCallback(
     (e) => {
       if (timeout.current) {
@@ -193,24 +254,6 @@ const VehiclePath: React.FC<{
     }
   }, [sharedPath, grouped, map])
 
-  // This would be stored as state via useCookie library.
-  // Path Stylization
-  const customColors: { [key: string]: string | null } = {
-    Ahi: '#FF0000',
-    daphne: '#FFA500',
-    pontus: '#FFFF00',
-  }
-
-  const color =
-    customColors[name] ??
-    vehicleData?.find((v) => v.vehicleName === name)?.color ??
-    '#ccc'
-
-  const [lineStyle, setLineStyle] = useState({
-    color,
-    weight: 3,
-  })
-
   // Determine Time Difference since last gpsFix
   const latest =
     vehiclePosition?.gpsFixes && vehiclePosition.gpsFixes.length > 0
@@ -234,7 +277,9 @@ const VehiclePath: React.FC<{
     <>
       <Polyline
         pathOptions={lineStyle}
-        positions={activeRoute ?? route}
+        positions={route}
+        // positions={activeRoute ?? route}
+        color={color}
         eventHandlers={{
           mouseover: () => {
             setLineStyle({ color, weight: 5 })
@@ -249,6 +294,7 @@ const VehiclePath: React.FC<{
           {/* DEPLOYMENT AND OVERVIEW PAGE */}
           {/* Circle = large dotted indicator circle. */}
           <Circle
+            data-vehicle-point={`${name}-latest`}
             center={{ lat: latest.latitude, lng: latest.longitude }}
             pathOptions={{
               color,
@@ -313,21 +359,14 @@ const VehiclePath: React.FC<{
       )}
       {(activeRoute ?? route).map((r, i) => (
         <>
-          <Circle
+          <VehiclePoint
             key={`${name}:${
               grouped ? 'overview' : 'detail'
             }:preview:${i}:${r.join()}`}
-            // key={`preview${r.join()}`}
-            center={{
-              lat: r[0],
-              lng: r[1],
-            }}
-            fillColor={color}
-            radius={10}
-            fillOpacity={1}
+            position={r}
             color={color}
-            opacity={1}
-          ></Circle>
+            radius={10}
+          />
         </>
       ))}
       {inactiveRoute && (
@@ -342,7 +381,6 @@ const VehiclePath: React.FC<{
             key={`${name}:${
               grouped ? 'overview' : 'detail'
             }:inactivePreview:${i}:${r.join()}`}
-            // key={`inactivePreview${i}${r.join()}`}
             center={{
               lat: r[0],
               lng: r[1],
@@ -360,7 +398,6 @@ const VehiclePath: React.FC<{
           key={`${name}:${
             grouped ? 'overview' : 'detail'
           }:touch:${index}:${r.join()}`}
-          // key={`touch${r.join()}`}
           center={{
             lat: r[0],
             lng: r[1],

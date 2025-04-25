@@ -1,5 +1,8 @@
 import React from 'react'
 import { useSelectedStations } from './SelectedStationContext'
+import { createLogger } from '@mbari/utils'
+
+const logger = createLogger('StationSection')
 
 // Define proper types for your station objects
 interface StationGeometry {
@@ -38,8 +41,8 @@ export const StationSection: React.FC<StationSectionProps> = ({
   const { selectedStations, toggleStation } = useSelectedStations()
 
   // Debug logging (can be removed in production)
-  console.log(`Rendering StationSection for ${name}`)
-  console.log('Items:', items)
+  logger.debug(`Rendering StationSection for ${name}`)
+  logger.debug('Items:', items)
 
   return (
     <div>
@@ -51,9 +54,9 @@ export const StationSection: React.FC<StationSectionProps> = ({
             const hasGeojson = !!station?.geojson
 
             // Log the station information for debugging
-            // console.log(`Station name: ${station.name}`)
-            // console.log(`Full station object:`, station)
-            // console.log(`GeoJSON available: ${hasGeojson}`)
+            // logger.debug(`Station name: ${station.name}`)
+            // logger.debug(`Full station object:`, station)
+            // logger.debug(`GeoJSON available: ${hasGeojson}`)
 
             return (
               <li key={`${station.name}-${index}`}>

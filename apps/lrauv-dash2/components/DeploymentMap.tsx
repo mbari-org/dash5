@@ -7,6 +7,9 @@ import { StationsListModal } from './StationsListModal'
 import { useSelectedStations } from './SelectedStationContext'
 import { useMarkers } from './MarkerContext'
 import { toast } from 'react-hot-toast'
+import { createLogger } from '@mbari/utils'
+import VehicleColorsModal from './VehicleColorsModal'
+import useTrackedVehicles from '../lib/useTrackedVehicles'
 
 // This is a tricky workaround to prevent leaflet from crashing next.js
 // SSR. If we don't do this, the leaflet map will be loaded server side
@@ -32,11 +35,11 @@ const StationMarker = dynamic(() => import('../components/StationMarker'), {
 const MapClickHandler = dynamic(() => import('./MapClickHandler'), {
   ssr: false,
 })
-
 const CustomMarkerSet = dynamic(() => import('./CustomMarkerSet'), {
   ssr: false,
 })
 
+const logger = createLogger('DeploymentMap')
 interface DeploymentMapProps {
   vehicleName?: string | null
   indicatorTime?: number | null
@@ -52,6 +55,7 @@ const DeploymentMap: React.FC<DeploymentMapProps> = ({
   startTime,
   endTime,
 }) => {
+  const mapRef = useRef<any>(null)
   const {
     updatedWaypoints,
     handleWaypointsUpdate,
@@ -76,8 +80,9 @@ const DeploymentMap: React.FC<DeploymentMapProps> = ({
     (wp) => ![wp.lat?.toLowerCase(), wp.lon?.toLowerCase()].includes('nan')
   )
 
+  const { trackedVehicles } = useTrackedVehicles()
+  const [showAll, setShowAll] = useState(true)
   const { handleDepthRequest, elevationAvailable } = useGoogleElevator()
-  // const { handleDepthRequest } = useGoogleElevator()
   const [center, setCenter] = useState<undefined | [number, number]>()
   const [centerZoom, setCenterZoom] = useState<number | undefined>(undefined)
   const [bounds, setBounds] = useState<
@@ -86,7 +91,13 @@ const DeploymentMap: React.FC<DeploymentMapProps> = ({
   const [latestGPS, setLatestGPS] = useState<VPosDetail | undefined>()
   const [viewMode, setViewMode] = useState<'center' | 'bounds' | null>(null)
   const [showStations, setShowStations] = useState(false)
+  const [showVehicleColors, setShowVehicleColors] = useState(false)
   const { selectedStations } = useSelectedStations()
+  const [colorModalOpen, setColorModalOpen] = useState(false)
+  const [colorModalPosition, setColorModalPosition] = useState<{
+    top: number
+    left: number
+  }>({ top: 0, left: 0 })
 
   const {
     markers,
@@ -113,27 +124,47 @@ const DeploymentMap: React.FC<DeploymentMapProps> = ({
   }, [vehicleName, setLatestGPS])
 
   useEffect(() => {
-    if (!latestGPS?.latitude || !latestGPS?.longitude) return
-
-    if (
-      !center ||
-      center[0] !== latestGPS.latitude ||
-      center[1] !== latestGPS.longitude
-    ) {
-      setCenter([latestGPS.latitude, latestGPS.longitude])
+    if (mapRef.current && !showVehicleColors) {
+      setTimeout(() => {
+        try {
+          // Try to invalidateSize method(s)
+          if (typeof mapRef.current.invalidateSize === 'function') {
+            mapRef.current.invalidateSize()
+          } else if (
+            mapRef.current._leafletContainer &&
+            typeof mapRef.current._leafletContainer.invalidateSize ===
+              'function'
+          ) {
+            mapRef.current._leafletContainer.invalidateSize()
+          } else if (
+            mapRef.current.leafletElement &&
+            typeof mapRef.current.leafletElement.invalidateSize === 'function'
+          ) {
+            mapRef.current.leafletElement.invalidateSize()
+          } else {
+            // Log what we have for debugging
+            logger.debug('Map structure:', mapRef.current)
+          }
+        } catch (e) {
+          logger.warn('Error invalidating map size:', e)
+        }
+      }, 200)
     }
-  }, [latestGPS]) // Intentionally omitting center from dependencies to avoid infinite loop
-
-  // Store positions of all vehicles to calculate center
+  }, [showVehicleColors])
+  // Store all vehicle locations to calculate center
   const vehiclePosition = useRef<Array<[number, number]>>([])
-  // Track vehicle path points for bounds calculation
+  // Vehicle path points for bounds calculation
   const pathPoints = useRef<Array<[number, number]>>([])
 
+  const handleOpenColorModal = () => {
+    setColorModalOpen(true)
+    setColorModalPosition({ top: 100, left: 100 }) // Adjust as needed
+  }
+
   // Handler for GPS fix updates
-  // This function is called when a new GPS fix is received
   const handleGPSFix = useCallback(
     (gps: VPosDetail) => {
-      // Reset the array if this is a different vehicle
+      // Reset the array if vehicle name changes
       if ((latestGPS?.isoTime ?? 0) > gps.isoTime || !latestGPS) {
         vehiclePosition.current = []
         setLatestGPS(gps)
@@ -166,14 +197,17 @@ const DeploymentMap: React.FC<DeploymentMapProps> = ({
           position: [lat, lng],
         })
 
-        // Show appropriate toast based on status
+        // Show appropriate toast status
         toast.dismiss('depth-loading')
         if (result.status === 'success') {
-        } else if (result.status === 'unavailable' || 'no-data') {
-          toast('⚠️ Maps Depth data currently unavailable❕', {
-            id: 'depth-result',
-            className: 'blue-toast',
-          })
+        } else if (
+          result.status === 'unavailable' ||
+          result.status === 'no-data'
+        ) {
+          // toast('⚠️ Maps Depth data currently unavailable❕', {
+          //   id: 'depth-result',
+          //   className: 'blue-toast',
+          // })
         }
         return result
       } catch (error) {
@@ -186,7 +220,6 @@ const DeploymentMap: React.FC<DeploymentMapProps> = ({
   )
 
   // Calculate bounds for the path
-  // This function is called to calculate the bounds of the path
   const calculatePathBounds = useCallback(() => {
     if (pathPoints.current.length === 0) {
       toast('No path points available for bounds calculation')
@@ -215,12 +248,11 @@ const DeploymentMap: React.FC<DeploymentMapProps> = ({
 
     setBounds(newBounds)
     setCenter(undefined) // Clear center when using bounds
-    // Set the view mode to force a re-render
+    // Force a re-render to update the map
     setViewMode('bounds')
   }, [])
 
   // Handler for centering the map on the latest GPS fix
-  // This function is called when the user requests to center the map
   const handleCoordinateRequest = useCallback(() => {
     if (latestGPS) {
       setCenter([latestGPS.latitude, latestGPS.longitude])
@@ -228,7 +260,7 @@ const DeploymentMap: React.FC<DeploymentMapProps> = ({
       setBounds(undefined)
       setViewMode('center')
     } else {
-      // If no latestGPS, try to use the last point in pathPoints if available
+      // If no latestGPS, try to use the last point in pathPoints
       const lastPoint = pathPoints.current[pathPoints.current.length - 1]
       if (lastPoint) {
         setCenter(lastPoint)
@@ -247,26 +279,82 @@ const DeploymentMap: React.FC<DeploymentMapProps> = ({
   }, [calculatePathBounds])
 
   // Handler for showing stations
-  // This function is called when the user requests to show stations
   const handleStationsRequest = useCallback(() => {
     setShowStations(true)
   }, [])
 
   // Handler for closing the stations modal
-  // This function is called when the user closes the stations modal
   const handleCloseStations = useCallback(() => {
     setShowStations(false)
+  }, [])
+
+  const handleVehicleColorRequest = useCallback(() => {
+    // Add debugging to verify values
+    logger.debug('Opening color modal with:', {
+      vehicleName,
+      trackedVehicles,
+      modalTrackedVehicles: vehicleName ? [vehicleName] : [],
+    })
+
+    setColorModalPosition({
+      top: 100,
+      left: 100,
+    })
+    setColorModalOpen(true)
+  }, [vehicleName, trackedVehicles])
+  // const handleVehicleColorRequest = useCallback((vehicleName?: string) => {
+  //   setShowVehicleColors(true)
+  // }, [])
+
+  const handleCloseVehicleColors = useCallback((vehicleName?: string) => {
+    setShowVehicleColors(false)
+
+    // Time for map to adjust after modal closes
+    setTimeout(() => {
+      if (mapRef.current) {
+        try {
+          // Try invalidateSize method(s)
+          if (typeof mapRef.current.invalidateSize === 'function') {
+            mapRef.current.invalidateSize()
+          } else if (
+            mapRef.current._leafletContainer &&
+            typeof mapRef.current._leafletContainer.invalidateSize ===
+              'function'
+          ) {
+            mapRef.current._leafletContainer.invalidateSize()
+          } else {
+            // Log for debugging
+            logger.debug('Map reference type:', typeof mapRef.current)
+            logger.debug(
+              'Map reference properties:',
+              Object.keys(mapRef.current)
+            )
+          }
+          logger.debug('Map size invalidated after closing modal')
+        } catch (e) {
+          logger.warn('Error invalidating map size:', e)
+        }
+      }
+    }, 300) // Slightly longer timeout for modal animation to complete
   }, [])
 
   // Handler for showing platforms
   // This function is called when the user requests to show platforms
   // This is a placeholder function and should be implemented as needed
   const handlePlatformsRequest = useCallback(() => {
-    console.log('Platforms request initiated')
+    logger.debug('Platforms request initiated')
     // TODO: Implement the logic to handle platform requests here
     // This will involve fetching platform data source
     // For now, logging a message to indicate the function was called
   }, [])
+
+  const modalTrackedVehicles = React.useMemo(() => {
+    if (!vehicleName) return trackedVehicles
+
+    // Create a new array with the current vehicle guaranteed
+    // Using Array.from instead of spread operator on the Set
+    return Array.from(new Set([...trackedVehicles, vehicleName]))
+  }, [trackedVehicles, vehicleName])
 
   return (
     <>
@@ -274,11 +362,16 @@ const DeploymentMap: React.FC<DeploymentMapProps> = ({
         <StationsListModal onClose={handleCloseStations} />
       ) : null}
       <Map
+        ref={mapRef}
         className="h-full w-full"
         maxZoom={17}
+        onMapReady={(map) => {
+          logger.debug('Map is ready!')
+          mapRef.current = map
+        }}
         onRequestDepth={async (lat, lng) => {
           const result = await handleDepthRequestWithFeedback(lat, lng)
-          return result.depth ?? 0 // Return depth or 0 if null
+          return result.depth ?? 0
         }}
         center={center}
         centerZoom={centerZoom}
@@ -288,6 +381,7 @@ const DeploymentMap: React.FC<DeploymentMapProps> = ({
         onRequestPlatforms={handlePlatformsRequest}
         onRequestFitBounds={handleFitBoundsRequest}
         onRequestStations={handleStationsRequest}
+        onRequestVehicleColors={handleVehicleColorRequest}
         isAddingMarkers={isAddingMarkers}
         onToggleMarkerMode={handleToggleMarkerMode}
         onRequestMarkers={handleMarkersRequest}
@@ -313,8 +407,8 @@ const DeploymentMap: React.FC<DeploymentMapProps> = ({
               index={marker.index}
               label={marker.label}
               draggable={true}
-              isSelected={activeEditMarkerId === marker.id.toString()} // Pass active edit state
-              isNew={marker.isNew} // Pass new marker state
+              isSelected={activeEditMarkerId === marker.id.toString()}
+              isNew={marker.isNew}
               onDragEnd={(pos) =>
                 handleMarkerDragEnd(marker.id, {
                   lat: pos[0],
@@ -384,6 +478,14 @@ const DeploymentMap: React.FC<DeploymentMapProps> = ({
             onGPSFix={handleGPSFix}
           />
         )}
+        <VehicleColorsModal
+          isOpen={colorModalOpen}
+          onClose={() => setColorModalOpen(false)}
+          anchorPosition={colorModalPosition}
+          trackedVehicles={vehicleName ? [vehicleName] : []} // Force include current vehicle only
+          activeVehicle={vehicleName || undefined}
+          forceShowAll={true} // Add this prop
+        />
       </Map>
     </>
   )

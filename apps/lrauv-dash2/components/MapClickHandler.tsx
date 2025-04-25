@@ -2,6 +2,9 @@ import React, { useEffect, useRef, useCallback, useState } from 'react'
 import { useMapEvents } from 'react-leaflet'
 import L from 'leaflet'
 import toast from 'react-hot-toast'
+import { createLogger } from '@mbari/utils'
+
+const logger = createLogger('MapClickHandler')
 
 interface MapClickHandlerProps {
   isAddingMarkers: boolean
@@ -56,7 +59,7 @@ const MapClickHandler: React.FC<MapClickHandlerProps> = ({
 
       // Don't add markers if we're currently editing a marker
       if (isEditingMarkerRef.current) {
-        console.log('Marker is being edited, not adding new marker')
+        logger.debug('Marker is being edited, not adding new marker')
         toast('Please finish editing current marker first')
         return
       }
@@ -77,7 +80,7 @@ const MapClickHandler: React.FC<MapClickHandlerProps> = ({
 
       // Don't add marker if clicking controls
       if (isControlClick) {
-        console.log('Click on control detected, not adding marker')
+        logger.debug('Click on control detected, not adding marker')
         return
       }
 

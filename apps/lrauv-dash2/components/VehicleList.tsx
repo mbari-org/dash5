@@ -14,6 +14,7 @@ import {
   VehicleHeader,
   Virtualizer,
 } from '@mbari/react-ui'
+import { useVehicleColors } from './VehicleColorsContext'
 import { capitalize } from '@mbari/utils'
 import React, { useEffect, useState } from 'react'
 import useTrackedVehicles from '../lib/useTrackedVehicles'
@@ -24,6 +25,10 @@ import { faCheck, faSync } from '@fortawesome/free-solid-svg-icons'
 import { useCookies } from 'react-cookie'
 import useGlobalModalId from '../lib/useGlobalModalId'
 import { useTethysSubscriptionEvent } from '../lib/useWebSocketListeners'
+import { createLogger } from '@mbari/utils'
+
+const logger = createLogger('VehicleList')
+
 const parsePos = (pos: string | number) => parseFloat(`${pos}`).toFixed(3)
 const calcPosition = (lat?: number | string, long?: number | string) =>
   lat && long ? [parsePos(lat), parsePos(long)].join(', ') : undefined
@@ -45,6 +50,8 @@ const ConnectedVehicleCell: React.FC<{
   onSelect: handleSelect,
 }) => {
   const [isOpen, setIsOpen] = React.useState(open)
+  const { vehicleColors } = useVehicleColors()
+  const contextColor = vehicleColors[name.toLowerCase()] || color
   const { data: lastDeployment } = useLastDeployment(
     {
       vehicle: name,
@@ -82,7 +89,7 @@ const ConnectedVehicleCell: React.FC<{
   // { refresh: 'y' },
   // { baseUrl: process.env.NEXT_PUBLIC_ODSS2BASE_URL }
   // )
-  // console.log('platformsTest', platforms)
+  // logger.debug('platformsTest', platforms)
 
   const mission = missionStartedEvent?.[0]?.text.replace(/started mission/i, '')
   const isLoading = positionLoading || vehicleInfoLoading
@@ -129,16 +136,16 @@ const ConnectedVehicleCell: React.FC<{
   const onColorChange = (_: string, _v: string) => {
     setGlobalModalId({ id: 'color', meta: { vehicleName: name, color } })
   }
+
   return (
     <>
       <VehicleHeader
         name={capitalize(name)}
         deployment={active ? lastDeployment?.name ?? 'loading' : 'Not Deployed'}
-        color={color}
+        color={contextColor} // Use context color here
         timeSpanSinceDeployment={active ? timeSpanSinceDeployment : undefined}
         onToggle={handleToggle}
         open={isOpen}
-        onChangeColor={onColorChange}
       />
       {isOpen && (
         <VehicleCell
@@ -278,6 +285,8 @@ const VehicleList: React.FC<{
     [key: string]: 'open' | 'closed' | undefined
   }>({})
 
+  const { vehicleColors } = useVehicleColors()
+
   const handleToggle = (open: boolean, name: string) => {
     setAccordionState({
       ...accordionState,
@@ -285,28 +294,15 @@ const VehicleList: React.FC<{
     })
   }
 
-  {
-    /* TODO:    **** Color Picker */
-  }
-  // Initialize Cookies
-  const [cookies, setCookie] = useCookies(['vehicleColors'])
-  const [color, setColor] = useState({ color: '', vehicle: '' })
-
-  function onChange(newColor: any) {
-    setCookie('vehicleColors', newColor)
-  }
-
-  const handleColorChange = (color: string, vehicle: string) => {
-    console.log('color changed', color, vehicle)
-    setColor({ color, vehicle })
-  }
-  {
-    /*  **** Color Picker */
-  }
   const cellAtIndex = (index: number, virtualizer: Virtualizer) => {
-    const color = vehicles.data?.find(
-      (v) => v.vehicleName === trackedVehicles[index]
-    )?.color
+    const vehicleColor =
+      vehicleColors[trackedVehicles[index].toLowerCase()] ||
+      vehicles.data?.find((v) => v.vehicleName === trackedVehicles[index])
+        ?.color ||
+      '#ccc'
+    // const color = vehicles.data?.find(
+    //   (v) => v.vehicleName === trackedVehicles[index]
+    // )?.color
     const handleSelect = () => {
       handleSelectVehicle?.(trackedVehicles[index])
     }
@@ -316,15 +312,22 @@ const VehicleList: React.FC<{
         <ConnectedVehicleCell
           name={trackedVehicles[index]}
           virtualizer={virtualizer}
-          color={color ?? '#ccc'}
+          color={vehicleColor ?? '#ccc'}
           open={accordionState[trackedVehicles[index]] !== 'closed'}
           onToggle={handleToggle}
           onSelect={handleSelect}
-          onColorChange={handleColorChange}
         />
       </div>
     )
   }
+
+  // Force component to re-render when vehicleColors changes
+  // This is crucial to ensure UI updates when colors change in modal
+  React.useEffect(() => {
+    // This effect depends on vehicleColors and will trigger a re-render
+    // when they change in the VehicleColorsModal
+    logger.debug('Vehicle colors updated in context', vehicleColors)
+  }, [vehicleColors])
 
   return (
     <CellVirtualizer

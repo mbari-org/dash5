@@ -2,6 +2,9 @@ import React, { useState, useEffect } from 'react'
 import { useGoogleMapsApiKey } from './useGoogleMapsApiKey'
 import { LoadScriptNext } from '@react-google-maps/api'
 import toast from 'react-hot-toast'
+import { createLogger } from '@mbari/utils'
+
+const logger = createLogger('GoogleMapsProvider')
 
 interface GoogleMapsProviderProps {
   children: React.ReactNode
@@ -17,9 +20,9 @@ export const GoogleMapsProvider: React.FC<GoogleMapsProviderProps> = ({
   useEffect(() => {
     if (!isLoading) {
       if (keySource === 'server') {
-        console.log('Using Google Maps from Tethys API')
+        logger.debug('Using Google Maps from Tethys API')
       } else if (keySource === 'local') {
-        console.log('Using Google Maps from local .env')
+        logger.debug('Using Google Maps from local .env')
       } else if (keySource === 'none' && !apiKey) {
         // Notify but don't block interface
         toast.error(
@@ -48,7 +51,7 @@ export const GoogleMapsProvider: React.FC<GoogleMapsProviderProps> = ({
 
   // On error, just render children without blocking UI
   if (error) {
-    console.warn('Maps API key error, using alternative maps:', error.message)
+    logger.warn('Maps API key error, using alternative maps:', error.message)
     return <>{children}</>
   }
 
@@ -59,7 +62,7 @@ export const GoogleMapsProvider: React.FC<GoogleMapsProviderProps> = ({
 
   // If no API key, silently render children
   if (!apiKey) {
-    console.warn('No Google Maps API key available, using alternative maps')
+    logger.warn('No Google Maps API key available, using alternative maps')
     return <>{children}</>
   }
 
@@ -69,11 +72,11 @@ export const GoogleMapsProvider: React.FC<GoogleMapsProviderProps> = ({
       googleMapsApiKey={apiKey}
       loadingElement={<>{children}</>} // Render children while loading
       onLoad={() => {
-        console.log('✅ Google Maps script loaded successfully')
+        logger.debug('✅ Google Maps script loaded successfully')
         setIsLoaded(true)
       }}
       onError={(err) => {
-        console.error('❌ Google Maps loading error:', err)
+        logger.error('❌ Google Maps loading error:', err)
         // Toast notification but continue with app
         toast.error('Google Hybrid map unavailable', {
           duration: 3000,
