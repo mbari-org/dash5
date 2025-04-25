@@ -212,28 +212,4 @@ const Layout: React.FC<{ children?: React.ReactNode }> = ({ children }) => {
   )
 }
 
-const ColorModal: React.FC<{ name: string; color: string }> = ({
-  name,
-  color: initialColor,
-}) => {
-  const [color, setColor] = useState(initialColor)
-  return (
-    <Modal
-      title={'Change color of ' + name}
-      extraWideModal
-      bodyOverflowHidden
-      snapTo="top-right"
-      open
-    >
-      <div className="flex flex-col">
-        <div className="flex flex-row items-center">
-          <div className="h-[400px] w-[512px]">
-            <HexColorPicker color={color} onChange={setColor} />;
-          </div>
-        </div>
-      </div>
-    </Modal>
-  )
-}
-
 export default Layout

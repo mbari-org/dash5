@@ -244,6 +244,7 @@ ul.tree input[type='checkbox'] {
 #vehicle-center,
 #allVehicles-center,
 #stationsdb,
+#vehicleColors,
 #toggle-markers {
   color: #fff !important;
   background-color: #8c9eff !important;
@@ -332,8 +333,21 @@ ul.tree input[type='checkbox'] {
   padding: 20px;
   border-radius: 8px;
   box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+  flex: 1 1 auto;
+  overflow-y: auto;
 }
 
+.modal-with-footer {
+  display: flex;
+  flex-direction: column;
+}
+
+.modal-footer {
+  flex: 0 0 auto;
+  padding: 16px;
+  border-top: 1px solid #eee;
+  margin-top: auto;
+}
 /* Measure Button CSS control */
 #measBtn {
   color: #fff !important;
@@ -437,8 +451,105 @@ span.leaflet-touch .leaflet-control-zoom-in,
   border: 1px solid #ccc;
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
-/* In your styles/globals.css or equivalent */
+/* Apply blue-toast styling to all toast notifications */
+.react-hot-toast,
+[data-testid^='toast'],
+div[role='status'][aria-live='polite'] {
+  /* Use existing blue-toast class if it exists */
+  @apply blue-toast !important;
+}
+
+/* If blue-toast doesn't exist yet, define it */
 .blue-toast {
-  background-color: #1e40af !important;
+  background-color: rgb(59, 130, 246) !important; /* Tailwind blue-500 */
   color: white !important;
+  border-radius: 0.375rem !important;
+  padding: 0.75rem 1rem !important;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15) !important;
+  font-weight: 500 !important;
+  min-width: 200px !important;
+}
+
+/* Style toast icons */
+/* Toast standard icon */
+.blue-toast svg,
+.react-hot-toast svg,
+div[role='status'][aria-live='polite'] svg {
+  fill: white !important;
+  stroke: white !important;
+}
+
+/* Toast success indicator */
+.react-hot-toast-success {
+  background-color: rgb(34, 197, 94) !important; /* Tailwind green-500 */
+}
+
+/* Toast error indicator */
+.react-hot-toast-error {
+  background-color: rgb(239, 68, 68) !important; /* Tailwind red-500 */
+}
+/* Custom scrollbar styling for VehicleColorsModal */
+.custom-scrollbar::-webkit-scrollbar {
+  width: 20px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: #f1f1f1;
+  border-radius: 4px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background: #888;
+  border-radius: 4px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: #555;
+}
+.leaflet-disabled {
+  pointer-events: none !important;
+  scroll-behavior: none !important;
+}
+
+/* Disable pointer events for the color picker */
+.color-picker-container {
+  pointer-events: auto !important;
+  cursor: default !important;
+}
+
+.show-all-checkbox {
+}
+
+/* Highlight the selected vehicle color within list*/
+.vehicle-hex-button:hover,
+.show-all-checkbox:hover {
+  outline: 3px solid yellow !important;
+  cursor: pointer !important;
+  transform: scale(1.1);
+}
+/* Use the default cursor for the color picker */
+.sketch-picker {
+  cursor: default !important;
+}
+
+@media (max-height: 700px) {
+  .modal-container {
+    top: 20px !important;
+    height: calc(100vh - 40px) !important;
+    overflow-y: auto !important;
+  }
+}
+/* Hover effect for vehicle names to see more clearly*/
+.vehicle-name-container {
+  transition: all 0.3s ease;
+  transform-origin: left center;
+  color: inherit;
+}
+
+.vehicle-name-container:hover {
+  transform: scale(1.1);
+  color: #000 !important;
+  background-color: white !important;
+  box-shadow: 0 0 8px rgba(0, 0, 0, 0.2);
+  z-index: 10;
 }

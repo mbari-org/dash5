@@ -3,12 +3,15 @@ import { useStations } from '@mbari/api-client'
 import { Modal } from '@mbari/react-ui'
 import { StationSection } from './StationSection'
 import { useSelectedStations } from './SelectedStationContext'
+import { createLogger } from '@mbari/utils'
+
+const logger = createLogger('StationsListModal')
 
 export const StationsListModal: React.FC<{ onClose: () => void }> = ({
   onClose,
   ...modalProps
 }) => {
-  console.log('StationsListModal rendering')
+  logger.debug('StationsListModal rendering')
   const { data: stations } = useStations()
   const { selectedStations, setSelectedStations } = useSelectedStations()
 
@@ -47,8 +50,8 @@ export const StationsListModal: React.FC<{ onClose: () => void }> = ({
       const groupName = station.name || String(station)
       // Initialize the group array if it doesn't exist
       const group = acc[groupName] || []
-      console.log('groupName:', groupName)
-      console.log('group:', group)
+      logger.debug('groupName:', groupName)
+      logger.debug('group:', group)
       // Add the complete station object to the group
       group.push(station)
       // Update the accumulator

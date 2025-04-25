@@ -34,6 +34,7 @@
     "luxon": "^2.4.0",
     "next": "^15.2.3",
     "react": "^18.2.0",
+    "react-color": "^2.19.3",
     "react-colorful": "^5.6.1",
     "react-cookie": "^7.1.4",
     "react-dom": "^18.2.0",

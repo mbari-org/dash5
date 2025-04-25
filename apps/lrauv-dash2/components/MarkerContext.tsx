@@ -6,6 +6,9 @@ import React, {
   useEffect,
 } from 'react'
 import toast from 'react-hot-toast'
+import { createLogger } from '@mbari/utils'
+
+const logger = createLogger('MarkerContext')
 
 // Define marker type
 export interface MarkerData {
@@ -62,10 +65,10 @@ export const MarkerProvider: React.FC<{ children: React.ReactNode }> = ({
       if (savedMarkers) {
         const parsedMarkers = JSON.parse(savedMarkers) as MarkerData[]
         setMarkers(parsedMarkers)
-        console.log('Loaded markers from localStorage:', parsedMarkers.length)
+        logger.debug('Loaded markers from localStorage:', parsedMarkers.length)
       }
     } catch (error) {
-      console.error('Error loading markers from localStorage:', error)
+      logger.error('Error loading markers from localStorage:', error)
     }
   }, [])
 
@@ -73,9 +76,9 @@ export const MarkerProvider: React.FC<{ children: React.ReactNode }> = ({
   useEffect(() => {
     try {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(markers))
-      console.log('Saved markers to localStorage:', markers.length)
+      logger.debug('Saved markers to localStorage:', markers.length)
     } catch (error) {
-      console.error('Error saving markers to localStorage:', error)
+      logger.error('Error saving markers to localStorage:', error)
     }
   }, [markers])
 
@@ -84,7 +87,7 @@ export const MarkerProvider: React.FC<{ children: React.ReactNode }> = ({
   }, [])
 
   const handleMarkersRequest = useCallback(() => {
-    console.log('Markers request initiated')
+    logger.debug('Markers request initiated')
   }, [])
 
   const handleAddMarker = useCallback(
@@ -218,7 +221,7 @@ export const MarkerProvider: React.FC<{ children: React.ReactNode }> = ({
   )
 
   const handleMarkerColorChange = useCallback((id: string, color: string) => {
-    console.log(`Marker ${id}: color updated to ${color}`)
+    logger.debug(`Marker ${id}: color updated to ${color}`)
     setMarkers((prev) =>
       prev.map((marker) =>
         marker.id.toString() === id

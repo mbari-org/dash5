@@ -13,6 +13,9 @@ import {
 import { renderToString } from 'react-dom/server'
 import toast from 'react-hot-toast'
 import { useMarkers } from './MarkerContext'
+import { createLogger } from '@mbari/utils'
+
+const logger = createLogger('DraggableMarker')
 
 // Define the DraggableMarkerProps interface
 export interface DraggableMarkerProps {
@@ -108,7 +111,7 @@ const DraggableMarker: React.FC<DraggableMarkerProps> = ({
 
   // Handle marker click
   const onEditStateChange = useCallback((isEditing: boolean) => {
-    console.log(
+    logger.debug(
       `Marker edit state changed: ${isEditing ? 'Editing' : 'Not Editing'}`
     )
   }, [])
@@ -116,12 +119,12 @@ const DraggableMarker: React.FC<DraggableMarkerProps> = ({
   // Open the popup when the marker is clicked
   useEffect(() => {
     if (isNew) {
-      console.log(`Opening popup for new marker ${id}...`)
+      logger.debug(`Opening popup for new marker ${id}...`)
 
       // First ensure the marker is mounted
       const marker = markerRef.current
       if (!marker) {
-        console.warn('Marker ref not available yet')
+        logger.warn('Marker ref not available yet')
         return
       }
 
@@ -140,7 +143,7 @@ const DraggableMarker: React.FC<DraggableMarkerProps> = ({
               inputRef.current.focus()
               inputRef.current.select()
             } else {
-              console.warn('Input ref not available')
+              logger.warn('Input ref not available')
             }
           }, 100)
         } catch (err) {
@@ -218,10 +221,10 @@ const DraggableMarker: React.FC<DraggableMarkerProps> = ({
 
       // Force remove the marker from the map immediately
       if (onDelete) {
-        console.log(`Deleting marker ${id}`)
+        logger.debug(`Deleting marker ${id}`)
         onDelete()
       } else {
-        console.warn(`No onDelete handler for marker ${id}`)
+        logger.warn(`No onDelete handler for marker ${id}`)
       }
 
       // Close any open popup
@@ -355,7 +358,7 @@ const DraggableMarker: React.FC<DraggableMarkerProps> = ({
   // Handle canceling edits
   const handleCancelClick = useCallback(
     (e: React.MouseEvent) => {
-      console.log('🔴 Cancel button clicked')
+      logger.debug('🔴 Cancel button clicked')
       e.stopPropagation()
       e.preventDefault()
       handleCancelEdit()
