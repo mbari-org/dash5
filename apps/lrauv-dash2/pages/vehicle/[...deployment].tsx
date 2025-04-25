@@ -193,28 +193,29 @@ const Vehicle: NextPage = () => {
   const chartAvailable =
     !!depthData && !chartLoading && !chartIdle && !chartError
 
-  const depthChart = useMemo(() => {
-    return chartAvailable ? (
-      <LineChart
-        name={depthData?.name ?? ''}
-        data={depthData?.values.map((v, i) => ({
-          value: v,
-          timestamp: depthData.times[i],
-        }))}
-        yAxisLabel={`${humanize(depthData?.name)} (${depthData?.units})`}
-        onHover={handleTimeScrub}
-        inverted={depthData.name === 'depth'}
-        className="h-[340px] w-full"
-      />
-    ) : null
-  }, [depthData, chartAvailable])
-
   const [indicatorTime, setIndicatorTime] = useState<number | null | undefined>(
     null
   )
   const handleTimeScrub = (time?: number | null) => {
     setIndicatorTime(time)
   }
+
+  const depthChart = useMemo(() => {
+    return chartAvailable ? (
+      <LineChart
+        name={depthData?.name ?? ''}
+        data={depthData?.values?.map((v, i) => ({
+          value: v,
+          timestamp: depthData?.times?.[i],
+        }))}
+        yAxisLabel={`${humanize(depthData?.name)} (${depthData?.units})`}
+        onHover={handleTimeScrub}
+        inverted={depthData?.name === 'depth'}
+        className="h-[340px] w-full"
+      />
+    ) : null
+  }, [depthData, chartAvailable])
+
   const handleBatteryClick = () => {
     setGlobalModalId({ id: 'battery' })
   }
