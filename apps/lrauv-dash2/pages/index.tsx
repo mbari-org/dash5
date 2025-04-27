@@ -190,8 +190,7 @@ const OverViewMap: React.FC<{
     }
   }, [showVehicleColors])
 
-  // handleGPSFix function
-  // This function is called when a GPS fix is received
+  // handleGPSFix - called when a GPS fix is received
   const handleGPSFix = useCallback(
     (gps: VPosDetail) => {
       if ((latestGPS?.isoTime ?? 0) > gps.isoTime || !latestGPS) {
@@ -259,7 +258,7 @@ const OverViewMap: React.FC<{
       return vehiclePositions.current
     }
 
-    // Try to access layers if map reference exists
+    // Access layers if map reference exists
     if (mapRef.current) {
       try {
         // Store the map reference
@@ -387,7 +386,7 @@ const OverViewMap: React.FC<{
           logger.warn('Error invalidating map size:', e)
         }
       }
-    }, 300) // Slightly longer timeout for modal animation to complete
+    }, 300) // Time for modal animation to complete
   }, [])
 
   useEffect(() => {
@@ -498,11 +497,12 @@ const OverViewMap: React.FC<{
                 label={marker.label}
                 draggable={true}
                 isSelected={activeEditMarkerId === marker.id.toString()} // Pass active edit state
-                isNew={marker.isNew} // Pass new marker state
-                onDragEnd={(pos) =>
+                isNew={marker.isNew}
+                savedToLayer={marker.savedToLayer}
+                onDragEnd={(newPos) =>
                   handleMarkerDragEnd(marker.id, {
-                    lat: pos[0],
-                    lng: pos[1],
+                    lat: newPos[0],
+                    lng: newPos[1],
                   })
                 }
                 iconColor={marker.iconColor}

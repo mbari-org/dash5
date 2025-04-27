@@ -72,6 +72,16 @@ declare global {
 let mapCoord: String
 let dmsCoord: String
 
+interface StoredMarker {
+  id: number
+  lat: number
+  lng: number
+  label: string
+  iconColor?: string
+  visible?: boolean
+  savedToLayer?: boolean
+}
+
 export interface MapProps extends React.HTMLAttributes<HTMLDivElement> {
   className?: string
   style?: React.CSSProperties
@@ -279,6 +289,7 @@ const Map = React.forwardRef<L.Map, MapProps>(
         lng: number
         index: number
         label: string
+        savedToLayer?: boolean
       }>
     >([])
 
@@ -494,18 +505,21 @@ const Map = React.forwardRef<L.Map, MapProps>(
       setMeasureMode(mode)
     }
 
+    // Handle Request Fit Bounds
     const handleRequestFitBounds = (e: React.MouseEvent) => {
       e.preventDefault()
       e.stopPropagation()
       onRequestFitBounds?.()
     }
 
+    // Handle mouse over event
     const handleMouseOver = (e: React.MouseEvent) => {
       e.preventDefault()
       e.stopPropagation()
       setVisibleDot('hidden')
     }
 
+    // Handle Add Marker
     const handleAddMarker = useCallback(
       (lat: number, lng: number) => {
         const newId = Date.now() // Generate unique ID
@@ -522,7 +536,7 @@ const Map = React.forwardRef<L.Map, MapProps>(
           },
         ])
 
-        // Still call onRequestMarkers for any additional functionality
+        // Call onRequestMarkers for any additional functionality
         onRequestMarkers?.()
 
         return newId
@@ -540,16 +554,42 @@ const Map = React.forwardRef<L.Map, MapProps>(
       [onToggleMarkerMode]
     )
 
+    // Handle marker drag end event
     const handleMarkerDragEnd = useCallback(
       (id: number, position: { lat: number; lng: number }) => {
-        // Update marker position in state
-        setMarkers((prev) =>
-          prev.map((marker) =>
+        logger.debug(
+          `Marker ${id} dragged to [${position.lat}, ${position.lng}]`
+        )
+
+        setMarkers((prev) => {
+          // Create updated array with new position
+          const updated = prev.map((marker) =>
             marker.id === id
-              ? { ...marker, lat: position.lat, lng: position.lng }
+              ? {
+                  ...marker,
+                  lat: position.lat,
+                  lng: position.lng,
+                  isNew: false, // Mark as not new after dragging
+                }
               : marker
           )
-        )
+
+          // If this marker is already saved to layer, update the layer storage too
+          const draggedMarker = updated.find((m) => m.id === id)
+          if (draggedMarker?.savedToLayer) {
+            localStorage.setItem(
+              'layerMarkers',
+              JSON.stringify(updated.filter((m) => m.savedToLayer))
+            )
+            logger.debug(`Updated layer storage for marker ${id}`)
+          }
+
+          // Always update the main storage
+          localStorage.setItem('savedMarkers', JSON.stringify(updated))
+
+          return updated
+        })
+        // Note: Toast here handled by the main context
       },
       []
     )
@@ -589,7 +629,43 @@ const Map = React.forwardRef<L.Map, MapProps>(
       return () => clearTimeout(timer)
     }, [])
 
-    // Add a useEffect to handle cursor changes when marker mode is toggled
+    // Add a saved marker to the JSON object Marker file
+    const addSavedMarker = useCallback((savedMarker: StoredMarker) => {
+      setMarkers((prev) => [
+        ...prev,
+        {
+          id: savedMarker.id || Date.now(),
+          lat: savedMarker.lat,
+          lng: savedMarker.lng,
+          index: prev.length,
+          label: savedMarker.label || `Marker ${prev.length + 1}`,
+          // Copy any other properties you need
+        },
+      ])
+    }, [])
+
+    // Update your useEffect to load saved markers from localStorage
+    useEffect(() => {
+      // Load saved layer markers from localStorage on mount
+      const savedLayerMarkers = localStorage.getItem('layerMarkers')
+      if (savedLayerMarkers) {
+        try {
+          const markers = JSON.parse(savedLayerMarkers) as StoredMarker[]
+          // Add these markers to your state
+          markers.forEach((marker: StoredMarker) => {
+            // Set savedToLayer flag and add to markers state
+            addSavedMarker({
+              ...marker,
+              savedToLayer: true,
+            })
+          })
+        } catch (e) {
+          console.error('Error loading saved markers:', e)
+        }
+      }
+    }, [addSavedMarker])
+
+    // Handle cursor changes when marker mode is toggled
     useEffect(() => {
       // Get the map container
       const mapContainer = document.querySelector('.leaflet-container')

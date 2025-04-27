@@ -204,10 +204,10 @@ const DeploymentMap: React.FC<DeploymentMapProps> = ({
           result.status === 'unavailable' ||
           result.status === 'no-data'
         ) {
-          // toast('⚠️ Maps Depth data currently unavailable❕', {
-          //   id: 'depth-result',
-          //   className: 'blue-toast',
-          // })
+          toast('⚠️ Maps Depth data currently unavailable❕', {
+            id: 'depth-result',
+            className: 'blue-toast',
+          })
         }
         return result
       } catch (error) {
@@ -302,9 +302,6 @@ const DeploymentMap: React.FC<DeploymentMapProps> = ({
     })
     setColorModalOpen(true)
   }, [vehicleName, trackedVehicles])
-  // const handleVehicleColorRequest = useCallback((vehicleName?: string) => {
-  //   setShowVehicleColors(true)
-  // }, [])
 
   const handleCloseVehicleColors = useCallback((vehicleName?: string) => {
     setShowVehicleColors(false)
@@ -351,8 +348,7 @@ const DeploymentMap: React.FC<DeploymentMapProps> = ({
   const modalTrackedVehicles = React.useMemo(() => {
     if (!vehicleName) return trackedVehicles
 
-    // Create a new array with the current vehicle guaranteed
-    // Using Array.from instead of spread operator on the Set
+    // Create a new array with the current vehicle
     return Array.from(new Set([...trackedVehicles, vehicleName]))
   }, [trackedVehicles, vehicleName])
 
@@ -409,10 +405,11 @@ const DeploymentMap: React.FC<DeploymentMapProps> = ({
               draggable={true}
               isSelected={activeEditMarkerId === marker.id.toString()}
               isNew={marker.isNew}
-              onDragEnd={(pos) =>
+              savedToLayer={marker.savedToLayer}
+              onDragEnd={(newPos) =>
                 handleMarkerDragEnd(marker.id, {
-                  lat: pos[0],
-                  lng: pos[1],
+                  lat: newPos[0],
+                  lng: newPos[1],
                 })
               }
               iconColor={marker.iconColor}
@@ -482,9 +479,9 @@ const DeploymentMap: React.FC<DeploymentMapProps> = ({
           isOpen={colorModalOpen}
           onClose={() => setColorModalOpen(false)}
           anchorPosition={colorModalPosition}
-          trackedVehicles={vehicleName ? [vehicleName] : []} // Force include current vehicle only
+          trackedVehicles={vehicleName ? [vehicleName] : []}
           activeVehicle={vehicleName || undefined}
-          forceShowAll={true} // Add this prop
+          forceShowAll={true}
         />
       </Map>
     </>

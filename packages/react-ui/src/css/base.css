@@ -517,9 +517,6 @@ div[role='status'][aria-live='polite'] svg {
   cursor: default !important;
 }
 
-.show-all-checkbox {
-}
-
 /* Highlight the selected vehicle color within list*/
 .vehicle-hex-button:hover,
 .show-all-checkbox:hover {
@@ -545,7 +542,7 @@ div[role='status'][aria-live='polite'] svg {
   transform-origin: left center;
   color: inherit;
 }
-
+/* Hover effect for vehicle names to see more clearly*/
 .vehicle-name-container:hover {
   transform: scale(1.1);
   color: #000 !important;
