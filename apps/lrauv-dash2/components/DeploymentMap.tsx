@@ -3,7 +3,8 @@ import React, { useCallback, useState, useRef, useEffect } from 'react'
 import { useManagedWaypoints } from '@mbari/react-ui'
 import useGoogleElevator from '../lib/useGoogleElevator'
 import { VPosDetail } from '@mbari/api-client'
-import { StationsListModal } from './StationsListModal'
+// import { StationsListModal } from './StationsListModal'
+import { MapLayersListModal } from '../components/MapLayersListModal'
 import { useSelectedStations } from './SelectedStationContext'
 import { useMarkers } from './MarkerContext'
 import { toast } from 'react-hot-toast'
@@ -90,7 +91,10 @@ const DeploymentMap: React.FC<DeploymentMapProps> = ({
   >()
   const [latestGPS, setLatestGPS] = useState<VPosDetail | undefined>()
   const [viewMode, setViewMode] = useState<'center' | 'bounds' | null>(null)
-  const [showStations, setShowStations] = useState(false)
+  const [selectedMarkerId, setSelectedMarkerId] = useState<string | null>(null)
+  const [defaultMarkerColor, setDefaultMarkerColor] = useState<string>('red')
+
+  const [showLayersModal, setShowLayersModal] = useState(false)
   const [showVehicleColors, setShowVehicleColors] = useState(false)
   const { selectedStations } = useSelectedStations()
   const [colorModalOpen, setColorModalOpen] = useState(false)
@@ -98,6 +102,10 @@ const DeploymentMap: React.FC<DeploymentMapProps> = ({
     top: number
     left: number
   }>({ top: 0, left: 0 })
+  const [layersModalPosition, setLayersModalPosition] = useState({
+    top: 0,
+    left: 0,
+  })
 
   const {
     markers,
@@ -112,6 +120,7 @@ const DeploymentMap: React.FC<DeploymentMapProps> = ({
     handleMarkersRequest,
     activeEditMarkerId,
     setActiveEditMarkerId,
+    setMarkers,
   } = useMarkers()
 
   const latestVehicle = useRef(vehicleName)
@@ -219,6 +228,189 @@ const DeploymentMap: React.FC<DeploymentMapProps> = ({
     [handleDepthRequest]
   )
 
+  // Handle marker click event
+  const handleMarkerClick = useCallback(
+    (markerId: string) => {
+      setSelectedMarkerId((prevId) => (prevId === markerId ? null : markerId))
+
+      // Close any open popups if a different marker is selected
+      if (mapRef.current && selectedMarkerId !== markerId) {
+        try {
+          // Try different ways to access closePopup
+          if (typeof mapRef.current.closePopup === 'function') {
+            mapRef.current.closePopup()
+          } else if (
+            mapRef.current &&
+            typeof mapRef.current.closePopup === 'function'
+          ) {
+            // Some React wrappers use _leafletElement
+            mapRef.current.closePopup()
+          } else if (mapRef.current.getContainer) {
+            // If we can access the container, try to find any open popups and close them manually
+            const container = mapRef.current.getContainer()
+            const popups = container.querySelectorAll('.leaflet-popup')
+            if (popups.length > 0) {
+              logger.debug('Closing popups manually')
+              // This will trigger Leaflet's internal popup close handlers
+              document.body.click()
+            }
+          } else {
+            logger.debug('No method to close popups found on map instance')
+          }
+        } catch (error) {
+          logger.warn('Error closing popup:', error)
+        }
+      }
+    },
+    [selectedMarkerId]
+  )
+
+  // Handle marker edit request
+  const handleEditMarker = useCallback(
+    (markerId: string) => {
+      // Set the active edit marker ID to trigger edit mode
+      setActiveEditMarkerId(markerId)
+
+      // Find the marker to edit
+      const markerToEdit = markers.find((m) => m.id.toString() === markerId)
+      if (markerToEdit) {
+        logger.debug('Editing marker:', markerToEdit)
+        // You could set additional state here if needed for editing UI
+      }
+    },
+    [markers, setActiveEditMarkerId]
+  )
+
+  // Handle marker delete request
+  const handleDeleteMarker = useCallback(
+    (markerId: string) => {
+      // Clear selection if the deleted marker was selected
+      if (selectedMarkerId === markerId) {
+        setSelectedMarkerId(null)
+      }
+
+      // Call the delete function from marker context
+      handleMarkerDelete(markerId)
+
+      toast.success('Marker deleted', {
+        id: 'marker-deleted',
+        duration: 2000,
+        className: 'blue-toast',
+      })
+    },
+    [handleMarkerDelete, selectedMarkerId]
+  )
+
+  // Handle marker save to layer
+  const handleSaveMarkerToLayer = useCallback(
+    (markerId: string, shouldSave: boolean = true) => {
+      logger.debug(
+        `${shouldSave ? 'Saving' : 'Removing'} marker ${markerId} ${
+          shouldSave ? 'to' : 'from'
+        } layer`
+      )
+
+      try {
+        // Find the marker to update
+        const markerToUpdate = markers.find(
+          (marker) => marker.id.toString() === markerId
+        )
+
+        if (!markerToUpdate) {
+          logger.warn(`Marker with ID ${markerId} not found`)
+          toast.error('Could not find marker to update', {
+            id: 'marker-layer-error',
+            duration: 2000,
+          })
+          return
+        }
+
+        // Update marker in context
+        const updatedMarkers = markers.map((marker) => {
+          if (marker.id.toString() === markerId) {
+            return {
+              ...marker,
+              savedToLayer: shouldSave,
+              visible: shouldSave ? true : marker.visible, // Make visible by default when saving
+            }
+          }
+          return marker
+        })
+
+        // Update the markers in context/state
+        setMarkers(updatedMarkers)
+
+        // If this was the selected marker, update UI state as needed
+        if (selectedMarkerId === markerId && !shouldSave) {
+          // Optionally deselect the marker if it's being removed from layer
+          // Uncomment if you want this behavior
+          // setSelectedMarkerId(null);
+        }
+
+        // Save to localStorage - only markers marked as savedToLayer
+        const layerMarkers = updatedMarkers.filter((m) => m.savedToLayer)
+
+        try {
+          localStorage.setItem(
+            'lrauv-map-markers',
+            JSON.stringify(layerMarkers)
+          )
+          logger.debug(`Saved ${layerMarkers.length} markers to localStorage`)
+        } catch (storageError) {
+          logger.error('Error saving markers to localStorage:', storageError)
+          toast.error('Error saving markers', {
+            id: 'marker-storage-error',
+            duration: 3000,
+          })
+          // Continue execution - the markers are still updated in-memory
+        }
+
+        // Provide user feedback
+        toast.success(
+          shouldSave
+            ? `Marker "${markerToUpdate.label || 'Unnamed'}" saved to layer`
+            : `Marker "${
+                markerToUpdate.label || 'Unnamed'
+              }" removed from layer`,
+          {
+            id: 'marker-layer-update',
+            duration: 2000,
+            className: 'blue-toast',
+          }
+        )
+
+        // Trigger UI updates if needed
+        if (shouldSave && mapRef.current) {
+          // This could optionally trigger a map UI update
+        }
+      } catch (error) {
+        logger.error('Error in handleSaveMarkerToLayer:', error)
+        toast.error('Failed to update marker', {
+          id: 'marker-update-error',
+          duration: 2000,
+        })
+      }
+    },
+    [markers, setMarkers, selectedMarkerId]
+  )
+  // Handle Marker position change
+  const handleMarkerPositionChange = useCallback(
+    (markerId: string, newPos: [number, number]) => {
+      // Convert string ID to number
+      const numericId = parseInt(markerId, 10)
+
+      // Convert position array to expected object format
+      const positionObj = {
+        lat: newPos[0],
+        lng: newPos[1],
+      }
+
+      // Call the actual handler with properly formatted parameters
+      handleMarkerDragEnd(numericId, positionObj)
+    },
+    [handleMarkerDragEnd]
+  )
+
   // Calculate bounds for the path
   const calculatePathBounds = useCallback(() => {
     if (pathPoints.current.length === 0) {
@@ -278,14 +470,20 @@ const DeploymentMap: React.FC<DeploymentMapProps> = ({
     calculatePathBounds()
   }, [calculatePathBounds])
 
-  // Handler for showing stations
-  const handleStationsRequest = useCallback(() => {
-    setShowStations(true)
-  }, [])
+  // Handler for showing Marker and Station layers
+  const handleLayersRequest = useCallback(
+    (position?: { top: number; left: number }) => {
+      if (position) {
+        setLayersModalPosition(position)
+      }
+      setShowLayersModal(true)
+    },
+    []
+  )
 
-  // Handler for closing the stations modal
-  const handleCloseStations = useCallback(() => {
-    setShowStations(false)
+  // Handler for closing the layers modal
+  const handleCloseLayers = useCallback(() => {
+    setShowLayersModal(false)
   }, [])
 
   const handleVehicleColorRequest = useCallback(() => {
@@ -354,8 +552,11 @@ const DeploymentMap: React.FC<DeploymentMapProps> = ({
 
   return (
     <>
-      {showStations ? (
-        <StationsListModal onClose={handleCloseStations} />
+      {showLayersModal ? (
+        <MapLayersListModal
+          onClose={handleCloseLayers}
+          anchorPosition={layersModalPosition}
+        />
       ) : null}
       <Map
         ref={mapRef}
@@ -376,7 +577,7 @@ const DeploymentMap: React.FC<DeploymentMapProps> = ({
         onRequestCoordinate={handleCoordinateRequest}
         onRequestPlatforms={handlePlatformsRequest}
         onRequestFitBounds={handleFitBoundsRequest}
-        onRequestStations={handleStationsRequest}
+        onRequestStations={handleLayersRequest}
         onRequestVehicleColors={handleVehicleColorRequest}
         isAddingMarkers={isAddingMarkers}
         onToggleMarkerMode={handleToggleMarkerMode}
@@ -395,36 +596,40 @@ const DeploymentMap: React.FC<DeploymentMapProps> = ({
           />
         )}
         renderDraggableMarkers={() =>
-          markers.map((marker) => (
-            <DraggableMarker
-              key={`marker-${marker.id}`}
-              id={marker.id.toString()}
-              position={[marker.lat, marker.lng]}
-              index={marker.index}
-              label={marker.label}
-              draggable={true}
-              isSelected={activeEditMarkerId === marker.id.toString()}
-              isNew={marker.isNew}
-              savedToLayer={marker.savedToLayer}
-              onDragEnd={(newPos) =>
-                handleMarkerDragEnd(marker.id, {
-                  lat: newPos[0],
-                  lng: newPos[1],
-                })
-              }
-              iconColor={marker.iconColor}
-              onColorChange={(color) =>
-                handleMarkerColorChange(marker.id.toString(), color)
-              }
-              onDelete={() => handleMarkerDelete(marker.id.toString())}
-              onEdit={(newLabel) =>
-                handleMarkerLabelChange(marker.id.toString(), newLabel)
-              }
-              onEditStateChange={(isEditing) => {
-                setActiveEditMarkerId(isEditing ? marker.id.toString() : null)
-              }}
-            />
-          ))
+          markers.map(
+            (marker) =>
+              // Only render the marker if visible or if visibility !== false
+              marker.visible !== false && (
+                <DraggableMarker
+                  key={`marker-${marker.id}`}
+                  id={marker.id.toString()}
+                  position={[marker.lat, marker.lng]}
+                  index={marker.index}
+                  label={marker.label}
+                  draggable={true}
+                  isSelected={selectedMarkerId === marker.id.toString()}
+                  isNew={marker.isNew}
+                  savedToLayer={marker.savedToLayer}
+                  iconColor={marker.iconColor || defaultMarkerColor}
+                  onClick={() => handleMarkerClick(marker.id.toString())}
+                  onDragEnd={(newPos) =>
+                    handleMarkerPositionChange(marker.id.toString(), newPos)
+                  }
+                  onEditStateChange={(isEditing) => {
+                    setActiveEditMarkerId(
+                      isEditing ? marker.id.toString() : null
+                    )
+                  }}
+                  onEdit={() => handleEditMarker(marker.id.toString())}
+                  onDelete={() => handleDeleteMarker(marker.id.toString())}
+                  onColorChange={(color) =>
+                    handleMarkerColorChange(marker.id.toString(), color)
+                  }
+                  onSaveToLayer={handleSaveMarkerToLayer}
+                  onRemoveFromLayer={(id) => handleSaveMarkerToLayer(id, false)}
+                />
+              )
+          )
         }
       >
         {selectedStations.map((station) => {

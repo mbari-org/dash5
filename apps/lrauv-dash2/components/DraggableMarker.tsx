@@ -11,6 +11,7 @@ import {
   faPalette,
   faStar,
   faFlag,
+  faExclamationTriangle,
 } from '@fortawesome/free-solid-svg-icons'
 import { renderToString } from 'react-dom/server'
 import toast from 'react-hot-toast'
@@ -27,16 +28,19 @@ export interface DraggableMarkerProps {
   index: number
   isSelected?: boolean
   draggable?: boolean
+  iconName?: string
+  iconColor?: string
+  isNew?: boolean
+  savedToLayer?: boolean
+  visible?: boolean
   onClick?: () => void
   onDragEnd?: (newPosition: [number, number]) => void
   onEdit?: (newLabel: string) => void
   onDelete?: () => void
   onColorChange?: (newColor: string) => void
+  onSaveToLayer?: (id: string) => void
+  onRemoveFromLayer?: (id: string) => void
   onEditStateChange?: (isEditing: boolean) => void
-  iconName?: string
-  iconColor?: string
-  isNew?: boolean
-  savedToLayer?: boolean
 }
 
 const DraggableMarker: React.FC<DraggableMarkerProps> = ({
@@ -47,12 +51,15 @@ const DraggableMarker: React.FC<DraggableMarkerProps> = ({
   isSelected = false,
   isNew = false,
   savedToLayer = false,
+  visible = true,
+  iconColor,
   onClick,
   onDragEnd,
   onEdit,
   onDelete,
   onColorChange,
-  iconColor,
+  onSaveToLayer,
+  onRemoveFromLayer,
 }) => {
   logger.debug('DraggableMarker rendering, savedToLayer:', savedToLayer)
   const markerRef = useRef<L.Marker>(null)
@@ -68,7 +75,8 @@ const DraggableMarker: React.FC<DraggableMarkerProps> = ({
   const map = useMap()
   const { handleMarkerSave, saveMarkerToLayer, removeMarkerFromLayer } =
     useMarkers()
-  const [, forceUpdate] = useState({})
+  const forceRerender = useCallback(() => setRerenderFlag((v) => v + 1), [])
+  const [rerenderFlag, setRerenderFlag] = useState(0)
 
   // Color options for the color picker
   const colorOptions = [
@@ -109,7 +117,7 @@ const DraggableMarker: React.FC<DraggableMarkerProps> = ({
         />
 
         {savedToLayer && (
-          <div className="absolute -top-2 -left-2">
+          <div className="absolute -left-1.5 -top-2">
             <FontAwesomeIcon
               icon={faStar}
               size="sm"
@@ -195,11 +203,13 @@ const DraggableMarker: React.FC<DraggableMarkerProps> = ({
 
   // Keep the popup open when selected
   useEffect(() => {
-    if ((isNew || isSelected) && !editMode) {
+    // Only new markers should automatically enter edit mode
+    if (isNew && !editMode) {
       setEditMode(true)
       setShowColorOptions(false)
     }
-  }, [isNew, isSelected, editMode])
+    // Remove the isSelected
+  }, [isNew, editMode])
 
   // Notify parent when edit mode changes
   useEffect(() => {
@@ -244,25 +254,67 @@ const DraggableMarker: React.FC<DraggableMarkerProps> = ({
 
   // Handle marker deletion
   const handleDelete = useCallback(
-    (e: React.MouseEvent) => {
+    (e: React.MouseEvent<HTMLButtonElement, MouseEvent>) => {
       e.stopPropagation()
       e.preventDefault()
 
-      // Force remove the marker from the map immediately
-      if (onDelete) {
-        logger.debug(`Deleting marker ${id}`)
-        onDelete()
+      // Add confirmation for markers saved to layer
+      if (savedToLayer) {
+        toast(
+          (t) => (
+            <div className="flex flex-col gap-2 p-2">
+              <div className="flex items-center font-medium">
+                <FontAwesomeIcon
+                  icon={faExclamationTriangle}
+                  size="lg"
+                  className="mr-2"
+                  style={{
+                    color: '#FF8C00',
+                    backgroundColor: 'white',
+                    padding: '2px',
+                    border: '2px solid #FF8C00',
+                    borderRadius: '2px',
+                  }}
+                />
+                Delete the saved Map Layer Marker permanently?
+              </div>
+              <div className="flex justify-between gap-2">
+                <button
+                  onClick={() => {
+                    toast.dismiss(t.id)
+                    if (onDelete) {
+                      logger.debug(`Deleting saved marker ${id}`)
+                      onDelete()
+                    }
+                  }}
+                  className="rounded bg-red-500 px-3 py-1 text-white hover:bg-red-600"
+                >
+                  Yes
+                </button>
+                <button
+                  onClick={() => toast.dismiss(t.id)}
+                  className="rounded bg-gray-300 px-3 py-1 text-black hover:bg-gray-400"
+                >
+                  No
+                </button>
+              </div>
+            </div>
+          ),
+          {
+            duration: Infinity,
+            position: 'top-center',
+            id: 'delete-saved-marker',
+            className: 'blue-toast',
+          }
+        )
       } else {
-        logger.warn(`No onDelete handler for marker ${id}`)
-      }
-
-      // Close any open popup
-      const marker = markerRef.current
-      if (marker) {
-        marker.closePopup()
+        if (onDelete) {
+          logger.debug(`Deleting marker ${id}`)
+          onDelete()
+        }
       }
     },
-    [onDelete, id]
+    [onDelete, id, savedToLayer]
   )
 
   // Handle marker drag end
@@ -295,8 +347,13 @@ const DraggableMarker: React.FC<DraggableMarkerProps> = ({
       onColorChange(selectedColor)
     }
 
-    handleMarkerSave(id, inputValue)
+    // Call handleMarkerSave if available
+    if (handleMarkerSave) {
+      handleMarkerSave(id, inputValue)
+    }
+
     setEditMode(false)
+    setShowColorOptions(false)
   }, [
     handleEditModeToggle,
     inputValue,
@@ -309,13 +366,6 @@ const DraggableMarker: React.FC<DraggableMarkerProps> = ({
     id,
   ])
 
-  //  Handle toggling color options
-  const handleToggleColorOptions = useCallback((e: React.MouseEvent) => {
-    e.stopPropagation()
-    e.preventDefault()
-    setShowColorOptions((prev) => !prev)
-  }, [])
-
   // Handle canceling edits
   const handleCancelEdit = useCallback(() => {
     // If this is a new marker, show confirmation dialog
@@ -323,7 +373,7 @@ const DraggableMarker: React.FC<DraggableMarkerProps> = ({
       toast(
         (t) => (
           <div className="flex flex-col gap-2 p-2">
-            <div className="font-medium">Cancel editing and delete marker?</div>
+            <div className="font-medium">Cancel new marker and delete?</div>
             <div className="flex justify-between gap-2">
               <button
                 onClick={() => {
@@ -380,6 +430,12 @@ const DraggableMarker: React.FC<DraggableMarkerProps> = ({
     [handleEditModeToggle]
   )
 
+  const handleToggleColorOptions = useCallback((e: React.MouseEvent) => {
+    e.stopPropagation()
+    e.preventDefault()
+    setShowColorOptions((prev) => !prev)
+  }, [])
+
   // Prevent default behavior for save/cancel
   const handleSaveClick = useCallback(
     (e: React.MouseEvent) => {
@@ -406,38 +462,24 @@ const DraggableMarker: React.FC<DraggableMarkerProps> = ({
     (e: React.MouseEvent) => {
       e.stopPropagation()
       e.preventDefault()
-      logger.debug('Saving marker to layer, id:', id)
-      saveMarkerToLayer(id.toString())
-      // Increase timeout to give context time to update
-      setTimeout(() => {
-        logger.debug('Force updating after save, id:', id)
-        forceUpdate({})
-      }, 100)
 
-      toast.success('Marker saved to Map Layers', {
-        duration: 2000,
-        position: 'top-center',
-        className: 'blue-toast',
-      })
+      if (onSaveToLayer) {
+        onSaveToLayer(id)
+      }
     },
-    [id, saveMarkerToLayer]
+    [id, onSaveToLayer]
   )
   // Handle removing marker from layer
   const handleRemoveFromLayer = useCallback(
     (e: React.MouseEvent) => {
       e.stopPropagation()
       e.preventDefault()
-      logger.debug('Removing marker from layer, id:', id)
-      removeMarkerFromLayer(id.toString())
-      // Force re-render
-      setTimeout(() => forceUpdate({}), 10)
-      toast.success('Marker removed from Map Layers', {
-        duration: 2000,
-        position: 'top-center',
-        className: 'blue-toast',
-      })
+
+      if (onRemoveFromLayer) {
+        onRemoveFromLayer(id)
+      }
     },
-    [id, removeMarkerFromLayer]
+    [id, onRemoveFromLayer]
   )
 
   //  Handle closing the popup
@@ -472,7 +514,8 @@ const DraggableMarker: React.FC<DraggableMarkerProps> = ({
       <Popup
         ref={popupRef}
         closeOnClick={!editMode}
-        autoClose={!editMode}
+        autoClose={false}
+        // autoClose={!editMode}
         className="marker-popup-container"
       >
         <div className="flex flex-col gap-0">
@@ -514,9 +557,27 @@ const DraggableMarker: React.FC<DraggableMarkerProps> = ({
             </div>
           </p>
 
+          {/* Show saved to layer message if applicable */}
+          {savedToLayer && (
+            <div className="my-1 flex items-center text-xs">
+              <FontAwesomeIcon
+                icon={faStar}
+                style={{ color: '#FFD700' }}
+                size="sm"
+                className="mr-1"
+              />
+              <span className="italic text-gray-600">
+                Saved to Map Layers
+                {visible === false && ' (Currently hidden)'}
+              </span>
+            </div>
+          )}
+
+          {/* Control buttons */}
           <div className={`mt-1 flex h-8 justify-between gap-0`}>
             {editMode ? (
               <>
+                {/* Edit mode buttons - Cancel, Color, Save */}
                 <button
                   onClick={handleCancelClick}
                   className="rounded bg-gray-300 px-2 py-1 text-xs"
@@ -554,7 +615,7 @@ const DraggableMarker: React.FC<DraggableMarkerProps> = ({
                 {!savedToLayer ? (
                   <button
                     onClick={handleSaveToLayer}
-                    className="relative rounded bg-green-500 px-2 py-1 text-xs text-white"
+                    className="rounded bg-green-500 px-2 py-1 text-xs text-white"
                     title="Save to Map Layers"
                   >
                     <FontAwesomeIcon

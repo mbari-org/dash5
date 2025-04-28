@@ -96,12 +96,12 @@ export interface MapProps extends React.HTMLAttributes<HTMLDivElement> {
   scrollWheelZoom?: boolean
   isAddingMarkers?: boolean
   onToggleMarkerMode?: () => void
-  onRequestMarkers?: () => void
+  onRequestMarkers?: (position?: { top: number; left: number }) => void
   onRequestDepth?: MouseCoordinatesProps['onRequestDepth']
   onRequestCoordinate?: () => void
   onRequestFitBounds?: () => void
   onRequestPlatforms?: () => void
-  onRequestStations?: () => void
+  onRequestStations?: (position?: { top: number; left: number }) => void
   onRequestVehicleColors?: (vehicleName?: string) => void
   whenCreated?: (map: L.Map) => void
   onMapReady?: (map: L.Map) => void
@@ -173,6 +173,7 @@ const Map = React.forwardRef<L.Map, MapProps>(
     }
 
     const mapRef = useRef<L.Map | null>(null)
+    const layersButtonRef = useRef<HTMLButtonElement>(null)
     const [mapReady, setMapReady] = useState(false)
 
     const [googleMapsStatus, setGoogleMapsStatus] = useState<
@@ -598,7 +599,22 @@ const Map = React.forwardRef<L.Map, MapProps>(
     const handleLayersClick = (e: React.MouseEvent) => {
       e.preventDefault()
       e.stopPropagation()
-      onRequestStations?.()
+
+      // Get button position
+      if (layersButtonRef.current) {
+        const rect = layersButtonRef.current.getBoundingClientRect()
+        const position = {
+          top: rect.bottom,
+          left: rect.left,
+        }
+
+        // Pass position to callbacks
+        onRequestStations?.(position)
+        onRequestMarkers?.(position)
+      } else {
+        onRequestStations?.()
+        onRequestMarkers?.()
+      }
     }
 
     // Handle mouse over event for the Vehicle Colors button
@@ -660,7 +676,7 @@ const Map = React.forwardRef<L.Map, MapProps>(
             })
           })
         } catch (e) {
-          console.error('Error loading saved markers:', e)
+          logger.error('Error loading saved markers:', e)
         }
       }
     }, [addSavedMarker])
@@ -895,9 +911,10 @@ const Map = React.forwardRef<L.Map, MapProps>(
             theme="mapBtnTT"
           >
             <button
-              id="stationsdb"
-              className="stationsdb rounded"
-              aria-label="Stations Database"
+              ref={layersButtonRef}
+              id="mapLayersdb"
+              className="mapLayersdb rounded"
+              aria-label="Map Layers Database"
               onMouseOver={handleMouseOver}
               style={{
                 position: 'relative',
@@ -1223,16 +1240,6 @@ const Map = React.forwardRef<L.Map, MapProps>(
           />
         )}
         <MeasureEvents />
-        {/* {showVehicleColorsModal && (
-          <VehicleColorsModal
-            isOpen={showVehicleColorsModal}
-            onClose={() => setShowVehicleColorsModal(false)}
-            anchorPosition={modalPosition}
-            trackedVehicles={(trackedVehicles || []).map(
-              (vehicle) => vehicle.name
-            )}
-          />
-        )} */}
       </MapContainer>
     )
   }

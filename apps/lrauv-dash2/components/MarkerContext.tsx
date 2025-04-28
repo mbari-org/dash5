@@ -5,8 +5,18 @@ import React, {
   useCallback,
   useEffect,
 } from 'react'
+// Temporarily comment out the API imports
+// import {
+//   getMarkers,
+//   createMarker,
+//   updateMarker,
+//   deleteMarker,
+//   batchUpdateMarkers,
+//   Marker,
+// } from '@mbari/api-client'
 import toast from 'react-hot-toast'
 import { createLogger } from '@mbari/utils'
+import { set } from 'msw/lib/types/context'
 
 const logger = createLogger('MarkerContext')
 
@@ -29,6 +39,8 @@ export interface MarkerContextType {
   selectedMarkers: MarkerData[]
   isAddingMarkers: boolean
   activeEditMarkerId: string | null
+  selectedMarkerId: string | null
+  setSelectedMarkerId: (id: string | null) => void
   setIsAddingMarkers: React.Dispatch<React.SetStateAction<boolean>>
   setActiveEditMarkerId: (id: string | null) => void
   handleAddMarker: (lat: number, lng: number) => number
@@ -51,13 +63,20 @@ export interface MarkerContextType {
   clearAllMarkers: () => void
   selectAllMarkers: () => void
   deselectAllMarkers: () => void
+  setMarkers: React.Dispatch<React.SetStateAction<MarkerData[]>>
 }
 
 // Storage key for localStorage
 const STORAGE_KEY = 'lrauv-map-markers'
 
 // Create context
-const MarkerContext = createContext<MarkerContextType | null>(null)
+const MarkerContext = createContext<MarkerContextType | undefined>(undefined)
+
+// Use mock implementations until API is ready
+const getMarkers = async () => {
+  const savedMarkers = localStorage.getItem('lrauv-map-markers')
+  return savedMarkers ? JSON.parse(savedMarkers) : []
+}
 
 // Provider component
 export const MarkerProvider: React.FC<{ children: React.ReactNode }> = ({
@@ -65,6 +84,9 @@ export const MarkerProvider: React.FC<{ children: React.ReactNode }> = ({
 }) => {
   const [markers, setMarkers] = useState<MarkerData[]>([])
   const [selectedMarkers, setSelectedMarkers] = useState<MarkerData[]>([])
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState<Error | null>(null)
+
   const [isAddingMarkers, setIsAddingMarkers] = useState(false)
   const [activeEditMarkerId, setActiveEditMarkerId] = useState<string | null>(
     null
@@ -75,6 +97,29 @@ export const MarkerProvider: React.FC<{ children: React.ReactNode }> = ({
   }, [markers])
   const deselectAllMarkers = useCallback(() => {
     setSelectedMarkers([])
+  }, [])
+  const [selectedMarkerId, setSelectedMarkerId] = useState<string | null>(null)
+  const [nextId, setNextId] = useState(1)
+
+  // Fetch markers on mount
+  useEffect(() => {
+    const fetchMarkers = async () => {
+      setLoading(true)
+      try {
+        const response = await getMarkers()
+        setMarkers(response)
+        setError(null)
+      } catch (err) {
+        logger.error('Failed to fetch markers:', err)
+        setError(
+          err instanceof Error ? err : new Error('Failed to fetch markers')
+        )
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    fetchMarkers()
   }, [])
 
   // Load markers from localStorage on initial mount
@@ -184,83 +229,90 @@ export const MarkerProvider: React.FC<{ children: React.ReactNode }> = ({
   )
 
   const toggleMarkerVisibility = useCallback(
-    (id: string) => {
-      const numericId = parseInt(id, 10)
-      setMarkers((prev) =>
-        prev.map((marker) =>
-          marker.id === numericId
-            ? { ...marker, visible: !marker.visible }
-            : marker
-        )
-      )
-      // Save the updated markers state
-      localStorage.setItem(
-        'savedMarkers',
-        JSON.stringify(
-          markers.map((m) =>
-            m.id === numericId ? { ...m, visible: !m.visible } : m
-          )
-        )
-      )
-    },
-    [markers]
-  )
+    (markerId: string, setVisible?: boolean) => {
+      setMarkers((prevMarkers) => {
+        return prevMarkers.map((marker) => {
+          if (marker.id.toString() === markerId) {
+            // If setVisible is provided, use that value; otherwise toggle
+            const newVisibility =
+              setVisible !== undefined
+                ? setVisible
+                : marker.visible === false
+                ? true
+                : false
 
-  const saveMarkerToLayer = useCallback(
-    (id: string) => {
-      const numericId = parseInt(id, 10)
+            // Rest of your function stays the same...
+            if (marker.savedToLayer) {
+              const savedMarkers = JSON.parse(
+                localStorage.getItem('lrauv-map-markers') || '[]'
+              )
+              const updatedSavedMarkers = savedMarkers.map((m: any) =>
+                m.id.toString() === markerId
+                  ? { ...m, visible: newVisibility }
+                  : m
+              )
+              localStorage.setItem(
+                'lrauv-map-markers',
+                JSON.stringify(updatedSavedMarkers)
+              )
+            }
 
-      // Get the marker with its CURRENT position (after any drag operations)
-      const markerToSave = markers.find((m) => m.id === numericId)
-
-      if (markerToSave) {
-        logger.debug(
-          `Saving marker ${numericId} to layer at position [${markerToSave.lat}, ${markerToSave.lng}]`
-        )
-
-        setMarkers((prev) => {
-          // Create updated array with savedToLayer flag set to true
-          const updated = prev.map((marker) =>
-            marker.id === numericId ? { ...marker, savedToLayer: true } : marker
-          )
-
-          // Immediately update both storage locations with the CURRENT position
-          localStorage.setItem('savedMarkers', JSON.stringify(updated))
-          localStorage.setItem(
-            'layerMarkers',
-            JSON.stringify(updated.filter((m) => m.savedToLayer))
-          )
-
-          return updated
+            return {
+              ...marker,
+              visible: newVisibility,
+            }
+          }
+          return marker
         })
-      } else {
-        logger.error(
-          `Marker ${numericId} not found when trying to save to layer`
-        )
-      }
+      })
     },
-    [markers] // Keep markers positions up-to-date
+    []
   )
 
-  const removeMarkerFromLayer = useCallback(
-    (id: string) => {
-      const numericId = parseInt(id, 10)
-      setMarkers((prev) =>
-        prev.map((marker) =>
-          marker.id === numericId ? { ...marker, savedToLayer: false } : marker
-        )
-      )
+  // Save marker to mapLayersList layer
+  const saveMarkerToLayer = useCallback((markerId: string) => {
+    setMarkers((prevMarkers) => {
+      const updatedMarkers = prevMarkers.map((marker) => {
+        if (marker.id.toString() === markerId) {
+          // Mark as saved to layer
+          return {
+            ...marker,
+            savedToLayer: true,
+            visible: true, // Make visible by default when saving to layer
+          }
+        }
+        return marker
+      })
 
-      // Update local storage
-      localStorage.setItem(
-        'layerMarkers',
-        JSON.stringify(
-          markers.filter((m) => m.id !== numericId && m.savedToLayer)
-        )
-      )
-    },
-    [markers]
-  )
+      // Update storage with saved markers
+      const markersToSave = updatedMarkers.filter((m) => m.savedToLayer)
+      localStorage.setItem('lrauv-map-markers', JSON.stringify(markersToSave))
+
+      return updatedMarkers
+    })
+  }, [])
+
+  // Remove marker from mapLayersList layer
+  const removeMarkerFromLayer = useCallback((markerId: string) => {
+    setMarkers((prevMarkers) => {
+      const updatedMarkers = prevMarkers.map((marker) => {
+        if (marker.id.toString() === markerId) {
+          // Remove from layer but keep in local state
+          return {
+            ...marker,
+            savedToLayer: false,
+          }
+        }
+        return marker
+      })
+
+      // Update storage with only saved markers
+      const markersToSave = updatedMarkers.filter((m) => m.savedToLayer)
+      localStorage.setItem('lrauv-map-markers', JSON.stringify(markersToSave))
+
+      return updatedMarkers
+    })
+  }, [])
 
   // Add function to clear all markers
   const clearAllMarkers = useCallback(() => {
@@ -338,10 +390,7 @@ export const MarkerProvider: React.FC<{ children: React.ReactNode }> = ({
             m.id.toString() === id ? { ...m, isNew: false, label: newLabel } : m
           )
         )
-
-        // Only show the toast message if:
-        // 1. The marker is NOT new (existing marker)
-        // 2. The label has actually changed
+        // Show toast message if the marker was new or label changed
         if (!isNew && hasLabelChanged) {
           toast.success(
             <div className="toast-content">
@@ -376,29 +425,62 @@ export const MarkerProvider: React.FC<{ children: React.ReactNode }> = ({
 
   const handleMarkerDelete = useCallback(
     (id: string) => {
-      // Find the marker before deleting it
-      const markerToDelete = markers.find((m) => m.id.toString() === id)
-      const markerLabel = markerToDelete?.label || 'Unknown'
+      logger.debug(`Deleting marker ${id}`)
 
-      // Delete the marker
-      setMarkers((prev) => prev.filter((marker) => marker.id.toString() !== id))
+      const numericId = parseInt(id, 10)
 
-      // Show toast message with the marker label
-      toast.success(
-        <div className="toast-content">
-          <div>
-            Marker <b>{markerLabel}</b> has been deleted
-          </div>
-        </div>,
-        { duration: 3000, className: 'blue-toast' }
-      )
+      // Find the marker to get its label for the toast
+      const marker = markers.find((m) => m.id === numericId)
+      const markerLabel = marker?.label || 'Unnamed'
+
+      // Remove the marker from the array
+      setMarkers((prev) => prev.filter((marker) => marker.id !== numericId))
+
+      // If the deleted marker was selected, clear selection
+      if (selectedMarkerId === id) {
+        setSelectedMarkerId(null)
+      }
 
       // If the deleted marker was being edited, reset active edit marker
       if (activeEditMarkerId === id) {
         setActiveEditMarkerId(null)
       }
+
+      // Also remove from localStorage if it was saved to layer
+      if (marker?.savedToLayer) {
+        const updatedMarkers = markers.filter(
+          (m) => m.id !== numericId && m.savedToLayer
+        )
+        try {
+          localStorage.setItem(
+            'lrauv-map-markers',
+            JSON.stringify(updatedMarkers)
+          )
+        } catch (error) {
+          logger.error('Error removing marker from storage:', error)
+        }
+      }
+
+      // Show confirmation toast
+      if (marker?.isNew == true) {
+        toast.success(
+          <div className="toast-content">
+            <div>Marker deleted.</div>
+          </div>,
+          { duration: 2000, className: 'blue-toast' }
+        )
+      } else if (marker?.isNew == false) {
+        toast.success(
+          <div className="toast-content">
+            <div>
+              Marker <b>{markerLabel}</b> deleted.
+            </div>
+          </div>,
+          { duration: 2000, className: 'blue-toast' }
+        )
+      }
     },
-    [markers, activeEditMarkerId]
+    [markers, selectedMarkerId, activeEditMarkerId]
   )
 
   // Handle marker drag end event
@@ -419,7 +501,7 @@ export const MarkerProvider: React.FC<{ children: React.ReactNode }> = ({
                 ...m,
                 lat: newPosition.lat,
                 lng: newPosition.lng,
-                isNew: false, // Mark as not new after dragging
+                isNew: false, // Not new after dragging
               }
             : m
         )
@@ -428,14 +510,11 @@ export const MarkerProvider: React.FC<{ children: React.ReactNode }> = ({
         const draggedMarker = updated.find((m) => m.id === id)
         if (draggedMarker?.savedToLayer) {
           localStorage.setItem(
-            'layerMarkers',
+            'lrauv-map-markers',
             JSON.stringify(updated.filter((m) => m.savedToLayer))
           )
           logger.debug(`Updated layer storage for marker ${id}`)
         }
-
-        // Always update the main storage
-        localStorage.setItem('savedMarkers', JSON.stringify(updated))
 
         return updated
       })
@@ -465,8 +544,12 @@ export const MarkerProvider: React.FC<{ children: React.ReactNode }> = ({
     markers,
     selectedMarkers,
     isAddingMarkers,
-    setIsAddingMarkers,
     activeEditMarkerId,
+    loading,
+    error,
+    selectedMarkerId,
+    setSelectedMarkerId,
+    setIsAddingMarkers,
     setActiveEditMarkerId,
     handleAddMarker,
     handleMarkerLabelChange,
@@ -485,6 +568,7 @@ export const MarkerProvider: React.FC<{ children: React.ReactNode }> = ({
     saveMarkerToLayer,
     selectAllMarkers,
     deselectAllMarkers,
+    setMarkers,
   }
 
   return (
