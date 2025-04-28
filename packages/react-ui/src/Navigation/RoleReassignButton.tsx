@@ -23,7 +23,7 @@ export const RoleReassignButton: React.FC<RoleReassignButtonProps> = ({
     currentUserName && onCalls.includes(currentUserName)
   )
   const picLabel = createRoleLabel(pics, 'PIC', currentUserName)
-  const onCallLabel = createRoleLabel(onCalls, 'On Call', currentUserName)
+  const onCallLabel = createRoleLabel(onCalls, 'On-Call', currentUserName)
   return (
     <AccessoryButton
       label={picLabel}

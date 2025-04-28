@@ -39,7 +39,7 @@ export const ReassignmentTable: React.FC<ReassignmentTableProps> = ({
         <tr className="grid grid-cols-5 gap-3">
           <th className={clsx(styles.headerCell, 'col-span-1')}></th>
           <th className={clsx(styles.headerCell, 'col-span-2')}>PIC</th>
-          <th className={clsx(styles.headerCell, 'col-span-2')}>On-call</th>
+          <th className={clsx(styles.headerCell, 'col-span-2')}>On-Call</th>
         </tr>
       </thead>
       <tbody className="flex flex-col gap-y-3">
@@ -64,8 +64,8 @@ export const ReassignmentTable: React.FC<ReassignmentTableProps> = ({
                 onSignIn={() => onRoleChange(vehicle.name, 'in', false)}
                 onSignOut={() => onRoleChange(vehicle.name, 'off', false)}
                 isLoading={isLoading}
-                signInAriaLabel={`Join ${vehicle.name} as On-call`}
-                signOutAriaLabel={`Remove ${currentUserName} from ${vehicle.name} as On-call`}
+                signInAriaLabel={`Join ${vehicle.name} as On-Call`}
+                signOutAriaLabel={`Remove ${currentUserName} from ${vehicle.name} as On-Call`}
               />
             </td>
           </tr>

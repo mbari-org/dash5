@@ -123,7 +123,7 @@ const Vehicle: NextPage = () => {
     ? createRoleLabel(pics, 'PIC', currentUserName)
     : ''
   const onCallLabel = onCalls?.length
-    ? createRoleLabel(onCalls, 'On Call', currentUserName)
+    ? createRoleLabel(onCalls, 'On-Call', currentUserName)
     : ''
 
   useEffect(() => {

@@ -103,7 +103,7 @@ const VehicleAccordion: React.FC<VehicleAccordionProps> = ({
   return (
     <div className="flex h-full flex-col divide-y divide-solid divide-stone-200">
       <AccordionHeader
-        label="Handoff / On Call"
+        label="Handoff / On-Call"
         secondaryLabel={handoffLabel}
         onToggle={handleToggleForSection('handoff')}
         open={section === 'handoff'}

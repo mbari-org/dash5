@@ -28,7 +28,7 @@ describe('ReassignmentTable', () => {
   test('should render table headers correctly', () => {
     render(<ReassignmentTable {...defaultProps} />)
     expect(screen.getByText('PIC')).toBeInTheDocument()
-    expect(screen.getByText('On-call')).toBeInTheDocument()
+    expect(screen.getByText('On-Call')).toBeInTheDocument()
   })
 
   test('should render vehicle names', () => {
@@ -42,7 +42,7 @@ describe('ReassignmentTable', () => {
     expect(screen.getByText('John Smith')).toBeInTheDocument()
   })
 
-  test('should display on-call operator names', () => {
+  test('should display On-Call operator names', () => {
     render(<ReassignmentTable {...defaultProps} />)
     expect(screen.getByText('Jane Doe')).toBeInTheDocument()
     expect(screen.getByText('Ralph Person')).toBeInTheDocument()
