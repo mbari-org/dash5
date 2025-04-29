@@ -486,70 +486,67 @@ const DeploymentMap: React.FC<DeploymentMapProps> = ({
     setShowLayersModal(false)
   }, [])
 
-  const handleVehicleColorRequest = useCallback(() => {
-    // Add debugging to verify values
-    logger.debug('Opening color modal with:', {
-      vehicleName,
-      trackedVehicles,
-      modalTrackedVehicles: vehicleName ? [vehicleName] : [],
-    })
+  // const handleVehicleColorRequest = useCallback(() => {
+  //   // Add debugging to verify values
+  //   logger.debug('Opening color modal with:', {
+  //     vehicleName,
+  //     trackedVehicles,
+  //     modalTrackedVehicles: vehicleName ? [vehicleName] : [],
+  //   })
 
-    setColorModalPosition({
-      top: 100,
-      left: 100,
-    })
-    setColorModalOpen(true)
-  }, [vehicleName, trackedVehicles])
+  //   setColorModalPosition({
+  //     top: 100,
+  //     left: 100,
+  //   })
+  //   setColorModalOpen(true)
+  // }, [vehicleName, trackedVehicles])
 
-  const handleCloseVehicleColors = useCallback((vehicleName?: string) => {
-    setShowVehicleColors(false)
+  // const handleCloseVehicleColors = useCallback((vehicleName?: string) => {
+  //   setShowVehicleColors(false)
 
-    // Time for map to adjust after modal closes
-    setTimeout(() => {
-      if (mapRef.current) {
-        try {
-          // Try invalidateSize method(s)
-          if (typeof mapRef.current.invalidateSize === 'function') {
-            mapRef.current.invalidateSize()
-          } else if (
-            mapRef.current._leafletContainer &&
-            typeof mapRef.current._leafletContainer.invalidateSize ===
-              'function'
-          ) {
-            mapRef.current._leafletContainer.invalidateSize()
-          } else {
-            // Log for debugging
-            logger.debug('Map reference type:', typeof mapRef.current)
-            logger.debug(
-              'Map reference properties:',
-              Object.keys(mapRef.current)
-            )
-          }
-          logger.debug('Map size invalidated after closing modal')
-        } catch (e) {
-          logger.warn('Error invalidating map size:', e)
-        }
-      }
-    }, 300) // Slightly longer timeout for modal animation to complete
-  }, [])
-
-  const handleVehicleColorRequest = useCallback(() => {
-    // Add debugging to verify values
-    logger.debug('Opening color modal with:', {
-      vehicleName,
-      trackedVehicles,
-      modalTrackedVehicles: vehicleName ? [vehicleName] : [],
-    })
-
-    setColorModalPosition({
-      top: 100,
-      left: 100,
-    })
-    setColorModalOpen(true)
-  }, [vehicleName, trackedVehicles])
-  // const handleVehicleColorRequest = useCallback((vehicleName?: string) => {
-  //   setShowVehicleColors(true)
+  //   // Time for map to adjust after modal closes
+  //   setTimeout(() => {
+  //     if (mapRef.current) {
+  //       try {
+  //         // Try invalidateSize method(s)
+  //         if (typeof mapRef.current.invalidateSize === 'function') {
+  //           mapRef.current.invalidateSize()
+  //         } else if (
+  //           mapRef.current._leafletContainer &&
+  //           typeof mapRef.current._leafletContainer.invalidateSize ===
+  //             'function'
+  //         ) {
+  //           mapRef.current._leafletContainer.invalidateSize()
+  //         } else {
+  //           // Log for debugging
+  //           logger.debug('Map reference type:', typeof mapRef.current)
+  //           logger.debug(
+  //             'Map reference properties:',
+  //             Object.keys(mapRef.current)
+  //           )
+  //         }
+  //         logger.debug('Map size invalidated after closing modal')
+  //       } catch (e) {
+  //         logger.warn('Error invalidating map size:', e)
+  //       }
+  //     }
+  //   }, 300) // Slightly longer timeout for modal animation to complete
   // }, [])
+
+  const handleVehicleColorRequest = useCallback(() => {
+    // Add debugging to verify values
+    logger.debug('Opening color modal with:', {
+      vehicleName,
+      trackedVehicles,
+      modalTrackedVehicles: vehicleName ? [vehicleName] : [],
+    })
+
+    setColorModalPosition({
+      top: 100,
+      left: 100,
+    })
+    setColorModalOpen(true)
+  }, [vehicleName, trackedVehicles])
 
   const handleCloseVehicleColors = useCallback((vehicleName?: string) => {
     setShowVehicleColors(false)
