@@ -82,48 +82,6 @@ export const VehicleColorsModal: React.FC<VehicleColorsModalProps> = ({
     onClose()
   }, [onClose])
 
-  // // Get reference to the map when modal opens - Not working as expected
-  // useEffect(() => {
-  //   if (isOpen) {
-  //     // Find the Leaflet map instance
-  //     const leafletContainer = document.querySelector('.leaflet-container')
-  //     if (leafletContainer) {
-  //       // Add a class that will disable interactions
-  //       leafletContainer.classList.add('leaflet-disabled')
-
-  //       // Try to find the map instance via _leaflet
-  //       const map = (leafletContainer as any)._leaflet_map
-  //       if (map) {
-  //         mapRef.current = map
-  //         map.dragging.disable()
-  //         map.touchZoom.disable()
-  //         map.doubleClickZoom.disable()
-  //         map.scrollWheelZoom.disable()
-  //         map.boxZoom.disable()
-  //         map.keyboard.disable()
-  //       }
-  //     }
-  //   }
-  //   return () => {
-  //     // Re-enable map when modal closes
-  //     const leafletContainer = document.querySelector('.leaflet-container')
-  //     if (leafletContainer) {
-  //       leafletContainer.classList.remove('leaflet-disabled')
-
-  //       const map = mapRef.current || (leafletContainer as any)._leaflet_map
-  //       if (map) {
-  //         // Re-enable map interactions
-  //         map.dragging.enable()
-  //         map.touchZoom.enable()
-  //         map.doubleClickZoom.enable()
-  //         map.scrollWheelZoom.enable()
-  //         map.boxZoom.enable()
-  //         map.keyboard.enable()
-  //       }
-  //     }
-  //   }
-  // }, [isOpen])
-
   // Close color picker when clicking outside
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -140,6 +98,7 @@ export const VehicleColorsModal: React.FC<VehicleColorsModalProps> = ({
     return () => document.removeEventListener('mousedown', handleClickOutside)
   }, [editingColorFor])
 
+  // handleResize to recalculate color picker position
   useEffect(() => {
     const handleResize = () => {
       if (editingColorFor) {
@@ -217,18 +176,18 @@ export const VehicleColorsModal: React.FC<VehicleColorsModalProps> = ({
   // Calculate color picker position
   const calculateColorPickerPosition = (vehicle: string) => {
     const vehicleRow = document.getElementById(`vehicle-row-${vehicle}`)
-    // Try to use cached position first
+    // Use cached position first
     let rect: DOMRect | undefined = elementPositions[vehicle]
-    // If not cached, get it from DOM
+    // Otherwise, get it from DOM
     if (!rect) {
       const vehicleRow = document.getElementById(`vehicle-row-${vehicle}`)
       rect = vehicleRow?.getBoundingClientRect()
-      // Cache the position if we have a valid rect
+      // Cache the position if valid rect
       if (rect) {
         setElementPositions((prev) => ({ ...prev, [vehicle]: rect as DOMRect }))
       }
     }
-    // If we still don't have a rect, fallback to anchorPosition
+    // Fallback to anchorPosition
     if (!vehicleRow || !rect) {
       return {
         top: `${Math.max(
@@ -250,7 +209,7 @@ export const VehicleColorsModal: React.FC<VehicleColorsModalProps> = ({
         maxWidth: '90vw',
       }
     }
-    // Default position
+    // Default color picker position
     const defaultPos = {
       left: `${anchorPosition.left + 480 + 10}px`,
       top: `${Math.max(
@@ -267,15 +226,15 @@ export const VehicleColorsModal: React.FC<VehicleColorsModalProps> = ({
     const pickerWidth = 420 // width + padding
     const pickerHeight = 500 // height + padding
 
-    // Check if color picker would go off-screen to the right
+    // Check if color picker would go off-screen - right
     if ((anchorPosition?.left || 0) + 480 + 10 + pickerWidth > screenWidth) {
-      // Position to the left of the modal instead
+      // Position to the left of the modal
       defaultPos.left = `${Math.max(
         10,
         (anchorPosition?.left || 50) - pickerWidth - 10
       )}px`
     }
-    // Check if color picker would go off-screen at the bottom
+    // Check if color picker would go off-screen - bottom
     if ((rect?.top || anchorPosition?.top || 0) + pickerHeight > screenHeight) {
       // Position higher up to fit in the viewport
       defaultPos.top = `${Math.max(10, screenHeight - pickerHeight - 10)}px`
@@ -283,24 +242,23 @@ export const VehicleColorsModal: React.FC<VehicleColorsModalProps> = ({
     return defaultPos
   }
 
-  // Debug logging to verify prop is received correctly
+  // Force showAll vehicles when modal opens
   useEffect(() => {
     if (isOpen) {
-      // Reset all necessary state when modal opens
+      // Reset when modal opens
       if (forceShowAll) {
         logger.debug(
           'Modal opened - resetting showAll to true due to forceShowAll'
         )
         setShowAll(true)
       }
-      // Reset other state if needed
+      // Reset other state
       setEditingColorFor(null)
     }
   }, [isOpen, forceShowAll])
 
-  // Inside the component before the return statement
+  // Ensure the active vehicle has a color entry
   useEffect(() => {
-    // Ensure the active vehicle has a color entry
     if (activeVehicle && !vehicleColors[activeVehicle.toLowerCase()]) {
       logger.debug(`Adding missing color for ${activeVehicle}`)
       setVehicleColor(activeVehicle, '#666666')
