@@ -9,9 +9,9 @@ export function useGoogleMapsApiKey() {
   const [apiKey, setApiKey] = useState<string | null>(null)
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<Error | null>(null)
-  const [keySource, setKeySource] = useState<'server' | 'local' | 'none'>(
-    'none'
-  )
+  const [keySource, setKeySource] = useState<
+    'server' | 'local' | 'direct' | 'none'
+  >('none')
 
   // Type assertion for the API context
   const tethysApi = useContext(TethysApiContext) as {
@@ -21,36 +21,79 @@ export function useGoogleMapsApiKey() {
   useEffect(() => {
     async function fetchApiKey() {
       try {
-        // FIRST PRIORITY: Try to fetch from the Tethys API
+        // FIRST PRIORITY: Try to fetch from the Tethys API using context
         if (tethysApi && tethysApi.client) {
           try {
-            logger.debug('🔍 Attempting to fetch API key from Tethys API...')
+            logger.debug(
+              '🔍 Attempting to fetch API key from Tethys API client...'
+            )
             const response = await tethysApi.client.get('/api/info')
             const googleApiKey = response.data?.result?.appConfig?.googleApiKey
 
             if (googleApiKey) {
-              logger.debug('✅ Successfully retrieved API key from server')
+              logger.debug(
+                '✅ Successfully retrieved API key from Tethys API client'
+              )
               setApiKey(googleApiKey)
               setKeySource('server')
               setIsLoading(false)
               return
             } else {
-              logger.debug('⚠️ API key not found in server response')
+              logger.debug('⚠️ API key not found in Tethys API client response')
             }
           } catch (apiError) {
-            logger.error('⚠️ Error fetching from API:', apiError)
+            logger.error('⚠️ Error fetching from Tethys API client:', apiError)
             // Continue to fallback - don't throw here
           }
         } else {
           logger.debug('ℹ️ Tethys API client not available')
-          logger.debug(
-            'Tethys API client check:',
-            !!tethysApi,
-            !!tethysApi?.client
-          )
+          // logger.debug(
+          //   'Tethys API client check:',
+          //   !!tethysApi,
+          //   !!tethysApi?.client
+          // )
         }
 
-        // SECOND PRIORITY: Fall back to environment variable
+        // SECOND PRIORITY: Try direct fetch from TethysDash endpoint
+        try {
+          logger.debug('🔍 Attempting direct fetch from TethysDash API...')
+          const response = await fetch(
+            'https://okeanids.mbari.org/TethysDash/api/info',
+            {
+              method: 'GET',
+              headers: {
+                Accept: 'application/json',
+                'Content-Type': 'application/json',
+              },
+              // Include credentials if needed for cookies
+              // credentials: 'include',
+            }
+          )
+
+          if (!response.ok) {
+            throw new Error(`HTTP error! Status: ${response.status}`)
+          }
+
+          const data = await response.json()
+          const directApiKey = data?.result?.appConfig?.googleApiKey
+
+          if (directApiKey) {
+            logger.debug(
+              '✅ Successfully retrieved API key from direct TethysDash fetch'
+            )
+            setApiKey(directApiKey)
+            setKeySource('direct')
+            setIsLoading(false)
+            return
+          } else {
+            logger.debug('⚠️ API key not found in direct TethysDash response')
+          }
+        } catch (directError) {
+          logger.error('⚠️ Error with direct TethysDash fetch:', directError)
+          // Continue to next fallback - don't throw
+        }
+
+        // THIRD PRIORITY: Fall back to environment variable
         if (process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY) {
           logger.debug(
             '✅ Falling back to Google Maps API key from environment'
@@ -61,7 +104,7 @@ export function useGoogleMapsApiKey() {
           return
         }
 
-        // If we get here, both methods failed - BUT DON'T THROW
+        // If we get here, all methods failed - BUT DON'T THROW
         logger.warn('⚠️ No Google Maps API key available from any source')
         setKeySource('none')
         setError(

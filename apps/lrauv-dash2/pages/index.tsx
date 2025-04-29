@@ -187,7 +187,7 @@ const OverViewMap: React.FC<{
               logger.debug('Triggered resize event as fallback')
             }
           } else {
-            // Just log it once without the full error
+            // Just log once without the full error
             logger.debug('Map layout update: invalidateSize not available yet')
           }
         } catch (err) {
@@ -417,7 +417,7 @@ const OverViewMap: React.FC<{
 
       handleMarkerDelete(markerId)
     },
-    [handleMarkerDelete, selectedMarkerId, markers] // Add handleMarkerDelete to dependencies
+    [handleMarkerDelete, selectedMarkerId, markers]
   )
 
   // Handle marker save to layer
@@ -480,7 +480,7 @@ const OverViewMap: React.FC<{
           })
         }
 
-        // Provide user feedback
+        // Request user feedback
         toast.success(
           shouldSave
             ? `Marker "${markerToUpdate.label || 'Unnamed'}" saved to layer`
@@ -519,7 +519,7 @@ const OverViewMap: React.FC<{
         lng: newPos[1],
       }
 
-      // Call the actual handler with properly formatted parameters
+      // Call handler with formatted parameters
       handleMarkerDragEnd(numericId, positionObj)
     },
     [handleMarkerDragEnd]
@@ -558,8 +558,7 @@ const OverViewMap: React.FC<{
           if (typeof mapRef.current.invalidateSize === 'function') {
             mapRef.current.invalidateSize()
           } else {
-            // Log what we have for debugging
-            logger.debug('Map reference type:', typeof mapRef.current)
+            // Logs for debugging
             logger.debug(
               'Map reference properties:',
               Object.keys(mapRef.current)
@@ -574,16 +573,6 @@ const OverViewMap: React.FC<{
   }, [])
 
   useEffect(() => {
-    // Log the map reference when it changes
-    logger.debug(
-      'Map reference type:',
-      mapRef.current ? typeof mapRef.current : 'null'
-    )
-    logger.debug(
-      'Map reference has invalidateSize:',
-      mapRef.current && typeof mapRef.current.invalidateSize === 'function'
-    )
-
     if (mapRef.current) {
       logger.debug(
         'Available methods:',
@@ -604,143 +593,138 @@ const OverViewMap: React.FC<{
   }, [mapRef])
 
   return (
-    logger.debug('Rendering Map with children'),
-    (
-      <>
-        {showLayersModal ? (
-          <MapLayersListModal
-            onClose={handleCloseLayers}
-            anchorPosition={layersModalPosition}
-          />
-        ) : null}
-        <Map
-          ref={mapRef}
-          className="h-full w-full"
-          onMapReady={(map) => {
-            logger.debug('🌍 Map ready callback triggered in OverViewMap')
-            // Store the Leaflet instance
-            mapRef.current = map
+    <>
+      {showLayersModal ? (
+        <MapLayersListModal
+          onClose={handleCloseLayers}
+          anchorPosition={layersModalPosition}
+        />
+      ) : null}
+      <Map
+        ref={mapRef}
+        className="h-full w-full"
+        onMapReady={(map) => {
+          logger.debug('🌍 Map ready callback triggered in OverViewMap')
+          // Store the Leaflet instance
+          mapRef.current = map
 
-            // Force redraw - after map is ready
-            setTimeout(() => {
-              try {
-                map.invalidateSize()
-              } catch (e) {
-                logger.warn('Could not invalidate map size:', e)
-              }
-            }, 200)
-          }}
-          trackedVehicles={trackedVehicles.map((vehicle) => ({
-            ...vehicle,
-            id: vehicle.id || vehicle.name, // Ensure id is always present
-          }))}
-          onRequestDepth={async (lat, lng) => {
+          // Force redraw - after map is ready
+          setTimeout(() => {
             try {
-              // Try to remove any leading zeros
-              const formattedLat = parseFloat(String(lat).replace(/^0+/, ''))
-              // Then use in depth request
-              const result = await handleDepthRequestWithFeedback(
-                formattedLat,
-                lng
-              )
-              return result.depth !== null ? result.depth : 0
-            } catch (error) {
-              logger.warn('❌ Error in depth request:', error)
-              toast.error('Depth data unavailable', { id: 'depth-error' })
-              return 0
+              map.invalidateSize()
+            } catch (e) {
+              logger.warn('Could not invalidate map size:', e)
             }
-          }}
-          center={center}
-          centerZoom={centerZoom}
-          fitBounds={bounds}
-          viewMode={viewMode}
-          onRequestCoordinate={handleCoordinateRequest}
-          onRequestFitBounds={handleFitBoundsRequest}
-          onRequestStations={handleLayersRequest}
-          onRequestVehicleColors={handleVehicleColorRequest}
-          onRequestMarkers={handleMarkersRequest}
-          isAddingMarkers={isAddingMarkers}
-          onToggleMarkerMode={handleToggleMarkerMode}
-          renderMapClickHandler={() => (
-            <MapClickHandler
-              isAddingMarkers={isAddingMarkers}
-              isEditingMarker={false}
-              onAddMarker={handleAddMarker}
-            />
-          )}
-          renderCustomMarkerSet={() => (
-            <CustomMarkerSet
-              isAddingMarkers={isAddingMarkers}
-              setIsAddingMarkers={(value) => setIsAddingMarkers(value)}
-            />
-          )}
-          renderDraggableMarkers={() =>
-            markers.map(
-              (marker) =>
-                // Only render the marker if visible or visibility !== false
-                marker.visible !== false && (
-                  <DraggableMarker
-                    key={`marker-${marker.id}`}
-                    id={marker.id.toString()}
-                    position={[marker.lat, marker.lng]}
-                    index={marker.index}
-                    label={marker.label}
-                    draggable={true}
-                    isSelected={selectedMarkerId === marker.id.toString()}
-                    isNew={marker.isNew}
-                    savedToLayer={marker.savedToLayer}
-                    iconColor={marker.iconColor || defaultMarkerColor}
-                    onClick={() => handleMarkerClick(marker.id.toString())}
-                    onDragEnd={(newPos) =>
-                      handleMarkerPositionChange(marker.id.toString(), newPos)
-                    }
-                    onEditStateChange={(isEditing) => {
-                      setActiveEditMarkerId(
-                        isEditing ? marker.id.toString() : null
-                      )
-                    }}
-                    onEdit={() => handleEditMarker(marker.id.toString())}
-                    onDelete={() => handleDeleteMarker(marker.id.toString())}
-                    onColorChange={(color) =>
-                      handleMarkerColorChange(marker.id.toString(), color)
-                    }
-                    onSaveToLayer={handleSaveMarkerToLayer}
-                    onRemoveFromLayer={(id) =>
-                      handleSaveMarkerToLayer(id, false)
-                    }
-                  />
-                )
+          }, 200)
+        }}
+        trackedVehicles={trackedVehicles.map((vehicle) => ({
+          ...vehicle,
+          id: vehicle.id || vehicle.name, // Ensure id is always present
+        }))}
+        onRequestDepth={async (lat, lng) => {
+          try {
+            // Try to remove any leading zeros
+            const formattedLat = parseFloat(String(lat).replace(/^0+/, ''))
+            // Then use in depth request
+            const result = await handleDepthRequestWithFeedback(
+              formattedLat,
+              lng
             )
+            return result.depth !== null ? result.depth : 0
+          } catch (error) {
+            logger.warn('❌ Error in depth request:', error)
+            toast.error('Depth data unavailable', { id: 'depth-error' })
+            return 0
           }
-        >
-          {uniqueTrackedVehicles.map((name, index) => (
-            <VehiclePath
-              name={name.name}
-              key={`path-${name}-${index}`}
-              onGPSFix={handleGPSFix}
-              grouped
+        }}
+        center={center}
+        centerZoom={centerZoom}
+        fitBounds={bounds}
+        viewMode={viewMode}
+        onRequestCoordinate={handleCoordinateRequest}
+        onRequestFitBounds={handleFitBoundsRequest}
+        onRequestStations={handleLayersRequest}
+        onRequestVehicleColors={handleVehicleColorRequest}
+        onRequestMarkers={handleMarkersRequest}
+        isAddingMarkers={isAddingMarkers}
+        onToggleMarkerMode={handleToggleMarkerMode}
+        renderMapClickHandler={() => (
+          <MapClickHandler
+            isAddingMarkers={isAddingMarkers}
+            isEditingMarker={false}
+            onAddMarker={handleAddMarker}
+          />
+        )}
+        renderCustomMarkerSet={() => (
+          <CustomMarkerSet
+            isAddingMarkers={isAddingMarkers}
+            setIsAddingMarkers={(value) => setIsAddingMarkers(value)}
+          />
+        )}
+        renderDraggableMarkers={() =>
+          markers.map(
+            (marker) =>
+              // Only render the marker if visible or visibility !== false
+              marker.visible !== false && (
+                <DraggableMarker
+                  key={`marker-${marker.id}`}
+                  id={marker.id.toString()}
+                  position={[marker.lat, marker.lng]}
+                  index={marker.index}
+                  label={marker.label}
+                  draggable={true}
+                  isSelected={selectedMarkerId === marker.id.toString()}
+                  isNew={marker.isNew}
+                  savedToLayer={marker.savedToLayer}
+                  iconColor={marker.iconColor || defaultMarkerColor}
+                  onClick={() => handleMarkerClick(marker.id.toString())}
+                  onDragEnd={(newPos) =>
+                    handleMarkerPositionChange(marker.id.toString(), newPos)
+                  }
+                  onEditStateChange={(isEditing) => {
+                    setActiveEditMarkerId(
+                      isEditing ? marker.id.toString() : null
+                    )
+                  }}
+                  onEdit={() => handleEditMarker(marker.id.toString())}
+                  onDelete={() => handleDeleteMarker(marker.id.toString())}
+                  onColorChange={(color) =>
+                    handleMarkerColorChange(marker.id.toString(), color)
+                  }
+                  onSaveToLayer={handleSaveMarkerToLayer}
+                  onRemoveFromLayer={(id) => handleSaveMarkerToLayer(id, false)}
+                />
+              )
+          )
+        }
+      >
+        {uniqueTrackedVehicles.map((name, index) => (
+          <VehiclePath
+            name={name.name}
+            key={`path-${name}-${index}`}
+            onGPSFix={handleGPSFix}
+            grouped
+          />
+        ))}
+        {selectedStations.map((station) => {
+          const lng = station.geojson?.geometry?.coordinates[0]
+          const lat = station.geojson?.geometry?.coordinates[1]
+
+          if (!lng || !lat) {
+            return null
+          }
+
+          return (
+            <StationMarker
+              key={station.name}
+              name={station.name}
+              lat={lat}
+              lng={lng}
             />
-          ))}
-          {selectedStations.map((station) => {
-            const lng = station.geojson?.geometry?.coordinates[0]
-            const lat = station.geojson?.geometry?.coordinates[1]
-
-            if (!lng || !lat) {
-              return null
-            }
-
-            return (
-              <StationMarker
-                key={station.name}
-                name={station.name}
-                lat={lat}
-                lng={lng}
-              />
-            )
-          })}
-        </Map>
-      </>
-    )
+          )
+        })}
+      </Map>
+    </>
   )
 }
 

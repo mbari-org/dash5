@@ -61,7 +61,6 @@ const DraggableMarker: React.FC<DraggableMarkerProps> = ({
   onSaveToLayer,
   onRemoveFromLayer,
 }) => {
-  logger.debug('DraggableMarker rendering, savedToLayer:', savedToLayer)
   const markerRef = useRef<L.Marker>(null)
   const [editMode, setEditMode] = useState(false)
   const [inputValue, setInputValue] = useState(label)
@@ -147,16 +146,14 @@ const DraggableMarker: React.FC<DraggableMarkerProps> = ({
 
   // Handle marker click
   const onEditStateChange = useCallback((isEditing: boolean) => {
-    logger.debug(
-      `Marker edit state changed: ${isEditing ? 'Editing' : 'Not Editing'}`
-    )
+    // logger.debug(
+    //   `Marker edit state changed: ${isEditing ? 'Editing' : 'Not Editing'}`
+    // )
   }, [])
 
   // Open the popup when the marker is clicked
   useEffect(() => {
     if (isNew) {
-      logger.debug(`Opening popup for new marker ${id}...`)
-
       // First ensure the marker is mounted
       const marker = markerRef.current
       if (!marker) {
@@ -449,7 +446,7 @@ const DraggableMarker: React.FC<DraggableMarkerProps> = ({
   // Handle canceling edits
   const handleCancelClick = useCallback(
     (e: React.MouseEvent) => {
-      logger.debug('Cancel button clicked')
+      // logger.debug('Cancel button clicked')
       e.stopPropagation()
       e.preventDefault()
       handleCancelEdit()

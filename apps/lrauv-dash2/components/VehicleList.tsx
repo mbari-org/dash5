@@ -300,9 +300,6 @@ const VehicleList: React.FC<{
       vehicles.data?.find((v) => v.vehicleName === trackedVehicles[index])
         ?.color ||
       '#ccc'
-    // const color = vehicles.data?.find(
-    //   (v) => v.vehicleName === trackedVehicles[index]
-    // )?.color
     const handleSelect = () => {
       handleSelectVehicle?.(trackedVehicles[index])
     }
@@ -326,7 +323,6 @@ const VehicleList: React.FC<{
   React.useEffect(() => {
     // This effect depends on vehicleColors and will trigger a re-render
     // when they change in the VehicleColorsModal
-    logger.debug('Vehicle colors updated in context', vehicleColors)
   }, [vehicleColors])
 
   return (
