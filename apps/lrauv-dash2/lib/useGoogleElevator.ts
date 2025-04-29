@@ -52,6 +52,12 @@ export function useElevator() {
 
         // Make the API request
         try {
+          // Add null check before using elevationService
+          if (!elevationService) {
+            logger.warn('Elevation service is not available')
+            return { depth: null, status: 'unavailable' } // Elevation service unavailable
+          }
+
           const result = await elevationService.getElevationForLocations(
             request
           )

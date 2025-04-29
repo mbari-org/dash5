@@ -607,6 +607,7 @@ const DeploymentMap: React.FC<DeploymentMapProps> = ({
       ) : null}
       <Map
         ref={mapRef}
+        mapId="deploymentMap"
         className="h-full w-full"
         maxZoom={17}
         onMapReady={(map) => {

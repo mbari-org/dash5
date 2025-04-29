@@ -602,6 +602,7 @@ const OverViewMap: React.FC<{
       ) : null}
       <Map
         ref={mapRef}
+        mapId="overviewMap"
         className="h-full w-full"
         onMapReady={(map) => {
           logger.debug('🌍 Map ready callback triggered in OverViewMap')
