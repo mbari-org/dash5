@@ -358,16 +358,14 @@ const VehiclePath: React.FC<{
         </>
       )}
       {(activeRoute ?? route).map((r, i) => (
-        <>
-          <VehiclePoint
-            key={`${name}:${
-              grouped ? 'overview' : 'detail'
-            }:preview:${i}:${r.join()}`}
-            position={r}
-            color={color}
-            radius={10}
-          />
-        </>
+        <VehiclePoint
+          key={`${name}:${
+            grouped ? 'overview' : 'detail'
+          }:preview:${i}:${r.join()}`}
+          position={r}
+          color={color}
+          radius={10}
+        />
       ))}
       {inactiveRoute && (
         <Polyline

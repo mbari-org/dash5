@@ -87,7 +87,7 @@ export const getElevationService =
               reject(error)
             }
           }
-        }, 200) // Check every 200ms
+        }, 200)
       }
     )
 
@@ -106,7 +106,6 @@ export const getCachedElevation = async (
 
   // Check cache first
   if (elevationCache.has(key)) {
-    logger.debug('Found cached elevation for', key)
     return elevationCache.get(key)!
   }
 

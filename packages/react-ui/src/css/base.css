@@ -506,9 +506,31 @@ div[role='status'][aria-live='polite'] svg {
 .custom-scrollbar::-webkit-scrollbar-thumb:hover {
   background: #555;
 }
+
 .leaflet-disabled {
   pointer-events: none !important;
   scroll-behavior: none !important;
+}
+
+/* Prevent Leaflet automatic paragraph wrapping */
+.leaflet-popup-content p {
+  margin: 0 !important;
+  display: contents !important;
+}
+
+/* Make Leaflet popup paragraphs behave like divs */
+.marker-popup-container .leaflet-popup-content p {
+  display: block !important;
+}
+
+/* Fix for nested elements */
+.leaflet-popup-content p > div {
+  display: inline-block !important;
+}
+
+/* Custom styling for marker popup content */
+.marker-popup-content {
+  display: inline-block;
 }
 
 /* Disable pointer events for the color picker */
@@ -525,7 +547,7 @@ div[role='status'][aria-live='polite'] svg {
   cursor: pointer !important;
   transform: scale(1.1);
 }
-/* Use the default cursor for the color picker */
+/* Default cursor for the color picker */
 .sketch-picker {
   cursor: default !important;
 }
