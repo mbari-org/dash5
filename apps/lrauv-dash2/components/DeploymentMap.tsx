@@ -3,7 +3,6 @@ import React, { useCallback, useState, useRef, useEffect } from 'react'
 import { useManagedWaypoints } from '@mbari/react-ui'
 import useGoogleElevator from '../lib/useGoogleElevator'
 import { VPosDetail } from '@mbari/api-client'
-// import { StationsListModal } from './StationsListModal'
 import { MapLayersListModal } from '../components/MapLayersListModal'
 import { useSelectedStations } from './SelectedStationContext'
 import { useMarkers } from './MarkerContext'
@@ -11,13 +10,17 @@ import { toast } from 'react-hot-toast'
 import { createLogger } from '@mbari/utils'
 import VehicleColorsModal from './VehicleColorsModal'
 import useTrackedVehicles from '../lib/useTrackedVehicles'
+import type { MapProps } from '@mbari/react-ui/dist/Map/Map'
 
 // This is a tricky workaround to prevent leaflet from crashing next.js
 // SSR. If we don't do this, the leaflet map will be loaded server side
 // and throw a window error.
-const Map = dynamic(() => import('@mbari/react-ui/dist/Map/Map'), {
-  ssr: false,
-})
+const Map = dynamic<CustomMapProps>(
+  () => import('@mbari/react-ui/dist/Map/Map'),
+  {
+    ssr: false,
+  }
+)
 const DraggableMarker = dynamic(() => import('./DraggableMarker'), {
   ssr: false,
 })
@@ -49,6 +52,15 @@ interface DeploymentMapProps {
   endTime?: number | null
 }
 
+// interface CustomMarkerProps
+type CustomMapProps = MapProps &
+  React.RefAttributes<L.Map> & {
+    isAddingMarkers?: boolean
+    onToggleMarkerMode?: () => void
+    trackedVehicles?: { name: string; id?: string }[]
+    mapId?: string
+  }
+
 const DeploymentMap: React.FC<DeploymentMapProps> = ({
   vehicleName,
   indicatorTime,
@@ -62,7 +74,7 @@ const DeploymentMap: React.FC<DeploymentMapProps> = ({
     handleWaypointsUpdate,
     editable,
     focusedWaypointIndex,
-  } = useManagedWaypoints()
+  } = useManagedWaypoints([], 'deploymentMap')
   const handleDragEnd = useCallback(
     (index: number, { lat, lng }: { lat: number; lng: number }) =>
       handleWaypointsUpdate(
@@ -486,53 +498,7 @@ const DeploymentMap: React.FC<DeploymentMapProps> = ({
     setShowLayersModal(false)
   }, [])
 
-  // const handleVehicleColorRequest = useCallback(() => {
-  //   // Add debugging to verify values
-  //   logger.debug('Opening color modal with:', {
-  //     vehicleName,
-  //     trackedVehicles,
-  //     modalTrackedVehicles: vehicleName ? [vehicleName] : [],
-  //   })
-
-  //   setColorModalPosition({
-  //     top: 100,
-  //     left: 100,
-  //   })
-  //   setColorModalOpen(true)
-  // }, [vehicleName, trackedVehicles])
-
-  // const handleCloseVehicleColors = useCallback((vehicleName?: string) => {
-  //   setShowVehicleColors(false)
-
-  //   // Time for map to adjust after modal closes
-  //   setTimeout(() => {
-  //     if (mapRef.current) {
-  //       try {
-  //         // Try invalidateSize method(s)
-  //         if (typeof mapRef.current.invalidateSize === 'function') {
-  //           mapRef.current.invalidateSize()
-  //         } else if (
-  //           mapRef.current._leafletContainer &&
-  //           typeof mapRef.current._leafletContainer.invalidateSize ===
-  //             'function'
-  //         ) {
-  //           mapRef.current._leafletContainer.invalidateSize()
-  //         } else {
-  //           // Log for debugging
-  //           logger.debug('Map reference type:', typeof mapRef.current)
-  //           logger.debug(
-  //             'Map reference properties:',
-  //             Object.keys(mapRef.current)
-  //           )
-  //         }
-  //         logger.debug('Map size invalidated after closing modal')
-  //       } catch (e) {
-  //         logger.warn('Error invalidating map size:', e)
-  //       }
-  //     }
-  //   }, 300) // Slightly longer timeout for modal animation to complete
-  // }, [])
-
+  // Handler for showing vehicle colors
   const handleVehicleColorRequest = useCallback(() => {
     // Add debugging to verify values
     logger.debug('Opening color modal with:', {
@@ -607,6 +573,7 @@ const DeploymentMap: React.FC<DeploymentMapProps> = ({
       ) : null}
       <Map
         ref={mapRef}
+        mapId="deploymentMap"
         className="h-full w-full"
         maxZoom={17}
         onMapReady={(map) => {

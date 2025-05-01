@@ -129,7 +129,7 @@ export const MarkerProvider: React.FC<{ children: React.ReactNode }> = ({
       if (savedMarkers) {
         const parsedMarkers = JSON.parse(savedMarkers) as MarkerData[]
         setMarkers(parsedMarkers)
-        logger.debug('Loaded markers from localStorage:', parsedMarkers.length)
+        // logger.debug('Loaded markers from localStorage:', parsedMarkers.length)
       }
     } catch (error) {
       logger.error('Error loading markers from localStorage:', error)
@@ -140,7 +140,7 @@ export const MarkerProvider: React.FC<{ children: React.ReactNode }> = ({
   useEffect(() => {
     try {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(markers))
-      logger.debug('Saved markers to localStorage:', markers.length)
+      // logger.debug('Saved markers to localStorage:', markers.length)
     } catch (error) {
       logger.error('Error saving markers to localStorage:', error)
     }

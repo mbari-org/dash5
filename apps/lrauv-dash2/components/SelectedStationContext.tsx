@@ -98,7 +98,7 @@ export const SelectedStationsProvider: React.FC<{
     // Function to handle tab focus
     const handleVisibilityChange = () => {
       if (document.visibilityState === 'visible') {
-        console.group(`👁️ Tab became visible (${providerId}) - Syncing state`)
+        // logger.debug(`👁️ Tab became visible (${providerId}) - Syncing state`)
 
         try {
           const storedValue = localStorage.getItem(STORAGE_KEY)
@@ -108,14 +108,14 @@ export const SelectedStationsProvider: React.FC<{
           if (
             JSON.stringify(parsedValue) !== JSON.stringify(selectedStations)
           ) {
-            logger.debug('Stored value differs from current state - updating')
-            logger.debug('Current state:', selectedStations)
-            logger.debug('Stored value:', parsedValue)
+            // logger.debug('Stored value differs from current state - updating')
+            // logger.debug('Current state:', selectedStations)
+            // logger.debug('Stored value:', parsedValue)
             setSelectedStations(parsedValue)
           } else {
-            logger.debug(
-              'Stored value matches current state - no update needed'
-            )
+            // logger.debug(
+            //   'Stored value matches current state - no update needed'
+            // )
           }
         } catch (error) {
           logger.error('Failed to parse stored stations on focus:', error)
