@@ -22,6 +22,7 @@ import useManagedWaypoints from './MissionModalSteps/hooks/useManagedWaypoints'
 import useManagedParameters from './MissionModalSteps/hooks/useManagedParameters'
 import useMissionModalSteps from './MissionModalSteps/hooks/useMissionModalSteps'
 import { ConfirmVehicleDialog } from './ConfirmVehicleDialog'
+import { useSchedule } from './MissionModalSteps/hooks/useSchedule'
 
 export type OnScheduleMissionHandler = (args: {
   selectedMissionId: string
@@ -102,13 +103,24 @@ export const MissionModalView: React.FC<MissionModalViewProps> = ({
   const [selectedMissionId, setSelectedMissionId] = useState<
     string | null | undefined
   >(selectedId)
-  const [confirmedVehicle, setConfirmedVehicle] = useState<string | null>(null)
-  const [showAlternateAddress, setShowAlternateAddress] = useState(false)
-  const [alternateAddress, setAlternateAddress] = useState<string | null>(null)
-  const [scheduleMethod, setScheduleMethod] = useState<ScheduleMethod>('ASAP')
-  const [customScheduleId, setCustomScheduleId] = useState<string | null>(null)
-  const [notes, setNotes] = useState<string | null>(null)
-  const [specifiedTime, setSpecifiedTime] = useState<string | null>(null)
+
+  const {
+    state: {
+      alternateAddress,
+      confirmedVehicle,
+      showAlternateAddress,
+      scheduleMethod,
+      customScheduleId,
+      notes,
+      specifiedTime,
+    },
+    actions: {
+      setAlternateAddress,
+      setConfirmedVehicle,
+      setShowAlternateAddress,
+    },
+    Provider,
+  } = useSchedule()
 
   const {
     handleParamUpdate,
@@ -334,31 +346,23 @@ export const MissionModalView: React.FC<MissionModalViewProps> = ({
         )
 
       case steps.indexOf('Schedule'):
-        return !showAlternateAddress ? (
-          <ScheduleStep
-            waypointCount={plottedWaypointCount}
-            overrideCount={overrideCount}
-            vehicleName={vehicleName}
-            commandText={missionName}
-            scheduleId={customScheduleId}
-            onScheduleIdChanged={setCustomScheduleId}
-            scheduleMethod={scheduleMethod}
-            onScheduleMethodChanged={setScheduleMethod}
-            notes={notes}
-            onNotesChanged={setNotes}
-            specifiedTime={specifiedTime}
-            onSpecifiedTimeChanged={setSpecifiedTime}
-          />
-        ) : (
-          <AlternativeAddressStep
-            alternateAddress={alternateAddress}
-            vehicleName={vehicleName}
-            mission={missionName}
-            alternativeAddresses={alternativeAddresses}
-            onNotesChanged={setNotes}
-            notes={notes}
-            onAlternativeAddressChanged={setAlternateAddress}
-          />
+        return (
+          <Provider>
+            {showAlternateAddress ? (
+              <AlternativeAddressStep
+                vehicleName={vehicleName}
+                mission={missionName}
+                alternativeAddresses={alternativeAddresses}
+              />
+            ) : (
+              <ScheduleStep
+                waypointCount={plottedWaypointCount}
+                overrideCount={overrideCount}
+                vehicleName={vehicleName}
+                commandText={missionName}
+              />
+            )}
+          </Provider>
         )
       default:
         return null

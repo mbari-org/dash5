@@ -8,6 +8,7 @@ import { ConfirmVehicleDialog } from './ConfirmVehicleDialog'
 // Special reuse of MissionModalStep which is identical here.
 import { ScheduleMethod, ScheduleStep } from './MissionModalSteps/ScheduleStep'
 import { AlternativeAddressStep } from './MissionModalSteps/AlternativeAddressStep'
+import { useSchedule } from './MissionModalSteps/hooks/useSchedule'
 
 import {
   SelectCommandStep,
@@ -94,6 +95,24 @@ export const CommandModalView: React.FC<CommandModalViewProps> = ({
   >(defaultCommand)
   const [useTemplateStep, setUseTemplateStep] = useState(false)
 
+  const {
+    state: {
+      alternateAddress,
+      confirmedVehicle,
+      showAlternateAddress,
+      scheduleMethod,
+      customScheduleId,
+      notes,
+      specifiedTime,
+    },
+    actions: {
+      setAlternateAddress,
+      setConfirmedVehicle,
+      setShowAlternateAddress,
+    },
+    Provider,
+  } = useSchedule()
+
   const handleSelectCommandId: SelectCommandStepProps['onSelectCommandId'] = (
     id,
     name,
@@ -138,15 +157,6 @@ export const CommandModalView: React.FC<CommandModalViewProps> = ({
     return selectedCommand?.name
   }
 
-  // Schedule section details
-  const [alternateAddress, setAlternateAddress] = useState<string | null>(null)
-  const [confirmedVehicle, setConfirmedVehicle] = useState<string | null>(null)
-  const [showAlternateAddress, setShowAlternateAddress] = useState(false)
-  const [scheduleMethod, setScheduleMethod] = useState<ScheduleMethod>('ASAP')
-  const [customScheduleId, setCustomScheduleId] = useState<string | null>(null)
-  const [notes, setNotes] = useState<string | null>(null)
-  const [specifiedTime, setSpecifiedTime] = useState<string | null>(null)
-
   const extraButtons = () => {
     if (currentStep === 0) return []
 
@@ -169,7 +179,6 @@ export const CommandModalView: React.FC<CommandModalViewProps> = ({
       : [backButton]
   }
 
-  // Command text state
   const [commandText, setCommandText] = useState<string | null>(null)
 
   // Templated Command State
@@ -179,6 +188,7 @@ export const CommandModalView: React.FC<CommandModalViewProps> = ({
   const [selectedParameters, setSelectedParameters] = useState<{
     [key: string]: string
   }>({})
+
   const handleTemplateParameterChange: BuildTemplatedCommandStepProps['onUpdateField'] =
     (param, argType, value) => {
       const lookup = argType === 'ARG_KEYWORD' ? param : argType
@@ -282,36 +292,28 @@ export const CommandModalView: React.FC<CommandModalViewProps> = ({
             onCommandTextChange={setCommandText}
           />
         ))}
-      {currentStep === 2 &&
-        selectedCommandId &&
-        (showAlternateAddress ? (
-          <AlternativeAddressStep
-            alternateAddress={alternateAddress}
-            vehicleName={vehicleName}
-            mission={commandText ?? getCommandNameById(selectedCommandId) ?? ''}
-            commandDescriptor="command"
-            alternativeAddresses={alternativeAddresses}
-            onNotesChanged={setNotes}
-            notes={notes}
-            onAlternativeAddressChanged={setAlternateAddress}
-          />
-        ) : (
-          <ScheduleStep
-            vehicleName={vehicleName}
-            commandText={
-              commandText ?? getCommandNameById(selectedCommandId) ?? ''
-            }
-            commandDescriptor="command"
-            scheduleId={customScheduleId}
-            onScheduleIdChanged={setCustomScheduleId}
-            scheduleMethod={scheduleMethod}
-            onScheduleMethodChanged={setScheduleMethod}
-            notes={notes}
-            onNotesChanged={setNotes}
-            specifiedTime={specifiedTime}
-            onSpecifiedTimeChanged={setSpecifiedTime}
-          />
-        ))}
+      {currentStep === 2 && selectedCommandId && (
+        <Provider>
+          {showAlternateAddress ? (
+            <AlternativeAddressStep
+              vehicleName={vehicleName}
+              mission={
+                commandText ?? getCommandNameById(selectedCommandId) ?? ''
+              }
+              commandDescriptor="command"
+              alternativeAddresses={alternativeAddresses}
+            />
+          ) : (
+            <ScheduleStep
+              vehicleName={vehicleName}
+              commandText={
+                commandText ?? getCommandNameById(selectedCommandId) ?? ''
+              }
+              commandDescriptor="command"
+            />
+          )}
+        </Provider>
+      )}
     </Modal>
   )
 }

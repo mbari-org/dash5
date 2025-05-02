@@ -2,8 +2,10 @@ import { TextArea } from '../../Fields/TextArea'
 import { Input } from '../../Fields/Input'
 import { DateField } from '../../Fields/DateField'
 import React from 'react'
+import { useScheduleContext } from './hooks/useSchedule'
 
 export type ScheduleMethod = 'ASAP' | 'end' | 'time'
+export type CommType = 'satCell' | 'cell' | 'sat'
 
 export interface ScheduleOption {
   value: ScheduleMethod
@@ -16,14 +18,6 @@ export interface ScheduleProps {
   commandDescriptor?: string
   waypointCount?: number
   overrideCount?: number
-  onNotesChanged?: (notes: string) => void
-  notes?: string | null
-  onScheduleMethodChanged?: (scheduleMethod: ScheduleMethod) => void
-  scheduleMethod: string
-  onScheduleIdChanged?: (scheduleId: string) => void
-  scheduleId?: string | null
-  specifiedTime?: string | null
-  onSpecifiedTimeChanged?: (time: string | null) => void
 }
 
 const SCHEDULE_OPTIONS: ScheduleOption[] = [
@@ -38,20 +32,24 @@ export const ScheduleStep: React.FC<ScheduleProps> = ({
   commandDescriptor = 'mission',
   waypointCount,
   overrideCount,
-  onNotesChanged,
-  notes = null,
-  onScheduleIdChanged,
-  scheduleId = null,
-  onScheduleMethodChanged: handleScheduleMethodChanged,
-  scheduleMethod = null,
-  specifiedTime = null,
-  onSpecifiedTimeChanged,
 }) => {
+  // Get schedule state and actions from context
+  const {
+    state: { scheduleMethod, customScheduleId, notes, specifiedTime },
+    actions: {
+      setScheduleMethod,
+      setCustomScheduleId,
+      setNotes,
+      setSpecifiedTime,
+    },
+  } = useScheduleContext()
+
   const handleScheduleIdChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    onScheduleIdChanged?.(e.target.value)
+    setCustomScheduleId(e.target.value)
   }
+
   const handleNotesChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
-    onNotesChanged?.(e.target.value)
+    setNotes(e.target.value)
   }
 
   const customizationsCount = (waypointCount ?? 0) + (overrideCount ?? 0)
@@ -82,7 +80,7 @@ export const ScheduleStep: React.FC<ScheduleProps> = ({
               <label
                 htmlFor="scheduleMethod"
                 className="flex items-center py-1"
-                onClick={() => handleScheduleMethodChanged?.(value)}
+                onClick={() => setScheduleMethod(value)}
               >
                 <input
                   type="radio"
@@ -95,7 +93,7 @@ export const ScheduleStep: React.FC<ScheduleProps> = ({
               </label>
               {scheduleMethod === 'time' && value === 'time' && (
                 <DateField
-                  onChange={onSpecifiedTimeChanged}
+                  onChange={setSpecifiedTime}
                   value={specifiedTime ?? ''}
                   name="specifiedTime"
                   className="ml-4 max-w-xs"
@@ -111,7 +109,7 @@ export const ScheduleStep: React.FC<ScheduleProps> = ({
           name="customScheduleId"
           className="ml-4 max-w-xs"
           onChange={handleScheduleIdChange}
-          value={scheduleId ?? ''}
+          value={customScheduleId ?? ''}
         />
       </section>
       <section className="mx-4 mt-4 flex flex-col">
