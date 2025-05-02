@@ -6,7 +6,7 @@ import { faAnglesRight } from '@fortawesome/free-solid-svg-icons'
 import { ConfirmVehicleDialog } from './ConfirmVehicleDialog'
 
 // Special reuse of MissionModalStep which is identical here.
-import { ScheduleOption, ScheduleStep } from './MissionModalSteps/ScheduleStep'
+import { ScheduleMethod, ScheduleStep } from './MissionModalSteps/ScheduleStep'
 import { AlternativeAddressStep } from './MissionModalSteps/AlternativeAddressStep'
 
 import {
@@ -27,7 +27,7 @@ export type OnScheduleCommandHandler = (args: {
   alternateAddress?: string | null
   specifiedTime?: string | null
   notes?: string | null
-  scheduleMethod?: ScheduleOption
+  scheduleMethod?: ScheduleMethod
   scheduleId?: string | null
   confirmedVehicle?: string | null
   preview?: boolean
@@ -142,9 +142,7 @@ export const CommandModal: React.FC<CommandModalProps> = ({
   const [alternateAddress, setAlternateAddress] = useState<string | null>(null)
   const [confirmedVehicle, setConfirmedVehicle] = useState<string | null>(null)
   const [showAlternateAddress, setShowAlternateAddress] = useState(false)
-  const [scheduleOption, setScheduleOption] = useState<ScheduleOption | null>(
-    'ASAP'
-  )
+  const [scheduleMethod, setScheduleMethod] = useState<ScheduleMethod>('ASAP')
   const [customScheduleId, setCustomScheduleId] = useState<string | null>(null)
   const [notes, setNotes] = useState<string | null>(null)
   const [specifiedTime, setSpecifiedTime] = useState<string | null>(null)
@@ -206,7 +204,7 @@ export const CommandModal: React.FC<CommandModalProps> = ({
       specifiedTime,
       alternateAddress,
       scheduleId: customScheduleId,
-      scheduleMethod: scheduleOption as ScheduleOption,
+      scheduleMethod,
       confirmedVehicle: confirmedVehicle ?? vehicleName,
       notes,
     })
@@ -306,8 +304,8 @@ export const CommandModal: React.FC<CommandModalProps> = ({
             commandDescriptor="command"
             scheduleId={customScheduleId}
             onScheduleIdChanged={setCustomScheduleId}
-            scheduleMethod={scheduleOption}
-            onScheduleMethodChanged={setScheduleOption}
+            scheduleMethod={scheduleMethod}
+            onScheduleMethodChanged={setScheduleMethod}
             notes={notes}
             onNotesChanged={setNotes}
             specifiedTime={specifiedTime}

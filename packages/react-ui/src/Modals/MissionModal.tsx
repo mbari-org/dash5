@@ -15,7 +15,7 @@ import { ParameterProps, ParameterTableProps } from '../Tables/ParameterTable'
 import { ParameterSummary } from './MissionModalSteps/ParameterSummary'
 import { SafetyCommsStep } from './MissionModalSteps/SafetyCommsStep'
 import { ReviewStep } from './MissionModalSteps/ReviewStep'
-import { ScheduleOption, ScheduleStep } from './MissionModalSteps/ScheduleStep'
+import { ScheduleMethod, ScheduleStep } from './MissionModalSteps/ScheduleStep'
 import { AlternativeAddressStep } from './MissionModalSteps/AlternativeAddressStep'
 import makeWaypointOverrides from './MissionModalSteps/helpers/makeWaypointOverrides'
 import useManagedWaypoints from './MissionModalSteps/hooks/useManagedWaypoints'
@@ -29,7 +29,7 @@ export type OnScheduleMissionHandler = (args: {
   alternateAddress?: string | null
   specifiedTime?: string | null
   notes?: string | null
-  scheduleMethod?: ScheduleOption
+  scheduleMethod: ScheduleMethod
   scheduleId?: string | null
   confirmedVehicle?: string | null
   preview?: boolean
@@ -105,9 +105,7 @@ export const MissionModal: React.FC<MissionModalProps> = ({
   const [confirmedVehicle, setConfirmedVehicle] = useState<string | null>(null)
   const [showAlternateAddress, setShowAlternateAddress] = useState(false)
   const [alternateAddress, setAlternateAddress] = useState<string | null>(null)
-  const [scheduleOption, setScheduleOption] = useState<ScheduleOption | null>(
-    'ASAP'
-  )
+  const [scheduleMethod, setScheduleMethod] = useState<ScheduleMethod>('ASAP')
   const [customScheduleId, setCustomScheduleId] = useState<string | null>(null)
   const [notes, setNotes] = useState<string | null>(null)
   const [specifiedTime, setSpecifiedTime] = useState<string | null>(null)
@@ -224,8 +222,8 @@ export const MissionModal: React.FC<MissionModalProps> = ({
         )
       case steps.indexOf('Schedule'):
         return (
-          !scheduleOption ||
-          (scheduleOption === 'time' && !specifiedTime) ||
+          !scheduleMethod ||
+          (scheduleMethod === 'time' && !specifiedTime) ||
           (showAlternateAddress && !alternateAddress)
         )
       default:
@@ -344,8 +342,8 @@ export const MissionModal: React.FC<MissionModalProps> = ({
             commandText={missionName}
             scheduleId={customScheduleId}
             onScheduleIdChanged={setCustomScheduleId}
-            scheduleMethod={scheduleOption}
-            onScheduleMethodChanged={setScheduleOption}
+            scheduleMethod={scheduleMethod}
+            onScheduleMethodChanged={setScheduleMethod}
             notes={notes}
             onNotesChanged={setNotes}
             specifiedTime={specifiedTime}
@@ -384,7 +382,7 @@ export const MissionModal: React.FC<MissionModalProps> = ({
       specifiedTime,
       alternateAddress,
       scheduleId: customScheduleId,
-      scheduleMethod: scheduleOption as ScheduleOption,
+      scheduleMethod,
       confirmedVehicle: confirmedVehicle ?? vehicleName,
       preview,
     })
