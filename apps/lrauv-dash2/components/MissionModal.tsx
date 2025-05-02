@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState } from 'react'
 import {
-  MissionModal as MissionModalView,
-  MissionModalProps as MissionModalViewProps,
+  MissionModalView,
+  MissionModalViewProps,
   MissionTableProps,
   ParameterProps,
   useManagedWaypoints,

@@ -35,7 +35,7 @@ export type OnScheduleMissionHandler = (args: {
   preview?: boolean
 }) => void
 
-export interface MissionModalProps
+export interface MissionModalViewProps
   extends Omit<StepProgressProps, 'steps'>,
     MissionTableProps,
     WaypointTableProps {
@@ -65,7 +65,7 @@ export interface MissionModalProps
   defaultSearchText?: string
 }
 
-export const MissionModal: React.FC<MissionModalProps> = ({
+export const MissionModalView: React.FC<MissionModalViewProps> = ({
   className,
   style,
   currentStepIndex,
