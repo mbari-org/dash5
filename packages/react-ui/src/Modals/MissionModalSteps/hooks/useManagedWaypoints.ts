@@ -11,50 +11,16 @@ export interface UseManagedWaypointsState {
   focusedWaypointIndex?: number | null
 }
 
-// Cache of atoms by ID to prevent recreation
-const atomCache: Record<string, any> = {}
+const managedWaypoints = atom<UseManagedWaypointsState | null>({
+  key: 'managedWaypoints',
+  default: null,
+})
 
-/**
- * Get or create an atom for a specific waypoints instance
- * @param id - Unique identifier for this waypoints instance
- * @returns Recoil atom with unique key
- */
-const getWaypointsAtom = (id: string = 'default') => {
-  if (!atomCache[id]) {
-    atomCache[id] = atom<UseManagedWaypointsState | null>({
-      key: `managedWaypoints-${id}`,
-      default: null,
-    })
-  }
-  return atomCache[id]
-}
-
-/**
- * Hook for managing waypoints shared between components
- * @param waypoints - Initial waypoints array
- * @param instanceId - Optional ID when multiple instances are needed
- */
-const useManagedWaypoints = (
-  waypointsOrId: WaypointProps[] | string = [],
-  instanceId?: string
-) => {
-  // Determine parameter types
-  let waypoints: WaypointProps[] = []
-  let id = 'default'
-
-  if (Array.isArray(waypointsOrId)) {
-    waypoints = waypointsOrId
-    id = instanceId || 'default'
-  } else if (typeof waypointsOrId === 'string') {
-    id = waypointsOrId
-  }
+const useManagedWaypoints = (waypoints: WaypointProps[] = []) => {
   const defaultWaypoints = useRef<string>(JSON.stringify(waypoints))
 
-  // Get or create atom for this specific instance
-  const managedWaypointsState = getWaypointsAtom(instanceId)
-
   const [updatedWaypoints, setUpdatedWaypoints] =
-    useRecoilState<UseManagedWaypointsState | null>(managedWaypointsState)
+    useRecoilState(managedWaypoints)
 
   const initialWaypoints = waypoints?.map((waypoint) =>
     (waypoint.lat || waypoint.lon) && !waypoint.stationName

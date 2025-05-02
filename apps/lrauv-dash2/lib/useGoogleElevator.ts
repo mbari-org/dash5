@@ -2,8 +2,6 @@ import { useCallback, useRef, useEffect, useState } from 'react'
 import { getElevationService, getCachedElevation } from './elevationService'
 import toast from 'react-hot-toast'
 import { createLogger } from '@mbari/utils'
-import axios from 'axios'
-import { setConfigApiKey } from './elevationService'
 
 const logger = createLogger('useGoogleElevator')
 
@@ -12,46 +10,17 @@ interface DepthResult {
   status: 'success' | 'error' | 'no-data' | 'unavailable'
 }
 
-const fetchApiKeyFromServer = async () => {
-  try {
-    const response = await axios.get(
-      'https://okeanids.mbari.org/TethysDash/api/info'
-    )
-    return response.data?.result?.appConfig?.googleApiKey || null
-  } catch (error) {
-    logger.error('Failed to fetch API key from server:', error)
-    return null
-  }
-}
-
 export function useElevator() {
   const elevationErrorShown = useRef(false)
   const depthLoading = useRef(false)
   const lastKnownDepth = useRef<number | null>(null)
-  const [configApiKey, setConfigApiKey] = useState<string | null>(null)
+
   const [elevationAvailable, setElevationAvailable] = useState<boolean | null>(
     null
   )
 
-  // Fetch API key from server on mount
-  useEffect(() => {
-    fetchApiKeyFromServer().then((apiKey) => {
-      setConfigApiKey(apiKey) // Store it in elevationService
-      setConfigApiKey(apiKey) // Also store it in local state
-
-      // Debug which key is being used
-      logger.debug('API Key source check:', {
-        fromEnv:
-          process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY?.substring(0, 5) + '...',
-        fromConfig: apiKey?.substring(0, 5) + '...',
-        isEnvDefined: !!process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY,
-        isConfigDefined: !!apiKey,
-      })
-    })
-  }, [])
-
   // Call this immediately on mount to start initializing the service
-  useEffect(() => {
+  useState(() => {
     getElevationService()
       .then(() => {
         setElevationAvailable(true)
@@ -61,7 +30,7 @@ export function useElevator() {
         setElevationAvailable(false)
         logger.warn('⚠️ Elevation service unavailable')
       })
-  }, [])
+  })
 
   const handleDepthRequest = useCallback(
     async (lat: number, lng: number): Promise<DepthResult> => {
@@ -83,12 +52,6 @@ export function useElevator() {
 
         // Make the API request
         try {
-          // Add null check before using elevationService
-          if (!elevationService) {
-            logger.warn('Elevation service is not available')
-            return { depth: null, status: 'unavailable' } // Elevation service unavailable
-          }
-
           const result = await elevationService.getElevationForLocations(
             request
           )
