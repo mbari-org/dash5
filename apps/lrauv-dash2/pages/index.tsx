@@ -16,9 +16,9 @@ import { Allotment, LayoutPriority } from 'allotment'
 import { useGoogleMaps } from '../lib/useGoogleMaps'
 import { VPosDetail } from '@mbari/api-client'
 import 'allotment/dist/style.css'
+import { StationsListModal } from '../components/StationsListModal'
 import { MapLayersListModal } from '../components/MapLayersListModal'
 import { useSelectedStations } from '../components/SelectedStationContext'
-import { useManagedWaypoints } from '@mbari/react-ui'
 import { useMarkers } from '../components/MarkerContext'
 import toast from 'react-hot-toast'
 import type { MapProps } from '@mbari/react-ui/dist/Map/Map'
@@ -68,8 +68,7 @@ type CustomMapProps = MapProps &
   React.RefAttributes<L.Map> & {
     isAddingMarkers?: boolean
     onToggleMarkerMode?: () => void
-    trackedVehicles?: { name: string; id?: string }[]
-    mapId?: string
+    trackedVehicles?: { name: string; id?: string }[] // Match the actual type being used
   }
 
 // interface MarkerData
@@ -88,12 +87,6 @@ const OverViewMap: React.FC<{
 }> = ({ trackedVehicles }) => {
   // Add mapRef to store the Leaflet map instance
   const mapRef = useRef<L.Map | null>(null)
-  const {
-    updatedWaypoints,
-    handleWaypointsUpdate,
-    editable,
-    focusedWaypointIndex,
-  } = useManagedWaypoints([], 'overviewMap')
   const { handleDepthRequest, elevationAvailable } = useGoogleElevator()
   const [center, setCenter] = useState<undefined | [number, number]>()
   const [centerZoom, setCenterZoom] = useState<number | undefined>(undefined)
@@ -195,7 +188,7 @@ const OverViewMap: React.FC<{
             }
           } else {
             // Just log once without the full error
-            // logger.debug('Map layout update: invalidateSize not available yet')
+            logger.debug('Map layout update: invalidateSize not available yet')
           }
         } catch (err) {
           // Log without the full error trace to reduce console noise
@@ -404,9 +397,9 @@ const OverViewMap: React.FC<{
 
       // Find the marker to edit
       const markerToEdit = markers.find((m) => m.id.toString() === markerId)
-      // if (markerToEdit) {
-      //   logger.debug('Editing marker:', markerToEdit)
-      // }
+      if (markerToEdit) {
+        logger.debug('Editing marker:', markerToEdit)
+      }
     },
     [markers, setActiveEditMarkerId]
   )
@@ -581,22 +574,22 @@ const OverViewMap: React.FC<{
 
   useEffect(() => {
     if (mapRef.current) {
-      // logger.debug(
-      //   'Available methods:',
-      //   Object.getOwnPropertyNames(mapRef.current).filter(
-      //     (prop) =>
-      //       mapRef.current &&
-      //       typeof (mapRef.current as unknown as Record<string, unknown>)[
-      //         prop
-      //       ] === 'function'
-      //   )
-      // )
+      logger.debug(
+        'Available methods:',
+        Object.getOwnPropertyNames(mapRef.current).filter(
+          (prop) =>
+            mapRef.current &&
+            typeof (mapRef.current as unknown as Record<string, unknown>)[
+              prop
+            ] === 'function'
+        )
+      )
     }
   }, [])
 
   // Handle map reference
   useEffect(() => {
-    // logger.debug('mapRef.current in OverViewMap:', mapRef.current)
+    logger.debug('mapRef.current in OverViewMap:', mapRef.current)
   }, [mapRef])
 
   return (
@@ -609,7 +602,6 @@ const OverViewMap: React.FC<{
       ) : null}
       <Map
         ref={mapRef}
-        mapId="overviewMap"
         className="h-full w-full"
         onMapReady={(map) => {
           logger.debug('🌍 Map ready callback triggered in OverViewMap')

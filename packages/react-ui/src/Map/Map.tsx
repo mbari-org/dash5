@@ -95,7 +95,6 @@ export interface MapProps extends React.HTMLAttributes<HTMLDivElement> {
   viewMode?: 'center' | 'bounds' | null
   scrollWheelZoom?: boolean
   isAddingMarkers?: boolean
-  mapId?: string
   onToggleMarkerMode?: () => void
   onRequestMarkers?: (position?: { top: number; left: number }) => void
   onRequestDepth?: MouseCoordinatesProps['onRequestDepth']
@@ -142,7 +141,6 @@ const Map = React.forwardRef<L.Map, MapProps>(
       className,
       style,
       center = [36.7849, -122.12097],
-      mapId = 'default',
       centerZoom,
       zoom = 17,
       minZoom = 4,
@@ -184,7 +182,7 @@ const Map = React.forwardRef<L.Map, MapProps>(
     const [isMeasuring, setIsMeasuring] = useState(false)
     const [isAddingMarkersLocal, setIsAddingMarkersLocal] =
       useState(isAddingMarkers)
-    const { baseLayer, setBaseLayer } = useMapBaseLayer(mapId)
+    const { baseLayer, setBaseLayer } = useMapBaseLayer()
     const addBaseLayerHandler = useCallback(
       (layer: BaseLayerOption) => () => {
         setBaseLayer(layer)
