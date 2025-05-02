@@ -1,6 +1,6 @@
 import {
-  CommandModal as CommandModalView,
-  CommandModalProps as CommandModalViewProps,
+  CommandModalView,
+  CommandModalViewProps,
   mapValues,
 } from '@mbari/react-ui'
 import {

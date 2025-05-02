@@ -33,7 +33,7 @@ export type OnScheduleCommandHandler = (args: {
   preview?: boolean
 }) => void
 
-export interface CommandModalProps
+export interface CommandModalViewProps
   extends StepProgressProps,
     SelectCommandStepProps {
   loading?: boolean
@@ -58,7 +58,7 @@ export interface CommandModalProps
   vehicles?: string[]
 }
 
-export const CommandModal: React.FC<CommandModalProps> = ({
+export const CommandModalView: React.FC<CommandModalViewProps> = ({
   loading,
   className,
   style,
@@ -316,4 +316,4 @@ export const CommandModal: React.FC<CommandModalProps> = ({
   )
 }
 
-CommandModal.displayName = 'Modals.CommandModal'
+CommandModalView.displayName = 'Modals.CommandModalView'

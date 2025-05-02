@@ -1,24 +1,24 @@
 import React from 'react'
 // also exported from '@storybook/react' if you can deal with breaking changes in 6.1
 import { Story, Meta } from '@storybook/react/types-6-0'
-import { CommandModal, CommandModalProps } from './CommandModal'
+import { CommandModalView, CommandModalViewProps } from './CommandModalView'
 import { CommandTableProps } from '../Tables/CommandTable'
 import { wait } from '@mbari/utils'
-import { syntaxVariations, commands } from './CommandModal.sampleProps'
+import { syntaxVariations, commands } from './CommandModalView.sampleProps'
 
 export default {
-  title: 'Modals/CommandModal',
-  component: CommandModal,
+  title: 'Modals/CommandModalView',
+  component: CommandModalView,
 } as Meta
 
-const Template: Story<CommandModalProps> = (args) => {
-  const onSchedule: CommandModalProps['onSchedule'] = async (values) => {
+const Template: Story<CommandModalViewProps> = (args) => {
+  const onSchedule: CommandModalViewProps['onSchedule'] = async (values) => {
     console.log('submitting')
     await wait(1)
     console.log('Submitted', values)
     return undefined
   }
-  return <CommandModal {...args} onSchedule={onSchedule} />
+  return <CommandModalView {...args} onSchedule={onSchedule} />
 }
 
 const commandTableArgs: CommandTableProps = {
@@ -33,7 +33,7 @@ const commandTableArgs: CommandTableProps = {
   selectedId: '5',
 }
 
-const args: Omit<CommandModalProps, 'onSubmit'> = {
+const args: Omit<CommandModalViewProps, 'onSubmit'> = {
   steps: ['Command', 'Build', 'Schedule'],
   currentStepIndex: 0,
   syntaxVariations,
