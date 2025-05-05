@@ -5,10 +5,17 @@ import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { faAnglesRight } from '@fortawesome/free-solid-svg-icons'
 import { ConfirmVehicleDialog } from './ConfirmVehicleDialog'
 
-// Special reuse of MissionModalStep which is identical here.
-import { ScheduleMethod, ScheduleStep } from './MissionModalSteps/ScheduleStep'
+import {
+  ScheduleMethod,
+  ScheduleStep,
+  CommType,
+} from './MissionModalSteps/ScheduleStep'
 import { AlternativeAddressStep } from './MissionModalSteps/AlternativeAddressStep'
-import { useSchedule } from './MissionModalSteps/hooks/useSchedule'
+
+import {
+  ScheduleProvider,
+  useScheduleContext,
+} from './MissionModalSteps/hooks/useSchedule'
 
 import {
   SelectCommandStep,
@@ -32,6 +39,8 @@ export type OnScheduleCommandHandler = (args: {
   scheduleId?: string | null
   confirmedVehicle?: string | null
   preview?: boolean
+  commType?: CommType
+  timeout?: number
 }) => void
 
 export interface CommandModalViewProps
@@ -59,7 +68,19 @@ export interface CommandModalViewProps
   vehicles?: string[]
 }
 
-export const CommandModalView: React.FC<CommandModalViewProps> = ({
+export const CommandModalView: React.FC<CommandModalViewProps> = (props) => (
+  <ScheduleProvider
+    initialState={{
+      scheduleMethod: 'ASAP',
+      alternateAddress: null,
+      commType: 'cellsat',
+    }}
+  >
+    <CommandModalBody {...props} />
+  </ScheduleProvider>
+)
+
+const CommandModalBody: React.FC<CommandModalViewProps> = ({
   loading,
   className,
   style,
@@ -89,6 +110,7 @@ export const CommandModalView: React.FC<CommandModalViewProps> = ({
 }) => {
   const [selectedCommandId, setSelectedCommandId] =
     useState<SelectCommandStepProps['selectedId']>(selectedId)
+
   const [currentStep, setCurrentStep] = useState(currentStepIndex ?? 0)
   const [selectedCommandName, setSelectedCommandName] = useState<
     string | null | undefined
@@ -104,14 +126,15 @@ export const CommandModalView: React.FC<CommandModalViewProps> = ({
       customScheduleId,
       notes,
       specifiedTime,
+      commType,
+      timeout,
     },
     actions: {
       setAlternateAddress,
       setConfirmedVehicle,
       setShowAlternateAddress,
     },
-    Provider,
-  } = useSchedule()
+  } = useScheduleContext()
 
   const handleSelectCommandId: SelectCommandStepProps['onSelectCommandId'] = (
     id,
@@ -135,10 +158,7 @@ export const CommandModalView: React.FC<CommandModalViewProps> = ({
   )
 
   const handleNext = () => {
-    console.log('Handle Next', selectedCommandId, '->', currentStep + 1)
-    if (selectedCommandId) {
-      return setCurrentStep(currentStep + 1)
-    }
+    if (selectedCommandId) setCurrentStep(currentStep + 1)
   }
 
   const handlePrevious = () => {
@@ -147,41 +167,35 @@ export const CommandModalView: React.FC<CommandModalViewProps> = ({
       setShowAlternateAddress(false)
       return
     }
-    if (currentStep > 0) {
-      return setCurrentStep(currentStep - 1)
-    }
+    currentStep > 0 && setCurrentStep(currentStep - 1)
   }
 
-  const getCommandNameById = (id: string) => {
-    const selectedCommand = commands.find((command) => command.id === id)
-    return selectedCommand?.name
-  }
+  const getCommandNameById = (id: string) =>
+    commands.find((c) => c.id === id)?.name
 
-  const extraButtons = () => {
+  const extraButtons = (): ExtraButton[] => {
     if (currentStep === 0) return []
 
-    const backButton: ExtraButton = {
+    const back: ExtraButton = {
       buttonText: 'Back',
       appearance: 'secondary',
       onClick: handlePrevious,
     }
-    const altAddressButton: ExtraButton = {
+
+    const alt: ExtraButton = {
       buttonText: 'Submit to alternative address',
       appearance: 'secondary',
       type: 'submit',
-      onClick: () => {
-        setShowAlternateAddress(true)
-      },
+      onClick: () => setShowAlternateAddress(true),
     }
 
-    return isLastStep && !!alternativeAddresses && !showAlternateAddress
-      ? [backButton, altAddressButton]
-      : [backButton]
+    return isLastStep && alternativeAddresses && !showAlternateAddress
+      ? [back, alt]
+      : [back]
   }
 
   const [commandText, setCommandText] = useState<string | null>(null)
 
-  // Templated Command State
   const [selectedSyntax, setSelectedSyntax] = useState<string | null>(
     syntaxVariations?.[0]?.help ?? null
   )
@@ -192,11 +206,11 @@ export const CommandModalView: React.FC<CommandModalViewProps> = ({
   const handleTemplateParameterChange: BuildTemplatedCommandStepProps['onUpdateField'] =
     (param, argType, value) => {
       const lookup = argType === 'ARG_KEYWORD' ? param : argType
-      setSelectedParameters({ ...selectedParameters, [lookup]: value })
+      setSelectedParameters((prev) => ({ ...prev, [lookup]: value }))
       handleUpdatedField?.(param, argType, value)
     }
 
-  // Reset params when command or syntax changes
+  /* Reset params when command or syntax changes */
   const lastSyntax = useRef({ selectedSyntax, selectedCommandId })
   useEffect(() => {
     if (
@@ -206,7 +220,7 @@ export const CommandModalView: React.FC<CommandModalViewProps> = ({
       setSelectedParameters({})
       lastSyntax.current = { selectedSyntax, selectedCommandId }
     }
-  }, [selectedCommandId, selectedSyntax, setSelectedParameters])
+  }, [selectedCommandId, selectedSyntax])
 
   const handleSchedule = () => {
     onSchedule({
@@ -217,6 +231,8 @@ export const CommandModalView: React.FC<CommandModalViewProps> = ({
       scheduleMethod,
       confirmedVehicle: confirmedVehicle ?? vehicleName,
       notes,
+      commType,
+      timeout,
     })
   }
 
@@ -262,6 +278,7 @@ export const CommandModalView: React.FC<CommandModalViewProps> = ({
           vehicleName={vehicleName}
         />
       )}
+
       {currentStep === 1 &&
         (useTemplateStep ? (
           <BuildTemplatedCommandStep
@@ -292,28 +309,25 @@ export const CommandModalView: React.FC<CommandModalViewProps> = ({
             onCommandTextChange={setCommandText}
           />
         ))}
-      {currentStep === 2 && selectedCommandId && (
-        <Provider>
-          {showAlternateAddress ? (
-            <AlternativeAddressStep
-              vehicleName={vehicleName}
-              mission={
-                commandText ?? getCommandNameById(selectedCommandId) ?? ''
-              }
-              commandDescriptor="command"
-              alternativeAddresses={alternativeAddresses}
-            />
-          ) : (
-            <ScheduleStep
-              vehicleName={vehicleName}
-              commandText={
-                commandText ?? getCommandNameById(selectedCommandId) ?? ''
-              }
-              commandDescriptor="command"
-            />
-          )}
-        </Provider>
-      )}
+
+      {currentStep === 2 &&
+        selectedCommandId &&
+        (showAlternateAddress ? (
+          <AlternativeAddressStep
+            vehicleName={vehicleName}
+            mission={commandText ?? getCommandNameById(selectedCommandId) ?? ''}
+            commandDescriptor="command"
+            alternativeAddresses={alternativeAddresses}
+          />
+        ) : (
+          <ScheduleStep
+            vehicleName={vehicleName}
+            commandText={
+              commandText ?? getCommandNameById(selectedCommandId) ?? ''
+            }
+            commandDescriptor="command"
+          />
+        ))}
     </Modal>
   )
 }

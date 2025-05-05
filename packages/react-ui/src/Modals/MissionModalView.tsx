@@ -1,3 +1,7 @@
+/* MissionModalView.tsx
+   — Refactored to use the new stand‑alone <ScheduleProvider> and useScheduleContext()
+*/
+
 import React, { useEffect, useState } from 'react'
 import { Modal } from '../Modal/Modal'
 import { StepProgress, StepProgressProps } from '../Navigation/StepProgress'
@@ -15,14 +19,22 @@ import { ParameterProps, ParameterTableProps } from '../Tables/ParameterTable'
 import { ParameterSummary } from './MissionModalSteps/ParameterSummary'
 import { SafetyCommsStep } from './MissionModalSteps/SafetyCommsStep'
 import { ReviewStep } from './MissionModalSteps/ReviewStep'
-import { ScheduleMethod, ScheduleStep } from './MissionModalSteps/ScheduleStep'
+import {
+  ScheduleMethod,
+  ScheduleStep,
+  CommType,
+} from './MissionModalSteps/ScheduleStep'
 import { AlternativeAddressStep } from './MissionModalSteps/AlternativeAddressStep'
 import makeWaypointOverrides from './MissionModalSteps/helpers/makeWaypointOverrides'
 import useManagedWaypoints from './MissionModalSteps/hooks/useManagedWaypoints'
 import useManagedParameters from './MissionModalSteps/hooks/useManagedParameters'
 import useMissionModalSteps from './MissionModalSteps/hooks/useMissionModalSteps'
 import { ConfirmVehicleDialog } from './ConfirmVehicleDialog'
-import { useSchedule } from './MissionModalSteps/hooks/useSchedule'
+
+import {
+  ScheduleProvider,
+  useScheduleContext,
+} from './MissionModalSteps/hooks/useSchedule'
 
 export type OnScheduleMissionHandler = (args: {
   selectedMissionId: string
@@ -34,6 +46,8 @@ export type OnScheduleMissionHandler = (args: {
   scheduleId?: string | null
   confirmedVehicle?: string | null
   preview?: boolean
+  commType?: CommType
+  timeout?: number
 }) => void
 
 export interface MissionModalViewProps
@@ -66,7 +80,19 @@ export interface MissionModalViewProps
   defaultSearchText?: string
 }
 
-export const MissionModalView: React.FC<MissionModalViewProps> = ({
+export const MissionModalView: React.FC<MissionModalViewProps> = (props) => (
+  <ScheduleProvider
+    initialState={{
+      scheduleMethod: 'ASAP',
+      alternateAddress: null,
+      commType: 'cellsat',
+    }}
+  >
+    <MissionModalBody {...props} />
+  </ScheduleProvider>
+)
+
+const MissionModalBody: React.FC<MissionModalViewProps> = ({
   className,
   style,
   currentStepIndex,
@@ -100,6 +126,7 @@ export const MissionModalView: React.FC<MissionModalViewProps> = ({
   const [selectedMissionCategory, setSelectedMissionCategory] = useState<
     string | undefined
   >(defaultMissionCategory ?? 'Recent Runs')
+
   const [selectedMissionId, setSelectedMissionId] = useState<
     string | null | undefined
   >(selectedId)
@@ -113,14 +140,15 @@ export const MissionModalView: React.FC<MissionModalViewProps> = ({
       customScheduleId,
       notes,
       specifiedTime,
+      commType,
+      timeout,
     },
     actions: {
       setAlternateAddress,
       setConfirmedVehicle,
       setShowAlternateAddress,
     },
-    Provider,
-  } = useSchedule()
+  } = useScheduleContext()
 
   const {
     handleParamUpdate,
@@ -174,9 +202,7 @@ export const MissionModalView: React.FC<MissionModalViewProps> = ({
 
   const handleSelect = (id?: string | null) => {
     setSelectedMissionId(id)
-    if (id) {
-      onSelectMission?.(id)
-    }
+    id && onSelectMission?.(id)
   }
 
   const handleSelectCategory = (category?: string) => {
@@ -186,14 +212,12 @@ export const MissionModalView: React.FC<MissionModalViewProps> = ({
   const missionName =
     missions.find(({ id }) => id === selectedMissionId)?.name ?? ''
 
-  const handleAlternateAddress = () => {
-    setShowAlternateAddress(true)
-  }
+  const handleAlternateAddress = () => setShowAlternateAddress(true)
 
-  const extraButtons = () => {
+  const extraButtons = (): ExtraButton[] => {
     if (currentStep === 0) return []
 
-    const extraButtons: ExtraButton[] = [
+    const buttons: ExtraButton[] = [
       {
         buttonText: 'Back',
         appearance: 'secondary',
@@ -205,15 +229,16 @@ export const MissionModalView: React.FC<MissionModalViewProps> = ({
           : handlePrevious,
       },
     ]
+
     if (steps[currentStep] === 'Schedule' && !showAlternateAddress) {
-      extraButtons.push({
+      buttons.push({
         buttonText: 'Send to alternate address',
         appearance: 'secondary',
         onClick: handleAlternateAddress,
         disabled: disableConfirm(),
       })
     }
-    return extraButtons
+    return buttons
   }
 
   const disableConfirm = () => {
@@ -239,7 +264,7 @@ export const MissionModalView: React.FC<MissionModalViewProps> = ({
           (showAlternateAddress && !alternateAddress)
         )
       default:
-        false
+        return false
     }
   }
 
@@ -258,6 +283,7 @@ export const MissionModalView: React.FC<MissionModalViewProps> = ({
             defaultSearchText={defaultSearchText}
           />
         )
+
       case steps.indexOf('Waypoints'):
         return showSummary ? (
           <WaypointSummary
@@ -346,24 +372,21 @@ export const MissionModalView: React.FC<MissionModalViewProps> = ({
         )
 
       case steps.indexOf('Schedule'):
-        return (
-          <Provider>
-            {showAlternateAddress ? (
-              <AlternativeAddressStep
-                vehicleName={vehicleName}
-                mission={missionName}
-                alternativeAddresses={alternativeAddresses}
-              />
-            ) : (
-              <ScheduleStep
-                waypointCount={plottedWaypointCount}
-                overrideCount={overrideCount}
-                vehicleName={vehicleName}
-                commandText={missionName}
-              />
-            )}
-          </Provider>
+        return showAlternateAddress ? (
+          <AlternativeAddressStep
+            vehicleName={vehicleName}
+            mission={missionName}
+            alternativeAddresses={alternativeAddresses}
+          />
+        ) : (
+          <ScheduleStep
+            waypointCount={plottedWaypointCount}
+            overrideCount={overrideCount}
+            vehicleName={vehicleName}
+            commandText={missionName}
+          />
         )
+
       default:
         return null
     }
@@ -371,10 +394,12 @@ export const MissionModalView: React.FC<MissionModalViewProps> = ({
 
   const handleSchedule = () => {
     const preview = currentStep !== steps.indexOf('Send Command')
+
     const waypointOverrides = makeWaypointOverrides(
       updatedWaypoints,
       unfilteredMissionParameters
     )
+
     onSchedule?.({
       selectedMissionId: selectedMissionId as string,
       parameterOverrides: [
@@ -389,10 +414,11 @@ export const MissionModalView: React.FC<MissionModalViewProps> = ({
       scheduleMethod,
       confirmedVehicle: confirmedVehicle ?? vehicleName,
       preview,
+      commType,
+      timeout,
     })
-    if (preview) {
-      handleNext()
-    }
+
+    preview && handleNext()
   }
 
   useEffect(() => {
@@ -408,7 +434,7 @@ export const MissionModalView: React.FC<MissionModalViewProps> = ({
     ) {
       setWaypointsEditable(false)
     }
-  }, [editable, setWaypointsEditable, currentStep, steps])
+  }, [editable, setWaypointsEditable, currentStep, steps, showSummary])
 
   switch (currentStep) {
     case steps.indexOf('Confirm'):
@@ -422,6 +448,7 @@ export const MissionModalView: React.FC<MissionModalViewProps> = ({
           onConfirm={handleSchedule}
         />
       )
+
     case steps.indexOf('Send Command'):
       return (
         <Modal
@@ -443,6 +470,7 @@ export const MissionModalView: React.FC<MissionModalViewProps> = ({
             <pre className="w-full rounded-lg bg-stone-100 p-4 font-mono">
               {commandText?.split(';').join(';\n')}
             </pre>
+
             {notes && (
               <>
                 <p className="my-2">Additional notes:</p>
@@ -454,6 +482,7 @@ export const MissionModalView: React.FC<MissionModalViewProps> = ({
           </div>
         </Modal>
       )
+
     default:
       return (
         <Modal
