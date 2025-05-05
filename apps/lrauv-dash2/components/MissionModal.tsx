@@ -361,6 +361,8 @@ const MissionModal: React.FC<MissionModalProps> = ({
     alternateAddress,
     notes,
     preview,
+    commType,
+    timeout,
   }) => {
     const { commandText, schedDate, previewSbd } = makeMissionCommand({
       mission: selectedMissionId as string,
@@ -378,6 +380,8 @@ const MissionModal: React.FC<MissionModalProps> = ({
         schedDate,
         destinationAddress: alternateAddress ?? undefined,
         commandText: commandText ?? '',
+        via: commType,
+        timeout,
       })
     }
   }

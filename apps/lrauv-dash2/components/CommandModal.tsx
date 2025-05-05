@@ -163,6 +163,8 @@ export const CommandModal: React.FC<CommandModalProps> = ({
     specifiedTime,
     alternateAddress,
     notes,
+    commType,
+    timeout,
   }) => {
     const { schedDate } = makeCommand({
       commandText,
@@ -176,6 +178,8 @@ export const CommandModal: React.FC<CommandModalProps> = ({
       schedDate,
       destinationAddress: alternateAddress ?? undefined,
       commandText,
+      via: commType,
+      timeout,
     })
   }
 
