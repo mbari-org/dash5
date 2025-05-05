@@ -9,6 +9,8 @@ export interface CreateCommandParams {
   commandNote: string
   runCommand?: string
   schedDate: string
+  via?: string
+  timeout?: number
   destinationAddress?: string
 }
 
@@ -18,6 +20,9 @@ export interface CreateCommandResponse {
   commandText: string
   commandNote: string
   schedDate: string
+  via: string
+  timeout: number
+  destinationAddress: string
   runCommand: boolean
   schedId: string
 }
@@ -32,6 +37,15 @@ export const createCommand = async (
     console.debug(`POST ${url}`)
   }
 
-  const response = await instance.post(url, undefined, { ...config, params })
+  // If via is 'sat', ensure timeout is undefined
+  const processedParams = { ...params }
+  if (processedParams.via === 'sat') {
+    processedParams.timeout = undefined
+  }
+
+  const response = await instance.post(url, undefined, {
+    ...config,
+    params: processedParams,
+  })
   return response.data.result as CreateCommandResponse
 }
