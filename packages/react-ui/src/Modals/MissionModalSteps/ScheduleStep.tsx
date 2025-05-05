@@ -1,14 +1,20 @@
 import { TextArea } from '../../Fields/TextArea'
 import { Input } from '../../Fields/Input'
-import { DateField } from '../../Fields/DateField'
-import React from 'react'
+import React, { useCallback } from 'react'
 import { useScheduleContext } from './hooks/useSchedule'
+import clsx from 'clsx'
+import { DateField } from '../../Fields/DateField'
 
 export type ScheduleMethod = 'ASAP' | 'end' | 'time'
-export type CommType = 'satCell' | 'cell' | 'sat'
+export type CommType = 'cellsat' | 'cell' | 'sat'
 
 export interface ScheduleOption {
   value: ScheduleMethod
+  label: string
+}
+
+export interface CommTypeOption {
+  value: CommType
   label: string
 }
 
@@ -26,6 +32,15 @@ const SCHEDULE_OPTIONS: ScheduleOption[] = [
   { value: 'time', label: 'For specific time:' },
 ]
 
+const COMM_TYPE_OPTIONS: CommTypeOption[] = [
+  {
+    value: 'cellsat',
+    label: 'Attempt via cell until timeout, then send via sat',
+  },
+  { value: 'cell', label: 'Attempt via cell until timeout' },
+  { value: 'sat', label: 'Send via sat' },
+]
+
 export const ScheduleStep: React.FC<ScheduleProps> = ({
   vehicleName,
   commandText,
@@ -33,14 +48,22 @@ export const ScheduleStep: React.FC<ScheduleProps> = ({
   waypointCount,
   overrideCount,
 }) => {
-  // Get schedule state and actions from context
   const {
-    state: { scheduleMethod, customScheduleId, notes, specifiedTime },
+    state: {
+      scheduleMethod,
+      customScheduleId,
+      notes,
+      specifiedTime,
+      commType,
+      timeout,
+    },
     actions: {
       setScheduleMethod,
       setCustomScheduleId,
       setNotes,
       setSpecifiedTime,
+      setCommType,
+      setTimeout,
     },
   } = useScheduleContext()
 
@@ -52,6 +75,11 @@ export const ScheduleStep: React.FC<ScheduleProps> = ({
     setNotes(e.target.value)
   }
 
+  const handleTimeoutChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value ? parseInt(e.target.value, 10) : undefined
+    setTimeout(value)
+  }
+
   const customizationsCount = (waypointCount ?? 0) + (overrideCount ?? 0)
   const hasBothCustomizations = waypointCount !== overrideCount
   const overrideSummary = customizationsCount
@@ -59,6 +87,13 @@ export const ScheduleStep: React.FC<ScheduleProps> = ({
         hasBothCustomizations ? 'and' : ''
       } ${(overrideCount ?? 0) > 0 ? `${overrideCount} override(s)` : ''}`
     : ''
+
+  const handleDateChange = useCallback(
+    (value: string) => {
+      setSpecifiedTime(value)
+    },
+    [setSpecifiedTime]
+  )
 
   return (
     <article className="h-full">
@@ -74,7 +109,7 @@ export const ScheduleStep: React.FC<ScheduleProps> = ({
         {overrideSummary}
       </section>
       <section className="flex">
-        <ul className="ml-4  flex max-h-full flex-col">
+        <ul className="ml-4 flex max-h-full flex-col">
           {SCHEDULE_OPTIONS.map(({ value, label }) => (
             <li className="mr-4 flex items-center" key={value}>
               <label
@@ -91,17 +126,65 @@ export const ScheduleStep: React.FC<ScheduleProps> = ({
                 />
                 {label}
               </label>
-              {scheduleMethod === 'time' && value === 'time' && (
-                <DateField
-                  onChange={setSpecifiedTime}
-                  value={specifiedTime ?? ''}
-                  name="specifiedTime"
-                  className="ml-4 max-w-xs"
+            </li>
+          ))}
+          <li
+            className={clsx(
+              'ml-4 flex items-center',
+              scheduleMethod === 'time' ? 'visible' : 'invisible'
+            )}
+          >
+            {scheduleMethod === 'time' && (
+              <DateField
+                onChange={handleDateChange}
+                value={specifiedTime ?? ''}
+                name="specifiedTime"
+                className="w-64"
+              />
+            )}
+          </li>
+        </ul>
+        <ul className="flex max-h-full flex-col">
+          {COMM_TYPE_OPTIONS.map(({ value, label }) => (
+            <li className="mr-4 flex items-center" key={value}>
+              <label
+                htmlFor="commType"
+                className="flex items-center py-1"
+                onClick={() => setCommType(value)}
+              >
+                <input
+                  type="radio"
+                  value={value}
+                  name="commType"
+                  checked={commType === value}
+                  className="mr-2"
                 />
-              )}
+                {label}
+              </label>
             </li>
           ))}
         </ul>
+        <div className="ml-2 flex">
+          <label
+            htmlFor="timeout"
+            className={clsx('mr-2 pt-1', commType === 'sat' && 'opacity-40')}
+          >
+            Cell timeout:
+          </label>
+          <Input
+            name="timeout"
+            type="number"
+            disabled={commType === 'sat'}
+            className="h-fit w-20"
+            value={timeout?.toString() ?? '5'}
+            onChange={handleTimeoutChange}
+          />
+          <span
+            className={clsx('ml-2 pt-1', commType === 'sat' && 'opacity-40')}
+          >
+            mins
+          </span>
+        </div>
       </section>
       <section className="mx-4 mt-4 flex items-center">
         <label>Custom schedule id (optional):</label>
