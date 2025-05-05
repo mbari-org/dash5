@@ -1,5 +1,5 @@
 import React, { createContext, useContext, ReactNode, useState } from 'react'
-import { ScheduleMethod } from '../ScheduleStep'
+import { ScheduleMethod, CommType } from '../ScheduleStep'
 
 export interface ScheduleState {
   alternateAddress: string | null
@@ -9,6 +9,8 @@ export interface ScheduleState {
   customScheduleId: string | null
   notes: string | null
   specifiedTime: string | null
+  commType: CommType
+  timeout: number | undefined
 }
 
 export interface ScheduleActions {
@@ -19,6 +21,8 @@ export interface ScheduleActions {
   setCustomScheduleId: (value: string | null) => void
   setNotes: (value: string | null) => void
   setSpecifiedTime: (value: string | null) => void
+  setCommType: (value: CommType) => void
+  setTimeout: (value: number | undefined) => void
 }
 
 type ScheduleContextType = {
@@ -74,6 +78,12 @@ export function useSchedule(initialState?: Partial<ScheduleState>) {
   const [specifiedTime, setSpecifiedTime] = useState<string | null>(
     initialState?.specifiedTime ?? null
   )
+  const [commType, setCommType] = useState<CommType>(
+    initialState?.commType ?? 'cellsat'
+  )
+  const [timeout, setTimeout] = useState<number | undefined>(
+    initialState?.timeout ?? 5
+  )
 
   const state: ScheduleState = {
     alternateAddress,
@@ -83,6 +93,8 @@ export function useSchedule(initialState?: Partial<ScheduleState>) {
     customScheduleId,
     notes,
     specifiedTime,
+    commType,
+    timeout,
   }
 
   const actions: ScheduleActions = {
@@ -93,6 +105,8 @@ export function useSchedule(initialState?: Partial<ScheduleState>) {
     setCustomScheduleId,
     setNotes,
     setSpecifiedTime,
+    setCommType,
+    setTimeout,
   }
 
   const contextValue = { state, actions }
