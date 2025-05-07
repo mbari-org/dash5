@@ -93,6 +93,7 @@ const DeploymentMap: React.FC<DeploymentMapProps> = ({
   const [viewMode, setViewMode] = useState<'center' | 'bounds' | null>(null)
   const [selectedMarkerId, setSelectedMarkerId] = useState<string | null>(null)
   const [defaultMarkerColor, setDefaultMarkerColor] = useState<string>('red')
+  const [depthWarningShown, setDepthWarningShown] = useState(false)
 
   const [showLayersModal, setShowLayersModal] = useState(false)
   const [showVehicleColors, setShowVehicleColors] = useState(false)
@@ -193,39 +194,52 @@ const DeploymentMap: React.FC<DeploymentMapProps> = ({
     [latestGPS, setLatestGPS]
   )
 
+  // Handle depth request with feedback
   const handleDepthRequestWithFeedback = useCallback(
     async (lat: number, lng: number) => {
       try {
-        // Call the elevation service
+        // Call elevation service
         const result = await handleDepthRequest(lat, lng)
 
-        // Update state with the result
+        // Update elevation data state - ADDING THIS
         setElevationData({
           depth: result.depth,
           status: result.status,
           position: [lat, lng],
         })
 
-        // Show appropriate toast status
+        // Show appropriate toast based on status
         toast.dismiss('depth-loading')
+
         if (result.status === 'success') {
+          setDepthWarningShown(false)
         } else if (
-          result.status === 'unavailable' ||
-          result.status === 'no-data'
+          (result.status === 'unavailable' || result.status === 'no-data') &&
+          !depthWarningShown
         ) {
-          toast('⚠️ Maps Depth data currently unavailable❕', {
-            id: 'depth-result',
+          // Only show warning once!
+          toast.error('⚠️ Map depth data currently unavailable', {
+            id: 'depth-unavailable',
+            duration: 5000,
             className: 'blue-toast',
           })
+          setDepthWarningShown(true)
         }
         return result
       } catch (error) {
         toast.dismiss('depth-loading')
-        toast.error('Error fetching depth data', { id: 'depth-result' })
+
+        if (!depthWarningShown) {
+          toast.error('Error fetching depth data', {
+            id: 'depth-result',
+            duration: 5000,
+          })
+          setDepthWarningShown(true)
+        }
         return { depth: null, status: 'error' }
       }
     },
-    [handleDepthRequest]
+    [handleDepthRequest, depthWarningShown] // Include the flag in dependencies
   )
 
   // Handle marker click event
@@ -485,53 +499,6 @@ const DeploymentMap: React.FC<DeploymentMapProps> = ({
   const handleCloseLayers = useCallback(() => {
     setShowLayersModal(false)
   }, [])
-
-  // const handleVehicleColorRequest = useCallback(() => {
-  //   // Add debugging to verify values
-  //   logger.debug('Opening color modal with:', {
-  //     vehicleName,
-  //     trackedVehicles,
-  //     modalTrackedVehicles: vehicleName ? [vehicleName] : [],
-  //   })
-
-  //   setColorModalPosition({
-  //     top: 100,
-  //     left: 100,
-  //   })
-  //   setColorModalOpen(true)
-  // }, [vehicleName, trackedVehicles])
-
-  // const handleCloseVehicleColors = useCallback((vehicleName?: string) => {
-  //   setShowVehicleColors(false)
-
-  //   // Time for map to adjust after modal closes
-  //   setTimeout(() => {
-  //     if (mapRef.current) {
-  //       try {
-  //         // Try invalidateSize method(s)
-  //         if (typeof mapRef.current.invalidateSize === 'function') {
-  //           mapRef.current.invalidateSize()
-  //         } else if (
-  //           mapRef.current._leafletContainer &&
-  //           typeof mapRef.current._leafletContainer.invalidateSize ===
-  //             'function'
-  //         ) {
-  //           mapRef.current._leafletContainer.invalidateSize()
-  //         } else {
-  //           // Log for debugging
-  //           logger.debug('Map reference type:', typeof mapRef.current)
-  //           logger.debug(
-  //             'Map reference properties:',
-  //             Object.keys(mapRef.current)
-  //           )
-  //         }
-  //         logger.debug('Map size invalidated after closing modal')
-  //       } catch (e) {
-  //         logger.warn('Error invalidating map size:', e)
-  //       }
-  //     }
-  //   }, 300) // Slightly longer timeout for modal animation to complete
-  // }, [])
 
   const handleVehicleColorRequest = useCallback(() => {
     // Add debugging to verify values

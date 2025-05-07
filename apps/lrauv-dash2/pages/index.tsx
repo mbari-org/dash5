@@ -99,6 +99,7 @@ const OverViewMap: React.FC<{
   const [viewMode, setViewMode] = useState<'center' | 'bounds' | null>(null)
   const [selectedMarkerId, setSelectedMarkerId] = useState<string | null>(null)
   const [defaultMarkerColor, setDefaultMarkerColor] = useState<string>('red')
+  const [depthWarningShown, setDepthWarningShown] = useState(false)
   const { selectedStations } = useSelectedStations()
   // Add state to track elevation data and loading state
   const [elevationData, setElevationData] = useState<{
@@ -338,21 +339,39 @@ const OverViewMap: React.FC<{
 
         // Show appropriate toast based on status
         toast.dismiss('depth-loading')
+
         if (result.status === 'success') {
-        } else if (result.status === 'unavailable' || 'no-data') {
-          logger.debug('⚠️ Maps Depth data currently unavailable❕', {
-            id: 'depth-result',
+          setDepthWarningShown(false)
+        } else if (
+          (result.status === 'unavailable' || result.status === 'no-data') &&
+          !depthWarningShown
+        ) {
+          // Only show warning once!
+          logger.debug('⚠️ Map Depth data currently unavailable❕')
+          toast.error('⚠️ Map depth data currently unavailable', {
+            id: 'depth-unavailable',
+            duration: 5000,
             className: 'blue-toast',
           })
+          setDepthWarningShown(true)
         }
+
         return result
       } catch (error) {
         toast.dismiss('depth-loading')
-        toast.error('Error fetching depth data', { id: 'depth-result' })
+
+        if (!depthWarningShown) {
+          toast.error('Error fetching depth data', {
+            id: 'depth-result',
+            duration: 5000,
+          })
+          setDepthWarningShown(true)
+        }
+
         return { depth: null, status: 'error' }
       }
     },
-    [handleDepthRequest]
+    [handleDepthRequest, depthWarningShown] // Include the flag in dependencies
   )
 
   const handleMarkerClick = useCallback(
