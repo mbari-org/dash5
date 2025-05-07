@@ -798,11 +798,13 @@ const OverviewPage: NextPage = () => {
                         </section>
                       </Allotment.Pane>
                       <Allotment.Pane priority={LayoutPriority.High}>
-                        <section className={styles.secondary}>
-                          <VehicleList
-                            onSelectVehicle={handleSelectedVehicle}
-                          />
-                        </section>
+                        <div style={{ overflowY: 'auto', height: '100%' }}>
+                          <section className={styles.secondary}>
+                            <VehicleList
+                              onSelectVehicle={handleSelectedVehicle}
+                            />
+                          </section>
+                        </div>
                       </Allotment.Pane>
                     </Allotment>
                   </div>
