@@ -20,6 +20,7 @@ import { StationsListModal } from '../components/StationsListModal'
 import { MapLayersListModal } from '../components/MapLayersListModal'
 import { useSelectedStations } from '../components/SelectedStationContext'
 import { useMarkers } from '../components/MarkerContext'
+import { useDepthRequest } from '@mbari/utils/useDepthRequest'
 import toast from 'react-hot-toast'
 import type { MapProps } from '@mbari/react-ui/dist/Map/Map'
 import { createLogger } from '@mbari/utils'
@@ -63,7 +64,7 @@ const styles = {
     'flex w-full flex-shrink-0 flex-col bg-white border-t-2 border-secondary-300/60',
 }
 
-// interface CustomMarkerProps
+// Interface CustomMarkerProps
 type CustomMapProps = MapProps &
   React.RefAttributes<L.Map> & {
     isAddingMarkers?: boolean
@@ -71,7 +72,7 @@ type CustomMapProps = MapProps &
     trackedVehicles?: { name: string; id?: string }[] // Match the actual type being used
   }
 
-// interface MarkerData
+// Interface MarkerData
 interface MarkerData {
   id: number
   lat: number
@@ -99,14 +100,17 @@ const OverViewMap: React.FC<{
   const [viewMode, setViewMode] = useState<'center' | 'bounds' | null>(null)
   const [selectedMarkerId, setSelectedMarkerId] = useState<string | null>(null)
   const [defaultMarkerColor, setDefaultMarkerColor] = useState<string>('red')
-  const [depthWarningShown, setDepthWarningShown] = useState(false)
   const { selectedStations } = useSelectedStations()
-  // Add state to track elevation data and loading state
-  const [elevationData, setElevationData] = useState<{
-    depth: number | null
-    status: string
-    position?: [number, number]
-  }>({ depth: null, status: 'none' })
+  const { handleDepthRequestWithFeedback } = useDepthRequest(
+    handleDepthRequest,
+    {
+      warningToastId: 'depth-unavailable',
+      errorToastId: 'depth-result',
+      loadingToastId: 'depth-loading',
+      warningToastClass: 'blue-toast',
+      toastDuration: 5000,
+    }
+  )
   const [layersModalPosition, setLayersModalPosition] = useState({
     top: 0,
     left: 0,
@@ -322,57 +326,6 @@ const OverViewMap: React.FC<{
       }, 1000)
     } // 1 second delay ensures bounds are applied first
   }, [calculateBounds])
-
-  // Create a wrapper for the depth request that updates state
-  const handleDepthRequestWithFeedback = useCallback(
-    async (lat: number, lng: number) => {
-      try {
-        // Call elevation service
-        const result = await handleDepthRequest(lat, lng)
-
-        // Update state with result
-        setElevationData({
-          depth: result.depth,
-          status: result.status,
-          position: [lat, lng],
-        })
-
-        // Show appropriate toast based on status
-        toast.dismiss('depth-loading')
-
-        if (result.status === 'success') {
-          setDepthWarningShown(false)
-        } else if (
-          (result.status === 'unavailable' || result.status === 'no-data') &&
-          !depthWarningShown
-        ) {
-          // Only show warning once!
-          logger.debug('⚠️ Map Depth data currently unavailable❕')
-          toast.error('⚠️ Map depth data currently unavailable', {
-            id: 'depth-unavailable',
-            duration: 5000,
-            className: 'blue-toast',
-          })
-          setDepthWarningShown(true)
-        }
-
-        return result
-      } catch (error) {
-        toast.dismiss('depth-loading')
-
-        if (!depthWarningShown) {
-          toast.error('Error fetching depth data', {
-            id: 'depth-result',
-            duration: 5000,
-          })
-          setDepthWarningShown(true)
-        }
-
-        return { depth: null, status: 'error' }
-      }
-    },
-    [handleDepthRequest, depthWarningShown] // Include the flag in dependencies
-  )
 
   const handleMarkerClick = useCallback(
     (markerId: string) => {

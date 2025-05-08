@@ -3,14 +3,14 @@ import React, { useCallback, useState, useRef, useEffect } from 'react'
 import { useManagedWaypoints } from '@mbari/react-ui'
 import useGoogleElevator from '../lib/useGoogleElevator'
 import { VPosDetail } from '@mbari/api-client'
-// import { StationsListModal } from './StationsListModal'
 import { MapLayersListModal } from '../components/MapLayersListModal'
 import { useSelectedStations } from './SelectedStationContext'
 import { useMarkers } from './MarkerContext'
-import { toast } from 'react-hot-toast'
+import toast from 'react-hot-toast'
 import { createLogger } from '@mbari/utils'
 import VehicleColorsModal from './VehicleColorsModal'
 import useTrackedVehicles from '../lib/useTrackedVehicles'
+import { useDepthRequest } from '@mbari/utils/useDepthRequest'
 
 // This is a tricky workaround to prevent leaflet from crashing next.js
 // SSR. If we don't do this, the leaflet map will be loaded server side
@@ -72,18 +72,27 @@ const DeploymentMap: React.FC<DeploymentMapProps> = ({
       ),
     [updatedWaypoints, handleWaypointsUpdate]
   )
-  const [elevationData, setElevationData] = useState<{
-    depth: number | null
-    status: string
-    position?: [number, number]
-  }>({ depth: null, status: 'none' })
+  const { handleDepthRequest, elevationAvailable } = useGoogleElevator()
+  // Depth request hook
+  const { handleDepthRequestWithFeedback } = useDepthRequest(
+    handleDepthRequest,
+    {
+      warningToastId: 'depth-unavailable',
+      errorToastId: 'depth-result',
+      loadingToastId: 'depth-loading',
+      warningToastClass: 'blue-toast',
+      toastDuration: 5000,
+    }
+  )
+
+  // Filter out waypoints with NaN lat/lon
   const plottedWaypoints = updatedWaypoints.filter(
     (wp) => ![wp.lat?.toLowerCase(), wp.lon?.toLowerCase()].includes('nan')
   )
 
   const { trackedVehicles } = useTrackedVehicles()
   const [showAll, setShowAll] = useState(true)
-  const { handleDepthRequest, elevationAvailable } = useGoogleElevator()
+
   const [center, setCenter] = useState<undefined | [number, number]>()
   const [centerZoom, setCenterZoom] = useState<number | undefined>(undefined)
   const [bounds, setBounds] = useState<
@@ -93,8 +102,6 @@ const DeploymentMap: React.FC<DeploymentMapProps> = ({
   const [viewMode, setViewMode] = useState<'center' | 'bounds' | null>(null)
   const [selectedMarkerId, setSelectedMarkerId] = useState<string | null>(null)
   const [defaultMarkerColor, setDefaultMarkerColor] = useState<string>('red')
-  const [depthWarningShown, setDepthWarningShown] = useState(false)
-
   const [showLayersModal, setShowLayersModal] = useState(false)
   const [showVehicleColors, setShowVehicleColors] = useState(false)
   const { selectedStations } = useSelectedStations()
@@ -192,54 +199,6 @@ const DeploymentMap: React.FC<DeploymentMapProps> = ({
       vehiclePosition.current.push(position)
     },
     [latestGPS, setLatestGPS]
-  )
-
-  // Handle depth request with feedback
-  const handleDepthRequestWithFeedback = useCallback(
-    async (lat: number, lng: number) => {
-      try {
-        // Call elevation service
-        const result = await handleDepthRequest(lat, lng)
-
-        // Update elevation data state - ADDING THIS
-        setElevationData({
-          depth: result.depth,
-          status: result.status,
-          position: [lat, lng],
-        })
-
-        // Show appropriate toast based on status
-        toast.dismiss('depth-loading')
-
-        if (result.status === 'success') {
-          setDepthWarningShown(false)
-        } else if (
-          (result.status === 'unavailable' || result.status === 'no-data') &&
-          !depthWarningShown
-        ) {
-          // Only show warning once!
-          toast.error('⚠️ Map depth data currently unavailable', {
-            id: 'depth-unavailable',
-            duration: 5000,
-            className: 'blue-toast',
-          })
-          setDepthWarningShown(true)
-        }
-        return result
-      } catch (error) {
-        toast.dismiss('depth-loading')
-
-        if (!depthWarningShown) {
-          toast.error('Error fetching depth data', {
-            id: 'depth-result',
-            duration: 5000,
-          })
-          setDepthWarningShown(true)
-        }
-        return { depth: null, status: 'error' }
-      }
-    },
-    [handleDepthRequest, depthWarningShown] // Include the flag in dependencies
   )
 
   // Handle marker click event
@@ -356,8 +315,7 @@ const DeploymentMap: React.FC<DeploymentMapProps> = ({
 
         // If this was the selected marker, update UI state as needed
         if (selectedMarkerId === markerId && !shouldSave) {
-          // Optionally deselect the marker if it's being removed from layer
-          // Uncomment if you want this behavior
+          // Optionally deselect the marker if being removed from layer
           // setSelectedMarkerId(null);
         }
 
@@ -376,7 +334,7 @@ const DeploymentMap: React.FC<DeploymentMapProps> = ({
             id: 'marker-storage-error',
             duration: 3000,
           })
-          // Continue execution - the markers are still updated in-memory
+          // Continue execution - Markers are updated in-memory
         }
 
         // Provide user feedback
