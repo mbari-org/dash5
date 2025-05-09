@@ -5,11 +5,7 @@ import DocsSection from './DocsSection'
 import HandoffSection from './HandoffSection'
 import LogsSection from './LogsSection'
 import ScienceDataSection from './ScienceDataSection'
-import {
-  useEvents,
-  useTethysApiContext,
-  useDeploymentCommandStatus,
-} from '@mbari/api-client'
+import { useEvents, useDeploymentCommandStatus } from '@mbari/api-client'
 import { DateTime } from 'luxon'
 import { parseMissionCommand, ScheduleSection } from './ScheduleSection'
 import useGlobalModalId from '../lib/useGlobalModalId'
@@ -154,7 +150,9 @@ const VehicleAccordion: React.FC<VehicleAccordionProps> = ({
       <AccordionHeader
         label="Comms Queue"
         secondaryLabel={
-          activeDeployment ? `${commsLogs?.length ?? 0} item(s) in queue` : ''
+          activeDeployment && !commsLoading
+            ? `${commsLogs?.length ?? 0} item(s) in queue`
+            : ''
         }
         onToggle={handleToggleForSection('comms')}
         open={section === 'comms'}
