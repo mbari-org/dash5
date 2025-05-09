@@ -1,7 +1,7 @@
 import React from 'react'
 import { fireEvent, render, screen } from '@testing-library/react'
 import '@testing-library/jest-dom'
-import { MissionModal, MissionModalProps } from './MissionModal'
+import { MissionModalView, MissionModalViewProps } from './MissionModalView'
 import { RecoilRoot } from 'recoil'
 
 jest.mock('../assets/ruler-dark.png', () => {
@@ -16,7 +16,7 @@ jest.mock('../assets/ruler-light.png', () => {
   }
 })
 
-const props: MissionModalProps = {
+const props: MissionModalViewProps = {
   currentStepIndex: 0,
   vehicleName: 'Brizo',
   unfilteredMissionParameters: [],
@@ -167,7 +167,7 @@ test('should render the component', async () => {
   expect(() =>
     render(
       <RecoilRoot>
-        <MissionModal {...props} />
+        <MissionModalView {...props} />
       </RecoilRoot>
     )
   ).not.toThrow()
@@ -177,7 +177,7 @@ test('should render the component', async () => {
 test('should display mission tasks', async () => {
   render(
     <RecoilRoot>
-      <MissionModal {...props} />
+      <MissionModalView {...props} />
     </RecoilRoot>
   )
   expect(screen.queryByText(props.missions[0].note ?? '')).toBeInTheDocument()
@@ -186,7 +186,7 @@ test('should display mission tasks', async () => {
 test('should display mission category and name labels', async () => {
   render(
     <RecoilRoot>
-      <MissionModal {...props} />
+      <MissionModalView {...props} />
     </RecoilRoot>
   )
   const { category, name } = props.missions[0]
@@ -196,7 +196,7 @@ test('should display mission category and name labels', async () => {
 test('should display mission descriptions', async () => {
   render(
     <RecoilRoot>
-      <MissionModal {...props} />
+      <MissionModalView {...props} />
     </RecoilRoot>
   )
   expect(
@@ -207,7 +207,7 @@ test('should display mission descriptions', async () => {
 test('should not display missions that do not match the current category filter', async () => {
   render(
     <RecoilRoot>
-      <MissionModal {...props} />
+      <MissionModalView {...props} />
     </RecoilRoot>
   )
   expect(
@@ -218,7 +218,7 @@ test('should not display missions that do not match the current category filter'
 test('should display vehicle name in teal', async () => {
   render(
     <RecoilRoot>
-      <MissionModal {...props} />
+      <MissionModalView {...props} />
     </RecoilRoot>
   )
   expect(screen.queryByTestId(/vehicle name/i)).toHaveClass('text-teal-500')
@@ -228,7 +228,7 @@ test('should display vehicle name in teal', async () => {
 test('should display mission name in teal', async () => {
   render(
     <RecoilRoot>
-      <MissionModal {...props} currentStepIndex={1} />
+      <MissionModalView {...props} currentStepIndex={1} />
     </RecoilRoot>
   )
   expect(screen.queryByTestId(/mission name/i)).toHaveClass('text-teal-500')
@@ -237,7 +237,7 @@ test('should display mission name in teal', async () => {
 test('should display number of available waypoint to set up and vehicle name', async () => {
   render(
     <RecoilRoot>
-      <MissionModal {...props} currentStepIndex={1} />
+      <MissionModalView {...props} currentStepIndex={1} />
     </RecoilRoot>
   )
   expect(
@@ -248,7 +248,7 @@ test('should display number of available waypoint to set up and vehicle name', a
 test('should display stat labels', async () => {
   render(
     <RecoilRoot>
-      <MissionModal {...props} currentStepIndex={1} />
+      <MissionModalView {...props} currentStepIndex={1} />
     </RecoilRoot>
   )
   expect(screen.queryByText(/total distance/i)).toBeInTheDocument()
@@ -259,7 +259,7 @@ test('should display stat labels', async () => {
 test('should display NaN all and Reset all buttons', async () => {
   render(
     <RecoilRoot>
-      <MissionModal {...props} currentStepIndex={1} />
+      <MissionModalView {...props} currentStepIndex={1} />
     </RecoilRoot>
   )
   expect(screen.queryByText(/NaN all/i)).toBeInTheDocument()
@@ -269,7 +269,7 @@ test('should display NaN all and Reset all buttons', async () => {
 test('should display Waypoint Summary when Next button is clicked after selecting waypoints', async () => {
   render(
     <RecoilRoot>
-      <MissionModal {...props} currentStepIndex={1} />
+      <MissionModalView {...props} currentStepIndex={1} />
     </RecoilRoot>
   )
   const nextButton = screen.getByRole('button', { name: 'Next' })
@@ -282,7 +282,7 @@ test('should display Waypoint Summary when Next button is clicked after selectin
 test('should display parameter names', async () => {
   render(
     <RecoilRoot>
-      <MissionModal {...props} currentStepIndex={2} />
+      <MissionModalView {...props} currentStepIndex={2} />
     </RecoilRoot>
   )
   expect(screen.queryByText(props.parameters[0].name)).toBeInTheDocument()
@@ -291,7 +291,7 @@ test('should display parameter names', async () => {
 test('should display parameter descriptions', async () => {
   render(
     <RecoilRoot>
-      <MissionModal {...props} currentStepIndex={2} />
+      <MissionModalView {...props} currentStepIndex={2} />
     </RecoilRoot>
   )
   const descriptWithBreaks = props.parameters[0]?.description
@@ -303,7 +303,7 @@ test('should display parameter descriptions', async () => {
 test('should display default values', async () => {
   render(
     <RecoilRoot>
-      <MissionModal {...props} currentStepIndex={2} />
+      <MissionModalView {...props} currentStepIndex={2} />
     </RecoilRoot>
   )
   // test assumes value !== 1 and adds 's' to unit
@@ -314,7 +314,7 @@ test('should display default values', async () => {
 test('should display Parameters Summary when Next button is clicked after selecting parameterss', async () => {
   render(
     <RecoilRoot>
-      <MissionModal {...props} currentStepIndex={2} />
+      <MissionModalView {...props} currentStepIndex={2} />
     </RecoilRoot>
   )
   const nextButton = screen.getByRole('button', { name: 'Next' })
@@ -327,7 +327,7 @@ test('should display Parameters Summary when Next button is clicked after select
 test('should display safety parameter names', async () => {
   render(
     <RecoilRoot>
-      <MissionModal {...props} currentStepIndex={3} />
+      <MissionModalView {...props} currentStepIndex={3} />
     </RecoilRoot>
   )
   expect(screen.queryByText(props.safetyParams[0].name)).toBeInTheDocument()
@@ -336,7 +336,7 @@ test('should display safety parameter names', async () => {
 test('should display comms parameter names', async () => {
   render(
     <RecoilRoot>
-      <MissionModal {...props} currentStepIndex={3} />
+      <MissionModalView {...props} currentStepIndex={3} />
     </RecoilRoot>
   )
   expect(screen.queryByText(props.commsParams[0].name)).toBeInTheDocument()
@@ -345,7 +345,7 @@ test('should display comms parameter names', async () => {
 test('should display safety parameter default values', async () => {
   render(
     <RecoilRoot>
-      <MissionModal {...props} currentStepIndex={3} />
+      <MissionModalView {...props} currentStepIndex={3} />
     </RecoilRoot>
   )
   // test assumes value !== 1 and adds 's' to unit
@@ -356,7 +356,7 @@ test('should display safety parameter default values', async () => {
 test('should display comms parameter default values', async () => {
   render(
     <RecoilRoot>
-      <MissionModal {...props} currentStepIndex={3} />
+      <MissionModalView {...props} currentStepIndex={3} />
     </RecoilRoot>
   )
   // test assumes value !== 1 and adds 's' to unit
@@ -368,7 +368,7 @@ test('should display comms parameter default values', async () => {
 test('should display review mission summary', async () => {
   render(
     <RecoilRoot>
-      <MissionModal {...props} currentStepIndex={4} />
+      <MissionModalView {...props} currentStepIndex={4} />
     </RecoilRoot>
   )
   expect(
@@ -379,7 +379,7 @@ test('should display review mission summary', async () => {
 test('should display safety parameters', async () => {
   render(
     <RecoilRoot>
-      <MissionModal {...props} currentStepIndex={4} />
+      <MissionModalView {...props} currentStepIndex={4} />
     </RecoilRoot>
   )
   expect(screen.queryByText(props.safetyParams[0].name)).toBeInTheDocument()
@@ -388,7 +388,7 @@ test('should display safety parameters', async () => {
 test('should display comms parameters', async () => {
   render(
     <RecoilRoot>
-      <MissionModal {...props} currentStepIndex={4} />
+      <MissionModalView {...props} currentStepIndex={4} />
     </RecoilRoot>
   )
   expect(screen.queryByText(props.commsParams[0].name)).toBeInTheDocument()
@@ -397,7 +397,7 @@ test('should display comms parameters', async () => {
 test('should display only mission parameters with overrides', async () => {
   render(
     <RecoilRoot>
-      <MissionModal {...props} currentStepIndex={4} />
+      <MissionModalView {...props} currentStepIndex={4} />
     </RecoilRoot>
   )
   expect(screen.queryByText(props.parameters[1].name)).toBeInTheDocument()
@@ -407,7 +407,7 @@ test('should display only mission parameters with overrides', async () => {
 test('should display safety parameters', async () => {
   render(
     <RecoilRoot>
-      <MissionModal {...props} currentStepIndex={4} />
+      <MissionModalView {...props} currentStepIndex={4} />
     </RecoilRoot>
   )
   expect(screen.queryByText(props.safetyParams[0].name)).toBeInTheDocument()
@@ -416,7 +416,7 @@ test('should display safety parameters', async () => {
 test('should display only plotted waypoints (i.e. ones that do not have NaN as a value)', async () => {
   render(
     <RecoilRoot>
-      <MissionModal {...props} currentStepIndex={4} />
+      <MissionModalView {...props} currentStepIndex={4} />
     </RecoilRoot>
   )
   expect(

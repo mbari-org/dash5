@@ -1,7 +1,5 @@
-import { ParameterProps, ScheduleOption } from '@mbari/react-ui'
+import { ParameterProps, ScheduleMethod } from '@mbari/react-ui'
 import { DateTime } from 'luxon'
-
-// export type ScheduleOption = 'ASAP' | 'end' | 'time'
 
 const printUnit = (p: ParameterProps) => {
   if (p.overrideValue?.match(/true/i)) {
@@ -20,7 +18,7 @@ export const makeCommand = ({
   specifiedLocalTime,
 }: {
   commandText: string
-  scheduleMethod?: ScheduleOption
+  scheduleMethod?: ScheduleMethod
   specifiedLocalTime?: string | null
 }) => {
   switch (scheduleMethod) {
@@ -63,7 +61,7 @@ export const makeMissionCommand = ({
 }: {
   parameterOverrides: ParameterProps[]
   mission: string
-  scheduleMethod: ScheduleOption
+  scheduleMethod: ScheduleMethod
   specifiedLocalTime?: string
 }) => {
   const missionName = mission.split('/').pop()?.split('.')[0]

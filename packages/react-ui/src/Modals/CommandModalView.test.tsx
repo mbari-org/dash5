@@ -1,10 +1,10 @@
 import { render, screen } from '@testing-library/react'
 import '@testing-library/jest-dom'
-import { CommandModal, CommandModalProps } from './CommandModal'
-import { syntaxVariations, commands } from './CommandModal.sampleProps'
+import { CommandModalView, CommandModalViewProps } from './CommandModalView'
+import { syntaxVariations, commands } from './CommandModalView.sampleProps'
 import userEvent from '@testing-library/user-event'
 
-const props: CommandModalProps = {
+const props: CommandModalViewProps = {
   steps: ['Command', 'Build', 'Schedule'],
   currentStepIndex: 0,
   vehicleName: 'Brizo',
@@ -40,28 +40,28 @@ const props: CommandModalProps = {
 }
 
 test('should render the component', async () => {
-  expect(() => render(<CommandModal {...props} />)).not.toThrow()
+  expect(() => render(<CommandModalView {...props} />)).not.toThrow()
 })
 
 test('should display command names', async () => {
-  render(<CommandModal {...props} />)
+  render(<CommandModalView {...props} />)
   expect(screen.queryByText(props.commands[0].name)).toBeInTheDocument()
 })
 
 test('should display command descriptions', async () => {
-  render(<CommandModal {...props} />)
+  render(<CommandModalView {...props} />)
   expect(
     screen.queryByText(`${props.commands[1].description}`)
   ).toBeInTheDocument()
 })
 
 test('should display vehicle name in teal', async () => {
-  render(<CommandModal {...props} />)
+  render(<CommandModalView {...props} />)
   expect(screen.queryByTestId(/vehicle name/i)).toHaveClass('text-teal-500')
 })
 
 test('should display progress bar steps', async () => {
-  render(<CommandModal {...props} />)
+  render(<CommandModalView {...props} />)
   const stepLabels = props.steps.map((step, index) => `${index + 1}. ${step}`)
   expect(screen.queryAllByText(stepLabels[0])[0]).toBeInTheDocument()
   expect(screen.queryAllByText(stepLabels[1])[0]).toBeInTheDocument()
@@ -70,18 +70,18 @@ test('should display progress bar steps', async () => {
 
 // Step 1 tests
 test('should display template commands placeholder text', async () => {
-  render(<CommandModal {...props} />)
+  render(<CommandModalView {...props} />)
   expect(screen.queryByText(/template/i)).toBeInTheDocument()
 })
 
 test('should display search commands placeholder text', async () => {
-  render(<CommandModal {...props} />)
+  render(<CommandModalView {...props} />)
   expect(screen.queryByPlaceholderText(/search commands/i)).toBeInTheDocument()
 })
 
 // Step 3 tests
 test('should render command', () => {
-  render(<CommandModal {...props} currentStepIndex={2} />)
+  render(<CommandModalView {...props} currentStepIndex={2} />)
 
   const selectedCommand =
     props?.commands?.find((command) => command?.id === props?.selectedId)
@@ -96,14 +96,14 @@ test('should render command', () => {
 })
 
 test('should render vehicle name', () => {
-  render(<CommandModal {...props} currentStepIndex={2} />)
+  render(<CommandModalView {...props} currentStepIndex={2} />)
 
   expect(screen.getByText(props.vehicleName)).toBeInTheDocument()
 })
 
 test('should render extra buttons and correct button text', () => {
   render(
-    <CommandModal
+    <CommandModalView
       {...props}
       currentStepIndex={2}
       alternativeAddresses={['one@example.com', 'two@example.com']}
@@ -123,7 +123,7 @@ test('should schedule a complete command without making any changes to the defau
   const user = userEvent.setup()
   var commandText = ''
   render(
-    <CommandModal
+    <CommandModalView
       {...props}
       onSchedule={(args) => {
         commandText = args.commandText

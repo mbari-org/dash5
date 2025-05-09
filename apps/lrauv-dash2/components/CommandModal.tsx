@@ -1,7 +1,6 @@
-import { useEffect } from 'react'
 import {
-  CommandModal as CommandModalView,
-  CommandModalProps as CommandModalViewProps,
+  CommandModalView,
+  CommandModalViewProps,
   mapValues,
 } from '@mbari/react-ui'
 import {
@@ -16,6 +15,7 @@ import {
   useCreateCommand,
   useVehicleNames,
   useSbdOutgoingAlternativeAddresses,
+  CreateCommandParams,
 } from '@mbari/api-client'
 import { makeCommand } from '../lib/makeCommand'
 import { useRouter } from 'next/router'
@@ -58,21 +58,24 @@ export const CommandModal: React.FC<CommandModalProps> = ({
   const vehicleName = params[0]
 
   // Network Mutations
-  const {
-    mutate: createCommand,
-    isLoading: sendingCommand,
-    isSuccess: commandSent,
-    isError: commandError,
-  } = useCreateCommand()
+  const { mutate: createCommand, isLoading: sendingCommand } =
+    useCreateCommand()
 
-  useEffect(() => {
-    if (commandSent) {
-      toast.success('Command sent')
-      onClose()
-    } else if (commandError) {
-      toast.error(`Error sending command: ${commandError}`)
-    }
-  }, [commandSent, commandError, onClose])
+  const onCommandSuccess = () => {
+    toast.success('Command sent')
+    onClose()
+  }
+
+  const onCommandError = (error: unknown) => {
+    toast.error(`Error sending command: ${error}`)
+  }
+
+  const sendCommand = (params: CreateCommandParams) => {
+    createCommand(params, {
+      onSuccess: onCommandSuccess,
+      onError: onCommandError,
+    })
+  }
 
   // Network supplied data
   const { data: vehicles } = useVehicleNames({ refresh: 'n' })
@@ -160,18 +163,23 @@ export const CommandModal: React.FC<CommandModalProps> = ({
     specifiedTime,
     alternateAddress,
     notes,
+    commType,
+    timeout,
   }) => {
     const { schedDate } = makeCommand({
       commandText,
       scheduleMethod,
       specifiedLocalTime: specifiedTime,
     })
-    createCommand({
+
+    sendCommand({
       vehicle: confirmedVehicle?.toLowerCase() ?? '',
       commandNote: notes ?? '',
       schedDate,
       destinationAddress: alternateAddress ?? undefined,
       commandText,
+      via: commType,
+      timeout,
     })
   }
 

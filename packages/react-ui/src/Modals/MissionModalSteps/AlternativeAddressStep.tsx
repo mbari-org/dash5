@@ -1,14 +1,11 @@
 import { TextArea } from '../../Fields/TextArea'
+import { useScheduleContext } from './hooks/useSchedule'
 
 export interface AlternativeAddressProps {
   vehicleName: string
   mission: string
   commandDescriptor?: string
   alternativeAddresses?: string[]
-  onNotesChanged?: (notes: string) => void
-  onAlternativeAddressChanged?: (address: string) => void
-  notes?: string | null
-  alternateAddress?: string | null
 }
 
 export const AlternativeAddressStep: React.FC<AlternativeAddressProps> = ({
@@ -16,17 +13,18 @@ export const AlternativeAddressStep: React.FC<AlternativeAddressProps> = ({
   mission,
   commandDescriptor = 'mission',
   alternativeAddresses = [],
-  alternateAddress = null,
-  notes = null,
-  onNotesChanged,
-  onAlternativeAddressChanged,
 }) => {
+  const {
+    state: { alternateAddress, notes },
+    actions: { setAlternateAddress, setNotes },
+  } = useScheduleContext()
+
   const handleNotesChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
-    onNotesChanged?.(e.target.value)
+    setNotes(e.target.value)
   }
 
   const handleAlternateAddressChange = (address: string) => () => {
-    onAlternativeAddressChanged?.(address)
+    setAlternateAddress(address)
   }
 
   return (

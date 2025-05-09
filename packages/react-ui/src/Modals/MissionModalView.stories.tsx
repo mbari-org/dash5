@@ -1,7 +1,7 @@
 import React from 'react'
 // also exported from '@storybook/react' if you can deal with breaking changes in 6.1
 import { Story, Meta } from '@storybook/react/types-6-0'
-import { MissionModal, MissionModalProps } from './MissionModal'
+import { MissionModalView, MissionModalViewProps } from './MissionModalView'
 import { MissionTableProps } from '../Tables/MissionTable'
 import { WaypointTableProps } from '../Tables/WaypointTable'
 import { makeOrdinal } from '@mbari/utils'
@@ -9,11 +9,11 @@ import { ParameterProps } from '../Tables/ParameterTable'
 
 export default {
   title: 'Modals/MissionModal',
-  component: MissionModal,
+  component: MissionModalView,
 } as Meta
 
-const Template: Story<MissionModalProps> = (args) => {
-  return <MissionModal {...args} />
+const Template: Story<MissionModalViewProps> = (args) => {
+  return <MissionModalView {...args} />
 }
 
 const missionTableArgs: MissionTableProps = {

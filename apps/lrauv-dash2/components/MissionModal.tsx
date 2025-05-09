@@ -1,7 +1,7 @@
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import {
-  MissionModal as MissionModalView,
-  MissionModalProps as MissionModalViewProps,
+  MissionModalView,
+  MissionModalViewProps,
   MissionTableProps,
   ParameterProps,
   useManagedWaypoints,
@@ -32,7 +32,6 @@ import { useRouter } from 'next/router'
 import { DateTime } from 'luxon'
 import { makeMissionCommand } from '../lib/makeCommand'
 import toast from 'react-hot-toast'
-import { ScheduleOption } from '@mbari/react-ui'
 import useGlobalDrawerState from '../lib/useGlobalDrawerState'
 import { point, distance } from '@turf/turf'
 import useGlobalModalId from '../lib/useGlobalModalId'
@@ -362,11 +361,13 @@ const MissionModal: React.FC<MissionModalProps> = ({
     alternateAddress,
     notes,
     preview,
+    commType,
+    timeout,
   }) => {
     const { commandText, schedDate, previewSbd } = makeMissionCommand({
       mission: selectedMissionId as string,
       parameterOverrides,
-      scheduleMethod: scheduleMethod as ScheduleOption,
+      scheduleMethod,
       specifiedLocalTime: specifiedTime ?? undefined,
     })
     setCommandText(previewSbd)
@@ -379,6 +380,8 @@ const MissionModal: React.FC<MissionModalProps> = ({
         schedDate,
         destinationAddress: alternateAddress ?? undefined,
         commandText: commandText ?? '',
+        via: commType,
+        timeout,
       })
     }
   }
