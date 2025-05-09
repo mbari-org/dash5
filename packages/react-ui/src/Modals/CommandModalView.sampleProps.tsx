@@ -1,6 +1,6 @@
-import { CommandModalProps } from './CommandModal'
+import { CommandModalViewProps } from './CommandModalView'
 
-export const syntaxVariations: CommandModalProps['syntaxVariations'] = [
+export const syntaxVariations: CommandModalViewProps['syntaxVariations'] = [
   { argList: [], help: 'List all failed components' },
   {
     argList: [
@@ -39,7 +39,7 @@ export const syntaxVariations: CommandModalProps['syntaxVariations'] = [
   },
 ]
 
-export const commands: CommandModalProps['commands'] = [
+export const commands: CommandModalViewProps['commands'] = [
   { id: '?', name: '?', description: 'Show help' },
   {
     id: '!',
