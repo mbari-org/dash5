@@ -28,7 +28,7 @@ export const LoadMoreButton: React.FC<LoadMoreButtonProps> = ({
       disabled={isLoading}
       className={clsx(styles.button, className)}
     >
-      <FontAwesomeIcon icon={faArrowCircleDown} className="mr-1.5" />
+      <FontAwesomeIcon icon={faArrowCircleDown} className="mr-1.5 mt-0.5" />
       {isLoading ? 'Loading…' : labelText}
     </button>
   )
