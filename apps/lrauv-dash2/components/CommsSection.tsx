@@ -4,16 +4,12 @@ import {
   AccordionCells,
   Virtualizer,
   CommsCell,
-  IconButton,
-  IconToggle,
-  HistoricalListIcon,
-  SubIcon,
   LoadMoreButton,
+  LogsToolbar,
 } from '@mbari/react-ui'
-import { faSync } from '@fortawesome/free-solid-svg-icons'
 import { DateTime } from 'luxon'
 import { useLastCommsTime } from '../lib/useLastCommsTime'
-import clsx from 'clsx'
+
 export interface CommsSectionProps {
   className?: string
   style?: React.CSSProperties
@@ -27,9 +23,9 @@ const CommsSection: React.FC<CommsSectionProps> = ({
   from,
   to,
 }) => {
-  const [allLogs, setAllLogs] = useState(true)
-  const toggleAllLogs = () => {
-    setAllLogs((prev) => !prev)
+  const [deploymentLogsOnly, setDeploymentLogsOnly] = useState(false)
+  const toggleDeploymentLogsOnly = () => {
+    setDeploymentLogsOnly((prev) => !prev)
   }
 
   const deploymentParams = useMemo(
@@ -65,7 +61,7 @@ const CommsSection: React.FC<CommsSectionProps> = ({
     fetchNextPage,
     hasNextPage,
     refetch,
-  } = allLogs ? allLogsResponse : deploymentResponse
+  } = deploymentLogsOnly ? deploymentResponse : allLogsResponse
 
   const flatData = useMemo(() => {
     if (!data?.pages) return []
@@ -129,47 +125,12 @@ const CommsSection: React.FC<CommsSectionProps> = ({
   return (
     <>
       <header className="flex justify-end p-2">
-        <div className="flex items-center">
-          <IconToggle
-            iconLeft={
-              <HistoricalListIcon
-                className={clsx(
-                  'transition-colors duration-300',
-                  allLogs ? 'text-black' : 'text-gray-400'
-                )}
-              />
-            }
-            iconRight={
-              <SubIcon
-                className={clsx(
-                  'transition-colors duration-300',
-                  allLogs ? 'text-gray-400' : 'text-black'
-                )}
-              />
-            }
-            isToggled={!allLogs}
-            onToggle={toggleAllLogs}
-            tooltip={
-              allLogs ? 'Displaying all logs' : 'Displaying deployment logs'
-            }
-            tooltipAlignment="right"
-            ariaLabelLeft="Displaying all logs"
-            ariaLabelRight="Displaying deployment logs"
-            className="mr-4"
-          />
-
-          <IconButton
-            icon={faSync}
-            ariaLabel="reload"
-            tooltipAlignment="right"
-            tooltip="Refresh logs"
-            disabled={isLoading || isFetching}
-            onClick={handleRefresh}
-            size="text-md"
-            iconClassName="text-xl"
-            className="flex items-center justify-center rounded-full border-2 border-blue-400 text-blue-400"
-          />
-        </div>
+        <LogsToolbar
+          deploymentLogsOnly={deploymentLogsOnly}
+          toggleDeploymentLogsOnly={toggleDeploymentLogsOnly}
+          disabled={isLoading || isFetching}
+          handleRefresh={handleRefresh}
+        />
       </header>
       <AccordionCells
         cellAtIndex={cellAtIndex}

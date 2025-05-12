@@ -3,24 +3,19 @@ import { useInfiniteEvents, useTethysApiContext } from '@mbari/api-client'
 import {
   Virtualizer,
   LogCell,
-  IconButton,
   MultiSelectField,
   AccordionCells,
-  HistoricalListIcon,
-  IconToggle,
-  SubIcon,
+  LogsToolbar,
   LoadMoreButton,
+  SelectOption,
 } from '@mbari/react-ui'
 import { MultiValue } from 'react-select'
 import { DateTime } from 'luxon'
-import clsx from 'clsx'
 import formatEvent, {
   displayNameForEventType,
   eventFilters,
   isUploadEvent,
 } from '../lib/formatEvent'
-import { faSync } from '@fortawesome/free-solid-svg-icons'
-import { SelectOption } from '@mbari/react-ui/dist/Fields/Select'
 
 export interface LogsSectionProps {
   className?: string
@@ -153,50 +148,12 @@ const LogsSection: React.FC<LogsSectionProps> = ({
           className="my-auto mr-2 max-w-xs"
           grow
         />
-
-        <div className="flex items-center">
-          <IconToggle
-            iconLeft={
-              <HistoricalListIcon
-                className={clsx(
-                  'transition-colors duration-300',
-                  deploymentLogsOnly ? 'text-gray-400' : 'text-black'
-                )}
-              />
-            }
-            iconRight={
-              <SubIcon
-                className={clsx(
-                  'transition-colors duration-300',
-                  deploymentLogsOnly ? 'text-black' : 'text-gray-400'
-                )}
-              />
-            }
-            isToggled={deploymentLogsOnly}
-            onToggle={toggleDeploymentLogsOnly}
-            tooltip={
-              deploymentLogsOnly
-                ? 'Displaying deployment logs'
-                : 'Displaying all logs'
-            }
-            tooltipAlignment="right"
-            ariaLabelLeft="Displaying all logs"
-            ariaLabelRight="Displaying deployment logs"
-            className="mr-4"
-          />
-
-          <IconButton
-            icon={faSync}
-            ariaLabel="reload"
-            tooltipAlignment="right"
-            tooltip="Refresh logs"
-            disabled={isLoading || isFetching}
-            onClick={handleRefresh}
-            size="text-md"
-            iconClassName="text-xl"
-            className="flex items-center justify-center rounded-full border-2 border-blue-400 text-blue-400"
-          />
-        </div>
+        <LogsToolbar
+          deploymentLogsOnly={deploymentLogsOnly}
+          toggleDeploymentLogsOnly={toggleDeploymentLogsOnly}
+          disabled={isLoading || isFetching}
+          handleRefresh={handleRefresh}
+        />
       </header>
 
       <AccordionCells
