@@ -1,5 +1,5 @@
 import React, { useMemo, useState } from 'react'
-import { useEvents, useTethysApiContext } from '@mbari/api-client'
+import { useInfiniteEvents, useTethysApiContext } from '@mbari/api-client'
 import {
   Virtualizer,
   LogCell,
@@ -9,6 +9,7 @@ import {
   HistoricalListIcon,
   IconToggle,
   SubIcon,
+  LoadMoreButton,
 } from '@mbari/react-ui'
 import { MultiValue } from 'react-select'
 import { DateTime } from 'luxon'
@@ -20,22 +21,16 @@ import formatEvent, {
 } from '../lib/formatEvent'
 import { faSync } from '@fortawesome/free-solid-svg-icons'
 import { SelectOption } from '@mbari/react-ui/dist/Fields/Select'
-import { getAdjustedUnixTime } from '@mbari/utils'
 
 export interface LogsSectionProps {
   className?: string
   style?: React.CSSProperties
   vehicleName: string
-  from: number // milliseconds since epoch
-  to?: number
+  from: number // milliseconds since epoch - only used for deployment logs
+  to?: number // milliseconds since epoch - only used for deployment logs
   deploymentLogsOnly: boolean
   setDeploymentLogsOnly: (value: boolean) => void
 }
-
-const TWO_YEARS_AGO = getAdjustedUnixTime({
-  unixTime: DateTime.now().toMillis(),
-  offsetYears: -2,
-})
 
 const LogsSection: React.FC<LogsSectionProps> = ({
   vehicleName,
@@ -51,75 +46,81 @@ const LogsSection: React.FC<LogsSectionProps> = ({
   const { siteConfig } = useTethysApiContext()
   const [filters, setFilters] = useState<MultiValue<SelectOption>>([])
 
-  const eventTypes = useMemo(() => {
-    return filters.length
-      ? filters
-          .map(({ id }) => eventFilters[id].eventTypes)
-          .flat()
-          .filter((k, i, a) => a.indexOf(k) === i)
-      : undefined
-  }, [filters])
-
-  // Query params for deployment logs (limited to deployment timeframe)
-  const deploymentQueryParams = useMemo(
-    () => ({
-      vehicles: [vehicleName],
-      eventTypes,
-      from: from,
-      to: to,
-      limit: 10000,
-    }),
-    [vehicleName, from, to, eventTypes]
+  const eventTypes = useMemo(
+    () =>
+      filters.length
+        ? filters
+            .map(({ id }) => eventFilters[id].eventTypes)
+            .flat()
+            .filter((k, i, a) => a.indexOf(k) === i)
+        : undefined,
+    [filters]
   )
 
-  // Query params for all logs (going back two years)
-  const allLogsQueryParams = useMemo(
+  const deploymentParams = useMemo(
     () => ({
       vehicles: [vehicleName],
       eventTypes,
-      from: TWO_YEARS_AGO,
-      to: undefined,
-      limit: 10000,
+      from,
+      to,
+      limit: 500,
+    }),
+    [vehicleName, eventTypes, from, to]
+  )
+
+  const deploymentResponse = useInfiniteEvents(deploymentParams)
+
+  const allLogsParams = useMemo(
+    () => ({
+      vehicles: [vehicleName],
+      eventTypes,
+      from: 0,
+      limit: 500,
     }),
     [vehicleName, eventTypes]
   )
 
-  // Two separate queries that will be cached independently
-  const {
-    data: deploymentLogsData,
-    isLoading: isDeploymentLogsLoading,
-    isFetching: isDeploymentLogsFetching,
-    refetch: refetchDeploymentLogs,
-  } = useEvents(deploymentQueryParams)
+  const allLogsResponse = useInfiniteEvents(allLogsParams)
 
   const {
-    data: allLogsData,
-    isLoading: isAllLogsLoading,
-    isFetching: isAllLogsFetching,
-    refetch: refetchAllLogs,
-  } = useEvents(allLogsQueryParams)
+    data,
+    isLoading,
+    isFetching,
+    isFetchingNextPage,
+    fetchNextPage,
+    hasNextPage,
+    refetch,
+  } = deploymentLogsOnly ? deploymentResponse : allLogsResponse
 
-  // Use the appropriate data based on the current mode
-  const data = useMemo(
-    () => (deploymentLogsOnly ? deploymentLogsData : allLogsData),
-    [deploymentLogsOnly, deploymentLogsData, allLogsData]
-  )
+  const flatData = useMemo(() => {
+    if (!data?.pages) return []
+    return data.pages.flat()
+  }, [data?.pages])
+  const dataCount = flatData?.length ?? 0
+  const totalCount = hasNextPage ? dataCount + 1 : dataCount
 
-  const isLoading = deploymentLogsOnly
-    ? isDeploymentLogsLoading
-    : isAllLogsLoading
-  const isFetching = deploymentLogsOnly
-    ? isDeploymentLogsFetching
-    : isAllLogsFetching
+  const handleLoadMore = () => {
+    fetchNextPage()
+  }
+  const cellAtIndex = (index: number, _v: Virtualizer) => {
+    if (hasNextPage && index === dataCount) {
+      return (
+        <LoadMoreButton
+          onClick={handleLoadMore}
+          isLoading={isFetchingNextPage}
+          label="Load more logs"
+        />
+      )
+    }
 
-  const cellAtIndex = (index: number, _virtualizer: Virtualizer) => {
-    const item = data?.[index]
-    const diff = DateTime.fromISO(item?.isoTime ?? '').diffNow('days').days
+    const item = flatData[index]
+    const isoTime = item?.isoTime ?? ''
+    const diff = DateTime.fromISO(isoTime).diffNow('days').days
     const date =
       Math.abs(diff) < 1
         ? 'Today'
-        : DateTime.fromISO(item?.isoTime ?? '').toFormat('yyyy-MM-dd')
-    const time = DateTime.fromISO(item?.isoTime ?? '').toFormat('H:mm')
+        : DateTime.fromISO(isoTime).toFormat('yyyy-MM-dd')
+    const time = DateTime.fromISO(isoTime).toFormat('H:mm')
 
     return item ? (
       <LogCell
@@ -135,13 +136,7 @@ const LogsSection: React.FC<LogsSectionProps> = ({
     )
   }
 
-  const handleRefresh = () => {
-    if (deploymentLogsOnly) {
-      refetchDeploymentLogs()
-    } else {
-      refetchAllLogs()
-    }
-  }
+  const handleRefresh = () => refetch()
 
   return (
     <>
@@ -154,12 +149,11 @@ const LogsSection: React.FC<LogsSectionProps> = ({
             id: key,
           }))}
           placeholder="Filter by event type"
-          onSelect={(selection) => {
-            setFilters(selection ?? [])
-          }}
+          onSelect={(sel) => setFilters(sel ?? [])}
           className="my-auto mr-2 max-w-xs"
           grow
         />
+
         <div className="flex items-center">
           <IconToggle
             iconLeft={
@@ -190,6 +184,7 @@ const LogsSection: React.FC<LogsSectionProps> = ({
             ariaLabelRight="Displaying deployment logs"
             className="mr-4"
           />
+
           <IconButton
             icon={faSync}
             ariaLabel="reload"
@@ -203,9 +198,10 @@ const LogsSection: React.FC<LogsSectionProps> = ({
           />
         </div>
       </header>
+
       <AccordionCells
         cellAtIndex={cellAtIndex}
-        count={data?.length}
+        count={totalCount}
         loading={isLoading || isFetching}
       />
     </>
