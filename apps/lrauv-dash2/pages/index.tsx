@@ -20,6 +20,7 @@ import { StationsListModal } from '../components/StationsListModal'
 import { MapLayersListModal } from '../components/MapLayersListModal'
 import { useSelectedStations } from '../components/SelectedStationContext'
 import { useMarkers } from '../components/MarkerContext'
+import { useDepthRequest } from '@mbari/utils/useDepthRequest'
 import toast from 'react-hot-toast'
 import type { MapProps } from '@mbari/react-ui/dist/Map/Map'
 import { createLogger } from '@mbari/utils'
@@ -63,7 +64,7 @@ const styles = {
     'flex w-full flex-shrink-0 flex-col bg-white border-t-2 border-secondary-300/60',
 }
 
-// interface CustomMarkerProps
+// Interface CustomMarkerProps
 type CustomMapProps = MapProps &
   React.RefAttributes<L.Map> & {
     isAddingMarkers?: boolean
@@ -71,7 +72,7 @@ type CustomMapProps = MapProps &
     trackedVehicles?: { name: string; id?: string }[] // Match the actual type being used
   }
 
-// interface MarkerData
+// Interface MarkerData
 interface MarkerData {
   id: number
   lat: number
@@ -100,12 +101,16 @@ const OverViewMap: React.FC<{
   const [selectedMarkerId, setSelectedMarkerId] = useState<string | null>(null)
   const [defaultMarkerColor, setDefaultMarkerColor] = useState<string>('red')
   const { selectedStations } = useSelectedStations()
-  // Add state to track elevation data and loading state
-  const [elevationData, setElevationData] = useState<{
-    depth: number | null
-    status: string
-    position?: [number, number]
-  }>({ depth: null, status: 'none' })
+  const { handleDepthRequestWithFeedback } = useDepthRequest(
+    handleDepthRequest,
+    {
+      warningToastId: 'depth-unavailable',
+      errorToastId: 'depth-result',
+      loadingToastId: 'depth-loading',
+      warningToastClass: 'blue-toast',
+      toastDuration: 5000,
+    }
+  )
   const [layersModalPosition, setLayersModalPosition] = useState({
     top: 0,
     left: 0,
@@ -321,39 +326,6 @@ const OverViewMap: React.FC<{
       }, 1000)
     } // 1 second delay ensures bounds are applied first
   }, [calculateBounds])
-
-  // Create a wrapper for the depth request that updates state
-  const handleDepthRequestWithFeedback = useCallback(
-    async (lat: number, lng: number) => {
-      try {
-        // Call elevation service
-        const result = await handleDepthRequest(lat, lng)
-
-        // Update state with result
-        setElevationData({
-          depth: result.depth,
-          status: result.status,
-          position: [lat, lng],
-        })
-
-        // Show appropriate toast based on status
-        toast.dismiss('depth-loading')
-        if (result.status === 'success') {
-        } else if (result.status === 'unavailable' || 'no-data') {
-          logger.debug('⚠️ Maps Depth data currently unavailable❕', {
-            id: 'depth-result',
-            className: 'blue-toast',
-          })
-        }
-        return result
-      } catch (error) {
-        toast.dismiss('depth-loading')
-        toast.error('Error fetching depth data', { id: 'depth-result' })
-        return { depth: null, status: 'error' }
-      }
-    },
-    [handleDepthRequest]
-  )
 
   const handleMarkerClick = useCallback(
     (markerId: string) => {
@@ -779,11 +751,13 @@ const OverviewPage: NextPage = () => {
                         </section>
                       </Allotment.Pane>
                       <Allotment.Pane priority={LayoutPriority.High}>
-                        <section className={styles.secondary}>
-                          <VehicleList
-                            onSelectVehicle={handleSelectedVehicle}
-                          />
-                        </section>
+                        <div style={{ overflowY: 'auto', height: '100%' }}>
+                          <section className={styles.secondary}>
+                            <VehicleList
+                              onSelectVehicle={handleSelectedVehicle}
+                            />
+                          </section>
+                        </div>
                       </Allotment.Pane>
                     </Allotment>
                   </div>
