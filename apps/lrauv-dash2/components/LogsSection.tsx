@@ -92,7 +92,10 @@ const LogsSection: React.FC<LogsSectionProps> = ({
     refetch,
   } = deploymentLogsOnly ? deploymentResponse : allLogsResponse
 
-  const flatData = useMemo(() => data?.pages.flat() ?? [], [data])
+  const flatData = useMemo(() => {
+    if (!data?.pages) return []
+    return data.pages.flat()
+  }, [data?.pages])
   const dataCount = flatData?.length ?? 0
   const totalCount = hasNextPage ? dataCount + 1 : dataCount
 
