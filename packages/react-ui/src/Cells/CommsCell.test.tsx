@@ -12,7 +12,7 @@ const props: CommsCellProps = {
   day: 'Today',
   time: '3:22',
   isUpload: true,
-  isScheduled: true,
+  commandType: 'mission',
   onSelect: () => {
     console.log('event fired')
   },
@@ -30,7 +30,7 @@ test('should have purple command text if scheduled', async () => {
 })
 
 test('should have green command text if any state other than scheduled', async () => {
-  render(<CommsCell {...props} isScheduled={false} />)
+  render(<CommsCell {...props} commandType="command" />)
 
   expect(screen.getByText(props.command)).toHaveClass('text-green-600')
 })

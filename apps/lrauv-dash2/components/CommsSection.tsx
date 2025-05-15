@@ -87,7 +87,7 @@ const CommsSection: React.FC<CommsSectionProps> = ({
     }
 
     const item = flatData[index]
-    const isScheduled = item?.eventType === 'run'
+    const commandType = item?.eventType === 'run' ? 'mission' : 'command'
     const today =
       DateTime.fromISO(item?.isoTime ?? '').day === DateTime.now().day
     const day = today
@@ -100,7 +100,7 @@ const CommsSection: React.FC<CommsSectionProps> = ({
     return item ? (
       <CommsCell
         className="border-b border-slate-200"
-        isScheduled={isScheduled}
+        commandType={commandType}
         isUpload={occurredSinceLastComms}
         command={item?.data ?? item?.text ?? ''}
         entry={`Mission ${item?.eventId}`}

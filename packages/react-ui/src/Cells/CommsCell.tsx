@@ -5,6 +5,7 @@ import { faBuilding } from '@fortawesome/free-regular-svg-icons'
 import { IconProp } from '@fortawesome/fontawesome-svg-core'
 import { swallow, truncate } from '@mbari/utils'
 import { AcknowledgeIcon } from '../Icons/AcknowledgeIcon'
+import { CommandType } from '../types'
 
 export interface CommsCellProps {
   className?: string
@@ -16,7 +17,7 @@ export interface CommsCellProps {
   day: string
   time: string
   isUpload: boolean
-  isScheduled: boolean
+  commandType: CommandType
   onSelect?: () => void
 }
 
@@ -39,7 +40,7 @@ export const CommsCell: React.FC<CommsCellProps> = ({
   day,
   time,
   isUpload,
-  isScheduled,
+  commandType,
   onSelect,
 }) => {
   const regFontEntry = entry.slice(0, -3)
@@ -51,7 +52,7 @@ export const CommsCell: React.FC<CommsCellProps> = ({
           <li
             className={clsx(
               styles.command,
-              isScheduled ? 'text-indigo-600' : 'text-green-600'
+              commandType === 'mission' ? 'text-indigo-600' : 'text-green-600'
             )}
             aria-label="command text"
           >

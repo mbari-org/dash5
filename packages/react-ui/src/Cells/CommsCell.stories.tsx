@@ -23,7 +23,7 @@ const args: CommsCellProps = {
   day: 'Today',
   time: '16:29',
   isUpload: true,
-  isScheduled: true,
+  commandType: 'mission',
   onSelect: () => {
     console.log('event fired')
   },
@@ -85,7 +85,7 @@ Stopped.args = {
   description: 'Ack. by Brizo',
   time: '14:18',
   isUpload: false,
-  isScheduled: false,
+  commandType: 'command',
 }
 
 Stopped.parameters = {
