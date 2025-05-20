@@ -58,6 +58,10 @@ jobs:
         run: |
           git fetch --tags --prune
           commit_msg="$(git show -s --format=%B ${{ github.event.pull_request.head.sha }})"
+          if [ $? -ne 0 ] || [ -z "$commit_msg" ]; then
+            echo "Error: Failed to retrieve commit message." >&2
+            exit 1
+          fi
           if echo "$commit_msg" | grep -iq "#major"; then
             echo "type=major" >> "$GITHUB_OUTPUT"
           elif echo "$commit_msg" | grep -iq "#minor"; then
