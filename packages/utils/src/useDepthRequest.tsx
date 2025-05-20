@@ -82,7 +82,7 @@ export function useDepthRequest(
           setDepthWarningShown(true)
         }
 
-        logger.debug('Depth request result:', result)
+        // logger.debug('Depth request result:', result)
         return result
       } catch (error) {
         logger.error('Depth request error:', error)

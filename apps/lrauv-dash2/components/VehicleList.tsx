@@ -65,6 +65,7 @@ const ConnectedVehicleCell: React.FC<{
     },
     {
       enabled: !!lastDeployment?.lastEvent,
+      staleTime: 10000, // 10 seconds
     }
   )
   const { data: vehicleInfo, isLoading: vehicleInfoLoading } = useVehicleInfo(
@@ -84,6 +85,10 @@ const ConnectedVehicleCell: React.FC<{
   )
   const pingEvent = useTethysSubscriptionEvent('VehiclePingResult', name)
 
+  // Stabilize vehicle Widget intermittent flashing
+  const dataIsLoading = positionLoading || vehicleInfoLoading
+  const [stableView, setStableView] = useState(false)
+
   // TODO: Remove this demonstations of 'usePlatforms'
   // const { data: platforms } = usePlatforms(
   // { refresh: 'y' },
@@ -94,12 +99,28 @@ const ConnectedVehicleCell: React.FC<{
   const mission = missionStartedEvent?.[0]?.text.replace(/started mission/i, '')
   const isLoading = positionLoading || vehicleInfoLoading
 
-  const lastLoad = React.useRef(isLoading)
+  // Extract complex expression for dependency array
+  const currentGpsFix = vehiclePosition?.gpsFixes?.[0]
+  const deploymentName = lastDeployment?.name
+
   useEffect(() => {
-    if (lastLoad.current !== isLoading) {
-      lastLoad.current = isLoading
+    // Start with unstable view when loading begins
+    if (dataIsLoading) {
+      setStableView(false)
+      return
     }
-  }, [isLoading, virtualizer])
+
+    // Add a small delay before showing stable content to prevent flashing
+    const timer = setTimeout(() => setStableView(true), 150)
+    return () => clearTimeout(timer)
+  }, [dataIsLoading, deploymentName, currentGpsFix])
+
+  // const lastLoad = React.useRef(isLoading)
+  // useEffect(() => {
+  //   if (lastLoad.current !== isLoading) {
+  //     lastLoad.current = isLoading
+  //   }
+  // }, [isLoading, virtualizer])
 
   const handleToggle = () => {
     setIsOpen(!isOpen)
@@ -147,7 +168,8 @@ const ConnectedVehicleCell: React.FC<{
         onToggle={handleToggle}
         open={isOpen}
       />
-      {isOpen && (
+      {/* {isOpen && ( */}
+      {isOpen && stableView && (
         <VehicleCell
           onSelect={handleSelect}
           headline={
@@ -276,6 +298,9 @@ const ConnectedVehicleCell: React.FC<{
   )
 }
 
+// Memoize the ConnectedVehicleCell component to prevent unnecessary re-renders
+const MemoizedConnectedVehicleCell = React.memo(ConnectedVehicleCell)
+
 const VehicleList: React.FC<{
   onSelectVehicle?: (vehicle: string) => void
 }> = ({ onSelectVehicle: handleSelectVehicle }) => {
@@ -300,13 +325,17 @@ const VehicleList: React.FC<{
       vehicles.data?.find((v) => v.vehicleName === trackedVehicles[index])
         ?.color ||
       '#ccc'
+
     const handleSelect = () => {
       handleSelectVehicle?.(trackedVehicles[index])
     }
 
     return (
-      <div className="border-b border-stone-400">
-        <ConnectedVehicleCell
+      <div
+        className="border-b border-stone-400"
+        key={`vehicle-${trackedVehicles[index]}-${colorVersion}`}
+      >
+        <MemoizedConnectedVehicleCell
           name={trackedVehicles[index]}
           virtualizer={virtualizer}
           color={vehicleColor ?? '#ccc'}
@@ -317,13 +346,46 @@ const VehicleList: React.FC<{
       </div>
     )
   }
+  // const cellAtIndex = (index: number, virtualizer: Virtualizer) => {
+  //   const vehicleColor =
+  //     vehicleColors[trackedVehicles[index].toLowerCase()] ||
+  //     vehicles.data?.find((v) => v.vehicleName === trackedVehicles[index])
+  //       ?.color ||
+  //     '#ccc'
+  //   const handleSelect = () => {
+  //     handleSelectVehicle?.(trackedVehicles[index])
+  //   }
 
+  //   return (
+  //     <div
+  //       className="border-b border-stone-400"
+  //       key={`vehicle-${trackedVehicles[index]}-${colorVersion}`}
+  //     >
+  //       <ConnectedVehicleCell
+  //         name={trackedVehicles[index]}
+  //         // name={trackedVehicles[index]}
+  //         virtualizer={virtualizer}
+  //         color={vehicleColor ?? '#ccc'}
+  //         open={accordionState[trackedVehicles[index]] !== 'closed'}
+  //         onToggle={handleToggle}
+  //         onSelect={handleSelect}
+  //       />
+  //     </div>
+  //   )
+  // }
+
+  const [colorVersion, setColorVersion] = useState(0)
+  React.useEffect(() => {
+    // Instead of forcing a full re-render, just update a counter
+    // that we can use as a key for components that need to update
+    setColorVersion((prev) => prev + 1)
+  }, [vehicleColors])
   // Force component to re-render when vehicleColors changes
   // This is crucial to ensure UI updates when colors change in modal
-  React.useEffect(() => {
-    // This effect depends on vehicleColors and will trigger a re-render
-    // when they change in the VehicleColorsModal
-  }, [vehicleColors])
+  // React.useEffect(() => {
+  //   // This effect depends on vehicleColors and will trigger a re-render
+  //   // when they change in the VehicleColorsModal
+  // }, [vehicleColors])
 
   return (
     <CellVirtualizer
