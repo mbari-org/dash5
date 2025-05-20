@@ -56,6 +56,10 @@ fi
 
 # Ensure that the local git repo is up to date
 git fetch --tags --prune
+if [ $? -ne 0 ]; then
+  echo -e "${RED}Error: Failed to fetch tags from the remote repository.${NC}"
+  exit 1
+fi
 
 # Get the latest version tag
 LATEST_TAG=$(git tag -l "v*" | grep -E '^v[0-9]+\.[0-9]+\.[0-9]+$' | sort -V | tail -n 1)
