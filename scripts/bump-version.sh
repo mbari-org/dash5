@@ -54,6 +54,9 @@ if ! command -v git &> /dev/null; then
   exit 1
 fi
 
+# Ensure that the local git repo is up to date
+git fetch --tags --prune
+
 # Get the latest version tag
 LATEST_TAG=$(git tag -l "v*" | grep -E '^v[0-9]+\.[0-9]+\.[0-9]+$' | sort -V | tail -n 1)
 
