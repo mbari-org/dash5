@@ -573,3 +573,32 @@ div[role='status'][aria-live='polite'] svg {
   box-shadow: 0 0 8px rgba(0, 0, 0, 0.2);
   z-index: 10;
 }
+
+/* Cell Virtualizer */
+.cell-virtualizer-container {
+  overflow: auto;
+}
+
+.selectable-text {
+  -webkit-user-select: text;
+  -moz-user-select: text;
+  user-select: text;
+}
+
+.non-selectable-text {
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  user-select: none;
+}
+
+.cell-virtualizer-total-size {
+  width: 100%;
+  position: relative;
+}
+
+.cell-virtualizer-item {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+}
