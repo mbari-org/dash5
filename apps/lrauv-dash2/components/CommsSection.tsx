@@ -1,5 +1,5 @@
 import React, { useMemo, useState } from 'react'
-import { EventType, useInfiniteEvents } from '@mbari/api-client'
+import { EventType } from '@mbari/api-client'
 import {
   AccordionCells,
   Virtualizer,
@@ -8,7 +8,7 @@ import {
   LogsToolbar,
 } from '@mbari/react-ui'
 import { DateTime } from 'luxon'
-import { useLastCommsTime } from '../lib/useLastCommsTime'
+import { useCommsEvents } from '../lib/useCommsEvents'
 
 export interface CommsSectionProps {
   className?: string
@@ -39,7 +39,7 @@ const CommsSection: React.FC<CommsSectionProps> = ({
     [vehicleName, from, to]
   )
 
-  const deploymentResponse = useInfiniteEvents(deploymentParams)
+  const deploymentResponse = useCommsEvents(deploymentParams)
 
   const allLogsParams = useMemo(
     () => ({
@@ -51,10 +51,10 @@ const CommsSection: React.FC<CommsSectionProps> = ({
     [vehicleName]
   )
 
-  const allLogsResponse = useInfiniteEvents(allLogsParams)
+  const allLogsResponse = useCommsEvents(allLogsParams)
 
   const {
-    data,
+    data = [],
     isLoading,
     isFetching,
     isFetchingNextPage,
@@ -63,17 +63,12 @@ const CommsSection: React.FC<CommsSectionProps> = ({
     refetch,
   } = deploymentLogsOnly ? deploymentResponse : allLogsResponse
 
-  const flatData = useMemo(() => {
-    if (!data?.pages) return []
-    return data.pages.flat()
-  }, [data?.pages])
-  const dataCount = flatData?.length ?? 0
+  const dataCount = data?.length ?? 0
   const totalCount = hasNextPage ? dataCount + 1 : dataCount
 
   const handleLoadMore = () => {
     fetchNextPage()
   }
-  const lastCommsMillis = useLastCommsTime(vehicleName, from)
 
   const cellAtIndex = (index: number, _virtualizer: Virtualizer) => {
     if (hasNextPage && index === dataCount) {
@@ -86,30 +81,26 @@ const CommsSection: React.FC<CommsSectionProps> = ({
       )
     }
 
-    const item = flatData[index]
+    const item = data[index]
     const commandType = item?.eventType === 'run' ? 'mission' : 'command'
     const today =
-      DateTime.fromISO(item?.isoTime ?? '').day === DateTime.now().day
+      DateTime.fromISO(item?.commsIsoTime ?? '').day === DateTime.now().day
     const day = today
       ? 'Today'
-      : DateTime.fromISO(item?.isoTime ?? '').toFormat('MMM d yyyy')
-    const time = DateTime.fromISO(item?.isoTime ?? '').toFormat('H:mm')
-    const occurredSinceLastComms =
-      (item?.unixTime ?? DateTime.now().toMillis()) > (lastCommsMillis ?? 0)
+      : DateTime.fromISO(item?.commsIsoTime ?? '').toFormat('MMM d yyyy')
+    const time = DateTime.fromISO(item?.commsIsoTime ?? '').toFormat('H:mm')
 
     return item ? (
       <CommsCell
         className="border-b border-slate-200"
         commandType={commandType}
-        isUpload={occurredSinceLastComms}
+        status={item?.status}
         command={item?.data ?? item?.text ?? ''}
         entry={`Mission ${item?.eventId}`}
         name={item?.user ?? ''}
-        description={
-          occurredSinceLastComms
-            ? 'Waiting to transmit'
-            : `Ack by ${vehicleName}`
-        }
+        via={item?.via}
+        vehicleName={vehicleName}
+        timeout={item?.timeout}
         day={day}
         time={time}
       />
