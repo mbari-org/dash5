@@ -5,6 +5,7 @@ import { faBuilding } from '@fortawesome/free-regular-svg-icons'
 import { IconProp } from '@fortawesome/fontawesome-svg-core'
 import { swallow, truncate } from '@mbari/utils'
 import { AcknowledgeIcon } from '../Icons/AcknowledgeIcon'
+import { ConnectedIcon } from '../Icons/ConnectedIcon'
 import { CommandType } from '../types'
 
 export interface CommsCellProps {
@@ -13,20 +14,23 @@ export interface CommsCellProps {
   command: string
   entry: string
   name?: string
-  description?: string
+  via?: 'cellsat' | 'cell' | 'sat'
+  vehicleName?: string
+  timeout?: string
   day: string
   time: string
-  isUpload: boolean
+  status: 'queued' | 'sent' | 'ack'
   commandType: CommandType
   onSelect?: () => void
 }
 
 const styles = {
-  container: 'flex items-center bg-white p-4 font-display text-sm',
+  container:
+    'w-full flex items-center bg-white py-4 pl-4 pr-1 font-display text-sm',
   command: 'whitespace-pre-line font-mono truncate',
   buttonWrapper: 'grid grid-cols-10 w-full items-center text-left',
-  detailsContainer: 'col-span-6 flex flex-grow flex-col pl-1',
-  icon: 'text-2xl opacity-60',
+  detailsContainer: 'col-span-4 flex flex-grow flex-col pl-1',
+  icon: 'text-2xl opacity-60 flex flex-grow items-center justify-center w-full col-span-3',
   description: 'flex flex-grow flex-col p-2 opacity-60 col-span-3',
 }
 
@@ -36,15 +40,26 @@ export const CommsCell: React.FC<CommsCellProps> = ({
   command,
   entry,
   name,
-  description,
+  via,
+  vehicleName,
+  timeout,
   day,
   time,
-  isUpload,
+  status,
   commandType,
   onSelect,
 }) => {
   const regFontEntry = entry.slice(0, -3)
   const boldFontEntry = entry.slice(-3)
+
+  const viaText = `${status === 'queued' ? 'Sending' : 'Sent'} via ${via}`
+  const timeoutText = `Timeout: ${timeout} mins`
+  const description =
+    status === 'queued'
+      ? `Waiting to transmit`
+      : status === 'ack'
+      ? `Ack by ${vehicleName}`
+      : `Sent to ${vehicleName}`
   return (
     <article style={style} className={clsx(styles.container, className)}>
       <button className={styles.buttonWrapper} onClick={swallow(onSelect)}>
@@ -67,18 +82,22 @@ export const CommsCell: React.FC<CommsCellProps> = ({
           </li>
         </ul>
         <div className={styles.icon}>
-          {isUpload ? (
+          {status === 'queued' ? (
             <FontAwesomeIcon
               icon={faBuilding as IconProp}
-              aria-label="transmitting icon"
+              aria-label="queued icon"
             />
+          ) : status === 'sent' ? (
+            <ConnectedIcon />
           ) : (
             <AcknowledgeIcon />
           )}
         </div>
 
         <ul className={styles.description}>
-          <li aria-label="action description">{description}</li>
+          <li aria-label="Comms status">{description}</li>
+          {via && <li>{viaText}</li>}
+          {timeout && <li>{timeoutText}</li>}
           <li>
             <span aria-label="day">{day}</span>{' '}
             <span aria-label="time">{time}</span>

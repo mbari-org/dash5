@@ -9,21 +9,23 @@ export default {
 } as Meta
 
 const Template: Story<CommsCellProps> = (args) => (
-  <div className="bg-stone-200 p-2" style={{ width: 438 }}>
+  <div className="bg-stone-200 p-2" style={{ width: 627 }}>
     <CommsCell {...args} />
   </div>
 )
 
 const args: CommsCellProps = {
   className: '',
-  command: 'sched “load Science/sci2.xml”',
+  command: 'sched "load Science/sci2.xml"',
   entry: 'Mission 12460798',
   name: 'Tanner Poling',
-  description: 'Waiting to transmit',
   day: 'Today',
   time: '16:29',
-  isUpload: true,
+  status: 'queued',
+  via: 'cellsat',
+  timeout: '10',
   commandType: 'mission',
+  vehicleName: 'Brizo',
   onSelect: () => {
     console.log('event fired')
   },
@@ -39,18 +41,20 @@ Waiting.parameters = {
   },
 }
 
-export const Scheduled = Template.bind({})
-Scheduled.args = {
+export const Sent = Template.bind({})
+Sent.args = {
   ...args,
-  command: 'sched asap “set \nprofile_station.MaxDepth \n150 m; run”',
+  command: 'sched asap "set \nprofile_station.MaxDepth \n150 m; run"',
   entry: 'Mission 1/2 12460795',
   name: 'Shannon Johnson',
-  description: 'Ack. by Brizo',
   time: '14:32',
-  isUpload: false,
+  via: 'cell',
+  timeout: '5',
+  status: 'sent',
+  commandType: 'mission',
 }
 
-Scheduled.parameters = {
+Sent.parameters = {
   design: {
     type: 'figma',
     url: 'https://www.figma.com/file/FtsKsOCBQ2YjTZlwezG6aI/MBARI-Components?node-id=297%3A1505',
@@ -64,31 +68,33 @@ LongScheduled.args = {
     'sched asap "load Science/sci2.xml;set sci2.MissionTimeout 10 min;set sci2.NeedCommsTime 45 min;set sci2.Lat1 34.378 degree;set sci2.Lon1 -119.737 degree;set sci2.Speed -2 m/s;set sci2.YoYoMaxDepth 20 m;set sci2.MaxDepth 40 m" 2mg2x 1 2\nsched asap "set sci2.MinOffshore 1 km;run" 2mg2x 2 2',
   entry: 'Mission 1/2 12460795',
   name: 'Shannon Johnson',
-  description: 'Ack. by Brizo',
   time: '14:32',
-  isUpload: false,
+  status: 'sent',
+  via: 'sat',
+  commandType: 'mission',
 }
 
-Scheduled.parameters = {
+Sent.parameters = {
   design: {
     type: 'figma',
     url: 'https://www.figma.com/file/FtsKsOCBQ2YjTZlwezG6aI/MBARI-Components?node-id=297%3A1505',
   },
 }
 
-export const Stopped = Template.bind({})
-Stopped.args = {
+export const Acknowledged = Template.bind({})
+Acknowledged.args = {
   ...args,
   command: 'schedule clear; schedule \nresume',
   entry: 'Command 12460792',
   name: 'Shannon Johnson',
-  description: 'Ack. by Brizo',
   time: '14:18',
-  isUpload: false,
+  status: 'ack',
+  via: 'cell',
+  timeout: '10',
   commandType: 'command',
 }
 
-Stopped.parameters = {
+Acknowledged.parameters = {
   design: {
     type: 'figma',
     url: 'https://www.figma.com/file/FtsKsOCBQ2YjTZlwezG6aI/MBARI-Components?node-id=298%3A1770',

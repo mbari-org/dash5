@@ -5,13 +5,12 @@ import { CommsCell, CommsCellProps } from './CommsCell'
 
 const props: CommsCellProps = {
   className: '',
-  command: 'sched “jaguarSharks.xml”',
+  command: 'sched "jaguarSharks.xml"',
   entry: 'Mission 12345678',
   name: 'Steve Zissou',
-  description: 'Waiting to transmit',
   day: 'Today',
   time: '3:22',
-  isUpload: true,
+  status: 'queued',
   commandType: 'mission',
   onSelect: () => {
     console.log('event fired')
@@ -35,14 +34,14 @@ test('should have green command text if any state other than scheduled', async (
   expect(screen.getByText(props.command)).toHaveClass('text-green-600')
 })
 
-test('should display transmitting icon when uploading', async () => {
+test('should display queued icon when status is queued', async () => {
   render(<CommsCell {...props} />)
 
-  expect(screen.getByLabelText(/transmitting icon/i)).toBeInTheDocument()
+  expect(screen.getByLabelText(/queued icon/i)).toBeInTheDocument()
 })
 
 test('should display acknowledge icon when appropriate', async () => {
-  render(<CommsCell {...props} isUpload={false} />)
+  render(<CommsCell {...props} status="ack" />)
 
   expect(screen.getByLabelText(/acknowledge icon/i)).toBeInTheDocument()
 })
