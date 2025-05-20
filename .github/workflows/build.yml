@@ -67,4 +67,4 @@ jobs:
           fi
 
       - name: Bump version and tag
-        run: ./scripts/bump-version.sh --${{ steps.bump.outputs.type }}
+        run: ./scripts/bump-version.sh "--${{ steps.bump.outputs.type }}"
