@@ -1,4 +1,10 @@
-import { useState, useMemo, useEffect, useRef, SetStateAction } from 'react'
+import React, {
+  useState,
+  useMemo,
+  useEffect,
+  useRef,
+  SetStateAction,
+} from 'react'
 import {
   Circle,
   useMapEvents,
@@ -396,8 +402,8 @@ export const Measurement: React.FC<MeasurementProps> = ({
   // Modify your component rendering to use the isPopupOpen state directly
   return (
     <>
-      {measurements.map((m) => (
-        <>
+      {measurements.map((m, index) => (
+        <React.Fragment key={`measurement-point-${index}-${m.lat}-${m.lng}`}>
           <Circle
             center={{
               lat: m.lat,
@@ -413,7 +419,7 @@ export const Measurement: React.FC<MeasurementProps> = ({
               },
             }}
           />
-        </>
+        </React.Fragment>
       ))}
 
       {isPoint.current ? (

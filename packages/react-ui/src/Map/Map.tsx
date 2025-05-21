@@ -1065,7 +1065,7 @@ const Map = React.forwardRef<L.Map, MapProps>(
                 maxWidth: 250,
               }}
             >
-              <p className="measure-info" cursor-pointer>
+              <div className="measure-info cursor-pointer">
                 <a
                   id="createMeasLink"
                   className="mousechange:hover cursor-pointer:onHover leaflet-pointer text-bg-blue-600 hover:text-bg-blue-800 w-full bg-white"
@@ -1100,7 +1100,7 @@ const Map = React.forwardRef<L.Map, MapProps>(
                     style={{ marginLeft: '1rem' }}
                   />
                 </button>
-              </p>
+              </div>
             </div>
           ) : null}
           {/* Measurement mode: MEASURING */}
@@ -1115,7 +1115,7 @@ const Map = React.forwardRef<L.Map, MapProps>(
                 maxWidth: 250,
               }}
             >
-              <p className="measure-info cursor-pointer:onHover">
+              <div className="measure-info cursor-pointer-onHover">
                 <br />
                 <h6>
                   <span className="font-bold text-blue-600">
@@ -1126,7 +1126,7 @@ const Map = React.forwardRef<L.Map, MapProps>(
                 <hr className="hr-round"></hr>
                 <br />
                 {element}
-              </p>
+              </div>
               <ul className="mousechange leaflet-pointer grid">
                 <li>
                   <button
