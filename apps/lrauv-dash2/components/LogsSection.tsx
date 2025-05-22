@@ -106,6 +106,54 @@ const LogsSection: React.FC<LogsSectionProps> = ({
   const handleLoadMore = () => {
     fetchNextPage()
   }
+
+  // Handle copy-paste action
+  const handleCopyPaste = (item: any, time: string, date: string) => {
+    try {
+      // Get log content
+      const logContent = formatEvent(
+        item,
+        siteConfig?.appConfig.external.tethysdash ?? ''
+      )
+
+      // Create a complete text representation
+      let completeText = `${displayNameForEventType(item)}\n`
+      completeText += `Time: ${time}\n`
+      completeText += `Date: ${date}\n`
+      completeText += `Direction: ${
+        isUploadEvent(item) ? 'Upload' : 'Download'
+      }\n\n`
+
+      // Add log content
+      if (typeof logContent === 'string') {
+        completeText += logContent
+      } else {
+        // Extract text as fallback (only if needed)
+        const tempDiv = document.createElement('div')
+        const ReactDOM = require('react-dom')
+        ReactDOM.render(logContent, tempDiv)
+        completeText += tempDiv.textContent || ''
+        ReactDOM.unmountComponentAtNode(tempDiv)
+      }
+
+      // Copy all text to the clipboard
+      navigator.clipboard
+        .writeText(completeText)
+        .then(() =>
+          toast.success('Log copied to clipboard.', {
+            duration: 2000,
+            className: 'blue-toast',
+          })
+        )
+        .catch((err) => {
+          logger.error('Failed to copy:', err)
+          toast.error('Failed to copy to clipboard')
+        })
+    } catch (error) {
+      logger.error('Clipboard error:', error)
+      toast.error("Your browser doesn't support clipboard access")
+    }
+  }
   const cellAtIndex = (index: number, _v: Virtualizer) => {
     if (hasNextPage && index === dataCount) {
       return (
@@ -133,52 +181,7 @@ const LogsSection: React.FC<LogsSectionProps> = ({
         label={displayNameForEventType(item)}
         log={formatEvent(item, siteConfig?.appConfig.external.tethysdash ?? '')}
         isUpload={isUploadEvent(item)}
-        onSelect={() => {
-          try {
-            // Get log content
-            const logContent = formatEvent(
-              item,
-              siteConfig?.appConfig.external.tethysdash ?? ''
-            )
-
-            // Create a complete text representation
-            let completeText = `${displayNameForEventType(item)}\n`
-            completeText += `Time: ${time}\n`
-            completeText += `Date: ${date}\n`
-            completeText += `Direction: ${
-              isUploadEvent(item) ? 'Upload' : 'Download'
-            }\n\n`
-
-            // Add log content
-            if (typeof logContent === 'string') {
-              completeText += logContent
-            } else {
-              // Extract text as fallback (only if needed)
-              const tempDiv = document.createElement('div')
-              const ReactDOM = require('react-dom')
-              ReactDOM.render(logContent, tempDiv)
-              completeText += tempDiv.textContent || ''
-              ReactDOM.unmountComponentAtNode(tempDiv)
-            }
-
-            // Copy all of the text to the clipboard
-            navigator.clipboard
-              .writeText(completeText)
-              .then(() =>
-                toast.success('Log copied to clipboard.', {
-                  duration: 2000,
-                  className: 'blue-toast',
-                })
-              )
-              .catch((err) => {
-                logger.error('Failed to copy:', err)
-                toast.error('Failed to copy to clipboard')
-              })
-          } catch (error) {
-            logger.error('Clipboard error:', error)
-            toast.error("Your browser doesn't support clipboard access")
-          }
-        }}
+        onSelect={() => handleCopyPaste(item, time, date)}
       />
     ) : (
       <span />
