@@ -100,3 +100,11 @@ Acknowledged.parameters = {
     url: 'https://www.figma.com/file/FtsKsOCBQ2YjTZlwezG6aI/MBARI-Components?node-id=298%3A1770',
   },
 }
+
+export const Timeout = Template.bind({})
+Timeout.args = {
+  ...args,
+  via: 'cell',
+  timeout: '5',
+  status: 'timeout',
+}

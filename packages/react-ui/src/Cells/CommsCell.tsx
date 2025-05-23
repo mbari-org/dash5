@@ -2,11 +2,59 @@ import React from 'react'
 import clsx from 'clsx'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { faBuilding } from '@fortawesome/free-regular-svg-icons'
+import { faStopwatch } from '@fortawesome/free-solid-svg-icons'
 import { IconProp } from '@fortawesome/fontawesome-svg-core'
 import { swallow, truncate } from '@mbari/utils'
 import { AcknowledgeIcon } from '../Icons/AcknowledgeIcon'
 import { ConnectedIcon } from '../Icons/ConnectedIcon'
 import { CommandType } from '../types'
+
+const getStatusTexts = (
+  status: 'queued' | 'sent' | 'ack' | 'timeout',
+  vehicleName?: string,
+  via?: 'cellsat' | 'cell' | 'sat',
+  timeout?: string
+) => {
+  let description = ''
+  let viaText = ''
+  let icon: React.ReactNode = null
+
+  switch (status) {
+    case 'sent':
+      description = `Sent to ${vehicleName}`
+      viaText = `Sent via ${via}`
+      icon = <ConnectedIcon />
+      break
+    case 'ack':
+      description = `Ack by ${vehicleName}`
+      viaText = `Sent via ${via}`
+      icon = <AcknowledgeIcon />
+      break
+    case 'timeout':
+      description = 'Cell timeout expired'
+      viaText = `Attempted via ${via}`
+      icon = (
+        <FontAwesomeIcon
+          icon={faStopwatch as IconProp}
+          aria-label="timeout icon"
+        />
+      )
+      break
+    default:
+      description = 'Waiting to transmit'
+      viaText = `Sending via ${via}`
+      icon = (
+        <FontAwesomeIcon
+          icon={faBuilding as IconProp}
+          aria-label="queued icon"
+        />
+      )
+  }
+
+  const timeoutText = `Timeout: ${timeout} mins`
+
+  return { description, viaText, timeoutText, icon }
+}
 
 export interface CommsCellProps {
   className?: string
@@ -19,7 +67,7 @@ export interface CommsCellProps {
   timeout?: string
   day: string
   time: string
-  status: 'queued' | 'sent' | 'ack'
+  status: 'queued' | 'sent' | 'ack' | 'timeout'
   commandType: CommandType
   onSelect?: () => void
 }
@@ -52,14 +100,13 @@ export const CommsCell: React.FC<CommsCellProps> = ({
   const regFontEntry = entry.slice(0, -3)
   const boldFontEntry = entry.slice(-3)
 
-  const viaText = `${status === 'queued' ? 'Sending' : 'Sent'} via ${via}`
-  const timeoutText = `Timeout: ${timeout} mins`
-  const description =
-    status === 'queued'
-      ? `Waiting to transmit`
-      : status === 'ack'
-      ? `Ack by ${vehicleName}`
-      : `Sent to ${vehicleName}`
+  const { description, viaText, timeoutText, icon } = getStatusTexts(
+    status,
+    vehicleName,
+    via,
+    timeout
+  )
+
   return (
     <article style={style} className={clsx(styles.container, className)}>
       <button className={styles.buttonWrapper} onClick={swallow(onSelect)}>
@@ -81,18 +128,7 @@ export const CommsCell: React.FC<CommsCellProps> = ({
             {name}
           </li>
         </ul>
-        <div className={styles.icon}>
-          {status === 'queued' ? (
-            <FontAwesomeIcon
-              icon={faBuilding as IconProp}
-              aria-label="queued icon"
-            />
-          ) : status === 'sent' ? (
-            <ConnectedIcon />
-          ) : (
-            <AcknowledgeIcon />
-          )}
-        </div>
+        <div className={styles.icon}>{icon}</div>
 
         <ul className={styles.description}>
           <li aria-label="Comms status">{description}</li>
