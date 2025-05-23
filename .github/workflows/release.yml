@@ -5,6 +5,7 @@ on:
   push:
     tags:
       - 'v*'  # Run when a version tag is pushed
+  # Tags are created automatically when PRs merge into develop
   release:
     types: [created]
 
