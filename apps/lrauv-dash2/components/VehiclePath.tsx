@@ -237,6 +237,7 @@ const VehiclePath: React.FC<VehiclePathProps> = ({
 
   // Fit bounds for Deployment Map
   useEffect(() => {
+    //  Disable map auto-fit centering when the user interacts with timeline.
     if (fit.current !== routeAsString && route && !disableAutoFit) {
       if (!grouped) {
         dispatch({ type: 'clear' })

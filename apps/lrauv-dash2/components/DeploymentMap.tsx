@@ -95,8 +95,9 @@ const DeploymentMap: React.FC<DeploymentMapProps> = ({
   const [isTimelineScrubbing, setIsTimelineScrubbing] = useState(false)
   const [center, setCenter] = useState<undefined | [number, number]>()
   const [centerZoom, setCenterZoom] = useState<number | undefined>(undefined)
-  const [bounds, setBounds] =
-    useState<[[number, number], [number, number]] | undefined>()
+  const [bounds, setBounds] = useState<
+    [[number, number], [number, number]] | undefined
+  >()
   const [latestGPS, setLatestGPS] = useState<VPosDetail | undefined>()
   const [viewMode, setViewMode] = useState<'center' | 'bounds' | null>(null)
   const [selectedMarkerId, setSelectedMarkerId] = useState<string | null>(null)
@@ -659,6 +660,7 @@ const DeploymentMap: React.FC<DeploymentMapProps> = ({
             indicatorTime={indicatorTime}
             onScrub={handleMapScrub}
             onGPSFix={handleGPSFix}
+            // Disable map auto-fit centering when scrubbing the timeline
             disableAutoFit={isTimelineScrubbing}
           />
         )}
