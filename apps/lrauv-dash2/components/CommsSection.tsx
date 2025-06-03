@@ -81,8 +81,10 @@ const CommsSection: React.FC<CommsSectionProps> = ({
 
     const item = data[index]
     const commandType = item?.eventType === 'run' ? 'mission' : 'command'
-    const today =
-      DateTime.fromISO(item?.commsIsoTime ?? '').day === DateTime.now().day
+    const today = DateTime.fromISO(item?.commsIsoTime ?? '').hasSame(
+      DateTime.now(),
+      'day'
+    )
     const day = today
       ? 'Today'
       : DateTime.fromISO(item?.commsIsoTime ?? '').toFormat('MMM d yyyy')
