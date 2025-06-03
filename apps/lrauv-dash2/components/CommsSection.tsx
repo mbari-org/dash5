@@ -69,7 +69,7 @@ const CommsSection: React.FC<CommsSectionProps> = ({
   }
 
   const cellAtIndex = (index: number, _virtualizer: Virtualizer) => {
-    if (hasNextPage && index === dataCount) {
+    if (hasNextPage && dataCount && index === dataCount) {
       return (
         <LoadMoreButton
           onClick={handleLoadMore}
