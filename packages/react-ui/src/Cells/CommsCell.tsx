@@ -21,18 +21,18 @@ const getStatusTexts = (
 
   switch (status) {
     case 'sent':
-      description = `Sent to ${vehicleName}`
-      viaText = `Sent via ${via}`
+      description = `Sent to ${vehicleName ?? 'vehicle'}`
+      viaText = `Sent via ${via ?? 'unknown method'}`
       icon = <ConnectedIcon />
       break
     case 'ack':
-      description = `Ack by ${vehicleName}`
-      viaText = `Sent via ${via}`
+      description = `Ack by ${vehicleName ?? 'vehicle'}`
+      viaText = `Sent via ${via ?? 'unknown method'}`
       icon = <AcknowledgeIcon />
       break
     case 'timeout':
       description = 'Cell timeout expired'
-      viaText = `Attempted via ${via}`
+      viaText = `Attempted via ${via ?? 'unknown method'}`
       icon = (
         <FontAwesomeIcon
           icon={faStopwatch as IconProp}
@@ -40,9 +40,10 @@ const getStatusTexts = (
         />
       )
       break
+    case 'queued':
     default:
       description = 'Waiting to transmit'
-      viaText = `Sending via ${via}`
+      viaText = `Sending via ${via ?? 'unknown method'}`
       icon = (
         <FontAwesomeIcon
           icon={faBuilding as IconProp}
