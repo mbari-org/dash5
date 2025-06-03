@@ -1,5 +1,5 @@
 import React, { useMemo, useState } from 'react'
-import { EventType } from '@mbari/api-client'
+import { EventType, useCommsEvents } from '@mbari/api-client'
 import {
   AccordionCells,
   Virtualizer,
@@ -8,7 +8,6 @@ import {
   LogsToolbar,
 } from '@mbari/react-ui'
 import { DateTime } from 'luxon'
-import { useCommsEvents } from '../lib/useCommsEvents'
 
 export interface CommsSectionProps {
   className?: string
@@ -57,17 +56,16 @@ const CommsSection: React.FC<CommsSectionProps> = ({
     data = [],
     isLoading,
     isFetching,
-    isFetchingNextPage,
-    fetchNextPage,
     hasNextPage,
     refetch,
+    fetchMore,
   } = deploymentLogsOnly ? deploymentResponse : allLogsResponse
 
   const dataCount = data?.length ?? 0
   const totalCount = hasNextPage ? dataCount + 1 : dataCount
 
   const handleLoadMore = () => {
-    fetchNextPage()
+    fetchMore()
   }
 
   const cellAtIndex = (index: number, _virtualizer: Virtualizer) => {
@@ -75,7 +73,7 @@ const CommsSection: React.FC<CommsSectionProps> = ({
       return (
         <LoadMoreButton
           onClick={handleLoadMore}
-          isLoading={isFetchingNextPage}
+          isLoading={isFetching}
           label="Load more logs"
         />
       )
