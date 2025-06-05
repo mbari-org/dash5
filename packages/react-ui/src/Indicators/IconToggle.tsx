@@ -17,11 +17,12 @@ interface IconToggleProps {
   tooltip?: string
   tooltipAlignment?: ToolTipAlignment
   toolTipDirection?: ToolTipDirection
+  disabled?: boolean
 }
 
 const styles = {
   container:
-    'relative flex h-10 cursor-pointer items-center rounded-md border border-gray-300 bg-gray-200/60',
+    'relative flex h-10 items-center rounded-md border border-gray-300 bg-gray-200/60',
   slider:
     'absolute rounded-md border border-black bg-white shadow-md transition-transform duration-300',
   list: 'relative z-10 flex w-full',
@@ -41,6 +42,7 @@ export const IconToggle: React.FC<IconToggleProps> = ({
   tooltip,
   tooltipAlignment = 'center',
   toolTipDirection = 'below',
+  disabled = false,
 }) => {
   const [hoverTimeout, setHoverTimeout] = useState<any>()
   const [hover, setHover] = useState(false)
@@ -57,16 +59,25 @@ export const IconToggle: React.FC<IconToggleProps> = ({
     }
   }
 
+  const handleToggle = () => {
+    if (disabled) return
+    onToggle(!isToggled)
+  }
+
   return (
-    <article
-      className={clsx(styles.container, className)}
+    <button
+      className={clsx(
+        styles.container,
+        className,
+        disabled ? 'pointer-events-none opacity-30' : 'cursor-pointer'
+      )}
       style={{ width: '84px' }}
-      role="button"
       aria-pressed={isToggled}
       aria-label={isToggled ? ariaLabelRight : ariaLabelLeft}
-      onClick={() => onToggle(!isToggled)}
+      onClick={handleToggle}
       onMouseEnter={handleMouseOver}
       onMouseLeave={handleMouseOut}
+      disabled={disabled}
     >
       <div
         className={styles.slider}
@@ -98,7 +109,7 @@ export const IconToggle: React.FC<IconToggleProps> = ({
           {iconRight}
         </li>
       </ul>
-      {tooltip && (
+      {tooltip && !disabled && (
         <ToolTip
           label={tooltip}
           active={hover}
@@ -106,7 +117,7 @@ export const IconToggle: React.FC<IconToggleProps> = ({
           align={tooltipAlignment}
         />
       )}
-    </article>
+    </button>
   )
 }
 

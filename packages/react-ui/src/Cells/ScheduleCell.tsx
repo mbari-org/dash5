@@ -12,14 +12,13 @@ import {
 } from '@fortawesome/free-solid-svg-icons'
 import { IconProp } from '@fortawesome/fontawesome-svg-core'
 import { IconButton } from '../Navigation'
-
+import { CommandType } from '../types'
 export type ScheduleCellStatus =
   | 'pending'
   | 'running'
   | 'cancelled'
   | 'completed'
   | 'paused'
-export type ScheduledCommandType = 'command' | 'mission'
 export interface ScheduleCellProps {
   className?: string
   style?: React.CSSProperties
@@ -30,7 +29,7 @@ export interface ScheduleCellProps {
   secondary: string
   name: string
   eventId: number
-  commandType: ScheduledCommandType
+  commandType: CommandType
   description: string
   description2?: string
   description3?: string
@@ -38,7 +37,7 @@ export interface ScheduleCellProps {
   onMoreClick: (
     id: {
       eventId?: number
-      commandType: ScheduledCommandType
+      commandType: CommandType
       status: ScheduleCellStatus
     },
     rect?: DOMRect
