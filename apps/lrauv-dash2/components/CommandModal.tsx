@@ -219,6 +219,8 @@ export const CommandModal: React.FC<CommandModalProps> = ({
       break
   }
 
+  const missionOptions = missionData?.list?.map((m) => m.path)?.sort() ?? []
+
   return (
     <CommandModalView
       className={className}
@@ -238,7 +240,7 @@ export const CommandModal: React.FC<CommandModalProps> = ({
       missions={[
         {
           name: 'Mission',
-          options: missionData?.list?.map((m) => m.path) ?? [],
+          options: missionOptions,
         },
       ]}
       decimationTypes={[{ name: 'Decimation Type', options: decimationTypes }]}
