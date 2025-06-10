@@ -332,6 +332,8 @@ export const BuildTemplatedCommandStep: React.FC<
               ?.slice(-2)
               .join('.')
           : undefined
+      case 'ARG_UNIVERSAL':
+        return values?.slice(-1)[0] ?? undefined
       case 'ARG_COMPONENT':
         return value ? values[1] : value
       case 'ARG_COMMAND':
