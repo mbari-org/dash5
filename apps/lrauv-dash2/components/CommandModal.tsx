@@ -116,20 +116,25 @@ export const CommandModal: React.FC<CommandModalProps> = ({
     { name: 'Module', options: moduleInfoData?.moduleNames ?? [] },
     {
       name: 'Component',
-      options: configVariable.Module
-        ? Object.keys(moduleInfoData?.outputUris[config.Module ?? ''] ?? {})
+      options: config?.Module
+        ? moduleInfoData?.sensors?.[config?.Module ?? '']
+            ?.map((s) => s.string)
+            ?.sort() ?? []
         : [],
     },
     {
       name: 'Element',
-      options: config.Component
-        ? moduleInfoData?.outputUris[config.Module ?? '']?.[
-            config.Component
-          ]?.map((e) => e.string) ?? []
-        : [],
+      options:
+        config?.Module && config?.Component
+          ? moduleInfoData?.uris?.[config?.Module ?? '']?.[
+              config?.Component ?? ''
+            ]
+              ?.map((e) => e.string)
+              ?.sort() ?? []
+          : [],
     },
   ]
-  const moduleNames = makeModuleNames(configVariable)
+  const moduleNames = makeModuleNames(variable)
 
   const units = unitsData?.map((u) => u.name) ?? []
 
