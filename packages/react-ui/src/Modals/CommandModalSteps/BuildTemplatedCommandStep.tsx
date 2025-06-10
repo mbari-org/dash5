@@ -338,6 +338,8 @@ export const BuildTemplatedCommandStep: React.FC<
         return value ? values[1] : value
       case 'ARG_COMMAND':
         return value ? values[0] : value
+      case 'ARG_MISSION':
+        return value ? values[0] : value
       case 'ARG_QUOTED_STRING':
         return value ? `"${value}"` : value
       default:

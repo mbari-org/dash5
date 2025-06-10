@@ -39,11 +39,7 @@ export const CommandModal: React.FC<CommandModalProps> = ({
   const [currentCommandId, setCurrentCommand] = useState<
     string | null | undefined
   >(defaultCommand)
-  const [configVariable, setConfigVariable] = useState<Record<string, string>>({
-    Module: '',
-    Component: '',
-    Element: '',
-  })
+
   const [variable, setVariable] = useState<Record<string, string>>({
     Variable: '',
     Mission: '',
@@ -104,10 +100,12 @@ export const CommandModal: React.FC<CommandModalProps> = ({
     argType,
     value
   ) => {
-    if (argType === 'ARG_CONFIG_VARIABLE') {
-      setConfigVariable(mapValues(value))
-    }
-    if (argType === 'ARG_VARIABLE') {
+    if (
+      argType === 'ARG_VARIABLE' ||
+      argType === 'ARG_COMPONENT' ||
+      argType === 'ARG_CONFIG_VARIABLE' ||
+      argType === 'ARG_MISSION'
+    ) {
       setVariable(mapValues(value))
     }
   }
@@ -237,6 +235,12 @@ export const CommandModal: React.FC<CommandModalProps> = ({
       syntaxVariations={syntaxVariations ?? []}
       units={[{ name: 'Units', options: units }]}
       universals={[{ name: 'Universal', options: universalData ?? [] }]}
+      missions={[
+        {
+          name: 'Mission',
+          options: missionData?.list?.map((m) => m.path) ?? [],
+        },
+      ]}
       decimationTypes={[{ name: 'Decimation Type', options: decimationTypes }]}
       serviceTypes={[{ name: 'Service Type', options: serviceTypes }]}
       variableTypes={variableTypes}
