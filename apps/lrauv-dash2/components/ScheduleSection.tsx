@@ -208,7 +208,7 @@ export const ScheduleSection: React.FC<ScheduleSectionProps> = ({
     const mission = results[index + indexOffset]
     const { name: missionName, parameters: missionParams } =
       parseMissionCommand(mission?.event.data ?? '')
-    console.log(missionName, missionParams)
+
     return mission ? (
       <ScheduleCell
         label={missionName ?? 'Unknown'}
