@@ -39,11 +39,7 @@ export const CommandModal: React.FC<CommandModalProps> = ({
   const [currentCommandId, setCurrentCommand] = useState<
     string | null | undefined
   >(defaultCommand)
-  const [configVariable, setConfigVariable] = useState<Record<string, string>>({
-    Module: '',
-    Component: '',
-    Element: '',
-  })
+
   const [variable, setVariable] = useState<Record<string, string>>({
     Variable: '',
     Mission: '',
@@ -104,10 +100,12 @@ export const CommandModal: React.FC<CommandModalProps> = ({
     argType,
     value
   ) => {
-    if (argType === 'ARG_CONFIG_VARIABLE') {
-      setConfigVariable(mapValues(value))
-    }
-    if (argType === 'ARG_VARIABLE') {
+    if (
+      argType === 'ARG_VARIABLE' ||
+      argType === 'ARG_COMPONENT' ||
+      argType === 'ARG_CONFIG_VARIABLE' ||
+      argType === 'ARG_MISSION'
+    ) {
       setVariable(mapValues(value))
     }
   }
@@ -116,20 +114,25 @@ export const CommandModal: React.FC<CommandModalProps> = ({
     { name: 'Module', options: moduleInfoData?.moduleNames ?? [] },
     {
       name: 'Component',
-      options: configVariable.Module
-        ? Object.keys(moduleInfoData?.outputUris[config.Module ?? ''] ?? {})
+      options: config?.Module
+        ? moduleInfoData?.sensors?.[config?.Module ?? '']
+            ?.map((s) => s.string)
+            ?.sort() ?? []
         : [],
     },
     {
       name: 'Element',
-      options: config.Component
-        ? moduleInfoData?.outputUris[config.Module ?? '']?.[
-            config.Component
-          ]?.map((e) => e.string) ?? []
-        : [],
+      options:
+        config?.Module && config?.Component
+          ? moduleInfoData?.uris?.[config?.Module ?? '']?.[
+              config?.Component ?? ''
+            ]
+              ?.map((e) => e.string)
+              ?.sort() ?? []
+          : [],
     },
   ]
-  const moduleNames = makeModuleNames(configVariable)
+  const moduleNames = makeModuleNames(variable)
 
   const units = unitsData?.map((u) => u.name) ?? []
 
@@ -216,6 +219,8 @@ export const CommandModal: React.FC<CommandModalProps> = ({
       break
   }
 
+  const missionOptions = missionData?.list?.map((m) => m.path)?.sort() ?? []
+
   return (
     <CommandModalView
       className={className}
@@ -232,6 +237,12 @@ export const CommandModal: React.FC<CommandModalProps> = ({
       syntaxVariations={syntaxVariations ?? []}
       units={[{ name: 'Units', options: units }]}
       universals={[{ name: 'Universal', options: universalData ?? [] }]}
+      missions={[
+        {
+          name: 'Mission',
+          options: missionOptions,
+        },
+      ]}
       decimationTypes={[{ name: 'Decimation Type', options: decimationTypes }]}
       serviceTypes={[{ name: 'Service Type', options: serviceTypes }]}
       variableTypes={variableTypes}
