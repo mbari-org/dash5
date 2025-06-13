@@ -13,6 +13,7 @@ export interface MissionTableProps {
   onSortColumn?: (column: number, ascending?: boolean) => void
   sortColumn?: number | null
   sortDirection?: SortDirection
+  loading?: boolean
 }
 
 export interface Mission {
@@ -40,6 +41,7 @@ export const MissionTable: React.FC<MissionTableProps> = ({
   onSortColumn,
   sortColumn,
   sortDirection,
+  loading,
 }) => {
   const shouldShowVehicleColumn = missions.some((p) => p.recentRun)
   const missionRows = missions.map(
@@ -137,6 +139,7 @@ export const MissionTable: React.FC<MissionTableProps> = ({
         selectedId ? missions.findIndex(({ id }) => id === selectedId) : null
       }
       colInRow={6}
+      loading={loading}
     />
   )
 }

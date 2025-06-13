@@ -16,6 +16,7 @@ export interface TableProps {
   selectedIndex?: number | null
   onSelectRow?: (index: number) => void
   colInRow?: number
+  loading?: boolean
 }
 
 const gridClassNames = [
@@ -50,6 +51,7 @@ export const Table: React.FC<TableProps> = ({
   onSelectRow,
   selectedIndex,
   colInRow,
+  loading,
 }) => {
   // dynamically calculate grid columns unless defined through associated prop
   const colsInRow = colInRow ? colInRow : rows[0]?.cells.length | 0
@@ -85,25 +87,32 @@ export const Table: React.FC<TableProps> = ({
           </thead>
         )}
         <tbody>
-          {rows.map((row, index) => (
+          {(loading && !rows.length) || !rows.length ? (
             <TableRow
-              key={`${row?.cells[0]}${index}`}
-              className={clsx(
-                'grid',
-                gridClassNames[colsInRow],
-                !onSelectRow && 'gap-4',
-                onSelectRow &&
-                  (selectedIndex === index
-                    ? 'bg-sky-200/70'
-                    : 'hover:bg-sky-50'),
-                index !== 0 && styles.borderTop
-              )}
-              {...row}
-              scrollable={scrollable}
-              highlightedStyle={highlightedStyle}
-              onSelect={onSelectRow ? () => handleSelectRow(index) : null}
+              cells={[{ label: loading ? 'Loading...' : 'No Results' }]}
+              className="grid-cols-1"
             />
-          ))}
+          ) : (
+            rows.map((row, index) => (
+              <TableRow
+                key={`${row?.cells[0]}${index}`}
+                className={clsx(
+                  'grid',
+                  gridClassNames[colsInRow],
+                  !onSelectRow && 'gap-4',
+                  onSelectRow &&
+                    (selectedIndex === index
+                      ? 'bg-sky-200/70'
+                      : 'hover:bg-sky-50'),
+                  index !== 0 && styles.borderTop
+                )}
+                {...row}
+                scrollable={scrollable}
+                highlightedStyle={highlightedStyle}
+                onSelect={onSelectRow ? () => handleSelectRow(index) : null}
+              />
+            ))
+          )}
         </tbody>
       </table>
     </article>
