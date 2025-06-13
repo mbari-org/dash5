@@ -71,7 +71,21 @@ export const MissionTable: React.FC<MissionTableProps> = ({
             }
           : null,
         {
-          label: description ? description : 'No description',
+          label: description ? (
+            <span
+              className="block overflow-hidden text-indigo-600 transition-all duration-200"
+              style={{
+                display: '-webkit-box',
+                WebkitLineClamp: 2, // tailwind line clamp doesn't work here since parent has flex
+                WebkitBoxOrient: 'vertical',
+              }}
+              title={description}
+            >
+              {description}
+            </span>
+          ) : (
+            'No description'
+          ),
           span: 3,
           secondary: (
             <ul className="">
