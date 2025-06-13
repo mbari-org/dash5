@@ -23,7 +23,7 @@ export const useRecentRuns = (
   )
 
   const formattedData = query.data?.map((event) => {
-    const mission = event.data?.match(/[a-zA-Z_/]+(\.xml|\.tl)/)?.[0] ?? ''
+    const mission = event.data?.match(/[a-zA-Z0-9_/]+(\.xml|\.tl)/)?.[0] ?? ''
     const { waypointOverrides, parameterOverrides } = extractOverrides(
       event.data ?? ''
     )
