@@ -7,35 +7,54 @@ import { rest } from 'msw'
 import { setupServer } from 'msw/node'
 import { MockProviders } from '../queryTestHelpers'
 
+// Mock events containing various mission names (including ones with digits and underscores) to
+// ensure the regex in `useRecentRuns` properly extracts them.
 const mockResponse = {
   result: [
     {
-      eventId: 17097188,
+      eventId: 1,
       vehicleName: 'brizo',
-      unixTime: 1660056630848,
-      isoTime: '2022-08-09T14:50:30.848Z',
+      unixTime: 1718512400000,
+      isoTime: '2024-06-16T04:00:00.000Z',
       eventType: 'run',
       user: 'Brian Kieft',
-      data: 'sched asap "load Science/profile_station.xml;set profile_station.MissionTimeout 4 h;set profile_station.NeedCommsTime 30 min;set profile_station.Lat 43.9375 degree;set profile_station.Lon -86.499304 degree;set profile_station.YoYoMaxDepth 4 m" p7w6 1 2\nsched asap "set profile_station.YoYoPitch 12 degree;set profile_station.Speed 0.8 m/s;set profile_station.MaxDepth 9 m;set profile_station.MinOffshore 0.5 km;run" p7w6 2 2',
+      data: 'load Science/sci2.tl;set sci2.MissionTimeout 4 h;set sci2.Lat1 36.903 degree;set sci2.Lon1 -122.11055 degree;set sci2.YoYoMinDepth 5 m;set sci2.YoYoMaxDepth 30 m;run',
     },
     {
-      eventId: 17097032,
+      eventId: 2,
       vehicleName: 'brizo',
-      unixTime: 1660013627155,
-      isoTime: '2022-08-09T02:53:47.155Z',
+      unixTime: 1718512300000,
+      isoTime: '2024-06-16T03:58:20.000Z',
       eventType: 'run',
       user: 'Brian Kieft',
-      data: 'sched asap "load Science/profile_station.tl;set profile_station.MissionTimeout 10 h;set profile_station.NeedCommsTime 60 min;set profile_station.Lat 43.92975 degree;set profile_station.Lon -86.5052 degree;set profile_station.YoYoMaxDepth 4 m" oapn 1 2\nsched asap "set profile_station.YoYoPitch 12 degree;set profile_station.Speed 0.8 m/s;set profile_station.MaxDepth 9 m;set profile_station.MinOffshore 0.5 km;run" oapn 2 2',
+      data: 'sched asap "load Science/profile_station.tl;set profile_station.MissionTimeout 6 h;set profile_station.NeedCommsTime 60 min;set profile_station.Lat 36.9057 degree;set profile_station.Lon -122.1161 degree;set profile_station.YoYoMinDepth 5 m" 2v4l8 1 2\nsched asap "set profile_station.YoYoMaxDepth 30 m;set profile_station.Speed 1.0 m/s;run" 2v4l8 2 2',
     },
     {
-      eventId: 17096967,
+      eventId: 3,
       vehicleName: 'brizo',
-      unixTime: 1660001471824,
-      isoTime: '2022-08-08T23:31:11.824Z',
+      unixTime: 1718512200000,
+      isoTime: '2024-06-16T03:56:40.000Z',
       eventType: 'run',
       user: 'Chris Preston',
-      note: 'Increased mission timout.  Still going to NN1-E',
-      data: 'sched asap "load Science/profile_station.xml;set profile_station.MissionTimeout 16 h;set profile_station.NeedCommsTime 60 min;set profile_station.Lat 43.907447 degree;set profile_station.Lon -86.52055 degree" o1bz 1 2\nsched asap "set profile_station.YoYoMaxDepth 20 m;run" o1bz 2 2',
+      data: 'load Maintenance/ballast_and_trim.tl;set ballast_and_trim.Depth1 15 m;run',
+    },
+    {
+      eventId: 4,
+      vehicleName: 'brizo',
+      unixTime: 1718512100000,
+      isoTime: '2024-06-16T03:55:00.000Z',
+      eventType: 'run',
+      user: 'Test User',
+      data: 'sched 20250616T0415 "load Science/nested_dir/profile_station_12.tl;set profile_station_12.MissionTimeout 14 h;set profile_station_12.NeedCommsTime 60 min;set profile_station_12.Lat 36.797 degree;set profile_station_12.Lon -121.847 degree" 2t7vk 1 2\nsched 20250616T0415 "set profile_station_12.YoYoMaxDepth 35 m;set profile_station_12.Speed 0.9 m/s;run" 2t7vk 2 2',
+    },
+    {
+      eventId: 5,
+      vehicleName: 'brizo',
+      unixTime: 1718512000000,
+      isoTime: '2024-06-16T03:53:20.000Z',
+      eventType: 'run',
+      user: 'Test User',
+      data: 'load Engineering/sink.tl;set sink.SinkDuration 1.5 h;set sink.Depth 15 m;set sink.DepthDeadband 5 m;run',
     },
   ],
 }
@@ -75,15 +94,20 @@ describe('useRecentRuns', () => {
       </MockProviders>
     )
 
-    await waitFor(() => {
-      return screen.getByTestId('command0')
-    })
+    await waitFor(() => screen.getByTestId('command4'))
 
-    expect(screen.getByTestId('command0')).toHaveTextContent(
-      'Science/profile_station.xml'
-    )
+    expect(screen.getByTestId('command0')).toHaveTextContent('Science/sci2.tl')
     expect(screen.getByTestId('command1')).toHaveTextContent(
       'Science/profile_station.tl'
+    )
+    expect(screen.getByTestId('command2')).toHaveTextContent(
+      'Maintenance/ballast_and_trim.tl'
+    )
+    expect(screen.getByTestId('command3')).toHaveTextContent(
+      'Science/nested_dir/profile_station_12.tl'
+    )
+    expect(screen.getByTestId('command4')).toHaveTextContent(
+      'Engineering/sink.tl'
     )
   })
 })
