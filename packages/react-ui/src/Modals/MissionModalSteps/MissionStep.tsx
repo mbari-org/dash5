@@ -14,6 +14,7 @@ export interface MissionStepProps {
   selectedCategory?: string
   onSelectCategory?: (id?: string) => void
   defaultSearchText?: string
+  loading?: boolean
 }
 
 export const MissionStep: React.FC<MissionStepProps> = ({
@@ -25,6 +26,7 @@ export const MissionStep: React.FC<MissionStepProps> = ({
   onSelectCategory: handleSelectCategory,
   selectedCategory = 'Recent Runs',
   defaultSearchText = '',
+  loading,
 }) => {
   const [searchTerm, setSearchTerm] = useState(defaultSearchText)
   const [filteredMissions, setFilteredMissions] = useState<Mission[]>(missions)
@@ -129,6 +131,7 @@ export const MissionStep: React.FC<MissionStepProps> = ({
         onSortColumn={handleSort}
         sortColumn={sortColumn}
         sortDirection={sortDirection}
+        loading={loading}
       />
     </article>
   )

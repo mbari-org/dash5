@@ -78,6 +78,7 @@ export interface MissionModalViewProps
   onStepIndexChange?: (step: number) => void
   selectedMissionCategory?: string
   defaultSearchText?: string
+  missionsLoading?: boolean
 }
 
 export const MissionModalView: React.FC<MissionModalViewProps> = (props) => (
@@ -122,6 +123,7 @@ const MissionModalBody: React.FC<MissionModalViewProps> = ({
   selectedMissionCategory: defaultMissionCategory,
   defaultOverrides,
   defaultSearchText,
+  missionsLoading,
 }) => {
   const [selectedMissionCategory, setSelectedMissionCategory] = useState<
     string | undefined
@@ -281,6 +283,7 @@ const MissionModalBody: React.FC<MissionModalViewProps> = ({
             onSelectCategory={handleSelectCategory}
             selectedCategory={selectedMissionCategory}
             defaultSearchText={defaultSearchText}
+            loading={missionsLoading}
           />
         )
 

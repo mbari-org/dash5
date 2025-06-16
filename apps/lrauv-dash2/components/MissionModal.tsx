@@ -146,13 +146,10 @@ const MissionModal: React.FC<MissionModalProps> = ({
     { enabled: !!vehicleName }
   )
 
-  const { data: recentRunsData } = useRecentRuns(
-    {
-      vehicles: vehicles ?? [],
-      from: LAST_60_DAYS,
-    },
-    { enabled: !!vehicles }
-  )
+  const { data: recentRunsData, isLoading: recentRunsLoading } = useRecentRuns({
+    vehicles: [], // All vehicles by default
+    from: LAST_60_DAYS,
+  })
   const {
     mutate: createCommand,
     isLoading: sendingCommand,
@@ -207,6 +204,7 @@ const MissionModal: React.FC<MissionModalProps> = ({
       ?.map(
         (
           {
+            data,
             mission,
             vehicleName: vehicle,
             isoTime,
@@ -222,7 +220,7 @@ const MissionModal: React.FC<MissionModalProps> = ({
             id: mission,
             category,
             name,
-            description: mission,
+            description: data,
             vehicle,
             ranOn: capitalize(
               DateTime.fromISO(isoTime).toFormat('MMM. d yyyy')
@@ -418,6 +416,7 @@ const MissionModal: React.FC<MissionModalProps> = ({
       onFocusWaypoint={onFocusWaypoint}
       vehicles={vehicles}
       loading={sendingCommand}
+      missionsLoading={recentRunsLoading}
       commandText={commandText}
       unitOptions={unitsData}
       selectedId={selectedMission}
