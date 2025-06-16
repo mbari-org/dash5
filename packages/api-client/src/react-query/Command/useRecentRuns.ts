@@ -23,6 +23,10 @@ export const useRecentRuns = (
   )
 
   const formattedData = query.data?.map((event) => {
+    // Regex: /[a-zA-Z0-9_/]+(\.xml|\.tl)/
+    //   • [a-zA-Z0-9_/]+  → one or more letters, digits, “_”, or “/” (captures a simple path or filename)
+    //   • (\.xml|\.tl)    → that sequence must end with “.xml” **or** “.tl” (the dot is escaped to mean a literal dot)
+    // Summary → Pulls out the first path-like token in event.data that ends in one of those extensions
     const mission = event.data?.match(/[a-zA-Z0-9_/]+(\.xml|\.tl)/)?.[0] ?? ''
     const { waypointOverrides, parameterOverrides } = extractOverrides(
       event.data ?? ''
