@@ -61,7 +61,7 @@ export const ParameterTable: React.FC<ParameterTableProps> = ({
                 label: (
                   <span
                     className={clsx(
-                      'font-medium',
+                      'whitespace-normal break-words font-medium',
                       overrideValue && 'text-teal-600',
                       !overrideValue && dvlOff && 'text-orange-500/80',
                       !overrideValue && !dvlOff && 'opacity-60'
