@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react'
+import React, { useState, useMemo, useEffect } from 'react'
 import { SelectOption } from '../../Fields/Select'
 import { Mission, MissionTable } from '../../Tables/MissionTable'
 import { Input, SelectField } from '../../Fields'
@@ -29,40 +29,60 @@ export const MissionStep: React.FC<MissionStepProps> = ({
   loading,
 }) => {
   const [searchTerm, setSearchTerm] = useState(defaultSearchText)
-  const [filteredMissions, setFilteredMissions] = useState<Mission[]>(missions)
-  const [searchMissions, setSearchMissions] = useState<Mission[]>([])
   const [sortColumn, setSortColumn] = useState<number | null | undefined>(null)
   const [sortDirection, setSortDirection] = useState<SortDirection>(null)
 
+  // Reset filters when the category changes
   useEffect(() => {
-    const filteredByRecent = missions.filter(
-      ({ category, recentRun, frequentRun }) => {
-        if (selectedCategory?.match(/recent runs/i)) return recentRun
-        if (selectedCategory?.match(/frequent runs/i)) return frequentRun
-        if (selectedCategory?.match(/default/i))
-          return category.length < 1 && !recentRun
-        return (
-          category.includes(selectedCategory ?? '') &&
-          !recentRun &&
-          !frequentRun
-        )
-      }
-    )
+    setSearchTerm('')
+    setSortColumn(null)
+    setSortDirection(null)
+  }, [selectedCategory])
 
-    setFilteredMissions(filteredByRecent.length ? filteredByRecent : [])
-  }, [selectedCategory, missionCategories, missions])
-
-  useEffect(() => {
-    if (searchTerm) {
-      const lowerCaseTerm = searchTerm.toLowerCase()
-      const searchResults = filteredMissions.filter((mission) =>
-        Object.values(mission).join(' ').toLowerCase().includes(lowerCaseTerm)
+  // Filter missions by category
+  const filteredMissions = useMemo(() => {
+    return missions.filter(({ category, recentRun, frequentRun }) => {
+      if (selectedCategory?.match(/recent runs/i)) return recentRun
+      if (selectedCategory?.match(/frequent runs/i)) return frequentRun
+      if (selectedCategory?.match(/default/i))
+        return category.length < 1 && !recentRun
+      return (
+        category.includes(selectedCategory ?? '') && !recentRun && !frequentRun
       )
-      setSearchMissions(searchResults)
-    }
+    })
+  }, [missions, selectedCategory])
 
-    if (!searchTerm) setSearchMissions([])
-  }, [searchTerm, filteredMissions])
+  // Sort missions based on sort column and direction state if present
+  const sortedMissions = useMemo(() => {
+    if (!sortColumn) return filteredMissions
+
+    const sortableColumns: (keyof Mission)[] = [
+      'category',
+      'vehicle',
+      'description',
+    ]
+
+    const sortProperty =
+      sortableColumns[sortColumn] === 'category'
+        ? ('id' as keyof Mission)
+        : sortableColumns[sortColumn]
+
+    return sortByProperty({
+      arrOfObj: [...filteredMissions],
+      sortProperty,
+      secondarySort: 'category',
+      sortAscending: sortDirection === 'asc',
+    }) as Mission[]
+  }, [filteredMissions, sortColumn, sortDirection])
+
+  // Apply search term to the sorted list if present
+  const searchedMissions = useMemo(() => {
+    if (!searchTerm) return sortedMissions ?? []
+    const lowerCaseTerm = searchTerm.toLowerCase()
+    return sortedMissions.filter((mission) =>
+      Object.values(mission).join(' ').toLowerCase().includes(lowerCaseTerm)
+    )
+  }, [searchTerm, sortedMissions])
 
   const handleSelectCategoryId = (id: string | null) => {
     if (!id) {
@@ -81,19 +101,8 @@ export const MissionStep: React.FC<MissionStepProps> = ({
   }
 
   const handleSort = (column: number, isAscending?: boolean) => {
-    const sortableColumns: string[] = ['category', 'vehicle', 'description']
-    const sortProperty = sortableColumns[column] as keyof Mission
-    const updatedIsAscending = !isAscending
-
-    const sortedMissions = sortByProperty({
-      arrOfObj: [...filteredMissions],
-      sortProperty: sortProperty === 'category' ? 'id' : sortProperty,
-      secondarySort: 'category',
-      sortAscending: updatedIsAscending,
-    })
     setSortColumn(column)
-    setSortDirection(updatedIsAscending ? 'asc' : 'desc')
-    setFilteredMissions(sortedMissions as Mission[])
+    setSortDirection(!isAscending ? 'asc' : 'desc')
   }
 
   return (
@@ -125,7 +134,7 @@ export const MissionStep: React.FC<MissionStepProps> = ({
       </ul>
       <MissionTable
         className="max-h-[calc(100%-40px)]"
-        missions={searchMissions.length ? searchMissions : filteredMissions}
+        missions={searchedMissions}
         selectedId={selectedId ? selectedId : ''}
         onSelectMission={onSelect}
         onSortColumn={handleSort}
