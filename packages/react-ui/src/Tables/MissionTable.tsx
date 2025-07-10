@@ -9,7 +9,7 @@ export interface MissionTableProps {
   style?: React.CSSProperties
   missions: Mission[]
   selectedId?: string
-  onSelectMission?: (missionId: string) => void
+  onSelectMission: (id?: string | null) => void
   onSortColumn?: (column: number, ascending?: boolean) => void
   sortColumn?: number | null
   sortDirection?: SortDirection
@@ -138,7 +138,7 @@ export const MissionTable: React.FC<MissionTableProps> = ({
   } as TableProps['header']
 
   const handleSelect = (index: number) => {
-    onSelectMission?.(missions[index].id)
+    onSelectMission(index ? missions[index].id : undefined)
   }
 
   return (
@@ -148,7 +148,7 @@ export const MissionTable: React.FC<MissionTableProps> = ({
       scrollable
       header={header}
       rows={missionRows}
-      onSelectRow={onSelectMission && handleSelect}
+      onSelectRow={handleSelect}
       selectedIndex={
         selectedId ? missions.findIndex(({ id }) => id === selectedId) : null
       }

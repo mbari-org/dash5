@@ -262,7 +262,22 @@ const MissionModal: React.FC<MissionModalProps> = ({
   const [selectedMission, setSelectedMission] = useState<string | undefined>(
     globalModalId?.meta?.mission ?? undefined
   )
-  const selectedMissionCategory = selectedMission?.split('/')[0]
+
+  const [selectedMissionCategory, setSelectedMissionCategory] = useState<
+    string | undefined
+  >('Recent Runs')
+
+  const handleSelectMission = (id?: string | null) => {
+    setSelectedMission(id ?? undefined)
+  }
+
+  const handleSelectMissionCategory = (category?: string) => {
+    if (selectedMissionCategory !== category) {
+      setSelectedMission(undefined)
+      setSelectedMissionCategory(category)
+    }
+  }
+
   const { data: selectedMissionData } = useScript(
     {
       path: selectedMission as string,
@@ -412,7 +427,7 @@ const MissionModal: React.FC<MissionModalProps> = ({
       onCancel={onClose}
       onSchedule={handleSchedule}
       missions={missions ?? []}
-      onSelectMission={setSelectedMission}
+      onSelectMission={handleSelectMission}
       waypoints={waypoints}
       stations={stations}
       onFocusWaypoint={onFocusWaypoint}
@@ -422,6 +437,7 @@ const MissionModal: React.FC<MissionModalProps> = ({
       commandText={commandText}
       unitOptions={unitsData}
       selectedId={selectedMission}
+      onSelectMissionCategory={handleSelectMissionCategory}
       selectedMissionCategory={selectedMissionCategory}
       defaultSearchText={globalModalId?.meta?.mission ?? ''}
       defaultOverrides={defaultOverrides}

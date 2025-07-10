@@ -79,6 +79,7 @@ export interface MissionModalViewProps
   selectedMissionCategory?: string
   defaultSearchText?: string
   missionsLoading?: boolean
+  onSelectMissionCategory?: (category?: string) => void
 }
 
 export const MissionModalView: React.FC<MissionModalViewProps> = (props) => (
@@ -113,26 +114,19 @@ const MissionModalBody: React.FC<MissionModalViewProps> = ({
   onSchedule,
   onCancel,
   onVerifyParameter,
-  onSelectMission,
+  onSelectMission: handleSelectMission,
   alternativeAddresses,
   unfilteredMissionParameters,
   vehicles,
   commandText,
   loading,
   unitOptions,
-  selectedMissionCategory: defaultMissionCategory,
+  selectedMissionCategory,
   defaultOverrides,
   defaultSearchText,
   missionsLoading,
+  onSelectMissionCategory: handleSelectCategory,
 }) => {
-  const [selectedMissionCategory, setSelectedMissionCategory] = useState<
-    string | undefined
-  >(defaultMissionCategory ?? 'Recent Runs')
-
-  const [selectedMissionId, setSelectedMissionId] = useState<
-    string | null | undefined
-  >(selectedId)
-
   const {
     state: {
       alternateAddress,
@@ -202,17 +196,7 @@ const MissionModalBody: React.FC<MissionModalViewProps> = ({
     </div>
   )
 
-  const handleSelect = (id?: string | null) => {
-    setSelectedMissionId(id)
-    id && onSelectMission?.(id)
-  }
-
-  const handleSelectCategory = (category?: string) => {
-    selectedMissionCategory !== category && setSelectedMissionCategory(category)
-  }
-
-  const missionName =
-    missions.find(({ id }) => id === selectedMissionId)?.name ?? ''
+  const missionName = missions.find(({ id }) => id === selectedId)?.name ?? ''
 
   const handleAlternateAddress = () => setShowAlternateAddress(true)
 
@@ -246,7 +230,7 @@ const MissionModalBody: React.FC<MissionModalViewProps> = ({
   const disableConfirm = () => {
     switch (currentStep) {
       case steps.indexOf('Mission'):
-        return !selectedMissionId
+        return !selectedId
       case steps.indexOf('Waypoints'):
         return (
           !updatedWaypoints.every(
@@ -277,9 +261,9 @@ const MissionModalBody: React.FC<MissionModalViewProps> = ({
           <MissionStep
             vehicleName={vehicleName}
             missions={missions}
-            selectedId={selectedMissionId}
+            selectedId={selectedId}
             missionCategories={missionCategories}
-            onSelect={handleSelect}
+            onSelect={handleSelectMission}
             onSelectCategory={handleSelectCategory}
             selectedCategory={selectedMissionCategory}
             defaultSearchText={defaultSearchText}
@@ -404,7 +388,7 @@ const MissionModalBody: React.FC<MissionModalViewProps> = ({
     )
 
     onSchedule?.({
-      selectedMissionId: selectedMissionId as string,
+      selectedMissionId: selectedId as string,
       parameterOverrides: [
         waypointOverrides,
         overriddenMissionParams,
@@ -445,7 +429,7 @@ const MissionModalBody: React.FC<MissionModalViewProps> = ({
         <ConfirmVehicleDialog
           vehicle={vehicleName}
           vehicleList={vehicles ?? []}
-          mission={selectedMissionId ?? ''}
+          mission={selectedId ?? ''}
           onChangeVehicle={setConfirmedVehicle}
           onCancel={handlePrevious}
           onConfirm={handleSchedule}
