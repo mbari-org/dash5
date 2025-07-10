@@ -302,7 +302,9 @@ const MissionModal: React.FC<MissionModalProps> = ({
   const reservedParams: string[] = [
     selectedMissionData?.inserts
       ?.filter(({ id }) =>
-        [/comms/i, /standard envelope/i].some((r) => r.test(id))
+        [/comms/i, /standard envelope/i, /standardenvelope/i].some((r) =>
+          r.test(id)
+        )
       )
       .map(({ scriptArgs }) => scriptArgs.map((arg) => arg.name)) ?? [],
     selectedMissionData?.latLonNamePairs?.map(({ latName, lonName }) => [
