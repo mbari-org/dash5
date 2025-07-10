@@ -1,9 +1,5 @@
-import { faCheckSquare } from '@fortawesome/free-solid-svg-icons'
-import { faSquare } from '@fortawesome/free-regular-svg-icons'
-import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
-import React, { MouseEvent, useEffect, useState } from 'react'
-import { Input, Select } from '../Fields'
-import clsx from 'clsx'
+import React, { useEffect, useState } from 'react'
+import { Input, Select, SelectOption } from '../Fields'
 
 export interface ParameterFieldUnit {
   name: string
@@ -32,6 +28,9 @@ const getUnitOptions = (name: string, units: ParameterFieldUnit[]) => {
   }))
 }
 
+const toBoolString = (v: string | undefined) =>
+  v === '1' || v?.toLowerCase() === 'true' ? 'true' : 'false'
+
 export interface ParameterFieldProps {
   className?: string
   overrideValue?: string
@@ -44,7 +43,7 @@ export interface ParameterFieldProps {
 }
 
 const styles = {
-  container: 'h-[40px] grid grid-cols-3 gap-1 rounded overflow-hidden',
+  container: 'grid grid-cols-3 gap-1 rounded overflow-hidden',
   input: 'flex rounded col-span-2',
   select: 'h-full',
   button: 'h-full w-full bg-white p-1 justify-center flex',
@@ -65,7 +64,7 @@ export const ParameterField: React.FC<ParameterFieldProps> = ({
 
   const lastOverrideValue = React.useRef(overrideValue)
   useEffect(() => {
-    if (lastOverrideValue.current !== overrideValue) {
+    if (lastOverrideValue?.current !== overrideValue) {
       setInputValue(overrideValue ? overrideValue : '')
       lastOverrideValue.current = overrideValue
     }
@@ -82,47 +81,48 @@ export const ParameterField: React.FC<ParameterFieldProps> = ({
     onOverride(inputValue, newUnit)
   }
 
-  const isTrueFalseField = ['True', 'False'].includes(defaultValue)
-  const useCheckbox = unit === 'bool' || isTrueFalseField
-  const toggleValues = isTrueFalseField ? ['True', 'False'] : ['1', '0']
-  const valueIsNotDefault =
-    !!overrideValue && overrideValue.length > 1 && inputValue !== defaultValue
-  if (useCheckbox) {
-    console.log(
-      name,
-      overrideValue,
-      inputValue,
-      defaultValue,
-      valueIsNotDefault
-    )
+  const isBoolean = unit === 'bool'
+
+  const boolOptions: SelectOption[] = [
+    { id: '1', name: 'true' },
+    { id: '0', name: 'false' },
+  ]
+
+  const isBoolOverride =
+    isBoolean && toBoolString(inputValue) !== toBoolString(defaultValue)
+
+  const handleBoolSelect = (id: string | null) => {
+    if (!id) {
+      return
+    }
+    const newVal = id
+    setInputValue(newVal)
+    onOverride(newVal, unitValue ?? '')
   }
-  const handleToggle = (e: MouseEvent) => {
-    e.preventDefault()
-    const checked = inputValue === 'True' || inputValue === '1'
-    const newValue = !checked ? toggleValues[0] : toggleValues[1]
-    setInputValue(newValue)
-    onOverride(newValue, unitValue ?? '')
+
+  const boolSelectStyles = {
+    singleValue: (base: any) => ({
+      ...base,
+      color: isBoolOverride ? '#0d9488' : base.color,
+    }),
+    placeholder: (base: any) => ({
+      ...base,
+      color: isBoolOverride ? '#0d9488' : base.color,
+    }),
   }
 
   return (
     <ul className={styles.container}>
       <li className={styles.input}>
-        {useCheckbox ? (
-          <button
-            onClick={handleToggle}
-            className={clsx(
-              'flex w-full',
-              !valueIsNotDefault && 'text-stone-300'
-            )}
-          >
-            <FontAwesomeIcon
-              icon={
-                ['True', '1'].includes(inputValue) ? faCheckSquare : faSquare
-              }
-              size="2xl"
-              className="ml-0"
-            />
-          </button>
+        {isBoolean ? (
+          <Select
+            name={name ?? 'overrideBool'}
+            options={boolOptions}
+            value={inputValue || ''}
+            placeholder=""
+            onSelect={handleBoolSelect}
+            styles={boolSelectStyles}
+          />
         ) : (
           <Input
             name={name ?? 'override'}
@@ -139,7 +139,7 @@ export const ParameterField: React.FC<ParameterFieldProps> = ({
             value={unitValue}
             placeholder={unit}
             onSelect={(id) => handleUnitOverride(id ?? unit)}
-            disabled={!inputValue}
+            disabled={!inputValue || isBoolean}
           />
         </li>
       )}
