@@ -79,7 +79,7 @@ export const ParameterTable: React.FC<ParameterTableProps> = ({
               {
                 label: (
                   <div>
-                    <span className="text-stone-600/60">
+                    <span className="whitespace-normal break-words text-stone-600/60">
                       {makeValueUnitString(value, unit)}
                     </span>
                     {dvlOff && (
