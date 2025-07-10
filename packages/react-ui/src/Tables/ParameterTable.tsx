@@ -42,7 +42,7 @@ export const ParameterTable: React.FC<ParameterTableProps> = ({
 }) => {
   const ParameterRows = useMemo(
     () =>
-      parameters.map(
+      parameters?.map(
         ({
           name,
           description,
@@ -116,7 +116,7 @@ export const ParameterTable: React.FC<ParameterTableProps> = ({
             ],
           }
         }
-      ),
+      ) ?? [],
     [parameters]
   )
 

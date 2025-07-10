@@ -45,7 +45,7 @@ export const ParameterStep: React.FC<ParameterStepProps> = ({
       setInitialParameters(parameters)
       const updatedParams =
         [...filteredParameters].map((param) =>
-          parameters.find(({ name }) => name === param.name)
+          parameters?.find(({ name }) => name === param?.name)
         ) ?? []
       setFilteredParameters(updatedParams as ParameterProps[])
     }
