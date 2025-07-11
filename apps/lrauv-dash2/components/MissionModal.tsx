@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import {
   MissionModalView,
   MissionModalViewProps,
@@ -83,6 +83,8 @@ const convertMissionDataToListItem =
       vehicle: vehicleName,
     }
   }
+
+const extractNum = (v: string | undefined) => v?.match(/-?\d+(?:\.\d+)?/)?.[0]
 
 const MissionModal: React.FC<MissionModalProps> = ({
   onClose: handleClose,
@@ -202,19 +204,16 @@ const MissionModal: React.FC<MissionModalProps> = ({
   const recentRuns: MissionTableProps['missions'] =
     recentRunsData
       ?.map(
-        (
-          {
-            data,
-            mission,
-            vehicleName: vehicle,
-            isoTime,
-            user,
-            note,
-            parameterOverrides,
-            waypointOverrides,
-          },
-          i
-        ) => {
+        ({
+          data,
+          mission,
+          vehicleName: vehicle,
+          isoTime,
+          user,
+          note,
+          parameterOverrides,
+          waypointOverrides,
+        }) => {
           const { category, name } = parseMissionPath(mission)
           return {
             id: mission,
@@ -228,6 +227,8 @@ const MissionModal: React.FC<MissionModalProps> = ({
             ranBy: capitalizeEach(user ?? ''),
             recentRun: true,
             note,
+            waypointOverrides,
+            parameterOverrides,
             parameterCount: parameterOverrides.length,
             waypointCount: waypointOverrides.length,
           }
@@ -278,6 +279,7 @@ const MissionModal: React.FC<MissionModalProps> = ({
     }
   }
 
+  // this gets the original mission template data (ie it would be the original sci2_flat_and_level mission, not a recent run of sci2_flat_and_level where the pilot has applied overrides)
   const { data: selectedMissionData } = useScript(
     {
       path: selectedMission as string,
@@ -294,11 +296,37 @@ const MissionModal: React.FC<MissionModalProps> = ({
       const lonArg = selectedMissionData.scriptArgs.find(
         (arg) => arg.name === lonName
       )
+
+      let latValue: string | undefined = latArg?.value
+      let lonValue: string | undefined = lonArg?.value
+
+      // If this is a recent run, use its waypoint overrides
+      if (selectedMissionCategory === 'Recent Runs' && selectedMission) {
+        const selectedRun = recentRuns.find(
+          (run) => run.id === selectedMission
+        ) as any
+
+        if (selectedRun?.waypointOverrides?.length) {
+          const latOverride = selectedRun.waypointOverrides.find(
+            (o: { name: string; value: string }) => o.name === latName
+          )
+          const lonOverride = selectedRun.waypointOverrides.find(
+            (o: { name: string; value: string }) => o.name === lonName
+          )
+
+          const latNum = extractNum(latOverride?.value)
+          const lonNum = extractNum(lonOverride?.value)
+
+          if (latNum) latValue = latNum
+          if (lonNum) lonValue = lonNum
+        }
+      }
+
       return {
         latName,
         lonName,
-        lat: latArg?.value,
-        lon: lonArg?.value,
+        lat: latValue,
+        lon: lonValue,
         description:
           latArg?.description ??
           `Latitude of ${makeOrdinal(index + 1)} waypoint. If NaN, waypoint
@@ -340,7 +368,7 @@ const MissionModal: React.FC<MissionModalProps> = ({
   const parameters: ParameterProps[] =
     [
       selectedMissionData?.inserts?.map((i) => i.scriptArgs).flat(),
-      selectedMissionData?.scriptArgs.filter(
+      selectedMissionData?.scriptArgs?.filter(
         ({ name }) => !reservedParams.includes(name)
       ),
     ]
@@ -357,6 +385,30 @@ const MissionModal: React.FC<MissionModalProps> = ({
               insertForParameter(arg, selectedMissionData?.inserts ?? []),
           } as ParameterProps)
       ) ?? []
+
+  const parametersWithOverrides: ParameterProps[] = useMemo(() => {
+    if (
+      selectedMissionCategory === 'Recent Runs' &&
+      selectedMission &&
+      parameters.length
+    ) {
+      const selectedRun = recentRuns.find(
+        (r) => r.id === selectedMission
+      ) as any
+      if (selectedRun?.parameterOverrides?.length) {
+        return parameters.map((p) => {
+          const ov = selectedRun.parameterOverrides.find(
+            (o: { name: string }) => o.name === p.name
+          )
+          if (ov && ov.value !== undefined) {
+            return { ...p, overrideValue: ov.value }
+          }
+          return p
+        })
+      }
+    }
+    return parameters
+  }, [selectedMissionCategory, selectedMission, recentRuns, parameters])
 
   const commsParams =
     commsInsert?.scriptArgs.map((i) => ({ ...i, insert: commsInsert.id })) ?? []
@@ -401,8 +453,6 @@ const MissionModal: React.FC<MissionModalProps> = ({
     }
   }
 
-  const defaultOverrides: ParameterProps[] = []
-
   return (
     <MissionModalView
       style={{ maxHeight: '80vh' }}
@@ -440,7 +490,7 @@ const MissionModal: React.FC<MissionModalProps> = ({
       onSelectMissionCategory={handleSelectMissionCategory}
       selectedMissionCategory={selectedMissionCategory}
       defaultSearchText={globalModalId?.meta?.mission ?? ''}
-      defaultOverrides={defaultOverrides}
+      defaultOverrides={parametersWithOverrides}
     />
   )
 }
