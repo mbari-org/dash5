@@ -80,7 +80,9 @@ export const extractOverrides = (
 
   for (const [, , name, value] of missionData.matchAll(regex)) {
     const cleaned = value.trim().split(/\s+/)[0] // keep value, drop units
-    commands.push({ name, value: cleaned })
+    // Strip any prefix so that it is just the command name without an insert prefix(ie `BackseatDriver.EnableBackseat` -> `EnableBackseat`)
+    const shortName = name.includes('.') ? name.split('.').pop()! : name
+    commands.push({ name: shortName, value: cleaned })
   }
 
   return classifyOverrides(commands, latLonNamePairs)

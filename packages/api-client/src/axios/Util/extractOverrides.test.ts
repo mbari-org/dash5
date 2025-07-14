@@ -30,7 +30,7 @@ sched asap "set sci2_noyo_optim:PowerOnly.SampleLoad1 1 bool;run" 33c01 4 4`
       { name: 'SlowSpeed', value: '0.4' },
       { name: 'MinAltitude', value: '10' },
       { name: 'MaxDepth', value: '270' },
-      { name: 'PowerOnly.SampleLoad1', value: '1' },
+      { name: 'SampleLoad1', value: '1' },
     ])
   })
 
