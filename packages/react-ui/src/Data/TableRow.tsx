@@ -4,6 +4,7 @@ import { swallow } from '@mbari/utils'
 import { TableCell } from './TableCell'
 
 export interface TableRowProps {
+  id?: string
   className?: string
   cells: CellProps[]
   highlighted?: boolean

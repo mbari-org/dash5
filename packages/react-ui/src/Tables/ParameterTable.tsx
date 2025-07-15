@@ -10,7 +10,7 @@ import { makeValueUnitString } from '@mbari/utils'
 export interface ParameterTableProps {
   className?: string
   style?: React.CSSProperties
-  parameters: ParameterProps[]
+  parameters?: ParameterProps[]
   altHeaderLabel?: string
   onParamUpdate: (
     name: string,
@@ -35,89 +35,92 @@ export interface ParameterProps {
 export const ParameterTable: React.FC<ParameterTableProps> = ({
   className,
   style,
-  parameters,
+  parameters = [],
   altHeaderLabel,
   onParamUpdate,
   unitOptions,
 }) => {
   const ParameterRows = useMemo(
     () =>
-      parameters?.map(
-        ({
-          name,
-          description,
-          value,
-          unit,
-          overrideValue,
-          overrideUnit,
-          dvlOff,
-        }) => {
-          const handleOverride = (newValue: string, newUnit: string) => {
-            onParamUpdate(name, newValue, newUnit)
-          }
-          return {
-            cells: [
-              {
-                label: (
-                  <span
-                    className={clsx(
-                      'whitespace-normal break-words font-medium',
-                      overrideValue && 'text-teal-600',
-                      !overrideValue && dvlOff && 'text-orange-500/80',
-                      !overrideValue && !dvlOff && 'opacity-60'
-                    )}
-                  >
-                    {name}
-                  </span>
-                ),
-                secondary: (
-                  <span className="text-stone-600/60 ">{description}</span>
-                ),
-                span: 3,
-                highlighted: true, // removes scrollable table styles on this cell
-              },
-              {
-                label: (
-                  <div>
-                    <span className="whitespace-normal break-words text-stone-600/60">
-                      {makeValueUnitString(value, unit)}
+      parameters
+        ?.filter((p) => p?.name)
+        .map(
+          ({
+            name,
+            description,
+            value,
+            unit,
+            overrideValue,
+            overrideUnit,
+            dvlOff,
+          }) => {
+            const handleOverride = (newValue: string, newUnit: string) => {
+              onParamUpdate(name, newValue, newUnit)
+            }
+            return {
+              id: name,
+              cells: [
+                {
+                  label: (
+                    <span
+                      className={clsx(
+                        'whitespace-normal break-words font-medium',
+                        overrideValue && 'text-teal-600',
+                        !overrideValue && dvlOff && 'text-orange-500/80',
+                        !overrideValue && !dvlOff && 'opacity-60'
+                      )}
+                    >
+                      {name}
                     </span>
-                    {dvlOff && (
-                      <span className="ml-4 text-orange-500/80">
-                        DVL is off
-                        <FontAwesomeIcon
-                          icon={faInfoCircle as IconProp}
-                          className="ml-2"
-                        />
+                  ),
+                  secondary: (
+                    <span className="text-stone-600/60 ">{description}</span>
+                  ),
+                  span: 3,
+                  highlighted: true, // removes scrollable table styles on this cell
+                },
+                {
+                  label: (
+                    <div>
+                      <span className="whitespace-normal break-words text-stone-600/60">
+                        {makeValueUnitString(value, unit)}
                       </span>
-                    )}
-                  </div>
-                ),
-                span: 2,
-                highlighted: true,
-                highlightedStyle: 'text-base',
-              },
-              {
-                label: (
-                  <ParameterField
-                    overrideValue={overrideValue}
-                    onOverride={handleOverride}
-                    overrideUnit={overrideUnit}
-                    unit={unit}
-                    unitOptions={unitOptions}
-                    name={name}
-                    defaultValue={value}
-                  />
-                ),
-                span: 3,
-                highlighted: true,
-                highlightedStyle: 'text-base text-teal-600',
-              },
-            ],
+                      {dvlOff && (
+                        <span className="ml-4 text-orange-500/80">
+                          DVL is off
+                          <FontAwesomeIcon
+                            icon={faInfoCircle as IconProp}
+                            className="ml-2"
+                          />
+                        </span>
+                      )}
+                    </div>
+                  ),
+                  span: 2,
+                  highlighted: true,
+                  highlightedStyle: 'text-base',
+                },
+                {
+                  label: (
+                    <ParameterField
+                      overrideValue={overrideValue}
+                      onOverride={handleOverride}
+                      overrideUnit={overrideUnit}
+                      unit={unit}
+                      unitOptions={unitOptions}
+                      name={name}
+                      defaultValue={value}
+                    />
+                  ),
+                  span: 3,
+                  highlighted: true,
+                  highlightedStyle: 'text-base text-teal-600',
+                },
+              ],
+            }
           }
-        }
-      ) ?? [],
-    [parameters]
+        ) ?? [],
+    [parameters, onParamUpdate, unitOptions]
   )
 
   return (
