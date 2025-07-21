@@ -58,8 +58,8 @@ const VehiclePoint: React.FC<{
   </Circle>
 )
 
-// VehiclePath component
-const VehiclePath: React.FC<{
+// VehiclePathProps interface
+interface VehiclePathProps {
   name: string
   grouped?: boolean
   from?: number
@@ -67,7 +67,11 @@ const VehiclePath: React.FC<{
   indicatorTime?: number | null
   onScrub?: (millis?: number | null) => void
   onGPSFix?: (gps: VPosDetail) => void
-}> = ({
+  disableAutoFit?: boolean
+}
+
+// VehiclePath component
+const VehiclePath: React.FC<VehiclePathProps> = ({
   name,
   grouped,
   to,
@@ -75,6 +79,7 @@ const VehiclePath: React.FC<{
   indicatorTime,
   onScrub: handleScrub,
   onGPSFix: handleGPSFix,
+  disableAutoFit = false,
 }) => {
   const map = useMap()
   const { sharedPath, dispatch } = useSharedPath()
@@ -232,7 +237,8 @@ const VehiclePath: React.FC<{
 
   // Fit bounds for Deployment Map
   useEffect(() => {
-    if (fit.current !== routeAsString && route) {
+    //  Disable map auto-fit centering when the user interacts with timeline.
+    if (fit.current !== routeAsString && route && !disableAutoFit) {
       if (!grouped) {
         dispatch({ type: 'clear' })
         if (route?.length) {
@@ -243,7 +249,7 @@ const VehiclePath: React.FC<{
       }
       fit.current = routeAsString
     }
-  }, [route, map, dispatch, name, grouped, routeAsString])
+  }, [route, map, dispatch, name, grouped, routeAsString, disableAutoFit])
 
   // OVERVIEW MAP
   // Fit bounds for OverViewMap

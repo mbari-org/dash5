@@ -92,7 +92,7 @@ const DeploymentMap: React.FC<DeploymentMapProps> = ({
 
   const { trackedVehicles } = useTrackedVehicles()
   const [showAll, setShowAll] = useState(true)
-
+  const [isTimelineScrubbing, setIsTimelineScrubbing] = useState(false)
   const [center, setCenter] = useState<undefined | [number, number]>()
   const [centerZoom, setCenterZoom] = useState<number | undefined>(undefined)
   const [bounds, setBounds] = useState<
@@ -173,6 +173,16 @@ const DeploymentMap: React.FC<DeploymentMapProps> = ({
   // Vehicle path points for bounds calculation
   const pathPoints = useRef<Array<[number, number]>>([])
 
+  // Handle map scrubbing event control
+  const handleMapScrub = useCallback(
+    (time?: number | null) => {
+      setIsTimelineScrubbing(time !== null)
+      handleScrub?.(time)
+    },
+    [handleScrub]
+  )
+
+  // Handle opening the color modal
   const handleOpenColorModal = () => {
     setColorModalOpen(true)
     setColorModalPosition({ top: 100, left: 100 }) // Adjust as needed
@@ -648,8 +658,10 @@ const DeploymentMap: React.FC<DeploymentMapProps> = ({
             from={startTime as number}
             to={endTime as number}
             indicatorTime={indicatorTime}
-            onScrub={handleScrub}
+            onScrub={handleMapScrub}
             onGPSFix={handleGPSFix}
+            // Disable map auto-fit centering when scrubbing the timeline
+            disableAutoFit={isTimelineScrubbing}
           />
         )}
         <VehicleColorsModal
