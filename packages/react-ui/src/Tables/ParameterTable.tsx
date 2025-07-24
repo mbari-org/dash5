@@ -15,7 +15,7 @@ export interface ParameterTableProps {
   onParamUpdate: (
     name: string,
     overrideValue: string,
-    overrideUnit: string
+    overrideUnit?: string
   ) => void
   onVerifyValue?: (value: string) => string
   unitOptions?: ParameterFieldUnit[]
@@ -54,9 +54,10 @@ export const ParameterTable: React.FC<ParameterTableProps> = ({
             overrideUnit,
             dvlOff,
           }) => {
-            const handleOverride = (newValue: string, newUnit: string) => {
+            const handleOverride = (newValue: string, newUnit?: string) => {
               onParamUpdate(name, newValue, newUnit)
             }
+
             return {
               id: name,
               cells: [

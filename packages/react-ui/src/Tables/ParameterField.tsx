@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react'
 import { Input, Select, SelectOption } from '../Fields'
+import { useDebouncedEffect } from '@mbari/utils'
 
 export interface ParameterFieldUnit {
   name: string
@@ -34,7 +35,7 @@ const toBoolString = (v: string | undefined) =>
 export interface ParameterFieldProps {
   className?: string
   overrideValue?: string
-  onOverride: (newOverride: string, overrideUnit: string) => void
+  onOverride: (newOverride: string, overrideUnit?: string) => void
   overrideUnit?: string
   unit?: string
   unitOptions?: ParameterFieldUnit[]
@@ -61,24 +62,47 @@ export const ParameterField: React.FC<ParameterFieldProps> = ({
 }) => {
   const [inputValue, setInputValue] = useState<string>(overrideValue ?? '')
   const [unitValue, setUnitValue] = useState(overrideUnit ?? unit)
+  const [isEditing, setIsEditing] = useState(false)
 
-  const lastOverrideValue = React.useRef(overrideValue)
+  // Pull external changes into the local draft when the user is *not* editing.
   useEffect(() => {
-    if (lastOverrideValue?.current !== overrideValue) {
-      setInputValue(overrideValue ? overrideValue : '')
-      lastOverrideValue.current = overrideValue
+    if (!isEditing) {
+      setInputValue(overrideValue ?? '')
     }
-  }, [inputValue, overrideValue, lastOverrideValue])
+  }, [overrideValue, isEditing])
+
+  useEffect(() => {
+    if (!isEditing) {
+      setUnitValue(overrideUnit ?? unit)
+    }
+  }, [overrideUnit, unit, isEditing])
+
+  // Update the override after user stops typing for 400ms
+  useDebouncedEffect(
+    () => {
+      if (isEditing) {
+        const valueChanged = inputValue !== (overrideValue ?? '')
+        const unitChanged = unitValue !== (overrideUnit ?? unit)
+
+        if (valueChanged || unitChanged) {
+          onOverride(inputValue, unitValue ?? '')
+        }
+        setIsEditing(false)
+      }
+    },
+    400,
+    [inputValue, unitValue]
+  )
 
   const handleOverride = (e: React.ChangeEvent<HTMLInputElement>) => {
     const newValue = e?.target?.value ?? ''
+    setIsEditing(true)
     setInputValue(newValue)
-    onOverride(newValue, unitValue ?? '')
   }
 
   const handleUnitOverride = (newUnit: string) => {
+    setIsEditing(true)
     setUnitValue(newUnit)
-    onOverride(inputValue, newUnit)
   }
 
   const isBoolean = unit === 'bool'
@@ -96,8 +120,8 @@ export const ParameterField: React.FC<ParameterFieldProps> = ({
       return
     }
     const newVal = id
+    setIsEditing(true)
     setInputValue(newVal)
-    onOverride(newVal, unitValue ?? '')
   }
 
   const boolSelectStyles = {
