@@ -156,6 +156,7 @@ const MissionModalBody: React.FC<MissionModalViewProps> = ({
     overriddenMissionParams,
     safetyCommsParams,
     overrideCount,
+    resetOverrides,
   } = useManagedParameters({
     parameters,
     safetyParams,
@@ -200,6 +201,19 @@ const MissionModalBody: React.FC<MissionModalViewProps> = ({
 
   const handleAlternateAddress = () => setShowAlternateAddress(true)
 
+  const handleBack = () => {
+    if (showAlternateAddress) {
+      setShowAlternateAddress(false)
+      setAlternateAddress(null)
+    }
+    // When returning to the select mission step, clear mission selection and overrides
+    if (currentStep === steps.indexOf('Mission') + 1) {
+      handleSelectMission(null)
+      resetOverrides()
+    }
+    handlePrevious()
+  }
+
   const extraButtons = (): ExtraButton[] => {
     if (currentStep === 0) return []
 
@@ -207,12 +221,7 @@ const MissionModalBody: React.FC<MissionModalViewProps> = ({
       {
         buttonText: 'Back',
         appearance: 'secondary',
-        onClick: showAlternateAddress
-          ? () => {
-              setShowAlternateAddress(false)
-              setAlternateAddress(null)
-            }
-          : handlePrevious,
+        onClick: handleBack,
       },
     ]
 
