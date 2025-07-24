@@ -1,8 +1,33 @@
-import { useState, useEffect } from 'react'
+import { useState, useMemo, useEffect } from 'react'
 import {
   ParameterProps,
   ParameterTableProps,
 } from '../../../Tables/ParameterTable'
+
+// Lookup map for initial overrides (these are the overrides applied by whoever previously ran this mission if this is a recent run)
+const buildOverrideMap = (list?: ParameterProps[]) => {
+  const map: Record<string, { value: string; unit?: string }> = {}
+  list?.forEach(({ name, overrideValue, overrideUnit }) => {
+    if (overrideValue !== undefined && overrideValue !== null) {
+      map[name] = {
+        value: overrideValue,
+        unit: overrideUnit,
+      }
+    }
+  })
+  return map
+}
+
+const applyOverrides = (
+  params: ParameterProps[],
+  overrides: Record<string, { value: string; unit?: string }>
+) =>
+  params.map((p) => {
+    const ov = overrides[p.name]
+    return ov?.value
+      ? { ...p, overrideValue: ov.value, overrideUnit: ov?.unit ?? undefined }
+      : p
+  })
 
 const useManagedParameters = ({
   parameters,
@@ -15,105 +40,73 @@ const useManagedParameters = ({
   commsParams: ParameterProps[]
   defaultOverrides?: ParameterProps[]
 }) => {
-  const [defaultParameters, setDefaultParameters] = useState<string>(
-    JSON.stringify(parameters)
+  // Local state: only the user overrides. Base parameter arrays remain props.
+  const [overrideMap, setOverrideMap] = useState<
+    Record<string, { value: string; unit?: string }>
+  >(() => buildOverrideMap(defaultOverrides))
+
+  // Re-derive parameter lists whenever overrides or base lists change.
+  const updatedParameters = useMemo(
+    () => applyOverrides(parameters, overrideMap),
+    [parameters, overrideMap]
+  )
+  const updatedSafetyParams = useMemo(
+    () => applyOverrides(safetyParams, overrideMap),
+    [safetyParams, overrideMap]
+  )
+  const updatedCommsParams = useMemo(
+    () => applyOverrides(commsParams, overrideMap),
+    [commsParams, overrideMap]
   )
 
-  const mergeOverrides = (param: ParameterProps) => {
-    const defaultOverride = defaultOverrides?.find(
-      (override) => override.name === param.name
-    )
-    return {
-      ...param,
-      overrideValue: defaultOverride?.overrideValue ?? param.overrideValue,
-      overrideUnit: defaultOverride?.overrideUnit ?? param.overrideUnit,
-    }
-  }
-
-  const [updatedParameters, setUpdatedParameters] = useState<ParameterProps[]>(
-    parameters.map(mergeOverrides)
-  )
-  const [updatedSafetyParams, setUpdatedSafetyParams] = useState<
-    ParameterProps[]
-  >(safetyParams.map(mergeOverrides))
-  const [updatedCommsParams, setUpdatedCommsParams] = useState<
-    ParameterProps[]
-  >(commsParams.map(mergeOverrides))
-  useEffect(() => {
-    const paramString = JSON.stringify(parameters)
-    if (defaultParameters !== paramString) {
-      setDefaultParameters(paramString)
-      setUpdatedParameters(parameters)
-      setUpdatedSafetyParams(safetyParams)
-      setUpdatedCommsParams(commsParams)
-    }
-  }, [
-    parameters,
-    defaultParameters,
-    setDefaultParameters,
-    setUpdatedParameters,
-  ])
-
-  const updateParams = (
-    params: ParameterProps[],
+  // Unified handler for all param categories
+  const updateOverride = (
     name: string,
     overrideValue: string,
     overrideUnit?: string
-  ) => {
-    return params.map((param) =>
-      param.name === name ? { ...param, overrideValue, overrideUnit } : param
-    )
-  }
+  ) =>
+    setOverrideMap((m) => ({
+      ...m,
+      [name]: { value: overrideValue, unit: overrideUnit },
+    }))
 
   const handleParamUpdate: ParameterTableProps['onParamUpdate'] = (
-    name: string,
-    overrideValue: string,
-    overrideUnit: string
+    name,
+    value,
+    unit
   ) => {
-    const newParameters = updateParams(
-      updatedParameters,
-      name,
-      overrideValue,
-      overrideUnit
-    )
-    setUpdatedParameters(newParameters)
+    updateOverride(name, value, unit)
   }
 
   const handleSafetyUpdate: ParameterTableProps['onParamUpdate'] = (
-    name: string,
-    newOverrideValue: string,
-    overrideUnit: string
-  ) => {
-    const newSafetyParams = updateParams(
-      updatedSafetyParams,
-      name,
-      newOverrideValue,
-      overrideUnit
-    )
-    setUpdatedSafetyParams(newSafetyParams)
-  }
+    name,
+    value,
+    unit
+  ) => updateOverride(name, value, unit)
 
   const handleCommsUpdate: ParameterTableProps['onParamUpdate'] = (
-    name: string,
-    newOverrideValue: string,
-    overrideUnit: string
-  ) => {
-    const newCommsParams = updateParams(
-      updatedCommsParams,
-      name,
-      newOverrideValue,
-      overrideUnit
-    )
-    setUpdatedCommsParams(newCommsParams)
-  }
+    name,
+    value,
+    unit
+  ) => updateOverride(name, value, unit)
 
-  const safetyCommsParams = updatedSafetyParams.concat(updatedCommsParams)
+  const safetyCommsParams = [...updatedSafetyParams, ...updatedCommsParams]
   const overriddenMissionParams = updatedParameters.filter(
-    (param) => param.overrideValue
+    (p) => p.overrideValue
   )
   const overrideCount =
-    safetyCommsParams.filter((param) => param.overrideValue)?.length +
-      overriddenMissionParams?.length ?? 0
+    safetyCommsParams.filter((p) => p.overrideValue).length +
+    overriddenMissionParams.length
+
+  // Initialize overrides once
+  useEffect(() => {
+    if (defaultOverrides?.length && Object.keys(overrideMap).length === 0) {
+      setOverrideMap(buildOverrideMap(defaultOverrides))
+    }
+  }, [defaultOverrides, overrideMap])
+
+  // Reset the initial overrides
+  const resetOverrides = () => setOverrideMap({})
 
   return {
     handleCommsUpdate,
@@ -125,6 +118,7 @@ const useManagedParameters = ({
     updatedSafetyParams,
     overrideCount,
     overriddenMissionParams,
+    resetOverrides,
   }
 }
 
