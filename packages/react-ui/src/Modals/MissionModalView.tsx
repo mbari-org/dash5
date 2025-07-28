@@ -1,8 +1,4 @@
-/* MissionModalView.tsx
-   — Refactored to use the new stand‑alone <ScheduleProvider> and useScheduleContext()
-*/
-
-import React, { useEffect, useState } from 'react'
+import React, { useEffect } from 'react'
 import { Modal } from '../Modal/Modal'
 import { StepProgress, StepProgressProps } from '../Navigation/StepProgress'
 import { SelectOption } from '../Fields/Select'
@@ -73,7 +69,7 @@ export interface MissionModalViewProps
   onVerifyParameter?: (param: string) => string
   alternativeAddresses?: string[]
   vehicles?: string[]
-  commandText?: string
+  previewText?: string
   loading?: boolean
   onStepIndexChange?: (step: number) => void
   selectedMissionCategory?: string
@@ -118,7 +114,7 @@ const MissionModalBody: React.FC<MissionModalViewProps> = ({
   alternativeAddresses,
   unfilteredMissionParameters,
   vehicles,
-  commandText,
+  previewText,
   loading,
   unitOptions,
   selectedMissionCategory,
@@ -464,7 +460,7 @@ const MissionModalBody: React.FC<MissionModalViewProps> = ({
               :
             </p>
             <pre className="w-full rounded-lg bg-stone-100 p-4 font-mono">
-              {commandText?.split(';').join(';\n')}
+              {previewText?.split(';').join(';\n')}
             </pre>
 
             {notes && (

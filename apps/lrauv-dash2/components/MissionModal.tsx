@@ -97,6 +97,7 @@ const MissionModal: React.FC<MissionModalProps> = ({
     handleClose?.()
   }, [handleClose, handleWaypointsUpdate])
   const [estDistance, setEstDistance] = useState<number | null>(null)
+
   useEffect(() => {
     const applicableWaypoints = updatedWaypoints.filter(
       (w) =>
@@ -105,11 +106,11 @@ const MissionModal: React.FC<MissionModalProps> = ({
           w.lon?.toLocaleLowerCase() ?? 'nan',
         ].includes('nan')
     )
+
     if (applicableWaypoints.length > 0) {
       const newDistance = applicableWaypoints.reduce((acc, curr, index) => {
-        if (index === 0) {
-          return acc
-        }
+        if (index === 0) return acc
+
         const prev = applicableWaypoints[index - 1]
         return (
           acc +
@@ -120,15 +121,14 @@ const MissionModal: React.FC<MissionModalProps> = ({
           )
         )
       }, 0)
+
       if (newDistance !== estDistance) {
         setEstDistance(newDistance)
       }
-    } else {
-      if (estDistance) {
-        setEstDistance(null)
-      }
+    } else if (estDistance) {
+      setEstDistance(null)
     }
-  }, [estDistance, setEstDistance, updatedWaypoints])
+  }, [estDistance, updatedWaypoints])
 
   // Query param state
   const router = useRouter()
@@ -201,42 +201,46 @@ const MissionModal: React.FC<MissionModalProps> = ({
     }),
   ]
 
-  const recentRuns: MissionTableProps['missions'] =
-    recentRunsData
-      ?.map(
-        ({
-          data,
-          mission,
-          vehicleName: vehicle,
-          isoTime,
-          user,
-          note,
-          parameterOverrides,
-          waypointOverrides,
-        }) => {
-          const { category, name } = parseMissionPath(mission)
-          return {
-            id: mission,
-            category,
-            name,
-            description: data,
-            vehicle,
-            ranOn: capitalize(
-              DateTime.fromISO(isoTime).toFormat('MMM. d yyyy')
-            ),
-            ranBy: capitalizeEach(user ?? ''),
-            recentRun: true,
+  const recentRuns: MissionTableProps['missions'] = useMemo(() => {
+    return (
+      recentRunsData
+        ?.map(
+          ({
+            data,
+            mission,
+            vehicleName: vehicle,
+            isoTime,
+            user,
             note,
-            waypointOverrides,
             parameterOverrides,
-            parameterCount: parameterOverrides.length,
-            waypointCount: waypointOverrides.length,
+            waypointOverrides,
+          }) => {
+            const { category, name } = parseMissionPath(mission)
+            return {
+              id: mission,
+              category,
+              name,
+              description: data,
+              vehicle,
+              ranOn: capitalize(
+                DateTime.fromISO(isoTime).toFormat('MMM. d yyyy')
+              ),
+              ranBy: capitalizeEach(user ?? ''),
+              recentRun: true,
+              note,
+              waypointOverrides,
+              parameterOverrides,
+              parameterCount: parameterOverrides.length,
+              waypointCount: waypointOverrides.length,
+            }
           }
-        }
-      )
-      .filter(
-        (mission, index, s) => s.findIndex((m) => m.id === mission.id) === index
-      ) ?? []
+        )
+        .filter(
+          (mission, index, s) =>
+            s.findIndex((m) => m.id === mission.id) === index
+        ) ?? []
+    )
+  }, [recentRunsData])
 
   const frequentRuns: MissionTableProps['missions'] =
     (frequentRunsData
@@ -342,21 +346,25 @@ const MissionModal: React.FC<MissionModalProps> = ({
       lon: `${geojson.geometry.coordinates[1]}`,
     })) ?? []
 
-  const reservedParams: string[] = [
-    selectedMissionData?.inserts
-      ?.filter(({ id }) =>
-        [/comms/i, /standard envelope/i, /standardenvelope/i].some((r) =>
-          r.test(id)
-        )
-      )
-      .map(({ scriptArgs }) => scriptArgs.map((arg) => arg.name)) ?? [],
-    selectedMissionData?.latLonNamePairs?.map(({ latName, lonName }) => [
-      latName,
-      lonName,
-    ]) ?? [],
-  ]
-    .flat(2)
-    .filter((i) => i)
+  const reservedParams: string[] = useMemo(
+    () =>
+      [
+        selectedMissionData?.inserts
+          ?.filter(({ id }) =>
+            [/comms/i, /standard envelope/i, /standardenvelope/i].some((r) =>
+              r.test(id)
+            )
+          )
+          .map(({ scriptArgs }) => scriptArgs.map((arg) => arg.name)) ?? [],
+        selectedMissionData?.latLonNamePairs?.map(({ latName, lonName }) => [
+          latName,
+          lonName,
+        ]) ?? [],
+      ]
+        .flat(2)
+        .filter((i) => i),
+    [selectedMissionData]
+  )
 
   const commsInsert = selectedMissionData?.inserts?.find(({ id }) =>
     id.match(/comms/i)
@@ -365,26 +373,29 @@ const MissionModal: React.FC<MissionModalProps> = ({
     id.match(/envelope/i)
   )
 
-  const parameters: ParameterProps[] =
-    [
-      selectedMissionData?.inserts?.map((i) => i.scriptArgs).flat(),
-      selectedMissionData?.scriptArgs?.filter(
-        ({ name }) => !reservedParams.includes(name)
-      ),
-    ]
-      .flat()
-      .map(
-        (arg) =>
-          ({
-            description: arg?.description ?? '',
-            name: arg?.name,
-            unit: arg?.unit,
-            value: arg?.value,
-            insert:
-              arg &&
-              insertForParameter(arg, selectedMissionData?.inserts ?? []),
-          } as ParameterProps)
-      ) ?? []
+  const parameters: ParameterProps[] = useMemo(() => {
+    return (
+      [
+        selectedMissionData?.inserts?.map((i) => i.scriptArgs).flat(),
+        selectedMissionData?.scriptArgs?.filter(
+          ({ name }) => !reservedParams.includes(name)
+        ),
+      ]
+        .flat()
+        .map(
+          (arg) =>
+            ({
+              description: arg?.description ?? '',
+              name: arg?.name,
+              unit: arg?.unit,
+              value: arg?.value,
+              insert:
+                arg &&
+                insertForParameter(arg, selectedMissionData?.inserts ?? []),
+            } as ParameterProps)
+        ) ?? []
+    )
+  }, [selectedMissionData, reservedParams])
 
   const parametersWithOverrides: ParameterProps[] = useMemo(() => {
     if (
@@ -395,6 +406,7 @@ const MissionModal: React.FC<MissionModalProps> = ({
       const selectedRun = recentRuns.find(
         (r) => r.id === selectedMission
       ) as any
+
       if (selectedRun?.parameterOverrides?.length) {
         return parameters.map((p) => {
           const ov = selectedRun.parameterOverrides.find(
@@ -417,9 +429,9 @@ const MissionModal: React.FC<MissionModalProps> = ({
     safetyInsert?.scriptArgs.map((i) => ({ ...i, insert: safetyInsert.id })) ??
     []
 
-  const [commandText, setCommandText] = useState<string | undefined>()
+  const [previewText, setPreviewText] = useState<string | undefined>()
 
-  const handleSchedule: MissionModalViewProps['onSchedule'] = ({
+  const handleSchedule: MissionModalViewProps['onSchedule'] = async ({
     confirmedVehicle,
     parameterOverrides,
     selectedMissionId,
@@ -431,13 +443,20 @@ const MissionModal: React.FC<MissionModalProps> = ({
     commType,
     timeout,
   }) => {
-    const { commandText, schedDate, previewSbd } = makeMissionCommand({
+    const {
+      commandText: formattedCommandText,
+      schedDate,
+      previewSbd,
+    } = makeMissionCommand({
       mission: selectedMissionId as string,
       parameterOverrides,
       scheduleMethod,
       specifiedLocalTime: specifiedTime ?? undefined,
+      units: unitsData,
     })
-    setCommandText(previewSbd)
+
+    setPreviewText(previewSbd)
+
     if (!preview) {
       createCommand({
         vehicle: confirmedVehicle?.toLowerCase() ?? '',
@@ -446,7 +465,7 @@ const MissionModal: React.FC<MissionModalProps> = ({
         runCommand: 'y',
         schedDate,
         destinationAddress: alternateAddress ?? undefined,
-        commandText: commandText ?? '',
+        commandText: formattedCommandText ?? '',
         via: commType,
         timeout,
       })
@@ -484,7 +503,7 @@ const MissionModal: React.FC<MissionModalProps> = ({
       vehicles={vehicles}
       loading={sendingCommand}
       missionsLoading={recentRunsLoading}
-      commandText={commandText}
+      previewText={previewText}
       unitOptions={unitsData}
       selectedId={selectedMission}
       onSelectMissionCategory={handleSelectMissionCategory}

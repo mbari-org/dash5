@@ -16,6 +16,11 @@ export interface MissionTableProps {
   loading?: boolean
 }
 
+export interface MissionOverride {
+  name: string
+  value: string
+}
+
 export interface Mission {
   id: string
   category: string
@@ -28,6 +33,8 @@ export interface Mission {
   ranAt?: string
   waypointCount?: number
   parameterCount?: number
+  waypointOverrides?: MissionOverride[]
+  parameterOverrides?: MissionOverride[]
   recentRun?: boolean
   frequentRun?: boolean
 }
