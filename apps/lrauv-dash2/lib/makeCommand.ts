@@ -1,5 +1,6 @@
 import { ParameterProps, ScheduleMethod } from '@mbari/react-ui'
 import { DateTime } from 'luxon'
+import { abbreviateUnitsInCommand } from '@mbari/utils'
 
 const printUnit = (p: ParameterProps) => {
   if (p.overrideValue?.match(/true/i)) {
@@ -16,38 +17,51 @@ export const makeCommand = ({
   commandText,
   scheduleMethod = 'end',
   specifiedLocalTime,
+  units,
+  isMission = false,
 }: {
   commandText: string
   scheduleMethod?: ScheduleMethod
   specifiedLocalTime?: string | null
+  units?: { name: string; abbreviation: string }[]
+  isMission?: boolean
 }) => {
+  // Convert any full unit names in the provided command text to their abbreviations
+  const resolvedCommandText = units
+    ? abbreviateUnitsInCommand(commandText, units)
+    : commandText
+
+  const previewCommandText = isMission
+    ? `${resolvedCommandText}; run`
+    : resolvedCommandText
+
   switch (scheduleMethod) {
     case 'ASAP':
       return {
-        commandText,
+        commandText: resolvedCommandText,
         schedDate: 'asap',
-        previewSbd: `sched asap "${commandText}"`,
+        previewSbd: `sched asap "${previewCommandText}"`,
       }
     case 'time':
       if (!specifiedLocalTime) {
         return {
-          commandText,
+          commandText: resolvedCommandText,
           schedDate: '',
-          previewSbd: `sched "${commandText}"`,
+          previewSbd: `sched "${previewCommandText}"`,
         }
       }
       const t = DateTime.fromISO(specifiedLocalTime).toUTC()
       const schedDate = `${t.toFormat('yyyyMMdd')}}T${t.toFormat('HHmm')}`
       return {
-        commandText,
+        commandText: resolvedCommandText,
         schedDate,
-        previewSbd: `sched ${schedDate} "${commandText}"`,
+        previewSbd: `sched ${schedDate} "${previewCommandText}"`,
       }
     default:
       return {
-        commandText,
+        commandText: resolvedCommandText,
         schedDate: '',
-        previewSbd: `sched "${commandText}"`,
+        previewSbd: `sched "${previewCommandText}"`,
       }
   }
 }
@@ -58,11 +72,13 @@ export const makeMissionCommand = ({
   parameterOverrides,
   scheduleMethod,
   specifiedLocalTime,
+  units,
 }: {
   parameterOverrides: ParameterProps[]
   mission: string
   scheduleMethod: ScheduleMethod
   specifiedLocalTime?: string
+  units?: { name: string; abbreviation: string }[]
 }) => {
   const missionName = mission.split('/').pop()?.split('.')[0]
   const commands: string[] = [`load ${mission}`]
@@ -73,10 +89,11 @@ export const makeMissionCommand = ({
       } ${printUnit(p)}`
     )
   })
-  commands.push('run')
   return makeCommand({
-    commandText: commands.join('; '),
+    commandText: commands.join(';'),
     scheduleMethod,
     specifiedLocalTime,
+    units,
+    isMission: true,
   })
 }
