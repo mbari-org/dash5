@@ -5,12 +5,17 @@ import { RequestConfig } from '../types'
 export interface GetPreviewParams {
   vehicle: string
   commandText: string
-  schedId: string
-  schedDate: string
+  schedId?: string
+  schedDate?: string
+}
+
+interface PreviewResult {
+  line: string
+  href: string
 }
 
 export interface GetPreviewResponse {
-  result: string
+  result: PreviewResult[]
 }
 
 export const getPreview = async (
