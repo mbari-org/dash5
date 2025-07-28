@@ -138,7 +138,7 @@ export const MissionTable: React.FC<MissionTableProps> = ({
   } as TableProps['header']
 
   const handleSelect = (index: number) => {
-    onSelectMission(index ? missions[index].id : undefined)
+    onSelectMission(typeof index === 'number' ? missions[index].id : undefined)
   }
 
   return (
