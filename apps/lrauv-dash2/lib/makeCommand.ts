@@ -18,36 +18,30 @@ export const makeCommand = ({
   scheduleMethod = 'end',
   specifiedLocalTime,
   units,
-  isMission = false,
 }: {
   commandText: string
   scheduleMethod?: ScheduleMethod
   specifiedLocalTime?: string | null
   units?: { name: string; abbreviation: string }[]
-  isMission?: boolean
 }) => {
   // Convert any full unit names in the provided command text to their abbreviations
   const resolvedCommandText = units
     ? abbreviateUnitsInCommand(commandText, units)
     : commandText
 
-  const previewCommandText = isMission
-    ? `${resolvedCommandText}; run`
-    : resolvedCommandText
-
   switch (scheduleMethod) {
     case 'ASAP':
       return {
         commandText: resolvedCommandText,
         schedDate: 'asap',
-        previewSbd: `sched asap "${previewCommandText}"`,
+        previewSbd: `sched asap "${resolvedCommandText}"`,
       }
     case 'time':
       if (!specifiedLocalTime) {
         return {
           commandText: resolvedCommandText,
           schedDate: '',
-          previewSbd: `sched "${previewCommandText}"`,
+          previewSbd: `sched "${resolvedCommandText}"`,
         }
       }
       const t = DateTime.fromISO(specifiedLocalTime).toUTC()
@@ -55,13 +49,13 @@ export const makeCommand = ({
       return {
         commandText: resolvedCommandText,
         schedDate,
-        previewSbd: `sched ${schedDate} "${previewCommandText}"`,
+        previewSbd: `sched ${schedDate} "${resolvedCommandText}"`,
       }
     default:
       return {
         commandText: resolvedCommandText,
         schedDate: '',
-        previewSbd: `sched "${previewCommandText}"`,
+        previewSbd: `sched "${resolvedCommandText}"`,
       }
   }
 }
@@ -89,11 +83,11 @@ export const makeMissionCommand = ({
       } ${printUnit(p)}`
     )
   })
+  commands.push('run')
   return makeCommand({
     commandText: commands.join(';'),
     scheduleMethod,
     specifiedLocalTime,
     units,
-    isMission: true,
   })
 }
