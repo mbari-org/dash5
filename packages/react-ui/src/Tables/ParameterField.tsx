@@ -112,8 +112,9 @@ export const ParameterField: React.FC<ParameterFieldProps> = ({
     { id: '0', name: 'false' },
   ]
 
-  const isBoolOverride =
-    isBoolean && toBoolString(inputValue) !== toBoolString(defaultValue)
+  const isUnitOverride =
+    (isBoolean && toBoolString(inputValue) !== toBoolString(defaultValue)) ||
+    (overrideUnit && overrideUnit !== unit)
 
   const handleBoolSelect = (id: string | null) => {
     if (!id) {
@@ -124,14 +125,14 @@ export const ParameterField: React.FC<ParameterFieldProps> = ({
     setInputValue(newVal)
   }
 
-  const boolSelectStyles = {
+  const unitSelectStyles = {
     singleValue: (base: any) => ({
       ...base,
-      color: isBoolOverride ? '#0d9488' : base.color,
+      color: isUnitOverride ? '#0d9488' : base.color,
     }),
     placeholder: (base: any) => ({
       ...base,
-      color: isBoolOverride ? '#0d9488' : base.color,
+      color: isUnitOverride ? '#0d9488' : base.color,
     }),
   }
 
@@ -145,7 +146,7 @@ export const ParameterField: React.FC<ParameterFieldProps> = ({
             value={inputValue || ''}
             placeholder=""
             onSelect={handleBoolSelect}
-            styles={boolSelectStyles}
+            styles={unitSelectStyles}
           />
         ) : (
           <Input
@@ -164,6 +165,7 @@ export const ParameterField: React.FC<ParameterFieldProps> = ({
             placeholder={unit}
             onSelect={(id) => handleUnitOverride(id ?? unit)}
             disabled={!inputValue || isBoolean}
+            styles={unitSelectStyles}
           />
         </li>
       )}
