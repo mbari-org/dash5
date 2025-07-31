@@ -13,6 +13,7 @@ import {
   getAdjustedUnixTime,
   makeOrdinal,
   sortByProperty,
+  getUnitFromAbbreviation,
 } from '@mbari/utils'
 import {
   MissionListItem,
@@ -441,15 +442,31 @@ const MissionModal: React.FC<MissionModalProps> = ({
               return norm(o.insert) === norm(p.insert)
             }
           )
-          if (ov && ov.value !== undefined) {
-            return { ...p, overrideValue: ov.value }
+          if (ov) {
+            const updated: ParameterProps = { ...p }
+            if (ov.value !== undefined) {
+              updated.overrideValue = ov.value
+            }
+            if (ov.unit) {
+              const fullUnitName = getUnitFromAbbreviation(ov.unit, unitsData)
+              if (fullUnitName && fullUnitName !== p.unit) {
+                updated.overrideUnit = fullUnitName
+              }
+            }
+            return updated
           }
           return p
         })
       }
     }
     return parameters
-  }, [selectedMissionCategory, selectedMission, recentRuns, parameters])
+  }, [
+    selectedMissionCategory,
+    selectedMission,
+    recentRuns,
+    parameters,
+    unitsData,
+  ])
 
   const commsParams = useMemo(
     () =>
@@ -488,15 +505,31 @@ const MissionModal: React.FC<MissionModalProps> = ({
               return norm(o.insert) === norm(p.insert)
             }
           )
-          if (ov && ov.value !== undefined) {
-            return { ...p, overrideValue: ov.value }
+          if (ov) {
+            const updated: ParameterProps = { ...p }
+            if (ov.value !== undefined) {
+              updated.overrideValue = ov.value
+            }
+            if (ov.unit) {
+              const fullUnitName = getUnitFromAbbreviation(ov.unit, unitsData)
+              if (fullUnitName && fullUnitName !== p.unit) {
+                updated.overrideUnit = fullUnitName
+              }
+            }
+            return updated
           }
           return p
         })
       }
     }
     return commsParams
-  }, [selectedMissionCategory, selectedMission, recentRuns, commsParams])
+  }, [
+    selectedMissionCategory,
+    selectedMission,
+    recentRuns,
+    commsParams,
+    unitsData,
+  ])
 
   // Apply parameter overrides to safety parameters
   const safetyParamsWithOverrides: ParameterProps[] = useMemo(() => {
@@ -519,15 +552,31 @@ const MissionModal: React.FC<MissionModalProps> = ({
               return norm(o.insert) === norm(p.insert)
             }
           )
-          if (ov && ov.value !== undefined) {
-            return { ...p, overrideValue: ov.value }
+          if (ov) {
+            const updated: ParameterProps = { ...p }
+            if (ov.value !== undefined) {
+              updated.overrideValue = ov.value
+            }
+            if (ov.unit) {
+              const fullUnitName = getUnitFromAbbreviation(ov.unit, unitsData)
+              if (fullUnitName && fullUnitName !== p.unit) {
+                updated.overrideUnit = fullUnitName
+              }
+            }
+            return updated
           }
           return p
         })
       }
     }
     return safetyParams
-  }, [selectedMissionCategory, selectedMission, recentRuns, safetyParams])
+  }, [
+    selectedMissionCategory,
+    selectedMission,
+    recentRuns,
+    safetyParams,
+    unitsData,
+  ])
 
   const [previewText, setPreviewText] = useState<string | undefined>()
 
