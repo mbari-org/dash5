@@ -11,26 +11,26 @@ sched asap "set sci2_noyo_optim:PowerOnly.SampleLoad1 1 bool;run" 33c01 4 4`
 
     // Check waypoint overrides (coordinates)
     expect(result.waypointOverrides).toEqual([
-      { name: 'Lat1', value: '36.79279', insert: undefined },
-      { name: 'Lon1', value: '-121.88919', insert: undefined },
-      { name: 'Lat2', value: '36.78427', insert: undefined },
-      { name: 'Lon2', value: 'NaN', insert: undefined },
+      { name: 'Lat1', value: '36.79279', insert: undefined, unit: 'degree' },
+      { name: 'Lon1', value: '-121.88919', insert: undefined, unit: 'degree' },
+      { name: 'Lat2', value: '36.78427', insert: undefined, unit: 'degree' },
+      { name: 'Lon2', value: 'NaN', insert: undefined, unit: 'degree' },
     ])
 
     // Check parameter overrides (depths, timeouts, and other parameters)
     expect(result.parameterOverrides).toEqual([
-      { name: 'MissionTimeout', value: '13', insert: undefined },
-      { name: 'NeedCommsTime', value: '90', insert: undefined },
-      { name: 'Depth1', value: '250', insert: undefined },
-      { name: 'Depth2', value: '250', insert: undefined },
-      { name: 'Depth3', value: 'NaN', insert: undefined },
-      { name: 'Repeat', value: '12', insert: undefined },
-      { name: 'ApproachDepth', value: '10', insert: undefined },
-      { name: 'ApproachSpeed', value: '1.0', insert: undefined },
-      { name: 'SlowSpeed', value: '0.4', insert: undefined },
-      { name: 'MinAltitude', value: '10', insert: undefined },
-      { name: 'MaxDepth', value: '270', insert: undefined },
-      { name: 'SampleLoad1', value: '1', insert: 'PowerOnly' },
+      { name: 'MissionTimeout', value: '13', insert: undefined, unit: 'h' },
+      { name: 'NeedCommsTime', value: '90', insert: undefined, unit: 'min' },
+      { name: 'Depth1', value: '250', insert: undefined, unit: 'm' },
+      { name: 'Depth2', value: '250', insert: undefined, unit: 'm' },
+      { name: 'Depth3', value: 'NaN', insert: undefined, unit: 'm' },
+      { name: 'Repeat', value: '12', insert: undefined, unit: 'count' },
+      { name: 'ApproachDepth', value: '10', insert: undefined, unit: 'm' },
+      { name: 'ApproachSpeed', value: '1.0', insert: undefined, unit: 'm/s' },
+      { name: 'SlowSpeed', value: '0.4', insert: undefined, unit: 'm/s' },
+      { name: 'MinAltitude', value: '10', insert: undefined, unit: 'm' },
+      { name: 'MaxDepth', value: '270', insert: undefined, unit: 'm' },
+      { name: 'SampleLoad1', value: '1', insert: 'PowerOnly', unit: 'bool' },
     ])
   })
 
@@ -56,16 +56,22 @@ sched asap "set sci2_noyo_optim:PowerOnly.SampleLoad1 1 bool;run" 33c01 4 4`
     expect(result.parameterOverrides.length).toBeGreaterThan(0)
 
     // Check that new overrides are added
-    expect(result.waypointOverrides).not.toContainEqual({
-      name: 'Lat3',
-      value: '36.79279 degree',
-      insert: undefined,
-    })
+    expect(result.waypointOverrides).not.toContainEqual(
+      expect.objectContaining({ name: 'Lat3' })
+    )
 
     expect(result.parameterOverrides).toEqual(
       expect.arrayContaining([
-        { name: 'Lat3', value: '36.79279' },
-        { name: 'Param1', value: 'value1' },
+        expect.objectContaining({
+          name: 'Lat3',
+          value: '36.79279',
+          unit: 'degree',
+        }),
+        expect.objectContaining({
+          name: 'Param1',
+          value: 'value1',
+          unit: undefined,
+        }),
       ])
     )
   })
@@ -82,10 +88,12 @@ sched asap "set sci2_noyo_optim:PowerOnly.SampleLoad1 1 bool;run" 33c01 4 4`
     expect(result.parameterOverrides).toContainEqual({
       name: 'Depth1',
       value: 'm',
+      unit: undefined,
     })
     expect(result.parameterOverrides).toContainEqual({
       name: 'Depth2',
       value: '50',
+      unit: 'm',
     })
   })
 
@@ -104,15 +112,16 @@ sched asap "set sci2_noyo_optim:PowerOnly.SampleLoad1 1 bool;run" 33c01 4 4`
     expect(result.waypointOverrides).toContainEqual({
       name: 'TransitLatitude',
       value: '36.9',
+      unit: 'degree',
     })
     expect(result.waypointOverrides).toContainEqual({
       name: 'TransitLongitude',
       value: '-122.1',
+      unit: 'degree',
     })
-    expect(result.parameterOverrides).not.toContainEqual({
-      name: 'TransitLatitude',
-      value: '36.9',
-    })
+    expect(result.parameterOverrides).not.toContainEqual(
+      expect.objectContaining({ name: 'TransitLatitude' })
+    )
   })
 
   it('should capture insert for prefixed parameter names', async () => {
@@ -123,6 +132,7 @@ sched asap "set sci2_noyo_optim:PowerOnly.SampleLoad1 1 bool;run" 33c01 4 4`
       name: 'SampleLoad1',
       value: '1',
       insert: 'PowerOnly',
+      unit: 'bool',
     })
   })
 })

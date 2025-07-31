@@ -15,14 +15,15 @@
  * @example
  * const data = "set PAM.Lat1 -121.847 degree; PAM:BackseatDriver.EnableBackseat 1 bool"
  * const { waypointOverrides, parameterOverrides } = extractOverrides(data)
- * // waypointOverrides: [{ name: "Lat1", value: "-121.847 degree" }]
- * // parameterOverrides: [{ name: "BackseatDriver.EnableBackseat", value: "1 bool" }]
+ * // waypointOverrides: [{ name: "Lat1", value: "-121.847", unit: "degree" }]
+ * // parameterOverrides: [{ name: "EnableBackseat", value: "1", unit: "bool" insert: "BackseatDriver" }]
  */
 
 export type Override = {
   name: string
   value: string
   insert?: string
+  unit?: string
 }
 
 export type Overrides = {
@@ -80,7 +81,10 @@ export const extractOverrides = (
   const commands: Override[] = []
 
   for (const [, , name, value] of missionData.matchAll(regex)) {
-    const cleaned = value.trim().split(/\s+/)[0] // keep value, drop units
+    const tokens = value.trim().split(/\s+/)
+    const cleaned = tokens[0]
+    const unit = tokens[1] ?? undefined
+
     // name may include an insert prefix separated by ':' or '.' — e.g. `sci2_flat_and_level:StandardEnvelope.MaxDepth`
     // We want to retain the insert so overrides can be mapped correctly
     let paramName = name
@@ -90,7 +94,7 @@ export const extractOverrides = (
       insert = name.slice(0, sepIndex)
       paramName = name.slice(sepIndex + 1)
     }
-    commands.push({ name: paramName, insert, value: cleaned })
+    commands.push({ name: paramName, insert, value: cleaned, unit })
   }
 
   return classifyOverrides(commands, latLonNamePairs)
