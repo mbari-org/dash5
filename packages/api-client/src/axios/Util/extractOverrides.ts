@@ -22,6 +22,7 @@
 export type Override = {
   name: string
   value: string
+  insert?: string
 }
 
 export type Overrides = {
@@ -75,14 +76,21 @@ export const extractOverrides = (
   missionData: string,
   latLonNamePairs?: { latName: string; lonName: string }[]
 ): Overrides => {
-  const regex = /(?:set\s+)?([\w]+)[.:]([\w.]+)\s+([^;"]+)/g
+  const regex = /(?:set\s+)?([\w]+)[.:]([\w.]+)\s+([^;"']+)/g
   const commands: Override[] = []
 
   for (const [, , name, value] of missionData.matchAll(regex)) {
     const cleaned = value.trim().split(/\s+/)[0] // keep value, drop units
-    // Strip any prefix so that it is just the command name without an insert prefix(ie `BackseatDriver.EnableBackseat` -> `EnableBackseat`)
-    const shortName = name.includes('.') ? name.split('.').pop()! : name
-    commands.push({ name: shortName, value: cleaned })
+    // name may include an insert prefix separated by ':' or '.' — e.g. `sci2_flat_and_level:StandardEnvelope.MaxDepth`
+    // We want to retain the insert so overrides can be mapped correctly
+    let paramName = name
+    let insert: string | undefined
+    const sepIndex = Math.max(name.lastIndexOf('.'), name.lastIndexOf(':'))
+    if (sepIndex !== -1) {
+      insert = name.slice(0, sepIndex)
+      paramName = name.slice(sepIndex + 1)
+    }
+    commands.push({ name: paramName, insert, value: cleaned })
   }
 
   return classifyOverrides(commands, latLonNamePairs)

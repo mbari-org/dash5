@@ -40,6 +40,10 @@ export const ParameterTable: React.FC<ParameterTableProps> = ({
   onParamUpdate,
   unitOptions,
 }) => {
+  // Use a param key to differentiate between parameters with the same name, but different or no inserts (ie StandardEnvelopes:MinAltitude and MinAltitude can coexist in the same mission)
+  const getParamKey = (name: string, insert?: string) =>
+    insert ? `${insert}:${name}` : name
+
   const ParameterRows = useMemo(
     () =>
       parameters
@@ -53,13 +57,17 @@ export const ParameterTable: React.FC<ParameterTableProps> = ({
             overrideValue,
             overrideUnit,
             dvlOff,
+            insert,
           }) => {
+            const uniqueKey = getParamKey(name, insert)
             const handleOverride = (newValue: string, newUnit?: string) => {
-              onParamUpdate(name, newValue, newUnit)
+              onParamUpdate(uniqueKey, newValue, newUnit)
             }
 
+            const paramName = insert ? `${insert}:${name}` : name
+
             return {
-              id: name,
+              id: uniqueKey,
               cells: [
                 {
                   label: (
@@ -71,7 +79,7 @@ export const ParameterTable: React.FC<ParameterTableProps> = ({
                         !overrideValue && !dvlOff && 'opacity-60'
                       )}
                     >
-                      {name}
+                      {paramName}
                     </span>
                   ),
                   secondary: (

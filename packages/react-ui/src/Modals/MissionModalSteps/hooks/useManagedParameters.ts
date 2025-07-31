@@ -7,9 +7,10 @@ import {
 // Lookup map for initial overrides (these are the overrides applied by whoever previously ran this mission if this is a recent run)
 const buildOverrideMap = (list?: ParameterProps[]) => {
   const map: Record<string, { value: string; unit?: string }> = {}
-  list?.forEach(({ name, overrideValue, overrideUnit }) => {
+  list?.forEach(({ name, overrideValue, overrideUnit, insert }) => {
     if (overrideValue !== undefined && overrideValue !== null) {
-      map[name] = {
+      const key = insert ? `${insert}:${name}` : name
+      map[key] = {
         value: overrideValue,
         unit: overrideUnit,
       }
@@ -23,7 +24,8 @@ const applyOverrides = (
   overrides: Record<string, { value: string; unit?: string }>
 ) =>
   params.map((p) => {
-    const ov = overrides[p.name]
+    const key = p.insert ? `${p.insert}:${p.name}` : p.name
+    const ov = overrides[key]
     return ov?.value
       ? { ...p, overrideValue: ov.value, overrideUnit: ov?.unit ?? undefined }
       : p
@@ -61,34 +63,34 @@ const useManagedParameters = ({
 
   // Unified handler for all param categories
   const updateOverride = (
-    name: string,
+    key: string,
     overrideValue: string,
     overrideUnit?: string
   ) =>
     setOverrideMap((m) => ({
       ...m,
-      [name]: { value: overrideValue, unit: overrideUnit },
+      [key]: { value: overrideValue, unit: overrideUnit },
     }))
 
   const handleParamUpdate: ParameterTableProps['onParamUpdate'] = (
-    name,
+    key,
     value,
     unit
   ) => {
-    updateOverride(name, value, unit)
+    updateOverride(key, value, unit)
   }
 
   const handleSafetyUpdate: ParameterTableProps['onParamUpdate'] = (
-    name,
+    key,
     value,
     unit
-  ) => updateOverride(name, value, unit)
+  ) => updateOverride(key, value, unit)
 
   const handleCommsUpdate: ParameterTableProps['onParamUpdate'] = (
-    name,
+    key,
     value,
     unit
-  ) => updateOverride(name, value, unit)
+  ) => updateOverride(key, value, unit)
 
   const safetyCommsParams = [...updatedSafetyParams, ...updatedCommsParams]
   const overriddenMissionParams = updatedParameters.filter(

@@ -40,9 +40,7 @@ const insertForParameter = (
   argument: ScriptArgument,
   inserts: ScriptInsert[]
 ) => {
-  const insert = inserts.find((i) =>
-    i.scriptArgs.find((a) => a.name === argument.name)
-  )
+  const insert = inserts.find((i) => i.scriptArgs.includes(argument))
   if (insert) {
     return insert.id
   }
@@ -346,23 +344,26 @@ const MissionModal: React.FC<MissionModalProps> = ({
       lon: `${geojson.geometry.coordinates[1]}`,
     })) ?? []
 
-  const reservedParams: string[] = useMemo(
+  const { reservedInserts, normalInserts } = useMemo(() => {
+    const all = selectedMissionData?.inserts ?? []
+    return {
+      reservedInserts: all.filter(({ id }) => /(comms|envelope)/i.test(id)),
+      normalInserts: all.filter(({ id }) => !/(comms|envelope)/i.test(id)),
+    }
+  }, [selectedMissionData])
+
+  const reservedInsertIdsLower = useMemo(
+    () => reservedInserts.map(({ id }) => id.toLowerCase()),
+    [reservedInserts]
+  )
+
+  // Waypoint parameter names (lat/lon pairs)
+  const waypointParamNames: string[] = useMemo(
     () =>
-      [
-        selectedMissionData?.inserts
-          ?.filter(({ id }) =>
-            [/comms/i, /standard envelope/i, /standardenvelope/i].some((r) =>
-              r.test(id)
-            )
-          )
-          .map(({ scriptArgs }) => scriptArgs.map((arg) => arg.name)) ?? [],
-        selectedMissionData?.latLonNamePairs?.map(({ latName, lonName }) => [
-          latName,
-          lonName,
-        ]) ?? [],
-      ]
-        .flat(2)
-        .filter((i) => i),
+      selectedMissionData?.latLonNamePairs?.flatMap(({ latName, lonName }) => [
+        latName,
+        lonName,
+      ]) ?? [],
     [selectedMissionData]
   )
 
@@ -374,28 +375,51 @@ const MissionModal: React.FC<MissionModalProps> = ({
   )
 
   const parameters: ParameterProps[] = useMemo(() => {
-    return (
-      [
-        selectedMissionData?.inserts?.map((i) => i.scriptArgs).flat(),
-        selectedMissionData?.scriptArgs?.filter(
-          ({ name }) => !reservedParams.includes(name)
-        ),
-      ]
-        .flat()
-        .map(
-          (arg) =>
-            ({
-              description: arg?.description ?? '',
-              name: arg?.name,
-              unit: arg?.unit,
-              value: arg?.value,
-              insert:
-                arg &&
-                insertForParameter(arg, selectedMissionData?.inserts ?? []),
-            } as ParameterProps)
-        ) ?? []
-    )
-  }, [selectedMissionData, reservedParams])
+    if (!selectedMissionData) return []
+
+    const sourceArgs = [
+      selectedMissionData.scriptArgs ?? [],
+      ...normalInserts.flatMap((ins) => ins.scriptArgs ?? []),
+    ].flat()
+
+    // Deduplicate by insertId and name to avoid duplicates between root and insert lists
+    const uniqMap = new Map<
+      string,
+      ScriptArgument & { insert?: string | null }
+    >()
+    sourceArgs.forEach((arg) => {
+      const insertId = insertForParameter(
+        arg,
+        selectedMissionData.inserts ?? []
+      )
+      const key = `${insertId ?? ''}:${arg.name}`
+      if (!uniqMap.has(key)) {
+        uniqMap.set(key, { ...arg, insert: insertId })
+      }
+    })
+
+    return Array.from(uniqMap.values())
+      .filter(
+        (a) =>
+          !waypointParamNames.includes(a.name) &&
+          !reservedInsertIdsLower.includes((a.insert ?? '').toLowerCase())
+      )
+      .map(
+        (a) =>
+          ({
+            description: a.description ?? '',
+            name: a.name,
+            unit: a.unit,
+            value: a.value,
+            insert: a.insert,
+          } as ParameterProps)
+      )
+  }, [
+    selectedMissionData,
+    normalInserts,
+    waypointParamNames,
+    reservedInsertIdsLower,
+  ])
 
   const parametersWithOverrides: ParameterProps[] = useMemo(() => {
     if (
@@ -410,7 +434,12 @@ const MissionModal: React.FC<MissionModalProps> = ({
       if (selectedRun?.parameterOverrides?.length) {
         return parameters.map((p) => {
           const ov = selectedRun.parameterOverrides.find(
-            (o: { name: string }) => o.name === p.name
+            (o: { name: string; insert?: string }) => {
+              if (o.name !== p.name) return false
+              const norm = (v?: string) =>
+                (v ?? '').replace(/\s+/g, '').toLowerCase()
+              return norm(o.insert) === norm(p.insert)
+            }
           )
           if (ov && ov.value !== undefined) {
             return { ...p, overrideValue: ov.value }
@@ -422,12 +451,83 @@ const MissionModal: React.FC<MissionModalProps> = ({
     return parameters
   }, [selectedMissionCategory, selectedMission, recentRuns, parameters])
 
-  const commsParams =
-    commsInsert?.scriptArgs.map((i) => ({ ...i, insert: commsInsert.id })) ?? []
+  const commsParams = useMemo(
+    () =>
+      commsInsert?.scriptArgs.map((i) => ({ ...i, insert: commsInsert.id })) ??
+      [],
+    [commsInsert]
+  )
 
-  const safetyParams =
-    safetyInsert?.scriptArgs.map((i) => ({ ...i, insert: safetyInsert.id })) ??
-    []
+  const safetyParams = useMemo(
+    () =>
+      safetyInsert?.scriptArgs.map((i) => ({
+        ...i,
+        insert: safetyInsert.id,
+      })) ?? [],
+    [safetyInsert]
+  )
+
+  // Apply parameter overrides to communications parameters
+  const commsParamsWithOverrides: ParameterProps[] = useMemo(() => {
+    if (
+      selectedMissionCategory === 'Recent Runs' &&
+      selectedMission &&
+      commsParams.length
+    ) {
+      const selectedRun = recentRuns.find(
+        (r) => r.id === selectedMission
+      ) as any
+
+      if (selectedRun?.parameterOverrides?.length) {
+        return commsParams.map((p) => {
+          const ov = selectedRun.parameterOverrides.find(
+            (o: { name: string; insert?: string }) => {
+              if (o.name !== p.name) return false
+              const norm = (v?: string) =>
+                (v ?? '').replace(/\s+/g, '').toLowerCase()
+              return norm(o.insert) === norm(p.insert)
+            }
+          )
+          if (ov && ov.value !== undefined) {
+            return { ...p, overrideValue: ov.value }
+          }
+          return p
+        })
+      }
+    }
+    return commsParams
+  }, [selectedMissionCategory, selectedMission, recentRuns, commsParams])
+
+  // Apply parameter overrides to safety parameters
+  const safetyParamsWithOverrides: ParameterProps[] = useMemo(() => {
+    if (
+      selectedMissionCategory === 'Recent Runs' &&
+      selectedMission &&
+      safetyParams.length
+    ) {
+      const selectedRun = recentRuns.find(
+        (r) => r.id === selectedMission
+      ) as any
+
+      if (selectedRun?.parameterOverrides?.length) {
+        return safetyParams.map((p) => {
+          const ov = selectedRun.parameterOverrides.find(
+            (o: { name: string; insert?: string }) => {
+              if (o.name !== p.name) return false
+              const norm = (v?: string) =>
+                (v ?? '').replace(/\s+/g, '').toLowerCase()
+              return norm(o.insert) === norm(p.insert)
+            }
+          )
+          if (ov && ov.value !== undefined) {
+            return { ...p, overrideValue: ov.value }
+          }
+          return p
+        })
+      }
+    }
+    return safetyParams
+  }, [selectedMissionCategory, selectedMission, recentRuns, safetyParams])
 
   const [previewText, setPreviewText] = useState<string | undefined>()
 
@@ -509,7 +609,11 @@ const MissionModal: React.FC<MissionModalProps> = ({
       onSelectMissionCategory={handleSelectMissionCategory}
       selectedMissionCategory={selectedMissionCategory}
       defaultSearchText={globalModalId?.meta?.mission ?? ''}
-      defaultOverrides={parametersWithOverrides}
+      defaultOverrides={[
+        ...parametersWithOverrides,
+        ...commsParamsWithOverrides,
+        ...safetyParamsWithOverrides,
+      ]}
     />
   )
 }
