@@ -57,7 +57,7 @@ export function useElevator() {
           )
 
           // Process result
-          const elevation = result?.results?.[0]?.elevation ?? null
+          const elevation = Math.abs(result?.results?.[0]?.elevation) ?? null
           lastKnownDepth.current = elevation
 
           return {
