@@ -70,8 +70,10 @@ const VehicleAccordion: React.FC<VehicleAccordionProps> = ({
   }
 
   const handoffLabel =
-    picLabel || onCallLabel
-      ? `${picLabel ?? 'Unassigned'} / ${onCallLabel ?? 'Unassigned'}`
+    (picLabel || onCallLabel) && authenticated
+      ? `${!!picLabel ? picLabel : 'Unassigned'} / ${
+          !!onCallLabel ? onCallLabel : 'Unassigned'
+        }`
       : undefined
 
   const { setGlobalModalId } = useGlobalModalId()

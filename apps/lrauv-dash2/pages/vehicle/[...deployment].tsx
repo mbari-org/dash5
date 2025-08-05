@@ -107,9 +107,14 @@ const Vehicle: NextPage = () => {
     }
   )
 
-  const { data, isLoading: loadingPicAndOnCall } = useVehiclePicAndOnCall({
-    vehicleName,
-  })
+  const { data, isLoading: loadingPicAndOnCall } = useVehiclePicAndOnCall(
+    {
+      vehicleName,
+    },
+    {
+      enabled: !!vehicleName && authenticated,
+    }
+  )
 
   const { profile } = useTethysApiContext()
   const currentUserName = profile
@@ -120,10 +125,22 @@ const Vehicle: NextPage = () => {
   const onCalls = data?.[0]?.onCalls.map((o) => o.user)
 
   const picLabel = pics?.length
-    ? createRoleLabel(pics, 'PIC', currentUserName)
+    ? createRoleLabel({
+        operators: pics,
+        role: 'PIC',
+        currentUser: currentUserName,
+        authenticated,
+        loading: loadingPicAndOnCall,
+      })
     : ''
   const onCallLabel = onCalls?.length
-    ? createRoleLabel(onCalls, 'On-Call', currentUserName)
+    ? createRoleLabel({
+        operators: onCalls,
+        role: 'On-Call',
+        currentUser: currentUserName,
+        authenticated,
+        loading: loadingPicAndOnCall,
+      })
     : ''
 
   useEffect(() => {
@@ -240,9 +257,8 @@ const Vehicle: NextPage = () => {
                       unixTime: deployment?.startEvent?.unixTime,
                     }
               }
-              onRoleReassign={
-                loadingPicAndOnCall ? undefined : handleRoleReassign
-              }
+              onRoleReassign={handleRoleReassign}
+              loadingPicAndOnCall={loadingPicAndOnCall}
               supportIcon1={
                 pingEvent?.reachable ? <ConnectedIcon /> : <NotConnectedIcon />
               }
@@ -296,6 +312,7 @@ const Vehicle: NextPage = () => {
                   )}`}
                 />
               )}
+              authenticated={authenticated}
             />
             <div className={styles.content}>
               <Allotment separator defaultSizes={[75, 25]}>
@@ -383,8 +400,8 @@ const Vehicle: NextPage = () => {
                       vehicleName={vehicleName}
                       from={adjustedDeploymentStartTime}
                       to={endTime}
-                      picLabel={loadingPicAndOnCall ? '...' : picLabel}
-                      onCallLabel={loadingPicAndOnCall ? '...' : onCallLabel}
+                      picLabel={picLabel}
+                      onCallLabel={onCallLabel}
                       activeDeployment={deployment.active}
                       currentDeploymentId={deployment.deploymentId as number}
                     />
