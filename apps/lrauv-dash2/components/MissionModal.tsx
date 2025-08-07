@@ -2,26 +2,13 @@ import { useCallback, useEffect, useMemo, useState } from 'react'
 import {
   MissionModalView,
   MissionModalViewProps,
-  MissionTableProps,
   ParameterProps,
   useManagedWaypoints,
   WaypointTableProps,
 } from '@mbari/react-ui'
+import { capitalize, makeOrdinal, getUnitFromAbbreviation } from '@mbari/utils'
 import {
-  capitalize,
-  capitalizeEach,
-  getAdjustedUnixTime,
-  makeOrdinal,
-  sortByProperty,
-  getUnitFromAbbreviation,
-} from '@mbari/utils'
-import {
-  MissionListItem,
-  useFrequentRuns,
-  useMissionList,
-  useRecentRuns,
   useUnits,
-  useScript,
   useStations,
   useSbdOutgoingAlternativeAddresses,
   useVehicleNames,
@@ -29,8 +16,8 @@ import {
   ScriptArgument,
   ScriptInsert,
 } from '@mbari/api-client'
+import { useMissionData } from '../lib/useMissionData'
 import { useRouter } from 'next/router'
-import { DateTime } from 'luxon'
 import { makeMissionCommand } from '../lib/makeCommand'
 import toast from 'react-hot-toast'
 import useGlobalDrawerState from '../lib/useGlobalDrawerState'
@@ -48,11 +35,6 @@ const insertForParameter = (
   return null
 }
 
-const LAST_60_DAYS = getAdjustedUnixTime({
-  unixTime: DateTime.now().toMillis(),
-  offsetDays: -60,
-})
-
 export interface MissionModalProps {
   onClose: () => void
   className?: string
@@ -62,26 +44,6 @@ export interface MissionModalProps {
 const onFocusWaypoint: WaypointTableProps['onFocusWaypoint'] = (index) => {
   console.log(index)
 }
-
-const parseMissionPath = (mission?: string) => {
-  const path = mission?.split('/') ?? ''
-  const category = path?.length > 1 ? path[0] : ''
-  const name = (path?.length === 1 ? path[0] : path[1]).split('.')[0]
-  return { category, name }
-}
-
-const convertMissionDataToListItem =
-  (vehicleName: string) => (mission: MissionListItem) => {
-    const { category, name } = parseMissionPath(mission.path)
-    return {
-      id: mission.path,
-      category,
-      name,
-      task: '',
-      description: mission.description,
-      vehicle: vehicleName,
-    }
-  }
 
 const extractNum = (v: string | undefined) => v?.match(/-?\d+(?:\.\d+)?/)?.[0]
 
@@ -138,19 +100,8 @@ const MissionModal: React.FC<MissionModalProps> = ({
   // Network supplied data
   const { data: vehicles } = useVehicleNames({ refresh: 'n' })
   const { data: alternativeAddresses } = useSbdOutgoingAlternativeAddresses({})
-  const { data: missionData } = useMissionList()
   const { data: unitsData } = useUnits()
-  const { data: frequentRunsData } = useFrequentRuns(
-    {
-      vehicle: vehicleName,
-    },
-    { enabled: !!vehicleName }
-  )
 
-  const { data: recentRunsData, isLoading: recentRunsLoading } = useRecentRuns({
-    vehicles: [], // All vehicles by default
-    from: LAST_60_DAYS,
-  })
   const {
     mutate: createCommand,
     isLoading: sendingCommand,
@@ -172,100 +123,17 @@ const MissionModal: React.FC<MissionModalProps> = ({
       setDrawerOpen(false)
     }
   })
-
-  const missionCategories = [
-    {
-      id: 'Recent Runs',
-      name: 'Recent Runs',
-    },
-    {
-      id: 'Frequent Runs',
-      name: 'Frequent Runs',
-    },
-    ...sortByProperty({
-      sortProperty: 'name',
-      arrOfObj:
-        missionData?.list
-          ?.map((mission) => {
-            const { category } = parseMissionPath(mission.path)
-            return {
-              id: category,
-              name: category === '' ? 'Default' : category,
-            }
-          })
-          .filter(
-            (mission, index, self) =>
-              self.findIndex((m) => m.id === mission.id) === index
-          ) ?? [],
-    }),
-  ]
-
-  const recentRuns: MissionTableProps['missions'] = useMemo(() => {
-    return (
-      recentRunsData
-        ?.map(
-          ({
-            data,
-            mission,
-            vehicleName: vehicle,
-            isoTime,
-            user,
-            note,
-            parameterOverrides,
-            waypointOverrides,
-          }) => {
-            const { category, name } = parseMissionPath(mission)
-            return {
-              id: mission,
-              category,
-              name,
-              description: data,
-              vehicle,
-              ranOn: capitalize(
-                DateTime.fromISO(isoTime).toFormat('MMM. d yyyy')
-              ),
-              ranBy: capitalizeEach(user ?? ''),
-              recentRun: true,
-              note,
-              waypointOverrides,
-              parameterOverrides,
-              parameterCount: parameterOverrides.length,
-              waypointCount: waypointOverrides.length,
-            }
-          }
-        )
-        .filter(
-          (mission, index, s) =>
-            s.findIndex((m) => m.id === mission.id) === index
-        ) ?? []
-    )
-  }, [recentRunsData])
-
-  const frequentRuns: MissionTableProps['missions'] =
-    (frequentRunsData
-      ?.map((d) => {
-        const relatedMission = missionData?.list?.find(
-          ({ path }) => path === d?.mission
-        )
-        return (
-          relatedMission && {
-            ...convertMissionDataToListItem(vehicleName)(relatedMission),
-            frequentRun: true,
-          }
-        )
-      })
-      .filter((i) => i) as MissionTableProps['missions']) ?? []
-
-  const missions: MissionTableProps['missions'] = [
-    ...recentRuns,
-    ...frequentRuns,
-    ...(missionData?.list?.map(convertMissionDataToListItem(vehicleName)) ??
-      []),
-  ]
-
   const [selectedMission, setSelectedMission] = useState<string | undefined>(
     globalModalId?.meta?.mission ?? undefined
   )
+
+  const {
+    recentRuns,
+    allMissions: missions,
+    selectedMissionData,
+    isRecentRunsLoading: recentRunsLoading,
+    missionCategories,
+  } = useMissionData({ vehicleName, selectedMission })
 
   const [selectedMissionCategory, setSelectedMissionCategory] = useState<
     string | undefined
@@ -281,15 +149,6 @@ const MissionModal: React.FC<MissionModalProps> = ({
       setSelectedMissionCategory(category)
     }
   }
-
-  // this gets the original mission template data (ie it would be the original sci2_flat_and_level mission, not a recent run of sci2_flat_and_level where the pilot has applied overrides)
-  const { data: selectedMissionData } = useScript(
-    {
-      path: selectedMission as string,
-      gitRef: missionData?.gitRef ?? 'master',
-    },
-    { enabled: !!selectedMission }
-  )
 
   const waypoints: WaypointTableProps['waypoints'] =
     selectedMissionData?.latLonNamePairs?.map(({ latName, lonName }, index) => {
