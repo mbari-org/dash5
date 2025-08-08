@@ -19,9 +19,9 @@ import { useRouter } from 'next/router'
 import { makeMissionCommand } from '../lib/makeCommand'
 import toast from 'react-hot-toast'
 import useGlobalDrawerState from '../lib/useGlobalDrawerState'
-import { point, distance } from '@turf/turf'
 import useGlobalModalId from '../lib/useGlobalModalId'
 import { useParameterOverrides } from '../lib/useParameterOverrides'
+import { useWaypointCalculations } from '../lib/useWaypointCalculations'
 
 export interface MissionModalProps {
   onClose: () => void
@@ -45,39 +45,8 @@ const MissionModal: React.FC<MissionModalProps> = ({
     handleWaypointsUpdate([])
     handleClose?.()
   }, [handleClose, handleWaypointsUpdate])
-  const [estDistance, setEstDistance] = useState<number | null>(null)
 
-  useEffect(() => {
-    const applicableWaypoints = updatedWaypoints.filter(
-      (w) =>
-        ![
-          w.lat?.toLowerCase() ?? 'nan',
-          w.lon?.toLocaleLowerCase() ?? 'nan',
-        ].includes('nan')
-    )
-
-    if (applicableWaypoints.length > 0) {
-      const newDistance = applicableWaypoints.reduce((acc, curr, index) => {
-        if (index === 0) return acc
-
-        const prev = applicableWaypoints[index - 1]
-        return (
-          acc +
-          distance(
-            point([Number(curr.lat ?? 0), Number(curr.lon ?? 0)]),
-            point([Number(prev.lat ?? 0), Number(prev.lon ?? 0)]),
-            { units: 'kilometers' }
-          )
-        )
-      }, 0)
-
-      if (newDistance !== estDistance) {
-        setEstDistance(newDistance)
-      }
-    } else if (estDistance) {
-      setEstDistance(null)
-    }
-  }, [estDistance, updatedWaypoints])
+  const { estDistance } = useWaypointCalculations(updatedWaypoints)
 
   // Query param state
   const router = useRouter()
