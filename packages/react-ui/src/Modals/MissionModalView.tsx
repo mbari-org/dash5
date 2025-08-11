@@ -1,8 +1,4 @@
-/* MissionModalView.tsx
-   — Refactored to use the new stand‑alone <ScheduleProvider> and useScheduleContext()
-*/
-
-import React, { useEffect, useState } from 'react'
+import React, { useEffect } from 'react'
 import { Modal } from '../Modal/Modal'
 import { StepProgress, StepProgressProps } from '../Navigation/StepProgress'
 import { SelectOption } from '../Fields/Select'
@@ -73,12 +69,13 @@ export interface MissionModalViewProps
   onVerifyParameter?: (param: string) => string
   alternativeAddresses?: string[]
   vehicles?: string[]
-  commandText?: string
+  previewText?: string
   loading?: boolean
   onStepIndexChange?: (step: number) => void
   selectedMissionCategory?: string
   defaultSearchText?: string
   missionsLoading?: boolean
+  onSelectMissionCategory?: (category?: string) => void
 }
 
 export const MissionModalView: React.FC<MissionModalViewProps> = (props) => (
@@ -113,26 +110,19 @@ const MissionModalBody: React.FC<MissionModalViewProps> = ({
   onSchedule,
   onCancel,
   onVerifyParameter,
-  onSelectMission,
+  onSelectMission: handleSelectMission,
   alternativeAddresses,
   unfilteredMissionParameters,
   vehicles,
-  commandText,
+  previewText,
   loading,
   unitOptions,
-  selectedMissionCategory: defaultMissionCategory,
+  selectedMissionCategory,
   defaultOverrides,
   defaultSearchText,
   missionsLoading,
+  onSelectMissionCategory: handleSelectCategory,
 }) => {
-  const [selectedMissionCategory, setSelectedMissionCategory] = useState<
-    string | undefined
-  >(defaultMissionCategory ?? 'Recent Runs')
-
-  const [selectedMissionId, setSelectedMissionId] = useState<
-    string | null | undefined
-  >(selectedId)
-
   const {
     state: {
       alternateAddress,
@@ -162,6 +152,7 @@ const MissionModalBody: React.FC<MissionModalViewProps> = ({
     overriddenMissionParams,
     safetyCommsParams,
     overrideCount,
+    resetOverrides,
   } = useManagedParameters({
     parameters,
     safetyParams,
@@ -202,19 +193,22 @@ const MissionModalBody: React.FC<MissionModalViewProps> = ({
     </div>
   )
 
-  const handleSelect = (id?: string | null) => {
-    setSelectedMissionId(id)
-    id && onSelectMission?.(id)
-  }
-
-  const handleSelectCategory = (category?: string) => {
-    selectedMissionCategory !== category && setSelectedMissionCategory(category)
-  }
-
-  const missionName =
-    missions.find(({ id }) => id === selectedMissionId)?.name ?? ''
+  const missionName = missions.find(({ id }) => id === selectedId)?.name ?? ''
 
   const handleAlternateAddress = () => setShowAlternateAddress(true)
+
+  const handleBack = () => {
+    if (showAlternateAddress) {
+      setShowAlternateAddress(false)
+      setAlternateAddress(null)
+    }
+    // When returning to the select mission step, clear mission selection and overrides
+    if (currentStep === steps.indexOf('Mission') + 1) {
+      handleSelectMission(null)
+      resetOverrides()
+    }
+    handlePrevious()
+  }
 
   const extraButtons = (): ExtraButton[] => {
     if (currentStep === 0) return []
@@ -223,12 +217,7 @@ const MissionModalBody: React.FC<MissionModalViewProps> = ({
       {
         buttonText: 'Back',
         appearance: 'secondary',
-        onClick: showAlternateAddress
-          ? () => {
-              setShowAlternateAddress(false)
-              setAlternateAddress(null)
-            }
-          : handlePrevious,
+        onClick: handleBack,
       },
     ]
 
@@ -246,7 +235,7 @@ const MissionModalBody: React.FC<MissionModalViewProps> = ({
   const disableConfirm = () => {
     switch (currentStep) {
       case steps.indexOf('Mission'):
-        return !selectedMissionId
+        return !selectedId
       case steps.indexOf('Waypoints'):
         return (
           !updatedWaypoints.every(
@@ -277,9 +266,9 @@ const MissionModalBody: React.FC<MissionModalViewProps> = ({
           <MissionStep
             vehicleName={vehicleName}
             missions={missions}
-            selectedId={selectedMissionId}
+            selectedId={selectedId}
             missionCategories={missionCategories}
-            onSelect={handleSelect}
+            onSelect={handleSelectMission}
             onSelectCategory={handleSelectCategory}
             selectedCategory={selectedMissionCategory}
             defaultSearchText={defaultSearchText}
@@ -404,7 +393,7 @@ const MissionModalBody: React.FC<MissionModalViewProps> = ({
     )
 
     onSchedule?.({
-      selectedMissionId: selectedMissionId as string,
+      selectedMissionId: selectedId as string,
       parameterOverrides: [
         waypointOverrides,
         overriddenMissionParams,
@@ -445,7 +434,7 @@ const MissionModalBody: React.FC<MissionModalViewProps> = ({
         <ConfirmVehicleDialog
           vehicle={vehicleName}
           vehicleList={vehicles ?? []}
-          mission={selectedMissionId ?? ''}
+          mission={selectedId ?? ''}
           onChangeVehicle={setConfirmedVehicle}
           onCancel={handlePrevious}
           onConfirm={handleSchedule}
@@ -471,7 +460,7 @@ const MissionModalBody: React.FC<MissionModalViewProps> = ({
               :
             </p>
             <pre className="w-full rounded-lg bg-stone-100 p-4 font-mono">
-              {commandText?.split(';').join(';\n')}
+              {previewText?.split(';').join(';\n')}
             </pre>
 
             {notes && (

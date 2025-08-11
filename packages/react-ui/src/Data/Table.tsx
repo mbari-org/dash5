@@ -95,7 +95,7 @@ export const Table: React.FC<TableProps> = ({
           ) : (
             rows.map((row, index) => (
               <TableRow
-                key={`${row?.cells[0]}${index}`}
+                key={row.id ?? index}
                 className={clsx(
                   'grid',
                   gridClassNames[colsInRow],

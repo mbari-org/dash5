@@ -82,6 +82,7 @@ const props: MissionModalViewProps = {
 
   onCancel: () => console.log('cancel'),
   onSchedule: () => console.log('scheduled'),
+  onSelectMission: () => console.log('selected'),
   waypoints: [
     {
       latName: 'Lat1',
