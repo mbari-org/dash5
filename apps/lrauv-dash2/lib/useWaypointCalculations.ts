@@ -1,46 +1,47 @@
-import { useState, useEffect } from 'react'
+import { useMemo } from 'react'
+import { toast } from 'react-hot-toast'
 import { point, distance } from '@turf/turf'
 import { WaypointProps } from '@mbari/react-ui'
 
-export const useWaypointCalculations = (updatedWaypoints: WaypointProps[]) => {
-  const [estDistance, setEstDistance] = useState<number | null>(null)
+const parseCoord = (v?: string): number | null => {
+  if (v == null) return null
+  const s = v.trim().toLowerCase()
+  if (!s || s === 'nan') return null
+  const n = Number(s)
+  return Number.isFinite(n) ? n : null
+}
 
-  useEffect(() => {
-    const calculateDistance = () => {
-      try {
-        const applicableWaypoints = updatedWaypoints.filter(
-          (w) => ![w.lat?.toLowerCase(), w.lon?.toLowerCase()].includes('nan')
-        )
+const inRange = (lat: number, lon: number) =>
+  lat >= -90 && lat <= 90 && lon >= -180 && lon <= 180
 
-        if (applicableWaypoints.length > 0) {
-          const newDistance = applicableWaypoints.reduce((acc, curr, index) => {
-            if (index === 0) return acc
+export const useWaypointCalculations = (updatedWaypoints: WaypointProps[]) =>
+  useMemo<{ estDistance: number | null }>(() => {
+    const pts: [number, number][] = []
 
-            const prev = applicableWaypoints[index - 1]
-            return (
-              acc +
-              distance(
-                point([Number(curr.lat ?? 0), Number(curr.lon ?? 0)]),
-                point([Number(prev.lat ?? 0), Number(prev.lon ?? 0)]),
-                { units: 'kilometers' }
-              )
-            )
-          }, 0)
+    updatedWaypoints.forEach((w) => {
+      const lat = parseCoord(w.lat)
+      const lon = parseCoord(w.lon)
+      if (lat === null || lon === null || !inRange(lat, lon)) return
+      // Turf expects [lon, lat]
+      pts.push([lon, lat])
+    })
 
-          setEstDistance(newDistance)
-        } else {
-          setEstDistance(null)
-        }
-      } catch (error) {
-        console.error('Error calculating waypoint distance:', error)
-        setEstDistance(null)
-      }
+    if (pts.length < 2) {
+      return { estDistance: null }
     }
 
-    // Debounce the calculation
-    const timeoutId = setTimeout(calculateDistance, 300)
-    return () => clearTimeout(timeoutId)
+    try {
+      let km = 0
+      for (let i = 1; i < pts.length; i++) {
+        km += distance(point(pts[i - 1]), point(pts[i]), {
+          units: 'kilometers',
+        })
+      }
+      return { estDistance: km }
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : 'Unknown error'
+      toast.error(`Distance calculation failed: ${msg}`)
+      console.error('Error calculating waypoint distance:', e)
+      return { estDistance: null }
+    }
   }, [updatedWaypoints])
-
-  return { estDistance }
-}
