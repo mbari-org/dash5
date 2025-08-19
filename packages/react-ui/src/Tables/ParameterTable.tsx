@@ -64,8 +64,6 @@ export const ParameterTable: React.FC<ParameterTableProps> = ({
               onParamUpdate(uniqueKey, newValue, newUnit)
             }
 
-            const paramName = insert ? `${insert}:${name}` : name
-
             return {
               id: uniqueKey,
               cells: [
@@ -79,7 +77,7 @@ export const ParameterTable: React.FC<ParameterTableProps> = ({
                         !overrideValue && !dvlOff && 'opacity-60'
                       )}
                     >
-                      {paramName}
+                      {name}
                     </span>
                   ),
                   secondary: (

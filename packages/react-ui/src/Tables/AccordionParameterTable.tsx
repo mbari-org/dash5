@@ -66,8 +66,6 @@ export const AccordionParameterTable: React.FC<
               onParamUpdate(uniqueKey, newValue, newUnit)
             }
 
-            const paramName = insert ? `${insert}:${name}` : name
-
             return {
               id: uniqueKey,
               render: (_index: number, _virtualizer: Virtualizer) => (
@@ -81,10 +79,12 @@ export const AccordionParameterTable: React.FC<
                         !overrideValue && !dvlOff && 'opacity-60'
                       )}
                     >
-                      {paramName}
+                      {name}
                     </span>
                     {description && (
-                      <div className="text-stone-600/60">{description}</div>
+                      <div className="break-words text-stone-600/60">
+                        {description}
+                      </div>
                     )}
                   </div>
                   <div className="col-span-2">
