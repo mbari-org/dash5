@@ -7,6 +7,7 @@ import {
 } from '../../Tables/ParameterTable'
 import { AccordionParameterTable } from '../../Tables/AccordionParameterTable'
 import { StatDisplay, StatProps } from './StatDisplay'
+import { humanize } from '@mbari/utils'
 
 export interface ParameterStepProps extends StatProps {
   vehicleName: string
@@ -160,7 +161,7 @@ export const ParameterStep: React.FC<ParameterStepProps> = ({
         {groups.map((group) => (
           <AccordionParameterTable
             key={group.key}
-            label={group.label}
+            label={humanize(group.label, true)}
             parameters={group.parameters}
             onParamUpdate={onParamUpdate}
             unitOptions={unitOptions}
