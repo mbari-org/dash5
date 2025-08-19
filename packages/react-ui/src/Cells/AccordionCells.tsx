@@ -9,6 +9,8 @@ export interface AccordionCellsProps {
   cellAtIndex: CellVirtualizerProps['cellAtIndex']
   count?: number
   loading?: boolean
+  header?: React.ReactNode
+  maxHeight?: string
 }
 
 export const AccordionCells: React.FC<AccordionCellsProps> = ({
@@ -17,16 +19,26 @@ export const AccordionCells: React.FC<AccordionCellsProps> = ({
   cellAtIndex,
   count = 0,
   loading,
+  header,
+  maxHeight,
 }) => {
   return (
     <div
-      className={clsx('relative flex h-full flex-shrink flex-grow', className)}
+      className={clsx(
+        'relative flex',
+        !maxHeight && 'h-full flex-shrink flex-grow',
+        className
+      )}
       style={style}
     >
       <CellVirtualizer
         cellAtIndex={cellAtIndex}
         count={count}
-        className="absolute inset-0 w-full"
+        className={clsx(
+          'w-full',
+          maxHeight ? ['overflow-y-auto', maxHeight] : 'absolute inset-0'
+        )}
+        header={header}
       />
       <div className="absolute inset-x-0 bottom-0 z-10 h-2 bg-gradient-to-t from-stone-400/20" />
       {loading && <AbsoluteOverlay />}
