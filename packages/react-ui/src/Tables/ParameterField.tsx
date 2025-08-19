@@ -153,6 +153,7 @@ export const ParameterField: React.FC<ParameterFieldProps> = ({
             name={name ?? 'override'}
             value={inputValue}
             onChange={handleOverride}
+            className="text-teal-600"
           />
         )}
       </li>
