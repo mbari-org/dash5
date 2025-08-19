@@ -1,11 +1,11 @@
-import React, { useEffect, useState } from 'react'
+import React, { useEffect, useMemo, useState } from 'react'
 import { SelectOption } from '../../Fields/Select'
 import { Input, SelectField } from '../../Fields'
 import {
-  ParameterTable,
   ParameterProps,
   ParameterTableProps,
 } from '../../Tables/ParameterTable'
+import { AccordionParameterTable } from '../../Tables/AccordionParameterTable'
 import { StatDisplay, StatProps } from './StatDisplay'
 
 export interface ParameterStepProps extends StatProps {
@@ -92,6 +92,52 @@ export const ParameterStep: React.FC<ParameterStepProps> = ({
     setSearchTerm(term)
   }
 
+  // Group parameters: first group is root level parameters, remaining by insert name
+  const groups = useMemo(() => {
+    const noInsert: ParameterProps[] = []
+    const insertToParams = new Map<string, ParameterProps[]>()
+
+    parameters &&
+      filteredParameters.forEach((p) => {
+        if (p.insert) {
+          if (!insertToParams.has(p.insert)) insertToParams.set(p.insert, [])
+          insertToParams.get(p.insert)?.push(p)
+        } else {
+          noInsert.push(p)
+        }
+      })
+
+    // Preserve order of first appearance for inserts
+    const seen = new Set<string>()
+    const orderedInsertGroups: {
+      key: string
+      label: string
+      parameters: ParameterProps[]
+    }[] = []
+    filteredParameters.forEach((p) => {
+      if (p.insert && !seen.has(p.insert)) {
+        seen.add(p.insert)
+        orderedInsertGroups.push({
+          key: p.insert,
+          label: p.insert,
+          parameters: insertToParams.get(p.insert) ?? [],
+        })
+      }
+    })
+
+    const result = [
+      { key: 'root', label: mission, parameters: noInsert },
+      ...orderedInsertGroups,
+    ].filter((g) => g.parameters.length > 0)
+
+    return result
+  }, [filteredParameters, mission])
+
+  // Manage open state of each group
+  const [openByGroup, setOpenByGroup] = useState<Record<string, boolean>>({
+    root: true,
+  })
+
   return (
     <article className="flex h-full flex-col">
       <section className="pb-2">
@@ -127,12 +173,21 @@ export const ParameterStep: React.FC<ParameterStepProps> = ({
         </div>
       </section>
 
-      <ParameterTable
-        parameters={filteredParameters}
-        onParamUpdate={onParamUpdate}
-        onVerifyValue={onVerifyValue}
-        unitOptions={unitOptions}
-      />
+      <div className="flex flex-col gap-4 overflow-y-auto pr-4">
+        {groups.map((group) => (
+          <AccordionParameterTable
+            key={group.key}
+            label={group.label}
+            parameters={group.parameters}
+            onParamUpdate={onParamUpdate}
+            unitOptions={unitOptions}
+            open={!!openByGroup[group.key]}
+            onToggle={(open) =>
+              setOpenByGroup((prev) => ({ ...prev, [group.key]: open }))
+            }
+          />
+        ))}
+      </div>
       <StatDisplay
         className="flex-shrink-0 flex-grow-0"
         totalDistance={totalDistance}
