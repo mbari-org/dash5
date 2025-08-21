@@ -47,7 +47,10 @@ export const useVehiclePicAndOnCall = (
   options?: SupportedQueryOptions
 ): UseVehiclePicAndOnCallResult => {
   const { vehicleName } = params
-  const vehicleNames = Array.isArray(vehicleName) ? vehicleName : [vehicleName]
+  const vehicleNames = useMemo(
+    () => (Array.isArray(vehicleName) ? vehicleName : [vehicleName]),
+    [vehicleName]
+  )
   const { axiosInstance } = useTethysApiContext()
 
   const query = useQuery(
@@ -86,17 +89,21 @@ export const useVehiclePicAndOnCall = (
   )
 
   const data = useMemo(() => {
-    if (!query.data?.length) return undefined
+    // Ensure every requested vehicle is represented, even if no sign in or out events exist
+    const eventsByVehicle: Record<string, GetEventsResponse[]> = {}
 
-    // Group events by vehicle
-    const eventsByVehicle = query.data.reduce((acc, event) => {
-      if (!event.vehicleName) return acc
-      if (!acc[event.vehicleName]) {
-        acc[event.vehicleName] = []
+    vehicleNames.forEach((name) => {
+      eventsByVehicle[name] = []
+    })
+
+    // Populate with any sign in or out events that came back from the query
+    query.data?.forEach((event) => {
+      if (!event.vehicleName) return
+      if (!eventsByVehicle[event.vehicleName]) {
+        eventsByVehicle[event.vehicleName] = []
       }
-      acc[event.vehicleName].push(event)
-      return acc
-    }, {} as Record<string, GetEventsResponse[]>)
+      eventsByVehicle[event.vehicleName].push(event)
+    })
 
     // Get PIC and OnCall for each vehicle
     return Object.entries(eventsByVehicle).map(([vehicleName, events]) => {
@@ -124,7 +131,7 @@ export const useVehiclePicAndOnCall = (
         })),
       }
     })
-  }, [query.data])
+  }, [query.data, vehicleNames])
 
   return {
     data,
