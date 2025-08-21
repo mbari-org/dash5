@@ -1,50 +1,52 @@
 import React, { useMemo } from 'react'
 import clsx from 'clsx'
-import { Table } from '../Data/Table'
+import { AccordionHeader } from '../Navigation/AccordionHeader'
+import { AccordionCells } from '../Cells/AccordionCells'
+import { Virtualizer } from '../Cells'
 import { ParameterField, ParameterFieldUnit } from './ParameterField'
+import { ParameterProps } from './ParameterTable'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { faInfoCircle } from '@fortawesome/free-solid-svg-icons'
 import { IconProp } from '@fortawesome/fontawesome-svg-core'
 import { makeValueUnitString } from '@mbari/utils'
 
-export interface ParameterTableProps {
+export interface AccordionParameterTableProps {
   className?: string
   style?: React.CSSProperties
+  label: string
+  secondaryLabel?: string
+  ariaLabel?: string
+  onExpand?: () => void
+  onToggle: (open: boolean) => void
+  open?: boolean
   parameters?: ParameterProps[]
-  altHeaderLabel?: string
   onParamUpdate: (
     name: string,
     overrideValue: string,
     overrideUnit?: string
   ) => void
-  onVerifyValue?: (value: string) => string
   unitOptions?: ParameterFieldUnit[]
+  loading?: boolean
 }
 
-export interface ParameterProps {
-  name: string
-  description?: string
-  value: string
-  unit?: string
-  dvlOff?: boolean
-  overrideValue?: string
-  overrideUnit?: string
-  insert?: string
-}
-
-export const ParameterTable: React.FC<ParameterTableProps> = ({
+export const AccordionParameterTable: React.FC<
+  AccordionParameterTableProps
+> = ({
   className,
   style,
+  label,
+  onExpand,
+  onToggle,
+  open,
   parameters = [],
-  altHeaderLabel,
   onParamUpdate,
   unitOptions,
+  loading,
 }) => {
-  // Use a param key to differentiate between parameters with the same name, but different or no inserts (ie StandardEnvelopes:MinAltitude and MinAltitude can coexist in the same mission)
   const getParamKey = (name: string, insert?: string) =>
     insert ? `${insert}:${name}` : name
 
-  const ParameterRows = useMemo(
+  const items = useMemo(
     () =>
       parameters
         ?.filter((p) => p?.name)
@@ -66,9 +68,9 @@ export const ParameterTable: React.FC<ParameterTableProps> = ({
 
             return {
               id: uniqueKey,
-              cells: [
-                {
-                  label: (
+              render: (_index: number, _virtualizer: Virtualizer) => (
+                <div className="grid grid-cols-8 items-center gap-4 border-b-2 border-stone-200 px-4 py-2">
+                  <div className="col-span-3">
                     <span
                       className={clsx(
                         'whitespace-normal break-words font-medium',
@@ -79,15 +81,13 @@ export const ParameterTable: React.FC<ParameterTableProps> = ({
                     >
                       {name}
                     </span>
-                  ),
-                  secondary: (
-                    <span className="text-stone-600/60 ">{description}</span>
-                  ),
-                  span: 3,
-                  highlighted: true, // removes scrollable table styles on this cell
-                },
-                {
-                  label: (
+                    {description && (
+                      <div className="break-words text-stone-600/60">
+                        {description}
+                      </div>
+                    )}
+                  </div>
+                  <div className="col-span-2">
                     <div>
                       <span className="whitespace-normal break-words text-stone-600/60">
                         {makeValueUnitString(value, unit)}
@@ -102,13 +102,8 @@ export const ParameterTable: React.FC<ParameterTableProps> = ({
                         </span>
                       )}
                     </div>
-                  ),
-                  span: 2,
-                  highlighted: true,
-                  highlightedStyle: 'text-base',
-                },
-                {
-                  label: (
+                  </div>
+                  <div className="col-span-3">
                     <ParameterField
                       overrideValue={overrideValue}
                       onOverride={handleOverride}
@@ -118,41 +113,68 @@ export const ParameterTable: React.FC<ParameterTableProps> = ({
                       name={name}
                       defaultValue={value}
                     />
-                  ),
-                  span: 3,
-                  highlighted: true,
-                  highlightedStyle: 'text-base text-teal-600',
-                },
-              ],
+                  </div>
+                </div>
+              ),
             }
           }
         ) ?? [],
     [parameters, onParamUpdate, unitOptions]
   )
 
+  const headerCellClass =
+    'flex flex-grow text-left font-sans text-sm items-center py-2 opacity-60'
+  const headerRowClass = 'whitespace-nowrap border-b-2 border-stone-200'
+
   return (
-    <Table
-      className={className}
+    <div
+      className={clsx(
+        'flex h-full flex-col border-2 border-stone-200',
+        className
+      )}
       style={style}
-      scrollable
-      grayHeader
-      colInRow={8}
-      header={{
-        cells: [
-          {
-            label: altHeaderLabel ?? 'PARAMETER',
-            span: 3,
-          },
-          {
-            label: 'DEFAULT VALUE',
-            span: 2,
-          },
-          { label: 'OVERRIDE VALUE', span: 3 },
-        ],
-      }}
-      rows={ParameterRows}
-    />
+    >
+      <AccordionHeader
+        className="sticky top-0 z-10"
+        label={`${label} parameters:`}
+        ariaLabel={label}
+        onExpand={onExpand}
+        onToggle={onToggle}
+        open={open}
+      />
+      <div
+        className={clsx('relative flex flex-col', !open && 'hidden')}
+        aria-hidden={!open}
+      >
+        <AccordionCells
+          header={
+            <div
+              className={clsx(
+                'sticky top-0 left-0 z-10 grid grid-cols-8 gap-4 bg-stone-100 px-4',
+                headerRowClass
+              )}
+            >
+              <div className={clsx('col-span-3', headerCellClass)}>
+                PARAMETER
+              </div>
+              <div className={clsx('col-span-2', headerCellClass)}>
+                DEFAULT VALUE
+              </div>
+              <div className={clsx('col-span-3', headerCellClass)}>
+                OVERRIDE VALUE
+              </div>
+            </div>
+          }
+          cellAtIndex={(index, virtualizer) =>
+            items[index]?.render(index, virtualizer)
+          }
+          count={items.length}
+          loading={loading}
+          maxHeight="max-h-400"
+        />
+      </div>
+    </div>
   )
 }
 
-ParameterTable.displayName = 'Tables.ParameterTable'
+AccordionParameterTable.displayName = 'Tables.AccordionParameterTable'
