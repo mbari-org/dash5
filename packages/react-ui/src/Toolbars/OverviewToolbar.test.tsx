@@ -72,6 +72,8 @@ const props: OverviewToolbarProps = {
   ),
   supportIcon1: <></>,
   supportIcon2: <></>,
+  loadingPicAndOnCall: false,
+  authenticated: true,
 }
 
 test('should render deployment name to the screen', async () => {

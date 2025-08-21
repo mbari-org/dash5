@@ -6,6 +6,7 @@ import { useTethysApiContext } from '../TethysApiProvider'
 import { useQuery } from 'react-query'
 import { DateTime } from 'luxon'
 import { getAdjustedUnixTime } from '@mbari/utils'
+import { SupportedQueryOptions } from '../types'
 
 const THREE_MONTHS_AGO = getAdjustedUnixTime({
   unixTime: DateTime.now().toMillis(),
@@ -33,18 +34,19 @@ export interface UseVehiclePicAndOnCallResult {
 
 export interface UseVehiclePicAndOnCallParams {
   vehicleName: string | string[]
-  enabled?: boolean
 }
 
 /**
- * Hook to get the PIC and OnCall users for a vehicle from note events
- * @param params Parameters including vehicleName and enabled flag
- * @returns The PIC and OnCall users found in the notes, with loading state
+ * Hook to get the PIC and On-Call users for one or more vehicles from note events
+ * @param params   Query parameters (currently only vehicleName)
+ * @param options  React-Query options such as enabled, staleTime, etc.
+ * @returns The PIC and On-Call users found in the notes, with loading state
  */
-export const useVehiclePicAndOnCall = ({
-  vehicleName,
-  enabled = true,
-}: UseVehiclePicAndOnCallParams): UseVehiclePicAndOnCallResult => {
+export const useVehiclePicAndOnCall = (
+  params: UseVehiclePicAndOnCallParams,
+  options?: SupportedQueryOptions
+): UseVehiclePicAndOnCallResult => {
+  const { vehicleName } = params
   const vehicleNames = useMemo(
     () => (Array.isArray(vehicleName) ? vehicleName : [vehicleName]),
     [vehicleName]
@@ -82,7 +84,7 @@ export const useVehiclePicAndOnCall = ({
     },
     {
       staleTime: STALE_TIME,
-      enabled,
+      ...options,
     }
   )
 

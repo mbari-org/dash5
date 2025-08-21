@@ -10,6 +10,7 @@ export interface CellVirtualizerProps {
   cellAtIndex: (index: number, virtualizer: Virtualizer) => JSX.Element
   count: number
   estimateSize?: (index: number) => number
+  header?: React.ReactNode
 }
 
 export const CellVirtualizer: React.FC<CellVirtualizerProps> = ({
@@ -18,6 +19,7 @@ export const CellVirtualizer: React.FC<CellVirtualizerProps> = ({
   style,
   count,
   estimateSize = () => 100,
+  header,
 }) => {
   // The scrollable element for your list
   const parentRef = React.useRef(null)
@@ -38,6 +40,7 @@ export const CellVirtualizer: React.FC<CellVirtualizerProps> = ({
       className={clsx(className, 'overflow-auto')}
       data-testid="virtualized-list"
     >
+      {header}
       {/* The large inner element to hold all of the items */}
       <div
         style={{

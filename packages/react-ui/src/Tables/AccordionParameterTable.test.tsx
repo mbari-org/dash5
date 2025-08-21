@@ -1,7 +1,10 @@
 import React from 'react'
 import { render, screen } from '@testing-library/react'
 import '@testing-library/jest-dom'
-import { ParameterTable, ParameterTableProps } from './ParameterTable'
+import {
+  AccordionParameterTable,
+  AccordionParameterTableProps,
+} from './AccordionParameterTable'
 
 jest.mock('../assets/ruler-dark.png', () => {
   return {
@@ -15,7 +18,10 @@ jest.mock('../assets/ruler-light.png', () => {
   }
 })
 
-const props: ParameterTableProps = {
+const props: AccordionParameterTableProps = {
+  label: 'Test',
+  onToggle: () => undefined,
+  open: true,
   parameters: [
     {
       name: 'Repeat',
@@ -33,30 +39,30 @@ const props: ParameterTableProps = {
       dvlOff: true,
     },
   ],
-  onParamUpdate: (value) => console.log(value),
-  onVerifyValue: (value) => value,
+  onParamUpdate: (name) => console.log(name),
+  unitOptions: [],
 }
 
 test('should render the component', async () => {
-  expect(() => render(<ParameterTable {...props} />)).not.toThrow()
+  expect(() => render(<AccordionParameterTable {...props} />)).not.toThrow()
 })
 
 test('should display parameter name', async () => {
-  render(<ParameterTable {...props} />)
+  render(<AccordionParameterTable {...props} />)
   expect(
     screen.queryByText(props?.parameters?.[0]?.name ?? '')
   ).toBeInTheDocument()
 })
 
 test('should display parameter description', async () => {
-  render(<ParameterTable {...props} />)
+  render(<AccordionParameterTable {...props} />)
   expect(
     screen.queryByText(`${props?.parameters?.[0]?.description}`)
   ).toBeInTheDocument()
 })
 
 test("should display the parameter's default value", async () => {
-  render(<ParameterTable {...props} />)
+  render(<AccordionParameterTable {...props} />)
   expect(
     screen.queryByText(
       `${props?.parameters?.[0]?.value} ${props?.parameters?.[0]?.unit}`
@@ -65,26 +71,26 @@ test("should display the parameter's default value", async () => {
 })
 
 test("should display the parameter's override value if provided", async () => {
-  render(<ParameterTable {...props} />)
+  render(<AccordionParameterTable {...props} />)
   expect(
     screen.queryByDisplayValue(`${props?.parameters?.[0]?.overrideValue}`)
   ).toBeInTheDocument()
 })
 
 test('should display dvl is off message if dvlOff flag is true', async () => {
-  render(<ParameterTable {...props} />)
+  render(<AccordionParameterTable {...props} />)
   expect(screen.queryByText(/dvl is off/i)).toBeInTheDocument()
 })
 
 test('should display parameter name in teal if override value is provided', async () => {
-  render(<ParameterTable {...props} />)
+  render(<AccordionParameterTable {...props} />)
   expect(screen.queryByText(props?.parameters?.[0]?.name ?? '')).toHaveClass(
     'text-teal-600'
   )
 })
 
 test('should display parameter name in orange if dvlOff flag is true', async () => {
-  render(<ParameterTable {...props} />)
+  render(<AccordionParameterTable {...props} />)
   expect(screen.queryByText(props?.parameters?.[1]?.name ?? '')).toHaveClass(
     'text-orange-500/80'
   )

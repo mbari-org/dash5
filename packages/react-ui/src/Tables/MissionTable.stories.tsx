@@ -24,7 +24,7 @@ const Template: Story<MissionTableProps> = (args) => {
       {...args}
       onSelectMission={(id) => {
         args.onSelectMission?.(id)
-        setSelection(id)
+        id && setSelection(id)
       }}
       selectedId={selection}
     />

@@ -1,5 +1,13 @@
 import { shortenName } from './shortenName'
 
+export interface CreateRoleLabelParams {
+  operators: string[]
+  role: 'PIC' | 'On-Call'
+  currentUser?: string
+  authenticated?: boolean
+  loading?: boolean
+}
+
 /**
  * Creates a human-readable label for role assignments based on a list of operators and the current user's status.
  *
@@ -8,11 +16,17 @@ import { shortenName } from './shortenName'
  * @param role - The type of role, either 'PIC' (Person In Charge) or 'On-Call'
  * @returns A string representing the role status in a user-friendly format
  */
-export const createRoleLabel = (
-  operators: string[],
-  role: 'PIC' | 'On-Call',
-  currentUser?: string
-) => {
+export const createRoleLabel = ({
+  operators,
+  role,
+  currentUser,
+  authenticated,
+  loading,
+}: CreateRoleLabelParams) => {
+  if (!authenticated && role === 'PIC') return 'Unavailable'
+  if (!authenticated && role === 'On-Call') return ''
+  if (loading) return '...'
+
   const operatorCount = operators.length
   if (!operatorCount) return `No ${role}`
 

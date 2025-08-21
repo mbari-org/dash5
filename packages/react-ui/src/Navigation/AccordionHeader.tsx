@@ -1,7 +1,11 @@
 import React from 'react'
 import clsx from 'clsx'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
-import { faChevronDown, faMaximize } from '@fortawesome/free-solid-svg-icons'
+import {
+  faChevronDown,
+  faChevronUp,
+  faMaximize,
+} from '@fortawesome/free-solid-svg-icons'
 import { IconProp } from '@fortawesome/fontawesome-svg-core'
 import { swallow } from '@mbari/utils'
 
@@ -65,7 +69,9 @@ export const AccordionHeader: React.FC<AccordionHeaderProps> = ({
         </button>
       )}
       <button className={styles.chevronButton} onClick={handleToggle}>
-        <FontAwesomeIcon icon={faChevronDown as IconProp} />
+        <FontAwesomeIcon
+          icon={open ? (faChevronDown as IconProp) : (faChevronUp as IconProp)}
+        />
       </button>
     </div>
   )

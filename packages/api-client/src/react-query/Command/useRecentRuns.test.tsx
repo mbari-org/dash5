@@ -56,6 +56,15 @@ const mockResponse = {
       user: 'Test User',
       data: 'load Engineering/sink.tl;set sink.SinkDuration 1.5 h;set sink.Depth 15 m;set sink.DepthDeadband 5 m;run',
     },
+    {
+      eventId: 6,
+      vehicleName: 'brizo',
+      unixTime: 1718511900000,
+      isoTime: '2024-06-16T03:51:40.000Z',
+      eventType: 'run',
+      user: 'Test User',
+      data: 'load Science/transit.tl;set transit.TransitLatitude 36.9 degree;set transit.TransitLongitude -122.1 degree;run',
+    },
   ],
 }
 
@@ -65,6 +74,28 @@ const server = setupServer(
   }),
   rest.get('/info', (_req, res, ctx) => {
     return res(ctx.status(200), ctx.json({}))
+  }),
+  rest.get('/commands/script', (req, res, ctx) => {
+    const path = req.url.searchParams.get('path')
+    if (path === 'Science/transit.tl') {
+      return res(
+        ctx.status(200),
+        ctx.json({
+          result: {
+            id: 'transit',
+            latLonNamePairs: [
+              { latName: 'TransitLatitude', lonName: 'TransitLongitude' },
+            ],
+            scriptArgs: [],
+          },
+        })
+      )
+    }
+    // default response
+    return res(
+      ctx.status(200),
+      ctx.json({ result: { id: 'mock', scriptArgs: [] } })
+    )
   })
 )
 
@@ -94,7 +125,7 @@ describe('useRecentRuns', () => {
       </MockProviders>
     )
 
-    await waitFor(() => screen.getByTestId('command4'))
+    await waitFor(() => screen.getByTestId('command5'))
 
     expect(screen.getByTestId('command0')).toHaveTextContent('Science/sci2.tl')
     expect(screen.getByTestId('command1')).toHaveTextContent(
@@ -108,6 +139,9 @@ describe('useRecentRuns', () => {
     )
     expect(screen.getByTestId('command4')).toHaveTextContent(
       'Engineering/sink.tl'
+    )
+    expect(screen.getByTestId('command5')).toHaveTextContent(
+      'Science/transit.tl'
     )
   })
 })

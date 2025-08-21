@@ -33,6 +33,8 @@ export interface OverviewToolbarProps {
   onIcon1hover?: () => JSX.Element
   onIcon2hover?: () => JSX.Element
   deployments?: DeploymentInfo[]
+  authenticated?: boolean
+  loadingPicAndOnCall?: boolean
   onSelectDeployment?: (deployment: DeploymentInfo) => void
 }
 
@@ -68,6 +70,8 @@ export const OverviewToolbar: React.FC<OverviewToolbarProps> = ({
   onRoleReassign,
   onIcon1hover,
   onIcon2hover,
+  authenticated,
+  loadingPicAndOnCall,
 }) => {
   const [hovering, setHovering] = useState<HoverOption>(null)
   const [showDeployments, setShowDeployments] = useState(false)
@@ -164,6 +168,8 @@ export const OverviewToolbar: React.FC<OverviewToolbarProps> = ({
               pics={pics}
               onCalls={onCalls}
               currentUserName={currentUserName}
+              authenticated={authenticated}
+              loading={loadingPicAndOnCall}
               onRoleReassign={onRoleReassign}
             />
           </li>
