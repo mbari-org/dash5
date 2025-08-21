@@ -2,29 +2,37 @@ import { render, screen, fireEvent } from '@testing-library/react'
 import '@testing-library/jest-dom'
 import { RoleReassignButton } from './RoleReassignButton'
 
+const args = {
+  authenticated: true,
+  loading: false,
+}
+
 describe('RoleReassignButton', () => {
   test('should render the component with default props', () => {
     expect(() => render(<RoleReassignButton />)).not.toThrow()
   })
 
   test('should display "No PIC" when pics array is empty', () => {
-    render(<RoleReassignButton />)
+    render(<RoleReassignButton {...args} />)
     expect(screen.getByText('No PIC')).toBeInTheDocument()
   })
 
   test('should display "No On-Call" when onCalls array is empty', () => {
-    render(<RoleReassignButton />)
+    render(<RoleReassignButton {...args} />)
     expect(screen.getByText('No On-Call')).toBeInTheDocument()
   })
 
   test('should display shortenedsingle PIC name when provided', () => {
-    render(<RoleReassignButton pics={['John Doe']} />)
+    render(<RoleReassignButton pics={['John Doe']} {...args} />)
     expect(screen.getByText('John D.')).toBeInTheDocument()
   })
 
   test('should display the count when multiple PICs are provided', () => {
     render(
-      <RoleReassignButton pics={['John Doe', 'Jane Smith', 'Bob Johnson']} />
+      <RoleReassignButton
+        pics={['John Doe', 'Jane Smith', 'Bob Johnson']}
+        {...args}
+      />
     )
     expect(screen.getByText('3 PIC')).toBeInTheDocument()
   })
@@ -34,6 +42,7 @@ describe('RoleReassignButton', () => {
       <RoleReassignButton
         pics={['Alice Cooper']}
         currentUserName="Alice Cooper"
+        {...args}
       />
     )
     expect(screen.getByText('You')).toBeInTheDocument()
@@ -44,6 +53,7 @@ describe('RoleReassignButton', () => {
       <RoleReassignButton
         pics={['Alice Cooper', 'Bob Dylan', 'Charlie Parker']}
         currentUserName="Alice Cooper"
+        {...args}
       />
     )
     expect(screen.getByText('You and 2 others')).toBeInTheDocument()
@@ -54,6 +64,7 @@ describe('RoleReassignButton', () => {
       <RoleReassignButton
         pics={['Alice Cooper', 'Bob Dylan']}
         currentUserName="Alice Cooper"
+        {...args}
       />
     )
     expect(screen.getByText('You and 1 other')).toBeInTheDocument()
@@ -64,6 +75,7 @@ describe('RoleReassignButton', () => {
       <RoleReassignButton
         pics={['Alice Cooper']}
         currentUserName="Alice Cooper"
+        {...args}
       />
     )
 
@@ -76,6 +88,7 @@ describe('RoleReassignButton', () => {
       <RoleReassignButton
         onCalls={['Alice Cooper']}
         currentUserName="Alice Cooper"
+        {...args}
       />
     )
 
@@ -84,14 +97,27 @@ describe('RoleReassignButton', () => {
   })
 
   test('should display shortened name for a single onCall user', () => {
-    render(<RoleReassignButton onCalls={['John Smith']} />)
+    render(<RoleReassignButton onCalls={['John Smith']} {...args} />)
     expect(screen.getByText('John S.')).toBeInTheDocument()
   })
 
   test('should display the count when multiple onCalls are provided', () => {
     render(
-      <RoleReassignButton onCalls={['John Doe', 'Jane Smith', 'Bob Johnson']} />
+      <RoleReassignButton
+        onCalls={['John Doe', 'Jane Smith', 'Bob Johnson']}
+        {...args}
+      />
     )
     expect(screen.getByText('3 On-Call')).toBeInTheDocument()
+  })
+
+  test('should display "Unavailable" when authenticated is false', () => {
+    render(<RoleReassignButton {...args} authenticated={false} />)
+    expect(screen.getByText('Unavailable')).toBeInTheDocument()
+  })
+
+  test('should display "..." when loading is true', () => {
+    render(<RoleReassignButton {...args} loading={true} />)
+    expect(screen.getAllByText('...').length).toBe(2)
   })
 })

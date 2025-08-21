@@ -7,6 +7,8 @@ export interface RoleReassignButtonProps {
   pics?: string[]
   onCalls?: string[]
   currentUserName?: string
+  authenticated?: boolean
+  loading?: boolean
   onRoleReassign?: () => void
   className?: string
 }
@@ -15,6 +17,8 @@ export const RoleReassignButton: React.FC<RoleReassignButtonProps> = ({
   pics = [],
   onCalls = [],
   currentUserName,
+  authenticated,
+  loading,
   onRoleReassign,
   className,
 }) => {
@@ -22,8 +26,20 @@ export const RoleReassignButton: React.FC<RoleReassignButtonProps> = ({
   const currentUserIsOnCall = !!(
     currentUserName && onCalls.includes(currentUserName)
   )
-  const picLabel = createRoleLabel(pics, 'PIC', currentUserName)
-  const onCallLabel = createRoleLabel(onCalls, 'On-Call', currentUserName)
+  const picLabel = createRoleLabel({
+    operators: pics,
+    role: 'PIC',
+    loading,
+    currentUser: currentUserName,
+    authenticated,
+  })
+  const onCallLabel = createRoleLabel({
+    operators: onCalls,
+    role: 'On-Call',
+    loading,
+    currentUser: currentUserName,
+    authenticated,
+  })
   return (
     <AccessoryButton
       label={picLabel}
