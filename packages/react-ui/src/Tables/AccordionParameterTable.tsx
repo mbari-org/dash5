@@ -82,7 +82,7 @@ export const AccordionParameterTable: React.FC<
                       {name}
                     </span>
                     {description && (
-                      <div className="break-words text-stone-600/60">
+                      <div className="break-words text-sm text-stone-600/60">
                         {description}
                       </div>
                     )}
