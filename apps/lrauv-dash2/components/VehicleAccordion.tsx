@@ -5,11 +5,10 @@ import DocsSection from './DocsSection'
 import HandoffSection from './HandoffSection'
 import LogsSection from './LogsSection'
 import ScienceDataSection from './ScienceDataSection'
-import { useEvents, useDeploymentCommandStatus } from '@mbari/api-client'
+import { useEvents, useMissionStartedEvent } from '@mbari/api-client'
 import { DateTime } from 'luxon'
-import { parseMissionCommand, ScheduleSection } from './ScheduleSection'
+import { ScheduleSection } from './ScheduleSection'
 import useGlobalModalId from '../lib/useGlobalModalId'
-import { shortenName } from '@mbari/utils'
 export type VehicleAccordionSection =
   | 'handoff'
   | 'data'
@@ -47,24 +46,25 @@ const VehicleAccordion: React.FC<VehicleAccordionProps> = ({
     to,
   })
 
-  const { data: deploymentCommandStatus } = useDeploymentCommandStatus(
+  const { data: missionStartedEvent } = useMissionStartedEvent(
     {
-      deploymentId: currentDeploymentId ?? 0,
+      vehicle: vehicleName,
+      limit: 1,
     },
     {
-      enabled: !!currentDeploymentId,
+      enabled: !!activeDeployment,
     }
   )
-  const currentMission = deploymentCommandStatus?.commandStatuses
-    ?.filter((s) => s.event.eventType === 'run')
-    ?.sort((a, b) => a.event.unixTime - b.event.unixTime)?.[0]
+
+  // The mission started event text is always in the format "Started mission <mission name>"
+  const currentMissionText = missionStartedEvent?.[0]?.text ?? ''
 
   const [section, setSection] = useState<VehicleAccordionSection>(null)
   const handleToggleForSection =
     (currentSection: VehicleAccordionSection) => (open: boolean) =>
       setSection(open ? currentSection : null)
 
-  if (!currentMission || !activeDeployment) {
+  if (!currentMissionText || !activeDeployment) {
     ;(currentSection: VehicleAccordionSection) => (open: boolean) =>
       setSection(open ? currentSection : 'comms')
   }
@@ -130,11 +130,9 @@ const VehicleAccordion: React.FC<VehicleAccordionProps> = ({
       <AccordionHeader
         label="Schedule"
         secondaryLabel={
-          activeDeployment && currentMission
-            ? `${
-                parseMissionCommand(currentMission.event.data ?? '').name ?? ''
-              } running for ${DateTime.fromMillis(
-                currentMission.event.unixTime ?? 0
+          activeDeployment && currentMissionText
+            ? `${currentMissionText} ${DateTime.fromMillis(
+                missionStartedEvent?.[0]?.unixTime ?? 0
               ).toRelative()}`
             : ''
         }
