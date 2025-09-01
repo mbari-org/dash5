@@ -480,7 +480,7 @@ const MissionModalBody: React.FC<MissionModalViewProps> = ({
       return (
         <Modal
           className={className}
-          style={style}
+          style={{ ...style, maxHeight: '95vh' }}
           title={
             <StepProgress
               steps={steps.slice(0, steps.length - 1)}
