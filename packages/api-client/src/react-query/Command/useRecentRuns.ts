@@ -5,6 +5,7 @@ import { generateMissionKey } from '../../axios/Util/generateMissionKey'
 import { useQuery } from 'react-query'
 import { useTethysApiContext } from '../TethysApiProvider'
 import { getScript } from '../../axios'
+import { createLimiter } from '../../axios/Util/concurrencyLimiter'
 
 export const useRecentRuns = (
   params: {
@@ -35,6 +36,16 @@ export const useRecentRuns = (
       //   • [a-zA-Z0-9_/]+  → one or more letters, digits, "_", or "/" (captures a simple path or filename)
       //   • (\.xml|\.tl)    → that sequence must end with ".xml" **or** ".tl" (the dot is escaped to mean a literal dot)
       // Summary → Pulls out the first path-like token in event.data that ends in one of those extensions
+
+      // Limit concurrent getScript requests
+      const limit = createLimiter(1)
+
+      // Cache script metadata requests by mission so we only fetch once per mission during this run
+      const scriptRequestByMission = new Map<
+        string,
+        ReturnType<typeof getScript>
+      >()
+
       const results = await Promise.all(
         query.data.map(async (event) => {
           const mission =
@@ -51,13 +62,20 @@ export const useRecentRuns = (
 
           if (hasNonstandardLatLonKeywords && mission) {
             try {
-              const { latLonNamePairs } = await getScript(
-                { path: mission, gitRef: 'master' },
-                {
-                  instance: axiosInstance,
-                  headers: { Authorization: `Bearer ${token}` },
-                }
-              )
+              let request = scriptRequestByMission.get(mission)
+              if (!request) {
+                request = limit(() =>
+                  getScript(
+                    { path: mission, gitRef: 'master' },
+                    {
+                      instance: axiosInstance,
+                      headers: { Authorization: `Bearer ${token}` },
+                    }
+                  )
+                ) as ReturnType<typeof getScript>
+                scriptRequestByMission.set(mission, request)
+              }
+              const { latLonNamePairs } = await request
               if (latLonNamePairs?.length) {
                 const newOverrides = extractOverrides(
                   event.data ?? '',
@@ -99,6 +117,8 @@ export const useRecentRuns = (
     },
     {
       enabled: !!query.data,
+      staleTime: options?.staleTime ?? 30 * 60 * 1000,
+      refetchOnWindowFocus: false,
     }
   )
 
