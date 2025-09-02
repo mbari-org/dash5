@@ -89,6 +89,8 @@ export const useEvents = (
     },
     {
       staleTime: 5 * 60 * 1000,
+      refetchOnWindowFocus: false,
+      refetchOnReconnect: false,
       ...options,
     }
   )
