@@ -81,7 +81,7 @@ const MissionModal: React.FC<MissionModalProps> = ({
     }
   })
   const [selectedMission, setSelectedMission] = useState<string | undefined>(
-    globalModalId?.meta?.mission ?? undefined
+    undefined
   )
   const [selectedMissionCategory, setSelectedMissionCategory] = useState<
     string | undefined
