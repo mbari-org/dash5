@@ -37,10 +37,17 @@ export const useMissionData = (params: {
     { enabled: !!selectedMission }
   )
 
-  const { data: recentRunsData, isLoading: isRecentRunsLoading } =
-    useRecentRuns({
+  const recentRunsParams = useMemo(
+    () => ({
       vehicles: [], // All vehicles by default
       from: LAST_60_DAYS,
+    }),
+    []
+  )
+
+  const { data: recentRunsData, isLoading: isRecentRunsLoading } =
+    useRecentRuns(recentRunsParams, {
+      staleTime: 60 * 1000,
     })
   const { data: frequentRunsData, isLoading: isFrequentRunsLoading } =
     useFrequentRuns(
