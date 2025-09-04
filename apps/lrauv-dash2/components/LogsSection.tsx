@@ -17,6 +17,7 @@ import formatEvent, {
   eventFilters,
   isUploadEvent,
 } from '../lib/formatEvent'
+import { applyEventFilters } from '../lib/eventFilterUtils'
 import { createLogger } from '@mbari/utils'
 
 const logger = createLogger('components.LogsSection')
@@ -93,8 +94,13 @@ const LogsSection: React.FC<LogsSectionProps> = ({
 
   const flatData = useMemo(() => {
     if (!data?.pages) return []
-    return data.pages.flat()
-  }, [data?.pages])
+    let events = data.pages.flat()
+    if (filters.length) {
+      const selectedFilterNames = filters.map(({ id }) => id)
+      events = applyEventFilters(events, selectedFilterNames)
+    }
+    return events
+  }, [data?.pages, filters])
   const dataCount = flatData?.length ?? 0
   const totalCount = hasNextPage ? dataCount + 1 : dataCount
 
