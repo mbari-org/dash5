@@ -167,11 +167,12 @@ const MissionModal: React.FC<MissionModalProps> = ({
     }) ?? []
 
   const { data: stationsData } = useStations({ enabled: waypoints.length > 0 })
+  // GeoJSON coordinates are in [lon, lat] order
   const stations: WaypointTableProps['stations'] =
     stationsData?.map(({ name, geojson }) => ({
       name,
-      lat: `${geojson.geometry.coordinates[0]}`,
-      lon: `${geojson.geometry.coordinates[1]}`,
+      lat: `${geojson.geometry.coordinates[1]}`,
+      lon: `${geojson.geometry.coordinates[0]}`,
     })) ?? []
 
   const [previewText, setPreviewText] = useState<string | undefined>()
