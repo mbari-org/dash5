@@ -82,7 +82,7 @@ const useManagedWaypoints = (waypoints: WaypointProps[] = []) => {
   }
 
   // Determine count of waypoints with actual values.
-  const plottedWaypoints = waypoints.filter(
+  const plottedWaypoints = (updatedWaypoints?.waypoints ?? waypoints).filter(
     ({ lat, lon }) => lat !== 'NaN' || lon !== 'NaN'
   )
   const plottedWaypointCount = plottedWaypoints.length ?? 0
