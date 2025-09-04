@@ -121,7 +121,7 @@ const MissionModalBody: React.FC<MissionModalViewProps> = ({
   defaultOverrides,
   defaultSearchText,
   missionsLoading,
-  onSelectMissionCategory: handleSelectCategory,
+  onSelectMissionCategory,
 }) => {
   const {
     state: {
@@ -159,6 +159,12 @@ const MissionModalBody: React.FC<MissionModalViewProps> = ({
     commsParams,
     defaultOverrides,
   })
+
+  // Reset overrides when the mission category changes
+  const handleSelectCategory = (category?: string) => {
+    resetOverrides()
+    onSelectMissionCategory?.(category)
+  }
 
   const { steps, currentStep, handleNext, handlePrevious, showSummary } =
     useMissionModalSteps({
