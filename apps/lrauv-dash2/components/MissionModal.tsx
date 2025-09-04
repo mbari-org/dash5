@@ -254,11 +254,15 @@ const MissionModal: React.FC<MissionModalProps> = ({
       onSelectMissionCategory={handleSelectMissionCategory}
       selectedMissionCategory={selectedMissionCategory}
       defaultSearchText={globalModalId?.meta?.mission ?? ''}
-      defaultOverrides={[
-        ...parametersWithOverrides,
-        ...commsParamsWithOverrides,
-        ...safetyParamsWithOverrides,
-      ]}
+      defaultOverrides={
+        selectedMissionCategory === 'Recent Runs'
+          ? [
+              ...parametersWithOverrides,
+              ...commsParamsWithOverrides,
+              ...safetyParamsWithOverrides,
+            ]
+          : undefined
+      }
     />
   )
 }
