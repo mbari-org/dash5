@@ -453,6 +453,7 @@ const MissionModalBody: React.FC<MissionModalViewProps> = ({
           title="Review and Send Command"
           onConfirm={handleSchedule}
           onCancel={handlePrevious}
+          onClose={handlePrevious}
           loading={loading}
           open
           extraWideModal
@@ -485,7 +486,7 @@ const MissionModalBody: React.FC<MissionModalViewProps> = ({
       return (
         <Modal
           className={className}
-          style={style}
+          style={{ ...style, maxHeight: '95vh' }}
           title={
             <StepProgress
               steps={steps.slice(0, steps.length - 1)}
@@ -496,6 +497,7 @@ const MissionModalBody: React.FC<MissionModalViewProps> = ({
           onConfirm={handleNext}
           disableConfirm={disableConfirm()}
           onCancel={onCancel}
+          onClose={onCancel}
           confirmButtonText={confirmButtonText}
           extraButtons={extraButtons()}
           snapTo="top-right"

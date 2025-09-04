@@ -125,20 +125,20 @@ export const ParameterStep: React.FC<ParameterStepProps> = ({
   return (
     <article className="flex h-full flex-col">
       <section className="pb-2">
-        <div className="mb-4">
+        <div>
           Set mission parameters for {vehicleName}&apos;s{' '}
           <span className="text-teal-500" data-testid="mission name">
             {mission}
           </span>{' '}
           mission
         </div>
-        <div className="py-4">
+        <div className="py-2">
           <ul className="grid grid-cols-2 gap-4">
             <li>
               <Input
                 name="Search parameters field"
                 placeholder="Search parameters"
-                className="ml-2 h-full"
+                className="h-full"
                 value={searchTerm}
                 onChange={(e) => handleSearch(e.target.value)}
               />

@@ -82,7 +82,7 @@ export const AccordionParameterTable: React.FC<
                       {name}
                     </span>
                     {description && (
-                      <div className="break-words text-stone-600/60">
+                      <div className="break-words text-sm text-stone-600/60">
                         {description}
                       </div>
                     )}
@@ -129,13 +129,14 @@ export const AccordionParameterTable: React.FC<
   return (
     <div
       className={clsx(
-        'flex h-full flex-col border-2 border-stone-200',
+        'flex flex-col border-2 border-stone-200',
+        open && 'h-3/4',
         className
       )}
       style={style}
     >
       <AccordionHeader
-        className="sticky top-0 z-10"
+        className="top-0 z-10"
         label={`${label} parameters:`}
         ariaLabel={label}
         onExpand={onExpand}
@@ -143,10 +144,14 @@ export const AccordionParameterTable: React.FC<
         open={open}
       />
       <div
-        className={clsx('relative flex flex-col', !open && 'hidden')}
+        className={clsx(
+          'relative flex min-h-0 flex-1 flex-col',
+          !open && 'hidden'
+        )}
         aria-hidden={!open}
       >
         <AccordionCells
+          className="min-h-0 flex-1"
           header={
             <div
               className={clsx(
@@ -170,7 +175,7 @@ export const AccordionParameterTable: React.FC<
           }
           count={items.length}
           loading={loading}
-          maxHeight="max-h-400"
+          maxHeight="max-h-full"
         />
       </div>
     </div>
