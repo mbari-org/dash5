@@ -8,6 +8,7 @@ import {
   Input,
   Dropdown,
   ScheduleCellStatus,
+  LogsToolbar,
 } from '@mbari/react-ui'
 import { DateTime } from 'luxon'
 import { faPlus } from '@fortawesome/free-solid-svg-icons'
@@ -126,36 +127,7 @@ export const ScheduleSection: React.FC<ScheduleSectionProps> = ({
     missions?.[0]?.event?.data === 'sched pause' ? 'paused' : 'running'
 
   const cellAtIndex = (index: number) => {
-    // if (index === 0 && activeDeployment) {
-    if (index === 0) {
-      return (
-        <div className="flex border-b border-stone-200 py-2 px-4 text-sm">
-          <p className="flex-grow text-xs">
-            {/* {capitalize(vehicleName)} is scheduled until */}
-            {/* {capitalize(vehicleName)} is NOT yet scheduled.
-            <br /> Deployment: TBD */}
-          </p>
-          <AccessoryButton
-            label="Mission"
-            icon={faPlus}
-            className="mx-2"
-            onClick={() => {
-              setGlobalModalId({ id: 'newMission' })
-            }}
-            tight
-          />
-          <AccessoryButton
-            label="Command"
-            icon={faPlus}
-            tight
-            onClick={() => {
-              setGlobalModalId({ id: 'newCommand' })
-            }}
-          />
-        </div>
-      )
-    }
-    if (index === 1 && activeDeployment) {
+    if (index === 0 && activeDeployment) {
       return (
         <div
           className={clsx(
@@ -300,6 +272,33 @@ export const ScheduleSection: React.FC<ScheduleSectionProps> = ({
 
   return (
     <>
+      <header className="flex justify-between p-2">
+        <div className="flex">
+          <AccessoryButton
+            label="Mission"
+            icon={faPlus}
+            className="mx-2"
+            onClick={() => {
+              setGlobalModalId({ id: 'newMission' })
+            }}
+            tight
+          />
+          <AccessoryButton
+            label="Command"
+            icon={faPlus}
+            tight
+            onClick={() => {
+              setGlobalModalId({ id: 'newCommand' })
+            }}
+          />
+        </div>
+        <LogsToolbar
+          deploymentLogsOnly={deploymentLogsOnly}
+          toggleDeploymentLogsOnly={toggleDeploymentLogsOnly}
+          disabled={isLoading || isFetching}
+          handleRefresh={handleRefresh}
+        />
+      </header>
       <AccordionCells cellAtIndex={cellAtIndex} count={totalCellCount} />
       {currentMoreMenu && (
         <div
