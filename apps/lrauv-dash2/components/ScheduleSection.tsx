@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react'
+import React, { useState, useRef, useMemo } from 'react'
 import {
   AccessoryButton,
   AccordionCells,
@@ -8,12 +8,19 @@ import {
   Input,
   Dropdown,
   ScheduleCellStatus,
+  LogsToolbar,
+  LoadMoreButton,
 } from '@mbari/react-ui'
 import { DateTime } from 'luxon'
 import { faPlus } from '@fortawesome/free-solid-svg-icons'
 import clsx from 'clsx'
 import { Select } from '@mbari/react-ui/dist/Fields/Select'
-import { useDeploymentCommandStatus } from '@mbari/api-client'
+import {
+  EventType,
+  GetEventsResponse,
+  useDeploymentCommandStatus,
+  useInfiniteEvents,
+} from '@mbari/api-client'
 import useGlobalModalId from '../lib/useGlobalModalId'
 import { toast } from 'react-hot-toast'
 
@@ -24,6 +31,19 @@ export interface ScheduleSectionProps {
   vehicleName: string
   currentDeploymentId?: number
   activeDeployment?: boolean
+}
+
+export interface CommandStatusItem {
+  event: {
+    data?: string
+    note?: string
+    user?: string
+    unixTime?: number
+    eventId: number
+    eventType: string
+    text?: string
+  }
+  status: string
 }
 
 export const parseMissionCommand = (name: string) => {
@@ -41,12 +61,17 @@ export const parseMissionCommand = (name: string) => {
 export const ScheduleSection: React.FC<ScheduleSectionProps> = ({
   currentDeploymentId,
   activeDeployment,
+  vehicleName,
 }) => {
   const { setGlobalModalId } = useGlobalModalId()
   const [scheduleFilter, setScheduleFilter] = useState<string>('')
   const [scheduleSearch, setScheduleSearch] = useState<string>('')
+  const [deploymentLogsOnly, setDeploymentLogsOnly] = useState(false)
+  const toggleDeploymentLogsOnly = () => {
+    setDeploymentLogsOnly((prev) => !prev)
+  }
 
-  const { data: deploymentCommands } = useDeploymentCommandStatus(
+  const deploymentResponse = useDeploymentCommandStatus(
     {
       deploymentId: currentDeploymentId ?? 0,
     },
@@ -55,21 +80,45 @@ export const ScheduleSection: React.FC<ScheduleSectionProps> = ({
     }
   )
 
-  const vehicleName = deploymentCommands?.deploymentInfo?.vehicleName ?? '...'
+  const allLogsParams = useMemo(
+    () => ({
+      vehicles: [vehicleName],
+      eventTypes: ['command', 'run'] as EventType[],
+      from: 0,
+      limit: 500,
+    }),
+    [vehicleName]
+  )
 
-  const toggleSchedule = () => {
-    setGlobalModalId({
-      id: 'newCommand',
-      meta: {
-        command: scheduleStatus === 'paused' ? 'sched resume' : 'sched pause',
+  const allLogsResponse = useInfiniteEvents(allLogsParams)
+
+  const { isLoading, isFetching, refetch } = deploymentLogsOnly
+    ? deploymentResponse
+    : allLogsResponse
+
+  const missions: CommandStatusItem[] = useMemo(() => {
+    if (deploymentLogsOnly) {
+      const cs = deploymentResponse.data?.commandStatuses ?? []
+      return cs as unknown as CommandStatusItem[]
+    }
+    const pages = allLogsResponse.data?.pages ?? []
+    const flat = pages.flat()
+    return flat.map((evt: GetEventsResponse) => ({
+      event: {
+        data: evt?.data,
+        note: evt?.note,
+        user: evt?.user,
+        unixTime: evt?.unixTime,
+        eventId: evt?.eventId,
+        eventType: evt?.eventType,
+        text: evt?.text,
       },
-    })
-  }
-
-  const missions = deploymentCommands?.commandStatuses
+      status: 'TBD',
+    }))
+  }, [deploymentLogsOnly, deploymentResponse.data, allLogsResponse.data])
 
   const scheduledTypes = ['pending', 'running']
-  const staticHeaderCellOffset = activeDeployment ? 2 : 0
+  const staticHeaderCellOffset = activeDeployment ? 1 : 0
   const indexOfPastSchedule =
     (missions?.findIndex((v) => !scheduledTypes.includes(v.status)) ?? 0) +
     staticHeaderCellOffset
@@ -102,8 +151,11 @@ export const ScheduleSection: React.FC<ScheduleSectionProps> = ({
     )
 
   const results = [scheduledCells, historicCells].flat()
-  const totalCellCount =
+  const baseTotalCellCount =
     results.length + staticFilterCellOffset + staticHeaderCellOffset
+  const { hasNextPage, isFetchingNextPage, fetchNextPage } = allLogsResponse
+  const showLoadMore = !deploymentLogsOnly && !!hasNextPage
+  const totalCellCount = baseTotalCellCount + (showLoadMore ? 1 : 0)
 
   const menuRef = useRef<HTMLDivElement | null>(null)
   const [currentMoreMenu, setCurrentMoreMenu] = useState<{
@@ -125,37 +177,23 @@ export const ScheduleSection: React.FC<ScheduleSectionProps> = ({
   const scheduleStatus: ScheduleCellProps['scheduleStatus'] | null =
     missions?.[0]?.event?.data === 'sched pause' ? 'paused' : 'running'
 
-  const cellAtIndex = (index: number) => {
-    // if (index === 0 && activeDeployment) {
-    if (index === 0) {
-      return (
-        <div className="flex border-b border-stone-200 py-2 px-4 text-sm">
-          <p className="flex-grow text-xs">
-            {/* {capitalize(vehicleName)} is scheduled until */}
-            {/* {capitalize(vehicleName)} is NOT yet scheduled.
-            <br /> Deployment: TBD */}
-          </p>
-          <AccessoryButton
-            label="Mission"
-            icon={faPlus}
-            className="mx-2"
-            onClick={() => {
-              setGlobalModalId({ id: 'newMission' })
-            }}
-            tight
-          />
-          <AccessoryButton
-            label="Command"
-            icon={faPlus}
-            tight
-            onClick={() => {
-              setGlobalModalId({ id: 'newCommand' })
-            }}
-          />
-        </div>
-      )
+  const toggleSchedule = () => {
+    setGlobalModalId({
+      id: 'newCommand',
+      meta: {
+        command: scheduleStatus === 'paused' ? 'sched resume' : 'sched pause',
+      },
+    })
+  }
+
+  const handleLoadMore = () => {
+    if (!deploymentLogsOnly) {
+      fetchNextPage()
     }
-    if (index === 1 && activeDeployment) {
+  }
+
+  const cellAtIndex = (index: number) => {
+    if (index === 0 && activeDeployment) {
       return (
         <div
           className={clsx(
@@ -199,6 +237,15 @@ export const ScheduleSection: React.FC<ScheduleSectionProps> = ({
             onChange={handleScheduleSearch}
           />
         </div>
+      )
+    }
+    if (showLoadMore && index === baseTotalCellCount) {
+      return (
+        <LoadMoreButton
+          onClick={handleLoadMore}
+          isLoading={isFetchingNextPage}
+          label="Load more logs"
+        />
       )
     }
     const indexOffset =
@@ -298,8 +345,39 @@ export const ScheduleSection: React.FC<ScheduleSectionProps> = ({
     console.log('should move in queue:', eventId, commandType)
   }
 
+  const handleRefresh = () => {
+    refetch()
+  }
+
   return (
     <>
+      <header className="flex justify-between p-2">
+        <div className="flex">
+          <AccessoryButton
+            label="Mission"
+            icon={faPlus}
+            className="mx-2"
+            onClick={() => {
+              setGlobalModalId({ id: 'newMission' })
+            }}
+            tight
+          />
+          <AccessoryButton
+            label="Command"
+            icon={faPlus}
+            tight
+            onClick={() => {
+              setGlobalModalId({ id: 'newCommand' })
+            }}
+          />
+        </div>
+        <LogsToolbar
+          deploymentLogsOnly={deploymentLogsOnly}
+          toggleDeploymentLogsOnly={toggleDeploymentLogsOnly}
+          disabled={isLoading || isFetching}
+          handleRefresh={handleRefresh}
+        />
+      </header>
       <AccordionCells cellAtIndex={cellAtIndex} count={totalCellCount} />
       {currentMoreMenu && (
         <div
