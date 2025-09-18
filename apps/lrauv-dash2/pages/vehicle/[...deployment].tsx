@@ -98,15 +98,6 @@ const Vehicle: NextPage = () => {
     }
   )
 
-  const { data: missionStartedEvent } = useMissionStartedEvent(
-    {
-      vehicle: vehicleName as string,
-    },
-    {
-      enabled: !!vehicleName && !!deployment?.lastEvent,
-    }
-  )
-
   const { data, isLoading: loadingPicAndOnCall } = useVehiclePicAndOnCall(
     {
       vehicleName,
@@ -158,20 +149,16 @@ const Vehicle: NextPage = () => {
       name: dep.name,
     })) ?? []
 
-  const deploymentStartTime = deployment?.startEvent?.unixTime ?? 0
-  const startTime =
-    deployment?.active && missionStartedEvent?.[0]?.unixTime
-      ? missionStartedEvent?.[0]?.unixTime
-      : deploymentStartTime
+  const startTime = deployment?.startEvent?.unixTime ?? 0
 
   const adjustedDeploymentStartTime = getAdjustedUnixTime({
-    unixTime: deploymentStartTime,
+    unixTime: startTime,
     offsetDays: deployment?.active ? -1 : 0,
   })
 
   const endTime = deployment?.active
     ? DateTime.utc().plus({ hours: 4 }).endOf('day').toMillis()
-    : deployment?.lastEvent ?? 0
+    : deployment?.endEvent?.unixTime ?? 0
 
   const lastCommsMillis = useLastCommsTime(vehicleName, startTime)
   const lastCommsTime = lastCommsMillis
