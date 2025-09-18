@@ -1,11 +1,6 @@
 import React, { useEffect, useRef, useCallback, useState, useMemo } from 'react'
 import { DateTime } from 'luxon'
-import {
-  useVehiclePos,
-  useVehicles,
-  useLastDeployment,
-  VPosDetail,
-} from '@mbari/api-client'
+import { useVehiclePos, useLastDeployment, VPosDetail } from '@mbari/api-client'
 import { Polyline, useMap, Circle, Tooltip } from 'react-leaflet'
 import {
   LatLng,
@@ -83,19 +78,18 @@ const VehiclePath: React.FC<VehiclePathProps> = ({
 }) => {
   const map = useMap()
   const { sharedPath, dispatch } = useSharedPath()
-  const { data: vehicleData } = useVehicles({})
 
   const { data: lastDeployment } = useLastDeployment(
     {
       vehicle: name,
     },
-    { staleTime: 5 * 60 * 1000 }
+    { staleTime: 5 * 60 * 1000, enabled: !from }
   )
   const { data: vehiclePosition } = useVehiclePos(
     {
       vehicle: name as string,
-      from: lastDeployment?.startEvent?.unixTime ?? 0,
-      to: to,
+      from: from ? from : lastDeployment?.startEvent?.unixTime ?? 0,
+      to: from ? to : lastDeployment?.endEvent?.unixTime,
     },
     {
       enabled: !!from || !!lastDeployment?.startEvent?.unixTime,
@@ -279,7 +273,7 @@ const VehiclePath: React.FC<VehiclePathProps> = ({
     }
   }
 
-  return route ? (
+  return route?.length ? (
     <>
       <Polyline
         pathOptions={lineStyle}
