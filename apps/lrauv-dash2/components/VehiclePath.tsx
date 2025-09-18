@@ -1,23 +1,11 @@
 import React, { useEffect, useRef, useCallback, useState, useMemo } from 'react'
 import { useVehiclePos, useLastDeployment, VPosDetail } from '@mbari/api-client'
 import { Polyline, useMap, Circle, Tooltip } from 'react-leaflet'
-import {
-  LatLng,
-  LeafletMouseEventHandlerFn,
-  Popup,
-  circle,
-  icon,
-} from 'leaflet'
+import { LatLng, LeafletMouseEventHandlerFn } from 'leaflet'
 import { useSharedPath } from './SharedPathContextProvider'
 import { distance } from '@turf/turf'
 import { parseISO, getTime } from 'date-fns'
 import { useVehicleColors } from './VehicleColorsContext'
-import { createLogger } from '@mbari/utils'
-
-const logger = createLogger('VehiclePath')
-
-let timeSinceFix
-let hours: number, minutes: number
 
 const getDistance = (a: VPosDetail, b: LatLng) =>
   distance([a.latitude, a.longitude], [b.lat, b.lng])

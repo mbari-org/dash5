@@ -33,7 +33,6 @@ import { Measurement } from './Measurement'
 import MovingDot from './MovingDot'
 import { AreaComponent, PathComponent, MeasurementProps } from './Measurement'
 import { CenterView } from './MapViews'
-import toast from 'react-hot-toast'
 import { createLogger, loadGoogleMapsOnce } from '@mbari/utils'
 import VehicleColorsModal from '@mbari/lrauv-dash2/components/VehicleColorsModal'
 

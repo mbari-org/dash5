@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState, useCallback } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { NextPage } from 'next'
 import { useRouter } from 'next/router'
 import { DateTime } from 'luxon'
@@ -19,7 +19,6 @@ import {
 } from '@mbari/react-ui'
 import {
   useDeployments,
-  useMissionStartedEvent,
   useTethysApiContext,
   useChartData,
   useVehiclePicAndOnCall,
