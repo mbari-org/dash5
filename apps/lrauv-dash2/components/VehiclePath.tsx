@@ -235,7 +235,9 @@ const VehiclePath: React.FC<VehiclePathProps> = ({
       if (!grouped) {
         dispatch({ type: 'clear' })
         if (route?.length) {
-          map.fitBounds(route)
+          map.fitBounds(route, {
+            paddingBottomRight: [0, 320], // Add bottom padding to deployment map to show path above the vehicle diagram
+          })
         }
       } else {
         dispatch({ type: 'append', coords: { [name]: route } })
