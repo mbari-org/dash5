@@ -167,24 +167,24 @@ const OverViewMap: React.FC<{
   }, [elevationAvailable, handleDepthRequest])
 
   useEffect(() => {
-    if (mapRef.current) {
+    if (mapRef?.current) {
       // Add timeout to ensure map has initialized properly
       setTimeout(() => {
         try {
           // Try multiple ways to access invalidateSize
-          if (typeof mapRef.current?.invalidateSize === 'function') {
-            mapRef.current.invalidateSize()
+          if (typeof mapRef?.current?.invalidateSize === 'function') {
+            mapRef?.current.invalidateSize()
             logger.debug('Map size invalidated directly')
           } else if (
-            mapRef.current &&
+            mapRef?.current &&
             // Use type assertion to access internal property
-            (mapRef.current as any)._leafletContainer?.invalidateSize
+            (mapRef?.current as any)._leafletContainer?.invalidateSize
           ) {
-            ;(mapRef.current as any)._leafletContainer.invalidateSize()
+            ;(mapRef?.current as any)._leafletContainer.invalidateSize()
             logger.debug('Map size invalidated via _leafletContainer')
-          } else if (mapRef.current?.getContainer?.()) {
+          } else if (mapRef?.current?.getContainer?.()) {
             // Try to access via container
-            const container = mapRef.current.getContainer()
+            const container = mapRef?.current.getContainer()
             if (container) {
               // Trigger a resize event manually
               const evt = new Event('resize')
@@ -272,10 +272,10 @@ const OverViewMap: React.FC<{
     }
 
     // Access layers if map reference exists
-    if (mapRef.current) {
+    if (mapRef?.current) {
       try {
         // Store the map reference
-        const leafletMap = mapRef.current
+        const leafletMap = mapRef?.current
 
         if (typeof leafletMap.eachLayer === 'function') {
           // Use eachLayer to iterate over all layers
@@ -332,18 +332,18 @@ const OverViewMap: React.FC<{
       setSelectedMarkerId((prevId) => (prevId === markerId ? null : markerId))
 
       // Close any open popups if a different marker is selected
-      if (mapRef.current && selectedMarkerId !== markerId) {
+      if (mapRef?.current && selectedMarkerId !== markerId) {
         try {
-          if (typeof mapRef.current.closePopup === 'function') {
-            mapRef.current.closePopup()
+          if (typeof mapRef?.current.closePopup === 'function') {
+            mapRef?.current.closePopup()
           } else if (
-            mapRef.current &&
-            typeof mapRef.current.closePopup === 'function'
+            mapRef?.current &&
+            typeof mapRef?.current.closePopup === 'function'
           ) {
-            mapRef.current.closePopup()
-          } else if (mapRef.current.getContainer) {
+            mapRef?.current.closePopup()
+          } else if (mapRef?.current.getContainer) {
             // Find open popups and close them manually
-            const container = mapRef.current.getContainer()
+            const container = mapRef?.current.getContainer()
             const popups = container.querySelectorAll('.leaflet-popup')
             if (popups.length > 0) {
               logger.debug('Closing popups manually')
@@ -467,7 +467,7 @@ const OverViewMap: React.FC<{
         )
 
         // Trigger UI updates if needed
-        if (shouldSave && mapRef.current) {
+        if (shouldSave && mapRef?.current) {
         }
       } catch (error) {
         logger.error('Error in handleSaveMarkerToLayer:', error)
@@ -524,16 +524,16 @@ const OverViewMap: React.FC<{
 
     // Map might need time to adjust after modal closes
     setTimeout(() => {
-      if (mapRef.current) {
+      if (mapRef?.current) {
         try {
           // Try invalidateSize method(s)
-          if (typeof mapRef.current.invalidateSize === 'function') {
-            mapRef.current.invalidateSize()
+          if (typeof mapRef?.current.invalidateSize === 'function') {
+            mapRef?.current.invalidateSize()
           } else {
             // Logs for debugging
             logger.debug(
               'Map reference properties:',
-              Object.keys(mapRef.current)
+              Object.keys(mapRef?.current)
             )
           }
           logger.debug('Map size invalidated after closing modal')
@@ -545,13 +545,13 @@ const OverViewMap: React.FC<{
   }, [])
 
   useEffect(() => {
-    if (mapRef.current) {
+    if (mapRef?.current) {
       logger.debug(
         'Available methods:',
-        Object.getOwnPropertyNames(mapRef.current).filter(
+        Object.getOwnPropertyNames(mapRef?.current).filter(
           (prop) =>
-            mapRef.current &&
-            typeof (mapRef.current as unknown as Record<string, unknown>)[
+            mapRef?.current &&
+            typeof (mapRef?.current as unknown as Record<string, unknown>)[
               prop
             ] === 'function'
         )
@@ -561,7 +561,7 @@ const OverViewMap: React.FC<{
 
   // Handle map reference
   useEffect(() => {
-    logger.debug('mapRef.current in OverViewMap:', mapRef.current)
+    logger.debug('mapRef?.current in OverViewMap:', mapRef?.current)
   }, [mapRef])
 
   return (
@@ -589,7 +589,7 @@ const OverViewMap: React.FC<{
             }
           }, 200)
         }}
-        trackedVehicles={trackedVehicles.map((vehicle) => ({
+        trackedVehicles={trackedVehicles?.map((vehicle) => ({
           ...vehicle,
           id: vehicle.id || vehicle.name, // Ensure id is always present
         }))}
@@ -670,7 +670,7 @@ const OverViewMap: React.FC<{
           )
         }
       >
-        {uniqueTrackedVehicles.map((name, index) => (
+        {uniqueTrackedVehicles?.map((name, index) => (
           <VehiclePath
             name={name.name}
             key={`path-${name}-${index}`}
@@ -678,7 +678,7 @@ const OverViewMap: React.FC<{
             grouped
           />
         ))}
-        {selectedStations.map((station) => {
+        {selectedStations?.map((station) => {
           const lng = station.geojson?.geometry?.coordinates[0]
           const lat = station.geojson?.geometry?.coordinates[1]
 

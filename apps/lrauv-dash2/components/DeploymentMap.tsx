@@ -141,26 +141,26 @@ const DeploymentMap: React.FC<DeploymentMapProps> = ({
   }, [vehicleName, setLatestGPS])
 
   useEffect(() => {
-    if (mapRef.current && !showVehicleColors) {
+    if (mapRef?.current && !showVehicleColors) {
       setTimeout(() => {
         try {
           // Try to invalidateSize method(s)
-          if (typeof mapRef.current.invalidateSize === 'function') {
-            mapRef.current.invalidateSize()
+          if (typeof mapRef?.current.invalidateSize === 'function') {
+            mapRef?.current.invalidateSize()
           } else if (
-            mapRef.current._leafletContainer &&
-            typeof mapRef.current._leafletContainer.invalidateSize ===
+            mapRef?.current._leafletContainer &&
+            typeof mapRef?.current._leafletContainer.invalidateSize ===
               'function'
           ) {
-            mapRef.current._leafletContainer.invalidateSize()
+            mapRef?.current._leafletContainer.invalidateSize()
           } else if (
-            mapRef.current.leafletElement &&
-            typeof mapRef.current.leafletElement.invalidateSize === 'function'
+            mapRef?.current.leafletElement &&
+            typeof mapRef?.current.leafletElement.invalidateSize === 'function'
           ) {
-            mapRef.current.leafletElement.invalidateSize()
+            mapRef?.current.leafletElement.invalidateSize()
           } else {
             // Log what we have for debugging
-            logger.debug('Map structure:', mapRef.current)
+            logger.debug('Map structure:', mapRef?.current)
           }
         } catch (e) {
           logger.warn('Error invalidating map size:', e)
@@ -197,7 +197,7 @@ const DeploymentMap: React.FC<DeploymentMapProps> = ({
         setLatestGPS(gps)
       }
       // Store position for path bounds calculation
-      if (gps.latitude && gps.longitude) {
+      if (gps?.latitude && gps?.longitude) {
         pathPoints.current.push([gps.latitude, gps.longitude])
       }
       // Limit stored positions to prevent memory issues
@@ -217,20 +217,20 @@ const DeploymentMap: React.FC<DeploymentMapProps> = ({
       setSelectedMarkerId((prevId) => (prevId === markerId ? null : markerId))
 
       // Close any open popups if a different marker is selected
-      if (mapRef.current && selectedMarkerId !== markerId) {
+      if (mapRef?.current && selectedMarkerId !== markerId) {
         try {
           // Try different ways to access closePopup
-          if (typeof mapRef.current.closePopup === 'function') {
-            mapRef.current.closePopup()
+          if (typeof mapRef?.current.closePopup === 'function') {
+            mapRef?.current.closePopup()
           } else if (
-            mapRef.current &&
-            typeof mapRef.current.closePopup === 'function'
+            mapRef?.current &&
+            typeof mapRef?.current.closePopup === 'function'
           ) {
             // Some React wrappers use _leafletElement
-            mapRef.current.closePopup()
-          } else if (mapRef.current.getContainer) {
+            mapRef?.current.closePopup()
+          } else if (mapRef?.current.getContainer) {
             // If we can access the container, try to find any open popups and close them manually
-            const container = mapRef.current.getContainer()
+            const container = mapRef?.current.getContainer()
             const popups = container.querySelectorAll('.leaflet-popup')
             if (popups.length > 0) {
               logger.debug('Closing popups manually')
@@ -362,7 +362,7 @@ const DeploymentMap: React.FC<DeploymentMapProps> = ({
         )
 
         // Trigger UI updates if needed
-        if (shouldSave && mapRef.current) {
+        if (shouldSave && mapRef?.current) {
           // This could optionally trigger a map UI update
         }
       } catch (error) {
@@ -488,23 +488,23 @@ const DeploymentMap: React.FC<DeploymentMapProps> = ({
 
     // Time for map to adjust after modal closes
     setTimeout(() => {
-      if (mapRef.current) {
+      if (mapRef?.current) {
         try {
           // Try invalidateSize method(s)
-          if (typeof mapRef.current.invalidateSize === 'function') {
-            mapRef.current.invalidateSize()
+          if (typeof mapRef?.current.invalidateSize === 'function') {
+            mapRef?.current.invalidateSize()
           } else if (
-            mapRef.current._leafletContainer &&
-            typeof mapRef.current._leafletContainer.invalidateSize ===
+            mapRef?.current._leafletContainer &&
+            typeof mapRef?.current._leafletContainer.invalidateSize ===
               'function'
           ) {
-            mapRef.current._leafletContainer.invalidateSize()
+            mapRef?.current._leafletContainer.invalidateSize()
           } else {
             // Log for debugging
-            logger.debug('Map reference type:', typeof mapRef.current)
+            logger.debug('Map reference type:', typeof mapRef?.current)
             logger.debug(
               'Map reference properties:',
-              Object.keys(mapRef.current)
+              Object.keys(mapRef?.current)
             )
           }
           logger.debug('Map size invalidated after closing modal')
@@ -578,7 +578,7 @@ const DeploymentMap: React.FC<DeploymentMapProps> = ({
           />
         )}
         renderDraggableMarkers={() =>
-          markers.map(
+          markers?.map(
             (marker) =>
               // Only render the marker if visible or if visibility !== false
               marker.visible !== false && (

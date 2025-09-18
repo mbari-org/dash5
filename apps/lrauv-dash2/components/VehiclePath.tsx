@@ -1,5 +1,4 @@
 import React, { useEffect, useRef, useCallback, useState, useMemo } from 'react'
-import { DateTime } from 'luxon'
 import { useVehiclePos, useLastDeployment, VPosDetail } from '@mbari/api-client'
 import { Polyline, useMap, Circle, Tooltip } from 'react-leaflet'
 import {
