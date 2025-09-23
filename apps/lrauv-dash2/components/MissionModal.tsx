@@ -87,13 +87,15 @@ const MissionModal: React.FC<MissionModalProps> = ({
     string | undefined
   >('Recent Runs')
 
+  const [showAllVehicleMissions, setShowAllVehicleMissions] = useState(false)
+
   const {
     recentRuns,
     allMissions: missions,
     selectedMissionData,
     isRecentRunsLoading: recentRunsLoading,
     missionCategories,
-  } = useMissionData({ vehicleName, selectedMission })
+  } = useMissionData({ vehicleName, selectedMission, showAllVehicleMissions })
 
   const {
     parameters,
@@ -255,6 +257,8 @@ const MissionModal: React.FC<MissionModalProps> = ({
       onSelectMissionCategory={handleSelectMissionCategory}
       selectedMissionCategory={selectedMissionCategory}
       defaultSearchText={globalModalId?.meta?.mission ?? ''}
+      showAllVehicleMissions={showAllVehicleMissions}
+      onShowAllVehicleMissions={setShowAllVehicleMissions}
       defaultOverrides={
         selectedMissionCategory === 'Recent Runs'
           ? [

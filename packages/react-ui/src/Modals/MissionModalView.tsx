@@ -76,6 +76,8 @@ export interface MissionModalViewProps
   defaultSearchText?: string
   missionsLoading?: boolean
   onSelectMissionCategory?: (category?: string) => void
+  showAllVehicleMissions?: boolean
+  onShowAllVehicleMissions?: (show: boolean) => void
 }
 
 export const MissionModalView: React.FC<MissionModalViewProps> = (props) => (
@@ -122,6 +124,8 @@ const MissionModalBody: React.FC<MissionModalViewProps> = ({
   defaultSearchText,
   missionsLoading,
   onSelectMissionCategory,
+  showAllVehicleMissions,
+  onShowAllVehicleMissions,
 }) => {
   const {
     state: {
@@ -279,6 +283,8 @@ const MissionModalBody: React.FC<MissionModalViewProps> = ({
             selectedCategory={selectedMissionCategory}
             defaultSearchText={defaultSearchText}
             loading={missionsLoading}
+            showAllVehicleMissions={showAllVehicleMissions}
+            onShowAllVehicleMissions={onShowAllVehicleMissions}
           />
         )
 
