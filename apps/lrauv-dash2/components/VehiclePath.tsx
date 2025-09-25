@@ -1,5 +1,10 @@
 import React, { useEffect, useRef, useCallback, useState, useMemo } from 'react'
-import { useVehiclePos, useLastDeployment, VPosDetail } from '@mbari/api-client'
+import {
+  useVehiclePos,
+  useLastDeployment,
+  VPosDetail,
+  useWaypointsInfo,
+} from '@mbari/api-client'
 import { Polyline, useMap, Circle, Tooltip } from 'react-leaflet'
 import { LatLng, LeafletMouseEventHandlerFn } from 'leaflet'
 import { useSharedPath } from './SharedPathContextProvider'
@@ -81,6 +86,11 @@ const VehiclePath: React.FC<VehiclePathProps> = ({
     {
       enabled: !!from || !!lastDeployment?.startEvent?.unixTime,
     }
+  )
+
+  const { data: futureWaypoints } = useWaypointsInfo(
+    { vehicle: name },
+    { enabled: !!name }
   )
 
   // Path/Point Stylization
@@ -178,6 +188,17 @@ const VehiclePath: React.FC<VehiclePathProps> = ({
   const route = vehiclePosition?.gpsFixes?.map(
     (g) => [g.latitude, g.longitude] as [number, number]
   )
+
+  const futureRoute = useMemo(() => {
+    const pts = futureWaypoints?.points
+    if (!pts?.length) return null
+    const latest = vehiclePosition?.gpsFixes?.[0]
+    const start =
+      latest?.latitude != null && latest?.longitude != null
+        ? [[latest.latitude, latest.longitude] as [number, number]]
+        : []
+    return [...start, ...pts.map((p) => [p.lat, p.lon] as [number, number])]
+  }, [futureWaypoints?.points, vehiclePosition?.gpsFixes])
 
   // DEPLOYMENT MAP
   // activePoints - Deployment Map
@@ -278,6 +299,13 @@ const VehiclePath: React.FC<VehiclePathProps> = ({
           },
         }}
       />
+      {/* dashed future waypoint trajectory */}
+      {futureRoute && (
+        <Polyline
+          positions={futureRoute}
+          pathOptions={{ color, weight: 5, opacity: 0.6, dashArray: '5, 10' }}
+        />
+      )}
       {latest && (
         <>
           {/* DEPLOYMENT AND OVERVIEW PAGE */}
