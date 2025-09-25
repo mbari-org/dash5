@@ -44,13 +44,16 @@ import { SelectedStationsProvider } from '../../components/SelectedStationContex
 import { SelectedPlatformsProvider } from '../../components/SelectedPlatformContext'
 import { createRoleLabel } from '@mbari/utils'
 
+// Every flex parent of the map needs `min-h-0`
+// Without it, Leaflet sometimes shows gray tiles
+
 const styles = {
-  content: 'flex flex-shrink flex-grow flex-row overflow-hidden',
-  primary: 'flex h-full flex-shrink flex-grow flex-col',
+  content: 'flex flex-shrink flex-grow flex-row overflow-hidden min-h-0',
+  primary: 'flex h-full flex-shrink flex-grow flex-col min-h-0',
   mapContainer:
-    'flex flex-shrink flex-col flex-grow bg-blue-300 relative h-full',
+    'flex flex-shrink flex-col flex-grow bg-blue-300 relative h-full min-h-0',
   secondary:
-    'flex w-full h-full flex-shrink-0 flex-col bg-white border-t-2 border-t-secondary-300/60 border-l border-l-slate-300',
+    'flex w-full h-full flex-shrink-0 flex-col bg-white border-t-2 border-t-secondary-300/60 border-l border-l-slate-300 min-h-0',
 }
 
 const LineChart = dynamic(
@@ -315,14 +318,14 @@ const Vehicle: NextPage = () => {
               authenticated={authenticated}
             />
             <div className={styles.content}>
-              <Allotment separator defaultSizes={[75, 25]}>
+              <Allotment separator defaultSizes={[75, 25]} className="min-h-0">
                 <section className={styles.primary}>
                   <MissionProgressToolbar
                     startTime={DateTime.fromMillis(startTime).toISO()}
                     endTime={DateTime.fromMillis(endTime).toISO()}
                     ticks={6}
                     ariaLabel="Mission Progress"
-                    className="bg-secondary-300/60"
+                    className="min-h-0 bg-secondary-300/60"
                     onScrub={handleTimeScrub}
                     indicatorTime={indicatorTime}
                   />

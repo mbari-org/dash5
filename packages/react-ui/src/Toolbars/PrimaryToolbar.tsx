@@ -7,7 +7,7 @@ import { faPlus, faSignIn, faTimes } from '@fortawesome/free-solid-svg-icons'
 import { faUser } from '@fortawesome/free-solid-svg-icons'
 
 const styles = {
-  bar: 'w-full flex flex-row bg-secondary-300 px-8 py-4',
+  bar: 'w-full flex flex-row bg-secondary-300 px-8 py-4 min-h-0',
   list: 'flex flex-row items-center align-center justify-between flex-grow w-full',
   item: 'flex my-auto self-center relative',
   option: 'mr-2',
