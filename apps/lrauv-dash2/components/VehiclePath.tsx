@@ -306,6 +306,23 @@ const VehiclePath: React.FC<VehiclePathProps> = ({
           pathOptions={{ color, weight: 5, opacity: 0.6, dashArray: '5, 10' }}
         />
       )}
+
+      {/* small dotted circles around future waypoint positions (exclude latest position) */}
+      {futureRoute &&
+        futureRoute.slice(1).map((p, i) => (
+          <Circle
+            key={`${name}:future-ring:${i}:${p.join()}`}
+            center={{ lat: p[0], lng: p[1] }}
+            pathOptions={{
+              color,
+              fillColor: color,
+              fillOpacity: 0.1,
+              weight: 1,
+              dashArray: '4, 4',
+            }}
+            radius={20}
+          />
+        ))}
       {latest && (
         <>
           {/* DEPLOYMENT AND OVERVIEW PAGE */}
