@@ -56,8 +56,14 @@ export interface EventKind {
   subkind?: string
 }
 
+export interface vehicleBasicInfos {
+  vehicleName: string
+  color: string
+}
+
 export interface GetInfoResponse {
   vehicleNames: string[]
+  vehicleBasicInfos: vehicleBasicInfos[]
   defaultVehicle: string
   eventTypes: string[]
   eventKinds: EventKind[]
