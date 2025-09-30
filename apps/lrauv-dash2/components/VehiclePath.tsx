@@ -1,5 +1,10 @@
 import React, { useEffect, useRef, useCallback, useState, useMemo } from 'react'
-import { useVehiclePos, useLastDeployment, VPosDetail } from '@mbari/api-client'
+import {
+  useVehiclePos,
+  useLastDeployment,
+  VPosDetail,
+  useWaypointsInfo,
+} from '@mbari/api-client'
 import { Polyline, useMap, Circle, Tooltip } from 'react-leaflet'
 import { LatLng, LeafletMouseEventHandlerFn } from 'leaflet'
 import { useSharedPath } from './SharedPathContextProvider'
@@ -81,6 +86,11 @@ const VehiclePath: React.FC<VehiclePathProps> = ({
     {
       enabled: !!from || !!lastDeployment?.startEvent?.unixTime,
     }
+  )
+
+  const { data: futureWaypoints } = useWaypointsInfo(
+    { vehicle: name },
+    { enabled: !!name }
   )
 
   // Path/Point Stylization
@@ -179,6 +189,32 @@ const VehiclePath: React.FC<VehiclePathProps> = ({
     (g) => [g.latitude, g.longitude] as [number, number]
   )
 
+  const futureRoute = useMemo(() => {
+    const pts = futureWaypoints?.points
+    if (!pts?.length) return null
+    const latest = vehiclePosition?.gpsFixes?.[0]
+    const start =
+      latest?.latitude != null && latest?.longitude != null
+        ? [[latest.latitude, latest.longitude] as [number, number]]
+        : []
+    return [...start, ...pts.map((p) => [p.lat, p.lon] as [number, number])]
+  }, [futureWaypoints?.points, vehiclePosition?.gpsFixes])
+
+  const fitPositions = useMemo(() => {
+    const current = route ?? []
+    const future = futureRoute ?? []
+    const all = [...current, ...future]
+    if (all.length === 0) return null
+    const seen = new Set<string>()
+    const deduped = all.filter((p) => {
+      const key = `${p[0]},${p[1]}`
+      if (seen.has(key)) return false
+      seen.add(key)
+      return true
+    })
+    return deduped
+  }, [route, futureRoute])
+
   // DEPLOYMENT MAP
   // activePoints - Deployment Map
   const activePoints =
@@ -211,28 +247,39 @@ const VehiclePath: React.FC<VehiclePathProps> = ({
     ]
       ?.filter((g) => g && g.latitude != null && g.longitude != null)
       .map((g) => [g?.latitude ?? 0, g?.longitude ?? 0] as [number, number])
-  // fit
-  const fit = useRef<string | null | undefined>(null)
-  // routeAsString
-  const routeAsString = route?.flat().join()
+
+  const fitRef = useRef<string | null | undefined>(null)
+  const fitPositionsAsString = fitPositions?.flat().join()
 
   // Fit bounds for Deployment Map
   useEffect(() => {
     //  Disable map auto-fit centering when the user interacts with timeline.
-    if (fit.current !== routeAsString && route && !disableAutoFit) {
+    if (
+      fitRef.current !== fitPositionsAsString &&
+      fitPositions &&
+      !disableAutoFit
+    ) {
       if (!grouped) {
         dispatch({ type: 'clear' })
-        if (route?.length) {
-          map.fitBounds(route, {
+        if (fitPositions?.length) {
+          map.fitBounds(fitPositions, {
             paddingBottomRight: [0, 320], // Add bottom padding to deployment map to show path above the vehicle diagram
           })
         }
       } else {
-        dispatch({ type: 'append', coords: { [name]: route } })
+        dispatch({ type: 'append', coords: { [name]: fitPositions } })
       }
-      fit.current = routeAsString
+      fitRef.current = fitPositionsAsString
     }
-  }, [route, map, dispatch, name, grouped, routeAsString, disableAutoFit])
+  }, [
+    fitPositions,
+    map,
+    dispatch,
+    name,
+    grouped,
+    fitPositionsAsString,
+    disableAutoFit,
+  ])
 
   // OVERVIEW MAP
   // Fit bounds for OverViewMap
@@ -278,6 +325,30 @@ const VehiclePath: React.FC<VehiclePathProps> = ({
           },
         }}
       />
+      {/* dashed future waypoint trajectory */}
+      {futureRoute && (
+        <Polyline
+          positions={futureRoute}
+          pathOptions={{ color, weight: 5, opacity: 0.6, dashArray: '5, 10' }}
+        />
+      )}
+
+      {/* small dotted circles around future waypoint positions (exclude latest position) */}
+      {futureRoute &&
+        futureRoute.slice(1).map((p, i) => (
+          <Circle
+            key={`${name}:future-ring:${i}:${p.join()}`}
+            center={{ lat: p[0], lng: p[1] }}
+            pathOptions={{
+              color,
+              fillColor: color,
+              fillOpacity: 0.1,
+              weight: 1,
+              dashArray: '4, 4',
+            }}
+            radius={20}
+          />
+        ))}
       {latest && (
         <>
           {/* DEPLOYMENT AND OVERVIEW PAGE */}
