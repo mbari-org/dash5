@@ -2,8 +2,7 @@ import {
   useVehicleInfo,
   useLastDeployment,
   useVehiclePos,
-  useVehicles,
-  usePlatforms,
+  useSiteConfig,
   useMissionStartedEvent,
   GetVehicleInfoResponse,
 } from '@mbari/api-client'
@@ -16,18 +15,14 @@ import {
 } from '@mbari/react-ui'
 import { useVehicleColors } from './VehicleColorsContext'
 import { capitalize } from '@mbari/utils'
-import React, { useEffect, useState } from 'react'
+import React, { useEffect } from 'react'
 import useTrackedVehicles from '../lib/useTrackedVehicles'
 import axios from 'axios'
 import { DateTime } from 'luxon'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { faCheck, faSync } from '@fortawesome/free-solid-svg-icons'
-import { useCookies } from 'react-cookie'
 import useGlobalModalId from '../lib/useGlobalModalId'
 import { useTethysSubscriptionEvent } from '../lib/useWebSocketListeners'
-import { createLogger } from '@mbari/utils'
-
-const logger = createLogger('VehicleList')
 
 const parsePos = (pos: string | number) => parseFloat(`${pos}`).toFixed(3)
 const calcPosition = (lat?: number | string, long?: number | string) =>
@@ -83,13 +78,6 @@ const ConnectedVehicleCell: React.FC<{
     }
   )
   const pingEvent = useTethysSubscriptionEvent('VehiclePingResult', name)
-
-  // TODO: Remove this demonstations of 'usePlatforms'
-  // const { data: platforms } = usePlatforms(
-  // { refresh: 'y' },
-  // { baseUrl: process.env.NEXT_PUBLIC_ODSS2BASE_URL }
-  // )
-  // logger.debug('platformsTest', platforms)
 
   const mission = missionStartedEvent?.[0]?.text.replace(/started mission/i, '')
   const isLoading = positionLoading || vehicleInfoLoading
@@ -280,10 +268,13 @@ const VehicleList: React.FC<{
   onSelectVehicle?: (vehicle: string) => void
 }> = ({ onSelectVehicle: handleSelectVehicle }) => {
   const { trackedVehicles } = useTrackedVehicles()
-  const vehicles = useVehicles({})
+  const { data: siteConfig } = useSiteConfig()
+
   const [accordionState, setAccordionState] = React.useState<{
     [key: string]: 'open' | 'closed' | undefined
   }>({})
+
+  const vehicles = siteConfig?.vehicleBasicInfos
 
   const { vehicleColors } = useVehicleColors()
 
@@ -297,8 +288,7 @@ const VehicleList: React.FC<{
   const cellAtIndex = (index: number, virtualizer: Virtualizer) => {
     const vehicleColor =
       vehicleColors[trackedVehicles[index].toLowerCase()] ||
-      vehicles.data?.find((v) => v.vehicleName === trackedVehicles[index])
-        ?.color ||
+      vehicles?.find((v) => v.vehicleName === trackedVehicles[index])?.color ||
       '#ccc'
     const handleSelect = () => {
       handleSelectVehicle?.(trackedVehicles[index])
