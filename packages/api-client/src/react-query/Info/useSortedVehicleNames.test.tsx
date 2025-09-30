@@ -8,23 +8,25 @@ import { setupServer } from 'msw/node'
 import { MockProviders } from '../queryTestHelpers'
 
 const mockVehicleResponse = {
-  result: [
-    { vehicleName: 'ahi', color: '#FF9900' },
-    { vehicleName: 'aku', color: '#CC33FF' },
-    { vehicleName: 'brizo', color: '#f4ba0c' },
-    { vehicleName: 'daphne', color: '#FF9900' },
-    { vehicleName: 'galene', color: '#CC33FF' },
-    { vehicleName: 'makai', color: '#FF0000' },
-    { vehicleName: 'melia', color: '#FF0000' },
-    { vehicleName: 'mesobot', color: '#FF0000' },
-    { vehicleName: 'opah', color: '#CC33FF' },
-    { vehicleName: 'polaris', color: '#FF0000' },
-    { vehicleName: 'pontus', color: '#BD9782' },
-    { vehicleName: 'sim', color: '#FF0000' },
-    { vehicleName: 'stella', color: '#FF0000' },
-    { vehicleName: 'tethys', color: '#CC33FF' },
-    { vehicleName: 'triton', color: '#f4ba0c' },
-  ],
+  result: {
+    vehicleBasicInfos: [
+      { vehicleName: 'ahi', color: '#FF9900' },
+      { vehicleName: 'aku', color: '#CC33FF' },
+      { vehicleName: 'brizo', color: '#f4ba0c' },
+      { vehicleName: 'daphne', color: '#FF9900' },
+      { vehicleName: 'galene', color: '#CC33FF' },
+      { vehicleName: 'makai', color: '#FF0000' },
+      { vehicleName: 'melia', color: '#FF0000' },
+      { vehicleName: 'mesobot', color: '#FF0000' },
+      { vehicleName: 'opah', color: '#CC33FF' },
+      { vehicleName: 'polaris', color: '#FF0000' },
+      { vehicleName: 'pontus', color: '#BD9782' },
+      { vehicleName: 'sim', color: '#FF0000' },
+      { vehicleName: 'stella', color: '#FF0000' },
+      { vehicleName: 'tethys', color: '#CC33FF' },
+      { vehicleName: 'triton', color: '#f4ba0c' },
+    ],
+  },
 }
 
 const mockDeploymentResponse = {
@@ -94,7 +96,7 @@ const mockDeploymentResponse = {
 }
 
 const server = setupServer(
-  rest.get('/info/vehicles', (_req, res, ctx) => {
+  rest.get('/info', (_req, res, ctx) => {
     return res(ctx.status(200), ctx.json(mockVehicleResponse))
   }),
   rest.get('/deployments/last', (req, res, ctx) => {
@@ -115,9 +117,7 @@ afterEach(() => server.resetHandlers())
 afterAll(() => server.close())
 
 const MockVehicleList: React.FC = () => {
-  const query = useSortedVehicleNames({
-    refresh: 'y',
-  })
+  const query = useSortedVehicleNames()
   return (
     <>
       {query.isLoading
