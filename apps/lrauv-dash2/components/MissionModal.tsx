@@ -11,8 +11,8 @@ import {
   useUnits,
   useStations,
   useSbdOutgoingAlternativeAddresses,
-  useVehicleNames,
   useCreateCommand,
+  useSiteConfig,
 } from '@mbari/api-client'
 import { useMissionData } from '../lib/useMissionData'
 import { useRouter } from 'next/router'
@@ -55,7 +55,8 @@ const MissionModal: React.FC<MissionModalProps> = ({
   const vehicleName = params[0]
 
   // Network supplied data
-  const { data: vehicles } = useVehicleNames({ refresh: 'n' })
+  const { data: vehicleInfo } = useSiteConfig()
+  const vehicles = vehicleInfo?.vehicleNames ?? []
   const { data: alternativeAddresses } = useSbdOutgoingAlternativeAddresses({})
   const { data: unitsData } = useUnits()
 

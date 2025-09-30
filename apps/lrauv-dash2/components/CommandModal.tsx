@@ -13,9 +13,9 @@ import {
   useMissionList,
   useScript,
   useCreateCommand,
-  useVehicleNames,
   useSbdOutgoingAlternativeAddresses,
   CreateCommandParams,
+  useSiteConfig,
 } from '@mbari/api-client'
 import { makeCommand } from '../lib/makeCommand'
 import { useRouter } from 'next/router'
@@ -74,7 +74,8 @@ export const CommandModal: React.FC<CommandModalProps> = ({
   }
 
   // Network supplied data
-  const { data: vehicles } = useVehicleNames({ refresh: 'n' })
+  const { data: vehicleInfo } = useSiteConfig()
+  const vehicles = vehicleInfo?.vehicleNames ?? []
   const { data: unitsData } = useUnits()
   const { data: commandData } = useCommands()
   const { data: recentCommandsData } = useRecentCommands({
