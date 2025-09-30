@@ -33,7 +33,6 @@ import { Measurement } from './Measurement'
 import MovingDot from './MovingDot'
 import { AreaComponent, PathComponent, MeasurementProps } from './Measurement'
 import { CenterView } from './MapViews'
-import toast from 'react-hot-toast'
 import { createLogger, loadGoogleMapsOnce } from '@mbari/utils'
 import VehicleColorsModal from '@mbari/lrauv-dash2/components/VehicleColorsModal'
 
@@ -59,6 +58,8 @@ const createSafeLogger = (
 
 // safeLogger instance that will be used during initialization
 const safeLogger = createSafeLogger(logger, ['debug'])
+
+const DEFAULT_CENTER: [number, number] = [36.8022, -121.788]
 
 const regex = /\B(?=(\d{3})+(?!\d))/g
 
@@ -140,7 +141,7 @@ const Map = React.forwardRef<L.Map, MapProps>(
     {
       className,
       style,
-      center = [36.7849, -122.12097],
+      center = DEFAULT_CENTER,
       centerZoom,
       zoom = 17,
       minZoom = 4,
@@ -192,6 +193,13 @@ const Map = React.forwardRef<L.Map, MapProps>(
     const [showVehicleColorsModal, setShowVehicleColorsModal] = useState(false)
     const vehicleColorsButtonRef = useRef<HTMLButtonElement>(null)
     const [modalPosition, setModalPosition] = useState({ top: 0, left: 0 })
+
+    const validatedCenter: [number, number] =
+      Array.isArray(center) &&
+      Number.isFinite(center[0]) &&
+      Number.isFinite(center[1])
+        ? center
+        : DEFAULT_CENTER
 
     // Google Maps initialization
     useEffect(() => {
@@ -309,16 +317,16 @@ const Map = React.forwardRef<L.Map, MapProps>(
 
     // Skip the log if ref is null - this is expected during initial render
     useEffect(() => {
-      if (ref && !mapRef.current) {
+      if (ref && !mapRef?.current) {
         // Don't log every time - very noisy
         return
       }
 
       // Forward the ref
       if (typeof ref === 'function') {
-        ref(mapRef.current)
+        ref(mapRef?.current)
       } else if (ref && typeof ref === 'object') {
-        ref.current = mapRef.current
+        ref.current = mapRef?.current
       }
     }, [ref])
 
@@ -703,7 +711,7 @@ const Map = React.forwardRef<L.Map, MapProps>(
 
     return (
       <MapContainer
-        center={center}
+        center={validatedCenter}
         zoom={zoom}
         scrollWheelZoom={true}
         className={className}
@@ -767,7 +775,7 @@ const Map = React.forwardRef<L.Map, MapProps>(
       >
         {!isMeasuring && (
           <CenterView
-            coords={center as [number, number]}
+            coords={validatedCenter}
             bounds={fitBounds as [[number, number], [number, number]]}
             zoom={centerZoom as number}
             viewMode={viewMode as 'center' | 'bounds' | null}

@@ -70,13 +70,13 @@ const VehiclePath: React.FC<VehiclePathProps> = ({
     {
       vehicle: name,
     },
-    { staleTime: 5 * 60 * 1000 }
+    { staleTime: 5 * 60 * 1000, enabled: !from }
   )
   const { data: vehiclePosition } = useVehiclePos(
     {
       vehicle: name as string,
-      from: lastDeployment?.startEvent?.unixTime ?? 0,
-      to: to,
+      from: from ? from : lastDeployment?.startEvent?.unixTime ?? 0,
+      to: from ? to : lastDeployment?.endEvent?.unixTime,
     },
     {
       enabled: !!from || !!lastDeployment?.startEvent?.unixTime,
@@ -223,7 +223,9 @@ const VehiclePath: React.FC<VehiclePathProps> = ({
       if (!grouped) {
         dispatch({ type: 'clear' })
         if (route?.length) {
-          map.fitBounds(route)
+          map.fitBounds(route, {
+            paddingBottomRight: [0, 320], // Add bottom padding to deployment map to show path above the vehicle diagram
+          })
         }
       } else {
         dispatch({ type: 'append', coords: { [name]: route } })
@@ -260,7 +262,7 @@ const VehiclePath: React.FC<VehiclePathProps> = ({
     }
   }
 
-  return route ? (
+  return route?.length ? (
     <>
       <Polyline
         pathOptions={lineStyle}

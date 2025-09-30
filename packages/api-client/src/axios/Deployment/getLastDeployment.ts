@@ -22,6 +22,8 @@ export interface DListResult {
   messages?: string[]
 }
 
+// IMPORTANT NOTE: the last deployment endpoint sometimes returns a deployment with a start event that is in the future in preparation for the mission
+
 export interface GetLastDeploymentResponse {
   deploymentId: string
   vehicle: string
