@@ -91,7 +91,7 @@ const Layout: React.FC<{ children?: React.ReactNode }> = ({ children }) => {
 
   const vehicleName = router.query.deployment?.[0] ?? ''
   return (
-    <div className="flex h-screen w-screen flex-col">
+    <div className="flex h-screen min-h-screen w-screen flex-col">
       <Head>
         <title>LRAUV Dash Client</title>
         <meta

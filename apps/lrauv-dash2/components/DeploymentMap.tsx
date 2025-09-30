@@ -533,7 +533,7 @@ const DeploymentMap: React.FC<DeploymentMapProps> = ({
   }, [trackedVehicles, vehicleName])
 
   return (
-    <>
+    <div className="h-full min-h-0 w-full">
       {showLayersModal ? (
         <MapLayersListModal
           onClose={handleCloseLayers}
@@ -542,7 +542,7 @@ const DeploymentMap: React.FC<DeploymentMapProps> = ({
       ) : null}
       <Map
         ref={mapRef}
-        className="h-full w-full"
+        className="h-full min-h-0 w-full"
         maxZoom={17}
         onMapReady={(map) => {
           logger.debug('Map is ready!')
@@ -673,7 +673,7 @@ const DeploymentMap: React.FC<DeploymentMapProps> = ({
           forceShowAll={true}
         />
       </Map>
-    </>
+    </div>
   )
 }
 

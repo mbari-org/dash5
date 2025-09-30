@@ -39,7 +39,7 @@ export interface OverviewToolbarProps {
 }
 
 const styles = {
-  container: 'flex font-display bg-white px-4 py-2',
+  container: 'flex font-display bg-white px-4 py-2 min-h-0',
   leftWrapper: 'flex flex-grow items-center px-2',
   rightWrapper: 'flex items-center px-2',
   chevron: 'pl-4 text-xs',

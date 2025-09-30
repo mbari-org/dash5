@@ -14,3 +14,10 @@ a {
 * {
   box-sizing: border-box;
 }
+
+/*  This is a workaround to make sure that every parent element of the map has a min height on load to prevent Leaflet from showing gray tiles */
+
+.split-view-container,
+.split-view-view {
+  min-height: 0 !important;
+}
