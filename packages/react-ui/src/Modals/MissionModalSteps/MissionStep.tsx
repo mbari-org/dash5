@@ -13,6 +13,8 @@ export interface MissionStepProps {
   missionCategories?: SelectOption[]
   selectedCategory?: string
   onSelectCategory?: (id?: string) => void
+  showAllVehicleMissions?: boolean
+  onShowAllVehicleMissions?: (show: boolean) => void
   defaultSearchText?: string
   loading?: boolean
 }
@@ -25,6 +27,8 @@ export const MissionStep: React.FC<MissionStepProps> = ({
   missionCategories,
   onSelectCategory: handleSelectCategory,
   selectedCategory = 'Recent Runs',
+  showAllVehicleMissions = false,
+  onShowAllVehicleMissions: handleShowAllVehicleMissions,
   defaultSearchText = '',
   loading,
 }) => {
@@ -108,11 +112,37 @@ export const MissionStep: React.FC<MissionStepProps> = ({
   return (
     <article className="h-full">
       <ul className="grid grid-cols-5 pb-2">
-        <li className="col-span-2 self-center">
-          Select a command for{' '}
-          <span className="text-teal-500" data-testid="vehicle name">
-            {vehicleName}
-          </span>
+        <li className="col-span-2 flex flex-col items-start">
+          <div>
+            {' '}
+            Select a command for{' '}
+            <span className="text-teal-500" data-testid="vehicle name">
+              {vehicleName}
+            </span>
+          </div>
+          <label
+            htmlFor="showAllVehicleMissions"
+            onClick={(e) => e.stopPropagation()}
+            className={`flex items-center text-sm ${
+              selectedCategory?.match(/recent runs/i)
+                ? 'cursor-pointer'
+                : 'opacity-40'
+            }`}
+          >
+            <input
+              id="showAllVehicleMissions"
+              name="showAllVehicleMissions"
+              type="checkbox"
+              className="mr-1 h-4 w-4 cursor-pointer disabled:cursor-not-allowed"
+              checked={showAllVehicleMissions}
+              disabled={!selectedCategory?.match(/recent runs/i)}
+              onChange={(e) => {
+                e.stopPropagation()
+                handleShowAllVehicleMissions?.(e.target.checked)
+              }}
+            />
+            Show recent runs for all vehicles
+          </label>
         </li>
         <li className="col-span-3 flex items-center">
           <SelectField

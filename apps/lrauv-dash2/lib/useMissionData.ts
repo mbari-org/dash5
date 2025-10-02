@@ -24,8 +24,9 @@ const LAST_60_DAYS = getAdjustedUnixTime({
 export const useMissionData = (params: {
   vehicleName: string
   selectedMission?: string
+  showAllVehicleMissions?: boolean
 }) => {
-  const { vehicleName, selectedMission } = params
+  const { vehicleName, selectedMission, showAllVehicleMissions } = params
 
   const { data: missionData } = useMissionList()
   // this gets the original mission template data (ie it would be the original sci2_flat_and_level mission, not a recent run of sci2_flat_and_level where the pilot has applied overrides)
@@ -39,10 +40,11 @@ export const useMissionData = (params: {
 
   const recentRunsParams = useMemo(
     () => ({
-      vehicles: [], // All vehicles by default
-      from: LAST_60_DAYS,
+      vehicles: showAllVehicleMissions ? [] : vehicleName ? [vehicleName] : [],
+      from: showAllVehicleMissions ? LAST_60_DAYS : 0,
+      limit: showAllVehicleMissions ? undefined : 100,
     }),
-    []
+    [vehicleName, showAllVehicleMissions]
   )
 
   const { data: recentRunsData, isLoading: isRecentRunsLoading } =
