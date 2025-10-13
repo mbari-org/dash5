@@ -79,14 +79,27 @@ export const MissionStep: React.FC<MissionStepProps> = ({
     }) as Mission[]
   }, [filteredMissions, sortColumn, sortDirection])
 
+  // If it's a recent run, include pilot name in the searchable text, otherwise include mission description for other categroies (mission description for recent runs is the parameters, which should not be included)
+  const searchableMissionTextMap = useMemo(() => {
+    const map = new Map<string, string>()
+    sortedMissions?.forEach((mission) => {
+      let text = `${mission?.id ?? ''} ${mission?.note ?? ''}`.toLowerCase()
+      selectedCategory?.match(/recent runs/i)
+        ? (text += mission?.ranBy?.toLowerCase() ?? '')
+        : (text += mission?.description?.toLowerCase() ?? '')
+      if (mission?.id) map.set(mission.id, text)
+    })
+    return map
+  }, [sortedMissions, selectedCategory])
+
   // Apply search term to the sorted list if present
   const searchedMissions = useMemo(() => {
     if (!searchTerm) return sortedMissions ?? []
     const lowerCaseTerm = searchTerm.toLowerCase()
     return sortedMissions.filter((mission) =>
-      Object.values(mission).join(' ').toLowerCase().includes(lowerCaseTerm)
+      (searchableMissionTextMap?.get(mission.id) ?? '').includes(lowerCaseTerm)
     )
-  }, [searchTerm, sortedMissions])
+  }, [searchTerm, sortedMissions, searchableMissionTextMap])
 
   const handleSelectCategoryId = (id: string | null) => {
     if (!id) {
@@ -98,6 +111,7 @@ export const MissionStep: React.FC<MissionStepProps> = ({
   }
 
   const handleSearch = (term: string) => {
+    // deselect any selected mission when searching so it doesn't stay selected when not visible due to search
     if (selectedId) {
       onSelect(null)
     }
