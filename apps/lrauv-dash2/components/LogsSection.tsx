@@ -25,11 +25,8 @@ import formatEvent, {
 import { applyEventFilters } from '../lib/eventFilterUtils'
 import { createLogger, useDebounce } from '@mbari/utils'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
-import {
-  faChevronDown,
-  faChevronUp,
-  faExternalLink,
-} from '@fortawesome/free-solid-svg-icons'
+import { faChevronDown, faChevronUp } from '@fortawesome/free-solid-svg-icons'
+import { RealTimeLogs } from './RealTimeLogs'
 
 const logger = createLogger('components.LogsSection')
 
@@ -63,40 +60,6 @@ const LogsSection: React.FC<LogsSectionProps> = ({
   const [filtersOpen, setFiltersOpen] = useState(false)
   const [searchText, setSearchText] = useState('')
   const debouncedSearchText = useDebounce(searchText, 250)
-
-  const { data: latestDataProcessed } = useEvents(
-    {
-      vehicles: [vehicleName],
-      eventTypes: ['dataProcessed'],
-      from: 0,
-      limit: 1,
-      ascending: 'n',
-    },
-    { staleTime: 60 * 1000 }
-  )
-
-  const espUrl = useMemo(() => {
-    const base = siteConfig?.appConfig.external.tethysdash
-    if (!base || !vehicleName) return undefined
-    return `${base}/data/${vehicleName}/realtime/ESPlogs/`
-  }, [siteConfig, vehicleName])
-
-  const shoreUrl = useMemo(() => {
-    const base = siteConfig?.appConfig.external.tethysdash
-    const path = latestDataProcessed?.[0]?.path
-    if (!base || !vehicleName || !path) return undefined
-    return `${base}/data/${vehicleName}/realtime/sbdlogs/${path}/shore.log`
-  }, [siteConfig, vehicleName, latestDataProcessed])
-
-  const handleEspClick = () => {
-    if (!espUrl) return
-    window.open(espUrl, '_blank', 'noopener,noreferrer')
-  }
-
-  const handleShoreClick = () => {
-    if (!shoreUrl) return
-    window.open(shoreUrl, '_blank', 'noopener,noreferrer')
-  }
 
   const eventFilterIds = useMemo(() => Object.keys(eventFilters), [])
 
@@ -310,24 +273,7 @@ const LogsSection: React.FC<LogsSectionProps> = ({
               </div>
             )}
           </div>
-          <Button
-            appearance="secondary"
-            onClick={handleShoreClick}
-            disabled={!shoreUrl}
-            aria-label="Open shore log file in a new browser tab"
-          >
-            <FontAwesomeIcon icon={faExternalLink} className="mr-2" />
-            Shore Log
-          </Button>
-          <Button
-            appearance="secondary"
-            onClick={handleEspClick}
-            disabled={!espUrl}
-            aria-label="Open ESP Logs listing in a new browser tab"
-          >
-            <FontAwesomeIcon icon={faExternalLink} className="mr-2" />
-            ESP Log
-          </Button>
+          <RealTimeLogs vehicleName={vehicleName} />
         </div>
         <LogsToolbar
           deploymentLogsOnly={deploymentLogsOnly}
