@@ -21,7 +21,11 @@ import formatEvent, {
 import { applyEventFilters } from '../lib/eventFilterUtils'
 import { createLogger, useDebounce } from '@mbari/utils'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
-import { faChevronDown, faChevronUp } from '@fortawesome/free-solid-svg-icons'
+import {
+  faChevronDown,
+  faChevronUp,
+  faExternalLink,
+} from '@fortawesome/free-solid-svg-icons'
 
 const logger = createLogger('components.LogsSection')
 
@@ -55,6 +59,17 @@ const LogsSection: React.FC<LogsSectionProps> = ({
   const [filtersOpen, setFiltersOpen] = useState(false)
   const [searchText, setSearchText] = useState('')
   const debouncedSearchText = useDebounce(searchText, 250)
+
+  const espUrl = useMemo(() => {
+    const base = siteConfig?.appConfig.external.tethysdash
+    if (!base || !vehicleName) return undefined
+    return `${base}/data/${vehicleName}/realtime/ESPlogs/`
+  }, [siteConfig, vehicleName])
+
+  const handleEspClick = () => {
+    if (!espUrl) return
+    window.open(espUrl, '_blank', 'noopener,noreferrer')
+  }
 
   const eventFilterIds = useMemo(() => Object.keys(eventFilters), [])
 
@@ -268,6 +283,15 @@ const LogsSection: React.FC<LogsSectionProps> = ({
               </div>
             )}
           </div>
+          <Button
+            appearance="secondary"
+            onClick={handleEspClick}
+            disabled={!espUrl}
+            aria-label="Open ESP Logs listing in a new browser tab"
+          >
+            <FontAwesomeIcon icon={faExternalLink} className="mr-2" />
+            ESP Log
+          </Button>
         </div>
         <LogsToolbar
           deploymentLogsOnly={deploymentLogsOnly}
