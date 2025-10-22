@@ -1,5 +1,9 @@
 import React, { useMemo, useState } from 'react'
-import { useInfiniteEvents, useTethysApiContext } from '@mbari/api-client'
+import {
+  useInfiniteEvents,
+  useTethysApiContext,
+  useEvents,
+} from '@mbari/api-client'
 import {
   Virtualizer,
   LogCell,
@@ -22,6 +26,7 @@ import { applyEventFilters } from '../lib/eventFilterUtils'
 import { createLogger, useDebounce } from '@mbari/utils'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { faChevronDown, faChevronUp } from '@fortawesome/free-solid-svg-icons'
+import { RealTimeLogs } from './RealTimeLogs'
 
 const logger = createLogger('components.LogsSection')
 
@@ -268,6 +273,7 @@ const LogsSection: React.FC<LogsSectionProps> = ({
               </div>
             )}
           </div>
+          <RealTimeLogs vehicleName={vehicleName} />
         </div>
         <LogsToolbar
           deploymentLogsOnly={deploymentLogsOnly}
