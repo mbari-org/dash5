@@ -20,6 +20,7 @@ export type ModalId =
   | 'vehicleComms'
   | 'battery'
   | 'color'
+  | 'emailNotifications'
   | null
 
 export interface GlobalModalMetaData {

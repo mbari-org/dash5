@@ -1,6 +1,6 @@
 import React, { useEffect } from 'react'
 import Head from 'next/head'
-import { PrimaryToolbar, ProfileDropdown, Modal } from '@mbari/react-ui'
+import { PrimaryToolbar, ProfileDropdown } from '@mbari/react-ui'
 import { useTethysApiContext } from '@mbari/api-client'
 import { useState } from 'react'
 import Image from 'next/legacy/image'
@@ -30,6 +30,7 @@ import { BatteryModal } from './BatteryModal'
 import { useTethysSubscription } from '../lib/useWebSocketListeners'
 import { HexColorPicker } from 'react-colorful'
 import { useCookies } from 'react-cookie'
+import EmailNotificationsModal from './EmailNotificationsModal'
 
 const Layout: React.FC<{ children?: React.ReactNode }> = ({ children }) => {
   const [showLogin, setLogin] = useState(false)
@@ -131,6 +132,13 @@ const Layout: React.FC<{ children?: React.ReactNode }> = ({ children }) => {
                   onDismiss={dismissDropdown}
                   options={[
                     {
+                      label: 'Email notifications',
+                      onSelect: () => {
+                        setGlobalModalId({ id: 'emailNotifications' })
+                        dismissDropdown()
+                      },
+                    },
+                    {
                       label: 'Logout',
                       onSelect: handleLogout,
                     },
@@ -205,6 +213,10 @@ const Layout: React.FC<{ children?: React.ReactNode }> = ({ children }) => {
       {globalModalId?.id === 'battery' && vehicleName.length > 0 && (
         <BatteryModal vehicleName={vehicleName} onClose={setModal(null)} />
       )}
+      {globalModalId?.id === 'emailNotifications' &&
+        requireAuthentication(
+          <EmailNotificationsModal onClose={setModal(null)} />
+        )}
       {/* {globalModalId?.id === 'color' && vehicleName.length > 0 ? (
         <ColorModal name={trackedVehicles[index]} color={color} />
       ) : null} */}
