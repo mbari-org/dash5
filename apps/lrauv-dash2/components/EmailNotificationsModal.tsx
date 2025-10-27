@@ -22,7 +22,7 @@ const EmailNotificationsModal: React.FC<EmailNotificationsModalProps> = ({
   const { profile, axiosInstance, token } = useTethysApiContext()
   const email = profile?.email ?? ''
 
-  const { data: siteInfo } = useSiteConfig({}, {}, undefined)
+  const { data: siteInfo } = useSiteConfig()
   const vehicleNames = useMemo(
     () =>
       [...(siteInfo?.vehicleNames ?? [])].sort((a, b) => a.localeCompare(b)),
