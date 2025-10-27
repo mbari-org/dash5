@@ -8,10 +8,11 @@ export const useSiteConfig = (
   options?: SupportedQueryOptions,
   instance?: AxiosInstance
 ) => {
+  const resolvedParams = params ?? {}
   const query = useQuery(
-    ['info', 'config', params],
+    ['info', 'config', resolvedParams],
     () => {
-      return getInfo(params ?? {}, {
+      return getInfo(resolvedParams, {
         instance: instance,
       })
     },
