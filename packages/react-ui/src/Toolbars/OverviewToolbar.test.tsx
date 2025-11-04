@@ -3,7 +3,7 @@ import '@testing-library/jest-dom'
 import { VehicleCommsCell, VehicleInfoCell } from '../Cells'
 import { OverviewToolbar, OverviewToolbarProps } from './OverviewToolbar'
 
-import { UnderwaterIcon, ConnectedIcon } from '../Icons'
+import { ConnectedIcon } from '../Icons'
 import { DateTime } from 'luxon'
 
 const props: OverviewToolbarProps = {
@@ -60,11 +60,9 @@ const props: OverviewToolbarProps = {
   ),
   onIcon2hover: () => (
     <VehicleInfoCell
-      icon={<UnderwaterIcon />}
-      headline="Likely underwater"
-      subtitle="Last confirmed on surface 47min ago"
-      lastCommsOverSat="Today at 14:08:36 (47m ago)"
-      estimate="Est. to surface in 15 mins at ~14:55"
+      isReachable={false}
+      lastCommsTime={DateTime.now().minus({ minutes: 47 })}
+      nextCommsTime={DateTime.now().plus({ minutes: 15 })}
       onSelect={() => {
         console.log('event fired')
       }}

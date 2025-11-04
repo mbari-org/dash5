@@ -16,6 +16,7 @@ import {
   OverviewToolbar,
   VehicleCommsCell,
   VehicleInfoCell,
+  PluggedInIcon,
 } from '@mbari/react-ui'
 import {
   useDeployments,
@@ -90,7 +91,7 @@ const Vehicle: NextPage = () => {
   const vehicleName = params[0]
   const deploymentId = parseInt(params[1] ?? '0', 10)
 
-  const { deployment, isLoading } = useCurrentDeployment()
+  const { deployment, lastDeployment, isLoading } = useCurrentDeployment()
   const { data: deploymentsData } = useDeployments(
     {
       vehicle: vehicleName as string,
@@ -175,6 +176,16 @@ const Vehicle: NextPage = () => {
           5 * 60 * 1000, // Replacee w/ buffer time
       })
     : null
+
+  // Vehicle is plugged in if:
+  // 1. There's a recoverEvent in lastDeployment, OR
+  // 2. The lastDeployment start time is in the future (preparing for mission)
+  const isPluggedIn = Boolean(
+    lastDeployment?.recoverEvent ||
+      (lastDeployment?.startEvent?.unixTime &&
+        DateTime.fromMillis(lastDeployment.startEvent.unixTime).toMillis() >
+          DateTime.now().toMillis())
+  )
   const handleRoleReassign = () => setGlobalModalId({ id: 'reassign' })
   const handleNewDeployment = () => setGlobalModalId({ id: 'newDeployment' })
   const handleEditDeployment = () => setGlobalModalId({ id: 'editDeployment' })
@@ -227,6 +238,14 @@ const Vehicle: NextPage = () => {
   }
 
   const pingEvent = useTethysSubscriptionEvent('VehiclePingResult', vehicleName)
+
+  const vehicleStatusIcon = isPluggedIn ? (
+    <PluggedInIcon />
+  ) : pingEvent?.reachable ? (
+    <SurfacedIcon />
+  ) : (
+    <UnderwaterIcon />
+  )
   return (
     <SelectedPlatformsProvider>
       <SelectedStationsProvider>
@@ -251,9 +270,7 @@ const Vehicle: NextPage = () => {
               supportIcon1={
                 pingEvent?.reachable ? <ConnectedIcon /> : <NotConnectedIcon />
               }
-              supportIcon2={
-                pingEvent?.reachable ? <SurfacedIcon /> : <UnderwaterIcon />
-              }
+              supportIcon2={vehicleStatusIcon}
               onSelectNewDeployment={handleNewDeployment}
               deployments={deployments}
               onEditDeployment={handleEditDeployment}
@@ -277,28 +294,28 @@ const Vehicle: NextPage = () => {
                         pingEvent?.checkedAt
                       ).toRelative()) as string) ?? 'Not available'
                   }
-                  nextComms={`${nextCommsTime?.toFormat(
-                    'hh:mm'
-                  )} (in ${nextCommsTime?.toRelative()})`}
+                  nextComms={
+                    nextCommsTime
+                      ? `${nextCommsTime?.toFormat(
+                          'hh:mm'
+                        )} (in ${nextCommsTime?.toRelative()})`
+                      : undefined
+                  }
                 />
               )}
               onIcon2hover={() => (
                 <VehicleInfoCell
-                  icon={
-                    pingEvent?.reachable ? <SurfacedIcon /> : <UnderwaterIcon />
+                  isPluggedIn={isPluggedIn}
+                  isReachable={pingEvent?.reachable}
+                  lastCommsTime={lastCommsTime}
+                  nextCommsTime={nextCommsTime}
+                  lastPluggedInTime={
+                    lastDeployment?.recoverEvent?.unixTime
+                      ? DateTime.fromMillis(
+                          lastDeployment.recoverEvent.unixTime
+                        )
+                      : null
                   }
-                  headline="Likely underwater"
-                  subtitle="Last comms over satellite"
-                  lastCommsOverSat={`${
-                    lastCommsTime?.day === DateTime.now().day
-                      ? 'Today'
-                      : lastCommsTime?.toFormat('mmm, d')
-                  } at ${lastCommsTime?.toFormat(
-                    'hh:mm:ss'
-                  )} (${lastCommsTime?.toRelative()})`}
-                  estimate={`Est. to surface in ${nextCommsTime?.toRelative()} at ~${nextCommsTime?.toFormat(
-                    'hh:mm'
-                  )}`}
                 />
               )}
               authenticated={authenticated}
