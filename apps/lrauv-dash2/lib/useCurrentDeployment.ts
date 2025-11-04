@@ -26,7 +26,13 @@ const useCurrentDeployment = () => {
 
   const deployment = deploymentData?.[0] ?? lastDeployment
 
-  return { vehicle, deployment, isLoading: isLoading || deploymentsLoading }
+  // Also return lastDeployment since it also contains the launch and recover events, which useDeployments does not
+  return {
+    vehicle,
+    deployment,
+    lastDeployment,
+    isLoading: isLoading || deploymentsLoading,
+  }
 }
 
 export default useCurrentDeployment
