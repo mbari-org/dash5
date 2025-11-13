@@ -30,18 +30,22 @@ test('should display underwater state when isReachable is false', async () => {
   expect(screen.getByText('Last comms over satellite')).toBeInTheDocument()
 })
 
-test('should display last comms time when provided and not plugged in', async () => {
-  const lastCommsTime = DateTime.now().minus({ hours: 1 })
-  render(<VehicleInfoCell isPluggedIn={false} lastCommsTime={lastCommsTime} />)
+test('should display last sat comms time when provided and not plugged in', async () => {
+  const lastSatCommsTime = DateTime.now().minus({ hours: 1 })
+  render(
+    <VehicleInfoCell isPluggedIn={false} lastSatCommsTime={lastSatCommsTime} />
+  )
 
-  expect(screen.queryByText(/Last comms over sat/i)).toBeInTheDocument()
+  expect(screen.getByText(/Last comms over sat:/i)).toBeInTheDocument()
 })
 
-test('should not display last comms time when plugged in', async () => {
-  const lastCommsTime = DateTime.now().minus({ hours: 1 })
-  render(<VehicleInfoCell isPluggedIn={true} lastCommsTime={lastCommsTime} />)
+test('should not display last sat comms time when plugged in', async () => {
+  const lastSatCommsTime = DateTime.now().minus({ hours: 1 })
+  render(
+    <VehicleInfoCell isPluggedIn={true} lastSatCommsTime={lastSatCommsTime} />
+  )
 
-  expect(screen.queryByText(/Last comms over sat/i)).not.toBeInTheDocument()
+  expect(screen.queryByText(/Last comms over sat:/i)).not.toBeInTheDocument()
 })
 
 test('should display estimate when nextCommsTime is provided and not plugged in', async () => {
@@ -59,20 +63,20 @@ test('should not display estimate when plugged in', async () => {
 })
 
 test('should display full information when all props are provided', async () => {
-  const lastCommsTime = DateTime.now().minus({ hours: 1 })
+  const lastSatCommsTime = DateTime.now().minus({ hours: 1 })
   const nextCommsTime = DateTime.now().plus({ minutes: 25 })
 
   render(
     <VehicleInfoCell
       isReachable={true}
-      lastCommsTime={lastCommsTime}
+      lastSatCommsTime={lastSatCommsTime}
       nextCommsTime={nextCommsTime}
     />
   )
 
   expect(screen.getByText('Likely surfaced')).toBeInTheDocument()
   expect(screen.getByText('Last comms over satellite')).toBeInTheDocument()
-  expect(screen.queryByText(/Last comms over sat/i)).toBeInTheDocument()
+  expect(screen.getByText(/Last comms over sat:/i)).toBeInTheDocument()
   expect(screen.queryByText(/Est\. to surface/i)).toBeInTheDocument()
 })
 
@@ -85,7 +89,7 @@ test('should display last plugged in time when provided and plugged in', async (
   expect(screen.getByText('Vehicle is docked')).toBeInTheDocument()
   expect(screen.getByText('Plugged in')).toBeInTheDocument()
   expect(screen.queryByText(/Last plugged in/i)).toBeInTheDocument()
-  expect(screen.queryByText(/Last comms over sat/i)).not.toBeInTheDocument()
+  expect(screen.queryByText(/Last comms over sat:/i)).not.toBeInTheDocument()
 })
 
 test('should not display last plugged in time when not plugged in', async () => {

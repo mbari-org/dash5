@@ -1,6 +1,6 @@
 import React from 'react'
 import clsx from 'clsx'
-import { swallow } from '@mbari/utils'
+import { swallow, formatCompactDuration } from '@mbari/utils'
 import { DateTime } from 'luxon'
 import { PluggedInIcon } from '../Icons/PluggedInIcon'
 import { SurfacedIcon } from '../Icons/SurfacedIcon'
@@ -11,7 +11,8 @@ export interface VehicleInfoCellProps {
   style?: React.CSSProperties
   isPluggedIn?: boolean
   isReachable?: boolean
-  lastCommsTime?: DateTime | null
+  lastSatCommsTime?: DateTime | null
+  lastCellCommsTime?: DateTime | null
   nextCommsTime?: DateTime | null
   lastPluggedInTime?: DateTime | null
   onSelect?: () => void
@@ -31,7 +32,8 @@ export const VehicleInfoCell: React.FC<VehicleInfoCellProps> = ({
   style,
   isPluggedIn,
   isReachable,
-  lastCommsTime,
+  lastSatCommsTime,
+  lastCellCommsTime,
   nextCommsTime,
   lastPluggedInTime,
   onSelect,
@@ -52,28 +54,59 @@ export const VehicleInfoCell: React.FC<VehicleInfoCellProps> = ({
     ? 'Likely surfaced'
     : 'Likely underwater'
 
-  // Compute subtitle based on state
-  const subtitle = isPluggedIn ? 'Plugged in' : 'Last comms over satellite'
+  // Determine most recent comms type
+  const mostRecentCommsType: 'sat' | 'cell' | null = (() => {
+    if (lastSatCommsTime && lastCellCommsTime) {
+      return lastSatCommsTime.toMillis() >= lastCellCommsTime.toMillis()
+        ? 'sat'
+        : 'cell'
+    }
+    if (lastSatCommsTime) return 'sat'
+    if (lastCellCommsTime) return 'cell'
+    return null
+  })()
 
-  // Format last comms time if available and not plugged in
-  const lastCommsOverSat =
-    isPluggedIn || !lastCommsTime
+  const subtitle = isPluggedIn
+    ? 'Plugged in'
+    : mostRecentCommsType === 'cell'
+    ? 'Last comms over cell'
+    : 'Last comms over satellite'
+
+  const lastSatFormatted =
+    isPluggedIn || !lastSatCommsTime
       ? undefined
       : `${
-          lastCommsTime.day === DateTime.now().day
+          lastSatCommsTime.day === DateTime.now().day
             ? 'Today'
-            : lastCommsTime.toFormat('MMM d')
-        } at ${lastCommsTime.toFormat(
-          'hh:mm:ss'
-        )} (${lastCommsTime.toRelative()})`
+            : lastSatCommsTime.toFormat('MMM d')
+        } at ${lastSatCommsTime.toFormat('hh:mm:ss')} (${formatCompactDuration(
+          lastSatCommsTime
+        )})`
+
+  const lastCellFormatted =
+    isPluggedIn || !lastCellCommsTime
+      ? undefined
+      : `${
+          lastCellCommsTime.day === DateTime.now().day
+            ? 'Today'
+            : lastCellCommsTime.toFormat('MMM d')
+        } at ${lastCellCommsTime.toFormat('hh:mm:ss')} (${formatCompactDuration(
+          lastCellCommsTime
+        )})`
 
   // Format estimate if available and not plugged in
+  const isFutureEstimate = nextCommsTime
+    ? nextCommsTime.toMillis() > DateTime.now().toMillis()
+    : false
+  const estimateDuration = nextCommsTime
+    ? formatCompactDuration(nextCommsTime)
+    : ''
   const estimate =
     isPluggedIn || !nextCommsTime
       ? undefined
-      : `Est. to surface in ${nextCommsTime.toRelative()} at ~${nextCommsTime.toFormat(
-          'hh:mm'
-        )}`
+      : `Est. to surface ${isFutureEstimate ? 'in ' : ''}${estimateDuration}${
+          isFutureEstimate ? '' : ' ago'
+        } at ~${nextCommsTime.toFormat('hh:mm')}`
 
   // Format last plugged in time if available and plugged in
   const lastPluggedIn =
@@ -83,9 +116,9 @@ export const VehicleInfoCell: React.FC<VehicleInfoCellProps> = ({
           lastPluggedInTime.day === DateTime.now().day
             ? 'Today'
             : lastPluggedInTime.toFormat('MMM d')
-        } at ${lastPluggedInTime.toFormat(
-          'hh:mm:ss'
-        )} (${lastPluggedInTime.toRelative()})`
+        } at ${lastPluggedInTime.toFormat('hh:mm:ss')} (${formatCompactDuration(
+          lastPluggedInTime
+        )})`
 
   return (
     <article className={clsx(styles.container, className)} style={style}>
@@ -103,10 +136,16 @@ export const VehicleInfoCell: React.FC<VehicleInfoCellProps> = ({
         </section>
         <section>
           <ul className={clsx(styles.content)}>
-            {lastCommsOverSat && (
+            {lastSatFormatted && (
               <li className="pb-1">
                 <span className="mr-1">Last comms over sat:</span>
-                {lastCommsOverSat}
+                {lastSatFormatted}
+              </li>
+            )}
+            {lastCellFormatted && (
+              <li className="pb-1">
+                <span className="mr-1">Last comms over cell:</span>
+                {lastCellFormatted}
               </li>
             )}
 

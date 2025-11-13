@@ -61,7 +61,7 @@ const props: OverviewToolbarProps = {
   onIcon2hover: () => (
     <VehicleInfoCell
       isReachable={false}
-      lastCommsTime={DateTime.now().minus({ minutes: 47 })}
+      lastSatCommsTime={DateTime.now().minus({ minutes: 47 })}
       nextCommsTime={DateTime.now().plus({ minutes: 15 })}
       onSelect={() => {
         console.log('event fired')

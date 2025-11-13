@@ -33,7 +33,8 @@ PluggedIn.parameters = {
 export const Surfaced = Template.bind({})
 Surfaced.args = {
   isReachable: true,
-  lastCommsTime: DateTime.now().minus({ minutes: 15 }),
+  lastSatCommsTime: DateTime.now().minus({ minutes: 15 }),
+  lastCellCommsTime: DateTime.now().minus({ minutes: 10 }),
   nextCommsTime: DateTime.now().plus({ minutes: 25 }),
   onSelect: () => {
     console.log('event fired')
@@ -49,7 +50,7 @@ Surfaced.parameters = {
 export const Underwater = Template.bind({})
 Underwater.args = {
   isReachable: false,
-  lastCommsTime: DateTime.now().minus({ hours: 1 }),
+  lastSatCommsTime: DateTime.now().minus({ hours: 1 }),
   nextCommsTime: DateTime.now().plus({ minutes: 30 }),
   onSelect: () => {
     console.log('event fired')
