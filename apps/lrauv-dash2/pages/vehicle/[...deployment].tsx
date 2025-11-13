@@ -43,6 +43,9 @@ import { useGoogleMaps } from '../../lib/useGoogleMaps'
 import { SelectedStationsProvider } from '../../components/SelectedStationContext'
 import { SelectedPlatformsProvider } from '../../components/SelectedPlatformContext'
 import { createRoleLabel } from '@mbari/utils'
+import { useNeedCommsTime } from '../../lib/useNeedCommsTime'
+import { calculateRelativeNextComm } from '@mbari/utils'
+import { useTick } from '../../lib/useTick'
 
 // Every flex parent of the map needs `min-h-0`
 // Without it, Leaflet sometimes shows gray tiles
@@ -163,23 +166,38 @@ const Vehicle: NextPage = () => {
     ? DateTime.utc().plus({ hours: 4 }).endOf('day').toMillis()
     : deployment?.endEvent?.unixTime ?? 0
 
-  const lastCommsMillis = useLastCommsTime(vehicleName, startTime)
-  const lastCommsTime = lastCommsMillis
-    ? DateTime.fromMillis(lastCommsMillis)
+  const { lastSatCommsTime, lastCellCommsTime } = useLastCommsTime(
+    vehicleName,
+    startTime
+  )
+  const lastSatCommsDT = lastSatCommsTime
+    ? DateTime.fromMillis(lastSatCommsTime)
     : null
-  const nextCommsTime = lastCommsMillis
-    ? DateTime.now().plus({
-        milliseconds:
-          DateTime.now().toMillis() -
-          lastCommsMillis +
-          25 * 60 * 1000 + // Replace with actual NeedsCommsInterval
-          5 * 60 * 1000, // Replacee w/ buffer time
-      })
+  const lastCellCommsDT = lastCellCommsTime
+    ? DateTime.fromMillis(lastCellCommsTime)
     : null
 
-  // Vehicle is plugged in if:
-  // 1. There's a recoverEvent in lastDeployment, OR
-  // 2. The lastDeployment start time is in the future (preparing for mission)
+  const { minutes: needCommsMinutes } = useNeedCommsTime(
+    vehicleName,
+    startTime,
+    { enabled: !!vehicleName && !!startTime }
+  )
+  const nowMs = useTick(60_000)
+  const { nextCommTimeMs, text: nextCommsText } = useMemo(
+    () =>
+      calculateRelativeNextComm(
+        lastSatCommsTime,
+        lastCellCommsTime,
+        needCommsMinutes ?? 60,
+        nowMs
+      ),
+    [lastSatCommsTime, lastCellCommsTime, needCommsMinutes, nowMs]
+  )
+  const nextCommsTime = nextCommTimeMs
+    ? DateTime.fromMillis(nextCommTimeMs)
+    : null
+
+  // Vehicle is plugged in if there's a recoverEvent in lastDeployment or lastDeployment start time is in the future (preparing for mission)
   const isPluggedIn = Boolean(
     lastDeployment?.recoverEvent ||
       (lastDeployment?.startEvent?.unixTime &&
@@ -294,20 +312,13 @@ const Vehicle: NextPage = () => {
                         pingEvent?.checkedAt
                       ).toRelative()) as string) ?? 'Not available'
                   }
-                  nextComms={
-                    nextCommsTime
-                      ? `${nextCommsTime?.toFormat(
-                          'hh:mm'
-                        )} (in ${nextCommsTime?.toRelative()})`
-                      : undefined
-                  }
+                  nextComms={nextCommsText ?? undefined}
                 />
               )}
               onIcon2hover={() => (
                 <VehicleInfoCell
                   isPluggedIn={isPluggedIn}
                   isReachable={pingEvent?.reachable}
-                  lastCommsTime={lastCommsTime}
                   nextCommsTime={nextCommsTime}
                   lastPluggedInTime={
                     lastDeployment?.recoverEvent?.unixTime
@@ -316,6 +327,8 @@ const Vehicle: NextPage = () => {
                         )
                       : null
                   }
+                  lastSatCommsTime={lastSatCommsDT}
+                  lastCellCommsTime={lastCellCommsDT}
                 />
               )}
               authenticated={authenticated}
