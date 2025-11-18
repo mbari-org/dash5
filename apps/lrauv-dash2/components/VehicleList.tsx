@@ -14,8 +14,13 @@ import {
   Virtualizer,
 } from '@mbari/react-ui'
 import { useVehicleColors } from './VehicleColorsContext'
-import { capitalize } from '@mbari/utils'
+import {
+  capitalize,
+  formatCompactDuration,
+  calculateRelativeNextComm,
+} from '@mbari/utils'
 import React, { useEffect } from 'react'
+import { useQuery } from 'react-query'
 import useTrackedVehicles from '../lib/useTrackedVehicles'
 import axios from 'axios'
 import { DateTime } from 'luxon'
@@ -23,12 +28,15 @@ import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { faCheck, faSync } from '@fortawesome/free-solid-svg-icons'
 import useGlobalModalId from '../lib/useGlobalModalId'
 import { useTethysSubscriptionEvent } from '../lib/useWebSocketListeners'
+import { useLastCommsTime } from '../lib/useLastCommsTime'
+import { useNeedCommsTime } from '../lib/useNeedCommsTime'
+import { useTick } from '../lib/useTick'
 
 const parsePos = (pos: string | number) => parseFloat(`${pos}`).toFixed(3)
 const calcPosition = (lat?: number | string, long?: number | string) =>
   lat && long ? [parsePos(lat), parsePos(long)].join(', ') : undefined
 
-const ConnectedVehicleCell: React.FC<{
+const ConnectedVehicleCellComponent: React.FC<{
   name: string
   color: string
   virtualizer: Virtualizer
@@ -47,6 +55,7 @@ const ConnectedVehicleCell: React.FC<{
   const [isOpen, setIsOpen] = React.useState(open)
   const { vehicleColors } = useVehicleColors()
   const contextColor = vehicleColors[name.toLowerCase()] || color
+  const { data: siteConfig } = useSiteConfig()
   const { data: lastDeployment } = useLastDeployment(
     {
       vehicle: name,
@@ -62,16 +71,76 @@ const ConnectedVehicleCell: React.FC<{
       enabled: !!lastDeployment?.lastEvent,
     }
   )
-  const { data: vehicleInfo, isLoading: vehicleInfoLoading } = useVehicleInfo(
+
+  // Construct fallback URL from siteConfig pattern
+  const fallbackVehicleInfoUrl = React.useMemo(() => {
+    const pattern =
+      siteConfig?.appConfig.external.statusWidgets?.lrauvStatusWidgetUrlPattern
+    if (!pattern) return null
+    // Replace <vehicleName> or <VehicleName> with actual name and change .svg to .json
+    return pattern.replace(/<vehicleName>/gi, name).replace('.svg', '.json')
+  }, [
+    siteConfig?.appConfig.external.statusWidgets?.lrauvStatusWidgetUrlPattern,
+    name,
+  ])
+
+  // Try original API endpoint first using useVehicleInfo
+  const baseUrl = process.env.NEXT_PUBLIC_API_HOST
+  const primaryVehicleInfo = useVehicleInfo(
     { name },
-    axios.create({
-      baseURL: process.env.NEXT_PUBLIC_API_HOST,
-      timeout: 5000,
-    })
+    baseUrl
+      ? axios.create({
+          baseURL: baseUrl,
+          timeout: 5000,
+        })
+      : undefined,
+    {
+      enabled: !!baseUrl && !!name,
+      staleTime: 0,
+    }
   )
+
+  // Fallback to siteConfig URL if primary fails
+  const { data: fallbackVehicleInfo } = useQuery(
+    ['vehicleInfoFallback', name, fallbackVehicleInfoUrl],
+    async () => {
+      if (!fallbackVehicleInfoUrl) return { not_found: true }
+      try {
+        const response = await axios.get(fallbackVehicleInfoUrl, {
+          timeout: 5000,
+        })
+        return response.data as GetVehicleInfoResponse
+      } catch (e: unknown) {
+        if ((e as any)?.response?.status === 404) {
+          return { not_found: true }
+        }
+        throw e
+      }
+    },
+    {
+      enabled:
+        !!fallbackVehicleInfoUrl &&
+        !!name &&
+        (primaryVehicleInfo.isError ||
+          primaryVehicleInfo.data?.not_found ||
+          (!primaryVehicleInfo.data && !primaryVehicleInfo.isLoading)),
+      staleTime: 0,
+      refetchInterval: 30 * 1000,
+    }
+  )
+
+  // Use primary if available, otherwise fallback
+  const vehicleInfo =
+    primaryVehicleInfo.data && !primaryVehicleInfo.data.not_found
+      ? primaryVehicleInfo.data
+      : fallbackVehicleInfo
+  const vehicleInfoLoading =
+    primaryVehicleInfo.isLoading ||
+    (fallbackVehicleInfo === undefined && !!fallbackVehicleInfoUrl)
   const { data: missionStartedEvent } = useMissionStartedEvent(
     {
       vehicle: name,
+      limit: 1,
     },
     {
       enabled: !!name && !!lastDeployment?.lastEvent,
@@ -98,6 +167,135 @@ const ConnectedVehicleCell: React.FC<{
     vehicleInfo?.not_found || !vehicleInfo
       ? undefined
       : (vehicleInfo as GetVehicleInfoResponse)
+
+  const deploymentStartTime = lastDeployment?.startEvent?.unixTime ?? 0
+
+  const missionStartTime =
+    missionStartedEvent?.[0]?.unixTime ?? deploymentStartTime
+
+  const { lastSatCommsTime, lastCellCommsTime } = useLastCommsTime(
+    name,
+    deploymentStartTime
+  )
+  const { minutes: needCommsMinutes } = useNeedCommsTime(
+    name,
+    missionStartTime,
+    {
+      enabled: !!name && !!missionStartTime,
+    }
+  )
+  const nowMs = useTick(60_000)
+  const nowDT = DateTime.fromMillis(nowMs)
+
+  const lastCellCommsDT = lastCellCommsTime
+    ? DateTime.fromMillis(lastCellCommsTime)
+    : null
+  const lastSatCommsDT = lastSatCommsTime
+    ? DateTime.fromMillis(lastSatCommsTime)
+    : null
+
+  const formattedCellTime = lastCellCommsDT
+    ? lastCellCommsDT.toFormat('HH:mm')
+    : vehicle?.text_cell
+  const formattedCellAgo = lastCellCommsDT
+    ? `${formatCompactDuration(lastCellCommsDT, nowDT)} ago`
+    : vehicle?.text_cellago
+
+  const formattedSatTime = lastSatCommsDT
+    ? lastSatCommsDT.toFormat('HH:mm')
+    : vehicle?.text_sat
+  const formattedSatAgo = lastSatCommsDT
+    ? `${formatCompactDuration(lastSatCommsDT, nowDT)} ago`
+    : vehicle?.text_commago
+
+  const { text: nextCommsText } = calculateRelativeNextComm(
+    lastSatCommsTime,
+    lastCellCommsTime,
+    needCommsMinutes ?? 60,
+    nowMs
+  )
+  const formattedNextComm = nextCommsText ?? vehicle?.text_nextcomm
+
+  const vehicleProps = vehicle
+    ? {
+        textAmpAgo: vehicle.text_ampago,
+        textVehicle: vehicle.text_vehicle,
+        textCell: formattedCellTime,
+        colorCell: vehicle.color_cell,
+        colorDirtbox: vehicle.color_dirtbox,
+        textSpeed: vehicle.text_speed,
+        textDvlStatus: vehicle.text_dvlstatus,
+        textStationDist: vehicle.text_stationdist,
+        textCommAgo: formattedSatAgo,
+        textNextComm: formattedNextComm,
+        textCriticalError: vehicle.text_criticalerror,
+        textTimeout: vehicle.text_timeout,
+        colorSatComm: vehicle.color_satcomm,
+        colorSmallCable: vehicle.color_smallcable,
+        textNote: vehicle.text_note,
+        textArriveStation: vehicle.text_arrivestation,
+        colorMissionAgo: vehicle.color_missionago,
+        textGps: vehicle.text_gps,
+        colorGps: vehicle.color_gps,
+        colorSw: vehicle.color_sw,
+        textCurrentDist: vehicle.text_currentdist,
+        textDroptime: vehicle.text_droptime,
+        colorDrop: vehicle.color_drop,
+        colorScheduled: vehicle.color_scheduled,
+        colorHw: vehicle.color_hw,
+        colorArrow: vehicle.color_arrow,
+        colorGf: vehicle.color_gf,
+        textGf: vehicle.text_gf,
+        colorFlow: vehicle.color_flow,
+        colorWavecolor: vehicle.color_wavecolor,
+        textAmps: vehicle.text_amps,
+        colorAmps: vehicle.color_amps,
+        colorDvl: vehicle.color_dvl,
+        textGpsAgo: vehicle.text_gpsago,
+        textCellAgo: formattedCellAgo,
+        textNoteTime: vehicle.text_notetime,
+        textArrow: vehicle.text_arrow,
+        colorBat1: vehicle.color_bat1,
+        colorBat2: vehicle.color_bat2,
+        colorBat3: vehicle.color_bat3,
+        colorBat4: vehicle.color_bat4,
+        colorBat5: vehicle.color_bat5,
+        colorBat6: vehicle.color_bat6,
+        colorBat7: vehicle.color_bat7,
+        colorBat8: vehicle.color_bat8,
+        colorCart: vehicle.color_cart,
+        colorCartCircle: vehicle.color_cartcircle,
+        colorThrust: vehicle.color_thrust,
+        textSat: formattedSatTime,
+        textLogTime: vehicle.text_logtime,
+        textMission: vehicle.text_mission
+          ? vehicle.text_mission
+              .replace(/&#x([0-9a-fA-F]+);/g, (_, hex) =>
+                String.fromCharCode(parseInt(hex, 16))
+              )
+              .replace(/&#(\d+);/g, (_, dec) =>
+                String.fromCharCode(parseInt(dec, 10))
+              )
+          : '',
+        textReckonDistance: vehicle.text_reckondistance,
+        textCriticalTime: vehicle.text_criticaltime,
+        textGfTime: vehicle.text_gftime,
+        textThrustTime: vehicle.text_thrusttime,
+        textLogAgo: vehicle.text_logago,
+        colorBigCable: vehicle.color_bigcable,
+        textScheduled: vehicle.text_scheduled,
+        textLastUpdate: vehicle.text_lastupdate,
+        colorMissionDefault: vehicle.color_missiondefault,
+        textVolts: vehicle.text_volts,
+        colorVolts: vehicle.color_volts,
+        status: (lastDeployment?.recoverEvent ? 'pluggedIn' : 'onMission') as
+          | 'pluggedIn'
+          | 'onMission',
+        textLeak: vehicle.text_leak,
+        textLeakAgo: vehicle.text_leakago,
+        colorLeak: vehicle.color_leak,
+      }
+    : undefined
 
   const status = lastDeployment?.recoverEvent
     ? 'Plugged in'
@@ -176,99 +374,29 @@ const ConnectedVehicleCell: React.FC<{
               : undefined
           }
           lastCell={
-            vehicle?.text_cellago?.length
+            formattedCellAgo
+              ? `${formattedCellAgo}`
+              : vehicle?.text_cellago?.length
               ? `${vehicle.text_cellago}`
               : undefined
           }
-          vehicle={
-            vehicle && {
-              textAmpAgo: vehicle.text_ampago,
-              textVehicle: vehicle.text_vehicle,
-              textCell: vehicle.text_cell,
-              colorCell: vehicle.color_cell,
-              colorDirtbox: vehicle.color_dirtbox,
-              textSpeed: vehicle.text_speed,
-              textDvlStatus: vehicle.text_dvlstatus,
-              textStationDist: vehicle.text_stationdist,
-              textCommAgo: vehicle.text_commago,
-              textNextComm: vehicle.text_nextcomm,
-              textCriticalError: vehicle.text_criticalerror,
-              textTimeout: vehicle.text_timeout,
-              colorSatComm: vehicle.color_satcomm,
-              colorSmallCable: vehicle.color_smallcable,
-              textNote: vehicle.text_note,
-              textArriveStation: vehicle.text_arrivestation,
-              colorMissionAgo: vehicle.color_missionago,
-              textGps: vehicle.text_gps,
-              colorGps: vehicle.color_gps,
-              colorSw: vehicle.color_sw,
-              textCurrentDist: vehicle.text_currentdist,
-              textDroptime: vehicle.text_droptime,
-              colorDrop: vehicle.color_drop,
-              colorScheduled: vehicle.color_scheduled,
-              colorHw: vehicle.color_hw,
-              colorArrow: vehicle.color_arrow,
-              colorGf: vehicle.color_gf,
-              textGf: vehicle.text_gf,
-              colorFlow: vehicle.color_flow,
-              colorWavecolor: vehicle.color_wavecolor,
-              textAmps: vehicle.text_amps,
-              colorAmps: vehicle.color_amps,
-              colorDvl: vehicle.color_dvl,
-              textGpsAgo: vehicle.text_gpsago,
-              textCellAgo: vehicle.text_cellago,
-              textNoteTime: vehicle.text_notetime,
-              textArrow: vehicle.text_arrow,
-              colorBat1: vehicle.color_bat1,
-              colorBat2: vehicle.color_bat2,
-              colorBat3: vehicle.color_bat3,
-              colorBat4: vehicle.color_bat4,
-              colorBat5: vehicle.color_bat5,
-              colorBat6: vehicle.color_bat6,
-              colorBat7: vehicle.color_bat7,
-              colorBat8: vehicle.color_bat8,
-              colorCart: vehicle.color_cart,
-              colorCartCircle: vehicle.color_cartcircle,
-              colorThrust: vehicle.color_thrust,
-              textSat: vehicle.text_sat,
-              textLogTime: vehicle.text_logtime,
-              textMission: vehicle.text_mission ?? '',
-              textReckonDistance: vehicle.text_reckondistance,
-              textCriticalTime: vehicle.text_criticaltime,
-              textGfTime: vehicle.text_gftime,
-              textThrustTime: vehicle.text_thrusttime,
-              textLogAgo: vehicle.text_logago,
-              colorBigCable: vehicle.color_bigcable,
-              textScheduled: vehicle.text_scheduled,
-              textLastUpdate: vehicle.text_lastupdate,
-              colorMissionDefault: vehicle.color_missiondefault,
-              textVolts: vehicle.text_volts,
-              colorVolts: vehicle.color_volts,
-              status: lastDeployment?.recoverEvent ? 'pluggedIn' : 'onMission',
-              textLeak: vehicle.text_leak,
-              textLeakAgo: vehicle.text_leakago,
-              colorLeak: vehicle.color_leak,
-              // colorCommAgo: 'st4',
-              // textLeakago: '',
-              // textFlowAgo: data.text_flowago,
-              // textBearing: '94&#x00B0;',
-              // colorUbat: 'st3',
-              // colorBt2: 'st3',
-              // colorBt1: 'st3',
-              // colorLeak: 'st18',
-            }
-          }
+          vehicle={vehicleProps}
         />
       )}
     </>
   )
 }
 
+// No memoization - let it update when data changes
+const ConnectedVehicleCell = ConnectedVehicleCellComponent
+
 const VehicleList: React.FC<{
   onSelectVehicle?: (vehicle: string) => void
 }> = ({ onSelectVehicle: handleSelectVehicle }) => {
   const { trackedVehicles } = useTrackedVehicles()
   const { data: siteConfig } = useSiteConfig()
+
+  console.log('zzz siteConfig', siteConfig)
 
   const [accordionState, setAccordionState] = React.useState<{
     [key: string]: 'open' | 'closed' | undefined
@@ -279,31 +407,31 @@ const VehicleList: React.FC<{
   const { vehicleColors } = useVehicleColors()
 
   const handleToggle = (open: boolean, name: string) => {
-    setAccordionState({
-      ...accordionState,
+    setAccordionState((prev) => ({
+      ...prev,
       [name]: open ? 'open' : 'closed',
-    })
+    }))
   }
 
   const cellAtIndex = (index: number, virtualizer: Virtualizer) => {
+    const vehicleName = trackedVehicles[index]
     const vehicleColor =
-      vehicleColors[trackedVehicles[index].toLowerCase()] ||
-      vehicles?.find((v) => v.vehicleName === trackedVehicles[index])?.color ||
+      vehicleColors[vehicleName.toLowerCase()] ||
+      vehicles?.find((v) => v.vehicleName === vehicleName)?.color ||
       '#ccc'
-    const handleSelect = () => {
-      handleSelectVehicle?.(trackedVehicles[index])
-    }
 
     return (
       <div className="border-b border-stone-400">
-        <ConnectedVehicleCell
-          name={trackedVehicles[index]}
-          virtualizer={virtualizer}
-          color={vehicleColor ?? '#ccc'}
-          open={accordionState[trackedVehicles[index]] !== 'closed'}
-          onToggle={handleToggle}
-          onSelect={handleSelect}
-        />
+        <div style={{ minHeight: '176px' }}>
+          <ConnectedVehicleCell
+            name={vehicleName}
+            virtualizer={virtualizer}
+            color={vehicleColor ?? '#ccc'}
+            open={accordionState[vehicleName] !== 'closed'}
+            onToggle={handleToggle}
+            onSelect={() => handleSelectVehicle?.(vehicleName)}
+          />
+        </div>
       </div>
     )
   }

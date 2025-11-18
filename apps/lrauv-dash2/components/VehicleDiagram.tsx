@@ -1,5 +1,9 @@
-import { useVehicleInfo, GetVehicleInfoResponse } from '@mbari/api-client'
-import React from 'react'
+import {
+  useSiteConfig,
+  useVehicleInfo,
+  GetVehicleInfoResponse,
+} from '@mbari/api-client'
+import React, { useMemo } from 'react'
 import axios from 'axios'
 import {
   FullWidthVehicleDiagram,
@@ -8,26 +12,109 @@ import {
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { faTriangleExclamation } from '@fortawesome/free-solid-svg-icons'
 import clsx from 'clsx'
+import { DateTime } from 'luxon'
+import { formatCompactDuration } from '@mbari/utils'
+import { useQuery } from 'react-query'
 
 const VehicleDiagram: React.FC<{
   name: string
   className?: string
   style?: React.CSSProperties
   onBatteryClick?: FullWidthVehicleDiagramProps['onBatteryClick']
-}> = ({ name, className, style, onBatteryClick: handleBatteryClick }) => {
-  const { data: vehicleInfo } = useVehicleInfo(
+  lastCellCommsTime?: DateTime | null
+  lastSatCommsTime?: DateTime | null
+  nextCommsText?: string | null
+}> = ({
+  name,
+  className,
+  style,
+  onBatteryClick: handleBatteryClick,
+  lastCellCommsTime: lastCellCommsDT,
+  lastSatCommsTime: lastSatCommsDT,
+  nextCommsText,
+}) => {
+  const { data: siteConfig } = useSiteConfig()
+
+  // Fallback url for local development
+  const fallbackVehicleInfoUrl = useMemo(() => {
+    const pattern =
+      siteConfig?.appConfig.external.statusWidgets?.lrauvStatusWidgetUrlPattern
+    if (!pattern) return null
+    return pattern.replace(/<vehicleName>/gi, name).replace('.svg', '.json')
+  }, [
+    siteConfig?.appConfig.external.statusWidgets?.lrauvStatusWidgetUrlPattern,
+    name,
+  ])
+
+  const baseUrl = process.env.NEXT_PUBLIC_API_HOST
+  const primaryVehicleInfo = useVehicleInfo(
     { name },
-    axios.create({
-      baseURL: process.env.NEXT_PUBLIC_API_HOST,
-      timeout: 5000,
-    }),
-    { staleTime: 5 * 60 * 1000, enabled: !!name }
+    baseUrl
+      ? axios.create({
+          baseURL: baseUrl,
+          timeout: 5000,
+        })
+      : undefined,
+    {
+      enabled: !!baseUrl && !!name,
+      staleTime: 0,
+    }
   )
+
+  const { data: fallbackVehicleInfo } = useQuery(
+    ['vehicleInfoFallback', name, fallbackVehicleInfoUrl],
+    async () => {
+      if (!fallbackVehicleInfoUrl) return { not_found: true }
+      try {
+        const response = await axios.get(fallbackVehicleInfoUrl, {
+          timeout: 5000,
+        })
+        return response.data as GetVehicleInfoResponse
+      } catch (e: unknown) {
+        if ((e as any)?.response?.status === 404) {
+          return { not_found: true }
+        }
+        throw e
+      }
+    },
+    {
+      enabled:
+        !!fallbackVehicleInfoUrl &&
+        !!name &&
+        (primaryVehicleInfo.isError ||
+          primaryVehicleInfo.data?.not_found ||
+          (!primaryVehicleInfo.data && !primaryVehicleInfo.isLoading)),
+      staleTime: 0,
+      refetchInterval: 30 * 1000,
+    }
+  )
+
+  // Use primary if available, otherwise fallback
+  const vehicleInfo =
+    primaryVehicleInfo.data && !primaryVehicleInfo.data.not_found
+      ? primaryVehicleInfo.data
+      : fallbackVehicleInfo
 
   const vehicle =
     vehicleInfo?.not_found || !vehicleInfo
       ? undefined
       : (vehicleInfo as GetVehicleInfoResponse)
+
+  const formattedCellTime = lastCellCommsDT
+    ? lastCellCommsDT.toFormat('HH:mm')
+    : vehicle?.text_cell
+  const formattedCellAgo = lastCellCommsDT
+    ? `${formatCompactDuration(lastCellCommsDT)} ago`
+    : vehicle?.text_cellago
+
+  const formattedSatTime = lastSatCommsDT
+    ? lastSatCommsDT.toFormat('HH:mm')
+    : vehicle?.text_sat
+  const formattedSatAgo = lastSatCommsDT
+    ? `${formatCompactDuration(lastSatCommsDT)} ago`
+    : vehicle?.text_commago
+
+  const formattedNextComm = nextCommsText ?? vehicle?.text_nextcomm
 
   return (
     <div
@@ -46,14 +133,14 @@ const VehicleDiagram: React.FC<{
         className={clsx(className, !vehicle && 'opacity-40', 'min-h-[200px]')}
         textAmpAgo={vehicle?.text_ampago}
         textVehicle={vehicle?.text_vehicle ?? name}
-        textCell={vehicle?.text_cell}
+        textCell={formattedCellTime}
         colorCell={vehicle?.color_cell}
         colorDirtbox={vehicle?.color_dirtbox}
         textSpeed={vehicle?.text_speed}
         textDvlStatus={vehicle?.text_dvlstatus}
         textStationDist={vehicle?.text_stationdist}
-        textCommAgo={vehicle?.text_commago}
-        textNextComm={vehicle?.text_nextcomm}
+        textCommAgo={formattedSatAgo}
+        textNextComm={formattedNextComm}
         textCriticalError={vehicle?.text_criticalerror}
         textTimeout={vehicle?.text_timeout}
         colorSatComm={vehicle?.color_satcomm}
@@ -78,7 +165,7 @@ const VehicleDiagram: React.FC<{
         colorAmps={vehicle?.color_amps}
         colorDvl={vehicle?.color_dvl}
         textGpsAgo={vehicle?.text_gpsago}
-        textCellAgo={vehicle?.text_cellago}
+        textCellAgo={formattedCellAgo}
         textNoteTime={vehicle?.text_notetime}
         textArrow={vehicle?.text_arrow}
         colorBat1={vehicle?.color_bat1}
@@ -92,7 +179,7 @@ const VehicleDiagram: React.FC<{
         colorCart={vehicle?.color_cart}
         colorCartCircle={vehicle?.color_cartcircle}
         colorThrust={vehicle?.color_thrust}
-        textSat={vehicle?.text_sat}
+        textSat={formattedSatTime}
         textLogTime={vehicle?.text_logtime}
         textMission={
           vehicle?.text_mission
