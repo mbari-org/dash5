@@ -448,6 +448,9 @@ const VehicleList: React.FC<{
       cellAtIndex={cellAtIndex}
       count={trackedVehicles.length}
       className="w-full flex-shrink"
+      style={{
+        overflowY: 'scroll',
+      }}
     />
   )
 }
