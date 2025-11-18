@@ -94,7 +94,17 @@ const VehicleDiagram: React.FC<{
         colorThrust={vehicle?.color_thrust}
         textSat={vehicle?.text_sat}
         textLogTime={vehicle?.text_logtime}
-        textMission={vehicle?.text_mission ?? ''}
+        textMission={
+          vehicle?.text_mission
+            ? vehicle.text_mission
+                .replace(/&#x([0-9a-fA-F]+);/g, (_, hex) =>
+                  String.fromCharCode(parseInt(hex, 16))
+                )
+                .replace(/&#(\d+);/g, (_, dec) =>
+                  String.fromCharCode(parseInt(dec, 10))
+                )
+            : ''
+        }
         textReckonDistance={vehicle?.text_reckondistance}
         textCriticalTime={vehicle?.text_criticaltime}
         textGfTime={vehicle?.text_gftime}
