@@ -117,6 +117,70 @@ describe('parseNeedCommsSelection', () => {
     expect(result.minutes).toBeNull()
     expect(result.eventUnixTime).toBeNull()
   })
+
+  it('filters events before minTime to avoid previous missions', () => {
+    const missionStartTime = 10000
+    const oneMinuteBeforeMission = missionStartTime - 60000 // 4000
+    const events = [
+      // Event from previous mission (before 1 minute before mission start)
+      makeEvent({
+        unixTime: 3000,
+        text: 'Got command .NeedCommsTime 15 min',
+        eventId: 1,
+      }),
+      // Event from 1 minute before mission start (should be included)
+      makeEvent({
+        unixTime: 5000,
+        text: 'Got command .NeedCommsTime 30 min',
+        eventId: 2,
+      }),
+      // Event after mission start (should be included)
+      makeEvent({
+        unixTime: 12000,
+        text: 'Got command .NeedCommsTime 45 min',
+        eventId: 3,
+      }),
+    ]
+    // Without minTime, it would select the most recent (45 min)
+    const resultWithoutFilter = parseNeedCommsSelection(events)
+    expect(resultWithoutFilter.minutes).toBe(45)
+    expect(resultWithoutFilter.eventId).toBe(3)
+
+    // With minTime, it should only consider events >= oneMinuteBeforeMission
+    // So it should find the 30 min event (at 5000) or 45 min event (at 12000)
+    // Since we scan newest first, it should find 45 min
+    const resultWithFilter = parseNeedCommsSelection(
+      events,
+      oneMinuteBeforeMission
+    )
+    expect(resultWithFilter.minutes).toBe(45)
+    expect(resultWithFilter.eventId).toBe(3)
+    expect(resultWithFilter.eventUnixTime).toBe(12000)
+  })
+
+  it('excludes events before minTime even if they are the only matches', () => {
+    const missionStartTime = 10000
+    const oneMinuteBeforeMission = missionStartTime - 60000 // 4000
+    const events = [
+      // Only event from previous mission (before 1 minute before mission start)
+      makeEvent({
+        unixTime: 3000,
+        text: 'Got command .NeedCommsTime 15 min',
+        eventId: 1,
+      }),
+    ]
+    // Without minTime, it would find the event
+    const resultWithoutFilter = parseNeedCommsSelection(events)
+    expect(resultWithoutFilter.minutes).toBe(15)
+
+    // With minTime, it should not find any events (all are before minTime)
+    const resultWithFilter = parseNeedCommsSelection(
+      events,
+      oneMinuteBeforeMission
+    )
+    expect(resultWithFilter.minutes).toBeNull()
+    expect(resultWithFilter.eventId).toBeNull()
+  })
 })
 
 describe('parseMissionNameSelection', () => {

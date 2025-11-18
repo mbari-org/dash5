@@ -26,12 +26,17 @@ export const useLastCommsTime = (
     unixTime: startTimeMillis,
     offsetDays: -1,
   })
-  const { data: eventsData } = useEvents({
-    vehicles: [vehicleName as string],
-    eventTypes: ['sbdReceive'],
-    from: adjustedStartTime,
-    limit: 500,
-  })
+  const { data: eventsData } = useEvents(
+    {
+      vehicles: [vehicleName as string],
+      eventTypes: ['sbdReceive'],
+      from: adjustedStartTime,
+      limit: 500,
+    },
+    {
+      staleTime: 60 * 1000,
+    }
+  )
 
   if (!eventsData) {
     return {

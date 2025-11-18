@@ -39,7 +39,11 @@ export const useNeedCommsTime = (
   const minutes = useMemo(() => {
     if (!data || data.length === 0) return null
 
-    const selection = parseNeedCommsSelection(data as GetEventsResponse[])
+    // Only consider events from 1 minute before mission start to avoid previous missions
+    const selection = parseNeedCommsSelection(
+      data as GetEventsResponse[],
+      from ?? undefined
+    )
     const parsed = selection.minutes
     if (parsed) return parsed
 
@@ -59,7 +63,7 @@ export const useNeedCommsTime = (
       }
     }
     return null
-  }, [data])
+  }, [data, from])
 
   return {
     minutes,

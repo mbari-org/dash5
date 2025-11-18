@@ -54,17 +54,29 @@ const extractMinutesFromText = (text: string): number | null => {
  * extracts the duration via extractMinutesFromText, and returns the
  * resolved minutes along with the originating event metadata. Returns all
  * nulls if no matching command is found.
+ *
+ * @param events - Array of events to search through
+ * @param minTime - Optional minimum unix time (in milliseconds) to filter events.
+ *                  Only events with unixTime >= minTime will be considered.
+ *                  This is used to avoid capturing values from previous missions.
  */
 export const parseNeedCommsSelection = (
-  events: GetEventsResponse[]
+  events: GetEventsResponse[],
+  minTime?: number | null
 ): {
   minutes: number | null
   eventUnixTime: number | null
   eventText: string | null
   eventId: number | null
 } => {
+  // Filter events to only include those >= minTime (if provided)
+  const filteredEvents =
+    minTime != null
+      ? events.filter((e) => (e.unixTime ?? 0) >= minTime)
+      : events
+
   // Sort by time ascending and scan most-recent first
-  const sorted = [...events].sort(
+  const sorted = [...filteredEvents].sort(
     (a, b) => (a.unixTime ?? 0) - (b.unixTime ?? 0)
   )
   for (let i = sorted.length - 1; i >= 0; i -= 1) {

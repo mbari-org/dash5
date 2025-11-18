@@ -23,6 +23,7 @@ import {
   useTethysApiContext,
   useChartData,
   useVehiclePicAndOnCall,
+  useMissionStartedEvent,
 } from '@mbari/api-client'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { faChevronDown, faChevronUp } from '@fortawesome/free-solid-svg-icons'
@@ -166,6 +167,20 @@ const Vehicle: NextPage = () => {
     ? DateTime.utc().plus({ hours: 4 }).endOf('day').toMillis()
     : deployment?.endEvent?.unixTime ?? 0
 
+  // Get the actual mission start time (e.g., ballast_and_trim, transit, etc.)
+  // instead of deployment start time
+  const { data: missionStartedEvent } = useMissionStartedEvent(
+    {
+      vehicle: vehicleName as string,
+      limit: 1,
+    },
+    {
+      enabled: !!vehicleName && !!deployment,
+      staleTime: 60 * 1000,
+    }
+  )
+  const missionStartTime = missionStartedEvent?.[0]?.unixTime ?? startTime
+
   const { lastSatCommsTime, lastCellCommsTime } = useLastCommsTime(
     vehicleName,
     startTime
@@ -179,8 +194,8 @@ const Vehicle: NextPage = () => {
 
   const { minutes: needCommsMinutes } = useNeedCommsTime(
     vehicleName,
-    startTime,
-    { enabled: !!vehicleName && !!startTime }
+    missionStartTime,
+    { enabled: !!vehicleName && !!missionStartTime }
   )
   const nowMs = useTick(60_000)
   const { nextCommTimeMs, text: nextCommsText } = useMemo(
@@ -391,6 +406,9 @@ const Vehicle: NextPage = () => {
                             name={vehicleName as string}
                             className="m-auto flex h-full w-full"
                             onBatteryClick={handleBatteryClick}
+                            lastCellCommsTime={lastCellCommsDT}
+                            lastSatCommsTime={lastSatCommsDT}
+                            nextCommsText={nextCommsText}
                           />
                         )}
                         {currentTab === 'depth' && (
