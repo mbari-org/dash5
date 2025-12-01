@@ -13,7 +13,7 @@ import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { faTriangleExclamation } from '@fortawesome/free-solid-svg-icons'
 import clsx from 'clsx'
 import { DateTime } from 'luxon'
-import { formatCompactDuration } from '@mbari/utils'
+import { decodeHtmlEntities, formatCompactDuration } from '@mbari/utils'
 import { useQuery } from 'react-query'
 
 const VehicleDiagram: React.FC<{
@@ -182,15 +182,7 @@ const VehicleDiagram: React.FC<{
         textSat={formattedSatTime}
         textLogTime={vehicle?.text_logtime}
         textMission={
-          vehicle?.text_mission
-            ? vehicle.text_mission
-                .replace(/&#x([0-9a-fA-F]+);/g, (_, hex) =>
-                  String.fromCharCode(parseInt(hex, 16))
-                )
-                .replace(/&#(\d+);/g, (_, dec) =>
-                  String.fromCharCode(parseInt(dec, 10))
-                )
-            : ''
+          vehicle?.text_mission ? decodeHtmlEntities(vehicle.text_mission) : ''
         }
         textReckonDistance={vehicle?.text_reckondistance}
         textCriticalTime={vehicle?.text_criticaltime}
