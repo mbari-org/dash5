@@ -293,20 +293,41 @@ export const ScheduleSection: React.FC<ScheduleSectionProps> = ({
 
   const handleDuplicate = ({
     eventId,
+    commandType,
   }: {
     eventId: number
     commandType: string
   }) => {
     const event = results.find((r) => r?.event.eventId === eventId)?.event
-    const mission = parseMissionCommand(event?.data ?? '')
-    setGlobalModalId({
-      id: 'newCommand',
-      meta: {
-        command: event?.text ?? event?.data ?? '',
-        mission: mission.name,
-        params: mission.parameters,
-      },
-    })
+
+    if (commandType === 'mission') {
+      const missionPath =
+        event?.data?.match(/[A-Za-z0-9_/]+\.(?:xml|tl)/)?.[0] ?? ''
+      setGlobalModalId({
+        id: 'newMission',
+        meta: {
+          mission: missionPath,
+          eventId: eventId,
+          eventData: event?.data ?? null,
+          eventUser: event?.user ?? null,
+          eventNote: event?.note ?? null,
+          eventIsoTime: event?.unixTime
+            ? new Date(event.unixTime).toISOString()
+            : null,
+          eventVehicleName: vehicleName,
+        },
+      })
+    } else {
+      const mission = parseMissionCommand(event?.data ?? '')
+      setGlobalModalId({
+        id: 'newCommand',
+        meta: {
+          command: event?.text ?? event?.data ?? '',
+          mission: mission.name,
+          params: mission.parameters,
+        },
+      })
+    }
   }
 
   const handleDelete = (_: { eventId: number; commandType: string }) => {
