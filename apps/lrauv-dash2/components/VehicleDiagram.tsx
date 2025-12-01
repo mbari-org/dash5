@@ -1,9 +1,5 @@
-import {
-  useSiteConfig,
-  useVehicleInfo,
-  GetVehicleInfoResponse,
-} from '@mbari/api-client'
-import React, { useMemo } from 'react'
+import { useVehicleInfo, GetVehicleInfoResponse } from '@mbari/api-client'
+import React from 'react'
 import axios from 'axios'
 import {
   FullWidthVehicleDiagram,
@@ -14,7 +10,6 @@ import { faTriangleExclamation } from '@fortawesome/free-solid-svg-icons'
 import clsx from 'clsx'
 import { DateTime } from 'luxon'
 import { decodeHtmlEntities, formatCompactDuration } from '@mbari/utils'
-import { useQuery } from 'react-query'
 
 const VehicleDiagram: React.FC<{
   name: string
@@ -33,21 +28,8 @@ const VehicleDiagram: React.FC<{
   lastSatCommsTime: lastSatCommsDT,
   nextCommsText,
 }) => {
-  const { data: siteConfig } = useSiteConfig()
-
-  // Fallback url for local development
-  const fallbackVehicleInfoUrl = useMemo(() => {
-    const pattern =
-      siteConfig?.appConfig.external.statusWidgets?.lrauvStatusWidgetUrlPattern
-    if (!pattern) return null
-    return pattern.replace(/<vehicleName>/gi, name).replace('.svg', '.json')
-  }, [
-    siteConfig?.appConfig.external.statusWidgets?.lrauvStatusWidgetUrlPattern,
-    name,
-  ])
-
   const baseUrl = process.env.NEXT_PUBLIC_API_HOST
-  const primaryVehicleInfo = useVehicleInfo(
+  const { data: vehicleInfo } = useVehicleInfo(
     { name },
     baseUrl
       ? axios.create({
@@ -56,44 +38,11 @@ const VehicleDiagram: React.FC<{
         })
       : undefined,
     {
-      enabled: !!baseUrl && !!name,
-      staleTime: 0,
-    }
-  )
-
-  const { data: fallbackVehicleInfo } = useQuery(
-    ['vehicleInfoFallback', name, fallbackVehicleInfoUrl],
-    async () => {
-      if (!fallbackVehicleInfoUrl) return { not_found: true }
-      try {
-        const response = await axios.get(fallbackVehicleInfoUrl, {
-          timeout: 5000,
-        })
-        return response.data as GetVehicleInfoResponse
-      } catch (e: unknown) {
-        if ((e as any)?.response?.status === 404) {
-          return { not_found: true }
-        }
-        throw e
-      }
-    },
-    {
-      enabled:
-        !!fallbackVehicleInfoUrl &&
-        !!name &&
-        (primaryVehicleInfo.isError ||
-          primaryVehicleInfo.data?.not_found ||
-          (!primaryVehicleInfo.data && !primaryVehicleInfo.isLoading)),
+      enabled: !!name,
       staleTime: 0,
       refetchInterval: 30 * 1000,
     }
   )
-
-  // Use primary if available, otherwise fallback
-  const vehicleInfo =
-    primaryVehicleInfo.data && !primaryVehicleInfo.data.not_found
-      ? primaryVehicleInfo.data
-      : fallbackVehicleInfo
 
   const vehicle =
     vehicleInfo?.not_found || !vehicleInfo

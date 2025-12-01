@@ -21,7 +21,6 @@ import {
   decodeHtmlEntities,
 } from '@mbari/utils'
 import React, { useEffect } from 'react'
-import { useQuery } from 'react-query'
 import useTrackedVehicles from '../lib/useTrackedVehicles'
 import axios from 'axios'
 import { DateTime } from 'luxon'
@@ -56,7 +55,6 @@ const ConnectedVehicleCellComponent: React.FC<{
   const [isOpen, setIsOpen] = React.useState(open)
   const { vehicleColors } = useVehicleColors()
   const contextColor = vehicleColors[name.toLowerCase()] || color
-  const { data: siteConfig } = useSiteConfig()
   const { data: lastDeployment } = useLastDeployment(
     {
       vehicle: name,
@@ -73,21 +71,8 @@ const ConnectedVehicleCellComponent: React.FC<{
     }
   )
 
-  // Construct fallback URL from siteConfig pattern
-  const fallbackVehicleInfoUrl = React.useMemo(() => {
-    const pattern =
-      siteConfig?.appConfig.external.statusWidgets?.lrauvStatusWidgetUrlPattern
-    if (!pattern) return null
-    // Replace <vehicleName> or <VehicleName> with actual name and change .svg to .json
-    return pattern.replace(/<vehicleName>/gi, name).replace('.svg', '.json')
-  }, [
-    siteConfig?.appConfig.external.statusWidgets?.lrauvStatusWidgetUrlPattern,
-    name,
-  ])
-
-  // Try original API endpoint first using useVehicleInfo
   const baseUrl = process.env.NEXT_PUBLIC_API_HOST
-  const primaryVehicleInfo = useVehicleInfo(
+  const { data: vehicleInfo, isLoading: vehicleInfoLoading } = useVehicleInfo(
     { name },
     baseUrl
       ? axios.create({
@@ -96,48 +81,11 @@ const ConnectedVehicleCellComponent: React.FC<{
         })
       : undefined,
     {
-      enabled: !!baseUrl && !!name,
-      staleTime: 0,
-    }
-  )
-
-  // Fallback to siteConfig URL if primary fails
-  const { data: fallbackVehicleInfo } = useQuery(
-    ['vehicleInfoFallback', name, fallbackVehicleInfoUrl],
-    async () => {
-      if (!fallbackVehicleInfoUrl) return { not_found: true }
-      try {
-        const response = await axios.get(fallbackVehicleInfoUrl, {
-          timeout: 5000,
-        })
-        return response.data as GetVehicleInfoResponse
-      } catch (e: unknown) {
-        if ((e as any)?.response?.status === 404) {
-          return { not_found: true }
-        }
-        throw e
-      }
-    },
-    {
-      enabled:
-        !!fallbackVehicleInfoUrl &&
-        !!name &&
-        (primaryVehicleInfo.isError ||
-          primaryVehicleInfo.data?.not_found ||
-          (!primaryVehicleInfo.data && !primaryVehicleInfo.isLoading)),
+      enabled: !!name,
       staleTime: 0,
       refetchInterval: 30 * 1000,
     }
   )
-
-  // Use primary if available, otherwise fallback
-  const vehicleInfo =
-    primaryVehicleInfo.data && !primaryVehicleInfo.data.not_found
-      ? primaryVehicleInfo.data
-      : fallbackVehicleInfo
-  const vehicleInfoLoading =
-    primaryVehicleInfo.isLoading ||
-    (fallbackVehicleInfo === undefined && !!fallbackVehicleInfoUrl)
   const { data: missionStartedEvent } = useMissionStartedEvent(
     {
       vehicle: name,
@@ -410,7 +358,10 @@ const VehicleList: React.FC<{
     const vehicleName = trackedVehicles[index]
     const vehicleColor =
       vehicleColors[vehicleName.toLowerCase()] ||
-      vehicles?.find((v) => v.vehicleName === vehicleName)?.color ||
+      vehicles?.find(
+        (v: { vehicleName: string; color?: string }) =>
+          v.vehicleName === vehicleName
+      )?.color ||
       '#ccc'
 
     return (
