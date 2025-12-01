@@ -396,8 +396,6 @@ const VehicleList: React.FC<{
   const { trackedVehicles } = useTrackedVehicles()
   const { data: siteConfig } = useSiteConfig()
 
-  console.log('zzz siteConfig', siteConfig)
-
   const [accordionState, setAccordionState] = React.useState<{
     [key: string]: 'open' | 'closed' | undefined
   }>({})
