@@ -58,6 +58,21 @@ export const parseMissionCommand = (name: string) => {
   }
 }
 
+/**
+ * Detects if a command is actually a mission command by checking if it contains
+ * "load" followed by a mission file path and "run"
+ */
+export const isMissionCommand = (
+  commandData?: string,
+  commandText?: string
+): boolean => {
+  const text = commandText || commandData || ''
+  // Check if it contains "load" followed by a mission file (.xml or .tl) and "run"
+  const hasLoad = /\bload\s+[A-Za-z0-9_/]+\.(?:xml|tl)/i.test(text)
+  const hasRun = /\brun\b/i.test(text)
+  return hasLoad && hasRun
+}
+
 export const ScheduleSection: React.FC<ScheduleSectionProps> = ({
   currentDeploymentId,
   activeDeployment,
@@ -283,7 +298,10 @@ export const ScheduleSection: React.FC<ScheduleSectionProps> = ({
         onMoreClick={openMoreMenu}
         eventId={mission.event.eventId}
         commandType={
-          mission?.event?.eventType === 'run' ? 'mission' : 'command'
+          mission?.event?.eventType === 'run' ||
+          isMissionCommand(mission?.event?.data, mission?.event?.text)
+            ? 'mission'
+            : 'command'
         }
       />
     ) : (
@@ -300,15 +318,20 @@ export const ScheduleSection: React.FC<ScheduleSectionProps> = ({
   }) => {
     const event = results.find((r) => r?.event.eventId === eventId)?.event
 
-    if (commandType === 'mission') {
+    // Check if this is actually a mission command based on content, not just commandType
+    const isMission = isMissionCommand(event?.data, event?.text)
+
+    if (commandType === 'mission' || isMission) {
       const missionPath =
-        event?.data?.match(/[A-Za-z0-9_/]+\.(?:xml|tl)/)?.[0] ?? ''
+        event?.data?.match(/[A-Za-z0-9_/]+\.(?:xml|tl)/)?.[0] ??
+        event?.text?.match(/[A-Za-z0-9_/]+\.(?:xml|tl)/)?.[0] ??
+        ''
       setGlobalModalId({
         id: 'newMission',
         meta: {
           mission: missionPath,
           eventId: eventId,
-          eventData: event?.data ?? null,
+          eventData: event?.data ?? event?.text ?? null,
           eventUser: event?.user ?? null,
           eventNote: event?.note ?? null,
           eventIsoTime: event?.unixTime
