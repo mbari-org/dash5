@@ -40,6 +40,11 @@ export interface GlobalModalMetaData {
   mission?: string | null
   params?: string | null
   newDocRequest?: NewDocRequest
+  eventData?: string | null
+  eventUser?: string | null
+  eventNote?: string | null
+  eventIsoTime?: string | null
+  eventVehicleName?: string | null
 }
 
 export interface GlobalModalState {

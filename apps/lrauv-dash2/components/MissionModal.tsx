@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState, useRef } from 'react'
 import {
   MissionModalView,
   MissionModalViewProps,
@@ -22,6 +22,7 @@ import useGlobalDrawerState from '../lib/useGlobalDrawerState'
 import useGlobalModalId from '../lib/useGlobalModalId'
 import { useParameterOverrides } from '../lib/useParameterOverrides'
 import { useWaypointCalculations } from '../lib/useWaypointCalculations'
+import { useInsertTempMission } from '../lib/useInsertTempMission'
 
 export interface MissionModalProps {
   onClose: () => void
@@ -81,6 +82,7 @@ const MissionModal: React.FC<MissionModalProps> = ({
       setDrawerOpen(false)
     }
   })
+
   const [selectedMission, setSelectedMission] = useState<string | undefined>(
     undefined
   )
@@ -98,6 +100,76 @@ const MissionModal: React.FC<MissionModalProps> = ({
     missionCategories,
   } = useMissionData({ vehicleName, selectedMission, showAllVehicleMissions })
 
+  // Insert temporary mission entry if rerunning from schedule history
+  const missionsWithTemporaryEntry = useInsertTempMission({
+    globalModalMeta: globalModalId?.meta,
+    missions,
+    recentRuns,
+    selectedMissionData,
+    vehicleName,
+  })
+
+  // Track if we've already auto-selected to prevent re-selecting when user changes selection
+  const hasAutoSelectedRef = useRef(false)
+
+  // Auto-select mission from globalModalId meta if provided (only once on initial load)
+  useEffect(() => {
+    const missionPath = globalModalId?.meta?.mission
+    const eventData = globalModalId?.meta?.eventData
+
+    // Reset the ref when modal closes (when globalModalId becomes null or changes)
+    if (!globalModalId?.id || globalModalId?.id !== 'newMission') {
+      hasAutoSelectedRef.current = false
+      return
+    }
+
+    if (
+      missionPath &&
+      missionsWithTemporaryEntry &&
+      missionsWithTemporaryEntry.length > 0 &&
+      !hasAutoSelectedRef.current
+    ) {
+      // Find mission by matching id (which is the mission path)
+      const matchingMission = missionsWithTemporaryEntry.find(
+        (m) => m.id === missionPath
+      )
+      // Only auto-select once per modal open
+      if (matchingMission) {
+        hasAutoSelectedRef.current = true
+        setSelectedMission(matchingMission.id)
+        // If rerunning from schedule history (has eventData), always use 'Recent Runs'
+        if (eventData) {
+          setSelectedMissionCategory('Recent Runs')
+        } else if (matchingMission.recentRun) {
+          setSelectedMissionCategory('Recent Runs')
+        } else if (matchingMission.frequentRun) {
+          setSelectedMissionCategory('Frequent Runs')
+        } else if (matchingMission.category) {
+          // Set category based on mission's category
+          const categoryId = missionCategories.find(
+            (c) =>
+              c.name === matchingMission.category ||
+              c.id === matchingMission.category
+          )?.id
+          if (categoryId) {
+            setSelectedMissionCategory(categoryId)
+          }
+        }
+      }
+    }
+  }, [
+    globalModalId?.id,
+    globalModalId?.meta?.mission,
+    globalModalId?.meta?.eventData,
+    missionsWithTemporaryEntry,
+    missionCategories,
+  ])
+
+  // Get recent runs from missionsWithTemporaryEntry (includes temporary mission if rerunning)
+  const recentRunsWithTemp = missionsWithTemporaryEntry.filter(
+    (m) => m.recentRun
+  )
+
   const {
     parameters,
     safetyParams,
@@ -109,7 +181,7 @@ const MissionModal: React.FC<MissionModalProps> = ({
     selectedMissionData,
     selectedMission,
     selectedMissionCategory,
-    recentRuns,
+    recentRuns: recentRunsWithTemp,
   })
 
   const handleSelectMission = (id?: string | null) => {
@@ -135,10 +207,10 @@ const MissionModal: React.FC<MissionModalProps> = ({
       let latValue: string | undefined = latArg?.value
       let lonValue: string | undefined = lonArg?.value
 
-      // If this is a recent run, use its waypoint overrides
+      // Use waypoint overrides from the selected mission in recent runs including temporary mission if rerunning
       if (selectedMissionCategory === 'Recent Runs' && selectedMission) {
-        const selectedRun = recentRuns.find(
-          (run) => run.id === selectedMission
+        const selectedRun = missionsWithTemporaryEntry.find(
+          (run) => run.id === selectedMission && run.recentRun
         ) as any
 
         if (selectedRun?.waypointOverrides?.length) {
@@ -244,7 +316,7 @@ const MissionModal: React.FC<MissionModalProps> = ({
       commsParams={commsParams}
       onCancel={onClose}
       onSchedule={handleSchedule}
-      missions={missions ?? []}
+      missions={missionsWithTemporaryEntry ?? []}
       onSelectMission={handleSelectMission}
       waypoints={waypoints}
       stations={stations}

@@ -158,7 +158,15 @@ const CommandModalBody: React.FC<CommandModalViewProps> = ({
   )
 
   const handleNext = () => {
-    if (selectedCommandId) setCurrentStep(currentStep + 1)
+    // Allow advancing if:
+    // 1. selectedCommandId is set (templated commands)
+    // 2. OR we're on step 1 and have commandText or selectedCommandName (freeform commands)
+    if (
+      selectedCommandId ||
+      (currentStep === 1 && (commandText || selectedCommandName))
+    ) {
+      setCurrentStep(currentStep + 1)
+    }
   }
 
   const handlePrevious = () => {
@@ -194,7 +202,9 @@ const CommandModalBody: React.FC<CommandModalViewProps> = ({
       : [back]
   }
 
-  const [commandText, setCommandText] = useState<string | null>(null)
+  const [commandText, setCommandText] = useState<string | null>(
+    defaultCommand ?? null
+  )
 
   const [selectedSyntax, setSelectedSyntax] = useState<string | null>(
     syntaxVariations?.[0]?.help ?? null
@@ -311,11 +321,16 @@ const CommandModalBody: React.FC<CommandModalViewProps> = ({
         ))}
 
       {currentStep === 2 &&
-        selectedCommandId &&
+        (selectedCommandId || commandText || selectedCommandName) &&
         (showAlternateAddress ? (
           <AlternativeAddressStep
             vehicleName={vehicleName}
-            mission={commandText ?? getCommandNameById(selectedCommandId) ?? ''}
+            mission={
+              commandText ??
+              getCommandNameById(selectedCommandId ?? '') ??
+              selectedCommandName ??
+              ''
+            }
             commandDescriptor="command"
             alternativeAddresses={alternativeAddresses}
           />
@@ -323,7 +338,10 @@ const CommandModalBody: React.FC<CommandModalViewProps> = ({
           <ScheduleStep
             vehicleName={vehicleName}
             commandText={
-              commandText ?? getCommandNameById(selectedCommandId) ?? ''
+              commandText ??
+              getCommandNameById(selectedCommandId ?? '') ??
+              selectedCommandName ??
+              ''
             }
             commandDescriptor="command"
           />

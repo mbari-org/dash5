@@ -16,12 +16,14 @@ import {
   OverviewToolbar,
   VehicleCommsCell,
   VehicleInfoCell,
+  PluggedInIcon,
 } from '@mbari/react-ui'
 import {
   useDeployments,
   useTethysApiContext,
   useChartData,
   useVehiclePicAndOnCall,
+  useMissionStartedEvent,
 } from '@mbari/api-client'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { faChevronDown, faChevronUp } from '@fortawesome/free-solid-svg-icons'
@@ -42,6 +44,9 @@ import { useGoogleMaps } from '../../lib/useGoogleMaps'
 import { SelectedStationsProvider } from '../../components/SelectedStationContext'
 import { SelectedPlatformsProvider } from '../../components/SelectedPlatformContext'
 import { createRoleLabel } from '@mbari/utils'
+import { useNeedCommsTime } from '../../lib/useNeedCommsTime'
+import { calculateRelativeNextComm } from '@mbari/utils'
+import { useTick } from '../../lib/useTick'
 
 // Every flex parent of the map needs `min-h-0`
 // Without it, Leaflet sometimes shows gray tiles
@@ -90,7 +95,7 @@ const Vehicle: NextPage = () => {
   const vehicleName = params[0]
   const deploymentId = parseInt(params[1] ?? '0', 10)
 
-  const { deployment, isLoading } = useCurrentDeployment()
+  const { deployment, lastDeployment, isLoading } = useCurrentDeployment()
   const { data: deploymentsData } = useDeployments(
     {
       vehicle: vehicleName as string,
@@ -162,19 +167,58 @@ const Vehicle: NextPage = () => {
     ? DateTime.utc().plus({ hours: 4 }).endOf('day').toMillis()
     : deployment?.endEvent?.unixTime ?? 0
 
-  const lastCommsMillis = useLastCommsTime(vehicleName, startTime)
-  const lastCommsTime = lastCommsMillis
-    ? DateTime.fromMillis(lastCommsMillis)
+  // Get the actual mission start time (e.g., ballast_and_trim, transit, etc.)
+  // instead of deployment start time
+  const { data: missionStartedEvent } = useMissionStartedEvent(
+    {
+      vehicle: vehicleName as string,
+      limit: 1,
+    },
+    {
+      enabled: !!vehicleName && !!deployment,
+      staleTime: 60 * 1000,
+    }
+  )
+  const missionStartTime = missionStartedEvent?.[0]?.unixTime ?? startTime
+
+  const { lastSatCommsTime, lastCellCommsTime } = useLastCommsTime(
+    vehicleName,
+    startTime
+  )
+  const lastSatCommsDT = lastSatCommsTime
+    ? DateTime.fromMillis(lastSatCommsTime)
     : null
-  const nextCommsTime = lastCommsMillis
-    ? DateTime.now().plus({
-        milliseconds:
-          DateTime.now().toMillis() -
-          lastCommsMillis +
-          25 * 60 * 1000 + // Replace with actual NeedsCommsInterval
-          5 * 60 * 1000, // Replacee w/ buffer time
-      })
+  const lastCellCommsDT = lastCellCommsTime
+    ? DateTime.fromMillis(lastCellCommsTime)
     : null
+
+  const { minutes: needCommsMinutes } = useNeedCommsTime(
+    vehicleName,
+    missionStartTime,
+    { enabled: !!vehicleName && !!missionStartTime }
+  )
+  const nowMs = useTick(60_000)
+  const { nextCommTimeMs, text: nextCommsText } = useMemo(
+    () =>
+      calculateRelativeNextComm(
+        lastSatCommsTime,
+        lastCellCommsTime,
+        needCommsMinutes ?? 60,
+        nowMs
+      ),
+    [lastSatCommsTime, lastCellCommsTime, needCommsMinutes, nowMs]
+  )
+  const nextCommsTime = nextCommTimeMs
+    ? DateTime.fromMillis(nextCommTimeMs)
+    : null
+
+  // Vehicle is plugged in if there's a recoverEvent in lastDeployment or lastDeployment start time is in the future (preparing for mission)
+  const isPluggedIn = Boolean(
+    lastDeployment?.recoverEvent ||
+      (lastDeployment?.startEvent?.unixTime &&
+        DateTime.fromMillis(lastDeployment.startEvent.unixTime).toMillis() >
+          DateTime.now().toMillis())
+  )
   const handleRoleReassign = () => setGlobalModalId({ id: 'reassign' })
   const handleNewDeployment = () => setGlobalModalId({ id: 'newDeployment' })
   const handleEditDeployment = () => setGlobalModalId({ id: 'editDeployment' })
@@ -227,6 +271,14 @@ const Vehicle: NextPage = () => {
   }
 
   const pingEvent = useTethysSubscriptionEvent('VehiclePingResult', vehicleName)
+
+  const vehicleStatusIcon = isPluggedIn ? (
+    <PluggedInIcon />
+  ) : pingEvent?.reachable ? (
+    <SurfacedIcon />
+  ) : (
+    <UnderwaterIcon />
+  )
   return (
     <SelectedPlatformsProvider>
       <SelectedStationsProvider>
@@ -251,9 +303,7 @@ const Vehicle: NextPage = () => {
               supportIcon1={
                 pingEvent?.reachable ? <ConnectedIcon /> : <NotConnectedIcon />
               }
-              supportIcon2={
-                pingEvent?.reachable ? <SurfacedIcon /> : <UnderwaterIcon />
-              }
+              supportIcon2={vehicleStatusIcon}
               onSelectNewDeployment={handleNewDeployment}
               deployments={deployments}
               onEditDeployment={handleEditDeployment}
@@ -277,28 +327,23 @@ const Vehicle: NextPage = () => {
                         pingEvent?.checkedAt
                       ).toRelative()) as string) ?? 'Not available'
                   }
-                  nextComms={`${nextCommsTime?.toFormat(
-                    'hh:mm'
-                  )} (in ${nextCommsTime?.toRelative()})`}
+                  nextComms={nextCommsText ?? undefined}
                 />
               )}
               onIcon2hover={() => (
                 <VehicleInfoCell
-                  icon={
-                    pingEvent?.reachable ? <SurfacedIcon /> : <UnderwaterIcon />
+                  isPluggedIn={isPluggedIn}
+                  isReachable={pingEvent?.reachable}
+                  nextCommsTime={nextCommsTime}
+                  lastPluggedInTime={
+                    lastDeployment?.recoverEvent?.unixTime
+                      ? DateTime.fromMillis(
+                          lastDeployment.recoverEvent.unixTime
+                        )
+                      : null
                   }
-                  headline="Likely underwater"
-                  subtitle="Last comms over satellite"
-                  lastCommsOverSat={`${
-                    lastCommsTime?.day === DateTime.now().day
-                      ? 'Today'
-                      : lastCommsTime?.toFormat('mmm, d')
-                  } at ${lastCommsTime?.toFormat(
-                    'hh:mm:ss'
-                  )} (${lastCommsTime?.toRelative()})`}
-                  estimate={`Est. to surface in ${nextCommsTime?.toRelative()} at ~${nextCommsTime?.toFormat(
-                    'hh:mm'
-                  )}`}
+                  lastSatCommsTime={lastSatCommsDT}
+                  lastCellCommsTime={lastCellCommsDT}
                 />
               )}
               authenticated={authenticated}
@@ -361,6 +406,9 @@ const Vehicle: NextPage = () => {
                             name={vehicleName as string}
                             className="m-auto flex h-full w-full"
                             onBatteryClick={handleBatteryClick}
+                            lastCellCommsTime={lastCellCommsDT}
+                            lastSatCommsTime={lastSatCommsDT}
+                            nextCommsText={nextCommsText}
                           />
                         )}
                         {currentTab === 'depth' && (
