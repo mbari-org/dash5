@@ -15,6 +15,7 @@ import useSessionToken from '../lib/useSessionToken'
 import { GoogleMapsProvider } from '../components/GoogleMapsProvider'
 import { VehicleColorsProvider } from '../components/VehicleColorsContext'
 import '../styles/vehicle.css'
+import '../styles/docs.css'
 
 // prevent font awesome from auto-adding styles.
 config.autoAddCss = false
