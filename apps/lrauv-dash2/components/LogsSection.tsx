@@ -1,9 +1,5 @@
 import React, { useMemo, useState } from 'react'
-import {
-  useInfiniteEvents,
-  useTethysApiContext,
-  useEvents,
-} from '@mbari/api-client'
+import { useInfiniteEvents, useTethysApiContext } from '@mbari/api-client'
 import {
   Virtualizer,
   LogCell,
@@ -14,7 +10,6 @@ import {
   Button,
   LogFiltersDropdown,
 } from '@mbari/react-ui'
-import toast from 'react-hot-toast'
 import { MultiValue } from 'react-select'
 import { DateTime } from 'luxon'
 import formatEvent, {
@@ -23,6 +18,7 @@ import formatEvent, {
   isUploadEvent,
 } from '../lib/formatEvent'
 import { applyEventFilters } from '../lib/eventFilterUtils'
+import { handleCopyEventLogs } from '../lib/handleCopyEventLogs'
 import { createLogger, useDebounce } from '@mbari/utils'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { faChevronDown, faChevronUp } from '@fortawesome/free-solid-svg-icons'
@@ -160,53 +156,6 @@ const LogsSection: React.FC<LogsSectionProps> = ({
     setFilters(ids.map((id: string) => ({ id, name: id })))
   }
 
-  // Handle copy-paste action
-  const handleCopyPaste = (item: any, time: string, date: string) => {
-    try {
-      // Get log content
-      const logContent = formatEvent(
-        item,
-        siteConfig?.appConfig.external.tethysdash ?? ''
-      )
-
-      // Create a complete text representation
-      let completeText = `${displayNameForEventType(item)}\n`
-      completeText += `Time: ${time}\n`
-      completeText += `Date: ${date}\n`
-      completeText += `Direction: ${
-        isUploadEvent(item) ? 'Upload' : 'Download'
-      }\n\n`
-
-      // Add log content
-      if (typeof logContent === 'string') {
-        completeText += logContent
-      } else {
-        // Extract text as fallback (only if needed)
-        const tempDiv = document.createElement('div')
-        const ReactDOM = require('react-dom')
-        ReactDOM.render(logContent, tempDiv)
-        completeText += tempDiv.textContent || ''
-        ReactDOM.unmountComponentAtNode(tempDiv)
-      }
-
-      // Copy all text to the clipboard
-      navigator.clipboard
-        .writeText(completeText)
-        .then(() =>
-          toast.success('Log copied to clipboard.', {
-            duration: 2000,
-            className: 'blue-toast',
-          })
-        )
-        .catch((err) => {
-          logger.error('Failed to copy:', err)
-          toast.error('Failed to copy to clipboard')
-        })
-    } catch (error) {
-      logger.error('Clipboard error:', error)
-      toast.error("Your browser doesn't support clipboard access")
-    }
-  }
   const cellAtIndex = (index: number, _v: Virtualizer) => {
     if (hasNextPage && index === dataCount) {
       return (
@@ -234,7 +183,7 @@ const LogsSection: React.FC<LogsSectionProps> = ({
         label={displayNameForEventType(item)}
         log={formatEvent(item, siteConfig?.appConfig.external.tethysdash ?? '')}
         isUpload={isUploadEvent(item)}
-        onSelect={() => handleCopyPaste(item, time, date)}
+        onCopy={handleCopyEventLogs}
       />
     ) : (
       <span />
