@@ -16,12 +16,14 @@ export const formatEventEntries = (
   const trimmedText = selectedText.trim()
   if (!trimmedText) return ''
 
-  // Pattern to match: EventType followed by time (H:mm) and date (yyyy-MM-dd or Today)
+  // Pattern to match: EventType followed by time (H:mm or H:mm:ss) and date (yyyy-MM-dd or Today)
   // This regex finds the start of each log entry
   const entryStartPattern = new RegExp(
     `\\b(${eventTypeNames
       .map((name) => name.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'))
-      .join('|')})\\s+(\\d{1,2}:\\d{2})\\s+(\\d{4}-\\d{2}-\\d{2}|Today)`,
+      .join(
+        '|'
+      )})\\s+(\\d{1,2}:\\d{2}(?::\\d{2})?)\\s+(\\d{4}-\\d{2}-\\d{2}|Today)`,
     'gi'
   )
 

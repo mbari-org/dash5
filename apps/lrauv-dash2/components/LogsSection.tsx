@@ -174,7 +174,7 @@ const LogsSection: React.FC<LogsSectionProps> = ({
       Math.abs(diff) < 1
         ? 'Today'
         : DateTime.fromISO(isoTime).toFormat('yyyy-MM-dd')
-    const time = DateTime.fromISO(isoTime).toFormat('H:mm')
+    const time = DateTime.fromISO(isoTime).toFormat('H:mm:ss')
     return item ? (
       <LogCell
         className="border-b border-slate-200"

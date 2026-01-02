@@ -166,4 +166,92 @@ describe('formatEventEntries', () => {
       expect(result).toBe('Test (Special) 14:30 2024-01-15 Message')
     })
   })
+
+  describe('time format compatibility', () => {
+    describe('H:mm format (without seconds)', () => {
+      it('formats single entry with H:mm format', () => {
+        const selectedText =
+          'Critical   14:30   2024-01-15   Some   log   message'
+        const result = formatEventEntries(selectedText, eventTypeNames)
+        expect(result).toBe('Critical 14:30 2024-01-15 Some log message')
+      })
+
+      it('formats multiple entries with H:mm format', () => {
+        const selectedText = `
+          Critical 14:30 2024-01-15 First log message
+          Important 15:00 2024-01-15 Second log message
+          Data 15:30 2024-01-15 Third log message
+        `
+        const result = formatEventEntries(selectedText, eventTypeNames)
+        expect(result).toBe(
+          'Critical 14:30 2024-01-15 First log message\nImportant 15:00 2024-01-15 Second log message\nData 15:30 2024-01-15 Third log message'
+        )
+      })
+
+      it('handles H:mm format with Today date', () => {
+        const selectedText = 'Important   09:15   Today   Started   mission'
+        const result = formatEventEntries(selectedText, eventTypeNames)
+        expect(result).toBe('Important 09:15 Today Started mission')
+      })
+    })
+
+    describe('H:mm:ss format (with seconds)', () => {
+      it('formats single entry with H:mm:ss format', () => {
+        const selectedText =
+          'Critical   14:30:45   2024-01-15   Some   log   message'
+        const result = formatEventEntries(selectedText, eventTypeNames)
+        expect(result).toBe('Critical 14:30:45 2024-01-15 Some log message')
+      })
+
+      it('formats multiple entries with H:mm:ss format', () => {
+        const selectedText = `
+          Critical 14:30:45 2024-01-15 First log message
+          Important 15:00:12 2024-01-15 Second log message
+          Data 15:30:33 2024-01-15 Third log message
+        `
+        const result = formatEventEntries(selectedText, eventTypeNames)
+        expect(result).toBe(
+          'Critical 14:30:45 2024-01-15 First log message\nImportant 15:00:12 2024-01-15 Second log message\nData 15:30:33 2024-01-15 Third log message'
+        )
+      })
+
+      it('handles H:mm:ss format with Today date', () => {
+        const selectedText = 'Important   09:15:30   Today   Started   mission'
+        const result = formatEventEntries(selectedText, eventTypeNames)
+        expect(result).toBe('Important 09:15:30 Today Started mission')
+      })
+
+      it('handles H:mm:ss format with single-digit hour', () => {
+        const selectedText = 'Critical 9:30:45 2024-01-15 Message'
+        const result = formatEventEntries(selectedText, eventTypeNames)
+        expect(result).toBe('Critical 9:30:45 2024-01-15 Message')
+      })
+    })
+
+    describe('mixed time formats', () => {
+      it('handles multiple entries with mixed H:mm and H:mm:ss formats', () => {
+        const selectedText = `
+          Critical 14:30 2024-01-15 First log message
+          Important 15:00:12 2024-01-15 Second log message
+          Data 15:30 2024-01-15 Third log message
+          Note 16:45:33 2024-01-15 Fourth log message
+        `
+        const result = formatEventEntries(selectedText, eventTypeNames)
+        expect(result).toBe(
+          'Critical 14:30 2024-01-15 First log message\nImportant 15:00:12 2024-01-15 Second log message\nData 15:30 2024-01-15 Third log message\nNote 16:45:33 2024-01-15 Fourth log message'
+        )
+      })
+
+      it('handles mixed formats with Today dates', () => {
+        const selectedText = `
+          Critical 14:30 Today First log message
+          Important 15:00:12 Today Second log message
+        `
+        const result = formatEventEntries(selectedText, eventTypeNames)
+        expect(result).toBe(
+          'Critical 14:30 Today First log message\nImportant 15:00:12 Today Second log message'
+        )
+      })
+    })
+  })
 })
