@@ -700,6 +700,8 @@ const OverViewMap: React.FC<{
   )
 }
 
+type MobileView = 'map' | 'list'
+
 // OverviewPage: NextPage
 const OverviewPage: NextPage = () => {
   const { mapsLoaded } = useGoogleMaps()
@@ -707,15 +709,40 @@ const OverviewPage: NextPage = () => {
   const { trackedVehicles } = useTrackedVehicles()
   const mounted = useRef(false)
   const { setGlobalModalId } = useGlobalModalId()
+  const [mobileView, setMobileView] = useState<MobileView>('map')
+
   useEffect(() => {
     if (!mounted.current) {
       mounted.current = true
       setGlobalModalId(null)
     }
   })
+
   const handleSelectedVehicle = (vehicle: string) => {
     router.push(`/vehicle/${vehicle}`)
   }
+
+  const primarySection = (
+    <section className={styles.primary}>
+      <div className={styles.mapContainer}>
+        {mapsLoaded && (
+          <OverViewMap
+            trackedVehicles={trackedVehicles.map((vehicle) => ({
+              name: vehicle,
+            }))}
+          />
+        )}
+      </div>
+    </section>
+  )
+
+  const secondarySection = (
+    <div style={{ overflowY: 'auto', height: '100%' }}>
+      <section className={styles.secondary}>
+        <VehicleList onSelectVehicle={handleSelectedVehicle} />
+      </section>
+    </div>
+  )
 
   return (
     <SharedPathContextProvider>
@@ -731,35 +758,54 @@ const OverviewPage: NextPage = () => {
                     className={styles.content}
                     data-testid="vehicle-dashboard"
                   >
-                    <Allotment
-                      separator
-                      snap
-                      defaultSizes={[75, 25]}
-                      proportionalLayout
-                    >
-                      <Allotment.Pane>
-                        <section className={styles.primary}>
-                          <div className={styles.mapContainer}>
-                            {mapsLoaded && (
-                              <OverViewMap
-                                trackedVehicles={trackedVehicles.map(
-                                  (vehicle) => ({ name: vehicle })
-                                )}
-                              />
-                            )}
-                          </div>
-                        </section>
-                      </Allotment.Pane>
-                      <Allotment.Pane priority={LayoutPriority.High}>
-                        <div style={{ overflowY: 'auto', height: '100%' }}>
-                          <section className={styles.secondary}>
-                            <VehicleList
-                              onSelectVehicle={handleSelectedVehicle}
-                            />
-                          </section>
-                        </div>
-                      </Allotment.Pane>
-                    </Allotment>
+                    {/* Desktop view (keep existing Allotment layout) */}
+                    <div className="hidden h-full w-full xl:block">
+                      <Allotment
+                        separator
+                        snap
+                        defaultSizes={[75, 25]}
+                        proportionalLayout
+                      >
+                        <Allotment.Pane>{primarySection}</Allotment.Pane>
+                        <Allotment.Pane priority={LayoutPriority.High}>
+                          {secondarySection}
+                        </Allotment.Pane>
+                      </Allotment>
+                    </div>
+
+                    {/* Mobile view (toggle between map and list) */}
+                    <div className="flex h-full w-full flex-col xl:hidden">
+                      <div className="flex shrink-0 items-center gap-2 border-b border-slate-200 bg-white px-4 py-2">
+                        <button
+                          type="button"
+                          onClick={() => setMobileView('map')}
+                          className={
+                            mobileView === 'map'
+                              ? 'rounded bg-secondary-300/60 px-3 py-1 text-sm font-bold text-black'
+                              : 'rounded px-3 py-1 text-sm font-bold text-slate-600'
+                          }
+                        >
+                          Map
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setMobileView('list')}
+                          className={
+                            mobileView === 'list'
+                              ? 'rounded bg-secondary-300/60 px-3 py-1 text-sm font-bold text-black'
+                              : 'rounded px-3 py-1 text-sm font-bold text-slate-600'
+                          }
+                        >
+                          Vehicles
+                        </button>
+                      </div>
+
+                      <div className="min-h-0 flex-1 overflow-hidden">
+                        {mobileView === 'map'
+                          ? primarySection
+                          : secondarySection}
+                      </div>
+                    </div>
                   </div>
                 </>
               ) : (
