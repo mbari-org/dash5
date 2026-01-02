@@ -1,6 +1,5 @@
 import React from 'react'
 import clsx from 'clsx'
-import { swallow } from '@mbari/utils'
 import { DownloadIcon } from '../Icons/DownloadIcon'
 import { UploadIcon } from '../Icons/UploadIcon'
 
@@ -12,7 +11,7 @@ export interface LogCellProps {
   date: string
   log: string | JSX.Element
   isUpload: boolean
-  onSelect?: () => void
+  onCopy?: (e: React.ClipboardEvent<HTMLElement>) => void
 }
 
 const styles = {
@@ -29,13 +28,13 @@ export const LogCell: React.FC<LogCellProps> = ({
   date,
   log,
   isUpload,
-  onSelect: handleSelect,
+  onCopy,
 }) => {
   return (
     <article style={style} className={clsx(styles.container, className)}>
-      <button
-        className="grid flex-grow grid-cols-5 gap-2 p-4"
-        onClick={swallow(handleSelect)}
+      <div
+        className="grid flex-grow select-text grid-cols-5 gap-2 p-4"
+        onCopy={onCopy}
       >
         <ul className={styles.details}>
           <li>{label}</li>
@@ -55,7 +54,7 @@ export const LogCell: React.FC<LogCellProps> = ({
         <div className="col-span-3 overflow-x-auto text-left">
           {typeof log === 'string' ? <p className={styles.log}>{log}</p> : log}
         </div>
-      </button>
+      </div>
     </article>
   )
 }
