@@ -71,7 +71,10 @@ const DocsSection: React.FC<DocsSectionProps> = ({
     }
   }
   const handleAddClick = swallow(() => {
-    setGlobalModalId({ id: 'editDocument' })
+    setGlobalModalId({
+      id: 'addDocument',
+      meta: { vehicleName, deploymentId: currentDeploymentId },
+    })
   })
 
   const { mutateAsync: deleteDocument } = useDeleteDocument()
@@ -84,7 +87,6 @@ const DocsSection: React.FC<DocsSectionProps> = ({
   }
 
   const handleAttach = (meta?: GlobalModalMetaData) => {
-    console.log('handleAttach', meta)
     setGlobalModalId({ id: 'attachDocument', meta })
   }
 

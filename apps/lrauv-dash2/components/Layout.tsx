@@ -17,6 +17,7 @@ import DeploymentDetails from './DeploymentDetails'
 import Reassignment from './Reassignment'
 import SendNote from './SendNote'
 import DocumentInstanceModal from './DocumentInstanceModal'
+import AddDocumentModal from './AddDocumentModal'
 import AttachmentModal from './AttachmentModal'
 import DetachModal from './DetachModal'
 import MissionModal from './MissionModal'
@@ -165,6 +166,9 @@ const Layout: React.FC<{ children?: React.ReactNode }> = ({ children }) => {
         requireAuthentication(<NewDeployment onClose={setModal(null)} />)}
       {globalModalId?.id === 'editDocument' && (
         <DocumentInstanceModal onClose={setModal(null)} />
+      )}
+      {globalModalId?.id === 'addDocument' && (
+        <AddDocumentModal onClose={setModal(null)} />
       )}
       {globalModalId?.id === 'reassign' &&
         requireAuthentication(<Reassignment vehicleNames={trackedVehicles} />)}
