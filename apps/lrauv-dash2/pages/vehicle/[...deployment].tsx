@@ -72,6 +72,7 @@ const DeploymentMap = dynamic(() => import('../../components/DeploymentMap'), {
 })
 
 type AvailableTab = 'vehicle' | 'depth' | null
+type MobileView = 'main' | 'sidebar'
 
 const Vehicle: NextPage = () => {
   const { authenticated } = useTethysApiContext()
@@ -91,6 +92,9 @@ const Vehicle: NextPage = () => {
     setTab(tab)
     setDrawerOpen(true)
   }
+
+  const [mobileView, setMobileView] = useState<MobileView>('main')
+
   const params = (router.query?.deployment ?? []) as string[]
   const vehicleName = params[0]
   const deploymentId = parseInt(params[1] ?? '0', 10)
@@ -279,6 +283,105 @@ const Vehicle: NextPage = () => {
   ) : (
     <UnderwaterIcon />
   )
+
+  const primarySection = (
+    <section className={styles.primary}>
+      <MissionProgressToolbar
+        startTime={DateTime.fromMillis(startTime).toISO()}
+        endTime={DateTime.fromMillis(endTime).toISO()}
+        ticks={6}
+        ariaLabel="Mission Progress"
+        className="min-h-0 bg-secondary-300/60"
+        onScrub={handleTimeScrub}
+        indicatorTime={indicatorTime}
+      />
+      <div className={styles.mapContainer}>
+        {mapsLoaded && (
+          <DeploymentMap
+            vehicleName={vehicleName}
+            indicatorTime={indicatorTime}
+            startTime={startTime}
+            endTime={endTime}
+            onScrub={handleTimeScrub}
+          />
+        )}
+        <div className="absolute bottom-0 z-[1001] flex w-full flex-col">
+          <TabGroup className="w-full px-8">
+            <Tab
+              onClick={toggleDrawer}
+              label={
+                <FontAwesomeIcon
+                  icon={drawerOpen ? faChevronDown : faChevronUp}
+                  size="1x"
+                />
+              }
+              selected
+              className="mr-auto"
+            />
+            <Tab
+              label="Vehicle State"
+              onClick={setCurrentTab('vehicle')}
+              selected={currentTab === 'vehicle'}
+            />
+            <Tab
+              label="Depth Data"
+              onClick={setCurrentTab('depth')}
+              selected={currentTab === 'depth'}
+              className="mr-auto"
+            />
+          </TabGroup>
+          <div
+            className={clsx(
+              'flex w-full bg-white',
+              drawerOpen ? 'h-80' : 'h-12'
+            )}
+          >
+            {currentTab === 'vehicle' && (
+              <VehicleDiagram
+                name={vehicleName as string}
+                className="m-auto flex h-full w-full"
+                onBatteryClick={handleBatteryClick}
+                lastCellCommsTime={lastCellCommsDT}
+                lastSatCommsTime={lastSatCommsDT}
+                nextCommsText={nextCommsText}
+              />
+            )}
+            {currentTab === 'depth' && (
+              <div className="flex h-full w-full overflow-hidden px-4">
+                {depthChart}
+                {chartLoading && (
+                  <p className="text-md m-auto font-bold">Loading Depth Data</p>
+                )}
+                {chartError && (
+                  <p className="text-md m-auto font-bold">
+                    Depth Data Could Not Be Loaded
+                  </p>
+                )}
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+    </section>
+  )
+
+  const secondarySection = (
+    <section className={styles.secondary}>
+      {deployment && (
+        <VehicleAccordion
+          authenticated={authenticated}
+          vehicleName={vehicleName}
+          from={adjustedDeploymentStartTime}
+          to={endTime}
+          picLabel={picLabel}
+          onCallLabel={onCallLabel}
+          activeDeployment={deployment.active}
+          currentDeploymentId={deployment.deploymentId as number}
+        />
+      )}
+    </section>
+  )
+
   return (
     <SelectedPlatformsProvider>
       <SelectedStationsProvider>
@@ -348,103 +451,59 @@ const Vehicle: NextPage = () => {
               )}
               authenticated={authenticated}
             />
-            <div className={styles.content}>
-              <Allotment separator defaultSizes={[75, 25]} className="min-h-0">
-                <section className={styles.primary}>
-                  <MissionProgressToolbar
-                    startTime={DateTime.fromMillis(startTime).toISO()}
-                    endTime={DateTime.fromMillis(endTime).toISO()}
-                    ticks={6}
-                    ariaLabel="Mission Progress"
-                    className="min-h-0 bg-secondary-300/60"
-                    onScrub={handleTimeScrub}
-                    indicatorTime={indicatorTime}
-                  />
-                  <div className={styles.mapContainer}>
-                    {mapsLoaded && (
-                      <DeploymentMap
-                        vehicleName={vehicleName}
-                        indicatorTime={indicatorTime}
-                        startTime={startTime}
-                        endTime={endTime}
-                        onScrub={handleTimeScrub}
-                      />
+
+            {/* Desktop view */}
+            <div className="hidden min-h-0 flex-1 xl:flex">
+              <div className={styles.content}>
+                <Allotment
+                  separator
+                  defaultSizes={[75, 25]}
+                  className="min-h-0"
+                >
+                  <Allotment.Pane minSize={720}>
+                    {primarySection}
+                  </Allotment.Pane>
+                  <Allotment.Pane minSize={512}>
+                    {secondarySection}
+                  </Allotment.Pane>
+                </Allotment>
+              </div>
+            </div>
+
+            {/* Mobile view (toggle between main and sidebar) */}
+            <div className="flex min-h-0 flex-1 xl:hidden">
+              <div className={clsx(styles.content, 'flex-col')}>
+                <div className="flex shrink-0 items-center gap-2 border-b border-slate-200 bg-white px-4 py-2">
+                  <button
+                    type="button"
+                    onClick={() => setMobileView('main')}
+                    className={clsx(
+                      'rounded px-3 py-1 text-sm font-bold',
+                      mobileView === 'main'
+                        ? 'bg-secondary-300/60 text-black'
+                        : 'text-slate-600'
                     )}
-                    <div className="absolute bottom-0 z-[1001] flex w-full flex-col">
-                      <TabGroup className="w-full px-8">
-                        <Tab
-                          onClick={toggleDrawer}
-                          label={
-                            <FontAwesomeIcon
-                              icon={drawerOpen ? faChevronDown : faChevronUp}
-                              size="1x"
-                            />
-                          }
-                          selected
-                          className="mr-auto"
-                        />
-                        <Tab
-                          label="Vehicle State"
-                          onClick={setCurrentTab('vehicle')}
-                          selected={currentTab === 'vehicle'}
-                        />
-                        <Tab
-                          label="Depth Data"
-                          onClick={setCurrentTab('depth')}
-                          selected={currentTab === 'depth'}
-                          className="mr-auto"
-                        />
-                      </TabGroup>
-                      <div
-                        className={clsx(
-                          'flex w-full bg-white',
-                          drawerOpen ? 'h-80' : 'h-12'
-                        )}
-                      >
-                        {currentTab === 'vehicle' && (
-                          <VehicleDiagram
-                            name={vehicleName as string}
-                            className="m-auto flex h-full w-full"
-                            onBatteryClick={handleBatteryClick}
-                            lastCellCommsTime={lastCellCommsDT}
-                            lastSatCommsTime={lastSatCommsDT}
-                            nextCommsText={nextCommsText}
-                          />
-                        )}
-                        {currentTab === 'depth' && (
-                          <div className="flex h-full w-full overflow-hidden px-4">
-                            {depthChart}
-                            {chartLoading && (
-                              <p className="text-md m-auto font-bold">
-                                Loading Depth Data
-                              </p>
-                            )}
-                            {chartError && (
-                              <p className="text-md m-auto font-bold">
-                                Depth Data Could Not Be Loaded
-                              </p>
-                            )}
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                  </div>
-                </section>
-                <section className={styles.secondary}>
-                  {deployment && (
-                    <VehicleAccordion
-                      authenticated={authenticated}
-                      vehicleName={vehicleName}
-                      from={adjustedDeploymentStartTime}
-                      to={endTime}
-                      picLabel={picLabel}
-                      onCallLabel={onCallLabel}
-                      activeDeployment={deployment.active}
-                      currentDeploymentId={deployment.deploymentId as number}
-                    />
-                  )}
-                </section>
-              </Allotment>
+                  >
+                    Map
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setMobileView('sidebar')}
+                    className={clsx(
+                      'rounded px-3 py-1 text-sm font-bold',
+                      mobileView === 'sidebar'
+                        ? 'bg-secondary-300/60 text-black'
+                        : 'text-slate-600'
+                    )}
+                  >
+                    Details
+                  </button>
+                </div>
+
+                <div className="min-h-0 flex-1 overflow-hidden">
+                  {mobileView === 'main' ? primarySection : secondarySection}
+                </div>
+              </div>
             </div>
           </Layout>
         </div>
