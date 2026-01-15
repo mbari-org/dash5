@@ -3,7 +3,7 @@ import { getInstance } from '../getInstance'
 import { RequestConfig } from '../types'
 
 export interface GetPlatformsParams {
-  refresh: 'y' | 'n'
+  refresh?: boolean | null
 }
 
 export interface GetPlatformsResponse {
@@ -16,7 +16,7 @@ export interface GetPlatformsResponse {
 }
 
 export const getPlatforms = async (
-  params: GetPlatformsParams,
+  params: GetPlatformsParams = {},
   {
     debug,
     instance = getInstance(),
@@ -30,6 +30,11 @@ export const getPlatforms = async (
     console.debug(`GET ${url}`)
   }
 
-  const response = await instance.get(url, { ...config, params })
+  const queryParams: Record<string, boolean | null> = {}
+  if (params.refresh !== undefined) {
+    queryParams.refresh = params.refresh
+  }
+
+  const response = await instance.get(url, { ...config, params: queryParams })
   return response.data as GetPlatformsResponse[]
 }
