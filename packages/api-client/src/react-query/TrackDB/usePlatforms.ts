@@ -4,17 +4,19 @@ import { useTethysApiContext } from '../TethysApiProvider'
 import { SupportedQueryOptions } from '../types'
 
 export const usePlatforms = (
-  params: GetPlatformsParams,
+  params?: GetPlatformsParams,
   options?: SupportedQueryOptions
 ) => {
-  const { axiosInstance } = useTethysApiContext()
+  const { axiosInstance, siteConfig } = useTethysApiContext()
+  const odss2dashApi = siteConfig?.appConfig?.odss2dashApi as string
+  const baseUrl = options?.baseUrl ?? odss2dashApi
 
   const query = useQuery(
     ['trackdb', 'platforms'],
     () => {
-      return getPlatforms(params, {
+      return getPlatforms(params ?? {}, {
         instance: axiosInstance,
-        baseURL: options?.baseUrl,
+        baseURL: baseUrl,
       })
     },
     {
