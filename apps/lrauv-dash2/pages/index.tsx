@@ -1,7 +1,7 @@
 import { OverviewToolbar } from '@mbari/react-ui'
 import { NextPage } from 'next'
 import Layout from '../components/Layout'
-import React, { useCallback, useEffect, useRef, useState } from 'react'
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import dynamic from 'next/dynamic'
 import VehicleDeploymentDropdown from '../components/VehicleDeploymentDropdown'
 import VehicleList from '../components/VehicleList'
@@ -14,16 +14,22 @@ import useGlobalModalId from '../lib/useGlobalModalId'
 import useGoogleElevator from '../lib/useGoogleElevator'
 import { Allotment, LayoutPriority } from 'allotment'
 import { useGoogleMaps } from '../lib/useGoogleMaps'
-import { VPosDetail } from '@mbari/api-client'
+import {
+  GetPlatformsResponse,
+  usePlatforms,
+  VPosDetail,
+} from '@mbari/api-client'
 import 'allotment/dist/style.css'
 import { StationsListModal } from '../components/StationsListModal'
 import { MapLayersListModal } from '../components/MapLayersListModal'
 import { useSelectedStations } from '../components/SelectedStationContext'
+import { useSelectedPlatforms } from '../components/SelectedPlatformContext'
 import { useMarkers } from '../components/MarkerContext'
 import { useDepthRequest } from '@mbari/utils/useDepthRequest'
 import toast from 'react-hot-toast'
 import type { MapProps } from '@mbari/react-ui/dist/Map/Map'
 import { createLogger } from '@mbari/utils'
+import { PlatformsListModal } from '../components/PlatformsListModal'
 
 // This is a tricky workaround to prevent leaflet from crashing next.js
 // SSR. If we don't do this, the leaflet map will be loaded server side
@@ -54,6 +60,14 @@ const CustomMarkerSet = dynamic(() => import('../components/CustomMarkerSet'), {
 const MapClickHandler = dynamic(() => import('../components/MapClickHandler'), {
   ssr: false,
 })
+
+const PlatformPath = dynamic(
+  () =>
+    import('../components/PlatformPath').then((mod) => ({
+      default: mod.PlatformPath,
+    })),
+  { ssr: false }
+)
 
 const logger = createLogger('OverviewPage')
 const styles = {
@@ -97,10 +111,12 @@ const OverViewMap: React.FC<{
   const [latestGPS, setLatestGPS] = useState<VPosDetail | undefined>()
   const [showLayersModal, setShowLayersModal] = useState(false)
   const [showVehicleColors, setShowVehicleColors] = useState(false)
+  const [showPlatformsModal, setShowPlatformsModal] = useState(false)
   const [viewMode, setViewMode] = useState<'center' | 'bounds' | null>(null)
   const [selectedMarkerId, setSelectedMarkerId] = useState<string | null>(null)
   const [defaultMarkerColor, setDefaultMarkerColor] = useState<string>('red')
   const { selectedStations } = useSelectedStations()
+  const { selectedPlatformIds } = useSelectedPlatforms()
   const { handleDepthRequestWithFeedback } = useDepthRequest(
     handleDepthRequest,
     {
@@ -136,6 +152,34 @@ const OverViewMap: React.FC<{
   const uniqueTrackedVehicles = Array.from(new Set(trackedVehicles))
   // Store all vehicle positions for bounds calculation
   const vehiclePositions = useRef<Array<[number, number]>>([])
+
+  const { data: platforms } = usePlatforms()
+  const platformMap = useMemo(() => {
+    return (
+      platforms?.reduce(
+        (
+          acc: Record<string, GetPlatformsResponse>,
+          p: GetPlatformsResponse
+        ) => {
+          acc[p._id] = p
+          return acc
+        },
+        {} as Record<string, GetPlatformsResponse>
+      ) ?? {}
+    )
+  }, [platforms])
+
+  // dash4-style TrackDB query window:
+  // - Always provide BOTH startDate and endDate
+  // - Overview doesn’t have a playback window, so default to the last 24h
+  const trackDbQueryWindow = useMemo(() => {
+    const endMs = Date.now()
+    const startMs = endMs - 24 * 60 * 60 * 1000
+    return {
+      startDate: new Date(startMs).toISOString(),
+      endDate: new Date(endMs).toISOString(),
+    }
+  }, [])
 
   // Effect to handle vehicle positions
   useEffect(() => {
@@ -508,9 +552,17 @@ const OverViewMap: React.FC<{
     []
   )
 
+  const handlePlatformsRequest = useCallback(() => {
+    setShowPlatformsModal(true)
+  }, [])
+
   // handleCloseLayers - Close the layers modal
   const handleCloseLayers = useCallback(() => {
     setShowLayersModal(false)
+  }, [])
+
+  const handleClosePlatforms = useCallback(() => {
+    setShowPlatformsModal(false)
   }, [])
 
   // handleVehicleColorRequest- Show vehicle colors
@@ -572,6 +624,9 @@ const OverViewMap: React.FC<{
           anchorPosition={layersModalPosition}
         />
       ) : null}
+      {showPlatformsModal ? (
+        <PlatformsListModal onClose={handleClosePlatforms} />
+      ) : null}
       <Map
         ref={mapRef}
         className="h-full w-full"
@@ -614,6 +669,7 @@ const OverViewMap: React.FC<{
         fitBounds={bounds}
         viewMode={viewMode}
         onRequestCoordinate={handleCoordinateRequest}
+        onRequestPlatforms={handlePlatformsRequest}
         onRequestFitBounds={handleFitBoundsRequest}
         onRequestStations={handleLayersRequest}
         onRequestVehicleColors={handleVehicleColorRequest}
@@ -678,6 +734,22 @@ const OverViewMap: React.FC<{
             grouped
           />
         ))}
+        {selectedPlatformIds.map((platformId) => {
+          const platform = platformMap[platformId]
+          if (!platform) return null
+
+          return (
+            <PlatformPath
+              key={platformId}
+              platformId={platformId}
+              platformName={platform.name}
+              platformAbbrev={platform.abbreviation}
+              color={platform.color}
+              startDate={trackDbQueryWindow.startDate}
+              endDate={trackDbQueryWindow.endDate}
+            />
+          )
+        })}
         {selectedStations?.map((station) => {
           const lng = station.geojson?.geometry?.coordinates[0]
           const lat = station.geojson?.geometry?.coordinates[1]
