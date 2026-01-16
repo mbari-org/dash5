@@ -554,29 +554,6 @@ const DeploymentMap: React.FC<DeploymentMapProps> = ({
     setShowPlatformsModal(false)
   }, [])
 
-  // dash4-style TrackDB query window:
-  // - Always provide BOTH startDate and endDate (never endDate alone)
-  // - Derived from the map/playback time window when available
-  const trackDbQueryWindow = useMemo(() => {
-    const fallbackEndMs = Date.now()
-    const endMs =
-      (typeof indicatorTime === 'number' ? indicatorTime : null) ??
-      (typeof endTime === 'number' ? endTime : null) ??
-      fallbackEndMs
-
-    const fallbackStartMs = endMs - 24 * 60 * 60 * 1000
-    const startMsCandidate =
-      (typeof startTime === 'number' ? startTime : null) ?? fallbackStartMs
-
-    const startMs =
-      startMsCandidate <= endMs ? startMsCandidate : fallbackStartMs
-
-    return {
-      startDate: new Date(startMs).toISOString(),
-      endDate: new Date(endMs).toISOString(),
-    }
-  }, [indicatorTime, startTime, endTime])
-
   const modalTrackedVehicles = React.useMemo(() => {
     if (!vehicleName) return trackedVehicles
 
@@ -694,8 +671,6 @@ const DeploymentMap: React.FC<DeploymentMapProps> = ({
               platformName={platform.name}
               platformAbbrev={platform.abbreviation}
               color={platform.color}
-              startDate={trackDbQueryWindow.startDate}
-              endDate={trackDbQueryWindow.endDate}
             />
           )
         })}

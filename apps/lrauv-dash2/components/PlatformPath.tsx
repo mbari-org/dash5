@@ -2,6 +2,7 @@ import React, { useMemo, useState } from 'react'
 import { Polyline, Tooltip, CircleMarker } from 'react-leaflet'
 import { usePlatformPositions } from '@mbari/api-client'
 import { createLogger } from '@mbari/utils'
+import { useTick } from '../lib/useTick'
 
 const logger = createLogger('PlatformPath')
 
@@ -10,9 +11,10 @@ export interface PlatformPathProps {
   platformName?: string
   platformAbbrev?: string
   color?: string
-  startDate: string
-  endDate: string
+  startDate?: string
+  endDate?: string
   limitPositions?: number
+  refreshIntervalMs?: number
 }
 
 export const PlatformPath: React.FC<PlatformPathProps> = ({
@@ -23,8 +25,28 @@ export const PlatformPath: React.FC<PlatformPathProps> = ({
   startDate,
   endDate,
   limitPositions = 20,
+  refreshIntervalMs = 5 * 60_000,
 }) => {
   const [hovered, setHovered] = useState(false)
+
+  const nowMs = useTick(refreshIntervalMs)
+
+  // dash4-style TrackDB query window:
+  // - Always provide BOTH startDate and endDate
+  // - Default to a rolling "last 24h" window that refreshes periodically
+  const queryWindow = useMemo(() => {
+    const hasExplicitWindow = Boolean(startDate && endDate)
+    if (hasExplicitWindow) {
+      return { startDate: startDate as string, endDate: endDate as string }
+    }
+
+    const end = nowMs
+    const start = end - 24 * 60 * 60 * 1000
+    return {
+      startDate: new Date(start).toISOString(),
+      endDate: new Date(end).toISOString(),
+    }
+  }, [startDate, endDate, nowMs])
 
   const {
     data: positionData,
@@ -33,8 +55,8 @@ export const PlatformPath: React.FC<PlatformPathProps> = ({
   } = usePlatformPositions(
     {
       platformId,
-      startDate,
-      endDate,
+      startDate: queryWindow.startDate,
+      endDate: queryWindow.endDate,
       lastNumberOfFixes: limitPositions,
     },
     {

@@ -169,18 +169,6 @@ const OverViewMap: React.FC<{
     )
   }, [platforms])
 
-  // dash4-style TrackDB query window:
-  // - Always provide BOTH startDate and endDate
-  // - Overview doesn’t have a playback window, so default to the last 24h
-  const trackDbQueryWindow = useMemo(() => {
-    const endMs = Date.now()
-    const startMs = endMs - 24 * 60 * 60 * 1000
-    return {
-      startDate: new Date(startMs).toISOString(),
-      endDate: new Date(endMs).toISOString(),
-    }
-  }, [])
-
   // Effect to handle vehicle positions
   useEffect(() => {
     // Reset positions when component unmounts or tracked vehicles change
@@ -745,8 +733,6 @@ const OverViewMap: React.FC<{
               platformName={platform.name}
               platformAbbrev={platform.abbreviation}
               color={platform.color}
-              startDate={trackDbQueryWindow.startDate}
-              endDate={trackDbQueryWindow.endDate}
             />
           )
         })}
