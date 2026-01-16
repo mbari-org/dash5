@@ -1,11 +1,17 @@
 import dynamic from 'next/dynamic'
-import React, { useCallback, useState, useRef, useEffect } from 'react'
+import React, { useCallback, useState, useRef, useEffect, useMemo } from 'react'
 import { useManagedWaypoints } from '@mbari/react-ui'
 import useGoogleElevator from '../lib/useGoogleElevator'
-import { VPosDetail } from '@mbari/api-client'
+import {
+  VPosDetail,
+  usePlatforms,
+  GetPlatformsResponse,
+} from '@mbari/api-client'
 import { MapLayersListModal } from '../components/MapLayersListModal'
 import { useSelectedStations } from './SelectedStationContext'
 import { useMarkers } from './MarkerContext'
+import { useSelectedPlatforms } from './SelectedPlatformContext'
+import { PlatformsListModal } from './PlatformsListModal'
 import toast from 'react-hot-toast'
 import { createLogger } from '@mbari/utils'
 import VehicleColorsModal from './VehicleColorsModal'
@@ -39,6 +45,12 @@ const MapClickHandler = dynamic(() => import('./MapClickHandler'), {
 const CustomMarkerSet = dynamic(() => import('./CustomMarkerSet'), {
   ssr: false,
 })
+const PlatformPath = dynamic(
+  () => import('./PlatformPath').then((mod) => ({ default: mod.PlatformPath })),
+  {
+    ssr: false,
+  }
+)
 
 const logger = createLogger('DeploymentMap')
 interface DeploymentMapProps {
@@ -104,7 +116,26 @@ const DeploymentMap: React.FC<DeploymentMapProps> = ({
   const [defaultMarkerColor, setDefaultMarkerColor] = useState<string>('red')
   const [showLayersModal, setShowLayersModal] = useState(false)
   const [showVehicleColors, setShowVehicleColors] = useState(false)
+  const [showPlatformsModal, setShowPlatformsModal] = useState(false)
   const { selectedStations } = useSelectedStations()
+  const { selectedPlatformIds } = useSelectedPlatforms()
+
+  const { data: platforms } = usePlatforms()
+
+  const platformMap = useMemo(() => {
+    return (
+      platforms?.reduce(
+        (
+          acc: Record<string, GetPlatformsResponse>,
+          p: GetPlatformsResponse
+        ) => {
+          acc[p._id] = p
+          return acc
+        },
+        {} as Record<string, GetPlatformsResponse>
+      ) ?? {}
+    )
+  }, [platforms])
   const [colorModalOpen, setColorModalOpen] = useState(false)
   const [colorModalPosition, setColorModalPosition] = useState<{
     top: number
@@ -515,15 +546,36 @@ const DeploymentMap: React.FC<DeploymentMapProps> = ({
     }, 300) // Slightly longer timeout for modal animation to complete
   }, [])
 
-  // Handler for showing platforms
-  // This function is called when the user requests to show platforms
-  // This is a placeholder function and should be implemented as needed
   const handlePlatformsRequest = useCallback(() => {
-    logger.debug('Platforms request initiated')
-    // TODO: Implement the logic to handle platform requests here
-    // This will involve fetching platform data source
-    // For now, logging a message to indicate the function was called
+    setShowPlatformsModal(true)
   }, [])
+
+  const handleClosePlatforms = useCallback(() => {
+    setShowPlatformsModal(false)
+  }, [])
+
+  // dash4-style TrackDB query window:
+  // - Always provide BOTH startDate and endDate (never endDate alone)
+  // - Derived from the map/playback time window when available
+  const trackDbQueryWindow = useMemo(() => {
+    const fallbackEndMs = Date.now()
+    const endMs =
+      (typeof indicatorTime === 'number' ? indicatorTime : null) ??
+      (typeof endTime === 'number' ? endTime : null) ??
+      fallbackEndMs
+
+    const fallbackStartMs = endMs - 24 * 60 * 60 * 1000
+    const startMsCandidate =
+      (typeof startTime === 'number' ? startTime : null) ?? fallbackStartMs
+
+    const startMs =
+      startMsCandidate <= endMs ? startMsCandidate : fallbackStartMs
+
+    return {
+      startDate: new Date(startMs).toISOString(),
+      endDate: new Date(endMs).toISOString(),
+    }
+  }, [indicatorTime, startTime, endTime])
 
   const modalTrackedVehicles = React.useMemo(() => {
     if (!vehicleName) return trackedVehicles
@@ -539,6 +591,9 @@ const DeploymentMap: React.FC<DeploymentMapProps> = ({
           onClose={handleCloseLayers}
           anchorPosition={layersModalPosition}
         />
+      ) : null}
+      {showPlatformsModal ? (
+        <PlatformsListModal onClose={handleClosePlatforms} />
       ) : null}
       <Map
         ref={mapRef}
@@ -625,6 +680,22 @@ const DeploymentMap: React.FC<DeploymentMapProps> = ({
               name={station.name}
               lat={lat}
               lng={lng}
+            />
+          )
+        })}
+        {selectedPlatformIds.map((platformId) => {
+          const platform = platformMap[platformId]
+          if (!platform) return null
+
+          return (
+            <PlatformPath
+              key={platformId}
+              platformId={platformId}
+              platformName={platform.name}
+              platformAbbrev={platform.abbreviation}
+              color={platform.color}
+              startDate={trackDbQueryWindow.startDate}
+              endDate={trackDbQueryWindow.endDate}
             />
           )
         })}
