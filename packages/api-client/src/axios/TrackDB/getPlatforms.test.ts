@@ -2,7 +2,7 @@ import { rest } from 'msw'
 import { setupServer } from 'msw/node'
 import { getPlatforms, GetPlatformsParams } from './getPlatforms'
 
-let params: GetPlatformsParams = { refresh: 'y' }
+let params: GetPlatformsParams = { refresh: true }
 
 const mockResponse = [
   {

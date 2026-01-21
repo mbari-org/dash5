@@ -1,22 +1,9 @@
-import React, { createContext, useContext, useState } from 'react'
-
-// Define or import the Station type
-interface Platform {
-  name: string
-  lat: number
-  lon: number
-  geojson: {
-    geometry: {
-      type: string
-      coordinates: [number, number]
-    }
-  }
-}
+import React, { createContext, useContext, useEffect, useState } from 'react'
 
 export interface SelectedPlatformsContextProps {
-  selectedPlatforms: Platform[]
-  setSelectedPlatforms: React.Dispatch<React.SetStateAction<Platform[]>>
-  togglePlatform: (platform: Platform) => void
+  selectedPlatformIds: string[]
+  setSelectedPlatformIds: React.Dispatch<React.SetStateAction<string[]>>
+  togglePlatformId: (platformId: string) => void
 }
 
 const SelectedPlatformsContext = createContext<
@@ -26,19 +13,39 @@ const SelectedPlatformsContext = createContext<
 export const SelectedPlatformsProvider: React.FC<{
   children: React.ReactNode
 }> = ({ children }) => {
-  const [selectedPlatforms, setSelectedPlatforms] = useState<Platform[]>([])
+  const [selectedPlatformIds, setSelectedPlatformIds] = useState<string[]>(
+    () => {
+      try {
+        const stored = localStorage.getItem('selectedTrackingDbAssetIds')
+        return stored ? JSON.parse(stored) : []
+      } catch {
+        return []
+      }
+    }
+  )
 
-  const togglePlatform = (platform: Platform) => {
-    setSelectedPlatforms((prev) =>
-      prev.includes(platform)
-        ? prev.filter((p) => p !== platform)
-        : [...prev, platform]
+  useEffect(() => {
+    localStorage.setItem(
+      'selectedTrackingDbAssetIds',
+      JSON.stringify(selectedPlatformIds)
+    )
+  }, [selectedPlatformIds])
+
+  const togglePlatformId = (platformId: string) => {
+    setSelectedPlatformIds((prev) =>
+      prev.includes(platformId)
+        ? prev.filter((id) => id !== platformId)
+        : [...prev, platformId]
     )
   }
 
   return (
     <SelectedPlatformsContext.Provider
-      value={{ selectedPlatforms, setSelectedPlatforms, togglePlatform }}
+      value={{
+        selectedPlatformIds,
+        setSelectedPlatformIds,
+        togglePlatformId,
+      }}
     >
       {children}
     </SelectedPlatformsContext.Provider>
@@ -49,7 +56,7 @@ export const useSelectedPlatforms = () => {
   const context = useContext(SelectedPlatformsContext)
   if (!context) {
     throw new Error(
-      'useSelectedPlatformss must be used within a SelectedPlatformssProvider'
+      'useSelectedPlatforms must be used within a SelectedPlatformsProvider'
     )
   }
   return context

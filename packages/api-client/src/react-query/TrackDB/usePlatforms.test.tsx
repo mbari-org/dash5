@@ -1,6 +1,6 @@
 import '@testing-library/jest-dom'
 import React from 'react'
-import { fireEvent, render, screen, waitFor } from '@testing-library/react'
+import { render, screen, waitFor } from '@testing-library/react'
 import { QueryClient } from 'react-query'
 import { rest } from 'msw'
 import { setupServer } from 'msw/node'
@@ -96,7 +96,7 @@ afterEach(() => server.resetHandlers())
 afterAll(() => server.close())
 
 const MockAlterAction: React.FC = () => {
-  const { isLoading, data } = usePlatforms({ refresh: 'y' })
+  const { isLoading, data } = usePlatforms({ refresh: true })
 
   return isLoading ? null : (
     <div>{data && <span data-testid="result">{data?.[0]._id}</span>}</div>

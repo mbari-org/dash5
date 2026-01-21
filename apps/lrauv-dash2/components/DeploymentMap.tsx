@@ -1,11 +1,12 @@
 import dynamic from 'next/dynamic'
-import React, { useCallback, useState, useRef, useEffect } from 'react'
+import React, { useCallback, useState, useRef, useEffect, useMemo } from 'react'
 import { useManagedWaypoints } from '@mbari/react-ui'
 import useGoogleElevator from '../lib/useGoogleElevator'
 import { VPosDetail } from '@mbari/api-client'
 import { MapLayersListModal } from '../components/MapLayersListModal'
 import { useSelectedStations } from './SelectedStationContext'
 import { useMarkers } from './MarkerContext'
+import { PlatformsListModal } from './PlatformsListModal'
 import toast from 'react-hot-toast'
 import { createLogger } from '@mbari/utils'
 import VehicleColorsModal from './VehicleColorsModal'
@@ -39,6 +40,13 @@ const MapClickHandler = dynamic(() => import('./MapClickHandler'), {
 const CustomMarkerSet = dynamic(() => import('./CustomMarkerSet'), {
   ssr: false,
 })
+const PlatformPaths = dynamic(
+  () =>
+    import('./PlatformPaths').then((mod) => ({ default: mod.PlatformPaths })),
+  {
+    ssr: false,
+  }
+)
 
 const logger = createLogger('DeploymentMap')
 interface DeploymentMapProps {
@@ -104,6 +112,7 @@ const DeploymentMap: React.FC<DeploymentMapProps> = ({
   const [defaultMarkerColor, setDefaultMarkerColor] = useState<string>('red')
   const [showLayersModal, setShowLayersModal] = useState(false)
   const [showVehicleColors, setShowVehicleColors] = useState(false)
+  const [showPlatformsModal, setShowPlatformsModal] = useState(false)
   const { selectedStations } = useSelectedStations()
   const [colorModalOpen, setColorModalOpen] = useState(false)
   const [colorModalPosition, setColorModalPosition] = useState<{
@@ -515,14 +524,12 @@ const DeploymentMap: React.FC<DeploymentMapProps> = ({
     }, 300) // Slightly longer timeout for modal animation to complete
   }, [])
 
-  // Handler for showing platforms
-  // This function is called when the user requests to show platforms
-  // This is a placeholder function and should be implemented as needed
   const handlePlatformsRequest = useCallback(() => {
-    logger.debug('Platforms request initiated')
-    // TODO: Implement the logic to handle platform requests here
-    // This will involve fetching platform data source
-    // For now, logging a message to indicate the function was called
+    setShowPlatformsModal(true)
+  }, [])
+
+  const handleClosePlatforms = useCallback(() => {
+    setShowPlatformsModal(false)
   }, [])
 
   const modalTrackedVehicles = React.useMemo(() => {
@@ -539,6 +546,9 @@ const DeploymentMap: React.FC<DeploymentMapProps> = ({
           onClose={handleCloseLayers}
           anchorPosition={layersModalPosition}
         />
+      ) : null}
+      {showPlatformsModal ? (
+        <PlatformsListModal onClose={handleClosePlatforms} />
       ) : null}
       <Map
         ref={mapRef}
@@ -628,6 +638,7 @@ const DeploymentMap: React.FC<DeploymentMapProps> = ({
             />
           )
         })}
+        <PlatformPaths />
         {plottedWaypoints?.length ? (
           <>
             {/* TODO: {plottedWaypoints.map((m, i) => {

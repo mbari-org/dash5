@@ -1,7 +1,7 @@
 import { OverviewToolbar } from '@mbari/react-ui'
 import { NextPage } from 'next'
 import Layout from '../components/Layout'
-import React, { useCallback, useEffect, useRef, useState } from 'react'
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import dynamic from 'next/dynamic'
 import VehicleDeploymentDropdown from '../components/VehicleDeploymentDropdown'
 import VehicleList from '../components/VehicleList'
@@ -24,6 +24,7 @@ import { useDepthRequest } from '@mbari/utils/useDepthRequest'
 import toast from 'react-hot-toast'
 import type { MapProps } from '@mbari/react-ui/dist/Map/Map'
 import { createLogger } from '@mbari/utils'
+import { PlatformsListModal } from '../components/PlatformsListModal'
 
 // This is a tricky workaround to prevent leaflet from crashing next.js
 // SSR. If we don't do this, the leaflet map will be loaded server side
@@ -54,6 +55,14 @@ const CustomMarkerSet = dynamic(() => import('../components/CustomMarkerSet'), {
 const MapClickHandler = dynamic(() => import('../components/MapClickHandler'), {
   ssr: false,
 })
+
+const PlatformPaths = dynamic(
+  () =>
+    import('../components/PlatformPaths').then((mod) => ({
+      default: mod.PlatformPaths,
+    })),
+  { ssr: false }
+)
 
 const logger = createLogger('OverviewPage')
 const styles = {
@@ -97,6 +106,7 @@ const OverViewMap: React.FC<{
   const [latestGPS, setLatestGPS] = useState<VPosDetail | undefined>()
   const [showLayersModal, setShowLayersModal] = useState(false)
   const [showVehicleColors, setShowVehicleColors] = useState(false)
+  const [showPlatformsModal, setShowPlatformsModal] = useState(false)
   const [viewMode, setViewMode] = useState<'center' | 'bounds' | null>(null)
   const [selectedMarkerId, setSelectedMarkerId] = useState<string | null>(null)
   const [defaultMarkerColor, setDefaultMarkerColor] = useState<string>('red')
@@ -508,9 +518,17 @@ const OverViewMap: React.FC<{
     []
   )
 
+  const handlePlatformsRequest = useCallback(() => {
+    setShowPlatformsModal(true)
+  }, [])
+
   // handleCloseLayers - Close the layers modal
   const handleCloseLayers = useCallback(() => {
     setShowLayersModal(false)
+  }, [])
+
+  const handleClosePlatforms = useCallback(() => {
+    setShowPlatformsModal(false)
   }, [])
 
   // handleVehicleColorRequest- Show vehicle colors
@@ -572,6 +590,9 @@ const OverViewMap: React.FC<{
           anchorPosition={layersModalPosition}
         />
       ) : null}
+      {showPlatformsModal ? (
+        <PlatformsListModal onClose={handleClosePlatforms} />
+      ) : null}
       <Map
         ref={mapRef}
         className="h-full w-full"
@@ -614,6 +635,7 @@ const OverViewMap: React.FC<{
         fitBounds={bounds}
         viewMode={viewMode}
         onRequestCoordinate={handleCoordinateRequest}
+        onRequestPlatforms={handlePlatformsRequest}
         onRequestFitBounds={handleFitBoundsRequest}
         onRequestStations={handleLayersRequest}
         onRequestVehicleColors={handleVehicleColorRequest}
@@ -678,6 +700,7 @@ const OverViewMap: React.FC<{
             grouped
           />
         ))}
+        <PlatformPaths />
         {selectedStations?.map((station) => {
           const lng = station.geojson?.geometry?.coordinates[0]
           const lat = station.geojson?.geometry?.coordinates[1]
