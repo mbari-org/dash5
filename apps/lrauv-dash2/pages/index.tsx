@@ -14,16 +14,11 @@ import useGlobalModalId from '../lib/useGlobalModalId'
 import useGoogleElevator from '../lib/useGoogleElevator'
 import { Allotment, LayoutPriority } from 'allotment'
 import { useGoogleMaps } from '../lib/useGoogleMaps'
-import {
-  GetPlatformsResponse,
-  usePlatforms,
-  VPosDetail,
-} from '@mbari/api-client'
+import { VPosDetail } from '@mbari/api-client'
 import 'allotment/dist/style.css'
 import { StationsListModal } from '../components/StationsListModal'
 import { MapLayersListModal } from '../components/MapLayersListModal'
 import { useSelectedStations } from '../components/SelectedStationContext'
-import { useSelectedPlatforms } from '../components/SelectedPlatformContext'
 import { useMarkers } from '../components/MarkerContext'
 import { useDepthRequest } from '@mbari/utils/useDepthRequest'
 import toast from 'react-hot-toast'
@@ -61,10 +56,10 @@ const MapClickHandler = dynamic(() => import('../components/MapClickHandler'), {
   ssr: false,
 })
 
-const PlatformPath = dynamic(
+const PlatformPaths = dynamic(
   () =>
-    import('../components/PlatformPath').then((mod) => ({
-      default: mod.PlatformPath,
+    import('../components/PlatformPaths').then((mod) => ({
+      default: mod.PlatformPaths,
     })),
   { ssr: false }
 )
@@ -116,7 +111,6 @@ const OverViewMap: React.FC<{
   const [selectedMarkerId, setSelectedMarkerId] = useState<string | null>(null)
   const [defaultMarkerColor, setDefaultMarkerColor] = useState<string>('red')
   const { selectedStations } = useSelectedStations()
-  const { selectedPlatformIds } = useSelectedPlatforms()
   const { handleDepthRequestWithFeedback } = useDepthRequest(
     handleDepthRequest,
     {
@@ -152,22 +146,6 @@ const OverViewMap: React.FC<{
   const uniqueTrackedVehicles = Array.from(new Set(trackedVehicles))
   // Store all vehicle positions for bounds calculation
   const vehiclePositions = useRef<Array<[number, number]>>([])
-
-  const { data: platforms } = usePlatforms()
-  const platformMap = useMemo(() => {
-    return (
-      platforms?.reduce(
-        (
-          acc: Record<string, GetPlatformsResponse>,
-          p: GetPlatformsResponse
-        ) => {
-          acc[p._id] = p
-          return acc
-        },
-        {} as Record<string, GetPlatformsResponse>
-      ) ?? {}
-    )
-  }, [platforms])
 
   // Effect to handle vehicle positions
   useEffect(() => {
@@ -722,20 +700,7 @@ const OverViewMap: React.FC<{
             grouped
           />
         ))}
-        {selectedPlatformIds.map((platformId) => {
-          const platform = platformMap[platformId]
-          if (!platform) return null
-
-          return (
-            <PlatformPath
-              key={platformId}
-              platformId={platformId}
-              platformName={platform.name}
-              platformAbbrev={platform.abbreviation}
-              color={platform.color}
-            />
-          )
-        })}
+        <PlatformPaths />
         {selectedStations?.map((station) => {
           const lng = station.geojson?.geometry?.coordinates[0]
           const lat = station.geojson?.geometry?.coordinates[1]

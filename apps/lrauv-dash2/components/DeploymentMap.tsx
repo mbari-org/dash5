@@ -2,15 +2,10 @@ import dynamic from 'next/dynamic'
 import React, { useCallback, useState, useRef, useEffect, useMemo } from 'react'
 import { useManagedWaypoints } from '@mbari/react-ui'
 import useGoogleElevator from '../lib/useGoogleElevator'
-import {
-  VPosDetail,
-  usePlatforms,
-  GetPlatformsResponse,
-} from '@mbari/api-client'
+import { VPosDetail } from '@mbari/api-client'
 import { MapLayersListModal } from '../components/MapLayersListModal'
 import { useSelectedStations } from './SelectedStationContext'
 import { useMarkers } from './MarkerContext'
-import { useSelectedPlatforms } from './SelectedPlatformContext'
 import { PlatformsListModal } from './PlatformsListModal'
 import toast from 'react-hot-toast'
 import { createLogger } from '@mbari/utils'
@@ -45,8 +40,9 @@ const MapClickHandler = dynamic(() => import('./MapClickHandler'), {
 const CustomMarkerSet = dynamic(() => import('./CustomMarkerSet'), {
   ssr: false,
 })
-const PlatformPath = dynamic(
-  () => import('./PlatformPath').then((mod) => ({ default: mod.PlatformPath })),
+const PlatformPaths = dynamic(
+  () =>
+    import('./PlatformPaths').then((mod) => ({ default: mod.PlatformPaths })),
   {
     ssr: false,
   }
@@ -118,24 +114,6 @@ const DeploymentMap: React.FC<DeploymentMapProps> = ({
   const [showVehicleColors, setShowVehicleColors] = useState(false)
   const [showPlatformsModal, setShowPlatformsModal] = useState(false)
   const { selectedStations } = useSelectedStations()
-  const { selectedPlatformIds } = useSelectedPlatforms()
-
-  const { data: platforms } = usePlatforms()
-
-  const platformMap = useMemo(() => {
-    return (
-      platforms?.reduce(
-        (
-          acc: Record<string, GetPlatformsResponse>,
-          p: GetPlatformsResponse
-        ) => {
-          acc[p._id] = p
-          return acc
-        },
-        {} as Record<string, GetPlatformsResponse>
-      ) ?? {}
-    )
-  }, [platforms])
   const [colorModalOpen, setColorModalOpen] = useState(false)
   const [colorModalPosition, setColorModalPosition] = useState<{
     top: number
@@ -660,20 +638,7 @@ const DeploymentMap: React.FC<DeploymentMapProps> = ({
             />
           )
         })}
-        {selectedPlatformIds.map((platformId) => {
-          const platform = platformMap[platformId]
-          if (!platform) return null
-
-          return (
-            <PlatformPath
-              key={platformId}
-              platformId={platformId}
-              platformName={platform.name}
-              platformAbbrev={platform.abbreviation}
-              color={platform.color}
-            />
-          )
-        })}
+        <PlatformPaths />
         {plottedWaypoints?.length ? (
           <>
             {/* TODO: {plottedWaypoints.map((m, i) => {
