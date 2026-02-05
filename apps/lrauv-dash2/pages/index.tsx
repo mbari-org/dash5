@@ -1,7 +1,7 @@
 import { OverviewToolbar } from '@mbari/react-ui'
 import { NextPage } from 'next'
 import Layout from '../components/Layout'
-import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import React, { useCallback, useEffect, useRef, useState } from 'react'
 import dynamic from 'next/dynamic'
 import VehicleDeploymentDropdown from '../components/VehicleDeploymentDropdown'
 import VehicleList from '../components/VehicleList'
@@ -25,6 +25,7 @@ import toast from 'react-hot-toast'
 import type { MapProps } from '@mbari/react-ui/dist/Map/Map'
 import { createLogger } from '@mbari/utils'
 import { PlatformsListModal } from '../components/PlatformsListModal'
+import { useRefreshPositions } from '../lib/useRefreshPositions'
 
 // This is a tricky workaround to prevent leaflet from crashing next.js
 // SSR. If we don't do this, the leaflet map will be loaded server side
@@ -79,6 +80,7 @@ type CustomMapProps = MapProps &
     isAddingMarkers?: boolean
     onToggleMarkerMode?: () => void
     trackedVehicles?: { name: string; id?: string }[] // Match the actual type being used
+    onRequestRefresh?: () => void
   }
 
 // Interface MarkerData
@@ -146,6 +148,16 @@ const OverViewMap: React.FC<{
   const uniqueTrackedVehicles = Array.from(new Set(trackedVehicles))
   // Store all vehicle positions for bounds calculation
   const vehiclePositions = useRef<Array<[number, number]>>([])
+
+  const vehicleNames = trackedVehicles.map((v) => v.name)
+  const {
+    refreshAll,
+    loading: refreshLoading,
+    lastRefreshed,
+    markInitialLoadDone,
+  } = useRefreshPositions(vehicleNames, {
+    autoRefreshMinutes: 10,
+  })
 
   // Effect to handle vehicle positions
   useEffect(() => {
@@ -640,6 +652,11 @@ const OverViewMap: React.FC<{
         onRequestStations={handleLayersRequest}
         onRequestVehicleColors={handleVehicleColorRequest}
         onRequestMarkers={handleMarkersRequest}
+        onRequestRefresh={refreshAll}
+        refreshLoading={refreshLoading}
+        refreshLastRefreshed={lastRefreshed}
+        refreshAutoRefreshMinutes={10}
+        refreshTooltipPreamble="Reload LRAUV positions"
         isAddingMarkers={isAddingMarkers}
         onToggleMarkerMode={handleToggleMarkerMode}
         renderMapClickHandler={() => (
@@ -697,6 +714,7 @@ const OverViewMap: React.FC<{
             name={name.name}
             key={`path-${name}-${index}`}
             onGPSFix={handleGPSFix}
+            onPositionDataLoaded={markInitialLoadDone}
             grouped
           />
         ))}
