@@ -35,6 +35,7 @@ import { AreaComponent, PathComponent, MeasurementProps } from './Measurement'
 import { CenterView } from './MapViews'
 import { createLogger, loadGoogleMapsOnce } from '@mbari/utils'
 import VehicleColorsModal from '@mbari/lrauv-dash2/components/VehicleColorsModal'
+import { RefreshButton } from './RefreshButton'
 
 const logger = createLogger('Map')
 
@@ -104,6 +105,11 @@ export interface MapProps extends React.HTMLAttributes<HTMLDivElement> {
   onRequestPlatforms?: () => void
   onRequestStations?: (position?: { top: number; left: number }) => void
   onRequestVehicleColors?: (vehicleName?: string) => void
+  onRequestRefresh?: () => void
+  refreshLastRefreshed?: Date | null
+  refreshAutoRefreshMinutes?: number
+  refreshTooltipPreamble?: string
+  refreshLoading?: boolean
   whenCreated?: (map: L.Map) => void
   onMapReady?: (map: L.Map) => void
   trackedVehicles?: Array<{ id: string; name: string }>
@@ -160,6 +166,11 @@ const Map = React.forwardRef<L.Map, MapProps>(
       onRequestPlatforms,
       onRequestStations,
       onRequestVehicleColors,
+      onRequestRefresh,
+      refreshLastRefreshed,
+      refreshAutoRefreshMinutes,
+      refreshTooltipPreamble,
+      refreshLoading,
       onMapReady,
       renderMapClickHandler,
       renderCustomMarkerSet,
@@ -861,6 +872,24 @@ const Map = React.forwardRef<L.Map, MapProps>(
         <Control prepend position="topright">
           <MouseCoordinates onRequestDepth={onRequestDepth} />
         </Control>
+        {onRequestRefresh && (
+          <div
+            style={{
+              position: 'absolute',
+              top: '12px',
+              left: '70px',
+              zIndex: 1000,
+            }}
+          >
+            <RefreshButton
+              onClick={onRequestRefresh}
+              loading={refreshLoading}
+              lastRefreshed={refreshLastRefreshed}
+              autoRefreshMinutes={refreshAutoRefreshMinutes}
+              tooltipPreamble={refreshTooltipPreamble}
+            />
+          </div>
+        )}
         {children}
         {/* TRACKDB/STATIONS CONTROLS - Now in separate Control component */}
         <Control position="topleft">
