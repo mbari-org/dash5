@@ -245,7 +245,8 @@ ul.tree input[type='checkbox'] {
 #allVehicles-center,
 #mapLayersdb,
 #vehicleColors,
-#toggle-markers {
+#toggle-markers,
+#refreshBtn {
   color: #fff !important;
   background-color: #8c9eff !important;
   box-shadow: 0 3px 5px -1px rgba(0, 0, 0, 0.2), 0 5px 8px rgba(0, 0, 0, 0.14),
@@ -260,6 +261,12 @@ ul.tree input[type='checkbox'] {
   width: 42px;
   height: 42px;
   border-radius: 0.25rem;
+  transition: filter 1s ease;
+}
+
+/* Active state for refresh button - visual feedback when pressed */
+#refreshBtn:active {
+  filter: brightness(0.15) !important;
 }
 @keyframes pulse {
   0% {
@@ -457,6 +464,18 @@ span.leaflet-touch .leaflet-control-zoom-in,
 div[role='status'][aria-live='polite'] {
   /* Use existing blue-toast class if it exists */
   @apply blue-toast !important;
+}
+
+/* Disable animation delays for instant toast appearance - refresh position notifications only */
+.refresh-position-toast,
+.refresh-position-toast[data-animation='enter'],
+.refresh-position-toast[data-animation='exit'],
+.refresh-position-toast[data-animation='slide'],
+.refresh-position-toast[data-animation='fade'] {
+  animation: none !important;
+  animation-duration: 0ms !important;
+  transition: none !important;
+  animation-delay: 0ms !important;
 }
 
 /* If blue-toast doesn't exist yet, define it */
