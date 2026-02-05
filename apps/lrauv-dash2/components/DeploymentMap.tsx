@@ -12,6 +12,7 @@ import { createLogger } from '@mbari/utils'
 import VehicleColorsModal from './VehicleColorsModal'
 import useTrackedVehicles from '../lib/useTrackedVehicles'
 import { useDepthRequest } from '@mbari/utils/useDepthRequest'
+import { useRefreshPositions } from '../lib/useRefreshPositions'
 
 // This is a tricky workaround to prevent leaflet from crashing next.js
 // SSR. If we don't do this, the leaflet map will be loaded server side
@@ -100,6 +101,23 @@ const DeploymentMap: React.FC<DeploymentMapProps> = ({
 
   const { trackedVehicles } = useTrackedVehicles()
   const [showAll, setShowAll] = useState(true)
+
+  const vehiclesToRefresh = vehicleName
+    ? [vehicleName]
+    : trackedVehicles.map((v) => (typeof v === 'string' ? v : v))
+  const {
+    refreshAll,
+    lastRefreshed,
+    loading: refreshLoading,
+    markInitialLoadDone,
+  } = useRefreshPositions(vehiclesToRefresh, {
+    autoRefreshMinutes: 10,
+    // Use vehicle's time range so toast counts match the map
+    preferredParams:
+      vehicleName && startTime != null
+        ? { [vehicleName]: { from: startTime, to: endTime ?? undefined } }
+        : undefined,
+  })
   const [isTimelineScrubbing, setIsTimelineScrubbing] = useState(false)
   const [center, setCenter] = useState<undefined | [number, number]>()
   const [centerZoom, setCenterZoom] = useState<number | undefined>(undefined)
@@ -571,6 +589,11 @@ const DeploymentMap: React.FC<DeploymentMapProps> = ({
         onRequestFitBounds={handleFitBoundsRequest}
         onRequestStations={handleLayersRequest}
         onRequestVehicleColors={handleVehicleColorRequest}
+        onRequestRefresh={refreshAll}
+        refreshLoading={refreshLoading}
+        refreshLastRefreshed={lastRefreshed}
+        refreshAutoRefreshMinutes={10}
+        refreshTooltipPreamble="Reload LRAUV positions"
         isAddingMarkers={isAddingMarkers}
         onToggleMarkerMode={handleToggleMarkerMode}
         onRequestMarkers={handleMarkersRequest}
@@ -671,6 +694,7 @@ const DeploymentMap: React.FC<DeploymentMapProps> = ({
             indicatorTime={indicatorTime}
             onScrub={handleMapScrub}
             onGPSFix={handleGPSFix}
+            onPositionDataLoaded={markInitialLoadDone}
             // Disable map auto-fit centering when scrubbing the timeline
             disableAutoFit={isTimelineScrubbing}
           />
