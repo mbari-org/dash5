@@ -10,6 +10,7 @@ import { LatLng, LeafletMouseEventHandlerFn } from 'leaflet'
 import { useSharedPath } from './SharedPathContextProvider'
 import { distance } from '@turf/turf'
 import { parseISO, getTime } from 'date-fns'
+import { formatElapsedTime } from '@mbari/utils'
 import { useVehicleColors } from './VehicleColorsContext'
 
 const getDistance = (a: VPosDetail, b: LatLng) =>
@@ -54,6 +55,7 @@ interface VehiclePathProps {
   indicatorTime?: number | null
   onScrub?: (millis?: number | null) => void
   onGPSFix?: (gps: VPosDetail) => void
+  onPositionDataLoaded?: () => void
   disableAutoFit?: boolean
 }
 
@@ -66,6 +68,7 @@ const VehiclePath: React.FC<VehiclePathProps> = ({
   indicatorTime,
   onScrub: handleScrub,
   onGPSFix: handleGPSFix,
+  onPositionDataLoaded,
   disableAutoFit = false,
 }) => {
   const map = useMap()
@@ -77,10 +80,13 @@ const VehiclePath: React.FC<VehiclePathProps> = ({
     },
     { staleTime: 5 * 60 * 1000, enabled: !from }
   )
+  // Default to 24 hours ago if no deployment data is available
+  // Memoize to prevent query key from changing on every render
+  const defaultFrom = useMemo(() => Date.now() - 24 * 60 * 60 * 1000, [])
   const { data: vehiclePosition } = useVehiclePos(
     {
       vehicle: name as string,
-      from: from ? from : lastDeployment?.startEvent?.unixTime ?? 0,
+      from: from ? from : lastDeployment?.startEvent?.unixTime ?? defaultFrom,
       to: from ? to : lastDeployment?.endEvent?.unixTime,
     },
     {
@@ -119,6 +125,7 @@ const VehiclePath: React.FC<VehiclePathProps> = ({
 
   // Handle GPS Fixes
   const latestGPS = useRef<[number, number] | undefined>()
+  const hasNotifiedDataLoaded = useRef(false)
 
   useEffect(() => {
     if (vehiclePosition?.gpsFixes && vehiclePosition.gpsFixes.length > 0) {
@@ -135,6 +142,18 @@ const VehiclePath: React.FC<VehiclePathProps> = ({
       handleGPSFix?.(latest)
     }
   }, [vehiclePosition, handleScrub, handleGPSFix])
+
+  // Notify parent once when position data is available (for refresh "first load" countdown)
+  useEffect(() => {
+    if (
+      !onPositionDataLoaded ||
+      hasNotifiedDataLoaded.current ||
+      !vehiclePosition?.gpsFixes?.length
+    )
+      return
+    hasNotifiedDataLoaded.current = true
+    onPositionDataLoaded()
+  }, [vehiclePosition?.gpsFixes, onPositionDataLoaded])
 
   const timeout = useRef<ReturnType<typeof setTimeout> | null>(null)
 
@@ -309,6 +328,11 @@ const VehiclePath: React.FC<VehiclePathProps> = ({
     }
   }
 
+  // Derived for tooltip (compact format, updates on re-render)
+  const timeSinceFixDisplay = latestTimeFix
+    ? formatElapsedTime(Date.now() - getTime(parseISO(latestTimeFix)))
+    : ''
+
   return route?.length ? (
     <>
       <Polyline
@@ -410,7 +434,7 @@ const VehiclePath: React.FC<VehiclePathProps> = ({
                     ' ' +
                     indicatorCoord.isoTime.split('T')[1].split('Z')[0]}
                   {' - '}
-                  {timeSinceFix}
+                  {timeSinceFixDisplay}
                 </span>
               </Tooltip>
             )}
