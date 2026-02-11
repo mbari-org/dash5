@@ -20,20 +20,24 @@ import { StationsListModal } from '../components/StationsListModal'
 import { MapLayersListModal } from '../components/MapLayersListModal'
 import { useSelectedStations } from '../components/SelectedStationContext'
 import { useMarkers } from '../components/MarkerContext'
-import { useDepthRequest } from '@mbari/utils/useDepthRequest'
 import toast from 'react-hot-toast'
-import type { MapProps } from '@mbari/react-ui/dist/Map/Map'
 import { createLogger } from '@mbari/utils'
 import { PlatformsListModal } from '../components/PlatformsListModal'
 
 // This is a tricky workaround to prevent leaflet from crashing next.js
 // SSR. If we don't do this, the leaflet map will be loaded server side
 // and throw a window error.
-const Map = dynamic<CustomMapProps>(
-  () => import('@mbari/react-ui/dist/Map/Map'),
-  {
-    ssr: false,
-  }
+// Map types are not imported from @mbari/react-ui to avoid module resolution issues.
+const Map = dynamic(() => import('@mbari/react-ui/dist/Map/Map'), {
+  ssr: false,
+})
+
+const MapDepthDisplay = dynamic(
+  () =>
+    import('@mbari/react-ui/dist/Map/Map').then((m) => ({
+      default: m.MapDepthDisplay,
+    })),
+  { ssr: false }
 )
 
 const VehiclePath = dynamic(() => import('../components/VehiclePath'), {
@@ -73,14 +77,6 @@ const styles = {
     'flex w-full flex-shrink-0 flex-col bg-white border-t-2 border-secondary-300/60',
 }
 
-// Interface CustomMarkerProps
-type CustomMapProps = MapProps &
-  React.RefAttributes<L.Map> & {
-    isAddingMarkers?: boolean
-    onToggleMarkerMode?: () => void
-    trackedVehicles?: { name: string; id?: string }[] // Match the actual type being used
-  }
-
 // Interface MarkerData
 interface MarkerData {
   id: number
@@ -111,16 +107,6 @@ const OverViewMap: React.FC<{
   const [selectedMarkerId, setSelectedMarkerId] = useState<string | null>(null)
   const [defaultMarkerColor, setDefaultMarkerColor] = useState<string>('red')
   const { selectedStations } = useSelectedStations()
-  const { handleDepthRequestWithFeedback } = useDepthRequest(
-    handleDepthRequest,
-    {
-      warningToastId: 'depth-unavailable',
-      errorToastId: 'depth-result',
-      loadingToastId: 'depth-loading',
-      warningToastClass: 'blue-toast',
-      toastDuration: 5000,
-    }
-  )
   const [layersModalPosition, setLayersModalPosition] = useState({
     top: 0,
     left: 0,
@@ -614,22 +600,6 @@ const OverViewMap: React.FC<{
           ...vehicle,
           id: vehicle.id || vehicle.name, // Ensure id is always present
         }))}
-        onRequestDepth={async (lat, lng) => {
-          try {
-            // Try to remove any leading zeros
-            const formattedLat = parseFloat(String(lat).replace(/^0+/, ''))
-            // Then use in depth request
-            const result = await handleDepthRequestWithFeedback(
-              formattedLat,
-              lng
-            )
-            return result.depth !== null ? result.depth : 0
-          } catch (error) {
-            logger.warn('❌ Error in depth request:', error)
-            toast.error('Depth data unavailable', { id: 'depth-error' })
-            return 0
-          }
-        }}
         center={center}
         centerZoom={centerZoom}
         fitBounds={bounds}
@@ -692,6 +662,16 @@ const OverViewMap: React.FC<{
           )
         }
       >
+        <MapDepthDisplay
+          depthRequest={handleDepthRequest}
+          options={{
+            warningToastId: 'depth-unavailable',
+            errorToastId: 'depth-result',
+            loadingToastId: 'depth-loading',
+            warningToastClass: 'blue-toast',
+            toastDuration: 5000,
+          }}
+        />
         {uniqueTrackedVehicles?.map((name, index) => (
           <VehiclePath
             name={name.name}
