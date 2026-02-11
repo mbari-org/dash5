@@ -461,7 +461,9 @@ const Vehicle: NextPage = () => {
                   className="min-h-0"
                 >
                   <Allotment.Pane minSize={720}>
-                    {primarySection}
+                    <div className="flex h-full min-h-0 flex-col">
+                      {primarySection}
+                    </div>
                   </Allotment.Pane>
                   <Allotment.Pane minSize={512}>
                     {secondarySection}
