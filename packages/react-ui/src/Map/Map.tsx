@@ -16,7 +16,6 @@ import '@mbari/react-ui/dist/mbari-ui.css'
 import '@mbari/react-ui/src/css/base.css'
 import Tippy from '@tippyjs/react'
 import 'tippy.js/dist/tippy.css'
-import MouseCoordinates, { MouseCoordinatesProps } from './MouseCoordinates'
 import { useMapBaseLayer, BaseLayerOption } from './useMapBaseLayer'
 import 'leaflet-mouse-position'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
@@ -33,6 +32,7 @@ import { Measurement } from './Measurement'
 import MovingDot from './MovingDot'
 import { AreaComponent, PathComponent, MeasurementProps } from './Measurement'
 import { CenterView } from './MapViews'
+import type { MapProps } from './Map.types'
 import { createLogger, loadGoogleMapsOnce } from '@mbari/utils'
 import VehicleColorsModal from '@mbari/lrauv-dash2/components/VehicleColorsModal'
 
@@ -83,56 +83,7 @@ interface StoredMarker {
   savedToLayer?: boolean
 }
 
-export interface MapProps extends React.HTMLAttributes<HTMLDivElement> {
-  className?: string
-  style?: React.CSSProperties
-  center?: [number, number]
-  centerZoom?: number
-  zoom?: number
-  minZoom?: number
-  maxZoom?: number
-  maxNativeZoom?: number
-  fitBounds?: [[number, number], [number, number]]
-  viewMode?: 'center' | 'bounds' | null
-  scrollWheelZoom?: boolean
-  isAddingMarkers?: boolean
-  onToggleMarkerMode?: () => void
-  onRequestMarkers?: (position?: { top: number; left: number }) => void
-  onRequestDepth?: MouseCoordinatesProps['onRequestDepth']
-  onRequestCoordinate?: () => void
-  onRequestFitBounds?: () => void
-  onRequestPlatforms?: () => void
-  onRequestStations?: (position?: { top: number; left: number }) => void
-  onRequestVehicleColors?: (vehicleName?: string) => void
-  whenCreated?: (map: L.Map) => void
-  onMapReady?: (map: L.Map) => void
-  trackedVehicles?: Array<{ id: string; name: string }>
-  dmsCoord?: string
-  mapCoord?: string
-  children?: React.ReactNode
-  renderMapClickHandler?: (props: {
-    isAddingMarkers: boolean
-    isEditingMarker: boolean
-    onAddMarker: (lat: number, lng: number) => number
-  }) => React.ReactNode
-  renderCustomMarkerSet?: (props: {
-    isAddingMarkers: boolean
-    setIsAddingMarkers: React.Dispatch<React.SetStateAction<boolean>>
-  }) => React.ReactNode
-  renderDraggableMarkers?: (props: {
-    markers: Array<{
-      id: number
-      lat: number
-      lng: number
-      index: number
-      label: string
-    }>
-    handleMarkerDragEnd: (
-      id: number,
-      position: { lat: number; lng: number }
-    ) => void
-  }) => React.ReactNode
-}
+export type { MapProps } from './Map.types'
 
 export type MeasureMode = 'open' | 'measuring' | 'closed' | 'cancelled'
 
@@ -146,7 +97,7 @@ const Map = React.forwardRef<L.Map, MapProps>(
       zoom = 17,
       minZoom = 4,
       maxZoom = 17,
-      maxNativeZoom = 13,
+      maxNativeZoom = 19,
       fitBounds,
       viewMode,
       trackedVehicles = [],
@@ -154,7 +105,6 @@ const Map = React.forwardRef<L.Map, MapProps>(
       isAddingMarkers = false,
       onToggleMarkerMode,
       onRequestMarkers,
-      onRequestDepth,
       onRequestCoordinate,
       onRequestFitBounds,
       onRequestPlatforms,
@@ -837,6 +787,7 @@ const Map = React.forwardRef<L.Map, MapProps>(
               <TileLayer
                 attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
                 url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+                maxNativeZoom={maxNativeZoom}
                 eventHandlers={{
                   add: addBaseLayerHandler('OpenStreetmaps'),
                 }}
@@ -851,6 +802,7 @@ const Map = React.forwardRef<L.Map, MapProps>(
               <TileLayer
                 attribution='&copy; <a href="http://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors, &copy; <a href="https://carto.com/attributions">CARTO</a>'
                 url="https://cartodb-basemaps-{s}.global.ssl.fastly.net/dark_nolabels/{z}/{x}/{y}.png"
+                maxNativeZoom={maxNativeZoom}
                 eventHandlers={{
                   add: addBaseLayerHandler('Dark Layer (CARTO)'),
                 }}
@@ -858,9 +810,6 @@ const Map = React.forwardRef<L.Map, MapProps>(
             </LayersControl.BaseLayer>
           )}
         </LayersControl>
-        <Control prepend position="topright">
-          <MouseCoordinates onRequestDepth={onRequestDepth} />
-        </Control>
         {children}
         {/* TRACKDB/STATIONS CONTROLS - Now in separate Control component */}
         <Control position="topleft">
@@ -1266,3 +1215,5 @@ const Map = React.forwardRef<L.Map, MapProps>(
 Map.displayName = 'Map.Map'
 
 export default Map
+export { default as MapDepthDisplay } from './MapDepthDisplay'
+export type { MapDepthDisplayProps, DepthRequestFn } from './MapDepthDisplay'
