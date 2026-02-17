@@ -99,7 +99,7 @@ describe('CommsSection', () => {
     expect(() =>
       render(
         <MockProviders queryClient={new QueryClient()}>
-          <CommsSection vehicleName="makai" from="" />
+          <CommsSection vehicleName="makai" from={0} />
         </MockProviders>
       )
     ).not.toThrow()
@@ -108,7 +108,7 @@ describe('CommsSection', () => {
   test('should render the pilot name', async () => {
     render(
       <MockProviders queryClient={new QueryClient()}>
-        <CommsSection vehicleName="makai" from="" />
+        <CommsSection vehicleName="makai" from={0} />
       </MockProviders>
     )
     await waitFor(() => {
@@ -120,7 +120,7 @@ describe('CommsSection', () => {
   test('should render the command', async () => {
     render(
       <MockProviders queryClient={new QueryClient()}>
-        <CommsSection vehicleName="makai" from="" />
+        <CommsSection vehicleName="makai" from={0} />
       </MockProviders>
     )
     await waitFor(() => {
@@ -135,7 +135,7 @@ describe('CommsSection', () => {
   test('should render the scheduled task', async () => {
     render(
       <MockProviders queryClient={new QueryClient()}>
-        <CommsSection vehicleName="makai" from="" />
+        <CommsSection vehicleName="makai" from={0} />
       </MockProviders>
     )
     await waitFor(() => {
@@ -150,7 +150,7 @@ describe('CommsSection', () => {
   test('should display timestamps with seconds (H:mm:ss)', async () => {
     render(
       <MockProviders queryClient={new QueryClient()}>
-        <CommsSection vehicleName="makai" from="" />
+        <CommsSection vehicleName="makai" from={0} />
       </MockProviders>
     )
     await waitFor(() => {
