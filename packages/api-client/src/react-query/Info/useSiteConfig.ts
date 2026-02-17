@@ -4,14 +4,15 @@ import { getInfo, GetInfoParams } from '../../axios'
 import { SupportedQueryOptions } from '../types'
 
 export const useSiteConfig = (
-  params: GetInfoParams,
+  params?: GetInfoParams,
   options?: SupportedQueryOptions,
   instance?: AxiosInstance
 ) => {
+  const resolvedParams = params ?? {}
   const query = useQuery(
-    ['info', 'config', params],
+    ['info', 'config', resolvedParams],
     () => {
-      return getInfo(params, {
+      return getInfo(resolvedParams, {
         instance: instance,
       })
     },

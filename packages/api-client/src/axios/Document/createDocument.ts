@@ -5,7 +5,7 @@ import { RequestConfig } from '../types'
 
 export interface CreateDocumentParams {
   name: string
-  docType: 'NORMAL' | 'FORM' | 'TEMPLATE'
+  docType: 'NORMAL' | 'FORM' | 'TEMPLATE' | 'FILLED'
   text: string
 }
 

@@ -43,13 +43,15 @@ test('should render the component', async () => {
 
 test('should display parameter name', async () => {
   render(<ParameterTable {...props} />)
-  expect(screen.queryByText(props.parameters[0].name)).toBeInTheDocument()
+  expect(
+    screen.queryByText(props?.parameters?.[0]?.name ?? '')
+  ).toBeInTheDocument()
 })
 
 test('should display parameter description', async () => {
   render(<ParameterTable {...props} />)
   expect(
-    screen.queryByText(`${props.parameters[0].description}`)
+    screen.queryByText(`${props?.parameters?.[0]?.description}`)
   ).toBeInTheDocument()
 })
 
@@ -57,7 +59,7 @@ test("should display the parameter's default value", async () => {
   render(<ParameterTable {...props} />)
   expect(
     screen.queryByText(
-      `${props.parameters[0].value} ${props.parameters[0].unit}`
+      `${props?.parameters?.[0]?.value} ${props?.parameters?.[0]?.unit}`
     )
   ).toBeInTheDocument()
 })
@@ -65,7 +67,7 @@ test("should display the parameter's default value", async () => {
 test("should display the parameter's override value if provided", async () => {
   render(<ParameterTable {...props} />)
   expect(
-    screen.queryByDisplayValue(`${props.parameters[0].overrideValue}`)
+    screen.queryByDisplayValue(`${props?.parameters?.[0]?.overrideValue}`)
   ).toBeInTheDocument()
 })
 
@@ -76,14 +78,14 @@ test('should display dvl is off message if dvlOff flag is true', async () => {
 
 test('should display parameter name in teal if override value is provided', async () => {
   render(<ParameterTable {...props} />)
-  expect(screen.queryByText(props.parameters[0].name)).toHaveClass(
+  expect(screen.queryByText(props?.parameters?.[0]?.name ?? '')).toHaveClass(
     'text-teal-600'
   )
 })
 
 test('should display parameter name in orange if dvlOff flag is true', async () => {
   render(<ParameterTable {...props} />)
-  expect(screen.queryByText(props.parameters[1].name)).toHaveClass(
+  expect(screen.queryByText(props?.parameters?.[1]?.name ?? '')).toHaveClass(
     'text-orange-500/80'
   )
 })

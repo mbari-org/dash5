@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import { TextAreaField, TextAreaFieldProps } from '../../Fields'
 
 export interface BuildFreeformCommandStepProps {
@@ -9,7 +9,19 @@ export interface BuildFreeformCommandStepProps {
 export const BuildFreeformCommandStep: React.FC<
   BuildFreeformCommandStepProps
 > = ({ command: initialCommand, onCommandTextChange }) => {
-  const [command, setCommand] = useState(initialCommand)
+  const [command, setCommand] = useState(initialCommand ?? '')
+
+  // Sync internal state with prop changes (only needed if prop changes externally ie when rerunning commands from schedule history)
+  useEffect(() => {
+    if (
+      initialCommand !== undefined &&
+      initialCommand !== null &&
+      initialCommand !== command
+    ) {
+      setCommand(initialCommand)
+    }
+  }, [initialCommand, command])
+
   const handleChangedCommand: TextAreaFieldProps['onChange'] = (e) => {
     setCommand(e.target.value)
     onCommandTextChange?.(e.target.value)

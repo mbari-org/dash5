@@ -7,11 +7,9 @@ import {
   faPlus,
 } from '@fortawesome/free-solid-svg-icons'
 import { IconDefinition, IconProp } from '@fortawesome/fontawesome-svg-core'
-import { AccessoryButton } from '../Navigation/AccessoryButton'
 import { capitalize, swallow } from '@mbari/utils'
-import { Dropdown } from '../Navigation'
+import { Dropdown, IconButton, RoleReassignButton } from '../Navigation'
 import { DateTime } from 'luxon'
-import { IconButton } from '../Navigation'
 
 export interface DeploymentInfo {
   id: string
@@ -23,23 +21,25 @@ export interface OverviewToolbarProps {
   style?: React.CSSProperties
   vehicleName?: string
   deployment?: DeploymentInfo
-  pilotInCharge?: string
-  pilotOnCall?: string
-  btnIcon?: IconDefinition
+  pics?: string[]
+  onCalls?: string[]
+  currentUserName?: string
   supportIcon1?: JSX.Element
   supportIcon2?: JSX.Element
   open?: boolean
   onSelectNewDeployment?: () => void
   onEditDeployment?: () => void
-  onClickPilot?: () => void
+  onRoleReassign?: () => void
   onIcon1hover?: () => JSX.Element
   onIcon2hover?: () => JSX.Element
   deployments?: DeploymentInfo[]
+  authenticated?: boolean
+  loadingPicAndOnCall?: boolean
   onSelectDeployment?: (deployment: DeploymentInfo) => void
 }
 
 const styles = {
-  container: 'flex font-display bg-white px-4 py-2',
+  container: 'flex font-display bg-white px-4 py-2 min-h-0',
   leftWrapper: 'flex flex-grow items-center px-2',
   rightWrapper: 'flex items-center px-2',
   chevron: 'pl-4 text-xs',
@@ -58,18 +58,20 @@ export const OverviewToolbar: React.FC<OverviewToolbarProps> = ({
   style,
   deployment,
   vehicleName,
-  pilotInCharge,
-  pilotOnCall,
-  btnIcon,
+  pics,
+  onCalls,
+  currentUserName,
   supportIcon1,
   supportIcon2,
   onSelectNewDeployment: handleNewDeployment,
   onSelectDeployment: handleSelectDeployment,
   deployments,
   onEditDeployment,
-  onClickPilot,
+  onRoleReassign,
   onIcon1hover,
   onIcon2hover,
+  authenticated,
+  loadingPicAndOnCall,
 }) => {
   const [hovering, setHovering] = useState<HoverOption>(null)
   const [showDeployments, setShowDeployments] = useState(false)
@@ -160,14 +162,15 @@ export const OverviewToolbar: React.FC<OverviewToolbarProps> = ({
         ) : null}
       </ul>
       <ul className={styles.rightWrapper}>
-        {onClickPilot && (
+        {onRoleReassign && (
           <li className="pr-2">
-            <AccessoryButton
-              label={pilotInCharge ?? 'No PIC'}
-              secondary={pilotOnCall ?? 'No On Call'}
-              icon={btnIcon as IconProp}
-              onClick={swallow(onClickPilot)}
-              isActive={true}
+            <RoleReassignButton
+              pics={pics}
+              onCalls={onCalls}
+              currentUserName={currentUserName}
+              authenticated={authenticated}
+              loading={loadingPicAndOnCall}
+              onRoleReassign={onRoleReassign}
             />
           </li>
         )}

@@ -9,23 +9,32 @@ export interface MissionTableProps {
   style?: React.CSSProperties
   missions: Mission[]
   selectedId?: string
-  onSelectMission?: (missionId: string) => void
+  onSelectMission: (id?: string | null) => void
   onSortColumn?: (column: number, ascending?: boolean) => void
   sortColumn?: number | null
   sortDirection?: SortDirection
+  loading?: boolean
+}
+
+export interface MissionOverride {
+  name: string
+  value: string
 }
 
 export interface Mission {
   id: string
   category: string
   name: string
-  task?: string
+  note?: string
   description?: string
   vehicle?: string
   ranBy?: string
   ranOn?: string
   ranAt?: string
   waypointCount?: number
+  parameterCount?: number
+  waypointOverrides?: MissionOverride[]
+  parameterOverrides?: MissionOverride[]
   recentRun?: boolean
   frequentRun?: boolean
 }
@@ -39,24 +48,29 @@ export const MissionTable: React.FC<MissionTableProps> = ({
   onSortColumn,
   sortColumn,
   sortDirection,
+  loading,
 }) => {
   const shouldShowVehicleColumn = missions.some((p) => p.recentRun)
   const missionRows = missions.map(
     ({
       category,
       name,
-      task,
+      note,
       description,
       ranBy,
       ranOn,
       ranAt,
       waypointCount,
+      parameterCount,
       vehicle,
     }) => ({
       cells: [
         {
-          label: category ? `${category}: ${name}` : `${name}`,
-          secondary: task,
+          label: category
+            ? `${category}: ${name}`
+            : `${name !== '' && name ? name : 'Unnamed mission'}`,
+          secondary: note ? <span className="italic">{note}</span> : null,
+          span: 2,
         },
         shouldShowVehicleColumn
           ? {
@@ -64,15 +78,48 @@ export const MissionTable: React.FC<MissionTableProps> = ({
             }
           : null,
         {
-          label: description ? description : 'No description',
-          secondary: `${(ranBy && `Last ran by ${ranBy}`) ?? ''} 
-            ${(ranOn && `on ${ranOn}.`) ?? ''} 
-            ${(ranAt && `Location ran at: ${ranAt}.`) ?? ''}
-            ${
-              (waypointCount &&
-                `This mission has ${waypointCount} waypoints`) ??
-              ''
-            }`,
+          label: description ? (
+            <span
+              className="block overflow-hidden text-indigo-600 transition-all duration-200"
+              style={{
+                display: '-webkit-box',
+                WebkitLineClamp: 2, // tailwind line clamp doesn't work here since parent has flex
+                WebkitBoxOrient: 'vertical',
+              }}
+              title={description}
+            >
+              {description}
+            </span>
+          ) : (
+            'No description'
+          ),
+          span: 3,
+          secondary: (
+            <ul className="">
+              <li className="flex">
+                {ranBy && `Last ran by ${ranBy}`}
+                {ranOn && ` on ${ranOn}`}
+              </li>
+              <li className="flex">{ranAt && `Location ran at: ${ranAt}`}</li>
+              {waypointCount || parameterCount ? (
+                <li className="flex">
+                  {`This mission has${
+                    waypointCount
+                      ? ` ${waypointCount} waypoint override${
+                          waypointCount !== 1 ? 's' : ''
+                        }`
+                      : ''
+                  }${waypointCount && parameterCount ? ' and' : ''}${
+                    parameterCount
+                      ? ` ${parameterCount} parameter override${
+                          parameterCount !== 1 ? 's' : ''
+                        }`
+                      : ''
+                  }`}
+                </li>
+              ) : null}
+            </ul>
+          ),
         },
       ].filter((i) => i),
     })
@@ -83,6 +130,7 @@ export const MissionTable: React.FC<MissionTableProps> = ({
       {
         label: 'MISSION NAME',
         onSort: onSortColumn,
+        span: 2,
       },
       shouldShowVehicleColumn
         ? {
@@ -90,14 +138,14 @@ export const MissionTable: React.FC<MissionTableProps> = ({
             onSort: onSortColumn,
           }
         : null,
-      { label: 'DESCRIPTION', onSort: onSortColumn },
+      { label: 'DESCRIPTION', onSort: onSortColumn, span: 3 },
     ].filter((i) => i),
     activeSortColumn: sortColumn,
     activeSortDirection: sortDirection,
   } as TableProps['header']
 
   const handleSelect = (index: number) => {
-    onSelectMission?.(missions[index].id)
+    onSelectMission(typeof index === 'number' ? missions[index].id : undefined)
   }
 
   return (
@@ -107,10 +155,12 @@ export const MissionTable: React.FC<MissionTableProps> = ({
       scrollable
       header={header}
       rows={missionRows}
-      onSelectRow={onSelectMission && handleSelect}
+      onSelectRow={handleSelect}
       selectedIndex={
         selectedId ? missions.findIndex(({ id }) => id === selectedId) : null
       }
+      colInRow={6}
+      loading={loading}
     />
   )
 }

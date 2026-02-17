@@ -1,45 +1,38 @@
 import React from 'react'
-import {
-  ReassignmentForm,
-  ReassignmentFormProps,
-  ReassignmentFormValues,
-} from '../Forms/ReassignmentForm'
 import { Modal, ModalPropsWithoutTitle } from '../Modal'
-import { AsyncSubmitHandler } from '@sumocreations/forms'
+
+import {
+  ReassignmentTableProps,
+  ReassignmentTable,
+} from '../Tables/ReassignmentTable'
+
+export type RoleChangeType = 'in' | 'off'
 
 export interface ReassignmentModalProps
   extends ModalPropsWithoutTitle,
-    ReassignmentFormProps {
-  onSubmit: AsyncSubmitHandler<ReassignmentFormValues>
-}
+    ReassignmentTableProps {}
 
 export const ReassignmentModal: React.FC<ReassignmentModalProps> = ({
   vehicles,
-  pics,
-  onCalls,
-  disableOnCalls,
-  disablePics,
-  loading,
-  onSubmit,
+  currentUserName,
+  isLoading,
+  onRoleChange,
+  onClose,
   ...modalProps
 }) => (
   <Modal
     {...modalProps}
-    title="On watch/on call"
-    form="reassignmentForm"
+    title="On Watch/On-Call"
     cancelButtonText="Cancel"
-    confirmButtonText="Save"
+    confirmButtonText="Done"
+    onClose={onClose}
+    onConfirm={onClose}
   >
-    <ReassignmentForm
-      onSubmit={onSubmit}
-      id="reassignmentForm"
+    <ReassignmentTable
       vehicles={vehicles}
-      pics={pics}
-      onCalls={onCalls}
-      disableOnCalls={disableOnCalls}
-      disablePics={disablePics}
-      loading={loading}
-      hideSubmit
+      currentUserName={currentUserName}
+      onRoleChange={onRoleChange}
+      isLoading={isLoading}
     />
   </Modal>
 )

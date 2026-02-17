@@ -14,12 +14,13 @@ export interface IconButtonProps {
   inactive?: boolean
   onClick?: (target: HTMLButtonElement) => void
   className?: string
+  iconClassName?: string
   style?: React.CSSProperties
   noPadding?: boolean
   testId?: string
   ariaLabel: string
   /**
-   * The tailwind text size class to apply to the icon.
+   * The tailwind text size class to apply to the button.
    */
   size?:
     | 'text-xs'
@@ -45,6 +46,7 @@ export const IconButton: React.FC<IconButtonProps> = ({
   icon,
   onClick: clickHandlerFromProps,
   className,
+  iconClassName,
   style: styleFromProps,
   tooltip,
   tooltipAlignment = 'center',
@@ -102,7 +104,7 @@ export const IconButton: React.FC<IconButtonProps> = ({
       aria-label={ariaLabel}
       data-testid={testId}
     >
-      <FontAwesomeIcon icon={icon as IconProp} />
+      <FontAwesomeIcon icon={icon as IconProp} className={iconClassName} />
       {tooltip ? (
         <ToolTip
           label={tooltip}

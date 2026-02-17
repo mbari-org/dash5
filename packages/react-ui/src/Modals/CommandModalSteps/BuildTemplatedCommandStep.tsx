@@ -52,7 +52,7 @@ const argumentAsParameter = (
     case 'ARG_INT':
       return {
         argType: arg.argType,
-        name: 'int',
+        name: arg?.altName ?? 'int',
         description: 'An integer value',
         inputType: 'number',
         value,
@@ -78,7 +78,7 @@ const argumentAsParameter = (
     case 'ARG_STRING':
       return {
         argType: arg.argType,
-        name: 'string',
+        name: arg?.altName ?? 'string',
         description: 'A string value',
         inputType: 'string',
         value,
@@ -104,8 +104,8 @@ const argumentAsParameter = (
     case 'ARG_TOKEN':
       return {
         argType: arg.argType,
-        name: 'token',
-        description: 'A token value',
+        name: arg?.altName ?? 'token',
+        description: `A ${arg?.altName ?? 'token'} value`,
         inputType: 'string',
         required: arg.required === 'REQUIRED',
         value,
@@ -230,6 +230,7 @@ const argumentAsParameter = (
 export interface Argument {
   argType: ArgumentType
   keyword?: string
+  altName?: string
   required?: string
 }
 
@@ -331,10 +332,16 @@ export const BuildTemplatedCommandStep: React.FC<
               ?.slice(-2)
               .join('.')
           : undefined
+      case 'ARG_UNIVERSAL':
+        return values?.slice(-1)[0] ?? undefined
       case 'ARG_COMPONENT':
         return value ? values[1] : value
       case 'ARG_COMMAND':
         return value ? values[0] : value
+      case 'ARG_MISSION':
+        return value ? values[0] : value
+      case 'ARG_QUOTED_STRING':
+        return value ? `"${value}"` : value
       default:
         return value
     }

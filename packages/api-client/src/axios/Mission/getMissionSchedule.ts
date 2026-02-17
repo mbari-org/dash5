@@ -8,7 +8,7 @@ export interface GetMissionScheduleParams {
   deploymentId: number
 }
 
-export interface Mission {
+export interface ScheduledMission {
   eventId: number
   vehicleName: string
   eventName: string
@@ -23,7 +23,7 @@ export interface Mission {
 }
 
 export interface GetMissionScheduleResponse {
-  result: Mission[]
+  result: ScheduledMission[]
 }
 
 export const getMissionSchedule = async (
@@ -72,7 +72,7 @@ export const getMissionSchedule = async (
     }
   }
 
-  const futureEvents: Mission[] = [
+  const futureEvents: ScheduledMission[] = [
     {
       eventName: 'Profile Station',
       note: 'One more time',
@@ -105,7 +105,7 @@ export const getMissionSchedule = async (
     },
   ]
 
-  const pastEvents: Mission[] = [
+  const pastEvents: ScheduledMission[] = [
     {
       eventName: 'Profile Station',
       note: 'One more time',
@@ -138,7 +138,7 @@ export const getMissionSchedule = async (
     },
   ]
 
-  const placeholderEvents: Mission[] = [
+  const placeholderEvents: ScheduledMission[] = [
     ...(deployment[0].endEvent?.eventId ? pastEvents : futureEvents),
     {
       eventName: 'resume',

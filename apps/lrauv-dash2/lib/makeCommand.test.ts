@@ -69,4 +69,18 @@ describe('makeMissionCommand', () => {
     )
     expect(schedDate).toBe('asap')
   })
+
+  it('should convert local time to UTC in the correct format', () => {
+    const { commandText, schedDate, previewSbd } = makeMissionCommand({
+      mission: 'Science/test.xml',
+      parameterOverrides: [],
+      scheduleMethod: 'time',
+      specifiedLocalTime: '2024-03-20T14:00:00-07:00', // Pacific time
+    })
+
+    // This time should be 21:00 UTC (14:00 PDT + 7 hours)
+    expect(schedDate).toBe('20240320T2100')
+    expect(previewSbd).toBe('sched 20240320T2100 "load Science/test.xml;run"')
+    expect(commandText).toBe('load Science/test.xml;run')
+  })
 })

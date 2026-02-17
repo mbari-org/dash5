@@ -61,7 +61,12 @@ describe('LogsSection', () => {
     expect(() =>
       render(
         <MockProviders queryClient={new QueryClient()}>
-          <LogsSection vehicleName="triton" from="2022-07-13T17:37:28.418Z" />
+          <LogsSection
+            vehicleName="triton"
+            from={1657733848418}
+            deploymentLogsOnly={false}
+            setDeploymentLogsOnly={() => {}}
+          />
         </MockProviders>
       )
     ).not.toThrow()
@@ -70,7 +75,12 @@ describe('LogsSection', () => {
   test('should render end of the deployment', async () => {
     render(
       <MockProviders queryClient={new QueryClient()}>
-        <LogsSection vehicleName="triton" from="2022-07-13T17:37:28.418Z" />
+        <LogsSection
+          vehicleName="triton"
+          from={1657733848418}
+          deploymentLogsOnly={false}
+          setDeploymentLogsOnly={() => {}}
+        />
       </MockProviders>
     )
     await waitFor(() => {
@@ -84,7 +94,12 @@ describe('LogsSection', () => {
   test('should render bytes received', async () => {
     render(
       <MockProviders queryClient={new QueryClient()}>
-        <LogsSection vehicleName="makai" from="2022-07-13T17:37:28.418Z" />
+        <LogsSection
+          vehicleName="makai"
+          from={1657733848418}
+          deploymentLogsOnly={false}
+          setDeploymentLogsOnly={() => {}}
+        />
       </MockProviders>
     )
     await waitFor(() => {

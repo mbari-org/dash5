@@ -4,8 +4,8 @@ import { getEvents, GetEventsParams } from './getEvents'
 
 let params: GetEventsParams = {
   vehicles: ['example'],
-  from: 'example',
-  to: 'example',
+  from: 1656435451959,
+  to: 1656436678089,
   eventTypes: ['note', 'gpsFix'],
   limit: 1,
   noteMatches: 'example',

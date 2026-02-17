@@ -21,6 +21,7 @@ export interface ModalViewProps {
   maximized?: boolean
   className?: string
   style?: React.CSSProperties
+  blurBackground?: boolean
   snapTo?:
     | 'top-right'
     | 'bottom-right'
@@ -109,6 +110,7 @@ export const Modal: React.FC<ModalProps & FooterProps> = ({
   maximized,
   className,
   style,
+  blurBackground,
   snapTo,
   allowPointerEventsOnChildren,
 }) => {
@@ -195,6 +197,7 @@ export const Modal: React.FC<ModalProps & FooterProps> = ({
       className={clsx(
         styles.overlay,
         zIndex,
+        blurBackground && 'bg-black/20 backdrop-blur-sm',
         !bodyOverflowHidden
           ? 'overflow-auto'
           : styles.overlayToContainModalSize,

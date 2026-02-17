@@ -1,70 +1,87 @@
 import {
-  usePicAndOnCall,
+  useVehiclePicAndOnCall,
   useAssignPicAndOnCall,
-  useUsersByRole,
 } from '@mbari/api-client'
-import { ReassignmentModal, ReassignmentModalProps } from '@mbari/react-ui'
+import {
+  ReassignmentModal,
+  ReassignmentTableProps,
+  RoleChangeType,
+} from '@mbari/react-ui'
+
 import useGlobalModalId from '../lib/useGlobalModalId'
 import { capitalize } from '@mbari/utils'
+import { useQueryClient } from 'react-query'
+import { useTethysApiContext } from '@mbari/api-client'
+import toast from 'react-hot-toast'
 
 const Reassignment: React.FC<{ vehicleNames: string[] }> = ({
   vehicleNames,
 }) => {
-  const { data, isLoading } = usePicAndOnCall({
+  const queryClient = useQueryClient()
+  const { data, isLoading } = useVehiclePicAndOnCall({
     vehicleName: vehicleNames,
   })
-  const { data: operators, isLoading: loadingOperators } = useUsersByRole({
-    role: 'operator',
-  })
   const { setGlobalModalId } = useGlobalModalId()
+  const { profile } = useTethysApiContext()
+  const currentUserName = profile
+    ? `${profile.firstName} ${profile.lastName}`
+    : ''
+
   const handleClose = () => setGlobalModalId(null)
 
   const { mutate: assignPicAndOnCall, isLoading: loadingAssignPicAndOnCall } =
     useAssignPicAndOnCall()
-  const handleReassignmentSubmit: ReassignmentModalProps['onSubmit'] = async ({
-    vehicleName: selectedVehicles,
-    pic,
-    onCall,
-  }) => {
-    await Promise.all(
-      selectedVehicles.map(async (vehicleName) => {
-        await assignPicAndOnCall({
-          vehicleName,
-          sign: 'in',
-          subRole: 'PIC',
-          email: pic,
-        })
-        await assignPicAndOnCall({
-          vehicleName,
-          sign: 'in',
-          subRole: 'On-Call',
-          email: onCall,
-        })
-      })
-    )
-    handleClose()
-    return undefined
+
+  const handleRoleChange = async (
+    vehicleName: string,
+    roleChangeType: RoleChangeType,
+    isPic: boolean
+  ) => {
+    if (profile?.email) {
+      assignPicAndOnCall(
+        {
+          vehicleName: vehicleName.toLowerCase(),
+          email: profile.email,
+          sign: roleChangeType,
+          subRole: isPic ? 'PIC' : 'On-Call',
+        },
+        {
+          onSuccess: () => {
+            toast.success(
+              `Successfully ${
+                roleChangeType === 'in' ? 'signed in' : 'signed off'
+              } as ${isPic ? 'PIC' : 'On-Call'} for ${vehicleName}`
+            )
+
+            queryClient.invalidateQueries(['users', 'picAndOnCall'])
+            queryClient.invalidateQueries(['users', 'role'])
+          },
+          onError: () => {
+            toast.error(
+              `Failed to ${
+                roleChangeType === 'in' ? 'sign in' : 'sign off'
+              } as ${isPic ? 'PIC' : 'On-Call'} for ${vehicleName}`
+            )
+          },
+        }
+      )
+    }
   }
+
+  const vehicleData: ReassignmentTableProps['vehicles'] =
+    data?.map((v) => ({
+      name: capitalize(v.vehicleName),
+      picOperators: v.pics.map((pic) => pic.user),
+      onCallOperators: v.onCalls.map((onCall) => onCall.user),
+    })) || []
 
   return (
     <ReassignmentModal
       onClose={handleClose}
-      vehicles={data?.map((v) => ({
-        vehicleName: capitalize(v.vehicleName),
-        vehicleId: v.vehicleName,
-        pic: v.pic?.user ?? 'Not Assigned',
-        onCall: v.onCall?.user ?? 'Not Assigned',
-      }))}
-      onSubmit={handleReassignmentSubmit}
-      pics={operators?.map((u) => ({
-        name: u.fullName,
-        id: u.email,
-      }))}
-      onCalls={operators?.map((u) => ({
-        name: u.fullName,
-        id: u.email,
-      }))}
-      loading={isLoading || loadingOperators || loadingAssignPicAndOnCall}
+      vehicles={vehicleData}
+      currentUserName={currentUserName}
+      onRoleChange={handleRoleChange}
+      isLoading={isLoading || loadingAssignPicAndOnCall}
       open
     />
   )

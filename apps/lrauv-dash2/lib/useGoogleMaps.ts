@@ -4,9 +4,7 @@ import { Loader } from '@googlemaps/js-api-loader'
 
 export const useGoogleMaps = () => {
   const { siteConfig } = useTethysApiContext()
-  const googleMapsApiKey =
-    process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY ??
-    siteConfig?.appConfig.googleApiKey
+  const googleMapsApiKey = siteConfig?.appConfig.googleApiKey
 
   const [mapsLoaded, setMapsLoaded] = useState(false)
   useEffect(() => {

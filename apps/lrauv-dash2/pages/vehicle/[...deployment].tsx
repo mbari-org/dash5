@@ -2,6 +2,8 @@ import { useEffect, useMemo, useState } from 'react'
 import { NextPage } from 'next'
 import { useRouter } from 'next/router'
 import { DateTime } from 'luxon'
+import { getAdjustedUnixTime } from '@mbari/utils'
+
 import {
   Tab,
   TabGroup,
@@ -14,13 +16,14 @@ import {
   OverviewToolbar,
   VehicleCommsCell,
   VehicleInfoCell,
+  PluggedInIcon,
 } from '@mbari/react-ui'
 import {
   useDeployments,
-  useMissionStartedEvent,
   useTethysApiContext,
   useChartData,
-  usePicAndOnCall,
+  useVehiclePicAndOnCall,
+  useMissionStartedEvent,
 } from '@mbari/api-client'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { faChevronDown, faChevronUp } from '@fortawesome/free-solid-svg-icons'
@@ -38,14 +41,23 @@ import { useLastCommsTime } from '../../lib/useLastCommsTime'
 import { Allotment } from 'allotment'
 import 'allotment/dist/style.css'
 import { useGoogleMaps } from '../../lib/useGoogleMaps'
+import { SelectedStationsProvider } from '../../components/SelectedStationContext'
+import { SelectedPlatformsProvider } from '../../components/SelectedPlatformContext'
+import { createRoleLabel } from '@mbari/utils'
+import { useNeedCommsTime } from '../../lib/useNeedCommsTime'
+import { calculateRelativeNextComm } from '@mbari/utils'
+import { useTick } from '../../lib/useTick'
+
+// Every flex parent of the map needs `min-h-0`
+// Without it, Leaflet sometimes shows gray tiles
 
 const styles = {
-  content: 'flex flex-shrink flex-grow flex-row overflow-hidden',
-  primary: 'flex h-full flex-shrink flex-grow flex-col',
+  content: 'flex flex-shrink flex-grow flex-row overflow-hidden min-h-0',
+  primary: 'flex h-full flex-shrink flex-grow flex-col min-h-0',
   mapContainer:
-    'flex flex-shrink flex-col flex-grow bg-blue-300 relative h-full',
+    'flex flex-shrink flex-col flex-grow bg-blue-300 relative h-full min-h-0',
   secondary:
-    'flex w-full h-full flex-shrink-0 flex-col bg-white border-t-2 border-t-secondary-300/60 border-l border-l-slate-300',
+    'flex w-full h-full flex-shrink-0 flex-col bg-white border-t-2 border-t-secondary-300/60 border-l border-l-slate-300 min-h-0',
 }
 
 const LineChart = dynamic(
@@ -60,6 +72,19 @@ const DeploymentMap = dynamic(() => import('../../components/DeploymentMap'), {
 })
 
 type AvailableTab = 'vehicle' | 'depth' | null
+type MobileView = 'main' | 'sidebar'
+
+const useIsDesktop = () => {
+  const [isDesktop, setIsDesktop] = useState(true)
+  useEffect(() => {
+    const mq = window.matchMedia('(min-width: 1280px)')
+    setIsDesktop(mq.matches)
+    const handler = (e: MediaQueryListEvent) => setIsDesktop(e.matches)
+    mq.addEventListener('change', handler)
+    return () => mq.removeEventListener('change', handler)
+  }, [])
+  return isDesktop
+}
 
 const Vehicle: NextPage = () => {
   const { authenticated } = useTethysApiContext()
@@ -79,14 +104,15 @@ const Vehicle: NextPage = () => {
     setTab(tab)
     setDrawerOpen(true)
   }
+
+  const [mobileView, setMobileView] = useState<MobileView>('main')
+  const isDesktop = useIsDesktop()
+
   const params = (router.query?.deployment ?? []) as string[]
   const vehicleName = params[0]
   const deploymentId = parseInt(params[1] ?? '0', 10)
 
-  const { data: picAndOnCall, isLoading: loadingPic } = usePicAndOnCall({
-    vehicleName,
-  })
-  const { deployment, isLoading } = useCurrentDeployment()
+  const { deployment, lastDeployment, isLoading } = useCurrentDeployment()
   const { data: deploymentsData } = useDeployments(
     {
       vehicle: vehicleName as string,
@@ -96,14 +122,41 @@ const Vehicle: NextPage = () => {
     }
   )
 
-  const { data: missionStartedEvent } = useMissionStartedEvent(
+  const { data, isLoading: loadingPicAndOnCall } = useVehiclePicAndOnCall(
     {
-      vehicle: vehicleName as string,
+      vehicleName,
     },
     {
-      enabled: !!vehicleName && !!deployment?.lastEvent,
+      enabled: !!vehicleName && authenticated,
     }
   )
+
+  const { profile } = useTethysApiContext()
+  const currentUserName = profile
+    ? `${profile.firstName} ${profile.lastName}`
+    : ''
+
+  const pics = data?.[0]?.pics.map((p) => p.user)
+  const onCalls = data?.[0]?.onCalls.map((o) => o.user)
+
+  const picLabel = pics?.length
+    ? createRoleLabel({
+        operators: pics,
+        role: 'PIC',
+        currentUser: currentUserName,
+        authenticated,
+        loading: loadingPicAndOnCall,
+      })
+    : ''
+  const onCallLabel = onCalls?.length
+    ? createRoleLabel({
+        operators: onCalls,
+        role: 'On-Call',
+        currentUser: currentUserName,
+        authenticated,
+        loading: loadingPicAndOnCall,
+      })
+    : ''
 
   useEffect(() => {
     if (!!deployment?.deploymentId && !deploymentId) {
@@ -120,30 +173,70 @@ const Vehicle: NextPage = () => {
       name: dep.name,
     })) ?? []
 
-  const deploymentStartTime = deployment?.startEvent?.unixTime ?? 0
-  const startTime =
-    deployment?.active && missionStartedEvent?.[0]?.unixTime
-      ? missionStartedEvent?.[0]?.unixTime
-      : deploymentStartTime
+  const startTime = deployment?.startEvent?.unixTime ?? 0
+
+  const adjustedDeploymentStartTime = getAdjustedUnixTime({
+    unixTime: startTime,
+    offsetDays: deployment?.active ? -1 : 0,
+  })
 
   const endTime = deployment?.active
     ? DateTime.utc().plus({ hours: 4 }).endOf('day').toMillis()
-    : deployment?.lastEvent ?? 0
+    : deployment?.endEvent?.unixTime ?? 0
 
-  const lastCommsMillis = useLastCommsTime(vehicleName, startTime)
-  const lastCommsTime = lastCommsMillis
-    ? DateTime.fromMillis(lastCommsMillis)
+  // Get the actual mission start time (e.g., ballast_and_trim, transit, etc.)
+  // instead of deployment start time
+  const { data: missionStartedEvent } = useMissionStartedEvent(
+    {
+      vehicle: vehicleName as string,
+      limit: 1,
+    },
+    {
+      enabled: !!vehicleName && !!deployment,
+      staleTime: 60 * 1000,
+    }
+  )
+  const missionStartTime = missionStartedEvent?.[0]?.unixTime ?? startTime
+
+  const { lastSatCommsTime, lastCellCommsTime } = useLastCommsTime(
+    vehicleName,
+    startTime
+  )
+  const lastSatCommsDT = lastSatCommsTime
+    ? DateTime.fromMillis(lastSatCommsTime)
     : null
-  const nextCommsTime = lastCommsMillis
-    ? DateTime.now().plus({
-        milliseconds:
-          DateTime.now().toMillis() -
-          lastCommsMillis +
-          25 * 60 * 1000 + // Replace with actual NeedsCommsInterval
-          5 * 60 * 1000, // Replacee w/ buffer time
-      })
+  const lastCellCommsDT = lastCellCommsTime
+    ? DateTime.fromMillis(lastCellCommsTime)
     : null
-  const handleClickPilot = () => setGlobalModalId({ id: 'reassign' })
+
+  const { minutes: needCommsMinutes } = useNeedCommsTime(
+    vehicleName,
+    missionStartTime,
+    { enabled: !!vehicleName && !!missionStartTime }
+  )
+  const nowMs = useTick(60_000)
+  const { nextCommTimeMs, text: nextCommsText } = useMemo(
+    () =>
+      calculateRelativeNextComm(
+        lastSatCommsTime,
+        lastCellCommsTime,
+        needCommsMinutes ?? 60,
+        nowMs
+      ),
+    [lastSatCommsTime, lastCellCommsTime, needCommsMinutes, nowMs]
+  )
+  const nextCommsTime = nextCommTimeMs
+    ? DateTime.fromMillis(nextCommTimeMs)
+    : null
+
+  // Vehicle is plugged in if there's a recoverEvent in lastDeployment or lastDeployment start time is in the future (preparing for mission)
+  const isPluggedIn = Boolean(
+    lastDeployment?.recoverEvent ||
+      (lastDeployment?.startEvent?.unixTime &&
+        DateTime.fromMillis(lastDeployment.startEvent.unixTime).toMillis() >
+          DateTime.now().toMillis())
+  )
+  const handleRoleReassign = () => setGlobalModalId({ id: 'reassign' })
   const handleNewDeployment = () => setGlobalModalId({ id: 'newDeployment' })
   const handleEditDeployment = () => setGlobalModalId({ id: 'editDeployment' })
 
@@ -155,8 +248,8 @@ const Vehicle: NextPage = () => {
   } = useChartData(
     {
       vehicle: vehicleName as string,
-      from: DateTime.fromMillis(startTime).toISO(),
-      to: endTime ? DateTime.fromMillis(endTime).toISO() : undefined,
+      from: startTime,
+      to: endTime ? endTime : undefined,
     },
     {
       enabled: currentTab === 'depth' && startTime > 0,
@@ -167,193 +260,267 @@ const Vehicle: NextPage = () => {
   const chartAvailable =
     !!depthData && !chartLoading && !chartIdle && !chartError
 
-  const depthChart = useMemo(() => {
-    return chartAvailable ? (
-      <LineChart
-        name={depthData?.name ?? ''}
-        data={depthData?.values.map((v, i) => ({
-          value: v,
-          timestamp: depthData.times[i],
-        }))}
-        yAxisLabel={`${humanize(depthData?.name)} (${depthData?.units})`}
-        onHover={handleTimeScrub}
-        inverted={depthData.name === 'depth'}
-        className="h-[340px] w-full"
-      />
-    ) : null
-  }, [depthData, chartAvailable])
-
   const [indicatorTime, setIndicatorTime] = useState<number | null | undefined>(
     null
   )
   const handleTimeScrub = (time?: number | null) => {
     setIndicatorTime(time)
   }
+
+  const depthChart = useMemo(() => {
+    return chartAvailable ? (
+      <LineChart
+        name={depthData?.name ?? ''}
+        data={depthData?.values?.map((v, i) => ({
+          value: v,
+          timestamp: depthData?.times?.[i],
+        }))}
+        yAxisLabel={`${humanize(depthData?.name)} (${depthData?.units})`}
+        onHover={handleTimeScrub}
+        inverted={depthData?.name === 'depth'}
+        className="h-[340px] w-full"
+      />
+    ) : null
+  }, [depthData, chartAvailable])
+
   const handleBatteryClick = () => {
     setGlobalModalId({ id: 'battery' })
   }
 
   const pingEvent = useTethysSubscriptionEvent('VehiclePingResult', vehicleName)
-  return (
-    <Layout>
-      <OverviewToolbar
-        vehicleName={vehicleName}
-        pilotInCharge={picAndOnCall?.[0].pic?.user}
-        pilotOnCall={picAndOnCall?.[0].onCall?.user}
-        deployment={
-          isLoading
-            ? { name: '...', id: '0' }
-            : {
-                name: (deployment?.name ?? '...') as string,
-                id: (deployment?.deploymentId as string) ?? '0',
-                unixTime: deployment?.startEvent?.unixTime,
-              }
-        }
-        onClickPilot={loadingPic ? undefined : handleClickPilot}
-        supportIcon1={
-          pingEvent?.reachable ? <ConnectedIcon /> : <NotConnectedIcon />
-        }
-        supportIcon2={
-          pingEvent?.reachable ? <SurfacedIcon /> : <UnderwaterIcon />
-        }
-        onSelectNewDeployment={handleNewDeployment}
-        deployments={deployments}
-        onEditDeployment={handleEditDeployment}
-        onSelectDeployment={handleSelectDeployment}
-        onIcon1hover={() => (
-          <VehicleCommsCell
-            icon={
-              pingEvent?.reachable ? <ConnectedIcon /> : <NotConnectedIcon />
-            }
-            headline={`Cell Comms: ${
-              pingEvent?.reachable ? 'Connected' : 'Not Connected'
-            }`}
-            host={pingEvent?.hostName ?? 'Not available'}
-            lastPing={
-              ((pingEvent?.checkedAt &&
-                DateTime.fromMillis(
-                  pingEvent?.checkedAt
-                ).toRelative()) as string) ?? 'Not available'
-            }
-            nextComms={`${nextCommsTime?.toFormat(
-              'hh:mm'
-            )} (in ${nextCommsTime?.toRelative()})`}
-          />
-        )}
-        onIcon2hover={() => (
-          <VehicleInfoCell
-            icon={pingEvent?.reachable ? <SurfacedIcon /> : <UnderwaterIcon />}
-            headline="Likely underwater"
-            subtitle="Last comms over satellite"
-            lastCommsOverSat={`${
-              lastCommsTime?.day === DateTime.now().day
-                ? 'Today'
-                : lastCommsTime?.toFormat('mmm, d')
-            } at ${lastCommsTime?.toFormat(
-              'hh:mm:ss'
-            )} (${lastCommsTime?.toRelative()})`}
-            estimate={`Est. to surface in ${nextCommsTime?.toRelative()} at ~${nextCommsTime?.toFormat(
-              'hh:mm'
-            )}`}
-          />
-        )}
+
+  const vehicleStatusIcon = isPluggedIn ? (
+    <PluggedInIcon />
+  ) : pingEvent?.reachable ? (
+    <SurfacedIcon />
+  ) : (
+    <UnderwaterIcon />
+  )
+
+  const primarySection = (
+    <section className={styles.primary}>
+      <MissionProgressToolbar
+        startTime={DateTime.fromMillis(startTime).toISO()}
+        endTime={DateTime.fromMillis(endTime).toISO()}
+        ticks={6}
+        ariaLabel="Mission Progress"
+        className="min-h-0 bg-secondary-300/60"
+        onScrub={handleTimeScrub}
+        indicatorTime={indicatorTime}
       />
-      <div className={styles.content}>
-        <Allotment separator defaultSizes={[75, 25]}>
-          <section className={styles.primary}>
-            <MissionProgressToolbar
-              startTime={DateTime.fromMillis(startTime).toISO()}
-              endTime={DateTime.fromMillis(endTime).toISO()}
-              ticks={6}
-              ariaLabel="Mission Progress"
-              className="bg-secondary-300/60"
-              onScrub={handleTimeScrub}
-              indicatorTime={indicatorTime}
-            />
-            <div className={styles.mapContainer}>
-              {mapsLoaded && (
-                <DeploymentMap
-                  vehicleName={vehicleName}
-                  indicatorTime={indicatorTime}
-                  startTime={startTime}
-                  endTime={endTime}
-                  onScrub={handleTimeScrub}
+      <div className={styles.mapContainer}>
+        {mapsLoaded && (
+          <DeploymentMap
+            vehicleName={vehicleName}
+            indicatorTime={indicatorTime}
+            startTime={startTime}
+            endTime={endTime}
+            onScrub={handleTimeScrub}
+          />
+        )}
+        <div className="absolute bottom-0 z-[1001] flex w-full flex-col">
+          <TabGroup className="w-full px-8">
+            <Tab
+              onClick={toggleDrawer}
+              label={
+                <FontAwesomeIcon
+                  icon={drawerOpen ? faChevronDown : faChevronUp}
+                  size="1x"
                 />
-              )}
-              <div className="absolute bottom-0 z-[1001] flex w-full flex-col">
-                <TabGroup className="w-full px-8">
-                  <Tab
-                    onClick={toggleDrawer}
-                    label={
-                      <FontAwesomeIcon
-                        icon={drawerOpen ? faChevronDown : faChevronUp}
-                        size="1x"
-                      />
-                    }
-                    selected
-                    className="mr-auto"
-                  />
-                  <Tab
-                    label="Vehicle State"
-                    onClick={setCurrentTab('vehicle')}
-                    selected={currentTab === 'vehicle'}
-                  />
-                  <Tab
-                    label="Depth Data"
-                    onClick={setCurrentTab('depth')}
-                    selected={currentTab === 'depth'}
-                    className="mr-auto"
-                  />
-                </TabGroup>
-                <div
-                  className={clsx(
-                    'flex w-full bg-white',
-                    drawerOpen ? 'h-80' : 'h-12'
-                  )}
-                >
-                  {currentTab === 'vehicle' && (
-                    <VehicleDiagram
-                      name={vehicleName as string}
-                      className="m-auto flex h-full w-full"
-                      onBatteryClick={handleBatteryClick}
-                    />
-                  )}
-                  {currentTab === 'depth' && (
-                    <div className="flex h-full w-full overflow-hidden px-4">
-                      {depthChart}
-                      {chartLoading && (
-                        <p className="text-md m-auto font-bold">
-                          Loading Depth Data
-                        </p>
-                      )}
-                      {chartError && (
-                        <p className="text-md m-auto font-bold">
-                          Depth Data Could Not Be Loaded
-                        </p>
-                      )}
-                    </div>
-                  )}
-                </div>
-              </div>
-            </div>
-          </section>
-          <section className={styles.secondary}>
-            {deployment && (
-              <VehicleAccordion
-                authenticated={authenticated}
-                vehicleName={vehicleName}
-                from={DateTime.fromMillis(deploymentStartTime)
-                  .minus({ days: deployment.active ? 1 : 0 })
-                  .toISO()}
-                to={DateTime.fromMillis(endTime).toISO()}
-                activeDeployment={deployment.active}
-                currentDeploymentId={deployment.deploymentId as number}
+              }
+              selected
+              className="mr-auto"
+            />
+            <Tab
+              label="Vehicle State"
+              onClick={setCurrentTab('vehicle')}
+              selected={currentTab === 'vehicle'}
+            />
+            <Tab
+              label="Depth Data"
+              onClick={setCurrentTab('depth')}
+              selected={currentTab === 'depth'}
+              className="mr-auto"
+            />
+          </TabGroup>
+          <div
+            className={clsx(
+              'flex w-full bg-white',
+              drawerOpen ? 'h-80' : 'h-12'
+            )}
+          >
+            {currentTab === 'vehicle' && (
+              <VehicleDiagram
+                name={vehicleName as string}
+                className="m-auto flex h-full w-full"
+                onBatteryClick={handleBatteryClick}
+                lastCellCommsTime={lastCellCommsDT}
+                lastSatCommsTime={lastSatCommsDT}
+                nextCommsText={nextCommsText}
               />
             )}
-          </section>
-        </Allotment>
+            {currentTab === 'depth' && (
+              <div className="flex h-full w-full overflow-hidden px-4">
+                {depthChart}
+                {chartLoading && (
+                  <p className="text-md m-auto font-bold">Loading Depth Data</p>
+                )}
+                {chartError && (
+                  <p className="text-md m-auto font-bold">
+                    Depth Data Could Not Be Loaded
+                  </p>
+                )}
+              </div>
+            )}
+          </div>
+        </div>
       </div>
-    </Layout>
+    </section>
+  )
+
+  const secondarySection = (
+    <section className={styles.secondary}>
+      {deployment && (
+        <VehicleAccordion
+          authenticated={authenticated}
+          vehicleName={vehicleName}
+          from={adjustedDeploymentStartTime}
+          to={endTime}
+          picLabel={picLabel}
+          onCallLabel={onCallLabel}
+          activeDeployment={deployment.active}
+          currentDeploymentId={deployment.deploymentId as number}
+        />
+      )}
+    </section>
+  )
+
+  return (
+    <SelectedPlatformsProvider>
+      <SelectedStationsProvider>
+        <div className={styles.content}>
+          <Layout>
+            <OverviewToolbar
+              vehicleName={vehicleName}
+              currentUserName={currentUserName}
+              pics={pics}
+              onCalls={onCalls}
+              deployment={
+                isLoading
+                  ? { name: '...', id: '0' }
+                  : {
+                      name: (deployment?.name ?? '...') as string,
+                      id: (deployment?.deploymentId as string) ?? '0',
+                      unixTime: deployment?.startEvent?.unixTime,
+                    }
+              }
+              onRoleReassign={handleRoleReassign}
+              loadingPicAndOnCall={loadingPicAndOnCall}
+              supportIcon1={
+                pingEvent?.reachable ? <ConnectedIcon /> : <NotConnectedIcon />
+              }
+              supportIcon2={vehicleStatusIcon}
+              onSelectNewDeployment={handleNewDeployment}
+              deployments={deployments}
+              onEditDeployment={handleEditDeployment}
+              onSelectDeployment={handleSelectDeployment}
+              onIcon1hover={() => (
+                <VehicleCommsCell
+                  icon={
+                    pingEvent?.reachable ? (
+                      <ConnectedIcon />
+                    ) : (
+                      <NotConnectedIcon />
+                    )
+                  }
+                  headline={`Cell Comms: ${
+                    pingEvent?.reachable ? 'Connected' : 'Not Connected'
+                  }`}
+                  host={pingEvent?.hostName ?? 'Not available'}
+                  lastPing={
+                    ((pingEvent?.checkedAt &&
+                      DateTime.fromMillis(
+                        pingEvent?.checkedAt
+                      ).toRelative()) as string) ?? 'Not available'
+                  }
+                  nextComms={nextCommsText ?? undefined}
+                />
+              )}
+              onIcon2hover={() => (
+                <VehicleInfoCell
+                  isPluggedIn={isPluggedIn}
+                  isReachable={pingEvent?.reachable}
+                  nextCommsTime={nextCommsTime}
+                  lastPluggedInTime={
+                    lastDeployment?.recoverEvent?.unixTime
+                      ? DateTime.fromMillis(
+                          lastDeployment.recoverEvent.unixTime
+                        )
+                      : null
+                  }
+                  lastSatCommsTime={lastSatCommsDT}
+                  lastCellCommsTime={lastCellCommsDT}
+                />
+              )}
+              authenticated={authenticated}
+            />
+
+            {/* Single map instance: render one layout to avoid duplicate controls */}
+            {isDesktop ? (
+              <div className="min-h-0 flex-1 flex">
+                <div className={styles.content}>
+                  <Allotment
+                    separator
+                    defaultSizes={[75, 25]}
+                    className="min-h-0"
+                  >
+                    <Allotment.Pane minSize={720}>
+                      {primarySection}
+                    </Allotment.Pane>
+                    <Allotment.Pane minSize={512}>
+                      {secondarySection}
+                    </Allotment.Pane>
+                  </Allotment>
+                </div>
+              </div>
+            ) : (
+              <div className="flex min-h-0 flex-1 flex-col">
+                <div className="flex shrink-0 items-center gap-2 border-b border-slate-200 bg-white px-4 py-2">
+                  <button
+                    type="button"
+                    onClick={() => setMobileView('main')}
+                    className={clsx(
+                      'rounded px-3 py-1 text-sm font-bold',
+                      mobileView === 'main'
+                        ? 'bg-secondary-300/60 text-black'
+                        : 'text-slate-600'
+                    )}
+                  >
+                    Map
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setMobileView('sidebar')}
+                    className={clsx(
+                      'rounded px-3 py-1 text-sm font-bold',
+                      mobileView === 'sidebar'
+                        ? 'bg-secondary-300/60 text-black'
+                        : 'text-slate-600'
+                    )}
+                  >
+                    Details
+                  </button>
+                </div>
+
+                <div className="min-h-0 flex-1 overflow-hidden">
+                  {mobileView === 'main' ? primarySection : secondarySection}
+                </div>
+              </div>
+            )}
+          </Layout>
+        </div>
+      </SelectedStationsProvider>
+    </SelectedPlatformsProvider>
   )
 }
 

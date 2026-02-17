@@ -1,0 +1,12 @@
+services:
+  dash5:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile
+    ports:
+      - '8082:80'
+    init: true
+    container_name: dash5
+    restart: always
+    labels:
+      - 'com.centurylinklabs.watchtower.enable=true'

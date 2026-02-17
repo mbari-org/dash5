@@ -7,10 +7,6 @@ export interface GetLastDeploymentParams {
    * The name of the vehicle.
    */
   vehicle: string
-  /**
-   * An ISO 8601 formatted date string.
-   */
-  to: string
 }
 
 export interface DeploymentEvent {
@@ -25,6 +21,8 @@ export interface DListResult {
   contents?: string
   messages?: string[]
 }
+
+// IMPORTANT NOTE: the last deployment endpoint sometimes returns a deployment with a start event that is in the future in preparation for the mission
 
 export interface GetLastDeploymentResponse {
   deploymentId: string

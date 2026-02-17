@@ -1,53 +1,28 @@
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState, useRef } from 'react'
 import {
-  MissionModal as MissionModalView,
-  MissionModalProps as MissionModalViewProps,
-  MissionTableProps,
+  MissionModalView,
+  MissionModalViewProps,
   ParameterProps,
   useManagedWaypoints,
   WaypointTableProps,
 } from '@mbari/react-ui'
+import { capitalize, makeOrdinal } from '@mbari/utils'
 import {
-  capitalize,
-  capitalizeEach,
-  makeOrdinal,
-  sortByProperty,
-} from '@mbari/utils'
-import {
-  MissionListItem,
-  useFrequentRuns,
-  useMissionList,
-  useRecentRuns,
   useUnits,
-  useScript,
   useStations,
   useSbdOutgoingAlternativeAddresses,
-  useVehicleNames,
   useCreateCommand,
-  ScriptArgument,
-  ScriptInsert,
+  useSiteConfig,
 } from '@mbari/api-client'
+import { useMissionData } from '../lib/useMissionData'
 import { useRouter } from 'next/router'
-import { DateTime } from 'luxon'
 import { makeMissionCommand } from '../lib/makeCommand'
 import toast from 'react-hot-toast'
-import { ScheduleOption } from '@mbari/react-ui'
 import useGlobalDrawerState from '../lib/useGlobalDrawerState'
-import { point, distance } from '@turf/turf'
 import useGlobalModalId from '../lib/useGlobalModalId'
-
-const insertForParameter = (
-  argument: ScriptArgument,
-  inserts: ScriptInsert[]
-) => {
-  const insert = inserts.find((i) =>
-    i.scriptArgs.find((a) => a.name === argument.name)
-  )
-  if (insert) {
-    return insert.id
-  }
-  return null
-}
+import { useParameterOverrides } from '../lib/useParameterOverrides'
+import { useWaypointCalculations } from '../lib/useWaypointCalculations'
+import { useInsertTempMission } from '../lib/useInsertTempMission'
 
 export interface MissionModalProps {
   onClose: () => void
@@ -59,25 +34,7 @@ const onFocusWaypoint: WaypointTableProps['onFocusWaypoint'] = (index) => {
   console.log(index)
 }
 
-const parseMissionPath = (mission?: string) => {
-  const path = mission?.split('/') ?? ''
-  const category = path?.length > 1 ? path[0] : ''
-  const name = (path?.length === 1 ? path[0] : path[1]).split('.')[0]
-  return { category, name }
-}
-
-const convertMissionDataToListItem =
-  (vehicleName: string) => (mission: MissionListItem) => {
-    const { category, name } = parseMissionPath(mission.path)
-    return {
-      id: mission.path,
-      category,
-      name,
-      task: '',
-      description: mission.description,
-      vehicle: vehicleName,
-    }
-  }
+const extractNum = (v: string | undefined) => v?.match(/-?\d+(?:\.\d+)?/)?.[0]
 
 const MissionModal: React.FC<MissionModalProps> = ({
   onClose: handleClose,
@@ -89,39 +46,8 @@ const MissionModal: React.FC<MissionModalProps> = ({
     handleWaypointsUpdate([])
     handleClose?.()
   }, [handleClose, handleWaypointsUpdate])
-  const [estDistance, setEstDistance] = useState<number | null>(null)
-  useEffect(() => {
-    const applicableWaypoints = updatedWaypoints.filter(
-      (w) =>
-        ![
-          w.lat?.toLowerCase() ?? 'nan',
-          w.lon?.toLocaleLowerCase() ?? 'nan',
-        ].includes('nan')
-    )
-    if (applicableWaypoints.length > 0) {
-      const newDistance = applicableWaypoints.reduce((acc, curr, index) => {
-        if (index === 0) {
-          return acc
-        }
-        const prev = applicableWaypoints[index - 1]
-        return (
-          acc +
-          distance(
-            point([Number(curr.lat ?? 0), Number(curr.lon ?? 0)]),
-            point([Number(prev.lat ?? 0), Number(prev.lon ?? 0)]),
-            { units: 'kilometers' }
-          )
-        )
-      }, 0)
-      if (newDistance !== estDistance) {
-        setEstDistance(newDistance)
-      }
-    } else {
-      if (estDistance) {
-        setEstDistance(null)
-      }
-    }
-  }, [estDistance, setEstDistance, updatedWaypoints])
+
+  const { estDistance } = useWaypointCalculations(updatedWaypoints)
 
   // Query param state
   const router = useRouter()
@@ -130,23 +56,11 @@ const MissionModal: React.FC<MissionModalProps> = ({
   const vehicleName = params[0]
 
   // Network supplied data
-  const { data: vehicles } = useVehicleNames({ refresh: 'n' })
+  const { data: vehicleInfo } = useSiteConfig()
+  const vehicles = vehicleInfo?.vehicleNames ?? []
   const { data: alternativeAddresses } = useSbdOutgoingAlternativeAddresses({})
-  const { data: missionData } = useMissionList()
   const { data: unitsData } = useUnits()
-  const { data: frequentRunsData } = useFrequentRuns(
-    {
-      vehicle: vehicleName,
-    },
-    { enabled: !!vehicleName }
-  )
-  const { data: recentRunsData } = useRecentRuns(
-    {
-      vehicles: vehicles ?? [],
-      from: DateTime.now().minus({ days: 60 }).toISODate(),
-    },
-    { enabled: !!vehicles }
-  )
+
   const {
     mutate: createCommand,
     isLoading: sendingCommand,
@@ -169,85 +83,117 @@ const MissionModal: React.FC<MissionModalProps> = ({
     }
   })
 
-  const missionCategories = [
-    {
-      id: 'Recent Runs',
-      name: 'Recent Runs',
-    },
-    {
-      id: 'Frequent Runs',
-      name: 'Frequent Runs',
-    },
-    ...sortByProperty({
-      sortProperty: 'name',
-      arrOfObj:
-        missionData?.list
-          ?.map((mission) => {
-            const { category } = parseMissionPath(mission.path)
-            return {
-              id: category,
-              name: category === '' ? 'Default' : category,
-            }
-          })
-          .filter(
-            (mission, index, self) =>
-              self.findIndex((m) => m.id === mission.id) === index
-          ) ?? [],
-    }),
-  ]
-
-  const recentRuns: MissionTableProps['missions'] =
-    recentRunsData
-      ?.map(({ mission, vehicleName: vehicle, isoTime, user }) => {
-        const { category, name } = parseMissionPath(mission)
-        return {
-          id: mission,
-          category,
-          name,
-          description: mission,
-          vehicle,
-          ranOn: capitalize(DateTime.fromISO(isoTime).toFormat('MMM. d yyyy')),
-          ranBy: capitalizeEach(user ?? ''),
-          recentRun: true,
-        }
-      })
-      .filter(
-        (mission, index, s) => s.findIndex((m) => m.id === mission.id) === index
-      ) ?? []
-
-  const frequentRuns: MissionTableProps['missions'] =
-    (frequentRunsData
-      ?.map((d) => {
-        const relatedMission = missionData?.list?.find(
-          ({ path }) => path === d?.mission
-        )
-        return (
-          relatedMission && {
-            ...convertMissionDataToListItem(vehicleName)(relatedMission),
-            frequentRun: true,
-          }
-        )
-      })
-      .filter((i) => i) as MissionTableProps['missions']) ?? []
-
-  const missions: MissionTableProps['missions'] = [
-    ...recentRuns,
-    ...frequentRuns,
-    ...(missionData?.list?.map(convertMissionDataToListItem(vehicleName)) ??
-      []),
-  ]
-
   const [selectedMission, setSelectedMission] = useState<string | undefined>(
-    globalModalId?.meta?.mission ?? undefined
+    undefined
   )
-  const selectedMissionCategory = selectedMission?.split('/')[0]
-  const { data: selectedMissionData } = useScript(
-    {
-      path: selectedMission as string,
-      gitRef: missionData?.gitRef ?? 'master',
-    },
-    { enabled: !!selectedMission }
+  const [selectedMissionCategory, setSelectedMissionCategory] = useState<
+    string | undefined
+  >('Recent Runs')
+
+  const [showAllVehicleMissions, setShowAllVehicleMissions] = useState(false)
+
+  const {
+    recentRuns,
+    allMissions: missions,
+    selectedMissionData,
+    isRecentRunsLoading: recentRunsLoading,
+    missionCategories,
+  } = useMissionData({ vehicleName, selectedMission, showAllVehicleMissions })
+
+  // Insert temporary mission entry if rerunning from schedule history
+  const missionsWithTemporaryEntry = useInsertTempMission({
+    globalModalMeta: globalModalId?.meta,
+    missions,
+    recentRuns,
+    selectedMissionData,
+    vehicleName,
+  })
+
+  // Track if we've already auto-selected to prevent re-selecting when user changes selection
+  const hasAutoSelectedRef = useRef(false)
+
+  // Auto-select mission from globalModalId meta if provided (only once on initial load)
+  useEffect(() => {
+    const missionPath = globalModalId?.meta?.mission
+    const eventData = globalModalId?.meta?.eventData
+
+    // Reset the ref when modal closes (when globalModalId becomes null or changes)
+    if (!globalModalId?.id || globalModalId?.id !== 'newMission') {
+      hasAutoSelectedRef.current = false
+      return
+    }
+
+    if (
+      missionPath &&
+      missionsWithTemporaryEntry &&
+      missionsWithTemporaryEntry.length > 0 &&
+      !hasAutoSelectedRef.current
+    ) {
+      // Find mission by matching id (which is the mission path)
+      const matchingMission = missionsWithTemporaryEntry.find(
+        (m) => m.id === missionPath
+      )
+      // Only auto-select once per modal open
+      if (matchingMission) {
+        hasAutoSelectedRef.current = true
+        setSelectedMission(matchingMission.id)
+        // If rerunning from schedule history (has eventData), always use 'Recent Runs'
+        if (eventData) {
+          setSelectedMissionCategory('Recent Runs')
+        } else if (matchingMission.recentRun) {
+          setSelectedMissionCategory('Recent Runs')
+        } else if (matchingMission.frequentRun) {
+          setSelectedMissionCategory('Frequent Runs')
+        } else if (matchingMission.category) {
+          // Set category based on mission's category
+          const categoryId = missionCategories.find(
+            (c) =>
+              c.name === matchingMission.category ||
+              c.id === matchingMission.category
+          )?.id
+          if (categoryId) {
+            setSelectedMissionCategory(categoryId)
+          }
+        }
+      }
+    }
+  }, [
+    globalModalId?.id,
+    globalModalId?.meta?.mission,
+    globalModalId?.meta?.eventData,
+    missionsWithTemporaryEntry,
+    missionCategories,
+  ])
+
+  // Get recent runs from missionsWithTemporaryEntry (includes temporary mission if rerunning)
+  const recentRunsWithTemp = missionsWithTemporaryEntry.filter(
+    (m) => m.recentRun
   )
+
+  const {
+    parameters,
+    safetyParams,
+    commsParams,
+    parametersWithOverrides,
+    commsParamsWithOverrides,
+    safetyParamsWithOverrides,
+  } = useParameterOverrides({
+    selectedMissionData,
+    selectedMission,
+    selectedMissionCategory,
+    recentRuns: recentRunsWithTemp,
+  })
+
+  const handleSelectMission = (id?: string | null) => {
+    setSelectedMission(id ?? undefined)
+  }
+
+  const handleSelectMissionCategory = (category?: string) => {
+    if (selectedMissionCategory !== category) {
+      setSelectedMission(undefined)
+      setSelectedMissionCategory(category)
+    }
+  }
 
   const waypoints: WaypointTableProps['waypoints'] =
     selectedMissionData?.latLonNamePairs?.map(({ latName, lonName }, index) => {
@@ -257,11 +203,37 @@ const MissionModal: React.FC<MissionModalProps> = ({
       const lonArg = selectedMissionData.scriptArgs.find(
         (arg) => arg.name === lonName
       )
+
+      let latValue: string | undefined = latArg?.value
+      let lonValue: string | undefined = lonArg?.value
+
+      // Use waypoint overrides from the selected mission in recent runs including temporary mission if rerunning
+      if (selectedMissionCategory === 'Recent Runs' && selectedMission) {
+        const selectedRun = missionsWithTemporaryEntry.find(
+          (run) => run.id === selectedMission && run.recentRun
+        ) as any
+
+        if (selectedRun?.waypointOverrides?.length) {
+          const latOverride = selectedRun.waypointOverrides.find(
+            (o: { name: string; value: string }) => o.name === latName
+          )
+          const lonOverride = selectedRun.waypointOverrides.find(
+            (o: { name: string; value: string }) => o.name === lonName
+          )
+
+          const latNum = extractNum(latOverride?.value)
+          const lonNum = extractNum(lonOverride?.value)
+
+          if (latNum) latValue = latNum
+          if (lonNum) lonValue = lonNum
+        }
+      }
+
       return {
         latName,
         lonName,
-        lat: latArg?.value,
-        lon: lonArg?.value,
+        lat: latValue,
+        lon: lonValue,
         description:
           latArg?.description ??
           `Latitude of ${makeOrdinal(index + 1)} waypoint. If NaN, waypoint
@@ -270,65 +242,17 @@ const MissionModal: React.FC<MissionModalProps> = ({
     }) ?? []
 
   const { data: stationsData } = useStations({ enabled: waypoints.length > 0 })
+  // GeoJSON coordinates are in [lon, lat] order
   const stations: WaypointTableProps['stations'] =
     stationsData?.map(({ name, geojson }) => ({
       name,
-      lat: `${geojson.geometry.coordinates[0]}`,
-      lon: `${geojson.geometry.coordinates[1]}`,
+      lat: `${geojson.geometry.coordinates[1]}`,
+      lon: `${geojson.geometry.coordinates[0]}`,
     })) ?? []
 
-  const reservedParams: string[] = [
-    selectedMissionData?.inserts
-      ?.filter(({ id }) =>
-        [/comms/i, /standard envelope/i].some((r) => r.test(id))
-      )
-      .map(({ scriptArgs }) => scriptArgs.map((arg) => arg.name)) ?? [],
-    selectedMissionData?.latLonNamePairs?.map(({ latName, lonName }) => [
-      latName,
-      lonName,
-    ]) ?? [],
-  ]
-    .flat(2)
-    .filter((i) => i)
+  const [previewText, setPreviewText] = useState<string | undefined>()
 
-  const commsInsert = selectedMissionData?.inserts?.find(({ id }) =>
-    id.match(/comms/i)
-  )
-  const safetyInsert = selectedMissionData?.inserts?.find(({ id }) =>
-    id.match(/envelope/i)
-  )
-
-  const parameters: ParameterProps[] =
-    [
-      selectedMissionData?.inserts?.map((i) => i.scriptArgs).flat(),
-      selectedMissionData?.scriptArgs.filter(
-        ({ name }) => !reservedParams.includes(name)
-      ),
-    ]
-      .flat()
-      .map(
-        (arg) =>
-          ({
-            description: arg?.description ?? '',
-            name: arg?.name,
-            unit: arg?.unit,
-            value: arg?.value,
-            insert:
-              arg &&
-              insertForParameter(arg, selectedMissionData?.inserts ?? []),
-          } as ParameterProps)
-      ) ?? []
-
-  const commsParams =
-    commsInsert?.scriptArgs.map((i) => ({ ...i, insert: commsInsert.id })) ?? []
-
-  const safetyParams =
-    safetyInsert?.scriptArgs.map((i) => ({ ...i, insert: safetyInsert.id })) ??
-    []
-
-  const [commandText, setCommandText] = useState<string | undefined>()
-
-  const handleSchedule: MissionModalViewProps['onSchedule'] = ({
+  const handleSchedule: MissionModalViewProps['onSchedule'] = async ({
     confirmedVehicle,
     parameterOverrides,
     selectedMissionId,
@@ -337,14 +261,23 @@ const MissionModal: React.FC<MissionModalProps> = ({
     alternateAddress,
     notes,
     preview,
+    commType,
+    timeout,
   }) => {
-    const { commandText, schedDate, previewSbd } = makeMissionCommand({
+    const {
+      commandText: formattedCommandText,
+      schedDate,
+      previewSbd,
+    } = makeMissionCommand({
       mission: selectedMissionId as string,
       parameterOverrides,
-      scheduleMethod: scheduleMethod as ScheduleOption,
-      specifiedTime: specifiedTime ?? undefined,
+      scheduleMethod,
+      specifiedLocalTime: specifiedTime ?? undefined,
+      units: unitsData,
     })
-    setCommandText(previewSbd)
+
+    setPreviewText(previewSbd)
+
     if (!preview) {
       createCommand({
         vehicle: confirmedVehicle?.toLowerCase() ?? '',
@@ -353,12 +286,12 @@ const MissionModal: React.FC<MissionModalProps> = ({
         runCommand: 'y',
         schedDate,
         destinationAddress: alternateAddress ?? undefined,
-        commandText: commandText ?? '',
+        commandText: formattedCommandText ?? '',
+        via: commType,
+        timeout,
       })
     }
   }
-
-  const defaultOverrides: ParameterProps[] = []
 
   return (
     <MissionModalView
@@ -383,19 +316,31 @@ const MissionModal: React.FC<MissionModalProps> = ({
       commsParams={commsParams}
       onCancel={onClose}
       onSchedule={handleSchedule}
-      missions={missions ?? []}
-      onSelectMission={setSelectedMission}
+      missions={missionsWithTemporaryEntry ?? []}
+      onSelectMission={handleSelectMission}
       waypoints={waypoints}
       stations={stations}
       onFocusWaypoint={onFocusWaypoint}
       vehicles={vehicles}
       loading={sendingCommand}
-      commandText={commandText}
+      missionsLoading={recentRunsLoading}
+      previewText={previewText}
       unitOptions={unitsData}
       selectedId={selectedMission}
+      onSelectMissionCategory={handleSelectMissionCategory}
       selectedMissionCategory={selectedMissionCategory}
       defaultSearchText={globalModalId?.meta?.mission ?? ''}
-      defaultOverrides={defaultOverrides}
+      showAllVehicleMissions={showAllVehicleMissions}
+      onShowAllVehicleMissions={setShowAllVehicleMissions}
+      defaultOverrides={
+        selectedMissionCategory === 'Recent Runs'
+          ? [
+              ...parametersWithOverrides,
+              ...commsParamsWithOverrides,
+              ...safetyParamsWithOverrides,
+            ]
+          : undefined
+      }
     />
   )
 }

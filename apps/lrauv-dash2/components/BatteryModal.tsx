@@ -34,15 +34,11 @@ export const BatteryModal: React.FC<BatteryModalProps> = ({
     error,
   } = useChartData({
     vehicle: vehicleName,
-    from: DateTime.fromMillis(deploymentStartTime).toISO(),
-    to: deploymentEndTime
-      ? DateTime.fromMillis(deploymentEndTime).toISO()
-      : undefined,
+    from: deploymentStartTime,
+    to: deploymentEndTime ? deploymentEndTime : undefined,
   })
 
   const data = chartData?.find((c) => c.name === 'battery_charge')
-  console.log(chartData)
-  console.log(data)
 
   const timeRemaining = data?.times
     ? (Math.max(...(data?.times ?? [])) - Math.min(...(data?.times ?? []))) /

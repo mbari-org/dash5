@@ -1,7 +1,6 @@
-import { useEffect } from 'react'
 import {
-  CommandModal as CommandModalView,
-  CommandModalProps as CommandModalViewProps,
+  CommandModalView,
+  CommandModalViewProps,
   mapValues,
 } from '@mbari/react-ui'
 import {
@@ -14,8 +13,9 @@ import {
   useMissionList,
   useScript,
   useCreateCommand,
-  useVehicleNames,
   useSbdOutgoingAlternativeAddresses,
+  CreateCommandParams,
+  useSiteConfig,
 } from '@mbari/api-client'
 import { makeCommand } from '../lib/makeCommand'
 import { useRouter } from 'next/router'
@@ -39,11 +39,7 @@ export const CommandModal: React.FC<CommandModalProps> = ({
   const [currentCommandId, setCurrentCommand] = useState<
     string | null | undefined
   >(defaultCommand)
-  const [configVariable, setConfigVariable] = useState<Record<string, string>>({
-    Module: '',
-    Component: '',
-    Element: '',
-  })
+
   const [variable, setVariable] = useState<Record<string, string>>({
     Variable: '',
     Mission: '',
@@ -58,24 +54,28 @@ export const CommandModal: React.FC<CommandModalProps> = ({
   const vehicleName = params[0]
 
   // Network Mutations
-  const {
-    mutate: createCommand,
-    isLoading: sendingCommand,
-    isSuccess: commandSent,
-    isError: commandError,
-  } = useCreateCommand()
+  const { mutate: createCommand, isLoading: sendingCommand } =
+    useCreateCommand()
 
-  useEffect(() => {
-    if (commandSent) {
-      toast.success('Command sent')
-      onClose()
-    } else if (commandError) {
-      toast.error(`Error sending command: ${commandError}`)
-    }
-  }, [commandSent, commandError, onClose])
+  const onCommandSuccess = () => {
+    toast.success('Command sent')
+    onClose()
+  }
+
+  const onCommandError = (error: unknown) => {
+    toast.error(`Error sending command: ${error}`)
+  }
+
+  const sendCommand = (params: CreateCommandParams) => {
+    createCommand(params, {
+      onSuccess: onCommandSuccess,
+      onError: onCommandError,
+    })
+  }
 
   // Network supplied data
-  const { data: vehicles } = useVehicleNames({ refresh: 'n' })
+  const { data: vehicleInfo } = useSiteConfig()
+  const vehicles = vehicleInfo?.vehicleNames ?? []
   const { data: unitsData } = useUnits()
   const { data: commandData } = useCommands()
   const { data: recentCommandsData } = useRecentCommands({
@@ -101,10 +101,12 @@ export const CommandModal: React.FC<CommandModalProps> = ({
     argType,
     value
   ) => {
-    if (argType === 'ARG_CONFIG_VARIABLE') {
-      setConfigVariable(mapValues(value))
-    }
-    if (argType === 'ARG_VARIABLE') {
+    if (
+      argType === 'ARG_VARIABLE' ||
+      argType === 'ARG_COMPONENT' ||
+      argType === 'ARG_CONFIG_VARIABLE' ||
+      argType === 'ARG_MISSION'
+    ) {
       setVariable(mapValues(value))
     }
   }
@@ -113,20 +115,25 @@ export const CommandModal: React.FC<CommandModalProps> = ({
     { name: 'Module', options: moduleInfoData?.moduleNames ?? [] },
     {
       name: 'Component',
-      options: configVariable.Module
-        ? Object.keys(moduleInfoData?.outputUris[config.Module ?? ''] ?? {})
+      options: config?.Module
+        ? moduleInfoData?.sensors?.[config?.Module ?? '']
+            ?.map((s) => s.string)
+            ?.sort() ?? []
         : [],
     },
     {
       name: 'Element',
-      options: config.Component
-        ? moduleInfoData?.outputUris[config.Module ?? '']?.[
-            config.Component
-          ]?.map((e) => e.string) ?? []
-        : [],
+      options:
+        config?.Module && config?.Component
+          ? moduleInfoData?.uris?.[config?.Module ?? '']?.[
+              config?.Component ?? ''
+            ]
+              ?.map((e) => e.string)
+              ?.sort() ?? []
+          : [],
     },
   ]
-  const moduleNames = makeModuleNames(configVariable)
+  const moduleNames = makeModuleNames(variable)
 
   const units = unitsData?.map((u) => u.name) ?? []
 
@@ -160,18 +167,24 @@ export const CommandModal: React.FC<CommandModalProps> = ({
     specifiedTime,
     alternateAddress,
     notes,
+    commType,
+    timeout,
   }) => {
-    const { schedDate } = makeCommand({
+    const { commandText: formattedCommandText, schedDate } = makeCommand({
       commandText,
       scheduleMethod,
-      specifiedTime,
+      specifiedLocalTime: specifiedTime,
+      units: unitsData,
     })
-    createCommand({
+
+    sendCommand({
       vehicle: confirmedVehicle?.toLowerCase() ?? '',
       commandNote: notes ?? '',
       schedDate,
       destinationAddress: alternateAddress ?? undefined,
-      commandText,
+      commandText: formattedCommandText,
+      via: commType,
+      timeout,
     })
   }
 
@@ -208,6 +221,8 @@ export const CommandModal: React.FC<CommandModalProps> = ({
       break
   }
 
+  const missionOptions = missionData?.list?.map((m) => m.path)?.sort() ?? []
+
   return (
     <CommandModalView
       className={className}
@@ -224,6 +239,12 @@ export const CommandModal: React.FC<CommandModalProps> = ({
       syntaxVariations={syntaxVariations ?? []}
       units={[{ name: 'Units', options: units }]}
       universals={[{ name: 'Universal', options: universalData ?? [] }]}
+      missions={[
+        {
+          name: 'Mission',
+          options: missionOptions,
+        },
+      ]}
       decimationTypes={[{ name: 'Decimation Type', options: decimationTypes }]}
       serviceTypes={[{ name: 'Service Type', options: serviceTypes }]}
       variableTypes={variableTypes}

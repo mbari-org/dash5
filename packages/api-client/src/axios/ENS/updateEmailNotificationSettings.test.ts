@@ -7,7 +7,8 @@ import {
 
 let params: UpdateEmailNotificationSettingsParams = {
   email: 'example',
-  plainText: 'example',
+  plainText: 'y',
+  details: {},
 }
 
 const mockResponse = { value: 'some-value' }

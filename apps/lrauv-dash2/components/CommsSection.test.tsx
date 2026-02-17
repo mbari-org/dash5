@@ -146,4 +146,21 @@ describe('CommsSection', () => {
       'text-indigo-600'
     )
   })
+
+  test('should display timestamps with seconds (H:mm:ss)', async () => {
+    render(
+      <MockProviders queryClient={new QueryClient()}>
+        <CommsSection vehicleName="makai" from="" />
+      </MockProviders>
+    )
+    await waitFor(() => {
+      screen.getByText(/One More/i)
+    })
+    const timeElements = screen.getAllByLabelText('time')
+    expect(timeElements.length).toBeGreaterThan(0)
+    const timeFormat = /^\d{1,2}:\d{2}:\d{2}$/
+    timeElements.forEach((el) => {
+      expect(el.textContent).toMatch(timeFormat)
+    })
+  })
 })

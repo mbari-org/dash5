@@ -1,10 +1,16 @@
 // Use scaffold axiosBase to generate the resources imported below.
 import { getInstance } from '../getInstance'
 import { RequestConfig } from '../types'
+import { EmailNotificationLine } from './getEmailNotificationSettings'
 
 export interface UpdateEmailNotificationSettingsParams {
   email: string
-  plainText: string
+  plainText: 'y' | 'n'
+  details: {
+    vehiclesEnabled?: string[]
+    notifLines?: EmailNotificationLine[]
+    [key: string]: unknown
+  }
 }
 
 export interface UpdateEmailNotificationSettingsResponse {
@@ -12,7 +18,7 @@ export interface UpdateEmailNotificationSettingsResponse {
 }
 
 export const updateEmailNotificationSettings = async (
-  params: UpdateEmailNotificationSettingsParams,
+  { email, plainText, details }: UpdateEmailNotificationSettingsParams,
   { debug, instance = getInstance(), ...config }: RequestConfig = {}
 ) => {
   const url = '/ens'
@@ -21,6 +27,10 @@ export const updateEmailNotificationSettings = async (
     console.debug(`PUT ${url}`)
   }
 
-  const response = await instance.put(url, params, config)
-  return response.data as UpdateEmailNotificationSettingsResponse
+  const response = await instance.put(url, details, {
+    ...config,
+    params: { email, plainText },
+  })
+  return (response.data?.result ??
+    response.data) as UpdateEmailNotificationSettingsResponse
 }

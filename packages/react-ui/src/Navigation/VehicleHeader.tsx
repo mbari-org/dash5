@@ -1,8 +1,11 @@
-import React from 'react'
+import React, { useCallback, useState } from 'react'
 import clsx from 'clsx'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { faChevronDown, faChevronLeft } from '@fortawesome/free-solid-svg-icons'
-import { DateTime } from 'luxon'
+import { ToolTip } from '../Navigation'
+import { createLogger } from '@mbari/utils'
+
+const logger = createLogger('VehicleHeader')
 
 export interface VehicleHeaderProps {
   className?: string
@@ -12,7 +15,7 @@ export interface VehicleHeaderProps {
   color: string
   onToggle: () => void
   open?: boolean
-  deployedAt?: number
+  timeSpanSinceDeployment?: string
 }
 
 const styles = {
@@ -28,11 +31,11 @@ export const VehicleHeader: React.FC<VehicleHeaderProps> = ({
   className,
   style,
   name,
-  color,
+  color, // Keep accepting color as a prop
   deployment,
   onToggle,
   open,
-  deployedAt,
+  timeSpanSinceDeployment,
 }) => {
   return (
     <div className={clsx('', className)} style={style}>
@@ -42,19 +45,21 @@ export const VehicleHeader: React.FC<VehicleHeaderProps> = ({
         onClick={onToggle}
         data-testid="vehicleHeaderButton"
       >
-        <span
-          className={styles.color}
+        {/* Simplified color indicator without interactive behaviors */}
+        <div
+          className={clsx(styles.color)}
           style={{ backgroundColor: color }}
           data-testid="color"
         />
         <span className={styles.label}>
           {name}: {deployment}
         </span>
-        {deployedAt ? (
+        {timeSpanSinceDeployment ? (
           <span className={styles.secondary}>
-            began {DateTime.fromSeconds(deployedAt).toRelative()}
+            began {timeSpanSinceDeployment}
           </span>
         ) : null}
+
         <FontAwesomeIcon
           icon={open ? faChevronDown : faChevronLeft}
           className={styles.icon}

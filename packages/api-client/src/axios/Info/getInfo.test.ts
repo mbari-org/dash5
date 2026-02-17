@@ -6,6 +6,10 @@ let params: GetInfoParams = {}
 
 export const mockResponse = {
   result: {
+    vehicleBasicInfos: [
+      { vehicleName: 'tethys', color: '#00AAFF' },
+      { vehicleName: 'aku', color: '#FFAA00' },
+    ],
     vehicleNames: [
       'ahi',
       'aku',
@@ -200,6 +204,15 @@ describe('getInfo', () => {
   it('should return the mocked value when successful', async () => {
     const response = await getInfo(params)
     expect(response).toEqual(mockResponse.result)
+  })
+
+  it('should include vehicleBasicInfos with vehicleName and color', async () => {
+    const response = await getInfo(params)
+    expect(Array.isArray(response.vehicleBasicInfos)).toBe(true)
+    expect(response.vehicleBasicInfos).toEqual([
+      { vehicleName: 'tethys', color: '#00AAFF' },
+      { vehicleName: 'aku', color: '#FFAA00' },
+    ])
   })
 
   it('should throw when unsuccessful', async () => {

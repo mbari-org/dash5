@@ -9,8 +9,13 @@ import { TethysApiProvider } from '@mbari/api-client'
 import { UIProvider } from '@mbari/react-ui'
 import { ReactQueryDevtools } from 'react-query/devtools'
 import { Toaster } from 'react-hot-toast'
+import { MarkerProvider } from '../components/MarkerContext'
+import { CookiesProvider } from 'react-cookie'
 import useSessionToken from '../lib/useSessionToken'
+import { GoogleMapsProvider } from '../components/GoogleMapsProvider'
+import { VehicleColorsProvider } from '../components/VehicleColorsContext'
 import '../styles/vehicle.css'
+import '../styles/docs.css'
 
 // prevent font awesome from auto-adding styles.
 config.autoAddCss = false
@@ -24,16 +29,24 @@ function MyApp({ Component, pageProps }: AppProps) {
   const handleSessionEnd = () => setSessionToken('')
   return (
     <QueryClientProvider client={queryClient}>
-      <UIProvider>
-        <TethysApiProvider
-          baseURL={process.env.NEXT_PUBLIC_BASE_URL}
-          sessionToken={sessionToken}
-          setSessionToken={setSessionToken}
-          onSessionEnd={handleSessionEnd}
-        >
-          <Component {...pageProps} />
-        </TethysApiProvider>
-      </UIProvider>
+      <CookiesProvider defaultSetOptions={{ path: '/' }}>
+        <UIProvider>
+          <VehicleColorsProvider>
+            <MarkerProvider>
+              <TethysApiProvider
+                baseURL={process.env.NEXT_PUBLIC_BASE_URL}
+                sessionToken={sessionToken}
+                setSessionToken={setSessionToken}
+                onSessionEnd={handleSessionEnd}
+              >
+                <GoogleMapsProvider>
+                  <Component {...pageProps} />
+                </GoogleMapsProvider>
+              </TethysApiProvider>
+            </MarkerProvider>
+          </VehicleColorsProvider>
+        </UIProvider>
+      </CookiesProvider>
       <Toaster />
       <ReactQueryDevtools initialIsOpen={false} />
     </QueryClientProvider>

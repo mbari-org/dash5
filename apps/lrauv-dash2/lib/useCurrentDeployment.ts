@@ -11,7 +11,6 @@ const useCurrentDeployment = () => {
   const { data: lastDeployment, isLoading } = useLastDeployment(
     {
       vehicle: vehicle as string,
-      to: new Date().toISOString(),
     },
     { staleTime: 5 * 60 * 1000, enabled: !!vehicle && !deploymentId }
   )
@@ -27,7 +26,13 @@ const useCurrentDeployment = () => {
 
   const deployment = deploymentData?.[0] ?? lastDeployment
 
-  return { vehicle, deployment, isLoading: isLoading || deploymentsLoading }
+  // Also return lastDeployment since it also contains the launch and recover events, which useDeployments does not
+  return {
+    vehicle,
+    deployment,
+    lastDeployment,
+    isLoading: isLoading || deploymentsLoading,
+  }
 }
 
 export default useCurrentDeployment
