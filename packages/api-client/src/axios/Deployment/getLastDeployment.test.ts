@@ -4,7 +4,6 @@ import { getLastDeployment, GetLastDeploymentParams } from './getLastDeployment'
 
 let params: GetLastDeploymentParams = {
   vehicle: 'opah',
-  to: 'example',
 }
 
 const mockResponse = {

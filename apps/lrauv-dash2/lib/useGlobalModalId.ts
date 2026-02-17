@@ -1,4 +1,5 @@
 import { atom, useRecoilState } from 'recoil'
+import type { NewDocRequest } from '../components/docs/types/docTypes'
 
 export type ModalId =
   | 'login'
@@ -9,6 +10,7 @@ export type ModalId =
   | 'editDeployment'
   | 'sendNote'
   | 'espSamples'
+  | 'addDocument'
   | 'editDocument'
   | 'attachDocument'
   | 'detachDocument'
@@ -19,6 +21,8 @@ export type ModalId =
   | 'vehicleCharts'
   | 'vehicleComms'
   | 'battery'
+  | 'color'
+  | 'emailNotifications'
   | null
 
 export interface GlobalModalMetaData {
@@ -26,6 +30,7 @@ export interface GlobalModalMetaData {
   docInstanceId?: number | null
   deploymentId?: number | null
   vehicleName?: string | null
+  color?: string | null
   deploymentName?: string | null
   documentName?: string | null
   duplicate?: boolean
@@ -34,6 +39,12 @@ export interface GlobalModalMetaData {
   command?: string | null
   mission?: string | null
   params?: string | null
+  newDocRequest?: NewDocRequest
+  eventData?: string | null
+  eventUser?: string | null
+  eventNote?: string | null
+  eventIsoTime?: string | null
+  eventVehicleName?: string | null
 }
 
 export interface GlobalModalState {

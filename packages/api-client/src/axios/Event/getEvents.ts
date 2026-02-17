@@ -31,8 +31,8 @@ export type EventType =
 
 export interface GetEventsParams {
   vehicles: string[]
-  from: string
-  to?: string
+  from: number // milliseconds since epoch
+  to?: number // milliseconds since epoch
   eventTypes?: EventType[]
   limit?: number
   noteMatches?: string

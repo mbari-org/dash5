@@ -42,14 +42,14 @@ const MouseCoordinates: React.FC<MouseCoordinatesProps> = ({
         )}`
 
   const handleDepth = useCallback(() => {
-    if (window.location.hostname.match(/localhost/i)) {
-      toast(
-        `Developer debug generating example depth for ${formattedCoordinates}`,
-        { icon: '⚠️', position: 'bottom-right' }
-      )
-      setDepth({ depth: Math.random() * 100, coordinate: formattedCoordinates })
-      return
-    }
+    // if (window.location.hostname.match(/localhost/i)) {
+    //   toast(
+    //     `Developer debug generating example depth for ${formattedCoordinates}`,
+    //     { icon: '⚠️', position: 'bottom-right' }
+    //   )
+    //   setDepth({ depth: Math.random() * 100, coordinate: formattedCoordinates })
+    //   return
+    // }
     if (mousePoint?.lat && mousePoint.lng) {
       onRequestDepth?.(mousePoint?.lat, mousePoint?.lng).then((depth) =>
         setDepth({ depth, coordinate: formattedCoordinates })

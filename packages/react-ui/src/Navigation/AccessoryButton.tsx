@@ -12,6 +12,7 @@ export interface AccessoryButtonProps extends ButtonProps {
   icon?: IconProp
   reverse?: boolean
   isActive?: boolean
+  isSecondaryActive?: boolean
 }
 
 export const AccessoryButton: React.FC<AccessoryButtonProps> = ({
@@ -21,6 +22,7 @@ export const AccessoryButton: React.FC<AccessoryButtonProps> = ({
   secondary,
   reverse,
   isActive,
+  isSecondaryActive,
   ...props
 }) => {
   return (
@@ -45,7 +47,9 @@ export const AccessoryButton: React.FC<AccessoryButtonProps> = ({
         {secondary && (
           <>
             {' / '}
-            <span>{secondary}</span>
+            <span className={clsx(isSecondaryActive && 'text-teal-500')}>
+              {secondary}
+            </span>
           </>
         )}
       </div>

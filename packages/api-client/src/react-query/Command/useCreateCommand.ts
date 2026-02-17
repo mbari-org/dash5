@@ -17,6 +17,11 @@ export const useCreateCommand = (config?: RequestConfig) => {
     {
       onSuccess: () => {
         queryClient.invalidateQueries(['event', 'events'])
+        queryClient.invalidateQueries([
+          'deployment',
+          'deployments',
+          'commandStatus',
+        ])
       },
     }
   )

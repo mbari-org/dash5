@@ -1,0 +1,32 @@
+services:
+  # The existing Nginx container (your Next.js app)
+  dash5:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile
+    ports:
+      - '4050:80'
+    command: ["nginx", "-g", "daemon off;"]
+    init: true
+    container_name: dash5-app
+    restart: always
+    networks:
+      - dash5-network
+
+  # Apache container that will proxy to the Nginx container
+  apache:
+    image: httpd:2.4
+    ports:
+      - '8084:80'
+    volumes:
+      - ./apache/httpd.conf:/usr/local/apache2/conf/httpd.conf
+      - ./apache/apache-vhost.conf:/usr/local/apache2/conf/extra/apache-vhost.conf
+    container_name: dash5-apache
+    depends_on:
+      - dash5
+    networks:
+      - dash5-network
+
+networks:
+  dash5-network:
+    driver: bridge

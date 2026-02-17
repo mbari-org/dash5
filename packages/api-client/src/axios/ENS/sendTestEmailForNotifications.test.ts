@@ -7,7 +7,7 @@ import {
 
 let params: SendTestEmailForNotificationsParams = {
   email: 'example',
-  plainText: 'example',
+  plainText: 'y',
 }
 
 const mockResponse = { value: 'some-value' }

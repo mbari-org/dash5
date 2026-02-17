@@ -21,9 +21,6 @@ const args: LogCellProps = {
   date: '2020-07-21',
   log: `Got command configSet\nPAR_licor.loadAtStartup 1 bool persist;`,
   isUpload: true,
-  onSelect: () => {
-    console.log('event fired')
-  },
 }
 
 export const Standard = Template.bind({})

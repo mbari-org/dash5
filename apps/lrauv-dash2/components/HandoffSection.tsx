@@ -9,8 +9,8 @@ const ON_CALL_NOTE = 'Signing in as On-Call'
 
 interface HandoffSectionProps {
   vehicleName: string
-  from: string
-  to?: string
+  from: number // milliseconds since epoch
+  to?: number
   authenticated?: boolean
   activeDeployment?: boolean
 }

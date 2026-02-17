@@ -4,7 +4,7 @@ import { RequestConfig } from '../types'
 
 export interface SendTestEmailForNotificationsParams {
   email: string
-  plainText: string
+  plainText: 'y' | 'n'
 }
 
 export interface SendTestEmailForNotificationsResponse {
@@ -21,6 +21,7 @@ export const sendTestEmailForNotifications = async (
     console.debug(`POST ${url}`)
   }
 
-  const response = await instance.post(url, params, config)
-  return response.data as SendTestEmailForNotificationsResponse
+  const response = await instance.post(url, null, { ...config, params })
+  return (response.data?.result ??
+    response.data) as SendTestEmailForNotificationsResponse
 }

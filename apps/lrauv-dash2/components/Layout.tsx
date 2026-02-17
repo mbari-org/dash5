@@ -3,7 +3,7 @@ import Head from 'next/head'
 import { PrimaryToolbar, ProfileDropdown } from '@mbari/react-ui'
 import { useTethysApiContext } from '@mbari/api-client'
 import { useState } from 'react'
-import Image from 'next/image'
+import Image from 'next/legacy/image'
 import VehicleDeploymentDropdown from '../components/VehicleDeploymentDropdown'
 import useTrackedVehicles from '../lib/useTrackedVehicles'
 import useGlobalModalId, { GlobalModalState } from '../lib/useGlobalModalId'
@@ -17,6 +17,7 @@ import DeploymentDetails from './DeploymentDetails'
 import Reassignment from './Reassignment'
 import SendNote from './SendNote'
 import DocumentInstanceModal from './DocumentInstanceModal'
+import AddDocumentModal from './AddDocumentModal'
 import AttachmentModal from './AttachmentModal'
 import DetachModal from './DetachModal'
 import MissionModal from './MissionModal'
@@ -28,6 +29,9 @@ import { CommsModal } from './CommsModal'
 import { ESPModal } from './ESPModal'
 import { BatteryModal } from './BatteryModal'
 import { useTethysSubscription } from '../lib/useWebSocketListeners'
+import { HexColorPicker } from 'react-colorful'
+import { useCookies } from 'react-cookie'
+import EmailNotificationsModal from './EmailNotificationsModal'
 
 const Layout: React.FC<{ children?: React.ReactNode }> = ({ children }) => {
   const [showLogin, setLogin] = useState(false)
@@ -89,7 +93,7 @@ const Layout: React.FC<{ children?: React.ReactNode }> = ({ children }) => {
 
   const vehicleName = router.query.deployment?.[0] ?? ''
   return (
-    <div className="flex h-screen w-screen flex-col">
+    <div className="flex h-screen min-h-screen w-screen flex-col">
       <Head>
         <title>LRAUV Dash Client</title>
         <meta
@@ -129,6 +133,13 @@ const Layout: React.FC<{ children?: React.ReactNode }> = ({ children }) => {
                   onDismiss={dismissDropdown}
                   options={[
                     {
+                      label: 'Email notifications',
+                      onSelect: () => {
+                        setGlobalModalId({ id: 'emailNotifications' })
+                        dismissDropdown()
+                      },
+                    },
+                    {
                       label: 'Logout',
                       onSelect: handleLogout,
                     },
@@ -155,6 +166,9 @@ const Layout: React.FC<{ children?: React.ReactNode }> = ({ children }) => {
         requireAuthentication(<NewDeployment onClose={setModal(null)} />)}
       {globalModalId?.id === 'editDocument' && (
         <DocumentInstanceModal onClose={setModal(null)} />
+      )}
+      {globalModalId?.id === 'addDocument' && (
+        <AddDocumentModal onClose={setModal(null)} />
       )}
       {globalModalId?.id === 'reassign' &&
         requireAuthentication(<Reassignment vehicleNames={trackedVehicles} />)}
@@ -203,6 +217,13 @@ const Layout: React.FC<{ children?: React.ReactNode }> = ({ children }) => {
       {globalModalId?.id === 'battery' && vehicleName.length > 0 && (
         <BatteryModal vehicleName={vehicleName} onClose={setModal(null)} />
       )}
+      {globalModalId?.id === 'emailNotifications' &&
+        requireAuthentication(
+          <EmailNotificationsModal onClose={setModal(null)} />
+        )}
+      {/* {globalModalId?.id === 'color' && vehicleName.length > 0 ? (
+        <ColorModal name={trackedVehicles[index]} color={color} />
+      ) : null} */}
     </div>
   )
 }

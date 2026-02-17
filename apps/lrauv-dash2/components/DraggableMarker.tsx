@@ -1,91 +1,692 @@
-import { useState, useRef, useMemo } from 'react'
-import { Marker } from 'react-leaflet'
+import { useRef, useState, useEffect, useCallback } from 'react'
+import { Marker, Popup, Tooltip, useMap } from 'react-leaflet'
 import L from 'leaflet'
-import mapMarker from './markers/mapMarker.svg'
-import mapMarker1 from './markers/mapMarker1.svg'
-import mapMarker2 from './markers/mapMarker2.svg'
-import mapMarker3 from './markers/mapMarker3.svg'
-import mapMarker4 from './markers/mapMarker4.svg'
-import mapMarker5 from './markers/mapMarker5.svg'
-import mapMarker6 from './markers/mapMarker6.svg'
-import mapMarker7 from './markers/mapMarker7.svg'
-import mapMarker8 from './markers/mapMarker8.svg'
-import mapMarker9 from './markers/mapMarker9.svg'
-import mapMarker10 from './markers/mapMarker10.svg'
-import mapMarker11 from './markers/mapMarker11.svg'
-import mapMarker12 from './markers/mapMarker12.svg'
-import mapMarker13 from './markers/mapMarker13.svg'
-import mapMarker14 from './markers/mapMarker14.svg'
-import mapMarker15 from './markers/mapMarker15.svg'
-import mapMarker16 from './markers/mapMarker16.svg'
-import mapMarker17 from './markers/mapMarker17.svg'
-import mapMarker18 from './markers/mapMarker18.svg'
-import mapMarker19 from './markers/mapMarker19.svg'
+import { divIcon } from 'leaflet'
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
+import {
+  faLocationDot,
+  faTrashCan,
+  faEdit,
+  faClose,
+  faPalette,
+  faStar,
+  faFlag,
+  faExclamationTriangle,
+} from '@fortawesome/free-solid-svg-icons'
+import { renderToString } from 'react-dom/server'
+import toast from 'react-hot-toast'
+import { useMarkers } from './MarkerContext'
+import { createLogger } from '@mbari/utils'
 
-const mapMarkerIcons = [
-  mapMarker1,
-  mapMarker2,
-  mapMarker3,
-  mapMarker4,
-  mapMarker5,
-  mapMarker6,
-  mapMarker7,
-  mapMarker8,
-  mapMarker9,
-  mapMarker10,
-  mapMarker11,
-  mapMarker12,
-  mapMarker13,
-  mapMarker14,
-  mapMarker15,
-  mapMarker16,
-  mapMarker17,
-  mapMarker18,
-  mapMarker19,
-]
+const logger = createLogger('DraggableMarker')
 
-const DraggableMarker: React.FC<{
-  draggable?: boolean
-  lat: number
-  lng: number
+// Define the DraggableMarkerProps interface
+export interface DraggableMarkerProps {
+  id: string
+  position: [number, number]
+  label: string
   index: number
-  onDragEnd: (index: number, latlng: { lat: number; lng: number }) => void
-}> = ({ draggable, lat, lng, index, onDragEnd: handleDragEnd }) => {
-  const [position, setPosition] = useState({ lat, lng })
-  const markerRef = useRef<L.Marker | null>(null)
-  const eventHandlers = useMemo(
-    () => ({
-      dragend() {
-        const marker = markerRef.current
-        if (marker != null) {
-          setPosition(marker.getLatLng())
-          handleDragEnd?.(index, { ...marker.getLatLng() })
+  isSelected?: boolean
+  draggable?: boolean
+  iconName?: string
+  iconColor?: string
+  isNew?: boolean
+  savedToLayer?: boolean
+  visible?: boolean
+  onClick?: () => void
+  onDragEnd?: (newPosition: [number, number]) => void
+  onEdit?: (newLabel: string) => void
+  onDelete?: () => void
+  onColorChange?: (newColor: string) => void
+  onSaveToLayer?: (id: string) => void
+  onRemoveFromLayer?: (id: string) => void
+  onEditStateChange?: (isEditing: boolean) => void
+}
+
+const DraggableMarker: React.FC<DraggableMarkerProps> = ({
+  id,
+  position,
+  label,
+  index,
+  isSelected = false,
+  isNew = false,
+  savedToLayer = false,
+  visible = true,
+  iconColor,
+  onClick,
+  onDragEnd,
+  onEdit,
+  onDelete,
+  onColorChange,
+  onSaveToLayer,
+  onRemoveFromLayer,
+}) => {
+  const markerRef = useRef<L.Marker>(null)
+  const [editMode, setEditMode] = useState(false)
+  const [inputValue, setInputValue] = useState(label)
+  const [selectedColor, setSelectedColor] = useState(iconColor || '#FF0000')
+  const [markerPosition, setMarkerPosition] =
+    useState<[number, number]>(position)
+  const [showColorOptions, setShowColorOptions] = useState(false)
+  const icon = createMarkerIcon(selectedColor, isSelected, savedToLayer)
+  const inputRef = useRef<HTMLInputElement>(null)
+  const popupRef = useRef<L.Popup>(null)
+  const map = useMap()
+  const { handleMarkerSave, saveMarkerToLayer, removeMarkerFromLayer } =
+    useMarkers()
+  const forceRerender = useCallback(() => setRerenderFlag((v) => v + 1), [])
+  const [rerenderFlag, setRerenderFlag] = useState(0)
+
+  // Color options for the color picker
+  const colorOptions = [
+    '#E53935',
+    '#D81B60',
+    '#8E24AA',
+    '#5E35B1',
+    '#3949AB',
+    '#1E88E5',
+    '#039BE5',
+    '#00ACC1',
+    '#00897B',
+    '#43A047',
+    '#7CB342',
+    '#C0CA33',
+    '#FDD835',
+    '#FFB300',
+    '#FB8C00',
+  ]
+
+  // Create a custom marker icon using FontAwesome
+  function createMarkerIcon(
+    color: string,
+    isSelected: boolean,
+    savedToLayer: boolean
+  ): L.DivIcon {
+    // Pass savedToLayer as a parameter to ensure it's current
+
+    const iconComponent = (
+      <div className="relative">
+        <FontAwesomeIcon
+          icon={faLocationDot}
+          size={isSelected ? '2xl' : '2xl'}
+          style={{
+            color: color,
+            filter: 'drop-shadow(0px 2px 2px rgba(0,0,0,0.5))',
+          }}
+        />
+
+        {savedToLayer && (
+          <div className="absolute -left-1.5 -top-2">
+            <FontAwesomeIcon
+              icon={faStar}
+              size="sm"
+              style={{
+                color: '#FFD700',
+                filter: 'drop-shadow(0px 1px 1px rgba(0,0,0,0.7))',
+              }}
+            />
+          </div>
+        )}
+      </div>
+    )
+
+    // Convert to HTML
+    const iconHtml = renderToString(iconComponent)
+
+    // Create the divIcon with appropriate sizing and anchor points
+    return divIcon({
+      className: `custom-marker-icon`,
+      html: iconHtml,
+      iconSize: [isSelected ? 38 : 36, isSelected ? 38 : 36],
+      iconAnchor: [18, 36], // Center bottom of the marker
+      popupAnchor: [0, -36], // Above the marker
+      tooltipAnchor: [-5, -25],
+    })
+  }
+
+  // Handle marker click
+  const onEditStateChange = useCallback((isEditing: boolean) => {
+    // logger.debug(
+    //   `Marker edit state changed: ${isEditing ? 'Editing' : 'Not Editing'}`
+    // )
+  }, [])
+
+  // Open the popup when the marker is clicked
+  useEffect(() => {
+    if (isNew) {
+      // First ensure the marker is mounted
+      const marker = markerRef.current
+      if (!marker) {
+        logger.warn('Marker ref not available yet')
+        return
+      }
+
+      // Use nested timeouts for proper sequencing
+      setTimeout(() => {
+        try {
+          marker.openPopup()
+
+          // Set edit mode after popup is open
+          setEditMode(true)
+          setShowColorOptions(false)
+
+          // Focus the input field
+          setTimeout(() => {
+            if (inputRef.current) {
+              inputRef.current.focus()
+              inputRef.current.select()
+            } else {
+              logger.warn('Input ref not available')
+            }
+          }, 100)
+        } catch (err) {
+          toast.error(`Error opening popup: ${(err as Error)?.message || err}`)
         }
-      },
-    }),
-    [handleDragEnd, index, setPosition]
+      }, 100) // Slightly longer delay
+    }
+  }, [isNew, id])
+
+  // Keep the popup open when editing
+  useEffect(() => {
+    // Get the marker's Leaflet instance
+    const marker = markerRef.current
+    if (!marker) return
+
+    // If in edit mode, ensure popup is open
+    if (editMode) {
+      marker.openPopup()
+    }
+  }, [editMode])
+
+  // Keep the popup open when selected
+  useEffect(() => {
+    // Only new markers should automatically enter edit mode
+    if (isNew && !editMode) {
+      setEditMode(true)
+      setShowColorOptions(false)
+    }
+    // Remove the isSelected
+  }, [isNew, editMode])
+
+  // Notify parent when edit mode changes
+  useEffect(() => {
+    if (onEditStateChange) {
+      onEditStateChange(editMode)
+    }
+  }, [editMode, onEditStateChange])
+
+  // Update position when props change
+  useEffect(() => {
+    setMarkerPosition(position)
+  }, [position])
+
+  // Update color when props change
+  useEffect(() => {
+    if (iconColor) {
+      setSelectedColor(iconColor)
+    }
+  }, [iconColor])
+
+  // Update input value when label changes
+  useEffect(() => {
+    if (editMode && inputRef.current) {
+      // Focus the input and select all text
+      setTimeout(() => {
+        if (inputRef.current) {
+          inputRef.current.focus()
+          inputRef.current.select()
+        }
+      }, 10) // Small timeout to ensure the input is rendered
+    }
+  }, [editMode])
+
+  // Handle marker drag end
+  const handleEditModeToggle = useCallback(
+    (isEditing: boolean) => {
+      setEditMode(isEditing)
+      onEditStateChange?.(isEditing)
+    },
+    [onEditStateChange]
   )
-  const icon = mapMarkerIcons[index] ?? mapMarker
+
+  // Handle marker deletion
+  const handleDelete = useCallback(
+    (e: React.MouseEvent<HTMLButtonElement, MouseEvent>) => {
+      e.stopPropagation()
+      e.preventDefault()
+
+      // Add confirmation for markers saved to layer
+      if (savedToLayer) {
+        toast(
+          (t) => (
+            <div className="flex flex-col gap-2 p-2">
+              <div className="flex items-center font-medium">
+                <FontAwesomeIcon
+                  icon={faExclamationTriangle}
+                  size="lg"
+                  className="mr-2"
+                  style={{
+                    color: '#FF8C00',
+                    backgroundColor: 'white',
+                    padding: '2px',
+                    border: '2px solid #FF8C00',
+                    borderRadius: '2px',
+                  }}
+                />
+                Delete the saved Map Layer Marker permanently?
+              </div>
+              <div className="flex justify-between gap-2">
+                <button
+                  onClick={() => {
+                    toast.dismiss(t.id)
+                    if (onDelete) {
+                      logger.debug(`Deleting saved marker ${id}`)
+                      onDelete()
+                    }
+                  }}
+                  className="rounded bg-red-500 px-3 py-1 text-white hover:bg-red-600"
+                >
+                  Yes
+                </button>
+                <button
+                  onClick={() => toast.dismiss(t.id)}
+                  className="rounded bg-gray-300 px-3 py-1 text-black hover:bg-gray-400"
+                >
+                  No
+                </button>
+              </div>
+            </div>
+          ),
+          {
+            duration: Infinity,
+            position: 'top-center',
+            id: 'delete-saved-marker',
+            className: 'blue-toast',
+          }
+        )
+      } else {
+        if (onDelete) {
+          logger.debug(`Deleting marker ${id}`)
+          onDelete()
+        }
+      }
+    },
+    [onDelete, id, savedToLayer]
+  )
+
+  // Handle marker drag end
+  const handleDragEnd = useCallback(() => {
+    const marker = markerRef.current
+    if (marker) {
+      const newPosition = marker.getLatLng()
+      setMarkerPosition([newPosition.lat, newPosition.lng])
+
+      // Call the onDragEnd prop to update the position in parent state
+      if (onDragEnd) {
+        onDragEnd([newPosition.lat, newPosition.lng])
+      }
+
+      logger.debug(
+        `Marker ${id} dragged to new position: [${newPosition.lat}, ${newPosition.lng}]`
+      )
+    }
+  }, [id, onDragEnd])
+
+  // Handle saving edits
+  const handleSaveEdit = useCallback(() => {
+    handleEditModeToggle(false)
+
+    if (inputValue !== label && onEdit) {
+      onEdit(inputValue)
+    }
+
+    if (selectedColor !== iconColor && onColorChange) {
+      onColorChange(selectedColor)
+    }
+
+    // Call handleMarkerSave if available
+    if (handleMarkerSave) {
+      handleMarkerSave(id, inputValue)
+    }
+
+    setEditMode(false)
+    setShowColorOptions(false)
+  }, [
+    handleEditModeToggle,
+    inputValue,
+    label,
+    onEdit,
+    selectedColor,
+    iconColor,
+    onColorChange,
+    handleMarkerSave,
+    id,
+  ])
+
+  // Handle canceling edits
+  const handleCancelEdit = useCallback(() => {
+    // If this is a new marker, show confirmation dialog
+    if (isNew) {
+      toast(
+        (t) => (
+          <div className="flex flex-col gap-2 p-2">
+            <div className="font-medium">Cancel new marker and delete?</div>
+            <div className="flex justify-between gap-2">
+              <button
+                onClick={() => {
+                  toast.dismiss(t.id)
+                  onDelete?.() // Delete the marker
+                  markerRef.current?.closePopup()
+                }}
+                className="rounded bg-red-500 px-3 py-1 text-white hover:bg-red-600"
+              >
+                Yes
+              </button>
+              <button
+                onClick={() => toast.dismiss(t.id)}
+                className="rounded bg-gray-300 px-3 py-1 text-black hover:bg-gray-400"
+              >
+                No
+              </button>
+            </div>
+          </div>
+        ),
+        {
+          duration: Infinity,
+          position: 'top-center',
+          id: 'cancel-edit',
+          className: 'blue-toast',
+        }
+      )
+    } else {
+      // For existing markers, just close the popup
+      handleEditModeToggle(false)
+      setInputValue(label) // Reset to original value
+      setSelectedColor(iconColor || '#FF0000') // Reset color
+      markerRef.current?.closePopup()
+    }
+  }, [handleEditModeToggle, isNew, label, iconColor, onDelete])
+
+  // Prevent popup from closing when clicking inside it
+  const handleEditClick = useCallback(
+    (e: React.MouseEvent) => {
+      // Stop popup from closing
+      e.stopPropagation()
+      e.preventDefault()
+
+      // Open popup if not already open
+      const marker = markerRef.current
+      if (marker) {
+        marker.openPopup()
+      }
+
+      // Hide color options by default when entering edit mode
+      setShowColorOptions(false)
+      handleEditModeToggle(true)
+    },
+    [handleEditModeToggle]
+  )
+
+  const handleToggleColorOptions = useCallback((e: React.MouseEvent) => {
+    e.stopPropagation()
+    e.preventDefault()
+    setShowColorOptions((prev) => !prev)
+  }, [])
+
+  // Prevent default behavior for save/cancel
+  const handleSaveClick = useCallback(
+    (e: React.MouseEvent) => {
+      e.stopPropagation()
+      e.preventDefault()
+      handleSaveEdit()
+    },
+    [handleSaveEdit]
+  )
+
+  // Handle canceling edits
+  const handleCancelClick = useCallback(
+    (e: React.MouseEvent) => {
+      // logger.debug('Cancel button clicked')
+      e.stopPropagation()
+      e.preventDefault()
+      handleCancelEdit()
+    },
+    [handleCancelEdit]
+  )
+
+  // Handle saving marker to layer
+  const handleSaveToLayer = useCallback(
+    (e: React.MouseEvent) => {
+      e.stopPropagation()
+      e.preventDefault()
+
+      if (onSaveToLayer) {
+        onSaveToLayer(id)
+      }
+    },
+    [id, onSaveToLayer]
+  )
+  // Handle removing marker from layer
+  const handleRemoveFromLayer = useCallback(
+    (e: React.MouseEvent) => {
+      e.stopPropagation()
+      e.preventDefault()
+
+      if (onRemoveFromLayer) {
+        onRemoveFromLayer(id)
+      }
+    },
+    [id, onRemoveFromLayer]
+  )
+
+  //  Handle closing the popup
+  const handleClosePopup = useCallback((e: React.MouseEvent) => {
+    e.stopPropagation()
+    e.preventDefault()
+
+    // Get the marker's Leaflet instance and close its popup
+    const marker = markerRef.current
+    if (marker) {
+      marker.closePopup()
+    }
+  }, [])
 
   return (
     <Marker
-      draggable={draggable}
-      eventHandlers={eventHandlers}
-      position={position}
       ref={markerRef}
-      icon={
-        new L.Icon({
-          iconUrl: icon?.src,
-          iconRetinaUrl: icon?.src,
-          popupAnchor: [-0, -0],
-          iconSize: [32, 45],
-          iconAnchor: [16, 45],
-        })
-      }
-    />
+      position={markerPosition}
+      draggable={true}
+      icon={icon}
+      eventHandlers={{
+        dragend: () => {
+          handleDragEnd()
+        },
+        click: () => onClick?.(),
+      }}
+    >
+      <Tooltip direction="top" offset={[-3, -10]} opacity={0.75}>
+        {label}
+      </Tooltip>
+      {/* Render the popup only if the marker is selected */}
+      <Popup
+        ref={popupRef}
+        closeOnClick={!editMode}
+        autoClose={false}
+        // autoClose={!editMode}
+        className="marker-popup-container"
+      >
+        <div className="flex flex-col gap-0">
+          <p className="m-0 p-0">
+            <strong className="flex items-center">
+              <span
+                className="mr-2 h-4 w-4 flex-shrink-0 rounded-full"
+                style={{ backgroundColor: selectedColor }}
+                title={selectedColor}
+              />
+              {editMode ? (
+                <input
+                  ref={inputRef}
+                  type="text"
+                  title="Edit marker label"
+                  value={inputValue}
+                  onChange={(e) => setInputValue(e.target.value)}
+                  className="h-6 w-full border px-2 py-0 text-sm"
+                  autoFocus
+                />
+              ) : (
+                <span className="flex h-6 items-center">{label}</span>
+              )}
+            </strong>
+            <br />
+            <div
+              className="marker-popup mt-1 text-sm text-gray-600"
+              title="Marker position"
+              style={{
+                background: '#e3f2fd',
+                padding: '4px 8px',
+                borderRadius: '4px',
+              }}
+            >
+              <strong>Position:</strong>
+              <br />
+              &nbsp;&nbsp;{markerPosition[0].toFixed(5)},{' '}
+              {markerPosition[1].toFixed(5)}
+            </div>
+          </p>
+
+          {/* Show saved to layer message if applicable */}
+          {savedToLayer && (
+            <div className="my-1 flex items-center text-xs">
+              <FontAwesomeIcon
+                icon={faStar}
+                style={{ color: '#FFD700' }}
+                size="sm"
+                className="mr-1"
+              />
+              <span className="italic text-gray-600">
+                Saved to Map Layers
+                {visible === false && ' (Currently hidden)'}
+              </span>
+            </div>
+          )}
+
+          {/* Control buttons */}
+          <div className={`mt-1 flex h-8 justify-between gap-0`}>
+            {editMode ? (
+              <>
+                {/* Edit mode buttons - Cancel, Color, Save */}
+                <button
+                  onClick={handleCancelClick}
+                  className="rounded bg-gray-300 px-2 py-1 text-xs"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={handleToggleColorOptions}
+                  className="rounded bg-blue-500 px-2 py-1 text-xs text-white"
+                  title={
+                    showColorOptions
+                      ? 'Hide marker colors'
+                      : 'Edit marker colors'
+                  }
+                >
+                  <FontAwesomeIcon icon={faPalette} size="lg" />
+                </button>
+                <button
+                  onClick={handleSaveClick}
+                  className="rounded bg-blue-500 px-2 py-1 text-xs text-white"
+                >
+                  Save
+                </button>
+              </>
+            ) : (
+              <>
+                <button
+                  onClick={handleDelete}
+                  className="rounded bg-red-500 px-2 py-1 text-xs text-white"
+                  title="Delete marker"
+                >
+                  <FontAwesomeIcon icon={faTrashCan} size="lg" />
+                </button>
+
+                {!savedToLayer ? (
+                  <button
+                    onClick={handleSaveToLayer}
+                    className="rounded bg-green-500 px-2 py-1 text-xs text-white"
+                    title="Save to Map Layers"
+                  >
+                    <FontAwesomeIcon
+                      icon={faFlag} // Use regular star if available
+                      style={{ color: '#FFFFFF' }}
+                      size="lg"
+                    />
+                  </button>
+                ) : (
+                  <button
+                    onClick={handleRemoveFromLayer}
+                    className="relative rounded bg-white px-2 py-1 text-xs text-black"
+                    style={{
+                      borderWidth: '1px',
+                      borderColor: '#3b82f6',
+                      borderStyle: 'solid',
+                    }}
+                    title="Remove from Map Layers"
+                  >
+                    <FontAwesomeIcon
+                      icon={faStar}
+                      style={{ color: '#FFD700' }} // Gold color
+                      size="lg"
+                    />
+                  </button>
+                )}
+
+                <button
+                  onClick={handleEditClick}
+                  className="rounded bg-blue-500 px-2 py-1 text-xs text-white"
+                  title="Edit marker"
+                >
+                  <FontAwesomeIcon icon={faEdit} size="lg" />
+                </button>
+                <button
+                  onClick={handleClosePopup}
+                  className="rounded bg-blue-500 px-2 py-1 text-xs text-white"
+                  title="Close"
+                >
+                  <FontAwesomeIcon icon={faClose} size="lg" />
+                </button>
+              </>
+            )}
+          </div>
+
+          {editMode && showColorOptions && (
+            <div className="color-options-container mt-2">
+              <p className="mb-1 text-xs font-semibold">Marker Color:</p>
+              <div className="flex flex-wrap gap-0">
+                {colorOptions.map((color) => (
+                  <button
+                    key={color}
+                    type="button"
+                    title="Select color"
+                    className={`h-6 w-6 rounded-full ${
+                      selectedColor === color
+                        ? 'ring-2 ring-black ring-offset-1'
+                        : ''
+                    }`}
+                    style={{ backgroundColor: color }}
+                    onClick={(e) => {
+                      e.stopPropagation()
+                      e.preventDefault()
+                      setSelectedColor(color)
+                    }}
+                  />
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
+      </Popup>
+    </Marker>
   )
 }
-
-DraggableMarker.displayName = 'Map.DraggableMarker'
 
 export default DraggableMarker

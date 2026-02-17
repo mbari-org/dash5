@@ -1,30 +1,28 @@
-import React from 'react'
 import { render, screen } from '@testing-library/react'
 import '@testing-library/jest-dom'
 import { ReassignmentModal } from './ReassignmentModal'
 
 describe('ReassignmentModal', () => {
   test('should render the vehicles', async () => {
-    const onSubmit = jest.fn()
+    const onRoleChange = jest.fn()
 
     render(
       <ReassignmentModal
         open
-        onSubmit={onSubmit}
         vehicles={[
           {
-            vehicleId: '1',
-            vehicleName: 'Vehicle 1',
-            pic: 'Pic 1',
-            onCall: 'On Call 1',
+            name: 'Vehicle 1',
+            picOperators: ['Pic 1'],
+            onCallOperators: ['On-Call 1'],
           },
           {
-            vehicleId: '2',
-            vehicleName: 'Vehicle 2',
-            pic: 'Pic 2',
-            onCall: 'On Call 2',
+            name: 'Vehicle 2',
+            picOperators: ['Pic 2'],
+            onCallOperators: ['On-Call 2'],
           },
         ]}
+        currentUserName="Test User"
+        onRoleChange={onRoleChange}
       />
     )
 

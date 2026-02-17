@@ -1,4 +1,4 @@
-interface AttributedItem {
+export interface AttributedItem {
   [key: string]: any
 }
 

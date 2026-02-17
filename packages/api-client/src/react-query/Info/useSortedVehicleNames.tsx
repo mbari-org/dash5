@@ -1,23 +1,22 @@
-import { useState, useCallback, useEffect } from 'react'
-import { useVehicles } from './useVehicles'
+import { useState, useCallback, useEffect, useMemo } from 'react'
 import { useQueryClient } from 'react-query'
-import {
-  getLastDeployment,
-  GetLastDeploymentResponse,
-  GetVehiclesParams,
-} from '../../axios'
+import { getLastDeployment, GetLastDeploymentResponse } from '../../axios'
 import { useTethysApiContext } from '../TethysApiProvider'
+import { useSiteConfig } from './useSiteConfig'
 
-export const useSortedVehicleNames = (params: GetVehiclesParams) => {
+export const useSortedVehicleNames = () => {
   const { axiosInstance } = useTethysApiContext()
-  const vehiclesQuery = useVehicles(params)
-  const vehicles = vehiclesQuery.data ?? []
+  const { data: vehiclesInfo, isLoading: isLoadingVehiclesInfo } =
+    useSiteConfig({})
+  const vehicles = useMemo(
+    () => vehiclesInfo?.vehicleBasicInfos ?? [],
+    [vehiclesInfo]
+  )
   const queryClient = useQueryClient()
   const [loadingDeployments, setLoadingDeployments] = useState(false)
 
   const fetchSortedDeployments = useCallback(async () => {
     setLoadingDeployments(true)
-    const to = new Date().toISOString()
     await Promise.all(
       vehicles.map(
         async ({ vehicleName }) =>
@@ -25,7 +24,7 @@ export const useSortedVehicleNames = (params: GetVehiclesParams) => {
             ['deployment', 'last', vehicleName],
             () => {
               return getLastDeployment(
-                { vehicle: vehicleName, to },
+                { vehicle: vehicleName },
                 {
                   instance: axiosInstance,
                 }
@@ -75,6 +74,6 @@ export const useSortedVehicleNames = (params: GetVehiclesParams) => {
         position,
       }))
       .sort((a, b) => a.position - b.position),
-    isLoading: vehiclesQuery.isLoading || loadingDeployments,
+    isLoading: isLoadingVehiclesInfo || loadingDeployments,
   }
 }

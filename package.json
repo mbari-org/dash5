@@ -11,7 +11,7 @@
     "apps/*"
   ],
   "engines": {
-    "node": "16.x.x",
+    "node": "18.x.x",
     "yarn": "1.22.x"
   },
   "scripts": {
@@ -21,7 +21,11 @@
     "prepare": "husky install",
     "lint": "eslint --quiet --fix ./packages/*/src/**/*.{ts,tsx}",
     "lint:watch": "esw --quiet --fix --watch ./packages/*/src/**/*.{ts,tsx}",
-    "lint:staged": "lint-staged"
+    "lint:staged": "lint-staged",
+    "version:patch": "./scripts/bump-version.sh --patch",
+    "version:minor": "./scripts/bump-version.sh --minor",
+    "version:major": "./scripts/bump-version.sh --major",
+    "version:dry-run": "./scripts/bump-version.sh --dry-run"
   },
   "lint-staged": {
     "*.{js,ts,tsx, jsx}": [
@@ -32,8 +36,15 @@
     ]
   },
   "devDependencies": {
+    "@babel/core": "^7.22.1",
+    "@babel/plugin-transform-runtime": "^7.22.1",
+    "@babel/preset-env": "^7.22.1",
+    "@babel/preset-react": "^7.22.1",
+    "@babel/preset-typescript": "^7.22.1",
     "@sumocreations/scaffolds": "^1.1.6",
     "@types/leaflet-mouse-position": "^1.2.1",
+    "@types/react-color": "^3.0.13",
+    "babel-loader": "^8.3.0",
     "eslint": "^8.11",
     "eslint-config-next": "^12.1.5",
     "eslint-config-prettier": "^8.5.0",
@@ -43,10 +54,10 @@
     "husky": "^7.0.4",
     "lint-staged": "^12.4.1",
     "rimraf": "^3.0.2",
-    "turbo": "^1.2.5"
+    "turbo": "^2.4.4"
   },
   "volta": {
-    "node": "16.18.1",
+    "node": "18.19.0",
     "yarn": "1.22.19"
   },
   "dependencies": {
@@ -54,5 +65,16 @@
     "d3-color": "3.1.0",
     "semver": "7.5.2",
     "trim-newlines": "3.0.1"
-  }
+  },
+  "resolutions": {
+    "elliptic": "^6.6.1",
+    "@babel/traverse": "^7.23.2",
+    "@babel/core": "^7.22.1",
+    "@babel/preset-env": "^7.22.1",
+    "@babel/preset-react": "^7.22.1",
+    "@babel/preset-typescript": "^7.22.1",
+    "@babel/plugin-transform-runtime": "^7.22.1",
+    "babel-loader": "^8.3.0"
+  },
+  "packageManager": "yarn@1.22.22"
 }

@@ -5,16 +5,10 @@ import DocsSection from './DocsSection'
 import HandoffSection from './HandoffSection'
 import LogsSection from './LogsSection'
 import ScienceDataSection from './ScienceDataSection'
-import {
-  useEvents,
-  usePicAndOnCall,
-  useTethysApiContext,
-  useDeploymentCommandStatus,
-} from '@mbari/api-client'
+import { useEvents, useMissionStartedEvent } from '@mbari/api-client'
 import { DateTime } from 'luxon'
-import { parseMissionCommand, ScheduleSection } from './ScheduleSection'
+import { ScheduleSection } from './ScheduleSection'
 import useGlobalModalId from '../lib/useGlobalModalId'
-
 export type VehicleAccordionSection =
   | 'handoff'
   | 'data'
@@ -26,32 +20,25 @@ export type VehicleAccordionSection =
 
 export interface VehicleAccordionProps {
   vehicleName: string
-  from: string
-  to?: string
+  from: number // milliseconds since epoch
+  to?: number
+  picLabel?: string
+  onCallLabel?: string
   authenticated?: boolean
   activeDeployment?: boolean
   currentDeploymentId?: number
 }
 
-const shortenName = (name: string) =>
-  name
-    .split(' ')
-    .reduce((acc, curr, idx) => `${acc} ${idx > 0 ? curr[0] : curr}.`, '')
-    .trim()
-
 const VehicleAccordion: React.FC<VehicleAccordionProps> = ({
   from,
   to,
   vehicleName,
+  picLabel,
+  onCallLabel,
   authenticated,
   activeDeployment,
   currentDeploymentId,
 }) => {
-  const { data: relatedLogs, isLoading: logsLoading } = useEvents({
-    vehicles: [vehicleName],
-    from: '',
-    to: '',
-  })
   const { data: commsLogs, isLoading: commsLoading } = useEvents({
     vehicles: [vehicleName],
     eventTypes: ['command', 'run'],
@@ -59,50 +46,35 @@ const VehicleAccordion: React.FC<VehicleAccordionProps> = ({
     to,
   })
 
-  const { data: deploymentCommandStatus } = useDeploymentCommandStatus(
+  const { data: missionStartedEvent } = useMissionStartedEvent(
     {
-      deploymentId: currentDeploymentId ?? 0,
+      vehicle: vehicleName,
+      limit: 1,
     },
     {
-      enabled: !!currentDeploymentId,
+      enabled: !!activeDeployment,
     }
   )
-  const currentMission = deploymentCommandStatus?.commandStatuses
-    ?.filter((s) => s.event.eventType === 'run')
-    ?.sort((a, b) => a.event.unixTime - b.event.unixTime)?.[0]
 
-  // const earliestLog = relatedLogs?.[(relatedLogs?.length ?? 0) - 1]?.isoTime
-  // const logsSummary = logsLoading
-  //   ? 'loading...'
-  //   : earliestLog
-  //   ? `started ${DateTime.fromISO(earliestLog).toRelative()}`
-  //   : 'no logs yet'
+  // The mission started event text is always in the format "Started mission <mission name>"
+  const currentMissionText = missionStartedEvent?.[0]?.text ?? ''
 
-  //const [section, setSection] = useState<VehicleAccordionSection>('schedule')
   const [section, setSection] = useState<VehicleAccordionSection>(null)
   const handleToggleForSection =
     (currentSection: VehicleAccordionSection) => (open: boolean) =>
       setSection(open ? currentSection : null)
 
-  if (!currentMission || !activeDeployment) {
+  if (!currentMissionText || !activeDeployment) {
     ;(currentSection: VehicleAccordionSection) => (open: boolean) =>
       setSection(open ? currentSection : 'comms')
   }
 
-  const { data: picAndOnCall, isLoading: loadingPic } = usePicAndOnCall({
-    vehicleName,
-  })
-  const { profile } = useTethysApiContext()
-  const profileName = `${profile?.firstName} ${profile?.lastName}`
-  const pic = picAndOnCall?.[0].pic?.user
-  const onCall = picAndOnCall?.[0].onCall?.user
-  const handoffLabel = loadingPic
-    ? '...'
-    : `${shortenName(pic ?? 'Unassigned')}${
-        pic === profileName ? ' (you)' : ''
-      } / ${shortenName(onCall ?? 'Unassigned')}${
-        onCall === profileName ? ' (you)' : ''
-      }`
+  const handoffLabel =
+    (picLabel || onCallLabel) && authenticated
+      ? `${!!picLabel ? picLabel : 'Unassigned'} / ${
+          !!onCallLabel ? onCallLabel : 'Unassigned'
+        }`
+      : undefined
 
   const { setGlobalModalId } = useGlobalModalId()
   const handleExpand = (section: string) => () => {
@@ -124,11 +96,13 @@ const VehicleAccordion: React.FC<VehicleAccordionProps> = ({
     }
   }
 
+  const [deploymentLogsOnly, setDeploymentLogsOnly] = useState(false)
+
   return (
     <div className="flex h-full flex-col divide-y divide-solid divide-stone-200">
       <AccordionHeader
-        label="Handoff / On Call"
-        secondaryLabel={activeDeployment ? handoffLabel : ''}
+        label="Handoff / On-Call"
+        secondaryLabel={handoffLabel}
         onToggle={handleToggleForSection('handoff')}
         open={section === 'handoff'}
         className="flex flex-shrink-0"
@@ -156,11 +130,9 @@ const VehicleAccordion: React.FC<VehicleAccordionProps> = ({
       <AccordionHeader
         label="Schedule"
         secondaryLabel={
-          activeDeployment && currentMission
-            ? `${
-                parseMissionCommand(currentMission.event.data ?? '').name ?? ''
-              } running for ${DateTime.fromMillis(
-                currentMission.event.unixTime ?? 0
+          activeDeployment && currentMissionText
+            ? `${currentMissionText} ${DateTime.fromMillis(
+                missionStartedEvent?.[0]?.unixTime ?? 0
               ).toRelative()}`
             : ''
         }
@@ -178,7 +150,9 @@ const VehicleAccordion: React.FC<VehicleAccordionProps> = ({
       <AccordionHeader
         label="Comms Queue"
         secondaryLabel={
-          activeDeployment ? `${commsLogs?.length ?? 0} item(s) in queue` : ''
+          activeDeployment && !commsLoading
+            ? `${commsLogs?.length ?? 0} item(s) in queue`
+            : ''
         }
         onToggle={handleToggleForSection('comms')}
         open={section === 'comms'}
@@ -190,14 +164,26 @@ const VehicleAccordion: React.FC<VehicleAccordionProps> = ({
       )}
       <AccordionHeader
         label="Log"
-        // secondaryLabel={activeDeployment ? logsSummary : ''}
+        secondaryLabel={
+          section === 'log'
+            ? deploymentLogsOnly
+              ? 'showing deployment logs'
+              : 'showing all logs'
+            : ''
+        }
         onToggle={handleToggleForSection('log')}
         open={section === 'log'}
         className="flex flex-shrink-0"
         onExpand={handleExpand('logs')}
       />
       {section === 'log' && (
-        <LogsSection vehicleName={vehicleName} from={from} to={to} />
+        <LogsSection
+          vehicleName={vehicleName}
+          from={from}
+          to={to}
+          deploymentLogsOnly={deploymentLogsOnly}
+          setDeploymentLogsOnly={setDeploymentLogsOnly}
+        />
       )}
       <AccordionHeader
         label="Docs"

@@ -1,5 +1,5 @@
 import React from 'react'
-import ReactSelect from 'react-select'
+import ReactSelect, { StylesConfig } from 'react-select'
 import { IconDefinition } from '@fortawesome/fontawesome-common-types'
 
 export interface SelectOption {
@@ -18,6 +18,7 @@ export interface SelectProps {
   value?: string
   disabled?: boolean
   clearable?: boolean
+  styles?: Record<string, any>
 }
 
 export const Select = React.forwardRef<any, SelectProps>(
@@ -32,6 +33,7 @@ export const Select = React.forwardRef<any, SelectProps>(
       value,
       disabled,
       clearable,
+      styles: customStyles,
     },
     ref
   ) => {
@@ -55,7 +57,10 @@ export const Select = React.forwardRef<any, SelectProps>(
           isClearable={clearable}
           isDisabled={disabled}
           onChange={handleChange}
-          styles={{ menuPortal: (base) => ({ ...base, zIndex: 9999 }) }}
+          styles={{
+            menuPortal: (base) => ({ ...base, zIndex: 9999 }),
+            ...(customStyles ?? {}),
+          }}
           menuPortalTarget={document.body}
           closeMenuOnSelect
         />
