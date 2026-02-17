@@ -45,7 +45,7 @@ export const makeCommand = ({
         }
       }
       const t = DateTime.fromISO(specifiedLocalTime).toUTC()
-      const schedDate = `${t.toFormat('yyyyMMdd')}}T${t.toFormat('HHmm')}`
+      const schedDate = `${t.toFormat('yyyyMMdd')}T${t.toFormat('HHmm')}`
       return {
         commandText: resolvedCommandText,
         schedDate,
