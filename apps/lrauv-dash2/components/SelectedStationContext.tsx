@@ -179,7 +179,7 @@ export const SelectedStationsProvider: React.FC<{
       // logger.debug('New count:', updated.length)
       return updated
     })
-    console.groupEnd()
+    // console.groupEnd()
   }
 
   return (

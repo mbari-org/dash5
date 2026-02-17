@@ -89,7 +89,7 @@ export const StationsListModal: React.FC<{ onClose: () => void }> = ({
       snapTo="top-left"
       open
       onConfirm={handleClose}
-      style={{ top: 510, background: 'bg-white !important', color: 'black' }}
+      style={{ top: 510, background: '#ffffff', color: 'black' }}
     >
       <ul
         className="mb-2 flex flex-col overflow-auto"
