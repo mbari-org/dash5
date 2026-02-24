@@ -1,10 +1,7 @@
 import React, { useCallback, useState, useLayoutEffect } from 'react'
 import { createPortal } from 'react-dom'
 import { useMap } from 'react-leaflet'
-import {
-  useDepthRequest,
-  DepthRequestOptions,
-} from '@mbari/utils/useDepthRequest'
+import { useDepthRequest, type DepthRequestOptions } from '@mbari/utils'
 import MouseCoordinates from './MouseCoordinates'
 
 const TOPRIGHT_PANE_SELECTOR = '.leaflet-top.leaflet-right'
@@ -52,7 +49,9 @@ const MapDepthDisplay: React.FC<MapDepthDisplayProps> = ({
 
   const onRequestDepth = useCallback(
     (lat: number, lng: number) =>
-      handleDepthRequestWithFeedback(lat, lng).then((r) => r.depth ?? 0),
+      handleDepthRequestWithFeedback(lat, lng).then(
+        (r: { depth: number | null }) => r.depth ?? 0
+      ),
     [handleDepthRequestWithFeedback]
   )
 

@@ -20,7 +20,7 @@ export interface MapProps extends React.HTMLAttributes<HTMLDivElement> {
   onRequestFitBounds?: () => void
   onRequestPlatforms?: () => void
   onRequestStations?: (position?: { top: number; left: number }) => void
-  onRequestVehicleColors?: (vehicleName?: string) => void
+  onRequestVehicleColors?: (anchor?: { top: number; left: number }) => void
   whenCreated?: (map: L.Map) => void
   onMapReady?: (map: L.Map) => void
   trackedVehicles?: Array<{ id: string; name: string }>
