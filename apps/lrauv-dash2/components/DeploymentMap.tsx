@@ -472,20 +472,17 @@ const DeploymentMap: React.FC<DeploymentMapProps> = ({
     setShowLayersModal(false)
   }, [])
 
-  const handleVehicleColorRequest = useCallback(() => {
-    // Add debugging to verify values
-    logger.debug('Opening color modal with:', {
-      vehicleName,
-      trackedVehicles,
-      modalTrackedVehicles: vehicleName ? [vehicleName] : [],
-    })
-
-    setColorModalPosition({
-      top: 100,
-      left: 100,
-    })
-    setColorModalOpen(true)
-  }, [vehicleName, trackedVehicles])
+  const handleVehicleColorRequest = useCallback(
+    (anchor?: { top: number; left: number }) => {
+      if (anchor) {
+        setColorModalPosition(anchor)
+      } else {
+        setColorModalPosition({ top: 100, left: 100 })
+      }
+      setColorModalOpen(true)
+    },
+    []
+  )
 
   const handleCloseVehicleColors = useCallback((vehicleName?: string) => {
     setShowVehicleColors(false)
