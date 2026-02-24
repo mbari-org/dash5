@@ -723,6 +723,19 @@ const OverViewMap: React.FC<{
 
 type MobileView = 'map' | 'list'
 
+// xl breakpoint = 1280px (matches Tailwind xl:)
+const useIsDesktop = () => {
+  const [isDesktop, setIsDesktop] = useState(true)
+  useEffect(() => {
+    const mq = window.matchMedia('(min-width: 1280px)')
+    setIsDesktop(mq.matches)
+    const handler = (e: MediaQueryListEvent) => setIsDesktop(e.matches)
+    mq.addEventListener('change', handler)
+    return () => mq.removeEventListener('change', handler)
+  }, [])
+  return isDesktop
+}
+
 // OverviewPage: NextPage
 const OverviewPage: NextPage = () => {
   const { mapsLoaded } = useGoogleMaps()
@@ -731,6 +744,7 @@ const OverviewPage: NextPage = () => {
   const mounted = useRef(false)
   const { setGlobalModalId } = useGlobalModalId()
   const [mobileView, setMobileView] = useState<MobileView>('map')
+  const isDesktop = useIsDesktop()
 
   useEffect(() => {
     if (!mounted.current) {
@@ -779,54 +793,55 @@ const OverviewPage: NextPage = () => {
                     className={styles.content}
                     data-testid="vehicle-dashboard"
                   >
-                    {/* Desktop view (keep existing Allotment layout) */}
-                    <div className="hidden h-full w-full xl:block">
-                      <Allotment
-                        separator
-                        snap
-                        defaultSizes={[75, 25]}
-                        proportionalLayout
-                      >
-                        <Allotment.Pane>{primarySection}</Allotment.Pane>
-                        <Allotment.Pane priority={LayoutPriority.High}>
-                          {secondarySection}
-                        </Allotment.Pane>
-                      </Allotment>
-                    </div>
-
-                    {/* Mobile view (toggle between map and list) */}
-                    <div className="flex h-full w-full flex-col xl:hidden">
-                      <div className="flex shrink-0 items-center gap-2 border-b border-slate-200 bg-white px-4 py-2">
-                        <button
-                          type="button"
-                          onClick={() => setMobileView('map')}
-                          className={
-                            mobileView === 'map'
-                              ? 'rounded bg-secondary-300/60 px-3 py-1 text-sm font-bold text-black'
-                              : 'rounded px-3 py-1 text-sm font-bold text-slate-600'
-                          }
+                    {/* Single map instance: render one layout to avoid duplicate controls */}
+                    {isDesktop ? (
+                      <div className="h-full w-full">
+                        <Allotment
+                          separator
+                          snap
+                          defaultSizes={[75, 25]}
+                          proportionalLayout
                         >
-                          Map
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => setMobileView('list')}
-                          className={
-                            mobileView === 'list'
-                              ? 'rounded bg-secondary-300/60 px-3 py-1 text-sm font-bold text-black'
-                              : 'rounded px-3 py-1 text-sm font-bold text-slate-600'
-                          }
-                        >
-                          Vehicles
-                        </button>
+                          <Allotment.Pane>{primarySection}</Allotment.Pane>
+                          <Allotment.Pane priority={LayoutPriority.High}>
+                            {secondarySection}
+                          </Allotment.Pane>
+                        </Allotment>
                       </div>
+                    ) : (
+                      <div className="flex h-full w-full flex-col">
+                        <div className="flex shrink-0 items-center gap-2 border-b border-slate-200 bg-white px-4 py-2">
+                          <button
+                            type="button"
+                            onClick={() => setMobileView('map')}
+                            className={
+                              mobileView === 'map'
+                                ? 'rounded bg-secondary-300/60 px-3 py-1 text-sm font-bold text-black'
+                                : 'rounded px-3 py-1 text-sm font-bold text-slate-600'
+                            }
+                          >
+                            Map
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => setMobileView('list')}
+                            className={
+                              mobileView === 'list'
+                                ? 'rounded bg-secondary-300/60 px-3 py-1 text-sm font-bold text-black'
+                                : 'rounded px-3 py-1 text-sm font-bold text-slate-600'
+                            }
+                          >
+                            Vehicles
+                          </button>
+                        </div>
 
-                      <div className="min-h-0 flex-1 overflow-hidden">
-                        {mobileView === 'map'
-                          ? primarySection
-                          : secondarySection}
+                        <div className="min-h-0 flex-1 overflow-hidden">
+                          {mobileView === 'map'
+                            ? primarySection
+                            : secondarySection}
+                        </div>
                       </div>
-                    </div>
+                    )}
                   </div>
                 </>
               ) : (

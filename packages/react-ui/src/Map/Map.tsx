@@ -723,7 +723,7 @@ const Map = React.forwardRef<L.Map, MapProps>(
           )}
         </LayersControl>
         {children}
-        {/* TRACKDB/STATIONS CONTROLS - Now in separate Control component */}
+        {/* Single consolidated topleft control: TrackDB/Layers + Center/FitBounds/Markers */}
         <Control position="topleft">
           <Tippy
             content="Edit Vehicle Colors"
@@ -798,116 +798,115 @@ const Map = React.forwardRef<L.Map, MapProps>(
               <span style={{ color: '#FFFFFF' }}>Layers</span>
             </button>
           </Tippy>
+          {(onRequestCoordinate ||
+            onRequestFitBounds ||
+            onToggleMarkerMode) && (
+            <hr style={{ height: '8pt', visibility: 'hidden' }} />
+          )}
+          {onRequestCoordinate && (
+            <>
+              <Tippy
+                content="Center map on centroid of latest GPS Fix positions"
+                placement="right-start"
+                theme="mapBtnTT"
+              >
+                <button
+                  id="vehicle-center"
+                  className="vehicle-center rounded"
+                  aria-label="Center map on vehicle"
+                  onMouseOver={handleMouseOver}
+                  style={{
+                    position: 'relative',
+                    zIndex: isHovering ? 900 : 10,
+                    border: '0px solid rgba(0,0,0,0.2)',
+                    backgroundClip: 'padding-box',
+                    width: 42,
+                    height: 42,
+                  }}
+                  onClick={onRequestCoordinate}
+                >
+                  <FontAwesomeIcon
+                    icon={faArrowsToCircle}
+                    size="2xl"
+                    color="#ffffff"
+                  />
+                </button>
+              </Tippy>
+              <hr style={{ height: '8pt', visibility: 'hidden' }} />
+            </>
+          )}
+
+          {onRequestFitBounds && (
+            <>
+              <Tippy
+                content="Zoom out to all available/selected vehicles"
+                placement="right-start"
+                theme="mapBtnTT"
+              >
+                <button
+                  id="allVehicles-center"
+                  className="allVehicles-center rounded"
+                  aria-label="Center map on all vehicles"
+                  onMouseOver={handleMouseOver}
+                  style={{
+                    position: 'relative',
+                    zIndex: isHovering ? 900 : 10,
+                    border: '0px solid rgba(0,0,0,0.2)',
+                    backgroundClip: 'padding-box',
+                    width: 42,
+                    height: 42,
+                  }}
+                  onClick={handleRequestFitBounds}
+                >
+                  <FontAwesomeIcon
+                    icon={faArrowsUpDownLeftRight}
+                    size="2xl"
+                    color="#ffffff"
+                  />
+                </button>
+              </Tippy>
+              <hr style={{ height: '8pt', visibility: 'hidden' }} />
+            </>
+          )}
+
+          {onToggleMarkerMode && (
+            <>
+              <Tippy
+                content={
+                  isAddingMarkers
+                    ? 'Cancel adding markers'
+                    : 'Add markers to map'
+                }
+                placement="right-start"
+                theme="mapBtnTT"
+              >
+                <button
+                  id="toggle-markers"
+                  className="toggle-markers rounded"
+                  aria-label="Toggle marker mode"
+                  onMouseOver={handleMouseOver}
+                  style={{
+                    position: 'relative',
+                    zIndex: isHovering ? 900 : 10,
+                    border: '0px solid rgba(0,0,0,0.2)',
+                    backgroundClip: 'padding-box',
+                    width: 42,
+                    height: 42,
+                  }}
+                  onClick={handleToggleMarkerMode}
+                >
+                  <FontAwesomeIcon
+                    icon={faLocationDot}
+                    size="2xl"
+                    className={isAddingMarkers ? 'pulsing-icon' : ''}
+                    color={isAddingMarkers ? '#FF0000' : '#ffffff'}
+                  />
+                </button>
+              </Tippy>
+              <hr style={{ height: '8pt', visibility: 'hidden' }} />
+            </>
+          )}
         </Control>
-
-        {/* COORDINATE CONTROLS */}
-        {onRequestCoordinate || onRequestFitBounds || onToggleMarkerMode ? (
-          <Control position="topleft">
-            {onRequestCoordinate && (
-              <>
-                <Tippy
-                  content="Center map on centroid of latest GPS Fix positions"
-                  placement="right-start"
-                  theme="mapBtnTT"
-                >
-                  <button
-                    id="vehicle-center"
-                    className="vehicle-center rounded"
-                    aria-label="Center map on vehicle"
-                    onMouseOver={handleMouseOver}
-                    style={{
-                      position: 'relative',
-                      zIndex: isHovering ? 900 : 10,
-                      border: '0px solid rgba(0,0,0,0.2)',
-                      backgroundClip: 'padding-box',
-                      width: 42,
-                      height: 42,
-                    }}
-                    onClick={onRequestCoordinate}
-                  >
-                    <FontAwesomeIcon
-                      icon={faArrowsToCircle}
-                      size="2xl"
-                      color="#ffffff"
-                    />
-                  </button>
-                </Tippy>
-                <hr style={{ height: '8pt', visibility: 'hidden' }} />
-              </>
-            )}
-
-            {onRequestFitBounds && (
-              <>
-                <Tippy
-                  content="Zoom out to all available/selected vehicles"
-                  placement="right-start"
-                  theme="mapBtnTT"
-                >
-                  <button
-                    id="allVehicles-center"
-                    className="allVehicles-center rounded"
-                    aria-label="Center map on all vehicles"
-                    onMouseOver={handleMouseOver}
-                    style={{
-                      position: 'relative',
-                      zIndex: isHovering ? 900 : 10,
-                      border: '0px solid rgba(0,0,0,0.2)',
-                      backgroundClip: 'padding-box',
-                      width: 42,
-                      height: 42,
-                    }}
-                    onClick={handleRequestFitBounds}
-                  >
-                    <FontAwesomeIcon
-                      icon={faArrowsUpDownLeftRight}
-                      size="2xl"
-                      color="#ffffff"
-                    />
-                  </button>
-                </Tippy>
-                <hr style={{ height: '8pt', visibility: 'hidden' }} />
-              </>
-            )}
-
-            {onToggleMarkerMode && (
-              <>
-                <Tippy
-                  content={
-                    isAddingMarkers
-                      ? 'Cancel adding markers'
-                      : 'Add markers to map'
-                  }
-                  placement="right-start"
-                  theme="mapBtnTT"
-                >
-                  <button
-                    id="toggle-markers"
-                    className="toggle-markers rounded"
-                    aria-label="Toggle marker mode"
-                    onMouseOver={handleMouseOver}
-                    style={{
-                      position: 'relative',
-                      zIndex: isHovering ? 900 : 10,
-                      border: '0px solid rgba(0,0,0,0.2)',
-                      backgroundClip: 'padding-box',
-                      width: 42,
-                      height: 42,
-                    }}
-                    onClick={handleToggleMarkerMode}
-                  >
-                    <FontAwesomeIcon
-                      icon={faLocationDot}
-                      size="2xl"
-                      className={isAddingMarkers ? 'pulsing-icon' : ''}
-                      color={isAddingMarkers ? '#FF0000' : '#ffffff'}
-                    />
-                  </button>
-                </Tippy>
-                <hr style={{ height: '8pt', visibility: 'hidden' }} />
-              </>
-            )}
-          </Control>
-        ) : null}
 
         {/* MEASUREMENT CONTROLS - In a separate Control component */}
         <Control position="topright">

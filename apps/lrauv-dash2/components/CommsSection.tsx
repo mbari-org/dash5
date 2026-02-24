@@ -88,7 +88,7 @@ const CommsSection: React.FC<CommsSectionProps> = ({
     const day = today
       ? 'Today'
       : DateTime.fromISO(item?.commsIsoTime ?? '').toFormat('MMM d yyyy')
-    const time = DateTime.fromISO(item?.commsIsoTime ?? '').toFormat('H:mm')
+    const time = DateTime.fromISO(item?.commsIsoTime ?? '').toFormat('H:mm:ss')
 
     return item ? (
       <CommsCell
