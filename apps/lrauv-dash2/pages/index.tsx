@@ -23,6 +23,7 @@ import { useMarkers } from '../components/MarkerContext'
 import toast from 'react-hot-toast'
 import { createLogger } from '@mbari/utils'
 import { PlatformsListModal } from '../components/PlatformsListModal'
+import VehicleColorsModal from '../components/VehicleColorsModal'
 
 // This is a tricky workaround to prevent leaflet from crashing next.js
 // SSR. If we don't do this, the leaflet map will be loaded server side
@@ -707,6 +708,15 @@ const OverViewMap: React.FC<{
           )
         })}
       </Map>
+      {showVehicleColors ? (
+        <VehicleColorsModal
+          isOpen={showVehicleColors}
+          onClose={handleCloseVehicleColors}
+          anchorPosition={colorModalPosition}
+          trackedVehicles={trackedVehicles?.map((v) => v.name) ?? []}
+          forceShowAll={true}
+        />
+      ) : null}
     </>
   )
 }

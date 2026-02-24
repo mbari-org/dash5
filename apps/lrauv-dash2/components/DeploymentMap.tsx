@@ -673,15 +673,15 @@ const DeploymentMap: React.FC<DeploymentMapProps> = ({
             disableAutoFit={isTimelineScrubbing}
           />
         )}
-        <VehicleColorsModal
-          isOpen={colorModalOpen}
-          onClose={() => setColorModalOpen(false)}
-          anchorPosition={colorModalPosition}
-          trackedVehicles={vehicleName ? [vehicleName] : []}
-          activeVehicle={vehicleName || undefined}
-          forceShowAll={true}
-        />
       </Map>
+      <VehicleColorsModal
+        isOpen={colorModalOpen}
+        onClose={() => setColorModalOpen(false)}
+        anchorPosition={colorModalPosition}
+        trackedVehicles={vehicleName ? [vehicleName] : []}
+        activeVehicle={vehicleName || undefined}
+        forceShowAll={true}
+      />
     </div>
   )
 }
