@@ -111,6 +111,10 @@ const OverViewMap: React.FC<{
     top: 0,
     left: 0,
   })
+  const [colorModalPosition, setColorModalPosition] = useState({
+    top: 100,
+    left: 100,
+  })
 
   // Marker state
   const {
@@ -517,10 +521,14 @@ const OverViewMap: React.FC<{
     setShowPlatformsModal(false)
   }, [])
 
-  // handleVehicleColorRequest- Show vehicle colors
-  const handleVehicleColorRequest = useCallback((vehicleName?: string) => {
-    setShowVehicleColors(true)
-  }, [])
+  // handleVehicleColorRequest - Show vehicle colors at anchor (from Map button)
+  const handleVehicleColorRequest = useCallback(
+    (anchor?: { top: number; left: number }) => {
+      setColorModalPosition(anchor ?? { top: 100, left: 100 })
+      setShowVehicleColors(true)
+    },
+    []
+  )
 
   // handleCloseVehicleColors - vehicle colors modal is closed
   const handleCloseVehicleColors = useCallback((vehicleName?: string) => {
