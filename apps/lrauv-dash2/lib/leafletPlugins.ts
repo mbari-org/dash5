@@ -18,53 +18,65 @@ export function initLeafletGoogle(apiKey: string): Promise<void> {
   }
 
   if (window.google?.maps) {
-    return initPromise != null
-      ? initPromise
-      : (initPromise = loadGoogleMutantOnly())
+    return initPromise ?? (initPromise = loadGoogleMutantOnly())
   }
 
-  if (initPromise) {
-    return initPromise
-  }
+  if (!initPromise) {
+    initPromise = (async () => {
+      const existing = document.getElementById('google-maps-script')
+      if (existing) {
+        await waitForGoogle(10000)
+        await loadGoogleMutantOnly()
+        return
+      }
 
-  initPromise = (async () => {
-    const existing = document.getElementById('google-maps-script')
-    if (existing) {
-      await waitForGoogle()
+      const script = document.createElement('script')
+      script.id = 'google-maps-script'
+      script.src = `https://maps.googleapis.com/maps/api/js?key=${apiKey}&libraries=places,elevation`
+      script.async = true
+      script.defer = true
+
+      await new Promise<void>((resolve, reject) => {
+        script.onload = () => resolve()
+        script.onerror = (e) => reject(e)
+        document.head.appendChild(script)
+      })
+
+      await waitForGoogle(10000)
       await loadGoogleMutantOnly()
-      return
-    }
-
-    const script = document.createElement('script')
-    script.id = 'google-maps-script'
-    script.src = `https://maps.googleapis.com/maps/api/js?key=${apiKey}&libraries=places,elevation`
-    script.async = true
-    script.defer = true
-
-    await new Promise<void>((resolve, reject) => {
-      script.onload = () => resolve()
-      script.onerror = (e) => reject(e)
-      document.head.appendChild(script)
+    })().catch((err) => {
+      initPromise = null
+      throw err
     })
-
-    await waitForGoogle()
-    await loadGoogleMutantOnly()
-  })()
+  }
 
   return initPromise
 }
 
-function waitForGoogle(): Promise<void> {
+function waitForGoogle(timeoutMs = 10000): Promise<void> {
   if (window.google?.maps) return Promise.resolve()
-  return new Promise((resolve) => {
+
+  return new Promise((resolve, reject) => {
+    const start = Date.now()
+    let rafId = 0
+
     const check = () => {
       if (window.google?.maps) {
+        cancelAnimationFrame(rafId)
         resolve()
         return
       }
-      requestAnimationFrame(check)
+
+      if (Date.now() - start >= timeoutMs) {
+        cancelAnimationFrame(rafId)
+        reject(new Error('Timed out waiting for Google Maps API'))
+        return
+      }
+
+      rafId = requestAnimationFrame(check)
     }
-    check()
+
+    rafId = requestAnimationFrame(check)
   })
 }
 

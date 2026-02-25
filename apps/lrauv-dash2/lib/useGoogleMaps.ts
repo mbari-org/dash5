@@ -11,16 +11,19 @@ export const useGoogleMaps = () => {
 
   useEffect(() => {
     if (typeof window === 'undefined') return
+
     if (window.google?.maps) {
       setMapsLoaded(true)
       return
     }
-    const check = () => {
+
+    const id = setInterval(() => {
       if (window.google?.maps) {
+        clearInterval(id)
         setMapsLoaded(true)
       }
-    }
-    const id = setInterval(check, 200)
+    }, 200)
+
     return () => clearInterval(id)
   }, [])
 
