@@ -94,6 +94,7 @@ const OverViewMap: React.FC<{
 }> = ({ trackedVehicles }) => {
   // Add mapRef to store the Leaflet map instance
   const mapRef = useRef<L.Map | null>(null)
+  const router = useRouter()
   const { handleDepthRequest, elevationAvailable } = useGoogleElevator()
   const [center, setCenter] = useState<undefined | [number, number]>()
   const [centerZoom, setCenterZoom] = useState<number | undefined>(undefined)
@@ -209,9 +210,6 @@ const OverViewMap: React.FC<{
     (gps: VPosDetail) => {
       if ((latestGPS?.isoTime ?? 0) > gps.isoTime || !latestGPS) {
         setLatestGPS(gps)
-        const coords: [number, number] = [gps.latitude, gps.longitude]
-        setCenter(coords)
-        setViewMode('center')
       }
       // Store position for bounds calculation
       vehiclePositions.current.push([gps.latitude, gps.longitude])
@@ -589,21 +587,21 @@ const OverViewMap: React.FC<{
         <PlatformsListModal onClose={handleClosePlatforms} />
       ) : null}
       <Map
+        key={`overview-map-${router.asPath}`}
         ref={mapRef}
         className="h-full w-full"
         onMapReady={(map) => {
           logger.debug('🌍 Map ready callback triggered in OverViewMap')
-          // Store the Leaflet instance
           mapRef.current = map
-
-          // Force redraw - after map is ready
-          setTimeout(() => {
-            try {
-              map.invalidateSize()
-            } catch (e) {
-              logger.warn('Could not invalidate map size:', e)
-            }
-          }, 200)
+          ;[200, 800].forEach((delay) => {
+            setTimeout(() => {
+              try {
+                map.invalidateSize()
+              } catch (e) {
+                logger.warn('Could not invalidate map size:', e)
+              }
+            }, delay)
+          })
         }}
         trackedVehicles={trackedVehicles?.map((vehicle) => ({
           ...vehicle,

@@ -1,4 +1,5 @@
 import dynamic from 'next/dynamic'
+import { useRouter } from 'next/router'
 import React, { useCallback, useState, useRef, useEffect, useMemo } from 'react'
 import { useManagedWaypoints } from '@mbari/react-ui'
 import useGoogleElevator from '../lib/useGoogleElevator'
@@ -70,6 +71,7 @@ const DeploymentMap: React.FC<DeploymentMapProps> = ({
   startTime,
   endTime,
 }) => {
+  const router = useRouter()
   const mapRef = useRef<any>(null)
   const {
     updatedWaypoints,
@@ -543,12 +545,22 @@ const DeploymentMap: React.FC<DeploymentMapProps> = ({
         <PlatformsListModal onClose={handleClosePlatforms} />
       ) : null}
       <Map
+        key={`deployment-map-${router.asPath}-${vehicleName ?? 'unknown'}`}
         ref={mapRef}
         className="h-full min-h-0 w-full"
         maxZoom={17}
         onMapReady={(map) => {
           logger.debug('Map is ready!')
           mapRef.current = map
+          ;[200, 800].forEach((delay) => {
+            setTimeout(() => {
+              try {
+                map.invalidateSize()
+              } catch (e) {
+                logger.warn('Could not invalidate map size:', e)
+              }
+            }, delay)
+          })
         }}
         center={center}
         centerZoom={centerZoom}
