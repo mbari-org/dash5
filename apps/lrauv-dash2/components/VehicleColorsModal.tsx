@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react'
 import { useVehicleColors } from './VehicleColorsContext'
-import { Modal } from '@mbari/react-ui/src/Modal/Modal'
+import { Modal } from '@mbari/react-ui'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { faTimes, faEyeDropper } from '@fortawesome/free-solid-svg-icons'
 import { SketchPicker } from 'react-color'

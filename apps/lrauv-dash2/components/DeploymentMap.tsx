@@ -1,4 +1,5 @@
 import dynamic from 'next/dynamic'
+import { useRouter } from 'next/router'
 import React, { useCallback, useState, useRef, useEffect, useMemo } from 'react'
 import { useManagedWaypoints } from '@mbari/react-ui'
 import useGoogleElevator from '../lib/useGoogleElevator'
@@ -11,14 +12,20 @@ import toast from 'react-hot-toast'
 import { createLogger } from '@mbari/utils'
 import VehicleColorsModal from './VehicleColorsModal'
 import useTrackedVehicles from '../lib/useTrackedVehicles'
-import { useDepthRequest } from '@mbari/utils/useDepthRequest'
-
 // This is a tricky workaround to prevent leaflet from crashing next.js
 // SSR. If we don't do this, the leaflet map will be loaded server side
 // and throw a window error.
 const Map = dynamic(() => import('@mbari/react-ui/dist/Map/Map'), {
   ssr: false,
 })
+
+const MapDepthDisplay = dynamic(
+  () =>
+    import('@mbari/react-ui/dist/Map/Map').then((m) => ({
+      default: m.MapDepthDisplay,
+    })),
+  { ssr: false }
+)
 const DraggableMarker = dynamic(() => import('./DraggableMarker'), {
   ssr: false,
 })
@@ -64,6 +71,7 @@ const DeploymentMap: React.FC<DeploymentMapProps> = ({
   startTime,
   endTime,
 }) => {
+  const router = useRouter()
   const mapRef = useRef<any>(null)
   const {
     updatedWaypoints,
@@ -80,18 +88,7 @@ const DeploymentMap: React.FC<DeploymentMapProps> = ({
       ),
     [updatedWaypoints, handleWaypointsUpdate]
   )
-  const { handleDepthRequest, elevationAvailable } = useGoogleElevator()
-  // Depth request hook
-  const { handleDepthRequestWithFeedback } = useDepthRequest(
-    handleDepthRequest,
-    {
-      warningToastId: 'depth-unavailable',
-      errorToastId: 'depth-result',
-      loadingToastId: 'depth-loading',
-      warningToastClass: 'blue-toast',
-      toastDuration: 5000,
-    }
-  )
+  const { handleDepthRequest } = useGoogleElevator()
 
   // Filter out waypoints with NaN lat/lon
   const plottedWaypoints = updatedWaypoints.filter(
@@ -477,20 +474,17 @@ const DeploymentMap: React.FC<DeploymentMapProps> = ({
     setShowLayersModal(false)
   }, [])
 
-  const handleVehicleColorRequest = useCallback(() => {
-    // Add debugging to verify values
-    logger.debug('Opening color modal with:', {
-      vehicleName,
-      trackedVehicles,
-      modalTrackedVehicles: vehicleName ? [vehicleName] : [],
-    })
-
-    setColorModalPosition({
-      top: 100,
-      left: 100,
-    })
-    setColorModalOpen(true)
-  }, [vehicleName, trackedVehicles])
+  const handleVehicleColorRequest = useCallback(
+    (anchor?: { top: number; left: number }) => {
+      if (anchor) {
+        setColorModalPosition(anchor)
+      } else {
+        setColorModalPosition({ top: 100, left: 100 })
+      }
+      setColorModalOpen(true)
+    },
+    []
+  )
 
   const handleCloseVehicleColors = useCallback((vehicleName?: string) => {
     setShowVehicleColors(false)
@@ -551,16 +545,22 @@ const DeploymentMap: React.FC<DeploymentMapProps> = ({
         <PlatformsListModal onClose={handleClosePlatforms} />
       ) : null}
       <Map
+        key={`deployment-map-${router.asPath}-${vehicleName ?? 'unknown'}`}
         ref={mapRef}
         className="h-full min-h-0 w-full"
         maxZoom={17}
         onMapReady={(map) => {
           logger.debug('Map is ready!')
           mapRef.current = map
-        }}
-        onRequestDepth={async (lat, lng) => {
-          const result = await handleDepthRequestWithFeedback(lat, lng)
-          return result.depth ?? 0
+          ;[200, 800].forEach((delay) => {
+            setTimeout(() => {
+              try {
+                map.invalidateSize()
+              } catch (e) {
+                logger.warn('Could not invalidate map size:', e)
+              }
+            }, delay)
+          })
         }}
         center={center}
         centerZoom={centerZoom}
@@ -624,6 +624,16 @@ const DeploymentMap: React.FC<DeploymentMapProps> = ({
           )
         }
       >
+        <MapDepthDisplay
+          depthRequest={handleDepthRequest}
+          options={{
+            warningToastId: 'depth-unavailable',
+            errorToastId: 'depth-result',
+            loadingToastId: 'depth-loading',
+            warningToastClass: 'blue-toast',
+            toastDuration: 5000,
+          }}
+        />
         {selectedStations.map((station) => {
           const lng = station.geojson.geometry.coordinates[0]
           const lat = station.geojson.geometry.coordinates[1]
@@ -675,15 +685,15 @@ const DeploymentMap: React.FC<DeploymentMapProps> = ({
             disableAutoFit={isTimelineScrubbing}
           />
         )}
-        <VehicleColorsModal
-          isOpen={colorModalOpen}
-          onClose={() => setColorModalOpen(false)}
-          anchorPosition={colorModalPosition}
-          trackedVehicles={vehicleName ? [vehicleName] : []}
-          activeVehicle={vehicleName || undefined}
-          forceShowAll={true}
-        />
       </Map>
+      <VehicleColorsModal
+        isOpen={colorModalOpen}
+        onClose={() => setColorModalOpen(false)}
+        anchorPosition={colorModalPosition}
+        trackedVehicles={vehicleName ? [vehicleName] : []}
+        activeVehicle={vehicleName || undefined}
+        forceShowAll={true}
+      />
     </div>
   )
 }

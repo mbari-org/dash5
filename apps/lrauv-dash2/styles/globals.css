@@ -15,9 +15,11 @@ a {
   box-sizing: border-box;
 }
 
-/*  This is a workaround to make sure that every parent element of the map has a min height on load to prevent Leaflet from showing gray tiles */
-
+/*  Min-height 0 on flex parents so the map can shrink and Leaflet doesn't show gray tiles.
+    Needed for: legacy split-view classes, Allotment panes, and the Leaflet container. */
 .split-view-container,
-.split-view-view {
+.split-view-view,
+.leaflet-container,
+[class*='splitViewView'] {
   min-height: 0 !important;
 }
