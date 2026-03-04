@@ -1,8 +1,29 @@
-import React, { useEffect, useState, useMemo } from 'react'
+import React, { useEffect, useRef, useState } from 'react'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { faSync } from '@fortawesome/free-solid-svg-icons'
 import Tippy from '@tippyjs/react'
 import { formatElapsedTime } from '@mbari/utils'
+
+const SpinnerIcon = React.memo<{ spinning: boolean }>(function SpinnerIcon({
+  spinning,
+}) {
+  return (
+    <span
+      style={
+        spinning
+          ? { display: 'inline-block', willChange: 'transform' }
+          : undefined
+      }
+    >
+      <FontAwesomeIcon
+        icon={faSync}
+        size="2xl"
+        color="#ffffff"
+        className={spinning ? 'animate-spin' : ''}
+      />
+    </span>
+  )
+})
 
 export interface RefreshButtonProps {
   onClick: () => void
@@ -12,6 +33,8 @@ export interface RefreshButtonProps {
   lastRefreshed?: Date | null
   autoRefreshMinutes?: number
   tooltipPreamble?: string
+  /** Spinner runs this long (ms) from click. Independent of loading. Default 400. */
+  spinDurationMs?: number
 }
 
 export const RefreshButton: React.FC<RefreshButtonProps> = ({
@@ -22,11 +45,29 @@ export const RefreshButton: React.FC<RefreshButtonProps> = ({
   lastRefreshed,
   autoRefreshMinutes,
   tooltipPreamble = 'Refresh vehicle positions',
+  spinDurationMs = 400,
 }) => {
-  // Update elapsed time every 2 seconds; initial "0s" for first paint
+  const [spinning, setSpinning] = useState(false)
+  const spinTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const [elapsedTime, setElapsedTime] = useState<string>('0s')
   const [nextAutoRefreshCountdown, setNextAutoRefreshCountdown] =
     useState<string>('')
+
+  const handleClick = () => {
+    setSpinning(true)
+    if (spinTimeoutRef.current) clearTimeout(spinTimeoutRef.current)
+    spinTimeoutRef.current = setTimeout(() => {
+      setSpinning(false)
+      spinTimeoutRef.current = null
+    }, spinDurationMs)
+    onClick()
+  }
+
+  useEffect(() => {
+    return () => {
+      if (spinTimeoutRef.current) clearTimeout(spinTimeoutRef.current)
+    }
+  }, [])
 
   useEffect(() => {
     if (loading) {
@@ -103,7 +144,7 @@ export const RefreshButton: React.FC<RefreshButtonProps> = ({
         id="refreshBtn"
         className={`refreshBtn rounded ${className}`}
         aria-label="Refresh vehicle positions"
-        onClick={onClick}
+        onClick={handleClick}
         disabled={disabled || loading}
         style={{
           position: 'relative',
@@ -116,12 +157,7 @@ export const RefreshButton: React.FC<RefreshButtonProps> = ({
             '0 3px 5px -1px rgba(0, 0, 0, 0.2), 0 5px 8px rgba(0, 0, 0, 0.14), 0 1px 14px rgba(0, 0, 0, 0.12)',
         }}
       >
-        <FontAwesomeIcon
-          icon={faSync}
-          size="2xl"
-          color="#ffffff"
-          className={loading ? 'animate-spin' : ''}
-        />
+        <SpinnerIcon spinning={spinning || loading} />
       </button>
     </Tippy>
   )

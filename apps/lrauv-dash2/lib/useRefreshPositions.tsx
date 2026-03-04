@@ -26,7 +26,6 @@ export interface UseRefreshPositionsOptions {
 
 /** Duration the refresh-position toast is shown and throttle window before another refresh is allowed. */
 const REFRESH_TOAST_DURATION_MS = 3000
-
 const getRefreshToastId = (vehicleName: string) =>
   `refresh-positions-${vehicleName}`
 
