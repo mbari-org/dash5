@@ -7,6 +7,7 @@ import {
 } from '@mbari/api-client'
 import { Polyline, useMap, Circle, Tooltip } from 'react-leaflet'
 import { LatLng, LeafletMouseEventHandlerFn } from 'leaflet'
+import { useRouter } from 'next/router'
 import { useSharedPath } from './SharedPathContextProvider'
 import { distance } from '@turf/turf'
 import { parseISO, getTime } from 'date-fns'
@@ -72,6 +73,7 @@ const VehiclePath: React.FC<VehiclePathProps> = ({
   disableAutoFit = false,
 }) => {
   const map = useMap()
+  const router = useRouter()
   const { sharedPath, dispatch } = useSharedPath()
 
   const { data: lastDeployment } = useLastDeployment(
@@ -301,13 +303,26 @@ const VehiclePath: React.FC<VehiclePathProps> = ({
   ])
 
   // OVERVIEW MAP
-  // Fit bounds for OverViewMap
+  // Re-run grouped fitBounds on route/tab switches after layout settles.
   useEffect(() => {
+    if (!grouped) return
+
     const coords = Object.values(sharedPath).flat()
-    if (grouped && coords.length > 1) {
-      map.fitBounds(coords)
+    if (coords.length <= 1) return
+
+    const applyFit = () => {
+      try {
+        map.invalidateSize()
+        map.fitBounds(coords)
+      } catch {
+        // noop; next delayed retry may succeed after layout settles
+      }
     }
-  }, [sharedPath, grouped, map])
+
+    applyFit()
+    const timers = [250, 800].map((delay) => setTimeout(applyFit, delay))
+    return () => timers.forEach((t) => clearTimeout(t))
+  }, [sharedPath, grouped, map, router.asPath])
 
   // Determine Time Difference since last gpsFix
   const latest =

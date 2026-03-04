@@ -74,6 +74,18 @@ const DeploymentMap = dynamic(() => import('../../components/DeploymentMap'), {
 type AvailableTab = 'vehicle' | 'depth' | null
 type MobileView = 'main' | 'sidebar'
 
+const useIsDesktop = () => {
+  const [isDesktop, setIsDesktop] = useState(true)
+  useEffect(() => {
+    const mq = window.matchMedia('(min-width: 1280px)')
+    setIsDesktop(mq.matches)
+    const handler = (e: MediaQueryListEvent) => setIsDesktop(e.matches)
+    mq.addEventListener('change', handler)
+    return () => mq.removeEventListener('change', handler)
+  }, [])
+  return isDesktop
+}
+
 const Vehicle: NextPage = () => {
   const { authenticated } = useTethysApiContext()
   const { mapsLoaded } = useGoogleMaps()
@@ -94,6 +106,7 @@ const Vehicle: NextPage = () => {
   }
 
   const [mobileView, setMobileView] = useState<MobileView>('main')
+  const isDesktop = useIsDesktop()
 
   const params = (router.query?.deployment ?? []) as string[]
   const vehicleName = params[0]
@@ -452,27 +465,26 @@ const Vehicle: NextPage = () => {
               authenticated={authenticated}
             />
 
-            {/* Desktop view */}
-            <div className="hidden min-h-0 flex-1 xl:flex">
-              <div className={styles.content}>
-                <Allotment
-                  separator
-                  defaultSizes={[75, 25]}
-                  className="min-h-0"
-                >
-                  <Allotment.Pane minSize={720}>
-                    {primarySection}
-                  </Allotment.Pane>
-                  <Allotment.Pane minSize={512}>
-                    {secondarySection}
-                  </Allotment.Pane>
-                </Allotment>
+            {/* Single map instance: render one layout to avoid duplicate controls */}
+            {isDesktop ? (
+              <div className="flex min-h-0 flex-1">
+                <div className={styles.content}>
+                  <Allotment
+                    separator
+                    defaultSizes={[75, 25]}
+                    className="min-h-0"
+                  >
+                    <Allotment.Pane minSize={720}>
+                      {primarySection}
+                    </Allotment.Pane>
+                    <Allotment.Pane minSize={512}>
+                      {secondarySection}
+                    </Allotment.Pane>
+                  </Allotment>
+                </div>
               </div>
-            </div>
-
-            {/* Mobile view (toggle between main and sidebar) */}
-            <div className="flex min-h-0 flex-1 xl:hidden">
-              <div className={clsx(styles.content, 'flex-col')}>
+            ) : (
+              <div className="flex min-h-0 flex-1 flex-col">
                 <div className="flex shrink-0 items-center gap-2 border-b border-slate-200 bg-white px-4 py-2">
                   <button
                     type="button"
@@ -504,7 +516,7 @@ const Vehicle: NextPage = () => {
                   {mobileView === 'main' ? primarySection : secondarySection}
                 </div>
               </div>
-            </div>
+            )}
           </Layout>
         </div>
       </SelectedStationsProvider>

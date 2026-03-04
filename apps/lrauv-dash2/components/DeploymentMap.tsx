@@ -1,6 +1,7 @@
 import dynamic from 'next/dynamic'
+import { useRouter } from 'next/router'
 import React, { useCallback, useState, useRef, useEffect, useMemo } from 'react'
-import { useManagedWaypoints } from '@mbari/react-ui'
+import { RefreshButton, useManagedWaypoints } from '@mbari/react-ui'
 import useGoogleElevator from '../lib/useGoogleElevator'
 import { VPosDetail } from '@mbari/api-client'
 import { MapLayersListModal } from '../components/MapLayersListModal'
@@ -11,7 +12,6 @@ import toast from 'react-hot-toast'
 import { createLogger } from '@mbari/utils'
 import VehicleColorsModal from './VehicleColorsModal'
 import useTrackedVehicles from '../lib/useTrackedVehicles'
-import { useDepthRequest } from '@mbari/utils/useDepthRequest'
 import { useRefreshPositions } from '../lib/useRefreshPositions'
 
 // This is a tricky workaround to prevent leaflet from crashing next.js
@@ -20,6 +20,14 @@ import { useRefreshPositions } from '../lib/useRefreshPositions'
 const Map = dynamic(() => import('@mbari/react-ui/dist/Map/Map'), {
   ssr: false,
 })
+
+const MapDepthDisplay = dynamic(
+  () =>
+    import('@mbari/react-ui/dist/Map/Map').then((m) => ({
+      default: m.MapDepthDisplay,
+    })),
+  { ssr: false }
+)
 const DraggableMarker = dynamic(() => import('./DraggableMarker'), {
   ssr: false,
 })
@@ -65,6 +73,7 @@ const DeploymentMap: React.FC<DeploymentMapProps> = ({
   startTime,
   endTime,
 }) => {
+  const router = useRouter()
   const mapRef = useRef<any>(null)
   const {
     updatedWaypoints,
@@ -81,18 +90,7 @@ const DeploymentMap: React.FC<DeploymentMapProps> = ({
       ),
     [updatedWaypoints, handleWaypointsUpdate]
   )
-  const { handleDepthRequest, elevationAvailable } = useGoogleElevator()
-  // Depth request hook
-  const { handleDepthRequestWithFeedback } = useDepthRequest(
-    handleDepthRequest,
-    {
-      warningToastId: 'depth-unavailable',
-      errorToastId: 'depth-result',
-      loadingToastId: 'depth-loading',
-      warningToastClass: 'blue-toast',
-      toastDuration: 5000,
-    }
-  )
+  const { handleDepthRequest } = useGoogleElevator()
 
   // Filter out waypoints with NaN lat/lon
   const plottedWaypoints = updatedWaypoints.filter(
@@ -495,20 +493,17 @@ const DeploymentMap: React.FC<DeploymentMapProps> = ({
     setShowLayersModal(false)
   }, [])
 
-  const handleVehicleColorRequest = useCallback(() => {
-    // Add debugging to verify values
-    logger.debug('Opening color modal with:', {
-      vehicleName,
-      trackedVehicles,
-      modalTrackedVehicles: vehicleName ? [vehicleName] : [],
-    })
-
-    setColorModalPosition({
-      top: 100,
-      left: 100,
-    })
-    setColorModalOpen(true)
-  }, [vehicleName, trackedVehicles])
+  const handleVehicleColorRequest = useCallback(
+    (anchor?: { top: number; left: number }) => {
+      if (anchor) {
+        setColorModalPosition(anchor)
+      } else {
+        setColorModalPosition({ top: 100, left: 100 })
+      }
+      setColorModalOpen(true)
+    },
+    []
+  )
 
   const handleCloseVehicleColors = useCallback((vehicleName?: string) => {
     setShowVehicleColors(false)
@@ -568,146 +563,177 @@ const DeploymentMap: React.FC<DeploymentMapProps> = ({
       {showPlatformsModal ? (
         <PlatformsListModal onClose={handleClosePlatforms} />
       ) : null}
-      <Map
-        ref={mapRef}
-        className="h-full min-h-0 w-full"
-        maxZoom={17}
-        onMapReady={(map) => {
-          logger.debug('Map is ready!')
-          mapRef.current = map
-        }}
-        onRequestDepth={async (lat, lng) => {
-          const result = await handleDepthRequestWithFeedback(lat, lng)
-          return result.depth ?? 0
-        }}
-        center={center}
-        centerZoom={centerZoom}
-        fitBounds={bounds}
-        viewMode={viewMode}
-        onRequestCoordinate={handleCoordinateRequest}
-        onRequestPlatforms={handlePlatformsRequest}
-        onRequestFitBounds={handleFitBoundsRequest}
-        onRequestStations={handleLayersRequest}
-        onRequestVehicleColors={handleVehicleColorRequest}
-        onRequestRefresh={refreshAll}
-        refreshLoading={refreshLoading}
-        refreshLastRefreshed={lastRefreshed}
-        refreshAutoRefreshMinutes={10}
-        refreshTooltipPreamble="Reload LRAUV positions"
-        isAddingMarkers={isAddingMarkers}
-        onToggleMarkerMode={handleToggleMarkerMode}
-        onRequestMarkers={handleMarkersRequest}
-        renderMapClickHandler={() => (
-          <MapClickHandler
-            isAddingMarkers={isAddingMarkers}
-            isEditingMarker={false}
-            onAddMarker={handleAddMarker}
+      <div className="relative h-full min-h-0 w-full">
+        <Map
+          key={`deployment-map-${router.asPath}-${vehicleName ?? 'unknown'}`}
+          ref={mapRef}
+          className="h-full min-h-0 w-full"
+          maxZoom={17}
+          onMapReady={(map) => {
+            logger.debug('Map is ready!')
+            mapRef.current = map
+            ;[200, 800].forEach((delay) => {
+              setTimeout(() => {
+                try {
+                  map.invalidateSize()
+                } catch (e) {
+                  logger.warn('Could not invalidate map size:', e)
+                }
+              }, delay)
+            })
+          }}
+          center={center}
+          centerZoom={centerZoom}
+          fitBounds={bounds}
+          viewMode={viewMode}
+          onRequestCoordinate={handleCoordinateRequest}
+          onRequestPlatforms={handlePlatformsRequest}
+          onRequestFitBounds={handleFitBoundsRequest}
+          onRequestStations={handleLayersRequest}
+          onRequestVehicleColors={handleVehicleColorRequest}
+          isAddingMarkers={isAddingMarkers}
+          onToggleMarkerMode={handleToggleMarkerMode}
+          onRequestMarkers={handleMarkersRequest}
+          renderMapClickHandler={() => (
+            <MapClickHandler
+              isAddingMarkers={isAddingMarkers}
+              isEditingMarker={false}
+              onAddMarker={handleAddMarker}
+            />
+          )}
+          renderCustomMarkerSet={() => (
+            <CustomMarkerSet
+              isAddingMarkers={isAddingMarkers}
+              setIsAddingMarkers={(value) => setIsAddingMarkers(value)}
+            />
+          )}
+          renderDraggableMarkers={() =>
+            markers?.map(
+              (marker) =>
+                // Only render the marker if visible or if visibility !== false
+                marker.visible !== false && (
+                  <DraggableMarker
+                    key={`marker-${marker.id}`}
+                    id={marker.id.toString()}
+                    position={[marker.lat, marker.lng]}
+                    index={marker.index}
+                    label={marker.label}
+                    draggable={true}
+                    isSelected={selectedMarkerId === marker.id.toString()}
+                    isNew={marker.isNew}
+                    savedToLayer={marker.savedToLayer}
+                    iconColor={marker.iconColor || defaultMarkerColor}
+                    onClick={() => handleMarkerClick(marker.id.toString())}
+                    onDragEnd={(newPos) =>
+                      handleMarkerPositionChange(marker.id.toString(), newPos)
+                    }
+                    onEditStateChange={(isEditing) => {
+                      setActiveEditMarkerId(
+                        isEditing ? marker.id.toString() : null
+                      )
+                    }}
+                    onEdit={() => handleEditMarker(marker.id.toString())}
+                    onDelete={() => handleDeleteMarker(marker.id.toString())}
+                    onColorChange={(color) =>
+                      handleMarkerColorChange(marker.id.toString(), color)
+                    }
+                    onSaveToLayer={handleSaveMarkerToLayer}
+                    onRemoveFromLayer={(id) =>
+                      handleSaveMarkerToLayer(id, false)
+                    }
+                  />
+                )
+            )
+          }
+        >
+          <MapDepthDisplay
+            depthRequest={handleDepthRequest}
+            options={{
+              warningToastId: 'depth-unavailable',
+              errorToastId: 'depth-result',
+              loadingToastId: 'depth-loading',
+              warningToastClass: 'blue-toast',
+              toastDuration: 5000,
+            }}
           />
-        )}
-        renderCustomMarkerSet={() => (
-          <CustomMarkerSet
-            isAddingMarkers={isAddingMarkers}
-            setIsAddingMarkers={(value) => setIsAddingMarkers(value)}
-          />
-        )}
-        renderDraggableMarkers={() =>
-          markers?.map(
-            (marker) =>
-              // Only render the marker if visible or if visibility !== false
-              marker.visible !== false && (
-                <DraggableMarker
-                  key={`marker-${marker.id}`}
-                  id={marker.id.toString()}
-                  position={[marker.lat, marker.lng]}
-                  index={marker.index}
-                  label={marker.label}
-                  draggable={true}
-                  isSelected={selectedMarkerId === marker.id.toString()}
-                  isNew={marker.isNew}
-                  savedToLayer={marker.savedToLayer}
-                  iconColor={marker.iconColor || defaultMarkerColor}
-                  onClick={() => handleMarkerClick(marker.id.toString())}
-                  onDragEnd={(newPos) =>
-                    handleMarkerPositionChange(marker.id.toString(), newPos)
-                  }
-                  onEditStateChange={(isEditing) => {
-                    setActiveEditMarkerId(
-                      isEditing ? marker.id.toString() : null
-                    )
-                  }}
-                  onEdit={() => handleEditMarker(marker.id.toString())}
-                  onDelete={() => handleDeleteMarker(marker.id.toString())}
-                  onColorChange={(color) =>
-                    handleMarkerColorChange(marker.id.toString(), color)
-                  }
-                  onSaveToLayer={handleSaveMarkerToLayer}
-                  onRemoveFromLayer={(id) => handleSaveMarkerToLayer(id, false)}
-                />
-              )
-          )
-        }
-      >
-        {selectedStations.map((station) => {
-          const lng = station.geojson.geometry.coordinates[0]
-          const lat = station.geojson.geometry.coordinates[1]
+          {selectedStations.map((station) => {
+            const lng = station.geojson.geometry.coordinates[0]
+            const lat = station.geojson.geometry.coordinates[1]
 
-          if (!lng || !lat) return null
-          return (
-            <StationMarker
-              key={station.name}
-              name={station.name}
-              lat={lat}
-              lng={lng}
+            if (!lng || !lat) return null
+            return (
+              <StationMarker
+                key={station.name}
+                name={station.name}
+                lat={lat}
+                lng={lng}
+              />
+            )
+          })}
+          <PlatformPaths />
+          {plottedWaypoints?.length ? (
+            <>
+              {/* TODO: {plottedWaypoints.map((m, i) => {
+                const index = Number(m.latName.match(/\d+/)?.[0] ?? i)
+                return (
+                  <DraggableMarker
+                    lat={Number(m.lat)}
+                    lng={Number(m.lon)}
+                    key={`${m.latName}-${m.lonName}-${m.lat}-${m.lon}`}
+                    index={index - 1}
+                    draggable={editable && !focusedWaypointIndex}
+                    onDragEnd={handleDragEnd}
+                  />
+                )
+              })} */}
+              {!!focusedWaypointIndex && <ClickableMapPoint />}
+              <WaypointPreviewPath
+                waypoints={plottedWaypoints.map((wp) => ({
+                  lat: Number(wp.lat),
+                  lon: Number(wp.lon),
+                }))}
+              />
+            </>
+          ) : (
+            <VehiclePath
+              name={vehicleName as string}
+              key={`path${vehicleName}`}
+              from={startTime as number}
+              to={endTime as number}
+              indicatorTime={indicatorTime}
+              onScrub={handleMapScrub}
+              onGPSFix={handleGPSFix}
+              onPositionDataLoaded={markInitialLoadDone}
+              // Disable map auto-fit centering when scrubbing the timeline
+              disableAutoFit={isTimelineScrubbing}
             />
-          )
-        })}
-        <PlatformPaths />
-        {plottedWaypoints?.length ? (
-          <>
-            {/* TODO: {plottedWaypoints.map((m, i) => {
-              const index = Number(m.latName.match(/\d+/)?.[0] ?? i)
-              return (
-                <DraggableMarker
-                  lat={Number(m.lat)}
-                  lng={Number(m.lon)}
-                  key={`${m.latName}-${m.lonName}-${m.lat}-${m.lon}`}
-                  index={index - 1}
-                  draggable={editable && !focusedWaypointIndex}
-                  onDragEnd={handleDragEnd}
-                />
-              )
-            })} */}
-            {!!focusedWaypointIndex && <ClickableMapPoint />}
-            <WaypointPreviewPath
-              waypoints={plottedWaypoints.map((wp) => ({
-                lat: Number(wp.lat),
-                lon: Number(wp.lon),
-              }))}
-            />
-          </>
-        ) : (
-          <VehiclePath
-            name={vehicleName as string}
-            key={`path${vehicleName}`}
-            from={startTime as number}
-            to={endTime as number}
-            indicatorTime={indicatorTime}
-            onScrub={handleMapScrub}
-            onGPSFix={handleGPSFix}
-            onPositionDataLoaded={markInitialLoadDone}
-            // Disable map auto-fit centering when scrubbing the timeline
-            disableAutoFit={isTimelineScrubbing}
+          )}
+        </Map>
+        <div
+          style={{
+            position: 'absolute',
+            top: '12px',
+            right: '70px',
+            zIndex: 1000,
+          }}
+        >
+          <RefreshButton
+            onClick={refreshAll}
+            loading={refreshLoading}
+            lastRefreshed={lastRefreshed}
+            autoRefreshMinutes={10}
+            tooltipPreamble="Reload LRAUV positions"
           />
-        )}
-        <VehicleColorsModal
-          isOpen={colorModalOpen}
-          onClose={() => setColorModalOpen(false)}
-          anchorPosition={colorModalPosition}
-          trackedVehicles={vehicleName ? [vehicleName] : []}
-          activeVehicle={vehicleName || undefined}
-          forceShowAll={true}
-        />
-      </Map>
+        </div>
+      </div>
+      <VehicleColorsModal
+        isOpen={colorModalOpen}
+        onClose={() => setColorModalOpen(false)}
+        anchorPosition={colorModalPosition}
+        trackedVehicles={vehicleName ? [vehicleName] : []}
+        activeVehicle={vehicleName || undefined}
+        forceShowAll={true}
+      />
     </div>
   )
 }

@@ -1,9 +1,14 @@
 {
   "extends": "tsconfig/react-library.json",
-  "include": ["."],
-  "exclude": ["dist", "build", "node_modules"],
   "compilerOptions": {
-    "outDir": "./dist"
+    "baseUrl": ".",
+    "paths": {},
+    "rootDir": "./src",
+    "outDir": "./dist",
+    "declaration": true,
+    "declarationMap": true
   },
+  "include": ["src"],
+  "exclude": ["dist", "build", "node_modules"],
   "types": ["resize-observer-browser"]
 }
