@@ -1,7 +1,7 @@
 import dynamic from 'next/dynamic'
 import { useRouter } from 'next/router'
 import React, { useCallback, useState, useRef, useEffect, useMemo } from 'react'
-import { RefreshButton, useManagedWaypoints } from '@mbari/react-ui'
+import { useManagedWaypoints } from '@mbari/react-ui'
 import useGoogleElevator from '../lib/useGoogleElevator'
 import { VPosDetail } from '@mbari/api-client'
 import { MapLayersListModal } from '../components/MapLayersListModal'
@@ -11,6 +11,7 @@ import { PlatformsListModal } from './PlatformsListModal'
 import toast from 'react-hot-toast'
 import { createLogger } from '@mbari/utils'
 import VehicleColorsModal from './VehicleColorsModal'
+import { MapRefreshButton } from './MapRefreshButton'
 import useTrackedVehicles from '../lib/useTrackedVehicles'
 import { useRefreshPositions } from '../lib/useRefreshPositions'
 
@@ -709,22 +710,11 @@ const DeploymentMap: React.FC<DeploymentMapProps> = ({
             />
           )}
         </Map>
-        <div
-          style={{
-            position: 'absolute',
-            top: '12px',
-            right: '70px',
-            zIndex: 1000,
-          }}
-        >
-          <RefreshButton
-            onClick={refreshAll}
-            loading={refreshLoading}
-            lastRefreshed={lastRefreshed}
-            autoRefreshMinutes={10}
-            tooltipPreamble="Reload LRAUV positions"
-          />
-        </div>
+        <MapRefreshButton
+          onClick={refreshAll}
+          loading={refreshLoading}
+          lastRefreshed={lastRefreshed}
+        />
       </div>
       <VehicleColorsModal
         isOpen={colorModalOpen}

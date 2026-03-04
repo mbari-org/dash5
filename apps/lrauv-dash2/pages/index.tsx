@@ -1,4 +1,4 @@
-import { OverviewToolbar, RefreshButton } from '@mbari/react-ui'
+import { OverviewToolbar } from '@mbari/react-ui'
 import { NextPage } from 'next'
 import Layout from '../components/Layout'
 import React, { useCallback, useEffect, useRef, useState } from 'react'
@@ -25,6 +25,7 @@ import { createLogger } from '@mbari/utils'
 import { PlatformsListModal } from '../components/PlatformsListModal'
 import { useRefreshPositions } from '../lib/useRefreshPositions'
 import VehicleColorsModal from '../components/VehicleColorsModal'
+import { MapRefreshButton } from '../components/MapRefreshButton'
 
 // This is a tricky workaround to prevent leaflet from crashing next.js
 // SSR. If we don't do this, the leaflet map will be loaded server side
@@ -720,22 +721,11 @@ const OverViewMap: React.FC<{
             )
           })}
         </Map>
-        <div
-          style={{
-            position: 'absolute',
-            top: '12px',
-            right: '70px',
-            zIndex: 1000,
-          }}
-        >
-          <RefreshButton
-            onClick={refreshAll}
-            loading={refreshLoading}
-            lastRefreshed={lastRefreshed}
-            autoRefreshMinutes={10}
-            tooltipPreamble="Reload LRAUV positions"
-          />
-        </div>
+        <MapRefreshButton
+          onClick={refreshAll}
+          loading={refreshLoading}
+          lastRefreshed={lastRefreshed}
+        />
       </div>
       {showVehicleColors ? (
         <VehicleColorsModal
