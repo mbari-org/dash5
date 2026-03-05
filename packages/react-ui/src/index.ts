@@ -19,3 +19,5 @@ export type {
   MapDepthDisplayProps,
   DepthRequestFn,
 } from './Map/MapDepthDisplay'
+export { RefreshButton } from './Map/RefreshButton'
+export type { RefreshButtonProps } from './Map/RefreshButton'

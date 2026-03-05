@@ -20,7 +20,7 @@ import {
   calculateRelativeNextComm,
   decodeHtmlEntities,
 } from '@mbari/utils'
-import React, { useEffect } from 'react'
+import React, { useEffect, useMemo } from 'react'
 import useTrackedVehicles from '../lib/useTrackedVehicles'
 import axios from 'axios'
 import { DateTime } from 'luxon'
@@ -61,10 +61,12 @@ const ConnectedVehicleCellComponent: React.FC<{
     },
     { staleTime: 5 * 60 * 1000 }
   )
+
+  const defaultFrom = useMemo(() => Date.now() - 24 * 60 * 60 * 1000, [])
   const { data: vehiclePosition, isLoading: positionLoading } = useVehiclePos(
     {
       vehicle: name,
-      from: lastDeployment?.lastEvent ?? 0,
+      from: lastDeployment?.lastEvent ?? defaultFrom,
     },
     {
       enabled: !!lastDeployment?.lastEvent,

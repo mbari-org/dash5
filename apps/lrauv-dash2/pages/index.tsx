@@ -1,7 +1,7 @@
 import { OverviewToolbar } from '@mbari/react-ui'
 import { NextPage } from 'next'
 import Layout from '../components/Layout'
-import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import React, { useCallback, useEffect, useRef, useState } from 'react'
 import dynamic from 'next/dynamic'
 import VehicleDeploymentDropdown from '../components/VehicleDeploymentDropdown'
 import VehicleList from '../components/VehicleList'
@@ -23,7 +23,9 @@ import { useMarkers } from '../components/MarkerContext'
 import toast from 'react-hot-toast'
 import { createLogger } from '@mbari/utils'
 import { PlatformsListModal } from '../components/PlatformsListModal'
+import { useRefreshPositions } from '../lib/useRefreshPositions'
 import VehicleColorsModal from '../components/VehicleColorsModal'
+import { MapRefreshButton } from '../components/MapRefreshButton'
 
 // This is a tricky workaround to prevent leaflet from crashing next.js
 // SSR. If we don't do this, the leaflet map will be loaded server side
@@ -40,7 +42,6 @@ const MapDepthDisplay = dynamic(
     })),
   { ssr: false }
 )
-
 const VehiclePath = dynamic(() => import('../components/VehiclePath'), {
   ssr: false,
 })
@@ -138,6 +139,16 @@ const OverViewMap: React.FC<{
   const uniqueTrackedVehicles = Array.from(new Set(trackedVehicles))
   // Store all vehicle positions for bounds calculation
   const vehiclePositions = useRef<Array<[number, number]>>([])
+
+  const vehicleNames = trackedVehicles.map((v) => v.name)
+  const {
+    refreshAll,
+    loading: refreshLoading,
+    lastRefreshed,
+    markInitialLoadDone,
+  } = useRefreshPositions(vehicleNames, {
+    autoRefreshMinutes: 10,
+  })
 
   // Effect to handle vehicle positions
   useEffect(() => {
@@ -586,126 +597,136 @@ const OverViewMap: React.FC<{
       {showPlatformsModal ? (
         <PlatformsListModal onClose={handleClosePlatforms} />
       ) : null}
-      <Map
-        key={`overview-map-${router.asPath}`}
-        ref={mapRef}
-        className="h-full w-full"
-        onMapReady={(map) => {
-          logger.debug('🌍 Map ready callback triggered in OverViewMap')
-          mapRef.current = map
-          ;[200, 800].forEach((delay) => {
-            setTimeout(() => {
-              try {
-                map.invalidateSize()
-              } catch (e) {
-                logger.warn('Could not invalidate map size:', e)
-              }
-            }, delay)
-          })
-        }}
-        trackedVehicles={trackedVehicles?.map((vehicle) => ({
-          ...vehicle,
-          id: vehicle.id || vehicle.name, // Ensure id is always present
-        }))}
-        center={center}
-        centerZoom={centerZoom}
-        fitBounds={bounds}
-        viewMode={viewMode}
-        onRequestCoordinate={handleCoordinateRequest}
-        onRequestPlatforms={handlePlatformsRequest}
-        onRequestFitBounds={handleFitBoundsRequest}
-        onRequestStations={handleLayersRequest}
-        onRequestVehicleColors={handleVehicleColorRequest}
-        onRequestMarkers={handleMarkersRequest}
-        isAddingMarkers={isAddingMarkers}
-        onToggleMarkerMode={handleToggleMarkerMode}
-        renderMapClickHandler={() => (
-          <MapClickHandler
-            isAddingMarkers={isAddingMarkers}
-            isEditingMarker={false}
-            onAddMarker={handleAddMarker}
-          />
-        )}
-        renderCustomMarkerSet={() => (
-          <CustomMarkerSet
-            isAddingMarkers={isAddingMarkers}
-            setIsAddingMarkers={(value) => setIsAddingMarkers(value)}
-          />
-        )}
-        renderDraggableMarkers={() =>
-          markers.map(
-            (marker) =>
-              // Only render the marker if visible or visibility !== false
-              marker.visible !== false && (
-                <DraggableMarker
-                  key={`marker-${marker.id}`}
-                  id={marker.id.toString()}
-                  position={[marker.lat, marker.lng]}
-                  index={marker.index}
-                  label={marker.label}
-                  draggable={true}
-                  isSelected={selectedMarkerId === marker.id.toString()}
-                  isNew={marker.isNew}
-                  savedToLayer={marker.savedToLayer}
-                  iconColor={marker.iconColor || defaultMarkerColor}
-                  onClick={() => handleMarkerClick(marker.id.toString())}
-                  onDragEnd={(newPos) =>
-                    handleMarkerPositionChange(marker.id.toString(), newPos)
-                  }
-                  onEditStateChange={(isEditing) => {
-                    setActiveEditMarkerId(
-                      isEditing ? marker.id.toString() : null
-                    )
-                  }}
-                  onEdit={() => handleEditMarker(marker.id.toString())}
-                  onDelete={() => handleDeleteMarker(marker.id.toString())}
-                  onColorChange={(color) =>
-                    handleMarkerColorChange(marker.id.toString(), color)
-                  }
-                  onSaveToLayer={handleSaveMarkerToLayer}
-                  onRemoveFromLayer={(id) => handleSaveMarkerToLayer(id, false)}
-                />
-              )
-          )
-        }
-      >
-        <MapDepthDisplay
-          depthRequest={handleDepthRequest}
-          options={{
-            warningToastId: 'depth-unavailable',
-            errorToastId: 'depth-result',
-            loadingToastId: 'depth-loading',
-            warningToastClass: 'blue-toast',
-            toastDuration: 5000,
+      <div className="relative h-full w-full">
+        <Map
+          key={`overview-map-${router.asPath}`}
+          ref={mapRef}
+          className="h-full w-full"
+          onMapReady={(map) => {
+            logger.debug('🌍 Map ready callback triggered in OverViewMap')
+            mapRef.current = map
+            ;[200, 800].forEach((delay) => {
+              setTimeout(() => {
+                try {
+                  map.invalidateSize()
+                } catch (e) {
+                  logger.warn('Could not invalidate map size:', e)
+                }
+              }, delay)
+            })
           }}
-        />
-        {uniqueTrackedVehicles?.map((name, index) => (
-          <VehiclePath
-            name={name.name}
-            key={`path-${name}-${index}`}
-            onGPSFix={handleGPSFix}
-            grouped
-          />
-        ))}
-        <PlatformPaths />
-        {selectedStations?.map((station) => {
-          const lng = station.geojson?.geometry?.coordinates[0]
-          const lat = station.geojson?.geometry?.coordinates[1]
-
-          if (!lng || !lat) {
-            return null
-          }
-
-          return (
-            <StationMarker
-              key={station.name}
-              name={station.name}
-              lat={lat}
-              lng={lng}
+          trackedVehicles={trackedVehicles?.map((vehicle) => ({
+            ...vehicle,
+            id: vehicle.id || vehicle.name, // Ensure id is always present
+          }))}
+          center={center}
+          centerZoom={centerZoom}
+          fitBounds={bounds}
+          viewMode={viewMode}
+          onRequestCoordinate={handleCoordinateRequest}
+          onRequestPlatforms={handlePlatformsRequest}
+          onRequestFitBounds={handleFitBoundsRequest}
+          onRequestStations={handleLayersRequest}
+          onRequestVehicleColors={handleVehicleColorRequest}
+          onRequestMarkers={handleMarkersRequest}
+          isAddingMarkers={isAddingMarkers}
+          onToggleMarkerMode={handleToggleMarkerMode}
+          renderMapClickHandler={() => (
+            <MapClickHandler
+              isAddingMarkers={isAddingMarkers}
+              isEditingMarker={false}
+              onAddMarker={handleAddMarker}
             />
-          )
-        })}
-      </Map>
+          )}
+          renderCustomMarkerSet={() => (
+            <CustomMarkerSet
+              isAddingMarkers={isAddingMarkers}
+              setIsAddingMarkers={(value) => setIsAddingMarkers(value)}
+            />
+          )}
+          renderDraggableMarkers={() =>
+            markers.map(
+              (marker) =>
+                // Only render the marker if visible or visibility !== false
+                marker.visible !== false && (
+                  <DraggableMarker
+                    key={`marker-${marker.id}`}
+                    id={marker.id.toString()}
+                    position={[marker.lat, marker.lng]}
+                    index={marker.index}
+                    label={marker.label}
+                    draggable={true}
+                    isSelected={selectedMarkerId === marker.id.toString()}
+                    isNew={marker.isNew}
+                    savedToLayer={marker.savedToLayer}
+                    iconColor={marker.iconColor || defaultMarkerColor}
+                    onClick={() => handleMarkerClick(marker.id.toString())}
+                    onDragEnd={(newPos) =>
+                      handleMarkerPositionChange(marker.id.toString(), newPos)
+                    }
+                    onEditStateChange={(isEditing) => {
+                      setActiveEditMarkerId(
+                        isEditing ? marker.id.toString() : null
+                      )
+                    }}
+                    onEdit={() => handleEditMarker(marker.id.toString())}
+                    onDelete={() => handleDeleteMarker(marker.id.toString())}
+                    onColorChange={(color) =>
+                      handleMarkerColorChange(marker.id.toString(), color)
+                    }
+                    onSaveToLayer={handleSaveMarkerToLayer}
+                    onRemoveFromLayer={(id) =>
+                      handleSaveMarkerToLayer(id, false)
+                    }
+                  />
+                )
+            )
+          }
+        >
+          <MapDepthDisplay
+            depthRequest={handleDepthRequest}
+            options={{
+              warningToastId: 'depth-unavailable',
+              errorToastId: 'depth-result',
+              loadingToastId: 'depth-loading',
+              warningToastClass: 'blue-toast',
+              toastDuration: 5000,
+            }}
+          />
+          {uniqueTrackedVehicles?.map((name, index) => (
+            <VehiclePath
+              name={name.name}
+              key={`path-${name}-${index}`}
+              onGPSFix={handleGPSFix}
+              onPositionDataLoaded={markInitialLoadDone}
+              grouped
+            />
+          ))}
+          <PlatformPaths />
+          {selectedStations?.map((station) => {
+            const lng = station.geojson?.geometry?.coordinates[0]
+            const lat = station.geojson?.geometry?.coordinates[1]
+
+            if (!lng || !lat) {
+              return null
+            }
+
+            return (
+              <StationMarker
+                key={station.name}
+                name={station.name}
+                lat={lat}
+                lng={lng}
+              />
+            )
+          })}
+        </Map>
+        <MapRefreshButton
+          onClick={refreshAll}
+          loading={refreshLoading}
+          lastRefreshed={lastRefreshed}
+        />
+      </div>
       {showVehicleColors ? (
         <VehicleColorsModal
           isOpen={showVehicleColors}
