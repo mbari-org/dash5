@@ -5,7 +5,6 @@ on:
   push:
     tags:
       - 'v*'  # Run when a version tag is pushed
-  # Tags are created automatically when PRs merge into develop
   release:
     types: [created]
 
@@ -23,43 +22,62 @@ jobs:
     outputs:
       env_name: ${{ steps.set-env.outputs.env_name }}
       is_production: ${{ steps.set-env.outputs.is_production }}
+      version: ${{ steps.set-env.outputs.version }}
     steps:
-      - name: Checkout code to determine branch for tag
+      - name: Checkout code to inspect tag metadata
         uses: actions/checkout@v3
         with:
           fetch-depth: 0  # Need full history to determine branch for tag
+          ref: ${{ github.event_name == 'release' && github.event.release.tag_name || github.ref }}
 
-      - name: Determine environment based on tag branch
+      - name: Determine environment based on tag annotation
         id: set-env
         run: |
-          if [[ "${{ github.event_name }}" == "push" && "${{ startsWith(github.ref, 'refs/tags/v') }}" == "true" ]]; then
-            # Get the branch where the tag was created
-            TAG_NAME="${{ github.ref_name }}"
-            COMMIT_SHA=$(git rev-list -n 1 $TAG_NAME)
-            
-            # Check if tag is on main branch (production) or develop branch (staging)
-            if git branch --contains $COMMIT_SHA | grep "main"; then
-              echo "Tag is on main branch - PRODUCTION environment"
-              echo "env_name=production" >> $GITHUB_OUTPUT
-              echo "is_production=true" >> $GITHUB_OUTPUT
-            elif git branch --contains $COMMIT_SHA | grep "develop"; then
-              echo "Tag is on develop branch - STAGING environment"
-              echo "env_name=staging" >> $GITHUB_OUTPUT
-              echo "is_production=false" >> $GITHUB_OUTPUT
-            else
-              echo "Tag is on an unknown branch - defaulting to STAGING"
-              echo "env_name=staging" >> $GITHUB_OUTPUT
-              echo "is_production=false" >> $GITHUB_OUTPUT
-            fi
-          elif [[ "${{ github.event_name }}" == "release" ]]; then
-            echo "Release event - PRODUCTION environment"
-            echo "env_name=production" >> $GITHUB_OUTPUT
-            echo "is_production=true" >> $GITHUB_OUTPUT
-          else
-            echo "Manual workflow dispatch - STAGING environment"
-            echo "env_name=staging" >> $GITHUB_OUTPUT
-            echo "is_production=false" >> $GITHUB_OUTPUT
+          TAG_NAME="${GITHUB_REF_NAME}"
+          if [[ "${{ github.event_name }}" == "release" ]]; then
+            TAG_NAME="${{ github.event.release.tag_name }}"
           fi
+
+          if [[ -z "$TAG_NAME" ]]; then
+            echo "Manual workflow dispatch - defaulting to STAGING"
+            echo "env_name=staging" >> "$GITHUB_OUTPUT"
+            echo "is_production=false" >> "$GITHUB_OUTPUT"
+            echo "version=manual-${GITHUB_RUN_NUMBER}" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          TAG_SUBJECT=$(git for-each-ref "refs/tags/${TAG_NAME}" --format='%(subject)')
+          VERSION="${TAG_NAME#v}"
+
+          echo "Tag ${TAG_NAME} subject: ${TAG_SUBJECT}"
+
+          if [[ "$TAG_SUBJECT" == Production\ release* ]]; then
+            echo "Annotated as PRODUCTION"
+            echo "env_name=production" >> "$GITHUB_OUTPUT"
+            echo "is_production=true" >> "$GITHUB_OUTPUT"
+          elif [[ "$TAG_SUBJECT" == Staging\ release* ]]; then
+            echo "Annotated as STAGING"
+            echo "env_name=staging" >> "$GITHUB_OUTPUT"
+            echo "is_production=false" >> "$GITHUB_OUTPUT"
+          else
+            COMMIT_SHA=$(git rev-list -n 1 "$TAG_NAME")
+
+            if git branch -r --contains "$COMMIT_SHA" | grep -q 'origin/main$'; then
+              echo "Falling back to branch detection: PRODUCTION"
+              echo "env_name=production" >> "$GITHUB_OUTPUT"
+              echo "is_production=true" >> "$GITHUB_OUTPUT"
+            elif git branch -r --contains "$COMMIT_SHA" | grep -q 'origin/develop$'; then
+              echo "Falling back to branch detection: STAGING"
+              echo "env_name=staging" >> "$GITHUB_OUTPUT"
+              echo "is_production=false" >> "$GITHUB_OUTPUT"
+            else
+              echo "Unable to infer branch. Defaulting to STAGING."
+              echo "env_name=staging" >> "$GITHUB_OUTPUT"
+              echo "is_production=false" >> "$GITHUB_OUTPUT"
+            fi
+          fi
+
+          echo "version=${VERSION}" >> "$GITHUB_OUTPUT"
 
   build-static:
     runs-on: ubuntu-latest
@@ -68,6 +86,8 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v3
+        with:
+          ref: ${{ github.event_name == 'release' && github.event.release.tag_name || github.ref }}
         
       - name: Set up Node.js
         uses: actions/setup-node@v3
@@ -123,6 +143,8 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v3
+        with:
+          ref: ${{ github.event_name == 'release' && github.event.release.tag_name || github.ref }}
         
       - name: Download static build
         uses: actions/download-artifact@v4
@@ -152,29 +174,24 @@ jobs:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
       
-      # Extract metadata for Docker tags
-      - name: Extract metadata (tags, labels) for Docker
-        id: meta
-        uses: docker/metadata-action@v3
-        with:
-          images: |
-            mbari/lrauv-dash-5
-            ghcr.io/${{ github.repository_owner }}/lrauv-dash-5
-          tags: |
-            # Always publish the environment tag (staging or production)
-            type=raw,value=${{ needs.determine-environment.outputs.env_name }}
+      - name: Prepare Docker tags
+        id: docker-tags
+        run: |
+          CHANNEL="${{ needs.determine-environment.outputs.env_name }}"
+          VERSION="${{ needs.determine-environment.outputs.version }}"
 
-            # Staging-only: publish a versioned staging tag for easy rollback/debugging
-            # Example: staging-1.2.3
-            type=semver,pattern=staging-{{version}},enable=${{ needs.determine-environment.outputs.is_production != 'true' }}
+          {
+            echo "tags<<EOF"
+            echo "mbari/lrauv-dash-5:${CHANNEL}"
+            echo "ghcr.io/${{ github.repository_owner }}/lrauv-dash-5:${CHANNEL}"
 
-            # Production-only: publish semver tags
-            type=semver,pattern={{version}},enable=${{ needs.determine-environment.outputs.is_production == 'true' }}
-            type=semver,pattern={{major}}.{{minor}},enable=${{ needs.determine-environment.outputs.is_production == 'true' }}
-            type=semver,pattern={{major}},enable=${{ needs.determine-environment.outputs.is_production == 'true' }}
+            if [[ "$CHANNEL" == "staging" ]]; then
+              echo "mbari/lrauv-dash-5:${CHANNEL}-${VERSION}"
+              echo "ghcr.io/${{ github.repository_owner }}/lrauv-dash-5:${CHANNEL}-${VERSION}"
+            fi
 
-            # Production-only: publish latest
-            type=raw,value=latest,enable=${{ needs.determine-environment.outputs.is_production == 'true' }}
+            echo "EOF"
+          } >> "$GITHUB_OUTPUT"
       
       # Build and push Docker image
       - name: Build and push Docker image
@@ -183,24 +200,15 @@ jobs:
           context: .
           file: ./docker/Dockerfile
           push: true
-          tags: ${{ steps.meta.outputs.tags }}
-          labels: ${{ steps.meta.outputs.labels }}
+          tags: ${{ steps.docker-tags.outputs.tags }}
           build-args: |
             ENVIRONMENT=${{ needs.determine-environment.outputs.env_name }}
       
-      # Trigger Watchtower to update container (for production environment)
-      - name: Trigger Watchtower to update production container
+      - name: Skip Watchtower for production
         if: needs.determine-environment.outputs.is_production == 'true'
-        shell: bash
         run: |
-          if [ -n "${{ secrets.WATCHTOWER_HTTP_API_TOKEN }}" ] && [ -n "${{ secrets.TETHYSDASH2_WATCHTOWER_ENDPOINT }}" ]; then
-            curl -H "Authorization: Bearer ${{ secrets.WATCHTOWER_HTTP_API_TOKEN }}" ${{ secrets.TETHYSDASH2_WATCHTOWER_ENDPOINT }}
-            echo "Watchtower update triggered successfully for PRODUCTION"
-          else
-            echo "Skipping Watchtower update - required secrets not configured"
-          fi
+          echo "Production image published. Watchtower auto-update is intentionally disabled."
 
-      # Trigger Watchtower to update container (for staging environment)
       - name: Trigger Watchtower to update staging container
         if: needs.determine-environment.outputs.is_production == 'false'
         shell: bash

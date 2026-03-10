@@ -31,7 +31,11 @@ Some projects in this repo depend on their siblings. For example the `@mbari/rea
 
 ### Deployment
 
-Deployments are handled automatically via [CircleCI](https://www.circleci.com).
+Deployments are handled by GitHub Actions and branch-aware release tags.
+
+- `develop` bumps create a staging release tag. CI publishes `mbari/lrauv-dash-5:staging` and `mbari/lrauv-dash-5:staging-X.Y.Z`, and Watchtower updates staging automatically.
+- `main` bumps create a production release tag. CI publishes `mbari/lrauv-dash-5:production`, but production deployment remains a manual pull and recreate step.
+- Use `yarn version:patch`, `yarn version:minor`, or `yarn version:major` only from `develop` or `main`. The script refuses version bumps from other branches.
 
 ## Packages
 
