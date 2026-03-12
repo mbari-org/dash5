@@ -78,7 +78,7 @@ export const DocCell: React.FC<DocCellProps> = ({
               data-testid="doc-cell-secondary"
               className="text-xs capitalize text-gray-400"
             >
-              {secondary.toLowerCase()}
+              {secondary}
             </span>
           )}
           <ul className="flex flex-col">
