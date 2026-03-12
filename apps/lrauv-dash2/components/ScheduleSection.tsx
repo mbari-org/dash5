@@ -45,6 +45,7 @@ export interface CommandStatusItem {
     text?: string
   }
   status: string
+  endedAt?: number
 }
 
 const VALID_SCHEDULE_CELL_STATUSES: ScheduleCellStatus[] = [
@@ -144,23 +145,25 @@ export const ScheduleSection: React.FC<ScheduleSectionProps> = ({
     : allLogsResponse
 
   // Fetch recent mission-started events to derive real running/ended status.
-  // The API returns them newest-first; index 0 = currently running mission.
+  // The API returns newest-first: index 0 = currently running mission.
+  // Poll every 60s so running→ended transitions appear without a page refresh.
   const missionStartedResponse = useMissionStartedEvent(
     { vehicle: vehicleName, limit: 50 },
-    { enabled: !!vehicleName, staleTime: 30 * 1000 }
+    { enabled: !!vehicleName, staleTime: 30 * 1000, refetchInterval: 60 * 1000 }
   )
 
-  // Build a map of mission name → index in the mission-started list.
-  // Index 0 = running, everything else = ended.
-  const missionStatusMap = useMemo(() => {
-    const map = new Map<string, 'running' | 'completed'>()
-    missionStartedResponse.data?.forEach((evt, idx) => {
-      const name = missionNameFromStartedText(evt.text)
-      if (name && !map.has(name)) {
-        map.set(name, idx === 0 ? 'running' : 'completed')
-      }
-    })
-    return map
+  // Build a timeline: each entry knows its own start time and when it ended
+  // (= the start time of the mission that replaced it, or undefined if running).
+  // events[0] = running  →  endedAt: undefined
+  // events[i] = ended    →  endedAt: events[i-1].unixTime
+  const missionTimeline = useMemo(() => {
+    const events = missionStartedResponse.data ?? []
+    return events.map((evt, idx) => ({
+      name: missionNameFromStartedText(evt.text),
+      startedAt: evt.unixTime,
+      endedAt: idx > 0 ? events[idx - 1].unixTime : undefined,
+      status: idx === 0 ? ('running' as const) : ('completed' as const),
+    }))
   }, [missionStartedResponse.data])
 
   const missions: CommandStatusItem[] = useMemo(() => {
@@ -186,36 +189,57 @@ export const ScheduleSection: React.FC<ScheduleSectionProps> = ({
       }))
     }
 
-    // Enrich each item's status using the mission-started sequence when
-    // the backend still returns TBD for everything.
+    // Enrich each item's status and endedAt from the mission-started timeline.
+    // For missions with the same name that ran multiple times, we match using
+    // the closest timeline entry whose startedAt is within 5 minutes of the
+    // event's unixTime.
+    const MATCH_WINDOW_MS = 5 * 60 * 1000
     const enriched = items.map((item) => {
       if (item.status !== 'TBD') return item
       const missionName = missionNameFromEventData(item.event.data)
-      const derivedStatus = missionName
-        ? missionStatusMap.get(missionName)
-        : undefined
-      return derivedStatus ? { ...item, status: derivedStatus } : item
+      if (!missionName || !item.event.unixTime) return item
+
+      const candidates = missionTimeline.filter((t) => t.name === missionName)
+      if (!candidates.length) return item
+
+      // Pick the timeline entry whose startedAt is nearest to the event time.
+      const best = candidates.reduce((prev, curr) =>
+        Math.abs(curr.startedAt - item.event.unixTime!) <
+        Math.abs(prev.startedAt - item.event.unixTime!)
+          ? curr
+          : prev
+      )
+
+      // Only enrich if within the match window to avoid false positives.
+      if (Math.abs(best.startedAt - item.event.unixTime) > MATCH_WINDOW_MS)
+        return item
+
+      return { ...item, status: best.status, endedAt: best.endedAt }
     })
 
     // Inject the currently running mission at the top if it was auto-triggered
     // by MissionManager (not found in the operator command log).
-    const currentMissionEvent = missionStartedResponse.data?.[0]
-    if (currentMissionEvent) {
-      const currentName = missionNameFromStartedText(currentMissionEvent.text)
+    const currentMissionEntry = missionTimeline[0]
+    if (currentMissionEntry) {
       const alreadyInList = enriched.some(
-        (item) => missionNameFromEventData(item.event.data) === currentName
+        (item) =>
+          missionNameFromEventData(item.event.data) === currentMissionEntry.name
       )
       if (!alreadyInList) {
-        enriched.unshift({
-          event: {
-            data: currentMissionEvent.text,
-            unixTime: currentMissionEvent.unixTime,
-            eventId: currentMissionEvent.eventId,
-            eventType: currentMissionEvent.eventType,
-            text: currentMissionEvent.text,
-          },
-          status: 'running',
-        })
+        const currentRawEvent = missionStartedResponse.data?.[0]
+        if (currentRawEvent) {
+          enriched.unshift({
+            event: {
+              data: currentRawEvent.text,
+              unixTime: currentRawEvent.unixTime,
+              eventId: currentRawEvent.eventId,
+              eventType: currentRawEvent.eventType,
+              text: currentRawEvent.text,
+            },
+            status: 'running',
+            endedAt: undefined,
+          })
+        }
       }
     }
 
@@ -224,7 +248,7 @@ export const ScheduleSection: React.FC<ScheduleSectionProps> = ({
     deploymentLogsOnly,
     deploymentResponse.data,
     allLogsResponse.data,
-    missionStatusMap,
+    missionTimeline,
     missionStartedResponse.data,
   ])
 
@@ -384,15 +408,21 @@ export const ScheduleSection: React.FC<ScheduleSectionProps> = ({
         className="border-b border-stone-200"
         description={
           mission.event.unixTime
-            ? `${
-                ['pending', 'running'].includes(mission.status)
-                  ? 'Started'
-                  : 'Ended'
-              } ${DateTime.fromMillis(mission.event.unixTime).toFormat('h:mm')}`
+            ? `Started ${DateTime.fromMillis(mission.event.unixTime).toFormat(
+                'h:mm'
+              )} (${
+                DateTime.fromMillis(mission.event.unixTime).toRelative({
+                  style: 'short',
+                }) ?? ''
+              })`
             : ''
         }
         description2={
-          DateTime.fromMillis(mission.event.unixTime ?? 0).toRelative() ?? ''
+          mission.status === 'running' || mission.status === 'pending'
+            ? 'Ended: TBD'
+            : mission.endedAt
+            ? `Ended: ${DateTime.fromMillis(mission.endedAt).toFormat('h:mm')}`
+            : ''
         }
         onSelect={() => undefined}
         onMoreClick={openMoreMenu}
