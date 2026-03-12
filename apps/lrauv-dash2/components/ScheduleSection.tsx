@@ -353,7 +353,12 @@ export const ScheduleSection: React.FC<ScheduleSectionProps> = ({
     if (index === indexOfPastSchedule && hasPastSchedule) {
       return (
         <div className="grid grid-cols-3 gap-2 px-4 py-2">
-          <span className="my-auto text-xs font-bold">Schedule History</span>
+          <span className="flex flex-col">
+            <span className="text-xs font-bold">Schedule History</span>
+            <span className="text-xs text-stone-400">
+              (end times approximate — see Logs for accuracy)
+            </span>
+          </span>
           <Select
             name="scheduleFilters"
             options={[
