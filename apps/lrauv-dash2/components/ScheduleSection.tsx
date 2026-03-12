@@ -46,6 +46,19 @@ export interface CommandStatusItem {
   status: string
 }
 
+const VALID_SCHEDULE_CELL_STATUSES: ScheduleCellStatus[] = [
+  'pending',
+  'running',
+  'cancelled',
+  'completed',
+  'paused',
+]
+
+const toScheduleCellStatus = (status: string): ScheduleCellStatus =>
+  VALID_SCHEDULE_CELL_STATUSES.includes(status as ScheduleCellStatus)
+    ? (status as ScheduleCellStatus)
+    : 'completed'
+
 export const parseMissionCommand = (name: string) => {
   const info = name
     .split(' ')
@@ -278,7 +291,7 @@ export const ScheduleSection: React.FC<ScheduleSectionProps> = ({
         status={
           mission.status === 'TBD'
             ? 'completed'
-            : (mission.status as ScheduleCellStatus)
+            : toScheduleCellStatus(mission.status)
         }
         name={mission.event.user ?? 'Unknown'}
         scheduleStatus={
@@ -287,13 +300,13 @@ export const ScheduleSection: React.FC<ScheduleSectionProps> = ({
         }
         className="border-b border-stone-200"
         description={
-          ['pending', 'running'].includes(mission.status)
-            ? `Started ${DateTime.fromMillis(
-                mission.event.unixTime ?? 0
-              ).toFormat('h:mm')}`
-            : `Ended ${DateTime.fromMillis(
-                mission.event.unixTime ?? 0
-              ).toFormat('h:mm')}`
+          mission.event.unixTime
+            ? `${
+                ['pending', 'running'].includes(mission.status)
+                  ? 'Started'
+                  : 'Ended'
+              } ${DateTime.fromMillis(mission.event.unixTime).toFormat('h:mm')}`
+            : undefined
         }
         description2={
           DateTime.fromMillis(mission.event.unixTime ?? 0).toRelative() ?? ''
