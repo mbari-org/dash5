@@ -46,11 +46,12 @@ const WaypointPreviewPath: React.FC<{
             route.map((r) => [r.lat, r.lon]) as [number, number][],
             { animate: false }
           )
+          fit.current = routeAsString
         } catch {
-          // noop; map pane may not be ready if component re-renders during transition
+          // noop; map pane may not be ready — leave fit.current unchanged so
+          // a subsequent render can retry fitBounds for the same route
         }
       }
-      fit.current = routeAsString
     }
     return () => {
       if (decorator.current) {

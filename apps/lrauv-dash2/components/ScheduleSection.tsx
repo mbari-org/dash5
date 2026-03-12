@@ -23,6 +23,10 @@ import {
   useMissionStartedEvent,
 } from '@mbari/api-client'
 import useGlobalModalId from '../lib/useGlobalModalId'
+import {
+  missionNameFromStartedText,
+  missionNameFromEventData,
+} from '../lib/missionUtils'
 import { toast } from 'react-hot-toast'
 
 export interface ScheduleSectionProps {
@@ -88,23 +92,10 @@ export const isMissionCommand = (
   return hasLoad && hasRun
 }
 
-/**
- * Extracts the bare mission name from a mission-started text field.
- * e.g. "Started mission circle_acoustic_contact" → "circle_acoustic_contact"
- */
-export const missionNameFromStartedText = (text: string): string =>
-  text.replace(/^Started mission\s+/i, '').trim()
-
-/**
- * Extracts the bare mission name from a run/command event data string.
- * e.g. "load Science/circle_acoustic_contact.tl;set ...;run" → "circle_acoustic_contact"
- */
-export const missionNameFromEventData = (data?: string): string => {
-  const match = data?.match(/[A-Za-z0-9_/]+\.(?:xml|tl)/i)
-  if (!match) return ''
-  const filename = match[0].split('/').pop() ?? ''
-  return filename.replace(/\.(xml|tl)$/i, '')
-}
+export {
+  missionNameFromStartedText,
+  missionNameFromEventData,
+} from '../lib/missionUtils'
 
 export const ScheduleSection: React.FC<ScheduleSectionProps> = ({
   currentDeploymentId,
@@ -221,19 +212,25 @@ export const ScheduleSection: React.FC<ScheduleSectionProps> = ({
     // by MissionManager (not found in the operator command log).
     const currentMissionEntry = missionTimeline[0]
     if (currentMissionEntry) {
+      // Check both data and text fields so missions present via either path
+      // are correctly detected as already in the list.
       const alreadyInList = enriched.some(
         (item) =>
-          missionNameFromEventData(item.event.data) === currentMissionEntry.name
+          missionNameFromEventData(item.event.data) ===
+            currentMissionEntry.name ||
+          missionNameFromEventData(item.event.text) === currentMissionEntry.name
       )
       if (!alreadyInList) {
         const currentRawEvent = missionStartedResponse.data?.[0]
         if (currentRawEvent) {
           enriched.unshift({
             event: {
-              data: currentRawEvent.text,
+              // Prefer data field so parseMissionCommand / isMissionCommand work
+              // correctly; fall back to text (mission-started log format).
+              data: currentRawEvent.data ?? currentRawEvent.text,
               unixTime: currentRawEvent.unixTime,
               eventId: currentRawEvent.eventId,
-              eventType: currentRawEvent.eventType,
+              eventType: 'run',
               text: currentRawEvent.text,
             },
             status: 'running',
@@ -412,17 +409,15 @@ export const ScheduleSection: React.FC<ScheduleSectionProps> = ({
           undefined
         }
         className="border-b border-stone-200"
-        description={
-          mission.event.unixTime != null
-            ? `${isMission ? 'Started' : 'Ran'} ${DateTime.fromMillis(
-                mission.event.unixTime
-              ).toFormat('h:mm')} (${
-                DateTime.fromMillis(mission.event.unixTime).toRelative({
-                  style: 'short',
-                }) ?? ''
-              })`
-            : ''
-        }
+        description={(() => {
+          if (mission.event.unixTime == null) return ''
+          const dt = DateTime.fromMillis(mission.event.unixTime)
+          const relative = dt.toRelative({ style: 'short' })
+          const relativePart = relative ? ` (${relative})` : ''
+          return `${isMission ? 'Started' : 'Ran'} ${dt.toFormat(
+            'h:mm'
+          )}${relativePart}`
+        })()}
         description2={
           mission.status === 'running' || mission.status === 'pending'
             ? 'Ended: TBD'

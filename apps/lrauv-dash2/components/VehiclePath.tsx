@@ -288,14 +288,16 @@ const VehiclePath: React.FC<VehiclePathProps> = ({
               paddingBottomRight: [0, 320], // Add bottom padding to deployment map to show path above the vehicle diagram
               animate: false, // Prevent zoom animation race with React re-renders on initial load
             })
+            fitRef.current = fitPositionsAsString
           } catch {
-            // noop; map pane may not be ready if component re-renders during transition
+            // noop; map pane may not be ready — leave fitRef.current unchanged
+            // so a subsequent render can retry fitBounds for the same bounds
           }
         }
       } else {
         dispatch({ type: 'append', coords: { [name]: fitPositions } })
+        fitRef.current = fitPositionsAsString
       }
-      fitRef.current = fitPositionsAsString
     }
   }, [
     fitPositions,
