@@ -1,5 +1,5 @@
 import React from 'react'
-import { render, screen } from '@testing-library/react'
+import { render } from '@testing-library/react'
 import '@testing-library/jest-dom'
 import { ScheduleSection, ScheduleSectionProps } from './ScheduleSection'
 import { QueryClient } from 'react-query'
@@ -47,3 +47,5 @@ test('should render the component', async () => {
     )
   ).not.toThrow()
 })
+// Pure function tests for missionNameFromStartedText and missionNameFromEventData
+// live in jest/missionUtils.test.ts where they run without React component overhead.

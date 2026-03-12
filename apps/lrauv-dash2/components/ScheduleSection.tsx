@@ -20,8 +20,13 @@ import {
   GetEventsResponse,
   useDeploymentCommandStatus,
   useInfiniteEvents,
+  useMissionStartedEvent,
 } from '@mbari/api-client'
 import useGlobalModalId from '../lib/useGlobalModalId'
+import {
+  missionNameFromStartedText,
+  missionNameFromEventData,
+} from '../lib/missionUtils'
 import { toast } from 'react-hot-toast'
 
 export interface ScheduleSectionProps {
@@ -44,7 +49,21 @@ export interface CommandStatusItem {
     text?: string
   }
   status: string
+  endedAt?: number
 }
+
+const VALID_SCHEDULE_CELL_STATUSES: ScheduleCellStatus[] = [
+  'pending',
+  'running',
+  'cancelled',
+  'completed',
+  'paused',
+]
+
+const toScheduleCellStatus = (status: string): ScheduleCellStatus =>
+  VALID_SCHEDULE_CELL_STATUSES.includes(status as ScheduleCellStatus)
+    ? (status as ScheduleCellStatus)
+    : 'completed'
 
 export const parseMissionCommand = (name: string) => {
   const info = name
@@ -72,6 +91,11 @@ export const isMissionCommand = (
   const hasRun = /\brun\b/i.test(text)
   return hasLoad && hasRun
 }
+
+export {
+  missionNameFromStartedText,
+  missionNameFromEventData,
+} from '../lib/missionUtils'
 
 export const ScheduleSection: React.FC<ScheduleSectionProps> = ({
   currentDeploymentId,
@@ -111,34 +135,128 @@ export const ScheduleSection: React.FC<ScheduleSectionProps> = ({
     ? deploymentResponse
     : allLogsResponse
 
+  // Fetch recent mission-started events to derive real running/ended status.
+  // The API returns newest-first: index 0 = currently running mission.
+  // Poll every 60s so running→ended transitions appear without a page refresh.
+  const missionStartedResponse = useMissionStartedEvent(
+    { vehicle: vehicleName, limit: 50 },
+    { enabled: !!vehicleName, staleTime: 30 * 1000, refetchInterval: 60 * 1000 }
+  )
+
+  // Build a timeline: each entry knows its own start time and when it ended
+  // (= the start time of the mission that replaced it, or undefined if running).
+  // events[0] = running  →  endedAt: undefined
+  // events[i] = ended    →  endedAt: events[i-1].unixTime
+  const missionTimeline = useMemo(() => {
+    const events = missionStartedResponse.data ?? []
+    return events.map((evt, idx) => ({
+      name: missionNameFromStartedText(evt.text),
+      startedAt: evt.unixTime,
+      endedAt: idx > 0 ? events[idx - 1].unixTime : undefined,
+      status: idx === 0 ? ('running' as const) : ('completed' as const),
+    }))
+  }, [missionStartedResponse.data])
+
   const missions: CommandStatusItem[] = useMemo(() => {
+    let items: CommandStatusItem[]
+
     if (deploymentLogsOnly) {
       const cs = deploymentResponse.data?.commandStatuses ?? []
-      return cs as unknown as CommandStatusItem[]
+      items = cs as unknown as CommandStatusItem[]
+    } else {
+      const pages = allLogsResponse.data?.pages ?? []
+      const flat = pages.flat()
+      items = flat.map((evt: GetEventsResponse) => ({
+        event: {
+          data: evt?.data,
+          note: evt?.note,
+          user: evt?.user,
+          unixTime: evt?.unixTime,
+          eventId: evt?.eventId,
+          eventType: evt?.eventType,
+          text: evt?.text,
+        },
+        status: 'TBD',
+      }))
     }
-    const pages = allLogsResponse.data?.pages ?? []
-    const flat = pages.flat()
-    return flat.map((evt: GetEventsResponse) => ({
-      event: {
-        data: evt?.data,
-        note: evt?.note,
-        user: evt?.user,
-        unixTime: evt?.unixTime,
-        eventId: evt?.eventId,
-        eventType: evt?.eventType,
-        text: evt?.text,
-      },
-      status: 'TBD',
-    }))
-  }, [deploymentLogsOnly, deploymentResponse.data, allLogsResponse.data])
+
+    // Enrich each item's status and endedAt from the mission-started timeline.
+    // For missions with the same name that ran multiple times, we match using
+    // the closest timeline entry whose startedAt is within 5 minutes of the
+    // event's unixTime.
+    const MATCH_WINDOW_MS = 5 * 60 * 1000
+    const enriched = items.map((item) => {
+      if (item.status !== 'TBD') return item
+      const missionName = missionNameFromEventData(item.event.data)
+      if (!missionName || item.event.unixTime == null) return item
+
+      const candidates = missionTimeline.filter((t) => t.name === missionName)
+      if (!candidates.length) return item
+
+      // Pick the timeline entry whose startedAt is nearest to the event time.
+      const best = candidates.reduce((prev, curr) =>
+        Math.abs(curr.startedAt - item.event.unixTime!) <
+        Math.abs(prev.startedAt - item.event.unixTime!)
+          ? curr
+          : prev
+      )
+
+      // Only enrich if within the match window to avoid false positives.
+      if (Math.abs(best.startedAt - item.event.unixTime) > MATCH_WINDOW_MS)
+        return item
+
+      return { ...item, status: best.status, endedAt: best.endedAt }
+    })
+
+    // Inject the currently running mission at the top if it was auto-triggered
+    // by MissionManager (not found in the operator command log).
+    const currentMissionEntry = missionTimeline[0]
+    if (currentMissionEntry) {
+      // Check both data and text fields so missions present via either path
+      // are correctly detected as already in the list.
+      const alreadyInList = enriched.some(
+        (item) =>
+          missionNameFromEventData(item.event.data) ===
+            currentMissionEntry.name ||
+          missionNameFromEventData(item.event.text) === currentMissionEntry.name
+      )
+      if (!alreadyInList) {
+        const currentRawEvent = missionStartedResponse.data?.[0]
+        if (currentRawEvent) {
+          enriched.unshift({
+            event: {
+              // Construct a command-format data string so parseMissionCommand
+              // produces a consistent label and "Use for new mission" receives
+              // a valid path. GetMissionStartedEventResponse has no data field.
+              data: `load ${currentMissionEntry.name}.tl;run`,
+              unixTime: currentRawEvent.unixTime,
+              eventId: currentRawEvent.eventId,
+              eventType: 'run',
+              text: currentRawEvent.text,
+            },
+            status: 'running',
+            endedAt: undefined,
+          })
+        }
+      }
+    }
+
+    return enriched
+  }, [
+    deploymentLogsOnly,
+    deploymentResponse.data,
+    allLogsResponse.data,
+    missionTimeline,
+    missionStartedResponse.data,
+  ])
 
   const scheduledTypes = ['pending', 'running']
   const staticHeaderCellOffset = activeDeployment ? 1 : 0
-  const indexOfPastSchedule =
-    (missions?.findIndex((v) => !scheduledTypes.includes(v.status)) ?? 0) +
-    staticHeaderCellOffset
-  const hasPastSchedule = indexOfPastSchedule > -1
+  // Filter bar always sits immediately after the "Schedule is running" banner
+  // so running missions appear below it — consistent regardless of vehicle.
+  const hasPastSchedule = (missions?.length ?? 0) > 0
   const staticFilterCellOffset = hasPastSchedule ? 1 : 0
+  const indexOfPastSchedule = staticHeaderCellOffset
 
   const handleScheduleSearch = (e: React.ChangeEvent<HTMLInputElement>) => {
     setScheduleSearch(e.target.value)
@@ -190,7 +308,13 @@ export const ScheduleSection: React.FC<ScheduleSectionProps> = ({
   }
 
   const scheduleStatus: ScheduleCellProps['scheduleStatus'] | null =
-    missions?.[0]?.event?.data === 'sched pause' ? 'paused' : 'running'
+    // Find the most recent sched pause/resume command rather than relying on
+    // missions[0], which may now be a synthetic mission-started injection.
+    missions?.find(
+      (m) => m.event.data === 'sched pause' || m.event.data === 'sched resume'
+    )?.event.data === 'sched pause'
+      ? 'paused'
+      : 'running'
 
   const toggleSchedule = () => {
     setGlobalModalId({
@@ -233,7 +357,12 @@ export const ScheduleSection: React.FC<ScheduleSectionProps> = ({
     if (index === indexOfPastSchedule && hasPastSchedule) {
       return (
         <div className="grid grid-cols-3 gap-2 px-4 py-2">
-          <span className="my-auto text-xs font-bold">Schedule History</span>
+          <span className="flex flex-col">
+            <span className="text-xs font-bold">Schedule History</span>
+            <span className="text-xs text-stone-400">
+              (end times approximate — see Logs for accuracy)
+            </span>
+          </span>
           <Select
             name="scheduleFilters"
             options={[
@@ -263,46 +392,50 @@ export const ScheduleSection: React.FC<ScheduleSectionProps> = ({
         />
       )
     }
-    const indexOffset =
-      index < (indexOfPastSchedule ?? results?.length ?? 0)
-        ? -staticHeaderCellOffset
-        : -staticHeaderCellOffset - staticFilterCellOffset
+    // Filter bar is always at staticHeaderCellOffset, so all mission cells
+    // need the full combined offset subtracted.
+    const indexOffset = -(staticHeaderCellOffset + staticFilterCellOffset)
     const mission = results[index + indexOffset]
     const { name: missionName, parameters: missionParams } =
       parseMissionCommand(mission?.event.data ?? '')
+    const isMission =
+      mission?.event?.eventType === 'run' ||
+      isMissionCommand(mission?.event?.data, mission?.event?.text)
+    const cellCommandType: 'mission' | 'command' = isMission
+      ? 'mission'
+      : 'command'
 
     return mission ? (
       <ScheduleCell
         label={missionName ?? 'Unknown'}
         secondary={missionParams ?? 'No parameters'}
-        status={mission.status === 'TBD' ? 'completed' : 'pending'}
+        status={toScheduleCellStatus(mission.status)}
         name={mission.event.user ?? 'Unknown'}
         scheduleStatus={
           (['pending', 'running'].includes(mission.status) && scheduleStatus) ||
           undefined
         }
         className="border-b border-stone-200"
-        description={
-          mission?.event.unixTime
-            ? `Ended ${DateTime.fromMillis(
-                mission.event.unixTime ?? 0
-              ).toFormat('h:mm')}`
-            : `Started ${DateTime.fromMillis(
-                mission.event.unixTime ?? 0
-              ).toFormat('h:mm')}`
-        }
+        description={(() => {
+          if (mission.event.unixTime == null) return ''
+          const dt = DateTime.fromMillis(mission.event.unixTime)
+          const relative = dt.toRelative({ style: 'short' })
+          const relativePart = relative ? ` (${relative})` : ''
+          return `${isMission ? 'Started' : 'Ran'} ${dt.toFormat(
+            'h:mm'
+          )}${relativePart}`
+        })()}
         description2={
-          DateTime.fromMillis(mission.event.unixTime ?? 0).toRelative() ?? ''
+          mission.status === 'running' || mission.status === 'pending'
+            ? 'Ended: TBD'
+            : mission.endedAt
+            ? `Ended: ${DateTime.fromMillis(mission.endedAt).toFormat('h:mm')}`
+            : ''
         }
         onSelect={() => undefined}
         onMoreClick={openMoreMenu}
         eventId={mission.event.eventId}
-        commandType={
-          mission?.event?.eventType === 'run' ||
-          isMissionCommand(mission?.event?.data, mission?.event?.text)
-            ? 'mission'
-            : 'command'
-        }
+        commandType={cellCommandType}
       />
     ) : (
       <p className="mx-2 my-2 rounded bg-stone-100 p-2">No Data</p>

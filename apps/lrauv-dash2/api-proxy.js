@@ -15,6 +15,7 @@ app.use(
   '',
   createProxyMiddleware({
     target: 'https://okeanids.mbari.org/',
+    // target: 'https://tethysdash2.shore.mbari.org/',
     changeOrigin: true,
     selfHandleResponse: true,
     logger: console,

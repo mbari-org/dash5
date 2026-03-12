@@ -41,9 +41,21 @@ const WaypointPreviewPath: React.FC<{
     }
     if (fit.current !== routeAsString && route) {
       if (route?.length) {
-        map.fitBounds(route.map((r) => [r.lat, r.lon]) as [number, number][])
+        try {
+          map.fitBounds(
+            route.map((r) => [r.lat, r.lon]) as [number, number][],
+            { animate: false }
+          )
+          fit.current = routeAsString
+        } catch {
+          // noop; map pane may not be ready — leave fit.current unchanged so
+          // a subsequent render can retry fitBounds for the same route
+        }
+      } else {
+        // Route cleared — update fit.current so that re-selecting the same
+        // waypoints later triggers fitBounds again instead of being skipped.
+        fit.current = routeAsString
       }
-      fit.current = routeAsString
     }
     return () => {
       if (decorator.current) {
