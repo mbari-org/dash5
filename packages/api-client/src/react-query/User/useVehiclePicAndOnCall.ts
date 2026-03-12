@@ -51,7 +51,7 @@ export const useVehiclePicAndOnCall = (
     () => (Array.isArray(vehicleName) ? vehicleName : [vehicleName]),
     [vehicleName]
   )
-  const { axiosInstance } = useTethysApiContext()
+  const { axiosInstance, token } = useTethysApiContext()
 
   const query = useQuery(
     ['users', 'picAndOnCall', vehicleNames],
@@ -60,10 +60,14 @@ export const useVehiclePicAndOnCall = (
 
       // Get events for each vehicle separately
       for (const name of vehicleNames) {
+        const authHeaders = token
+          ? { Authorization: `Bearer ${token}` }
+          : undefined
+
         // Get last deployment for this vehicle
         const lastDeployment = await getLastDeployment(
           { vehicle: name },
-          { instance: axiosInstance }
+          { instance: axiosInstance, headers: authHeaders }
         )
 
         // Get events for this vehicle
@@ -74,7 +78,7 @@ export const useVehiclePicAndOnCall = (
             eventTypes: ['note'],
             limit: 3000,
           },
-          { instance: axiosInstance }
+          { instance: axiosInstance, headers: authHeaders }
         )
 
         results.push(...events)

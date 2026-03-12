@@ -21,8 +21,21 @@ export const useRefreshSessionToken = (config: {
     {
       enabled: (sessionToken?.length ?? 0) > 0,
       staleTime: 60 * 60 * 1000,
-      onSettled: data => {
-        setSessionToken(data?.token ?? '')
+      onSuccess: (data) => {
+        if (data?.token) {
+          setSessionToken(data.token)
+        }
+      },
+      onError: (err: unknown) => {
+        // Only clear the session token on explicit authentication failures
+        // (401/403). For transient errors such as network timeouts or server
+        // errors, preserve the existing token so a browser refresh does not
+        // inadvertently log the user out.
+        const status = (err as { response?: { status?: number } })?.response
+          ?.status
+        if (status === 401 || status === 403) {
+          setSessionToken('')
+        }
       },
     }
   )
