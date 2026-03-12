@@ -8,7 +8,7 @@ import {
   faCheck,
   faTimes,
   faPauseCircle,
-  faSync,
+  faPersonRunning,
 } from '@fortawesome/free-solid-svg-icons'
 import { IconProp } from '@fortawesome/fontawesome-svg-core'
 import { IconButton } from '../Navigation'
@@ -57,7 +57,7 @@ const styles = {
 
 const icons: { [key: string]: IconProp } = {
   pending: faClock as IconProp,
-  running: faSync as IconProp,
+  running: faPersonRunning as IconProp,
   cancelled: faTimes as IconProp,
   completed: faCheck as IconProp,
   paused: faPauseCircle as IconProp,
