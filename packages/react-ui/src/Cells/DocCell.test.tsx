@@ -51,23 +51,22 @@ test('should render the more options button', async () => {
 test('should render the secondary label when provided', async () => {
   render(<DocCell {...props} secondary="predeployment" />)
 
-  expect(screen.getByText('predeployment')).toBeInTheDocument()
+  expect(screen.getByTestId('doc-cell-secondary')).toBeInTheDocument()
+  expect(screen.getByTestId('doc-cell-secondary')).toHaveTextContent(
+    'predeployment'
+  )
 })
 
 test('should not render a secondary label when secondary is undefined', async () => {
-  const { container } = render(<DocCell {...props} />)
+  render(<DocCell {...props} />)
 
-  // Assert the secondary element itself is absent, not a hard-coded string
-  expect(container.querySelector('span.text-gray-400')).not.toBeInTheDocument()
+  expect(screen.queryByTestId('doc-cell-secondary')).not.toBeInTheDocument()
 })
 
 test('should not render a secondary label when secondary is empty string', async () => {
-  // Compare against a baseline render with no secondary prop — HTML should
-  // be identical, confirming the empty string produces no extra element.
-  const { container: baseline } = render(<DocCell {...props} />)
-  const { container: withEmpty } = render(<DocCell {...props} secondary="" />)
+  render(<DocCell {...props} secondary="" />)
 
-  expect(withEmpty.innerHTML).toBe(baseline.innerHTML)
+  expect(screen.queryByTestId('doc-cell-secondary')).not.toBeInTheDocument()
 })
 
 test('label button should have a title attribute matching the full label', async () => {

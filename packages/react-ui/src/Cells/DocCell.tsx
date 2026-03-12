@@ -74,7 +74,10 @@ export const DocCell: React.FC<DocCellProps> = ({
             {label}
           </button>
           {secondary && (
-            <span className="text-xs capitalize text-gray-400">
+            <span
+              data-testid="doc-cell-secondary"
+              className="text-xs capitalize text-gray-400"
+            >
               {secondary.toLowerCase()}
             </span>
           )}
