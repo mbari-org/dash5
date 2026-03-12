@@ -95,11 +95,8 @@ const Layout: React.FC<{ children?: React.ReactNode }> = ({ children }) => {
   return (
     <div className="flex h-screen min-h-screen w-screen flex-col">
       <Head>
-        <title>
-          {vehicleName
-            ? `${vehicleName} | LRAUV Dash Client`
-            : 'LRAUV Dash Client'}
-        </title>
+        {/* prettier-ignore */}
+        <title>{vehicleName ? `${vehicleName} | LRAUV Dash Client` : 'LRAUV Dash Client'}</title>
         <meta
           name="description"
           content="Manage and plan missions for various LRAUV"
