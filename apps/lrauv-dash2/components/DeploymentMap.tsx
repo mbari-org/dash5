@@ -94,6 +94,19 @@ const DeploymentMap: React.FC<DeploymentMapProps> = ({
       ),
     [updatedWaypoints, handleWaypointsUpdate]
   )
+
+  const handleDeleteWaypoint = useCallback(
+    (index: number) =>
+      handleWaypointsUpdate(
+        updatedWaypoints.map((m, i) =>
+          i === index
+            ? { ...m, lat: 'NaN', lon: 'NaN', stationName: 'Custom' }
+            : m
+        )
+      ),
+    [updatedWaypoints, handleWaypointsUpdate]
+  )
+
   const { handleDepthRequest } = useGoogleElevator()
 
   // Filter out waypoints with NaN lat/lon
@@ -689,6 +702,9 @@ const DeploymentMap: React.FC<DeploymentMapProps> = ({
                     draggable={editable && !focusedWaypointIndex}
                     onDragEnd={(newPos) =>
                       handleDragEnd(i, { lat: newPos[0], lng: newPos[1] })
+                    }
+                    onDelete={
+                      editable ? () => handleDeleteWaypoint(i) : undefined
                     }
                   />
                 )
