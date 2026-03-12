@@ -188,7 +188,7 @@ export const ScheduleSection: React.FC<ScheduleSectionProps> = ({
     const enriched = items.map((item) => {
       if (item.status !== 'TBD') return item
       const missionName = missionNameFromEventData(item.event.data)
-      if (!missionName || !item.event.unixTime) return item
+      if (!missionName || item.event.unixTime == null) return item
 
       const candidates = missionTimeline.filter((t) => t.name === missionName)
       if (!candidates.length) return item
@@ -225,9 +225,9 @@ export const ScheduleSection: React.FC<ScheduleSectionProps> = ({
         if (currentRawEvent) {
           enriched.unshift({
             event: {
-              // Prefer data field so parseMissionCommand / isMissionCommand work
-              // correctly; fall back to text (mission-started log format).
-              data: currentRawEvent.data ?? currentRawEvent.text,
+              // GetMissionStartedEventResponse has no data field; use text.
+              // eventType:'run' ensures isMissionCommand classifies this correctly.
+              data: currentRawEvent.text,
               unixTime: currentRawEvent.unixTime,
               eventId: currentRawEvent.eventId,
               eventType: 'run',
@@ -307,7 +307,13 @@ export const ScheduleSection: React.FC<ScheduleSectionProps> = ({
   }
 
   const scheduleStatus: ScheduleCellProps['scheduleStatus'] | null =
-    missions?.[0]?.event?.data === 'sched pause' ? 'paused' : 'running'
+    // Find the most recent sched pause/resume command rather than relying on
+    // missions[0], which may now be a synthetic mission-started injection.
+    missions?.find(
+      (m) => m.event.data === 'sched pause' || m.event.data === 'sched resume'
+    )?.event.data === 'sched pause'
+      ? 'paused'
+      : 'running'
 
   const toggleSchedule = () => {
     setGlobalModalId({
