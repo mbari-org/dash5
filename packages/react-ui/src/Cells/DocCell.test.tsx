@@ -47,3 +47,30 @@ test('should render the more options button', async () => {
 
   expect(screen.getByLabelText(/more options/i)).toBeInTheDocument()
 })
+
+test('should render the secondary label when provided', async () => {
+  render(<DocCell {...props} secondary="predeployment" />)
+
+  expect(screen.getByText('predeployment')).toBeInTheDocument()
+})
+
+test('should not render a secondary label when secondary is undefined', async () => {
+  render(<DocCell {...props} />)
+
+  expect(screen.queryByText(/predeployment/i)).not.toBeInTheDocument()
+})
+
+test('should not render a secondary label when secondary is empty string', async () => {
+  render(<DocCell {...props} secondary="" />)
+
+  // The conditional {secondary && ...} gates on a non-empty string
+  const spans = document.querySelectorAll('span.text-gray-400')
+  expect(spans.length).toBe(0)
+})
+
+test('label button should have a title attribute matching the full label', async () => {
+  render(<DocCell {...props} />)
+
+  const button = screen.getByRole('button', { name: props.label })
+  expect(button).toHaveAttribute('title', props.label)
+})
