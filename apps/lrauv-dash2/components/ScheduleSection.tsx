@@ -275,7 +275,11 @@ export const ScheduleSection: React.FC<ScheduleSectionProps> = ({
       <ScheduleCell
         label={missionName ?? 'Unknown'}
         secondary={missionParams ?? 'No parameters'}
-        status={mission.status === 'TBD' ? 'completed' : 'pending'}
+        status={
+          mission.status === 'TBD'
+            ? 'completed'
+            : (mission.status as ScheduleCellStatus)
+        }
         name={mission.event.user ?? 'Unknown'}
         scheduleStatus={
           (['pending', 'running'].includes(mission.status) && scheduleStatus) ||
@@ -283,11 +287,11 @@ export const ScheduleSection: React.FC<ScheduleSectionProps> = ({
         }
         className="border-b border-stone-200"
         description={
-          mission?.event.unixTime
-            ? `Ended ${DateTime.fromMillis(
+          ['pending', 'running'].includes(mission.status)
+            ? `Started ${DateTime.fromMillis(
                 mission.event.unixTime ?? 0
               ).toFormat('h:mm')}`
-            : `Started ${DateTime.fromMillis(
+            : `Ended ${DateTime.fromMillis(
                 mission.event.unixTime ?? 0
               ).toFormat('h:mm')}`
         }
