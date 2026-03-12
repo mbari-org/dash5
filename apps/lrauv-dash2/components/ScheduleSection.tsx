@@ -254,11 +254,11 @@ export const ScheduleSection: React.FC<ScheduleSectionProps> = ({
 
   const scheduledTypes = ['pending', 'running']
   const staticHeaderCellOffset = activeDeployment ? 1 : 0
-  const indexOfPastSchedule =
-    (missions?.findIndex((v) => !scheduledTypes.includes(v.status)) ?? 0) +
-    staticHeaderCellOffset
-  const hasPastSchedule = indexOfPastSchedule > -1
+  // Filter bar always sits immediately after the "Schedule is running" banner
+  // so running missions appear below it — consistent regardless of vehicle.
+  const hasPastSchedule = (missions?.length ?? 0) > 0
   const staticFilterCellOffset = hasPastSchedule ? 1 : 0
+  const indexOfPastSchedule = staticHeaderCellOffset
 
   const handleScheduleSearch = (e: React.ChangeEvent<HTMLInputElement>) => {
     setScheduleSearch(e.target.value)
@@ -354,7 +354,7 @@ export const ScheduleSection: React.FC<ScheduleSectionProps> = ({
       return (
         <div className="grid grid-cols-3 gap-2 px-4 py-2">
           <span className="flex flex-col">
-            <span className="text-xs font-bold">Schedule History</span>
+            <span className="text-xs font-bold">Mission Log</span>
             <span className="text-xs text-stone-400">
               (end times approximate — see Logs for accuracy)
             </span>
@@ -388,10 +388,9 @@ export const ScheduleSection: React.FC<ScheduleSectionProps> = ({
         />
       )
     }
-    const indexOffset =
-      index < (indexOfPastSchedule ?? results?.length ?? 0)
-        ? -staticHeaderCellOffset
-        : -staticHeaderCellOffset - staticFilterCellOffset
+    // Filter bar is always at staticHeaderCellOffset, so all mission cells
+    // need the full combined offset subtracted.
+    const indexOffset = -(staticHeaderCellOffset + staticFilterCellOffset)
     const mission = results[index + indexOffset]
     const { name: missionName, parameters: missionParams } =
       parseMissionCommand(mission?.event.data ?? '')
