@@ -116,7 +116,7 @@ export const TethysApiProvider: React.FC<TethysApiProviderProps> = ({
         error,
         authenticated: currentUser?.token?.length ?? 0 ? true : false,
         profile: currentUser,
-        loading: loginUser.isLoading,
+        loading: loginUser.isLoading || refreshedSession.isLoading,
         axiosInstance: instance.current,
         siteConfig: siteInfo,
       }}
