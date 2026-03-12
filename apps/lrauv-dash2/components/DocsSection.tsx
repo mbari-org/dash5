@@ -147,6 +147,7 @@ const DocsSection: React.FC<DocsSectionProps> = ({
       <DocCell
         className={'border-b border-slate-200'}
         label={item?.name ?? ''}
+        secondary={item?.docType}
         attachments={attachments}
         time={time}
         date={date}

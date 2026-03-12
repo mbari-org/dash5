@@ -23,6 +23,7 @@ export interface DocCellProps {
   time: string
   date: string
   label: string
+  secondary?: string
   attachments?: Attachment[]
   docInstanceId: number
   docId: number
@@ -42,19 +43,13 @@ export const DocCell: React.FC<DocCellProps> = ({
   time,
   date,
   label,
+  secondary,
   attachments,
   onMoreClick,
   docInstanceId,
   docId,
 }) => {
   const moreButtonRef = useRef<HTMLDivElement | null>(null)
-  const labelAsArray = label.split(' ')
-  const truncatedLabel = labelAsArray
-    .filter((word, i) => {
-      if (i < 3) return word
-      if (labelAsArray[2] === '-' && i === 3) return word
-    })
-    .join(' ')
 
   const handleMoreClick = () => {
     onMoreClick(
@@ -74,9 +69,15 @@ export const DocCell: React.FC<DocCellProps> = ({
           <button
             className="w-full truncate text-left font-light text-primary-600"
             onClick={swallow(onSelect)}
+            title={label}
           >
-            {truncatedLabel}
+            {label}
           </button>
+          {secondary && (
+            <span className="text-xs capitalize text-gray-400">
+              {secondary.toLowerCase()}
+            </span>
+          )}
           <ul className="flex flex-col">
             {attachments?.map((attachment) => (
               <li key={attachment.id}>
