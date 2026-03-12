@@ -20,6 +20,7 @@ import {
   GetEventsResponse,
   useDeploymentCommandStatus,
   useInfiniteEvents,
+  useMissionStartedEvent,
 } from '@mbari/api-client'
 import useGlobalModalId from '../lib/useGlobalModalId'
 import { toast } from 'react-hot-toast'
@@ -86,6 +87,24 @@ export const isMissionCommand = (
   return hasLoad && hasRun
 }
 
+/**
+ * Extracts the bare mission name from a mission-started text field.
+ * e.g. "Started mission circle_acoustic_contact" → "circle_acoustic_contact"
+ */
+export const missionNameFromStartedText = (text: string): string =>
+  text.replace(/^Started mission\s+/i, '').trim()
+
+/**
+ * Extracts the bare mission name from a run/command event data string.
+ * e.g. "load Science/circle_acoustic_contact.tl;set ...;run" → "circle_acoustic_contact"
+ */
+export const missionNameFromEventData = (data?: string): string => {
+  const match = data?.match(/[A-Za-z0-9_/]+\.(?:xml|tl)/i)
+  if (!match) return ''
+  const filename = match[0].split('/').pop() ?? ''
+  return filename.replace(/\.(xml|tl)$/i, '')
+}
+
 export const ScheduleSection: React.FC<ScheduleSectionProps> = ({
   currentDeploymentId,
   activeDeployment,
@@ -124,26 +143,90 @@ export const ScheduleSection: React.FC<ScheduleSectionProps> = ({
     ? deploymentResponse
     : allLogsResponse
 
+  // Fetch recent mission-started events to derive real running/ended status.
+  // The API returns them newest-first; index 0 = currently running mission.
+  const missionStartedResponse = useMissionStartedEvent(
+    { vehicle: vehicleName, limit: 50 },
+    { enabled: !!vehicleName, staleTime: 30 * 1000 }
+  )
+
+  // Build a map of mission name → index in the mission-started list.
+  // Index 0 = running, everything else = ended.
+  const missionStatusMap = useMemo(() => {
+    const map = new Map<string, 'running' | 'completed'>()
+    missionStartedResponse.data?.forEach((evt, idx) => {
+      const name = missionNameFromStartedText(evt.text)
+      if (name && !map.has(name)) {
+        map.set(name, idx === 0 ? 'running' : 'completed')
+      }
+    })
+    return map
+  }, [missionStartedResponse.data])
+
   const missions: CommandStatusItem[] = useMemo(() => {
+    let items: CommandStatusItem[]
+
     if (deploymentLogsOnly) {
       const cs = deploymentResponse.data?.commandStatuses ?? []
-      return cs as unknown as CommandStatusItem[]
+      items = cs as unknown as CommandStatusItem[]
+    } else {
+      const pages = allLogsResponse.data?.pages ?? []
+      const flat = pages.flat()
+      items = flat.map((evt: GetEventsResponse) => ({
+        event: {
+          data: evt?.data,
+          note: evt?.note,
+          user: evt?.user,
+          unixTime: evt?.unixTime,
+          eventId: evt?.eventId,
+          eventType: evt?.eventType,
+          text: evt?.text,
+        },
+        status: 'TBD',
+      }))
     }
-    const pages = allLogsResponse.data?.pages ?? []
-    const flat = pages.flat()
-    return flat.map((evt: GetEventsResponse) => ({
-      event: {
-        data: evt?.data,
-        note: evt?.note,
-        user: evt?.user,
-        unixTime: evt?.unixTime,
-        eventId: evt?.eventId,
-        eventType: evt?.eventType,
-        text: evt?.text,
-      },
-      status: 'TBD',
-    }))
-  }, [deploymentLogsOnly, deploymentResponse.data, allLogsResponse.data])
+
+    // Enrich each item's status using the mission-started sequence when
+    // the backend still returns TBD for everything.
+    const enriched = items.map((item) => {
+      if (item.status !== 'TBD') return item
+      const missionName = missionNameFromEventData(item.event.data)
+      const derivedStatus = missionName
+        ? missionStatusMap.get(missionName)
+        : undefined
+      return derivedStatus ? { ...item, status: derivedStatus } : item
+    })
+
+    // Inject the currently running mission at the top if it was auto-triggered
+    // by MissionManager (not found in the operator command log).
+    const currentMissionEvent = missionStartedResponse.data?.[0]
+    if (currentMissionEvent) {
+      const currentName = missionNameFromStartedText(currentMissionEvent.text)
+      const alreadyInList = enriched.some(
+        (item) => missionNameFromEventData(item.event.data) === currentName
+      )
+      if (!alreadyInList) {
+        enriched.unshift({
+          event: {
+            data: currentMissionEvent.text,
+            unixTime: currentMissionEvent.unixTime,
+            eventId: currentMissionEvent.eventId,
+            eventType: currentMissionEvent.eventType,
+            text: currentMissionEvent.text,
+          },
+          status: 'running',
+        })
+      }
+    }
+
+    return enriched
+  }, [
+    deploymentLogsOnly,
+    deploymentResponse.data,
+    allLogsResponse.data,
+    missionStatusMap,
+    missionStartedResponse.data,
+  ])
 
   const scheduledTypes = ['pending', 'running']
   const staticHeaderCellOffset = activeDeployment ? 1 : 0
