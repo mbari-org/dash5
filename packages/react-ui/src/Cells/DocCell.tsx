@@ -67,7 +67,7 @@ export const DocCell: React.FC<DocCellProps> = ({
         </ul>
         <div className="col-span-6 pt-2 text-sm">
           <button
-            className="w-full truncate text-left font-light text-primary-600"
+            className="w-full truncate text-left font-light capitalize text-primary-600"
             title={label}
             onClick={swallow(onSelect)}
           >
