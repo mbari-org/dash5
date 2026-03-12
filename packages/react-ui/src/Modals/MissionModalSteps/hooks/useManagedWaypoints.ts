@@ -1,9 +1,20 @@
 import { atom, useRecoilState } from 'recoil'
 import { useRef, useEffect, useCallback } from 'react'
+import { roundCoord } from '@mbari/utils'
 import {
   WaypointProps,
   WaypointTableProps,
 } from '../../../Tables/WaypointTable'
+
+const WAYPOINT_COORD_DECIMALS = 5
+
+function normalizeWaypointCoord(value: string | undefined): string {
+  if (value == null || value === '' || value.toLowerCase() === 'nan')
+    return value ?? ''
+  const num = parseFloat(value)
+  if (!Number.isFinite(num)) return value
+  return roundCoord(num, WAYPOINT_COORD_DECIMALS).toString()
+}
 
 export interface UseManagedWaypointsState {
   waypoints?: WaypointProps[]
@@ -44,10 +55,15 @@ const useManagedWaypoints = (waypoints: WaypointProps[] = []) => {
     updatedWaypoints?.waypoints,
   ])
 
-  // Update waypoints via user input
+  // Update waypoints via user input. Normalizes lat/lon to fixed decimal places.
   const handleWaypointsUpdate = useCallback(
     (newWaypoints: WaypointProps[]) => {
-      setUpdatedWaypoints({ ...updatedWaypoints, waypoints: newWaypoints })
+      const normalized = newWaypoints.map((wp) => ({
+        ...wp,
+        lat: normalizeWaypointCoord(wp.lat),
+        lon: normalizeWaypointCoord(wp.lon),
+      }))
+      setUpdatedWaypoints({ ...updatedWaypoints, waypoints: normalized })
     },
     [setUpdatedWaypoints, updatedWaypoints]
   )
