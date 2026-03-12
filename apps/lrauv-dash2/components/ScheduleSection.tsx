@@ -418,7 +418,7 @@ export const ScheduleSection: React.FC<ScheduleSectionProps> = ({
         className="border-b border-stone-200"
         description={
           mission.event.unixTime
-            ? `${isMission ? 'Started' : 'Run'} ${DateTime.fromMillis(
+            ? `${isMission ? 'Started' : 'Ran'} ${DateTime.fromMillis(
                 mission.event.unixTime
               ).toFormat('h:mm')} (${
                 DateTime.fromMillis(mission.event.unixTime).toRelative({
