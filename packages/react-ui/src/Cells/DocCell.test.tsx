@@ -55,17 +55,19 @@ test('should render the secondary label when provided', async () => {
 })
 
 test('should not render a secondary label when secondary is undefined', async () => {
-  render(<DocCell {...props} />)
+  const { container } = render(<DocCell {...props} />)
 
-  expect(screen.queryByText(/predeployment/i)).not.toBeInTheDocument()
+  // Assert the secondary element itself is absent, not a hard-coded string
+  expect(container.querySelector('span.text-gray-400')).not.toBeInTheDocument()
 })
 
 test('should not render a secondary label when secondary is empty string', async () => {
-  render(<DocCell {...props} secondary="" />)
+  // Compare against a baseline render with no secondary prop — HTML should
+  // be identical, confirming the empty string produces no extra element.
+  const { container: baseline } = render(<DocCell {...props} />)
+  const { container: withEmpty } = render(<DocCell {...props} secondary="" />)
 
-  // The conditional {secondary && ...} gates on a non-empty string
-  const spans = document.querySelectorAll('span.text-gray-400')
-  expect(spans.length).toBe(0)
+  expect(withEmpty.innerHTML).toBe(baseline.innerHTML)
 })
 
 test('label button should have a title attribute matching the full label', async () => {
