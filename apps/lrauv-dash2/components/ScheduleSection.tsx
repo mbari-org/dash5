@@ -306,7 +306,7 @@ export const ScheduleSection: React.FC<ScheduleSectionProps> = ({
                   ? 'Started'
                   : 'Ended'
               } ${DateTime.fromMillis(mission.event.unixTime).toFormat('h:mm')}`
-            : undefined
+            : ''
         }
         description2={
           DateTime.fromMillis(mission.event.unixTime ?? 0).toRelative() ?? ''
