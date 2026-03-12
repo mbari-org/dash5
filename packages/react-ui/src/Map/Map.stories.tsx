@@ -1,10 +1,15 @@
 import { Story, Meta } from '@storybook/react'
-import Map, { MapProps } from './Map'
+import Map, { MapProps, MapDepthDisplay } from './Map'
 import { useCallback, useState } from 'react'
 
 export default {
   title: 'Maps/Map',
 } as Meta
+
+const mockDepthRequest = async (_lat: number, _lng: number) => ({
+  depth: (Math.random() * 10000.0) / 100.0,
+  status: 'success',
+})
 
 const Template: Story<MapProps> = (args) => {
   const [center, setCenter] = useState(args.center)
@@ -19,7 +24,9 @@ const Template: Story<MapProps> = (args) => {
         className="h-96 w-full"
         onRequestCoordinate={onRequestCoordinate}
         center={center}
-      />
+      >
+        <MapDepthDisplay depthRequest={mockDepthRequest} />
+      </Map>
     </div>
   )
 }
@@ -27,9 +34,6 @@ const Template: Story<MapProps> = (args) => {
 const args: MapProps = {
   center: [37.7749, -122.4194],
   zoom: 10,
-  onRequestDepth: async () => {
-    return (Math.random() * 10000.0) / 100.0
-  },
 }
 
 export const Primary = Template.bind({})

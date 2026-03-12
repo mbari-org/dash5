@@ -3,7 +3,7 @@ import { SelectOption } from '../../Fields/Select'
 import { Mission, MissionTable } from '../../Tables/MissionTable'
 import { Input, SelectField } from '../../Fields'
 import { sortByProperty } from '@mbari/utils'
-import { SortDirection } from 'react-ui/src/Data/TableHeader'
+import { SortDirection } from '../../Data/TableHeader'
 
 export interface MissionStepProps {
   vehicleName: string

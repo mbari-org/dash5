@@ -1,10 +1,9 @@
 import { createLogger } from '@mbari/utils'
 
-// Extend the Window interface
+// Extend the Window interface (google is declared in types/global.d.ts)
 declare global {
   interface Window {
     [GOOGLE_MAPS_LOADED_FLAG]?: boolean
-    google?: any
   }
 }
 
