@@ -225,9 +225,10 @@ export const ScheduleSection: React.FC<ScheduleSectionProps> = ({
         if (currentRawEvent) {
           enriched.unshift({
             event: {
-              // GetMissionStartedEventResponse has no data field; use text.
-              // eventType:'run' ensures isMissionCommand classifies this correctly.
-              data: currentRawEvent.text,
+              // Construct a command-format data string so parseMissionCommand
+              // produces a consistent label and "Use for new mission" receives
+              // a valid path. GetMissionStartedEventResponse has no data field.
+              data: `load ${currentMissionEntry.name}.tl;run`,
               unixTime: currentRawEvent.unixTime,
               eventId: currentRawEvent.eventId,
               eventType: 'run',

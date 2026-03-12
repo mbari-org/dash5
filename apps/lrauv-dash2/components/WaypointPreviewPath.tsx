@@ -51,6 +51,10 @@ const WaypointPreviewPath: React.FC<{
           // noop; map pane may not be ready — leave fit.current unchanged so
           // a subsequent render can retry fitBounds for the same route
         }
+      } else {
+        // Route cleared — update fit.current so that re-selecting the same
+        // waypoints later triggers fitBounds again instead of being skipped.
+        fit.current = routeAsString
       }
     }
     return () => {
