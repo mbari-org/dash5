@@ -283,9 +283,14 @@ const VehiclePath: React.FC<VehiclePathProps> = ({
       if (!grouped) {
         dispatch({ type: 'clear' })
         if (fitPositions?.length) {
-          map.fitBounds(fitPositions, {
-            paddingBottomRight: [0, 320], // Add bottom padding to deployment map to show path above the vehicle diagram
-          })
+          try {
+            map.fitBounds(fitPositions, {
+              paddingBottomRight: [0, 320], // Add bottom padding to deployment map to show path above the vehicle diagram
+              animate: false, // Prevent zoom animation race with React re-renders on initial load
+            })
+          } catch {
+            // noop; map pane may not be ready if component re-renders during transition
+          }
         }
       } else {
         dispatch({ type: 'append', coords: { [name]: fitPositions } })
@@ -313,7 +318,7 @@ const VehiclePath: React.FC<VehiclePathProps> = ({
     const applyFit = () => {
       try {
         map.invalidateSize()
-        map.fitBounds(coords)
+        map.fitBounds(coords, { animate: false })
       } catch {
         // noop; next delayed retry may succeed after layout settles
       }

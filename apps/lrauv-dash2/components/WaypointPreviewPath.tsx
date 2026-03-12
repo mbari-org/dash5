@@ -41,7 +41,14 @@ const WaypointPreviewPath: React.FC<{
     }
     if (fit.current !== routeAsString && route) {
       if (route?.length) {
-        map.fitBounds(route.map((r) => [r.lat, r.lon]) as [number, number][])
+        try {
+          map.fitBounds(
+            route.map((r) => [r.lat, r.lon]) as [number, number][],
+            { animate: false }
+          )
+        } catch {
+          // noop; map pane may not be ready if component re-renders during transition
+        }
       }
       fit.current = routeAsString
     }
