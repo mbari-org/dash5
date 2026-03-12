@@ -390,6 +390,12 @@ export const ScheduleSection: React.FC<ScheduleSectionProps> = ({
     const mission = results[index + indexOffset]
     const { name: missionName, parameters: missionParams } =
       parseMissionCommand(mission?.event.data ?? '')
+    const isMission =
+      mission?.event?.eventType === 'run' ||
+      isMissionCommand(mission?.event?.data, mission?.event?.text)
+    const cellCommandType: 'mission' | 'command' = isMission
+      ? 'mission'
+      : 'command'
 
     return mission ? (
       <ScheduleCell
@@ -408,9 +414,9 @@ export const ScheduleSection: React.FC<ScheduleSectionProps> = ({
         className="border-b border-stone-200"
         description={
           mission.event.unixTime
-            ? `Started ${DateTime.fromMillis(mission.event.unixTime).toFormat(
-                'h:mm'
-              )} (${
+            ? `${isMission ? 'Started' : 'Run'} ${DateTime.fromMillis(
+                mission.event.unixTime
+              ).toFormat('h:mm')} (${
                 DateTime.fromMillis(mission.event.unixTime).toRelative({
                   style: 'short',
                 }) ?? ''
@@ -427,12 +433,7 @@ export const ScheduleSection: React.FC<ScheduleSectionProps> = ({
         onSelect={() => undefined}
         onMoreClick={openMoreMenu}
         eventId={mission.event.eventId}
-        commandType={
-          mission?.event?.eventType === 'run' ||
-          isMissionCommand(mission?.event?.data, mission?.event?.text)
-            ? 'mission'
-            : 'command'
-        }
+        commandType={cellCommandType}
       />
     ) : (
       <p className="mx-2 my-2 rounded bg-stone-100 p-2">No Data</p>
