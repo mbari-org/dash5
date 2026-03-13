@@ -429,7 +429,7 @@ export const ScheduleSection: React.FC<ScheduleSectionProps> = ({
           mission.status === 'running' || mission.status === 'pending'
             ? 'Ended: TBD'
             : mission.endedAt
-            ? `Ended: ${DateTime.fromMillis(mission.endedAt).toFormat('h:mm')}`
+            ? `Ended: ~${DateTime.fromMillis(mission.endedAt).toFormat('h:mm')}`
             : ''
         }
         onSelect={() => undefined}
