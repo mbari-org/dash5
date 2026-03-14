@@ -47,7 +47,102 @@ const MockComponent: React.FC<{
   </QueryClientProvider>
 )
 
+const MockTokenHook: React.FC<{
+  sessionToken: string
+  setSessionToken: (token: string) => void
+}> = ({ sessionToken, setSessionToken }) => {
+  useRefreshSessionToken({
+    sessionToken,
+    setSessionToken,
+    instance: axios.create(),
+  })
+  return null
+}
+
 describe('useRefreshSessionToken', () => {
+  it('should call setSessionToken with the new token when the response includes one', async () => {
+    server.use(
+      rest.get('/user/token', (_req, res, ctx) =>
+        res(ctx.status(200), ctx.json(mockResponse))
+      )
+    )
+
+    const setSessionToken = jest.fn()
+    render(
+      <QueryClientProvider client={new QueryClient()}>
+        <MockTokenHook
+          sessionToken="old-fake-token"
+          setSessionToken={setSessionToken}
+        />
+      </QueryClientProvider>
+    )
+
+    await waitFor(() =>
+      expect(setSessionToken).toHaveBeenCalledWith(mockResponse.result.token)
+    )
+  })
+
+  it('should not call setSessionToken when the response has no token field', async () => {
+    // Regression: the real okeanids /user/token endpoint returns 200 with user
+    // profile data but omits the token field. Before the fix (onSettled → onSuccess
+    // + guard), this caused setSessionToken('') to wipe the cookie.
+    server.use(
+      rest.get('/user/token', (_req, res, ctx) =>
+        res(
+          ctx.status(200),
+          ctx.json({
+            result: {
+              email: 'jim@sumocreations.com',
+              firstName: 'Jim',
+              lastName: 'Jeffers',
+              roles: ['operator'],
+              // token field intentionally absent
+            },
+          })
+        )
+      )
+    )
+
+    const setSessionToken = jest.fn()
+    render(
+      <QueryClientProvider client={new QueryClient()}>
+        <MockTokenHook
+          sessionToken="existing-cookie-token"
+          setSessionToken={setSessionToken}
+        />
+      </QueryClientProvider>
+    )
+
+    // Allow the query to settle
+    await new Promise((r) => setTimeout(r, 100))
+
+    expect(setSessionToken).not.toHaveBeenCalled()
+  })
+
+  it('should not call setSessionToken when the token refresh fails', async () => {
+    // Regression: onSettled called setSessionToken('') on 401/500, wiping the cookie.
+    server.use(
+      rest.get('/user/token', (_req, res, ctx) => res(ctx.status(401)))
+    )
+
+    const setSessionToken = jest.fn()
+    render(
+      <QueryClientProvider
+        client={
+          new QueryClient({ defaultOptions: { queries: { retry: false } } })
+        }
+      >
+        <MockTokenHook
+          sessionToken="existing-cookie-token"
+          setSessionToken={setSessionToken}
+        />
+      </QueryClientProvider>
+    )
+
+    await new Promise((r) => setTimeout(r, 200))
+    expect(setSessionToken).not.toHaveBeenCalledWith('')
+  })
+
   it('should render the logout button and auth token after the user authenticates', async () => {
     server.use(
       rest.get('/user/token', (_req, res, ctx) => {

@@ -22,7 +22,9 @@ export const useRefreshSessionToken = (config: {
       enabled: (sessionToken?.length ?? 0) > 0,
       staleTime: 60 * 60 * 1000,
       onSuccess: (data) => {
-        setSessionToken(data?.token ?? '')
+        if (data?.token) {
+          setSessionToken(data.token)
+        }
       },
     }
   )

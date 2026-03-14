@@ -13,7 +13,7 @@ export const useCreateLogin = (config: {
       return createLogin(params, { instance })
     },
     {
-      onSettled: data => {
+      onSuccess: (data) => {
         setSessionToken(data?.token ?? '')
       },
     }
