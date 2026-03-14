@@ -2,6 +2,7 @@ import React, { useEffect, useRef } from 'react'
 import { useMap, Polyline } from 'react-leaflet'
 import L from 'leaflet'
 import 'leaflet-polylinedecorator'
+import { WAYPOINT_ICON_COLOR } from './WaypointIcon'
 
 export interface Coord {
   lat: number
@@ -18,7 +19,7 @@ const WaypointPreviewPath: React.FC<{
   const route = waypoints
   const routeAsString = waypoints?.flat().join()
   const decorator = useRef<L.PolylineDecorator | null>(null)
-  const color = '#7e22ce'
+  const color = WAYPOINT_ICON_COLOR
 
   useEffect(() => {
     if (decorator.current) {
@@ -62,7 +63,7 @@ const WaypointPreviewPath: React.FC<{
         decorator.current.removeFrom(map)
       }
     }
-  }, [route, map, routeAsString])
+  }, [route, map, routeAsString, color])
   return route ? (
     <>
       {waypoints && (

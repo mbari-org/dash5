@@ -79,6 +79,14 @@ const filterCustomWaypointIndices = (waypoints: WaypointProps[]) =>
     [] as number[]
   )
 
+const isWaypointPlaced = (wp: WaypointProps | undefined): boolean => {
+  const lat = wp?.lat?.trim()
+  const lon = wp?.lon?.trim()
+  if (!lat || !lon) return false
+  const nan = 'nan'
+  return lat.toLowerCase() !== nan && lon.toLowerCase() !== nan
+}
+
 export const WaypointTable: React.FC<WaypointTableProps> = ({
   className,
   style,
@@ -236,7 +244,10 @@ export const WaypointTable: React.FC<WaypointTableProps> = ({
                     size="text-2xl"
                     noPadding
                     onClick={handleFocusWaypoint}
-                    disabled={rowIndex === focusedWaypointIndex}
+                    disabled={
+                      rowIndex === focusedWaypointIndex ||
+                      isWaypointPlaced(selectedWaypoint)
+                    }
                   />
                 </div>
               </div>
