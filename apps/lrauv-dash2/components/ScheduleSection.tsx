@@ -422,14 +422,14 @@ export const ScheduleSection: React.FC<ScheduleSectionProps> = ({
           const relative = dt.toRelative({ style: 'short' })
           const relativePart = relative ? ` (${relative})` : ''
           return `${isMission ? 'Started' : 'Ran'} ${dt.toFormat(
-            'h:mm'
+            'H:mm'
           )}${relativePart}`
         })()}
         description2={
           mission.status === 'running' || mission.status === 'pending'
             ? 'Ended: TBD'
             : mission.endedAt
-            ? `Ended: ~${DateTime.fromMillis(mission.endedAt).toFormat('h:mm')}`
+            ? `Ended: ~${DateTime.fromMillis(mission.endedAt).toFormat('H:mm')}`
             : ''
         }
         onSelect={() => undefined}
