@@ -1,3 +1,11 @@
+export const normalizeMissionName = (missionName?: string): string => {
+  if (!missionName) return ''
+  const trimmed = missionName.trim()
+  if (!trimmed) return ''
+  const filename = trimmed.split('/').pop() ?? ''
+  return filename.replace(/\.(xml|tl)$/i, '').toLowerCase()
+}
+
 /**
  * Extracts the bare mission name from a mission-started text field.
  * e.g. "Started mission circle_acoustic_contact" → "circle_acoustic_contact"
@@ -10,8 +18,23 @@ export const missionNameFromStartedText = (text: string): string =>
  * e.g. "load Science/circle_acoustic_contact.tl;set ...;run" → "circle_acoustic_contact"
  */
 export const missionNameFromEventData = (data?: string): string => {
-  const match = data?.match(/[A-Za-z0-9_/]+\.(?:xml|tl)/i)
-  if (!match) return ''
-  const filename = match[0].split('/').pop() ?? ''
-  return filename.replace(/\.(xml|tl)$/i, '')
+  const withExtension = data?.match(/[A-Za-z0-9_/]+\.(?:xml|tl)/i)?.[0]
+  if (withExtension) {
+    return (
+      withExtension
+        .split('/')
+        .pop()
+        ?.replace(/\.(xml|tl)$/i, '') ?? ''
+    )
+  }
+
+  // Fallback for mission loads with no extension, e.g. "load Maintenance/calibration;run"
+  const loadMatch = data?.match(/\bload\s+([A-Za-z0-9_/.-]+)\b/i)?.[1]
+  if (!loadMatch) return ''
+  return (
+    loadMatch
+      .split('/')
+      .pop()
+      ?.replace(/\.(xml|tl)$/i, '') ?? ''
+  )
 }

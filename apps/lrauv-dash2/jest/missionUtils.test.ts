@@ -1,6 +1,7 @@
 import {
   missionNameFromStartedText,
   missionNameFromEventData,
+  normalizeMissionName,
 } from '../lib/missionUtils'
 
 describe('missionNameFromStartedText', () => {
@@ -62,5 +63,25 @@ describe('missionNameFromEventData', () => {
 
   test('returns empty string for empty string input', () => {
     expect(missionNameFromEventData('')).toBe('')
+  })
+
+  test('extracts mission name from load command without extension', () => {
+    expect(missionNameFromEventData('load Maintenance/calibration;run')).toBe(
+      'calibration'
+    )
+  })
+})
+
+describe('normalizeMissionName', () => {
+  test('normalizes started-mission path names for matching', () => {
+    expect(normalizeMissionName('Maintenance/calibration')).toBe('calibration')
+  })
+
+  test('normalizes extension and case', () => {
+    expect(normalizeMissionName('Science/Default.TL')).toBe('default')
+  })
+
+  test('returns empty string for missing values', () => {
+    expect(normalizeMissionName(undefined)).toBe('')
   })
 })
