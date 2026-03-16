@@ -6,6 +6,13 @@ export const normalizeMissionName = (missionName?: string): string => {
   return filename.replace(/\.(xml|tl)$/i, '').toLowerCase()
 }
 
+export const normalizeMissionPath = (missionName?: string): string => {
+  if (!missionName) return ''
+  const trimmed = missionName.trim()
+  if (!trimmed) return ''
+  return trimmed.replace(/\.(xml|tl)$/i, '').toLowerCase()
+}
+
 /**
  * Extracts the bare mission name from a mission-started text field.
  * e.g. "Started mission circle_acoustic_contact" → "circle_acoustic_contact"
@@ -37,4 +44,14 @@ export const missionNameFromEventData = (data?: string): string => {
       .pop()
       ?.replace(/\.(xml|tl)$/i, '') ?? ''
   )
+}
+
+export const missionPathFromEventData = (data?: string): string => {
+  const withExtension = data?.match(/[A-Za-z0-9_/]+\.(?:xml|tl)/i)?.[0]
+  if (withExtension) return normalizeMissionPath(withExtension)
+
+  // Fallback for mission loads with no extension, e.g. "load Maintenance/calibration;run"
+  const loadMatch = data?.match(/\bload\s+([A-Za-z0-9_/.-]+)\b/i)?.[1]
+  if (!loadMatch) return ''
+  return normalizeMissionPath(loadMatch)
 }

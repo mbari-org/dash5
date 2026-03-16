@@ -2,6 +2,8 @@ import {
   missionNameFromStartedText,
   missionNameFromEventData,
   normalizeMissionName,
+  normalizeMissionPath,
+  missionPathFromEventData,
 } from '../lib/missionUtils'
 
 describe('missionNameFromStartedText', () => {
@@ -83,5 +85,33 @@ describe('normalizeMissionName', () => {
 
   test('returns empty string for missing values', () => {
     expect(normalizeMissionName(undefined)).toBe('')
+  })
+})
+
+describe('normalizeMissionPath', () => {
+  test('normalizes path and removes extension', () => {
+    expect(normalizeMissionPath('Science/Default.TL')).toBe('science/default')
+  })
+
+  test('returns empty string for missing values', () => {
+    expect(normalizeMissionPath(undefined)).toBe('')
+  })
+})
+
+describe('missionPathFromEventData', () => {
+  test('extracts full mission path from load with extension', () => {
+    expect(missionPathFromEventData('load Science/default.tl;run')).toBe(
+      'science/default'
+    )
+  })
+
+  test('extracts full mission path from load without extension', () => {
+    expect(missionPathFromEventData('load Maintenance/calibration;run')).toBe(
+      'maintenance/calibration'
+    )
+  })
+
+  test('returns empty string when no mission path is present', () => {
+    expect(missionPathFromEventData('sched stop')).toBe('')
   })
 })

@@ -26,7 +26,9 @@ import useGlobalModalId from '../lib/useGlobalModalId'
 import {
   missionNameFromStartedText,
   missionNameFromEventData,
+  missionPathFromEventData,
   normalizeMissionName,
+  normalizeMissionPath,
 } from '../lib/missionUtils'
 import { toast } from 'react-hot-toast'
 
@@ -103,6 +105,16 @@ export const ScheduleSection: React.FC<ScheduleSectionProps> = ({
   activeDeployment,
   vehicleName,
 }) => {
+  const missionKeysMatch = (leftPath: string, rightPath: string) => {
+    if (!leftPath || !rightPath) return false
+    const leftHasPath = leftPath.includes('/')
+    const rightHasPath = rightPath.includes('/')
+
+    if (leftHasPath && rightHasPath) return leftPath === rightPath
+
+    return normalizeMissionName(leftPath) === normalizeMissionName(rightPath)
+  }
+
   const { setGlobalModalId } = useGlobalModalId()
   const [scheduleFilter, setScheduleFilter] = useState<string>('')
   const [scheduleSearch, setScheduleSearch] = useState<string>('')
@@ -188,14 +200,13 @@ export const ScheduleSection: React.FC<ScheduleSectionProps> = ({
     const MATCH_WINDOW_MS = 10 * 60 * 1000
     const enriched = items.map((item) => {
       if (item.status !== 'TBD') return item
-      const missionName =
-        missionNameFromEventData(item.event.data) ||
-        missionNameFromEventData(item.event.text)
-      if (!missionName || item.event.unixTime == null) return item
+      const missionPath =
+        missionPathFromEventData(item.event.data) ||
+        missionPathFromEventData(item.event.text)
+      if (!missionPath || item.event.unixTime == null) return item
 
-      const normalizedMissionName = normalizeMissionName(missionName)
-      const candidates = missionTimeline.filter(
-        (t) => normalizeMissionName(t.name) === normalizedMissionName
+      const candidates = missionTimeline.filter((t) =>
+        missionKeysMatch(normalizeMissionPath(t.name), missionPath)
       )
       if (!candidates.length) return item
 
@@ -233,16 +244,15 @@ export const ScheduleSection: React.FC<ScheduleSectionProps> = ({
     // Otherwise inject a synthetic running row at the top.
     const currentMissionEntry = missionTimeline[0]
     if (currentMissionEntry) {
-      const currentMissionName = normalizeMissionName(currentMissionEntry.name)
+      const currentMissionPath = normalizeMissionPath(currentMissionEntry.name)
+      if (!currentMissionPath) return enriched
+
       const matchingMissionIndex = enriched.findIndex((item) => {
-        const fromData = normalizeMissionName(
-          missionNameFromEventData(item.event.data)
-        )
-        const fromText = normalizeMissionName(
-          missionNameFromEventData(item.event.text)
-        )
+        const fromDataPath = missionPathFromEventData(item.event.data)
+        const fromTextPath = missionPathFromEventData(item.event.text)
         return (
-          fromData === currentMissionName || fromText === currentMissionName
+          missionKeysMatch(fromDataPath, currentMissionPath) ||
+          missionKeysMatch(fromTextPath, currentMissionPath)
         )
       })
 
