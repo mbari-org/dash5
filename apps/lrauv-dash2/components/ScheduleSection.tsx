@@ -105,11 +105,6 @@ export const isMissionCommand = (
   return hasLoad && hasRun
 }
 
-export {
-  missionNameFromStartedText,
-  missionNameFromEventData,
-} from '../lib/missionUtils'
-
 export const ScheduleSection: React.FC<ScheduleSectionProps> = ({
   currentDeploymentId,
   activeDeployment,

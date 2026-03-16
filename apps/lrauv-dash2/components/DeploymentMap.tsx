@@ -699,7 +699,7 @@ const DeploymentMap: React.FC<DeploymentMapProps> = ({
                     key={`waypoint-${i}-${m.latName}-${m.lonName}-${m.lat}-${m.lon}`}
                     position={[Number(m.lat), Number(m.lon)]}
                     number={waypointNumber}
-                    draggable={editable && !focusedWaypointIndex}
+                    draggable={editable && focusedWaypointIndex == null}
                     onDragEnd={(newPos) =>
                       handleDragEnd(i, { lat: newPos[0], lng: newPos[1] })
                     }
@@ -709,7 +709,9 @@ const DeploymentMap: React.FC<DeploymentMapProps> = ({
                   />
                 )
               })}
-              {!!focusedWaypointIndex && <ClickableMapPoint />}
+              {typeof focusedWaypointIndex === 'number' && (
+                <ClickableMapPoint />
+              )}
               <WaypointPreviewPath
                 waypoints={plottedWaypoints.map((wp) => ({
                   lat: Number(wp.lat),
