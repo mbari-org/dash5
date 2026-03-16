@@ -432,7 +432,27 @@ export const ScheduleSection: React.FC<ScheduleSectionProps> = ({
             ? `Ended: ~${DateTime.fromMillis(mission.endedAt).toFormat('H:mm')}`
             : ''
         }
-        onSelect={() => undefined}
+        onSelect={() => {
+          setGlobalModalId({
+            id: 'scheduleEventDetails',
+            meta: {
+              scheduleEvent: {
+                eventId: mission.event.eventId,
+                commandType: cellCommandType,
+                status: mission.status,
+                label: missionName ?? 'Unknown',
+                secondary: missionParams ?? undefined,
+                user: mission.event.user ?? undefined,
+                note: mission.event.note ?? undefined,
+                eventData: mission.event.data ?? undefined,
+                eventText: mission.event.text ?? undefined,
+                startedAt: mission.event.unixTime,
+                endedAt: mission.endedAt,
+                vehicleName,
+              },
+            },
+          })
+        }}
         onMoreClick={openMoreMenu}
         eventId={mission.event.eventId}
         commandType={cellCommandType}

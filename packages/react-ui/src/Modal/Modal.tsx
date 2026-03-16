@@ -29,6 +29,13 @@ export interface ModalViewProps {
     | 'bottom-left'
     | 'all-sides'
   allowPointerEventsOnChildren?: boolean
+  headerClassName?: string
+  headerStyle?: React.CSSProperties
+  dragButtonClassName?: string
+  titleClassName?: string
+  titleStyle?: React.CSSProperties
+  closeButtonClassName?: string
+  closeButtonStyle?: React.CSSProperties
   children?: React.ReactNode
 }
 
@@ -113,6 +120,13 @@ export const Modal: React.FC<ModalProps & FooterProps> = ({
   blurBackground,
   snapTo,
   allowPointerEventsOnChildren,
+  headerClassName,
+  headerStyle,
+  dragButtonClassName,
+  titleClassName,
+  titleStyle,
+  closeButtonClassName,
+  closeButtonStyle,
 }) => {
   const browserWindow = typeof window !== 'undefined' ? window : undefined
   const [state, setState] = useState<ModalDragState>(DEFAULT_STATE)
@@ -224,15 +238,40 @@ export const Modal: React.FC<ModalProps & FooterProps> = ({
         ref={dialog}
       >
         {loading && <LoadingOverlay />}
-        <header className={clsx(styles.header, !grayHeader && 'bg-opacity-10')}>
+        <header
+          className={clsx(
+            styles.header,
+            !grayHeader && 'bg-opacity-10',
+            headerClassName
+          )}
+          style={headerStyle}
+        >
           {draggable ? (
-            <button onMouseDown={handleMouseDown} className={styles.dragButton}>
-              <h2 className={styles.title}>{title}</h2>
+            <button
+              onMouseDown={handleMouseDown}
+              className={clsx(styles.dragButton, dragButtonClassName)}
+            >
+              <h2
+                className={clsx(styles.title, titleClassName)}
+                style={titleStyle}
+              >
+                {title}
+              </h2>
             </button>
           ) : typeof title === 'string' ? (
-            <h2 className={styles.title}>{title}</h2>
+            <h2
+              className={clsx(styles.title, titleClassName)}
+              style={titleStyle}
+            >
+              {title}
+            </h2>
           ) : (
-            <div className={styles.title}>{title}</div>
+            <div
+              className={clsx(styles.title, titleClassName)}
+              style={titleStyle}
+            >
+              {title}
+            </div>
           )}
           {handleOnClose ? (
             <IconButton
@@ -240,7 +279,8 @@ export const Modal: React.FC<ModalProps & FooterProps> = ({
               tooltip="close"
               onClick={handleOnClose}
               ariaLabel="close"
-              className={styles.closeButton}
+              className={clsx(styles.closeButton, closeButtonClassName)}
+              style={closeButtonStyle}
               size="text-2xl"
             />
           ) : null}
