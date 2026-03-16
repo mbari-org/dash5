@@ -317,7 +317,7 @@ export const ScheduleSection: React.FC<ScheduleSectionProps> = ({
       (v) =>
         !scheduleFilter ||
         scheduleFilter === 'all' ||
-        v.status === scheduleFilter
+        toScheduleCellStatus(v.status) === scheduleFilter
     )
     .filter(
       (v) =>
