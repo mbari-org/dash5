@@ -19,10 +19,12 @@ const useSessionToken = (name: string) => {
 
   const setSessionToken = (token: string) => {
     setSessionToken_(token)
+    const isSecureContext =
+      typeof window !== 'undefined' && window.location.protocol === 'https:'
     setCookie(name, token, {
       days: 7,
       SameSite: 'Strict',
-      Secure: window.location.protocol === 'https:',
+      Secure: isSecureContext,
     })
   }
 

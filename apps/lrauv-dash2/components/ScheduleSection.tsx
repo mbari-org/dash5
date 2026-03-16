@@ -68,6 +68,16 @@ const toScheduleCellStatus = (status: string): ScheduleCellStatus =>
     ? (status as ScheduleCellStatus)
     : 'completed'
 
+const missionKeysMatch = (leftPath: string, rightPath: string) => {
+  if (!leftPath || !rightPath) return false
+  const leftHasPath = leftPath.includes('/')
+  const rightHasPath = rightPath.includes('/')
+
+  if (leftHasPath && rightHasPath) return leftPath === rightPath
+
+  return normalizeMissionName(leftPath) === normalizeMissionName(rightPath)
+}
+
 export const parseMissionCommand = (name: string) => {
   const info = name
     .split(' ')
@@ -105,16 +115,6 @@ export const ScheduleSection: React.FC<ScheduleSectionProps> = ({
   activeDeployment,
   vehicleName,
 }) => {
-  const missionKeysMatch = (leftPath: string, rightPath: string) => {
-    if (!leftPath || !rightPath) return false
-    const leftHasPath = leftPath.includes('/')
-    const rightHasPath = rightPath.includes('/')
-
-    if (leftHasPath && rightHasPath) return leftPath === rightPath
-
-    return normalizeMissionName(leftPath) === normalizeMissionName(rightPath)
-  }
-
   const { setGlobalModalId } = useGlobalModalId()
   const [scheduleFilter, setScheduleFilter] = useState<string>('')
   const [scheduleSearch, setScheduleSearch] = useState<string>('')
