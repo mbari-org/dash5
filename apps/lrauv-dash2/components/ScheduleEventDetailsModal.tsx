@@ -10,12 +10,6 @@ export interface ScheduleEventDetailsModalProps {
   onClose: () => void
 }
 
-// interface ParsedSetting {
-//   kind: string
-//   key: string
-//   value: string
-// }
-
 const formatTime = (unixTime?: number) => {
   if (!unixTime) return 'N/A'
   const dt = DateTime.fromMillis(unixTime)
@@ -77,54 +71,6 @@ const statusPillStyle = (status?: string): React.CSSProperties => {
   }
 }
 
-// const parseSettings = (segments: string[]): ParsedSetting[] =>
-//   segments.map((segment) => {
-//     const lower = segment.toLowerCase()
-//     if (lower.startsWith('load ')) {
-//       return {
-//         kind: 'mission',
-//         key: 'load',
-//         value: segment.replace(/^load\s+/i, '').trim(),
-//       }
-//     }
-//     if (lower.startsWith('set ')) {
-//       const content = segment.replace(/^set\s+/i, '').trim()
-//       const firstSpace = content.indexOf(' ')
-//       if (firstSpace === -1) {
-//         return {
-//           kind: 'parameter',
-//           key: content,
-//           value: '',
-//         }
-//       }
-//       return {
-//         kind: 'parameter',
-//         key: content.slice(0, firstSpace).trim(),
-//         value: content.slice(firstSpace + 1).trim(),
-//       }
-//     }
-//     if (lower.startsWith('sched ')) {
-//       return {
-//         kind: 'schedule',
-//         key: 'sched',
-//         value: segment.replace(/^sched\s+/i, '').trim(),
-//       }
-//     }
-//     if (lower === 'run') {
-//       return {
-//         kind: 'execution',
-//         key: 'run',
-//         value: 'true',
-//       }
-//     }
-//
-//     return {
-//       kind: 'command',
-//       key: 'raw',
-//       value: segment,
-//     }
-//   })
-
 export const ScheduleEventDetailsModal: React.FC<
   ScheduleEventDetailsModalProps
 > = ({ onClose }) => {
@@ -153,7 +99,6 @@ export const ScheduleEventDetailsModal: React.FC<
     .join(' ')
   const headerTitle = `${vehicleDeployment} - Mission Details`
   const segments = splitCommandSegments(event.eventData || event.eventText)
-  // const settings = parseSettings(segments)
 
   return (
     <Modal
@@ -344,42 +289,6 @@ export const ScheduleEventDetailsModal: React.FC<
             </p>
           </div>
         )}
-
-        {/* {settings.length > 0 && (
-          <div>
-            <p className="text-xs uppercase tracking-wide text-stone-500">
-              Parsed Settings
-            </p>
-            <div className="mt-1 max-h-44 overflow-auto rounded border border-stone-200 bg-stone-50">
-              <table className="w-full text-left text-xs">
-                <thead className="sticky top-0 bg-stone-100">
-                  <tr>
-                    <th className="px-2 py-1 font-semibold text-stone-700">Type</th>
-                    <th className="px-2 py-1 font-semibold text-stone-700">Key</th>
-                    <th className="px-2 py-1 font-semibold text-stone-700">
-                      Value
-                    </th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {settings.map((setting, index) => (
-                    <tr key={`${setting.kind}-${setting.key}-${index}`}>
-                      <td className="border-t border-stone-200 px-2 py-1 text-stone-600">
-                        {setting.kind}
-                      </td>
-                      <td className="border-t border-stone-200 px-2 py-1 font-mono break-all">
-                        {setting.key || 'n/a'}
-                      </td>
-                      <td className="border-t border-stone-200 px-2 py-1 font-mono break-all">
-                        {setting.value || 'n/a'}
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          </div>
-        )} */}
 
         {segments.length > 0 && (
           <div>

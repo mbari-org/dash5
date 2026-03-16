@@ -4,6 +4,16 @@ import { useRefreshSessionToken } from '../User/useRefreshSessionToken'
 import { TethysApiContext, TethysApiContextProfile } from './TethysApiContext'
 import { getInstance } from '../../axios/getInstance'
 import { useSiteConfig } from '../Info/useSiteConfig'
+
+const decodeBase64Url = (input: string): string => {
+  const normalized = input.replace(/-/g, '+').replace(/_/g, '/')
+  const padding =
+    normalized.length % 4 === 0 ? '' : '='.repeat(4 - (normalized.length % 4))
+  const withPadding = `${normalized}${padding}`
+
+  if (typeof atob === 'function') return atob(withPadding)
+  throw new Error('Base64url decoder unavailable')
+}
 // Decode the JWT payload to extract profile fields (firstName, lastName, email,
 // roles). The TethysDash /user/token endpoint validates the token but may omit
 // these fields from its JSON response; the JWT itself always carries them.
@@ -16,7 +26,9 @@ const decodeJWTProfile = (
   roles: string[]
 }> => {
   try {
-    const payload = JSON.parse(atob(token.split('.')[1]))
+    const payloadSegment = token.split('.')[1]
+    if (!payloadSegment) return {}
+    const payload = JSON.parse(decodeBase64Url(payloadSegment))
     return {
       firstName: payload.firstName,
       lastName: payload.lastName,
@@ -97,15 +109,20 @@ export const TethysApiProvider: React.FC<TethysApiProviderProps> = ({
   // (e.g. no firstName/lastName). The JWT payload itself contains the full
   // profile, so we decode it as a fallback to avoid "uu" initials.
   useEffect(() => {
-    if (!loggedOut && refreshedSession.data && !existingToken) {
-      const token = refreshedSession.data.token || sessionToken
-      if (token) {
-        const apiProfile = refreshedSession.data
-        const profile = apiProfile.firstName
-          ? apiProfile
-          : decodeJWTProfile(token)
-        setCurrentUser({ ...profile, ...apiProfile, token })
-      }
+    if (!loggedOut && refreshedSession.data) {
+      const apiProfile = refreshedSession.data
+      const responseToken = apiProfile.token
+      const token = responseToken || existingToken || sessionToken
+      if (!token) return
+
+      const isInitialHydration = !existingToken
+      const hasRotatedToken = !!responseToken && responseToken !== existingToken
+      if (!isInitialHydration && !hasRotatedToken) return
+
+      const profile = apiProfile.firstName
+        ? apiProfile
+        : decodeJWTProfile(token)
+      setCurrentUser({ ...profile, ...apiProfile, token })
     }
   }, [
     refreshedSession.data,
@@ -113,7 +130,6 @@ export const TethysApiProvider: React.FC<TethysApiProviderProps> = ({
     existingToken,
     sessionToken,
     loggedOut,
-    setCurrentUser,
   ])
 
   // This handler is available in theTethysApiContext for use in components

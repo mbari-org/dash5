@@ -14,7 +14,9 @@ export const useCreateLogin = (config: {
     },
     {
       onSuccess: (data) => {
-        setSessionToken(data?.token ?? '')
+        if (data?.token) {
+          setSessionToken(data.token)
+        }
       },
     }
   )

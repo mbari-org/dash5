@@ -9,10 +9,11 @@ import {
 const WAYPOINT_COORD_DECIMALS = 5
 
 function normalizeWaypointCoord(value: string | undefined): string {
-  if (value == null || value === '' || value.toLowerCase() === 'nan')
-    return value ?? ''
-  const num = parseFloat(value)
-  if (!Number.isFinite(num)) return value
+  const trimmed = (value ?? '').trim()
+  if (trimmed === '') return ''
+  if (trimmed.toLowerCase() === 'nan') return 'NaN'
+  const num = parseFloat(trimmed)
+  if (!Number.isFinite(num)) return ''
   return roundCoord(num, WAYPOINT_COORD_DECIMALS).toString()
 }
 

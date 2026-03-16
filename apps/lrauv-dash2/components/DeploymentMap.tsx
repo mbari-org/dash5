@@ -109,9 +109,20 @@ const DeploymentMap: React.FC<DeploymentMapProps> = ({
 
   const { handleDepthRequest } = useGoogleElevator()
 
-  // Filter out waypoints with NaN lat/lon
-  const plottedWaypoints = updatedWaypoints.filter(
-    (wp) => ![wp.lat?.toLowerCase(), wp.lon?.toLowerCase()].includes('nan')
+  // Keep original indices so drag/delete updates target the correct waypoint
+  // even when some waypoints are filtered out from map rendering.
+  const plottedWaypoints = useMemo(
+    () =>
+      updatedWaypoints
+        .map((waypoint, originalIndex) => ({ waypoint, originalIndex }))
+        .filter(
+          ({ waypoint }) =>
+            ![
+              waypoint.lat?.toLowerCase(),
+              waypoint.lon?.toLowerCase(),
+            ].includes('nan')
+        ),
+    [updatedWaypoints]
   )
 
   const { trackedVehicles } = useTrackedVehicles()
@@ -690,30 +701,37 @@ const DeploymentMap: React.FC<DeploymentMapProps> = ({
           <PlatformPaths />
           {plottedWaypoints?.length ? (
             <>
-              {plottedWaypoints.map((m, i) => {
+              {plottedWaypoints.map(({ waypoint, originalIndex }, i) => {
                 const waypointNumber = Number(
-                  m.latName.match(/\d+/)?.[0] ?? i + 1
+                  waypoint.latName?.match(/\d+/)?.[0] ?? originalIndex + 1
                 )
                 return (
                   <WaypointMapMarker
-                    key={`waypoint-${i}-${m.latName}-${m.lonName}-${m.lat}-${m.lon}`}
-                    position={[Number(m.lat), Number(m.lon)]}
+                    key={`waypoint-${originalIndex}-${waypoint.latName}-${waypoint.lonName}-${waypoint.lat}-${waypoint.lon}`}
+                    position={[Number(waypoint.lat), Number(waypoint.lon)]}
                     number={waypointNumber}
-                    draggable={editable && !focusedWaypointIndex}
+                    draggable={editable && focusedWaypointIndex == null}
                     onDragEnd={(newPos) =>
-                      handleDragEnd(i, { lat: newPos[0], lng: newPos[1] })
+                      handleDragEnd(originalIndex, {
+                        lat: newPos[0],
+                        lng: newPos[1],
+                      })
                     }
                     onDelete={
-                      editable ? () => handleDeleteWaypoint(i) : undefined
+                      editable
+                        ? () => handleDeleteWaypoint(originalIndex)
+                        : undefined
                     }
                   />
                 )
               })}
-              {!!focusedWaypointIndex && <ClickableMapPoint />}
+              {typeof focusedWaypointIndex === 'number' && (
+                <ClickableMapPoint />
+              )}
               <WaypointPreviewPath
-                waypoints={plottedWaypoints.map((wp) => ({
-                  lat: Number(wp.lat),
-                  lon: Number(wp.lon),
+                waypoints={plottedWaypoints.map(({ waypoint }) => ({
+                  lat: Number(waypoint.lat),
+                  lon: Number(waypoint.lon),
                 }))}
               />
             </>
