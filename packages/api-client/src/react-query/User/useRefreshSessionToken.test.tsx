@@ -47,7 +47,41 @@ const MockComponent: React.FC<{
   </QueryClientProvider>
 )
 
+const MockRefreshWithSpy: React.FC<{
+  testToken?: string
+  setSessionToken: jest.Mock
+}> = ({ testToken = '', setSessionToken }) => {
+  const currentSession = useRefreshSessionToken({
+    sessionToken: testToken,
+    setSessionToken,
+    instance: axios.create(),
+  })
+  return <div data-testid="status">{currentSession.status}</div>
+}
+
+const MockSpyComponent: React.FC<{
+  queryClient: QueryClient
+  testToken?: string
+  setSessionToken: jest.Mock
+}> = ({ queryClient, testToken, setSessionToken }) => (
+  <QueryClientProvider client={queryClient}>
+    <MockRefreshWithSpy
+      testToken={testToken}
+      setSessionToken={setSessionToken}
+    />
+  </QueryClientProvider>
+)
+
 describe('useRefreshSessionToken', () => {
+  const createQueryClient = () =>
+    new QueryClient({
+      defaultOptions: {
+        queries: {
+          retry: false,
+        },
+      },
+    })
+
   it('should render the logout button and auth token after the user authenticates', async () => {
     server.use(
       rest.get('/user/token', (_req, res, ctx) => {
@@ -85,5 +119,28 @@ describe('useRefreshSessionToken', () => {
     expect(
       screen.queryByText(mockResponse.result.firstName)
     ).not.toBeInTheDocument()
+  })
+
+  it('should preserve existing token on transient refresh failure', async () => {
+    const setSessionToken = jest.fn()
+    server.use(
+      rest.get('/user/token', (_req, res, ctx) => {
+        return res(ctx.status(500), ctx.json({}))
+      })
+    )
+
+    render(
+      <MockSpyComponent
+        queryClient={createQueryClient()}
+        testToken="existing-token"
+        setSessionToken={setSessionToken}
+      />
+    )
+
+    await waitFor(() => {
+      expect(screen.getByTestId('status')).toHaveTextContent('error')
+    })
+
+    expect(setSessionToken).not.toHaveBeenCalledWith('')
   })
 })
