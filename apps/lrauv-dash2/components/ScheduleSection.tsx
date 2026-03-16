@@ -252,9 +252,8 @@ export const ScheduleSection: React.FC<ScheduleSectionProps> = ({
 
   const scheduledTypes = ['pending', 'running']
   const staticHeaderCellOffset = activeDeployment ? 1 : 0
-  // Filter bar always sits immediately after the "Schedule is running" banner
-  // so running missions appear below it — consistent regardless of vehicle.
-  const hasPastSchedule = (missions?.length ?? 0) > 0
+  const hasPastSchedule =
+    missions?.some((v) => !scheduledTypes.includes(v.status)) ?? false
   const staticFilterCellOffset = hasPastSchedule ? 1 : 0
   const indexOfPastSchedule = staticHeaderCellOffset
 
