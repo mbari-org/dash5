@@ -24,6 +24,10 @@ export const useRefreshSessionToken = (config: {
       onSuccess: (data) => {
         if (data?.token) {
           setSessionToken(data.token)
+        } else {
+          // Successful validation responses without a token should clear the
+          // session so callers don't keep using an unusable auth state.
+          setSessionToken('')
         }
       },
       onError: (err: unknown) => {
