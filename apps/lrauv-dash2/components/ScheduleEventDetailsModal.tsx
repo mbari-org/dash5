@@ -131,6 +131,7 @@ export const ScheduleEventDetailsModal: React.FC<
   const { globalModalId } = useGlobalModalId()
   const router = useRouter()
   const { deployment } = useCurrentDeployment()
+  const [showStatusTooltip, setShowStatusTooltip] = useState(false)
   const [showEndedTooltip, setShowEndedTooltip] = useState(false)
   const event = globalModalId?.meta?.scheduleEvent
 
@@ -189,9 +190,53 @@ export const ScheduleEventDetailsModal: React.FC<
             <p className="break-all font-medium">{event.label || 'Unknown'}</p>
           </div>
           <div>
-            <p className="text-xs uppercase tracking-wide text-stone-500">
-              Status
-            </p>
+            <div className="flex items-center text-xs tracking-wide text-stone-500">
+              <span className="uppercase">Status</span>
+              <span className="relative ml-1 inline-flex align-middle">
+                <button
+                  type="button"
+                  className="cursor-pointer rounded-full border border-stone-300 px-1 text-[10px] font-semibold text-stone-500 hover:bg-stone-100 focus:bg-stone-100"
+                  onMouseEnter={() => setShowStatusTooltip(true)}
+                  onMouseLeave={() => setShowStatusTooltip(false)}
+                  onFocus={() => setShowStatusTooltip(true)}
+                  onBlur={() => setShowStatusTooltip(false)}
+                  onClick={() => setShowStatusTooltip((prev) => !prev)}
+                  aria-label="Status field help"
+                >
+                  ?
+                </button>
+                {showStatusTooltip && (
+                  <div
+                    className="leading-3.5 pointer-events-none absolute left-full top-0 z-[9999] ml-2 -translate-y-2/3 rounded border px-3 py-2 text-[11px] normal-case text-stone-700 shadow-lg"
+                    style={{
+                      width: 'calc(28rem - 30px)',
+                      borderColor: '#bae6fd',
+                      backgroundColor: '#fffbeb',
+                    }}
+                  >
+                    <p className="normal-case">
+                      <strong>Running</strong>: mission/command is actively
+                      executing.
+                    </p>
+                    <p className="mt-1 normal-case">
+                      <strong>Pending</strong>: queued and waiting to run.
+                    </p>
+                    <p className="mt-1 normal-case">
+                      <strong>Completed</strong>: finished normally.
+                    </p>
+                    <p className="mt-1 normal-case">
+                      <strong>Cancelled</strong>: stopped before completion.
+                    </p>
+                    <p className="mt-1 normal-case">
+                      <strong>Paused</strong>: schedule execution is paused.
+                    </p>
+                    <p className="mt-1 normal-case">
+                      <strong>Unknown</strong>: status not available from logs.
+                    </p>
+                  </div>
+                )}
+              </span>
+            </div>
             <div className="mt-0.5 flex items-center">
               <span
                 className={statusPillClass(event.status)}
