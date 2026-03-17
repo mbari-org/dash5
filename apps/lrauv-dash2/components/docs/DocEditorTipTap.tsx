@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { useEditor, EditorContent } from '@tiptap/react'
+import type { Editor } from '@tiptap/core'
 import StarterKit from '@tiptap/starter-kit'
 import { TextAlign } from '@tiptap/extension-text-align'
 import { Color } from '@tiptap/extension-color'
@@ -123,7 +124,7 @@ export default function DocEditorTipTap(props: DocEditorTipTapProps) {
       TextAreaNode,
     ],
     content: html || '',
-    onUpdate: ({ editor }: { editor: { getHTML: () => string } }) => {
+    onUpdate: ({ editor }: { editor: Editor }) => {
       onChange(editor.getHTML())
     },
   })
