@@ -141,6 +141,6 @@ describe('useRefreshSessionToken', () => {
       expect(screen.getByTestId('status')).toHaveTextContent('error')
     })
 
-    expect(setSessionToken).not.toHaveBeenCalledWith('')
+    expect(setSessionToken).not.toHaveBeenCalled()
   })
 })
