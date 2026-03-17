@@ -11,7 +11,7 @@ export interface ScheduleEventDetailsModalProps {
 }
 
 const formatTime = (unixTime?: number) => {
-  if (!unixTime) return 'N/A'
+  if (unixTime == null) return 'N/A'
   const dt = DateTime.fromMillis(unixTime)
   return `${dt.toFormat('MMM d, yyyy HH:mm:ss')} (${
     dt.toRelative() ?? 'just now'

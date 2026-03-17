@@ -248,6 +248,7 @@ export const Modal: React.FC<ModalProps & FooterProps> = ({
         >
           {draggable ? (
             <button
+              type="button"
               onMouseDown={handleMouseDown}
               className={clsx(styles.dragButton, dragButtonClassName)}
             >

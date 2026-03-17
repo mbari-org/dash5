@@ -117,9 +117,11 @@ const DeploymentMap: React.FC<DeploymentMapProps> = ({
         .map((waypoint, originalIndex) => ({ waypoint, originalIndex }))
         .filter(
           ({ waypoint }) =>
+            !!waypoint.lat?.trim() &&
+            !!waypoint.lon?.trim() &&
             ![
-              waypoint.lat?.toLowerCase(),
-              waypoint.lon?.toLowerCase(),
+              waypoint.lat?.trim().toLowerCase(),
+              waypoint.lon?.trim().toLowerCase(),
             ].includes('nan')
         ),
     [updatedWaypoints]

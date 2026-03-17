@@ -104,8 +104,11 @@ describe('useRefreshSessionToken', () => {
     )
 
     const setSessionToken = jest.fn()
+    const queryClient = new QueryClient({
+      defaultOptions: { queries: { retry: false } },
+    })
     render(
-      <QueryClientProvider client={new QueryClient()}>
+      <QueryClientProvider client={queryClient}>
         <MockTokenHook
           sessionToken="existing-cookie-token"
           setSessionToken={setSessionToken}
@@ -113,8 +116,7 @@ describe('useRefreshSessionToken', () => {
       </QueryClientProvider>
     )
 
-    // Allow the query to settle
-    await new Promise((r) => setTimeout(r, 100))
+    await waitFor(() => expect(queryClient.isFetching()).toBe(0))
 
     expect(setSessionToken).not.toHaveBeenCalled()
   })
@@ -126,12 +128,11 @@ describe('useRefreshSessionToken', () => {
     )
 
     const setSessionToken = jest.fn()
+    const queryClient = new QueryClient({
+      defaultOptions: { queries: { retry: false } },
+    })
     render(
-      <QueryClientProvider
-        client={
-          new QueryClient({ defaultOptions: { queries: { retry: false } } })
-        }
-      >
+      <QueryClientProvider client={queryClient}>
         <MockTokenHook
           sessionToken="existing-cookie-token"
           setSessionToken={setSessionToken}
@@ -139,7 +140,7 @@ describe('useRefreshSessionToken', () => {
       </QueryClientProvider>
     )
 
-    await new Promise((r) => setTimeout(r, 200))
+    await waitFor(() => expect(queryClient.isFetching()).toBe(0))
     expect(setSessionToken).not.toHaveBeenCalledWith('')
   })
 
