@@ -52,9 +52,10 @@ export const useVehiclePicAndOnCall = (
     [vehicleName]
   )
   const { axiosInstance, token } = useTethysApiContext()
+  const hasToken = (token?.length ?? 0) > 0
 
   const query = useQuery(
-    ['users', 'picAndOnCall', vehicleNames],
+    ['users', 'picAndOnCall', vehicleNames, hasToken ? 'authed' : 'unauth'],
     async () => {
       const results: GetEventsResponse[] = []
       const authHeaders = token
@@ -86,8 +87,9 @@ export const useVehiclePicAndOnCall = (
       return results
     },
     {
-      staleTime: STALE_TIME,
       ...options,
+      staleTime: STALE_TIME,
+      enabled: (options?.enabled ?? true) && hasToken,
     }
   )
 
