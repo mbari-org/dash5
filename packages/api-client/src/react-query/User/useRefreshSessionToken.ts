@@ -9,7 +9,7 @@ export const useRefreshSessionToken = (config: {
 }) => {
   const { sessionToken, setSessionToken, instance } = config
   const query = useQuery(
-    ['token', sessionToken],
+    ['token'],
     () => {
       return token({
         headers: {
