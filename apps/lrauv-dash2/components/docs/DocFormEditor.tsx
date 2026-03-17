@@ -1,5 +1,8 @@
 import React from 'react'
 import { useEditor, EditorContent } from '@tiptap/react'
+import type { Editor } from '@tiptap/core'
+import type { EditorView } from '@tiptap/pm/view'
+import type { Slice } from '@tiptap/pm/model'
 import StarterKit from '@tiptap/starter-kit'
 import { TextAlign } from '@tiptap/extension-text-align'
 import { Color } from '@tiptap/extension-color'
@@ -315,13 +318,18 @@ export default function DocFormEditor(props: DocFormEditorProps) {
       TextAreaNode,
     ],
     content: contentWithIds || '',
-    onUpdate: ({ editor }: { editor: { getHTML: () => string } }) => {
+    onUpdate: ({ editor }: { editor: Editor }) => {
       const current = editor.getHTML()
       const diffed = computeDiffHtml(current)
       onChange?.(diffed)
     },
     editorProps: {
-      handleTextInput: (view: any, from: any, to: any, text: any) => {
+      handleTextInput: (
+        view: EditorView,
+        _from: number,
+        _to: number,
+        _text: string
+      ) => {
         const target = (view.dom.ownerDocument?.activeElement ??
           null) as HTMLElement | null
         if (
@@ -333,7 +341,11 @@ export default function DocFormEditor(props: DocFormEditorProps) {
         }
         return true
       },
-      handlePaste: (view: any, event: any) => {
+      handlePaste: (
+        view: EditorView,
+        _event: ClipboardEvent,
+        _slice: Slice
+      ) => {
         const target = (view.dom.ownerDocument?.activeElement ??
           null) as HTMLElement | null
         if (
@@ -345,7 +357,7 @@ export default function DocFormEditor(props: DocFormEditorProps) {
         }
         return true
       },
-      handleKeyDown: (view: any, event: any) => {
+      handleKeyDown: (view: EditorView, event: KeyboardEvent) => {
         const target = (view.dom.ownerDocument?.activeElement ??
           null) as HTMLElement | null
         if (
