@@ -315,13 +315,13 @@ export default function DocFormEditor(props: DocFormEditorProps) {
       TextAreaNode,
     ],
     content: contentWithIds || '',
-    onUpdate: ({ editor }) => {
+    onUpdate: ({ editor }: { editor: { getHTML: () => string } }) => {
       const current = editor.getHTML()
       const diffed = computeDiffHtml(current)
       onChange?.(diffed)
     },
     editorProps: {
-      handleTextInput: (view, from, to, text) => {
+      handleTextInput: (view: any, from: any, to: any, text: any) => {
         const target = (view.dom.ownerDocument?.activeElement ??
           null) as HTMLElement | null
         if (
@@ -333,7 +333,7 @@ export default function DocFormEditor(props: DocFormEditorProps) {
         }
         return true
       },
-      handlePaste: (view, event) => {
+      handlePaste: (view: any, event: any) => {
         const target = (view.dom.ownerDocument?.activeElement ??
           null) as HTMLElement | null
         if (
@@ -345,7 +345,7 @@ export default function DocFormEditor(props: DocFormEditorProps) {
         }
         return true
       },
-      handleKeyDown: (view, event) => {
+      handleKeyDown: (view: any, event: any) => {
         const target = (view.dom.ownerDocument?.activeElement ??
           null) as HTMLElement | null
         if (

@@ -123,7 +123,7 @@ export default function DocEditorTipTap(props: DocEditorTipTapProps) {
       TextAreaNode,
     ],
     content: html || '',
-    onUpdate: ({ editor }) => {
+    onUpdate: ({ editor }: { editor: { getHTML: () => string } }) => {
       onChange(editor.getHTML())
     },
   })
