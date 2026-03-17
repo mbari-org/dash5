@@ -121,7 +121,7 @@ describe('useRefreshSessionToken', () => {
   it('should clear token when a successful response omits token', async () => {
     server.use(
       rest.get('/user/token', (_req, res, ctx) => {
-        return res(ctx.status(200), ctx.json({ result: '' }))
+        return res(ctx.status(200), ctx.json({ result: {} }))
       })
     )
 

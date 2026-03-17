@@ -57,13 +57,12 @@ export const useVehiclePicAndOnCall = (
     ['users', 'picAndOnCall', vehicleNames],
     async () => {
       const results: GetEventsResponse[] = []
+      const authHeaders = token
+        ? { Authorization: `Bearer ${token}` }
+        : undefined
 
       // Get events for each vehicle separately
       for (const name of vehicleNames) {
-        const authHeaders = token
-          ? { Authorization: `Bearer ${token}` }
-          : undefined
-
         // Get last deployment for this vehicle
         const lastDeployment = await getLastDeployment(
           { vehicle: name },

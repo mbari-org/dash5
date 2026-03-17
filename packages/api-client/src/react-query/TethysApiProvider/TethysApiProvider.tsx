@@ -83,6 +83,16 @@ export const TethysApiProvider: React.FC<TethysApiProviderProps> = ({
     setCurrentUser,
   ])
 
+  // Keep in-memory auth state aligned with persisted token state. If token
+  // refresh clears the session token (auth failure or unusable response),
+  // clear current user so callers stop using a stale authenticated profile.
+  useEffect(() => {
+    if (!sessionToken && existingToken) {
+      setCurrentUser(undefined)
+      setLoggedOut(true)
+    }
+  }, [sessionToken, existingToken, setCurrentUser, setLoggedOut])
+
   // This handler is available in theTethysApiContext for use in components
   const login = React.useCallback(
     async (email: string, password: string) => {
