@@ -81,7 +81,7 @@ export default function DocEditorToolbar({
     const { state } = editor
     const { storedMarks } = state
     if (storedMarks) {
-      return storedMarks.some((mark) => mark.type.name === markName)
+      return storedMarks.some((mark: any) => mark.type.name === markName)
     }
     return false
   }
