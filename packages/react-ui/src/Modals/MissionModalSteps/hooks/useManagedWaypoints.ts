@@ -58,6 +58,19 @@ const useManagedWaypoints = (waypoints: WaypointProps[] = []) => {
     updatedWaypoints?.waypoints,
   ])
 
+  const patchManagedWaypoints = useCallback(
+    (
+      patchFn: (
+        prev: UseManagedWaypointsState | null
+      ) => Partial<UseManagedWaypointsState>
+    ) =>
+      setUpdatedWaypoints((prev) => ({
+        ...(prev ?? {}),
+        ...patchFn(prev),
+      })),
+    [setUpdatedWaypoints]
+  )
+
   // Update waypoints via user input. Normalizes lat/lon to fixed decimal places.
   const handleWaypointsUpdate = useCallback(
     (newWaypoints: WaypointProps[]) => {
@@ -66,38 +79,39 @@ const useManagedWaypoints = (waypoints: WaypointProps[] = []) => {
         lat: normalizeWaypointCoord(wp.lat),
         lon: normalizeWaypointCoord(wp.lon),
       }))
-      setUpdatedWaypoints({ ...updatedWaypoints, waypoints: normalized })
+      patchManagedWaypoints(() => ({ waypoints: normalized }))
     },
-    [setUpdatedWaypoints, updatedWaypoints]
+    [patchManagedWaypoints]
   )
 
   // Clear all waypoints
   const handleNaNwaypoints = useCallback(() => {
-    const allNaNwaypoints =
-      updatedWaypoints?.waypoints?.map((waypoint) => ({
-        ...waypoint,
-        lat: 'NaN',
-        lon: 'NaN',
-        stationName: 'Custom',
-      })) ?? []
-    setUpdatedWaypoints({ ...updatedWaypoints, waypoints: allNaNwaypoints })
-  }, [setUpdatedWaypoints, updatedWaypoints])
+    patchManagedWaypoints((prev) => {
+      const currentWaypoints = prev?.waypoints ?? []
+      return {
+        waypoints: currentWaypoints.map((waypoint) => ({
+          ...waypoint,
+          lat: 'NaN',
+          lon: 'NaN',
+          stationName: 'Custom',
+        })),
+      }
+    })
+  }, [patchManagedWaypoints])
 
   // Reset waypoints to initial state
   const handleResetWaypoints = useCallback(() => {
-    setUpdatedWaypoints({ ...updatedWaypoints, waypoints: initialWaypoints })
-  }, [setUpdatedWaypoints, updatedWaypoints, initialWaypoints])
+    patchManagedWaypoints(() => ({ waypoints: initialWaypoints }))
+  }, [patchManagedWaypoints, initialWaypoints])
 
   // Handle focused waypoint via user input or external event.
   const handleFocusWaypoint: WaypointTableProps['onFocusWaypoint'] = (
     index
   ) => {
-    console.log('handleFocusWaypoint', index)
-    setUpdatedWaypoints({
-      ...updatedWaypoints,
-      waypoints: updatedWaypoints?.waypoints ?? [],
+    patchManagedWaypoints((prev) => ({
+      waypoints: prev?.waypoints ?? [],
       focusedWaypointIndex: index,
-    })
+    }))
   }
 
   // Determine count of waypoints with actual values.
@@ -107,7 +121,7 @@ const useManagedWaypoints = (waypoints: WaypointProps[] = []) => {
   const plottedWaypointCount = plottedWaypoints.length ?? 0
 
   const setWaypointsEditable = (editable: boolean) => {
-    setUpdatedWaypoints({ ...updatedWaypoints, editable })
+    patchManagedWaypoints(() => ({ editable }))
   }
 
   return {
