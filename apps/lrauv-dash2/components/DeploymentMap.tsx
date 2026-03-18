@@ -155,6 +155,10 @@ const DeploymentMap: React.FC<DeploymentMapProps> = ({
     top: number
     left: number
   }>({ top: 0, left: 0 })
+  const [waypointFitTrigger, setWaypointFitTrigger] = useState(0)
+  const prevFocusedWaypointIndexRef = useRef<number | null | undefined>(
+    focusedWaypointIndex
+  )
   const [layersModalPosition, setLayersModalPosition] = useState({
     top: 0,
     left: 0,
@@ -177,6 +181,18 @@ const DeploymentMap: React.FC<DeploymentMapProps> = ({
   } = useMarkers()
 
   const latestVehicle = useRef(vehicleName)
+  useEffect(() => {
+    // When leaving waypoint focus mode (e.g. clicking "Done" after placing via map click),
+    // force a waypoint bounds fit so the map recenters deterministically.
+    if (
+      prevFocusedWaypointIndexRef.current != null &&
+      focusedWaypointIndex == null
+    ) {
+      setWaypointFitTrigger((v) => v + 1)
+    }
+    prevFocusedWaypointIndexRef.current = focusedWaypointIndex
+  }, [focusedWaypointIndex])
+
   useEffect(() => {
     if (vehicleName !== latestVehicle.current) {
       setLatestGPS(undefined)
@@ -720,6 +736,7 @@ const DeploymentMap: React.FC<DeploymentMapProps> = ({
                 })}
                 {focusedWaypointIndex != null && <ClickableMapPoint />}
                 <WaypointPreviewPath
+                  fitTrigger={waypointFitTrigger}
                   waypoints={plottedWaypoints.map(({ wp }) => ({
                     lat: Number(wp.lat),
                     lon: Number(wp.lon),
