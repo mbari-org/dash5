@@ -691,41 +691,42 @@ const DeploymentMap: React.FC<DeploymentMapProps> = ({
             )
           })}
           <PlatformPaths />
-          {plottedWaypoints?.length ? (
-            <>
-              {plottedWaypoints.map(({ wp: m, originalIndex }, i) => {
-                const waypointNumber = Number(
-                  m.latName.match(/\d+/)?.[0] ?? originalIndex + 1
-                )
-                return (
-                  <WaypointMapMarker
-                    key={`waypoint-${originalIndex}-${m.latName}-${m.lonName}-${m.lat}-${m.lon}`}
-                    position={[Number(m.lat), Number(m.lon)]}
-                    number={waypointNumber}
-                    draggable={editable && focusedWaypointIndex == null}
-                    onDragEnd={(newPos) =>
-                      handleDragEnd(originalIndex, {
-                        lat: newPos[0],
-                        lng: newPos[1],
-                      })
-                    }
-                    onDelete={
-                      editable
-                        ? () => handleDeleteWaypoint(originalIndex)
-                        : undefined
-                    }
-                  />
-                )
-              })}
-              {focusedWaypointIndex != null && <ClickableMapPoint />}
-              <WaypointPreviewPath
-                waypoints={plottedWaypoints.map(({ wp }) => ({
-                  lat: Number(wp.lat),
-                  lon: Number(wp.lon),
-                }))}
-              />
-            </>
-          ) : (
+          <>
+            {plottedWaypoints?.length ? (
+              <>
+                {plottedWaypoints.map(({ wp: m, originalIndex }, i) => {
+                  const waypointNumber = Number(
+                    m.latName.match(/\d+/)?.[0] ?? originalIndex + 1
+                  )
+                  return (
+                    <WaypointMapMarker
+                      key={`waypoint-${originalIndex}-${m.latName}-${m.lonName}-${m.lat}-${m.lon}`}
+                      position={[Number(m.lat), Number(m.lon)]}
+                      number={waypointNumber}
+                      draggable={editable && focusedWaypointIndex == null}
+                      onDragEnd={(newPos) =>
+                        handleDragEnd(originalIndex, {
+                          lat: newPos[0],
+                          lng: newPos[1],
+                        })
+                      }
+                      onDelete={
+                        editable
+                          ? () => handleDeleteWaypoint(originalIndex)
+                          : undefined
+                      }
+                    />
+                  )
+                })}
+                {focusedWaypointIndex != null && <ClickableMapPoint />}
+                <WaypointPreviewPath
+                  waypoints={plottedWaypoints.map(({ wp }) => ({
+                    lat: Number(wp.lat),
+                    lon: Number(wp.lon),
+                  }))}
+                />
+              </>
+            ) : null}
             <VehiclePath
               name={vehicleName as string}
               key={`path${vehicleName}`}
@@ -738,7 +739,7 @@ const DeploymentMap: React.FC<DeploymentMapProps> = ({
               // Disable map auto-fit centering when scrubbing the timeline
               disableAutoFit={isTimelineScrubbing}
             />
-          )}
+          </>
         </Map>
         <MapRefreshButton
           onClick={refreshAll}
