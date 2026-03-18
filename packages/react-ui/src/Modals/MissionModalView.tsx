@@ -256,7 +256,7 @@ const MissionModalBody: React.FC<MissionModalViewProps> = ({
               lonName &&
               lat !== '' &&
               lon !== ''
-          ) || !!focusedWaypointIndex
+          ) || focusedWaypointIndex != null
         )
       case steps.indexOf('Schedule'):
         return (

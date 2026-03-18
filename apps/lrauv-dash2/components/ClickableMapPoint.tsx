@@ -22,6 +22,7 @@ const ClickableMapPoint: React.FC<{
                 ...waypoint,
                 lat: e.latlng.lat.toString(),
                 lon: e.latlng.lng.toString(),
+                stationName: 'Custom',
               }
             }
             return waypoint
