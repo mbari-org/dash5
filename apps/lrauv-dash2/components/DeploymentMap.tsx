@@ -81,38 +81,11 @@ const DeploymentMap: React.FC<DeploymentMapProps> = ({
   const mapRef = useRef<any>(null)
   const {
     updatedWaypoints,
-    handleWaypointsUpdate,
+    setWaypointCustomPosition,
+    clearWaypoint,
     editable,
     focusedWaypointIndex,
   } = useManagedWaypoints()
-  const handleDragEnd = useCallback(
-    (index: number, { lat, lng }: { lat: number; lng: number }) =>
-      handleWaypointsUpdate(
-        updatedWaypoints.map((m, i) =>
-          i === index
-            ? {
-                ...m,
-                lat: lat.toString(),
-                lon: lng.toString(),
-                stationName: 'Custom',
-              }
-            : m
-        )
-      ),
-    [updatedWaypoints, handleWaypointsUpdate]
-  )
-
-  const handleDeleteWaypoint = useCallback(
-    (index: number) =>
-      handleWaypointsUpdate(
-        updatedWaypoints.map((m, i) =>
-          i === index
-            ? { ...m, lat: 'NaN', lon: 'NaN', stationName: 'Custom' }
-            : m
-        )
-      ),
-    [updatedWaypoints, handleWaypointsUpdate]
-  )
 
   const { handleDepthRequest } = useGoogleElevator()
 
@@ -728,14 +701,14 @@ const DeploymentMap: React.FC<DeploymentMapProps> = ({
                       number={waypointNumber}
                       draggable={editable && focusedWaypointIndex == null}
                       onDragEnd={(newPos) =>
-                        handleDragEnd(originalIndex, {
+                        setWaypointCustomPosition(originalIndex, {
                           lat: newPos[0],
-                          lng: newPos[1],
+                          lon: newPos[1],
                         })
                       }
                       onDelete={
                         editable
-                          ? () => handleDeleteWaypoint(originalIndex)
+                          ? () => clearWaypoint(originalIndex)
                           : undefined
                       }
                     />

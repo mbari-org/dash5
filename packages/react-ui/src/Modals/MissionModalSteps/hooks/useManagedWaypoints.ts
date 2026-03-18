@@ -1,6 +1,7 @@
 import { atom, useRecoilState } from 'recoil'
 import { useRef, useEffect, useCallback } from 'react'
 import { roundCoord } from '@mbari/utils'
+import type { Coordinates } from '../../../types'
 import {
   WaypointProps,
   WaypointTableProps,
@@ -85,6 +86,58 @@ const useManagedWaypoints = (waypoints: WaypointProps[] = []) => {
     [patchManagedWaypoints]
   )
 
+  const setWaypointCustomPosition = useCallback(
+    (index: number, coords: Coordinates) => {
+      patchManagedWaypoints((prev) => {
+        const currentWaypoints = prev?.waypoints ?? []
+
+        if (index < 0 || index >= currentWaypoints.length) return {}
+
+        const normalizedLat = roundCoord(
+          coords.lat,
+          WAYPOINT_COORD_DECIMALS
+        ).toString()
+        const normalizedLon = roundCoord(
+          coords.lon,
+          WAYPOINT_COORD_DECIMALS
+        ).toString()
+
+        return {
+          waypoints: currentWaypoints.map((waypoint, i) =>
+            i === index
+              ? {
+                  ...waypoint,
+                  lat: normalizedLat,
+                  lon: normalizedLon,
+                  stationName: 'Custom',
+                }
+              : waypoint
+          ),
+        }
+      })
+    },
+    [patchManagedWaypoints]
+  )
+
+  const clearWaypoint = useCallback(
+    (index: number) => {
+      patchManagedWaypoints((prev) => {
+        const currentWaypoints = prev?.waypoints ?? []
+
+        if (index < 0 || index >= currentWaypoints.length) return {}
+
+        return {
+          waypoints: currentWaypoints.map((waypoint, i) =>
+            i === index
+              ? { ...waypoint, lat: 'NaN', lon: 'NaN', stationName: 'Custom' }
+              : waypoint
+          ),
+        }
+      })
+    },
+    [patchManagedWaypoints]
+  )
+
   // Clear all waypoints
   const handleNaNwaypoints = useCallback(() => {
     patchManagedWaypoints((prev) => {
@@ -115,6 +168,8 @@ const useManagedWaypoints = (waypoints: WaypointProps[] = []) => {
     }))
   }
 
+  const focusWaypoint = handleFocusWaypoint
+
   // Determine count of waypoints with actual values.
   const plottedWaypoints = (updatedWaypoints?.waypoints ?? waypoints).filter(
     ({ lat, lon }) => lat !== 'NaN' || lon !== 'NaN'
@@ -129,12 +184,15 @@ const useManagedWaypoints = (waypoints: WaypointProps[] = []) => {
     handleNaNwaypoints,
     handleResetWaypoints,
     handleWaypointsUpdate,
+    setWaypointCustomPosition,
+    clearWaypoint,
     setWaypointsEditable,
     editable: updatedWaypoints?.editable,
     updatedWaypoints: updatedWaypoints?.waypoints ?? [],
     plottedWaypoints,
     plottedWaypointCount,
     handleFocusWaypoint,
+    focusWaypoint,
     focusedWaypointIndex: updatedWaypoints?.focusedWaypointIndex,
   }
 }
