@@ -89,7 +89,14 @@ const DeploymentMap: React.FC<DeploymentMapProps> = ({
     (index: number, { lat, lng }: { lat: number; lng: number }) =>
       handleWaypointsUpdate(
         updatedWaypoints.map((m, i) =>
-          i === index ? { ...m, lat: lat.toString(), lon: lng.toString() } : m
+          i === index
+            ? {
+                ...m,
+                lat: lat.toString(),
+                lon: lng.toString(),
+                stationName: 'Custom',
+              }
+            : m
         )
       ),
     [updatedWaypoints, handleWaypointsUpdate]
