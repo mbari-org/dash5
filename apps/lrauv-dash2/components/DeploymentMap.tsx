@@ -1,6 +1,6 @@
 import dynamic from 'next/dynamic'
 import { useRouter } from 'next/router'
-import React, { useCallback, useState, useRef, useEffect, useMemo } from 'react'
+import React, { useCallback, useState, useRef, useEffect } from 'react'
 import { useManagedWaypoints } from '@mbari/react-ui'
 import useGoogleElevator from '../lib/useGoogleElevator'
 import { VPosDetail } from '@mbari/api-client'
@@ -110,9 +110,12 @@ const DeploymentMap: React.FC<DeploymentMapProps> = ({
   const { handleDepthRequest } = useGoogleElevator()
 
   // Filter out waypoints with NaN lat/lon
-  const plottedWaypoints = updatedWaypoints.filter(
-    (wp) => ![wp.lat?.toLowerCase(), wp.lon?.toLowerCase()].includes('nan')
-  )
+  const plottedWaypoints = updatedWaypoints
+    .map((wp, originalIndex) => ({ wp, originalIndex }))
+    .filter(
+      ({ wp }) =>
+        ![wp.lat?.toLowerCase(), wp.lon?.toLowerCase()].includes('nan')
+    )
 
   const { trackedVehicles } = useTrackedVehicles()
   const [showAll, setShowAll] = useState(true)
@@ -690,28 +693,33 @@ const DeploymentMap: React.FC<DeploymentMapProps> = ({
           <PlatformPaths />
           {plottedWaypoints?.length ? (
             <>
-              {plottedWaypoints.map((m, i) => {
+              {plottedWaypoints.map(({ wp: m, originalIndex }, i) => {
                 const waypointNumber = Number(
-                  m.latName.match(/\d+/)?.[0] ?? i + 1
+                  m.latName.match(/\d+/)?.[0] ?? originalIndex + 1
                 )
                 return (
                   <WaypointMapMarker
-                    key={`waypoint-${i}-${m.latName}-${m.lonName}-${m.lat}-${m.lon}`}
+                    key={`waypoint-${originalIndex}-${m.latName}-${m.lonName}-${m.lat}-${m.lon}`}
                     position={[Number(m.lat), Number(m.lon)]}
                     number={waypointNumber}
                     draggable={editable && focusedWaypointIndex == null}
                     onDragEnd={(newPos) =>
-                      handleDragEnd(i, { lat: newPos[0], lng: newPos[1] })
+                      handleDragEnd(originalIndex, {
+                        lat: newPos[0],
+                        lng: newPos[1],
+                      })
                     }
                     onDelete={
-                      editable ? () => handleDeleteWaypoint(i) : undefined
+                      editable
+                        ? () => handleDeleteWaypoint(originalIndex)
+                        : undefined
                     }
                   />
                 )
               })}
               {focusedWaypointIndex != null && <ClickableMapPoint />}
               <WaypointPreviewPath
-                waypoints={plottedWaypoints.map((wp) => ({
+                waypoints={plottedWaypoints.map(({ wp }) => ({
                   lat: Number(wp.lat),
                   lon: Number(wp.lon),
                 }))}
