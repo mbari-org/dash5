@@ -1,4 +1,4 @@
-import { useState, useMemo, useEffect } from 'react'
+import { useState, useMemo, useEffect, useRef } from 'react'
 import {
   ParameterProps,
   ParameterTableProps,
@@ -47,6 +47,11 @@ const useManagedParameters = ({
     Record<string, { value: string; unit?: string }>
   >(() => buildOverrideMap(defaultOverrides))
 
+  // Track whether the user has changed any parameter values.
+  // If they haven't, we can safely re-sync `overrideMap` when `defaultOverrides`
+  // updates asynchronously (e.g. frequent runs finishing override parsing).
+  const hasUserModifiedRef = useRef(false)
+
   // Re-derive parameter lists whenever overrides or base lists change.
   const updatedParameters = useMemo(
     () => applyOverrides(parameters, overrideMap),
@@ -67,10 +72,13 @@ const useManagedParameters = ({
     overrideValue: string,
     overrideUnit?: string
   ) =>
-    setOverrideMap((m) => ({
-      ...m,
-      [key]: { value: overrideValue, unit: overrideUnit },
-    }))
+    setOverrideMap((m) => {
+      hasUserModifiedRef.current = true
+      return {
+        ...m,
+        [key]: { value: overrideValue, unit: overrideUnit },
+      }
+    })
 
   const handleParamUpdate: ParameterTableProps['onParamUpdate'] = (
     key,
@@ -102,13 +110,22 @@ const useManagedParameters = ({
 
   // Initialize overrides once
   useEffect(() => {
-    if (defaultOverrides?.length && Object.keys(overrideMap).length === 0) {
+    if (!defaultOverrides?.length) {
+      if (!hasUserModifiedRef.current) setOverrideMap({})
+      return
+    }
+
+    // Re-sync only if user hasn't started editing.
+    if (!hasUserModifiedRef.current) {
       setOverrideMap(buildOverrideMap(defaultOverrides))
     }
-  }, [defaultOverrides, overrideMap])
+  }, [defaultOverrides])
 
   // Reset the initial overrides
-  const resetOverrides = () => setOverrideMap({})
+  const resetOverrides = () => {
+    hasUserModifiedRef.current = false
+    setOverrideMap({})
+  }
 
   return {
     handleCommsUpdate,

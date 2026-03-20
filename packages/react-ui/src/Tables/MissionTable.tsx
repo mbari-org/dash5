@@ -23,6 +23,7 @@ export interface MissionOverride {
 
 export interface Mission {
   id: string
+  missionPath?: string
   category: string
   name: string
   note?: string
