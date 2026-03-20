@@ -165,9 +165,10 @@ const MissionModal: React.FC<MissionModalProps> = ({
     missionCategories,
   ])
 
-  // Get recent runs from missionsWithTemporaryEntry (includes temporary mission if rerunning)
-  const recentRunsWithTemp = missionsWithTemporaryEntry.filter(
-    (m) => m.recentRun
+  // Missions with parameter/waypoint overrides that should be applied.
+  // Includes both recent runs (including temporary rerun entries) and frequent runs.
+  const runsWithOverrides = missionsWithTemporaryEntry.filter(
+    (m) => m.recentRun || m.frequentRun
   )
 
   const {
@@ -181,7 +182,7 @@ const MissionModal: React.FC<MissionModalProps> = ({
     selectedMissionData,
     selectedMission,
     selectedMissionCategory,
-    recentRuns: recentRunsWithTemp,
+    runsWithOverrides,
   })
 
   const handleSelectMission = (id?: string | null) => {
@@ -207,10 +208,17 @@ const MissionModal: React.FC<MissionModalProps> = ({
       let latValue: string | undefined = latArg?.value
       let lonValue: string | undefined = lonArg?.value
 
-      // Use waypoint overrides from the selected mission in recent runs including temporary mission if rerunning
-      if (selectedMissionCategory === 'Recent Runs' && selectedMission) {
+      // Use waypoint overrides from the selected mission for recent and frequent runs.
+      if (
+        (selectedMissionCategory === 'Recent Runs' ||
+          selectedMissionCategory === 'Frequent Runs') &&
+        selectedMission
+      ) {
         const selectedRun = missionsWithTemporaryEntry.find(
-          (run) => run.id === selectedMission && run.recentRun
+          (run) =>
+            run.id === selectedMission &&
+            ((selectedMissionCategory === 'Recent Runs' && run.recentRun) ||
+              (selectedMissionCategory === 'Frequent Runs' && run.frequentRun))
         ) as any
 
         if (selectedRun?.waypointOverrides?.length) {
@@ -264,12 +272,16 @@ const MissionModal: React.FC<MissionModalProps> = ({
     commType,
     timeout,
   }) => {
+    const missionPathForCommand =
+      missionsWithTemporaryEntry.find((m) => m.id === selectedMissionId)
+        ?.missionPath ?? (selectedMissionId as string)
+
     const {
       commandText: formattedCommandText,
       schedDate,
       previewSbd,
     } = makeMissionCommand({
-      mission: selectedMissionId as string,
+      mission: missionPathForCommand,
       parameterOverrides,
       scheduleMethod,
       specifiedLocalTime: specifiedTime ?? undefined,
@@ -281,7 +293,7 @@ const MissionModal: React.FC<MissionModalProps> = ({
     if (!preview) {
       createCommand({
         vehicle: confirmedVehicle?.toLowerCase() ?? '',
-        path: selectedMission as string,
+        path: missionPathForCommand,
         commandNote: notes ?? '',
         runCommand: 'y',
         schedDate,
@@ -333,7 +345,8 @@ const MissionModal: React.FC<MissionModalProps> = ({
       showAllVehicleMissions={showAllVehicleMissions}
       onShowAllVehicleMissions={setShowAllVehicleMissions}
       defaultOverrides={
-        selectedMissionCategory === 'Recent Runs'
+        selectedMissionCategory === 'Recent Runs' ||
+        selectedMissionCategory === 'Frequent Runs'
           ? [
               ...parametersWithOverrides,
               ...commsParamsWithOverrides,
