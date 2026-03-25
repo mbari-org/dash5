@@ -1,5 +1,9 @@
 import React, { useMemo, useState } from 'react'
-import { useInfiniteEvents, useTethysApiContext } from '@mbari/api-client'
+import {
+  EventType,
+  useInfiniteEvents,
+  useTethysApiContext,
+} from '@mbari/api-client'
 import {
   Virtualizer,
   LogCell,
@@ -21,7 +25,11 @@ import { applyEventFilters } from '../lib/eventFilterUtils'
 import { handleCopyEventLogs } from '../lib/handleCopyEventLogs'
 import { createLogger, useDebounce } from '@mbari/utils'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
-import { faChevronDown, faChevronUp } from '@fortawesome/free-solid-svg-icons'
+import {
+  faChevronDown,
+  faChevronUp,
+  faTriangleExclamation,
+} from '@fortawesome/free-solid-svg-icons'
 import { RealTimeLogs } from './RealTimeLogs'
 
 const logger = createLogger('components.LogsSection')
@@ -38,7 +46,12 @@ export interface LogsSectionProps {
 
 const styles = {
   icon: 'ml-1 my-auto flex-grow-0 mr-2 flex-shrink-0',
+  emptyLogBanner:
+    'flex items-center justify-center gap-0.5 bg-amber-50 px-2 py-6 text-xl text-black',
+  emptyLogBannerIcon: 'mr-1 flex-shrink-0 text-amber-600',
 }
+
+const DATA_FILTER_ID = 'Data'
 
 const LogsSection: React.FC<LogsSectionProps> = ({
   vehicleName,
@@ -52,36 +65,44 @@ const LogsSection: React.FC<LogsSectionProps> = ({
   }
 
   const { siteConfig } = useTethysApiContext()
-  const [filters, setFilters] = useState<MultiValue<SelectOption>>([])
+  const [filters, setFilters] = useState<MultiValue<SelectOption>>(() =>
+    Object.keys(eventFilters)
+      .filter((id) => id !== DATA_FILTER_ID)
+      .map((id) => ({ id, name: id }))
+  )
   const [filtersOpen, setFiltersOpen] = useState(false)
   const [searchText, setSearchText] = useState('')
   const debouncedSearchText = useDebounce(searchText, 250)
+  const [includeDataEvents, setIncludeDataEvents] = useState(false)
 
-  const eventFilterIds = useMemo(() => Object.keys(eventFilters), [])
+  const modalEventFilterIds = useMemo(
+    () => Object.keys(eventFilters).filter((id) => id !== DATA_FILTER_ID),
+    []
+  )
 
   const eventFilterOptions = useMemo(
     () =>
-      eventFilterIds.map((id) => ({
+      modalEventFilterIds.map((id) => ({
         id,
         label: id,
       })),
-    [eventFilterIds]
+    [modalEventFilterIds]
   )
   const allFiltersSelected = useMemo(
-    () => filters.length === eventFilterIds.length,
-    [filters, eventFilterIds]
+    () => filters.length === modalEventFilterIds.length,
+    [filters, modalEventFilterIds]
   )
 
-  const eventTypes = useMemo(
-    () =>
-      filters.length && !allFiltersSelected
-        ? filters
-            .map(({ id }) => eventFilters[id].eventTypes)
-            .flat()
-            .filter((k, i, a) => a.indexOf(k) === i)
-        : undefined,
-    [filters, allFiltersSelected]
-  )
+  const eventTypes = useMemo((): EventType[] | undefined => {
+    if (!filters.length || allFiltersSelected) return undefined
+    const base = filters
+      .flatMap(({ id }) => eventFilters[id].eventTypes)
+      .filter((k, i, a) => a.indexOf(k) === i)
+    if (includeDataEvents && !base.includes('dataProcessed')) {
+      return [...base, 'dataProcessed']
+    }
+    return base
+  }, [filters, allFiltersSelected, includeDataEvents])
 
   const deploymentParams = useMemo(
     () => ({
@@ -119,9 +140,10 @@ const LogsSection: React.FC<LogsSectionProps> = ({
   } = deploymentLogsOnly ? deploymentResponse : allLogsResponse
 
   const flatData = useMemo(() => {
+    if (filters.length === 0) return []
     if (!data?.pages) return []
     let events = data.pages.flat()
-    if (filters.length) {
+    if (filters.length && !allFiltersSelected) {
       const selectedFilterNames = filters.map(({ id }) => id)
       events = applyEventFilters(events, selectedFilterNames)
     }
@@ -139,10 +161,24 @@ const LogsSection: React.FC<LogsSectionProps> = ({
         return parts.some((p) => p.toLowerCase().includes(searchTerm))
       })
     }
+    if (!includeDataEvents) {
+      events = events.filter((e) => e.eventType !== 'dataProcessed')
+    }
     return events
-  }, [data?.pages, filters, debouncedSearchText])
+  }, [
+    data?.pages,
+    filters,
+    allFiltersSelected,
+    debouncedSearchText,
+    includeDataEvents,
+  ])
   const dataCount = flatData?.length ?? 0
   const totalCount = hasNextPage ? dataCount + 1 : dataCount
+  const listLoading = filters.length > 0 && (isLoading || isFetching)
+  const showNoFiltersMessage = filters.length === 0 && !listLoading
+  const accordionCount = showNoFiltersMessage ? 0 : totalCount
+  const showNoMatchingEventsMessage =
+    filters.length > 0 && !listLoading && dataCount === 0
 
   const handleLoadMore = () => {
     fetchNextPage()
@@ -218,6 +254,8 @@ const LogsSection: React.FC<LogsSectionProps> = ({
                   onSearchChange={setSearchText}
                   onDismiss={() => setFiltersOpen(false)}
                   placeholder="Search logs"
+                  includeDataEvents={includeDataEvents}
+                  onIncludeDataEventsChange={setIncludeDataEvents}
                 />
               </div>
             )}
@@ -232,10 +270,39 @@ const LogsSection: React.FC<LogsSectionProps> = ({
         />
       </header>
 
+      {showNoFiltersMessage ? (
+        <div className={styles.emptyLogBanner} role="status">
+          <FontAwesomeIcon
+            icon={faTriangleExclamation}
+            className={styles.emptyLogBannerIcon}
+            size="lg"
+            aria-hidden
+          />
+          <p className="m-0">
+            Open <strong className="font-semibold">Filter</strong> and choose at
+            least one type to see logs.
+          </p>
+        </div>
+      ) : null}
+      {showNoMatchingEventsMessage ? (
+        <div className={styles.emptyLogBanner} role="status">
+          <FontAwesomeIcon
+            icon={faTriangleExclamation}
+            className={styles.emptyLogBannerIcon}
+            size="lg"
+            aria-hidden
+          />
+          <p className="m-0">
+            No matching events. Try adjusting{' '}
+            <strong className="font-semibold">Filter</strong> or search.
+          </p>
+        </div>
+      ) : null}
+
       <AccordionCells
         cellAtIndex={cellAtIndex}
-        count={totalCount}
-        loading={isLoading || isFetching}
+        count={accordionCount}
+        loading={listLoading}
       />
     </>
   )
