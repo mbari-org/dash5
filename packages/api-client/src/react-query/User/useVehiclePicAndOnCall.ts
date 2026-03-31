@@ -89,7 +89,7 @@ export const useVehiclePicAndOnCall = (
     {
       staleTime: STALE_TIME,
       ...options,
-      enabled: (options?.enabled ?? true) && hasToken,
+      enabled: options?.enabled ?? true,
     }
   )
 

@@ -4,6 +4,29 @@ import { useRefreshSessionToken } from '../User/useRefreshSessionToken'
 import { TethysApiContext, TethysApiContextProfile } from './TethysApiContext'
 import { getInstance } from '../../axios/getInstance'
 import { useSiteConfig } from '../Info/useSiteConfig'
+// Decode the JWT payload to extract profile fields (firstName, lastName, email,
+// roles). The TethysDash /user/token endpoint validates the token but may omit
+// these fields from its JSON response; the JWT itself always carries them.
+const decodeJWTProfile = (
+  token: string
+): Partial<{
+  firstName: string
+  lastName: string
+  email: string
+  roles: string[]
+}> => {
+  try {
+    const payload = JSON.parse(atob(token.split('.')[1]))
+    return {
+      firstName: payload.firstName,
+      lastName: payload.lastName,
+      email: payload.email,
+      roles: payload.roles,
+    }
+  } catch {
+    return {}
+  }
+}
 
 interface TethysApiProviderProps {
   baseURL?: string
@@ -65,33 +88,33 @@ export const TethysApiProvider: React.FC<TethysApiProviderProps> = ({
   const { data: siteInfo } = useSiteConfig({}, {}, instance.current)
 
   // We'll update the current user state from the refreshed session
-  // response. The TethysDash API will return a user object that
-  // is identical to the login response.
+  // response. The TethysDash API may return a user object without a
+  // token field (the token was already validated server-side). In that
+  // case we preserve the existing session token from the cookie so the
+  // user stays authenticated across browser refreshes.
+  //
+  // Additionally, the /user/token endpoint may return a minimal response
+  // (e.g. no firstName/lastName). The JWT payload itself contains the full
+  // profile, so we decode it as a fallback to avoid "uu" initials.
   useEffect(() => {
-    if (
-      !loggedOut &&
-      refreshedSession.data?.token &&
-      refreshedSession.data?.token !== existingToken
-    ) {
-      setCurrentUser(refreshedSession.data)
+    if (!loggedOut && refreshedSession.data && !existingToken) {
+      const token = refreshedSession.data.token || sessionToken
+      if (token) {
+        const apiProfile = refreshedSession.data
+        const profile = apiProfile.firstName
+          ? apiProfile
+          : decodeJWTProfile(token)
+        setCurrentUser({ ...profile, ...apiProfile, token })
+      }
     }
   }, [
     refreshedSession.data,
     lastInitialToken,
     existingToken,
+    sessionToken,
     loggedOut,
     setCurrentUser,
   ])
-
-  // Keep in-memory auth state aligned with persisted token state. If token
-  // refresh clears the session token (auth failure or unusable response),
-  // clear current user so callers stop using a stale authenticated profile.
-  useEffect(() => {
-    if (!sessionToken && existingToken) {
-      setCurrentUser(undefined)
-      setLoggedOut(true)
-    }
-  }, [sessionToken, existingToken, setCurrentUser, setLoggedOut])
 
   // This handler is available in theTethysApiContext for use in components
   const login = React.useCallback(
@@ -117,6 +140,28 @@ export const TethysApiProvider: React.FC<TethysApiProviderProps> = ({
     onSessionEnd?.()
   }, [setCurrentUser, setError, setLoggedOut, onSessionEnd])
 
+  // When the server rejects the session token (e.g. expired JWT → 401), clear
+  // auth state so the login prompt is shown rather than a broken "authenticated"
+  // UI with an expired token. Only fires when the user was actively logged in
+  // (existingToken is truthy) to avoid interfering with the initial page load
+  // path where the user was never authenticated.
+  useEffect(() => {
+    if (refreshedSession.isError && existingToken && !loggedOut) {
+      logout()
+    }
+  }, [refreshedSession.isError, existingToken, loggedOut, logout])
+
+  // Remain in loading state while a session token exists in the cookie but
+  // currentUser hasn't been hydrated yet. This bridges the one-render gap
+  // between refreshedSession.isLoading flipping to false and the useEffect
+  // below calling setCurrentUser — without this, authenticated briefly goes
+  // false → createRoleLabel returns "Unavailable" for PIC/On-Call.
+  const pendingAuthValidation =
+    (sessionToken?.length ?? 0) > 0 &&
+    !currentUser &&
+    !loggedOut &&
+    !refreshedSession.isError
+
   return (
     <TethysApiContext.Provider
       value={{
@@ -126,7 +171,10 @@ export const TethysApiProvider: React.FC<TethysApiProviderProps> = ({
         error,
         authenticated: currentUser?.token?.length ?? 0 ? true : false,
         profile: currentUser,
-        loading: loginUser.isLoading,
+        loading:
+          loginUser.isLoading ||
+          refreshedSession.isLoading ||
+          pendingAuthValidation,
         axiosInstance: instance.current,
         siteConfig: siteInfo,
       }}
