@@ -87,7 +87,7 @@ const useIsDesktop = () => {
 }
 
 const Vehicle: NextPage = () => {
-  const { authenticated } = useTethysApiContext()
+  const { authenticated, loading: authLoading } = useTethysApiContext()
   const { mapsLoaded } = useGoogleMaps()
 
   const [mounted, setMounted] = useState(false)
@@ -415,7 +415,7 @@ const Vehicle: NextPage = () => {
                     }
               }
               onRoleReassign={handleRoleReassign}
-              loadingPicAndOnCall={loadingPicAndOnCall}
+              loadingPicAndOnCall={loadingPicAndOnCall || authLoading}
               supportIcon1={
                 pingEvent?.reachable ? <ConnectedIcon /> : <NotConnectedIcon />
               }
