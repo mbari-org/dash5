@@ -1,14 +1,10 @@
 import { useMemo } from 'react'
-import { useQuery } from 'react-query'
 import {
-  extractOverridesWithScriptMetadata,
-  generateMissionKey,
-  getScript,
   useFrequentRuns,
   useMissionList,
   useRecentRuns,
   useScript,
-  useTethysApiContext,
+  useSiteConfig,
 } from '@mbari/api-client'
 
 import { Mission } from '@mbari/react-ui'
@@ -34,6 +30,12 @@ export const useMissionData = (params: {
   const { vehicleName, selectedMission, showAllVehicleMissions } = params
 
   const { data: missionData } = useMissionList()
+  const { data: siteInfo } = useSiteConfig()
+
+  const frequentVehicles = useMemo(() => {
+    if (showAllVehicleMissions) return siteInfo?.vehicleNames ?? []
+    return vehicleName ? [vehicleName] : []
+  }, [showAllVehicleMissions, siteInfo?.vehicleNames, vehicleName])
 
   const recentRunsParams = useMemo(
     () => ({
@@ -48,12 +50,19 @@ export const useMissionData = (params: {
     useRecentRuns(recentRunsParams, {
       staleTime: 60 * 1000,
     })
-  const { data: frequentRunsData, isLoading: isFrequentRunsLoading } =
+
+  const gitRef = missionData?.gitRef ?? 'master'
+
+  const { data: normalizedFrequentRuns, isLoading: isFrequentRunsLoading } =
     useFrequentRuns(
       {
-        vehicle: vehicleName,
+        vehicles: frequentVehicles,
+        gitRef,
       },
-      { enabled: !!vehicleName }
+      {
+        enabled: frequentVehicles.length > 0,
+        staleTime: 60 * 1000,
+      }
     )
 
   const recentRuns: Mission[] = useMemo(() => {
@@ -98,101 +107,49 @@ export const useMissionData = (params: {
     )
   }, [recentRunsData])
 
-  const { axiosInstance, token } = useTethysApiContext()
-
-  const frequentRunsProcessedQuery = useQuery(
-    [
-      'frequentRunsProcessed',
-      frequentRunsData,
-      missionData?.gitRef,
-      missionData?.list,
-      vehicleName,
-    ],
-    async () => {
-      if (!frequentRunsData || !missionData?.list) return []
-
-      // Cache script metadata requests so repeated missions don't refetch.
-      const scriptRequestByMission = new Map<
-        string,
-        ReturnType<typeof getScript>
-      >()
-
-      const getScriptMetadata = async (missionPath: string) => {
-        const existing = scriptRequestByMission.get(missionPath)
-        if (existing) return existing
-
-        const request = getScript(
-          { path: missionPath, gitRef: missionData?.gitRef ?? 'master' },
-          {
-            instance: axiosInstance,
-            headers: { Authorization: `Bearer ${token}` },
-          }
-        )
-        scriptRequestByMission.set(missionPath, request)
-        return request
-      }
-
-      const results: Mission[] = []
-
-      for (const d of frequentRunsData) {
-        const relatedMission = missionData.list.find(
-          ({ path }) => path === d?.mission
-        )
-        if (!relatedMission) continue
-
-        const writtenCommand = d?.writtenCommand ?? ''
-        const missionPathForFetch = d?.mission || undefined
-        const { waypointOverrides, parameterOverrides } =
-          await extractOverridesWithScriptMetadata(
-            writtenCommand,
-            missionPathForFetch,
-            missionPathForFetch
-              ? async () => getScriptMetadata(missionPathForFetch)
-              : undefined,
-            { logContext: d?.mission }
-          )
-
-        const missionPath = relatedMission.path
-        const hasOverrides =
-          waypointOverrides.length > 0 || parameterOverrides.length > 0
-        const id = hasOverrides
-          ? generateMissionKey({
-              missionName: missionPath,
-              waypointOverrides,
-              parameterOverrides,
-            })
-          : missionPath
-
-        results.push({
-          ...convertMissionDataToListItem(vehicleName)(relatedMission),
-          id,
-          missionPath,
-          frequentRun: true,
-          waypointOverrides,
-          parameterOverrides,
-          parameterCount: parameterOverrides.length,
-          waypointCount: waypointOverrides.length,
-        } as Mission)
-      }
-
-      // Dedupe on the composite id so the list stays stable.
-      return results.filter(
-        (mission, index, s) => s.findIndex((m) => m.id === mission.id) === index
-      )
-    },
-    {
-      enabled:
-        !!frequentRunsData?.length &&
-        !!missionData?.list?.length &&
-        !!vehicleName,
-      staleTime: 60 * 1000,
-      refetchOnWindowFocus: false,
-    }
-  )
-
   const frequentRuns: Mission[] = useMemo(() => {
-    return frequentRunsProcessedQuery.data ?? []
-  }, [frequentRunsProcessedQuery.data])
+    if (!normalizedFrequentRuns?.length || !missionData?.list) return []
+
+    const needsVehiclePrefix =
+      showAllVehicleMissions || frequentVehicles.length > 1
+
+    const results: Mission[] = []
+
+    for (const run of normalizedFrequentRuns) {
+      const relatedMission = missionData.list.find(
+        ({ path }) => path === run.missionPath
+      )
+      if (!relatedMission) continue
+
+      const { waypointOverrides, parameterOverrides } = run
+      const missionPath = relatedMission.path
+      const hasOverrides =
+        waypointOverrides.length > 0 || parameterOverrides.length > 0
+      const baseId = hasOverrides ? run.selectionId : missionPath
+
+      const id = needsVehiclePrefix ? `${run.vehicle}|${baseId}` : baseId
+
+      results.push({
+        ...convertMissionDataToListItem(run.vehicle)(relatedMission),
+        id,
+        missionPath,
+        frequentRun: true,
+        waypointOverrides,
+        parameterOverrides,
+        parameterCount: parameterOverrides.length,
+        waypointCount: waypointOverrides.length,
+      } as Mission)
+    }
+
+    return results.filter(
+      (mission, index, s) => s.findIndex((m) => m.id === mission.id) === index
+    )
+  }, [
+    normalizedFrequentRuns,
+    missionData?.list,
+    showAllVehicleMissions,
+    frequentVehicles,
+  ])
 
   const missionCategories = [
     {
@@ -256,7 +213,6 @@ export const useMissionData = (params: {
     missionCategories,
     allMissions,
     isRecentRunsLoading,
-    isFrequentRunsLoading:
-      isFrequentRunsLoading || frequentRunsProcessedQuery.isLoading,
+    isFrequentRunsLoading,
   }
 }

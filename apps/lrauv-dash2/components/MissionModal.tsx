@@ -97,6 +97,7 @@ const MissionModal: React.FC<MissionModalProps> = ({
     allMissions: missions,
     selectedMissionData,
     isRecentRunsLoading: recentRunsLoading,
+    isFrequentRunsLoading: frequentRunsLoading,
     missionCategories,
   } = useMissionData({ vehicleName, selectedMission, showAllVehicleMissions })
 
@@ -335,7 +336,7 @@ const MissionModal: React.FC<MissionModalProps> = ({
       onFocusWaypoint={onFocusWaypoint}
       vehicles={vehicles}
       loading={sendingCommand}
-      missionsLoading={recentRunsLoading}
+      missionsLoading={recentRunsLoading || frequentRunsLoading}
       previewText={previewText}
       unitOptions={unitsData}
       selectedId={selectedMission}
