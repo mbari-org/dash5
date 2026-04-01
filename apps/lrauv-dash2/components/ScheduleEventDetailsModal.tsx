@@ -87,19 +87,44 @@ const TimeBlock: React.FC<{ unixTime?: number }> = ({ unixTime }) => {
 const formatScheduleDate = (scheduleDate?: string): string => {
   if (!scheduleDate) return 'N/A'
   if (scheduleDate.toLowerCase() === 'asap') return 'ASAP'
-  const match = scheduleDate.match(/^(\d{4})(\d{2})(\d{2})}T(\d{2})(\d{2})$/)
-  if (!match) return scheduleDate
-  const utc = DateTime.fromObject(
-    {
-      year: parseInt(match[1]),
-      month: parseInt(match[2]),
-      day: parseInt(match[3]),
-      hour: parseInt(match[4]),
-      minute: parseInt(match[5]),
-    },
-    { zone: 'utc' }
-  ).toLocal()
-  return `${utc.toFormat('MMM d, yyyy HH:mm')} (local)`
+
+  // Format: 20260401}T0600 (makeCommand format, UTC)
+  const fullMatch = scheduleDate.match(
+    /^(\d{4})(\d{2})(\d{2})}T(\d{2})(\d{2})$/
+  )
+  if (fullMatch) {
+    const utc = DateTime.fromObject(
+      {
+        year: parseInt(fullMatch[1]),
+        month: parseInt(fullMatch[2]),
+        day: parseInt(fullMatch[3]),
+        hour: parseInt(fullMatch[4]),
+        minute: parseInt(fullMatch[5]),
+      },
+      { zone: 'utc' }
+    ).toLocal()
+    return `${utc.toFormat('MMM d, yyyy HH:mm')} (local)`
+  }
+
+  // Format: 20260331T18 or 20260331T1800 (alternate, no }, UTC)
+  const shortMatch = scheduleDate.match(
+    /^(\d{4})(\d{2})(\d{2})T(\d{2})(\d{2})?$/
+  )
+  if (shortMatch) {
+    const utc = DateTime.fromObject(
+      {
+        year: parseInt(shortMatch[1]),
+        month: parseInt(shortMatch[2]),
+        day: parseInt(shortMatch[3]),
+        hour: parseInt(shortMatch[4]),
+        minute: shortMatch[5] ? parseInt(shortMatch[5]) : 0,
+      },
+      { zone: 'utc' }
+    ).toLocal()
+    return `${utc.toFormat('MMM d, yyyy HH:mm')} (local)`
+  }
+
+  return scheduleDate
 }
 
 const formatVia = (via?: 'cell' | 'sat' | 'cellsat'): string => {
@@ -199,6 +224,7 @@ export const ScheduleEventDetailsModal: React.FC<
   const cleanLabel =
     (event.label || 'Unknown')
       .replace(/\d{8}}T\d{4}\s*/g, '')
+      .replace(/\d{8}T\d{2,4}\s*/g, '')
       .replace(/^["'\s]+/, '')
       .replace(/^load\s+/i, '')
       .replace(/\.(tl|xml|py)$/i, '')
