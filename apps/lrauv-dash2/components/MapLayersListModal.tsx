@@ -135,32 +135,31 @@ const TreeItem: React.FC<TreeItemProps> = ({
               }}
               onMouseEnter={onMouseEnterStar}
               onMouseLeave={onMouseLeaveStar}
-              className="relative mr-2 focus:outline-none"
+              className="mr-1 focus:outline-none"
               aria-label={isStarred ? 'Unstar station' : 'Star station'}
               title={
                 isStarred
                   ? 'Hover to spotlight on map'
                   : 'Click to enable spotlight'
               }
-              style={{ width: '20px', height: '20px', flexShrink: 0 }}
+              style={{
+                width: '20px',
+                height: '20px',
+                flexShrink: 0,
+                borderRadius: '50%',
+                background: 'transparent',
+                border: 0,
+                padding: 0,
+                boxShadow: '0 1px 3px rgba(0,0,0,0.35)',
+                display: 'inline-flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                cursor: 'pointer',
+              }}
             >
-              <span
-                style={{
-                  position: 'absolute',
-                  inset: 0,
-                  borderRadius: '50%',
-                  border: 'none',
-                  backgroundColor: '#f0f0f0',
-                  boxShadow: '0 2px 4px rgba(0,0,0,0.4)',
-                }}
-              />
               <FontAwesomeIcon
                 icon={faStar}
                 style={{
-                  position: 'absolute',
-                  top: '50%',
-                  left: '50%',
-                  transform: 'translate(-50%, -50%)',
                   color: isStarred ? '#FFD700' : '#9ca3af',
                   fontSize: '10px',
                 }}
