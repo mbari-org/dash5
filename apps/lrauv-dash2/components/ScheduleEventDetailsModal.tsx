@@ -163,9 +163,9 @@ const statusPillStyle = (status?: string): React.CSSProperties => {
     case 'pending':
     case 'tbd':
       return {
-        backgroundColor: '#f5f5f4',
-        color: '#44403c',
-        borderColor: '#d6d3d1',
+        backgroundColor: '#e0f2fe',
+        color: '#0c4a6e',
+        borderColor: '#7dd3fc',
       }
     case 'completed':
       return {
