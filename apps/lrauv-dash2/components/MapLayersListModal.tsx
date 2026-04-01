@@ -187,8 +187,8 @@ const TreeItem: React.FC<TreeItemProps> = ({
                 className="ml-2 focus:outline-none"
                 aria-label="Center map on station"
                 style={{
-                  width: '26px',
-                  height: '26px',
+                  width: '20px',
+                  height: '20px',
                   flexShrink: 0,
                   borderRadius: '3px',
                   background: '#fff',
@@ -203,7 +203,7 @@ const TreeItem: React.FC<TreeItemProps> = ({
               >
                 <FontAwesomeIcon
                   icon={faArrowsToCircle}
-                  style={{ color: '#6b7280', fontSize: '16px' }}
+                  style={{ color: '#6b7280', fontSize: '13px' }}
                 />
               </button>
             </Tippy>
