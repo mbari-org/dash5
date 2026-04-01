@@ -202,6 +202,8 @@ export const ScheduleEventDetailsModal: React.FC<
   const { deployment } = useCurrentDeployment()
   const [showStatusTooltip, setShowStatusTooltip] = useState(false)
   const [showEndedTooltip, setShowEndedTooltip] = useState(false)
+  const [showScheduledStartTooltip, setShowScheduledStartTooltip] =
+    useState(false)
   const event = globalModalId?.meta?.scheduleEvent
 
   if (!event) return null
@@ -236,8 +238,7 @@ export const ScheduleEventDetailsModal: React.FC<
   const isActiveOrDone = ['running', 'completed', 'cancelled'].includes(
     event.status?.toLowerCase() ?? ''
   )
-  const startedLabel =
-    isScheduledStart && !isActiveOrDone ? 'Queued' : 'Started'
+  const startedLabel = isScheduledStart ? 'Queued' : 'Started'
 
   return (
     <Modal
@@ -337,9 +338,7 @@ export const ScheduleEventDetailsModal: React.FC<
           <div>
             <p
               className={`text-sm uppercase tracking-wide ${
-                isScheduledStart && !isActiveOrDone
-                  ? 'text-sky-600'
-                  : 'text-stone-500'
+                isScheduledStart ? 'text-sky-600' : 'text-stone-500'
               }`}
             >
               {startedLabel}
@@ -423,7 +422,76 @@ export const ScheduleEventDetailsModal: React.FC<
                 isScheduledStart ? 'text-sky-600' : 'text-stone-500'
               }`}
             >
-              Scheduled Start
+              {isScheduledStart && isActiveOrDone ? (
+                <span className="inline-flex items-center gap-1">
+                  Started
+                  <span className="relative inline-flex">
+                    <span
+                      style={{
+                        color: '#10b981',
+                        fontSize: '0.85rem',
+                        fontWeight: 700,
+                        lineHeight: 1,
+                        cursor: 'default',
+                      }}
+                      onMouseEnter={() => setShowScheduledStartTooltip(true)}
+                      onMouseLeave={() => setShowScheduledStartTooltip(false)}
+                    >
+                      ✓
+                    </span>
+                    {showScheduledStartTooltip && (
+                      <span
+                        className="pointer-events-none absolute bottom-full left-1/2 mb-1 -translate-x-1/2 whitespace-nowrap rounded border px-2 py-0.5 text-[10px] font-normal normal-case shadow"
+                        style={{
+                          borderColor: '#6ee7b7',
+                          backgroundColor: '#ecfdf5',
+                          color: '#065f46',
+                          zIndex: 9999,
+                        }}
+                      >
+                        Confirmed by vehicle logs
+                      </span>
+                    )}
+                  </span>
+                </span>
+              ) : (
+                <span className="inline-flex items-center gap-1">
+                  Scheduled Start
+                  {isScheduledStart && event.commandType === 'command' && (
+                    <span className="relative inline-flex align-middle">
+                      <button
+                        type="button"
+                        className="cursor-pointer rounded-full border border-stone-300 px-1 text-[10px] font-semibold text-stone-500 hover:bg-stone-100 focus:bg-stone-100"
+                        aria-label="Scheduled start confirmation info"
+                        onMouseEnter={() => setShowScheduledStartTooltip(true)}
+                        onMouseLeave={() => setShowScheduledStartTooltip(false)}
+                        onFocus={() => setShowScheduledStartTooltip(true)}
+                        onBlur={() => setShowScheduledStartTooltip(false)}
+                        onClick={() =>
+                          setShowScheduledStartTooltip((prev) => !prev)
+                        }
+                      >
+                        ?
+                      </button>
+                      {showScheduledStartTooltip && (
+                        <span
+                          className="pointer-events-none absolute bottom-full left-1/2 mb-1 -translate-x-1/2 rounded border px-3 py-2 text-xs font-normal normal-case leading-relaxed text-stone-700 shadow-lg"
+                          style={{
+                            borderColor: '#bae6fd',
+                            backgroundColor: '#fffbeb',
+                            width: '16rem',
+                            zIndex: 9999,
+                          }}
+                        >
+                          Command execution cannot be confirmed from vehicle
+                          logs — scheduled time is when the command was set to
+                          run.
+                        </span>
+                      )}
+                    </span>
+                  )}
+                </span>
+              )}
             </p>
             <p className="font-medium">
               {formatScheduleDate(event.scheduleDate)}
