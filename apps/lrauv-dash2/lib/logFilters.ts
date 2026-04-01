@@ -22,18 +22,25 @@ export const hasAllNonDataFiltersSelected = (
   selectedFilterIds: string[]
 ): boolean => selectedFilterIds.length === MODAL_VISIBLE_FILTER_IDS.length
 
+/** At least one modal filter checked, or Include Data Events is on. */
+export const hasLogFilterSelection = (
+  selectedFilterIds: string[],
+  includeDataEvents: boolean
+): boolean => selectedFilterIds.length > 0 || includeDataEvents
+
 /**
  * Event types to request from the API: narrowed list when the user picks a subset of
  * filters; `undefined` means “all types.” Adds dataProcessed when Include Data is on.
+ * When no modal filters are selected but Include Data is on, only `dataProcessed` is requested.
  */
 export const deriveEventTypes = (
   selectedFilterIds: string[],
   includeDataEvents: boolean
 ): EventType[] | undefined => {
-  if (
-    !selectedFilterIds.length ||
-    hasAllNonDataFiltersSelected(selectedFilterIds)
-  ) {
+  if (!selectedFilterIds.length) {
+    return includeDataEvents ? ['dataProcessed'] : undefined
+  }
+  if (hasAllNonDataFiltersSelected(selectedFilterIds)) {
     return undefined
   }
   const base = selectedFilterIds

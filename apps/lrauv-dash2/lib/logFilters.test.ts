@@ -2,6 +2,7 @@ import {
   applySelectedFilters,
   deriveEventTypes,
   hasAllNonDataFiltersSelected,
+  hasLogFilterSelection,
   modalVisibleFilterIds,
 } from './logFilters'
 import { GetEventsResponse } from '@mbari/api-client'
@@ -10,9 +11,9 @@ describe('logFilters', () => {
   const modalIds = modalVisibleFilterIds()
 
   describe('deriveEventTypes', () => {
-    test('returns undefined when no filters selected', () => {
+    test('when no modal filters selected, requests only data or nothing', () => {
       expect(deriveEventTypes([], false)).toBeUndefined()
-      expect(deriveEventTypes([], true)).toBeUndefined()
+      expect(deriveEventTypes([], true)).toEqual(['dataProcessed'])
     })
 
     test('returns undefined when all non-Data filters selected', () => {
@@ -48,6 +49,14 @@ describe('logFilters', () => {
       expect(result).toEqual([deployEvent, dataEvent])
     })
 
+    test('data-only: modal empty and Include Data on keeps only data events', () => {
+      const result = applySelectedFilters([deployEvent, dataEvent], [], {
+        includeDataEvents: true,
+        allNonDataFiltersSelected: false,
+      })
+      expect(result).toEqual([dataEvent])
+    })
+
     test('drops data when Include Data is off and selection is partial', () => {
       const result = applySelectedFilters(
         [deployEvent, dataEvent],
@@ -78,6 +87,17 @@ describe('logFilters', () => {
     test('is true only when counts match modal-visible list', () => {
       expect(hasAllNonDataFiltersSelected(modalIds)).toBe(true)
       expect(hasAllNonDataFiltersSelected(['Deployment'])).toBe(false)
+    })
+  })
+
+  describe('hasLogFilterSelection', () => {
+    test('is true when Include Data is on even if no modal filters', () => {
+      expect(hasLogFilterSelection([], true)).toBe(true)
+      expect(hasLogFilterSelection([], false)).toBe(false)
+    })
+
+    test('is true when at least one modal filter is selected', () => {
+      expect(hasLogFilterSelection(['Deployment'], false)).toBe(true)
     })
   })
 })

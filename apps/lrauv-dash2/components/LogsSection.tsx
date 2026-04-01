@@ -21,6 +21,7 @@ import {
   defaultModalSelections,
   deriveEventTypes,
   hasAllNonDataFiltersSelected,
+  hasLogFilterSelection,
   modalVisibleFilterIds,
 } from '../lib/logFilters'
 import { handleCopyEventLogs } from '../lib/handleCopyEventLogs'
@@ -87,6 +88,15 @@ const LogsSection: React.FC<LogsSectionProps> = ({
     [filters]
   )
 
+  const hasSelection = useMemo(
+    () =>
+      hasLogFilterSelection(
+        filters.map((f) => f.id),
+        includeDataEvents
+      ),
+    [filters, includeDataEvents]
+  )
+
   const eventTypes = useMemo(
     () =>
       deriveEventTypes(
@@ -132,7 +142,7 @@ const LogsSection: React.FC<LogsSectionProps> = ({
   } = deploymentLogsOnly ? deploymentResponse : allLogsResponse
 
   const flatData = useMemo(() => {
-    if (filters.length === 0) return []
+    if (!hasSelection) return []
     if (!data?.pages) return []
     let events = applySelectedFilters(
       data.pages.flat(),
@@ -162,15 +172,16 @@ const LogsSection: React.FC<LogsSectionProps> = ({
     filters,
     allNonDataFiltersSelected,
     debouncedSearchText,
+    hasSelection,
     includeDataEvents,
   ])
   const dataCount = flatData?.length ?? 0
   const totalCount = hasNextPage ? dataCount + 1 : dataCount
-  const listLoading = filters.length > 0 && (isLoading || isFetching)
-  const showNoFiltersMessage = filters.length === 0 && !listLoading
+  const listLoading = hasSelection && (isLoading || isFetching)
+  const showNoFiltersMessage = !hasSelection && !listLoading
   const accordionCount = showNoFiltersMessage ? 0 : totalCount
   const showNoMatchingEventsMessage =
-    filters.length > 0 && !listLoading && dataCount === 0
+    hasSelection && !listLoading && dataCount === 0
 
   const handleLoadMore = () => {
     fetchNextPage()
