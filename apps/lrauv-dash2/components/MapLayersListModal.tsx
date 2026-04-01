@@ -163,7 +163,7 @@ const TreeItem: React.FC<TreeItemProps> = ({
               <FontAwesomeIcon
                 icon={faStar}
                 style={{
-                  color: isStarred ? '#F57C00' : '#9ca3af',
+                  color: isStarred ? '#FFD700' : '#9ca3af',
                   fontSize: '14px',
                 }}
               />
