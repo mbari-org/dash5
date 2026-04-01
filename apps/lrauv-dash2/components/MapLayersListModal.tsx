@@ -149,8 +149,9 @@ const TreeItem: React.FC<TreeItemProps> = ({
                   position: 'absolute',
                   inset: 0,
                   borderRadius: '50%',
-                  border: '2px solid #000',
+                  border: 'none',
                   backgroundColor: '#f0f0f0',
+                  boxShadow: '0 2px 4px rgba(0,0,0,0.4)',
                 }}
               />
               <FontAwesomeIcon
