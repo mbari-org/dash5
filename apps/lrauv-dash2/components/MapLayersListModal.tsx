@@ -138,7 +138,11 @@ const TreeItem: React.FC<TreeItemProps> = ({
               onMouseLeave={onMouseLeaveStar}
               className="ml-2 focus:outline-none"
               aria-label={isStarred ? 'Unstar station' : 'Star station'}
-              title={isStarred ? 'Remove spotlight' : 'Spotlight on map'}
+              title={
+                isStarred
+                  ? 'Hover to spotlight on map'
+                  : 'Click to enable spotlight'
+              }
             >
               <FontAwesomeIcon
                 icon={faStar}
@@ -482,9 +486,11 @@ export const MapLayersListModal: React.FC<{
                   }}
                   isStarred={starredStations.includes(station.name)}
                   onStarClick={() => toggleStarStation(station.name)}
-                  onMouseEnterStar={() =>
-                    setHighlightedStationName(station.name)
-                  }
+                  onMouseEnterStar={() => {
+                    if (starredStations.includes(station.name)) {
+                      setHighlightedStationName(station.name)
+                    }
+                  }}
                   onMouseLeaveStar={() => setHighlightedStationName(null)}
                 />
               ))}
