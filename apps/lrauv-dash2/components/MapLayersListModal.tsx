@@ -203,7 +203,7 @@ const TreeItem: React.FC<TreeItemProps> = ({
               >
                 <FontAwesomeIcon
                   icon={faArrowsToCircle}
-                  style={{ color: '#6b7280', fontSize: '13px' }}
+                  style={{ color: '#6b7280', fontSize: '14.5px' }}
                 />
               </button>
             </Tippy>
