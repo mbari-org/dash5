@@ -9,7 +9,7 @@ import {
   faMapMarkerAlt,
   faCircle,
   faStar,
-  faExpand,
+  faCrosshairs,
 } from '@fortawesome/free-solid-svg-icons'
 import { useSelectedStations } from './SelectedStationContext'
 import { useMarkers } from './MarkerContext'
@@ -184,7 +184,7 @@ const TreeItem: React.FC<TreeItemProps> = ({
                 width: '22px',
                 height: '22px',
                 flexShrink: 0,
-                borderRadius: '50%',
+                borderRadius: '3px',
                 background: '#fff',
                 border: 0,
                 padding: 0,
@@ -196,8 +196,8 @@ const TreeItem: React.FC<TreeItemProps> = ({
               }}
             >
               <FontAwesomeIcon
-                icon={faExpand}
-                style={{ color: '#6b7280', fontSize: '10px' }}
+                icon={faCrosshairs}
+                style={{ color: '#6b7280', fontSize: '12px' }}
               />
             </button>
           )}
