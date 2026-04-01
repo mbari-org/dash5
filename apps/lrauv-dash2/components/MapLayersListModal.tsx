@@ -126,7 +126,6 @@ const TreeItem: React.FC<TreeItemProps> = ({
               />
             )
           ) : null}
-          <span className="text-sm font-medium">{label}</span>
           {onStarClick !== undefined && (
             <button
               onClick={(e) => {
@@ -136,23 +135,40 @@ const TreeItem: React.FC<TreeItemProps> = ({
               }}
               onMouseEnter={onMouseEnterStar}
               onMouseLeave={onMouseLeaveStar}
-              className="ml-2 focus:outline-none"
+              className="relative mr-2 focus:outline-none"
               aria-label={isStarred ? 'Unstar station' : 'Star station'}
               title={
                 isStarred
                   ? 'Hover to spotlight on map'
                   : 'Click to enable spotlight'
               }
+              style={{ width: '16px', height: '16px', flexShrink: 0 }}
             >
+              <span
+                style={{
+                  position: 'absolute',
+                  inset: 0,
+                  borderRadius: '50%',
+                  border: `2px solid ${isStarred ? '#FFD700' : '#9ca3af'}`,
+                  backgroundColor: isStarred
+                    ? 'rgba(255,215,0,0.15)'
+                    : 'transparent',
+                }}
+              />
               <FontAwesomeIcon
                 icon={faStar}
                 style={{
+                  position: 'absolute',
+                  top: '50%',
+                  left: '50%',
+                  transform: 'translate(-50%, -50%)',
                   color: isStarred ? '#FFD700' : '#9ca3af',
-                  fontSize: '12px',
+                  fontSize: '8px',
                 }}
               />
             </button>
           )}
+          <span className="text-sm font-medium">{label}</span>
         </label>
       </div>
 
