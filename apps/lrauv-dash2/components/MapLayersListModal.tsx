@@ -1,4 +1,6 @@
 import React, { useCallback, useState, useRef, useEffect, useMemo } from 'react'
+import Tippy from '@tippyjs/react'
+import 'tippy.js/dist/tippy.css'
 import { useStations } from '@mbari/api-client'
 import { Modal } from '@mbari/react-ui'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
@@ -130,76 +132,81 @@ const TreeItem: React.FC<TreeItemProps> = ({
             )
           ) : null}
           {onStarClick !== undefined && (
-            <button
-              onClick={(e) => {
-                e.preventDefault()
-                e.stopPropagation()
-                onStarClick()
-              }}
-              onMouseEnter={onMouseEnterStar}
-              onMouseLeave={onMouseLeaveStar}
-              className="mr-1 focus:outline-none"
-              aria-label={isStarred ? 'Unstar station' : 'Star station'}
-              title={
+            <Tippy
+              content={
                 isStarred
                   ? 'Hover to spotlight on map'
                   : 'Click to enable spotlight'
               }
-              style={{
-                width: '22px',
-                height: '22px',
-                flexShrink: 0,
-                borderRadius: '50%',
-                background: '#fff',
-                border: 0,
-                padding: 0,
-                boxShadow: '0 1px 3px rgba(0,0,0,0.35)',
-                display: 'inline-flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                cursor: 'pointer',
-              }}
+              placement="top-start"
             >
-              <FontAwesomeIcon
-                icon={faStar}
-                style={{
-                  color: isStarred ? '#FFD700' : '#9ca3af',
-                  fontSize: '14px',
+              <button
+                onClick={(e) => {
+                  e.preventDefault()
+                  e.stopPropagation()
+                  onStarClick()
                 }}
-              />
-            </button>
+                onMouseEnter={onMouseEnterStar}
+                onMouseLeave={onMouseLeaveStar}
+                className="mr-1 focus:outline-none"
+                aria-label={isStarred ? 'Unstar station' : 'Star station'}
+                style={{
+                  width: '22px',
+                  height: '22px',
+                  flexShrink: 0,
+                  borderRadius: '50%',
+                  background: '#fff',
+                  border: 0,
+                  padding: 0,
+                  boxShadow: '0 1px 3px rgba(0,0,0,0.35)',
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  cursor: 'pointer',
+                }}
+              >
+                <FontAwesomeIcon
+                  icon={faStar}
+                  style={{
+                    color: isStarred ? '#FFD700' : '#9ca3af',
+                    fontSize: '14px',
+                  }}
+                />
+              </button>
+            </Tippy>
           )}
           <span className="text-sm font-medium">{label}</span>
           {onCenterClick !== undefined && (
-            <button
-              onClick={(e) => {
-                e.preventDefault()
-                e.stopPropagation()
-                onCenterClick()
-              }}
-              className="ml-2 focus:outline-none"
-              aria-label="Center map on station"
-              title="Center map on this station"
-              style={{
-                width: '22px',
-                height: '22px',
-                flexShrink: 0,
-                borderRadius: '3px',
-                background: '#fff',
-                border: 0,
-                padding: 0,
-                boxShadow: '0 1px 3px rgba(0,0,0,0.35)',
-                display: 'inline-flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                cursor: 'pointer',
-              }}
-            >
-              <FontAwesomeIcon
-                icon={faArrowsToCircle}
-                style={{ color: '#6b7280', fontSize: '16px' }}
-              />
-            </button>
+            <Tippy content="Center map on this station" placement="top-start">
+              <button
+                onClick={(e) => {
+                  e.preventDefault()
+                  e.stopPropagation()
+                  onCenterClick()
+                }}
+                className="ml-2 focus:outline-none"
+                aria-label="Center map on station"
+                style={{
+                  width: '26px',
+                  height: '26px',
+                  flexShrink: 0,
+                  borderRadius: '3px',
+                  background: '#fff',
+                  border: 0,
+                  padding: 0,
+                  boxShadow: '0 1px 3px rgba(0,0,0,0.35)',
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  cursor: 'pointer',
+                }}
+              >
+                <FontAwesomeIcon
+                  icon={faArrowsToCircle}
+                  style={{ color: '#6b7280', fontSize: '16px' }}
+                />
+              </button>
+            </Tippy>
           )}
         </label>
       </div>
