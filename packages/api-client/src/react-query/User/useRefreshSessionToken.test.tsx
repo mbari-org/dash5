@@ -118,7 +118,11 @@ describe('useRefreshSessionToken', () => {
     expect(mockSetSessionToken).not.toHaveBeenCalled()
   })
 
-  it('should clear token when a successful response omits token', async () => {
+  it('should preserve existing token when a successful response omits token', async () => {
+    // The TethysDash /user/token endpoint validates the token and returns the
+    // user profile without re-issuing a new token. The existing cookie must NOT
+    // be cleared — clearing it was the root cause of users being logged out on
+    // browser refresh in the static-export build.
     server.use(
       rest.get('/user/token', (_req, res, ctx) => {
         return res(ctx.status(200), ctx.json({ result: {} }))
@@ -133,7 +137,7 @@ describe('useRefreshSessionToken', () => {
       expect(screen.getByTestId('status')).toHaveTextContent('success')
     })
 
-    expect(mockSetSessionToken).toHaveBeenCalledWith('')
+    expect(mockSetSessionToken).not.toHaveBeenCalled()
   })
 
   it('should set refreshed token when a successful response includes token', async () => {

@@ -23,13 +23,20 @@ export const useRefreshSessionToken = (config: {
       staleTime: 60 * 60 * 1000,
       retry: false,
       onSuccess: (data) => {
-        if (data?.token) {
-          setSessionToken(data.token)
-        } else {
-          // Successful validation responses without a token should clear the
-          // session so callers don't keep using an unusable auth state.
-          setSessionToken('')
+        if (process.env.NODE_ENV !== 'production') {
+          console.log(
+            '[useRefreshSessionToken] onSuccess — data.token length:',
+            data?.token?.length ?? 0,
+            '| has profile:',
+            !!(data?.firstName || data?.email)
+          )
         }
+        if (data?.token) {
+          // Server issued a new/rotated token — update the cookie.
+          setSessionToken(data.token)
+        }
+        // If the server validated the token but didn't return a new one,
+        // the existing cookie is still valid — do NOT clear it.
       },
       onError: (err: unknown) => {
         // Only clear the session token on explicit authentication failures
@@ -39,6 +46,12 @@ export const useRefreshSessionToken = (config: {
         const status = axios.isAxiosError(err)
           ? err.response?.status
           : undefined
+        if (process.env.NODE_ENV !== 'production') {
+          console.log('[useRefreshSessionToken] onError — status:', status)
+          if (status === 401 || status === 403) {
+            console.warn('[useRefreshSessionToken] 401/403 — clearing token')
+          }
+        }
         if (status === 401 || status === 403) {
           setSessionToken('')
         }
