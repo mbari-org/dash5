@@ -26,6 +26,10 @@ export interface SelectedStationsContextProps {
   selectedStations: Station[]
   setSelectedStations: React.Dispatch<React.SetStateAction<Station[]>>
   toggleStation: (station: Station) => void
+  starredStations: string[]
+  toggleStarStation: (name: string) => void
+  highlightedStationName: string | null
+  setHighlightedStationName: React.Dispatch<React.SetStateAction<string | null>>
   debug: {
     providerId: string
     instanceCount: number
@@ -40,6 +44,7 @@ const SelectedStationsContext = createContext<
 let instanceCounter = 0
 // Key for localStorage
 const STORAGE_KEY = 'selectedStations'
+const STARRED_STORAGE_KEY = 'starredStations'
 
 export const SelectedStationsProvider: React.FC<{
   children: React.ReactNode
@@ -58,6 +63,34 @@ export const SelectedStationsProvider: React.FC<{
     }
     return []
   })
+
+  const [starredStations, setStarredStations] = useState<string[]>(() => {
+    if (typeof window !== 'undefined') {
+      try {
+        const stored = localStorage.getItem(STARRED_STORAGE_KEY)
+        return stored ? JSON.parse(stored) : []
+      } catch {
+        return []
+      }
+    }
+    return []
+  })
+
+  const [highlightedStationName, setHighlightedStationName] = useState<
+    string | null
+  >(null)
+
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      localStorage.setItem(STARRED_STORAGE_KEY, JSON.stringify(starredStations))
+    }
+  }, [starredStations])
+
+  const toggleStarStation = (name: string) => {
+    setStarredStations((prev) =>
+      prev.includes(name) ? prev.filter((n) => n !== name) : [...prev, name]
+    )
+  }
 
   const providerId = useRef(
     `provider-${Date.now()}-${++instanceCounter}`
@@ -188,6 +221,10 @@ export const SelectedStationsProvider: React.FC<{
         selectedStations,
         setSelectedStations,
         toggleStation,
+        starredStations,
+        toggleStarStation,
+        highlightedStationName,
+        setHighlightedStationName,
         debug: {
           providerId,
           instanceCount: instanceCounter,

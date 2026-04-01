@@ -8,6 +8,7 @@ import {
   faCaretRight,
   faMapMarkerAlt,
   faCircle,
+  faStar,
 } from '@fortawesome/free-solid-svg-icons'
 import { useSelectedStations } from './SelectedStationContext'
 import { useMarkers } from './MarkerContext'
@@ -28,6 +29,10 @@ interface TreeItemProps {
   iconColor?: string
   children?: React.ReactNode
   disabled?: boolean
+  isStarred?: boolean
+  onStarClick?: () => void
+  onMouseEnterStar?: () => void
+  onMouseLeaveStar?: () => void
 }
 
 const TreeItem: React.FC<TreeItemProps> = ({
@@ -40,6 +45,10 @@ const TreeItem: React.FC<TreeItemProps> = ({
   iconColor,
   children,
   disabled = false,
+  isStarred,
+  onStarClick,
+  onMouseEnterStar,
+  onMouseLeaveStar,
 }) => {
   const hasChildren = React.Children.count(children) > 0
 
@@ -118,6 +127,28 @@ const TreeItem: React.FC<TreeItemProps> = ({
             )
           ) : null}
           <span className="text-sm font-medium">{label}</span>
+          {onStarClick !== undefined && (
+            <button
+              onClick={(e) => {
+                e.preventDefault()
+                e.stopPropagation()
+                onStarClick()
+              }}
+              onMouseEnter={onMouseEnterStar}
+              onMouseLeave={onMouseLeaveStar}
+              className="ml-2 focus:outline-none"
+              aria-label={isStarred ? 'Unstar station' : 'Star station'}
+              title={isStarred ? 'Remove spotlight' : 'Spotlight on map'}
+            >
+              <FontAwesomeIcon
+                icon={faStar}
+                style={{
+                  color: isStarred ? '#FFD700' : '#9ca3af',
+                  fontSize: '12px',
+                }}
+              />
+            </button>
+          )}
         </label>
       </div>
 
@@ -145,7 +176,13 @@ export const MapLayersListModal: React.FC<{
 }> = ({ onClose, anchorPosition, ...modalProps }) => {
   // Move all hooks to the top level
   const { data: stations } = useStations()
-  const { selectedStations, setSelectedStations } = useSelectedStations()
+  const {
+    selectedStations,
+    setSelectedStations,
+    starredStations,
+    toggleStarStation,
+    setHighlightedStationName,
+  } = useSelectedStations()
   const {
     markers,
     selectedMarkers,
@@ -443,6 +480,12 @@ export const MapLayersListModal: React.FC<{
                       ])
                     }
                   }}
+                  isStarred={starredStations.includes(station.name)}
+                  onStarClick={() => toggleStarStation(station.name)}
+                  onMouseEnterStar={() =>
+                    setHighlightedStationName(station.name)
+                  }
+                  onMouseLeaveStar={() => setHighlightedStationName(null)}
                 />
               ))}
               {Object.keys(stationGroups).length === 0 ? (

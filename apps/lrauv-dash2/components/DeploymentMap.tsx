@@ -129,7 +129,7 @@ const DeploymentMap: React.FC<DeploymentMapProps> = ({
   const [showLayersModal, setShowLayersModal] = useState(false)
   const [showVehicleColors, setShowVehicleColors] = useState(false)
   const [showPlatformsModal, setShowPlatformsModal] = useState(false)
-  const { selectedStations } = useSelectedStations()
+  const { selectedStations, highlightedStationName } = useSelectedStations()
   const [colorModalOpen, setColorModalOpen] = useState(false)
   const [colorModalPosition, setColorModalPosition] = useState<{
     top: number
@@ -683,6 +683,7 @@ const DeploymentMap: React.FC<DeploymentMapProps> = ({
                 name={station.name}
                 lat={lat}
                 lng={lng}
+                isHighlighted={highlightedStationName === station.name}
               />
             )
           })}
