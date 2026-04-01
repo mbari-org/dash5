@@ -450,6 +450,7 @@ export const MapLayersListModal: React.FC<{
           onClose={handleClose}
           snapTo={!modalPosition ? 'top-left' : undefined}
           open
+          allowPointerEventsOnChildren
           fullWidthBody={true}
           style={{
             maxHeight: '70vh',
