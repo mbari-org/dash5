@@ -31,9 +31,7 @@ const useSessionToken = (name: string) => {
   const setSessionToken = (token: string) => {
     console.log(
       '[useSessionToken] setSessionToken — length:',
-      token?.length ?? 0,
-      '| preview:',
-      token ? token.substring(0, 20) + '...' : '(empty)'
+      token?.length ?? 0
     )
     setSessionToken_(token)
     setCookie(name, token, {
@@ -42,13 +40,13 @@ const useSessionToken = (name: string) => {
       Secure:
         typeof window !== 'undefined' && window.location.protocol === 'https:',
     })
-    const verify = getCookie(name)
-    console.log(
-      '[useSessionToken] post-write verify — cookie length:',
-      verify?.length ?? 0,
-      '| match:',
-      verify === token
-    )
+    if (process.env.NODE_ENV !== 'production') {
+      const verify = getCookie(name)
+      console.log(
+        '[useSessionToken] post-write verify — cookie length:',
+        verify?.length ?? 0
+      )
+    }
   }
 
   return { sessionToken, setSessionToken }
