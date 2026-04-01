@@ -23,12 +23,14 @@ export const useRefreshSessionToken = (config: {
       staleTime: 60 * 60 * 1000,
       retry: false,
       onSuccess: (data) => {
-        console.log(
-          '[useRefreshSessionToken] onSuccess — data.token length:',
-          data?.token?.length ?? 0,
-          '| has profile:',
-          !!(data?.firstName || data?.email)
-        )
+        if (process.env.NODE_ENV !== 'production') {
+          console.log(
+            '[useRefreshSessionToken] onSuccess — data.token length:',
+            data?.token?.length ?? 0,
+            '| has profile:',
+            !!(data?.firstName || data?.email)
+          )
+        }
         if (data?.token) {
           // Server issued a new/rotated token — update the cookie.
           setSessionToken(data.token)
@@ -44,9 +46,13 @@ export const useRefreshSessionToken = (config: {
         const status = axios.isAxiosError(err)
           ? err.response?.status
           : undefined
-        console.log('[useRefreshSessionToken] onError — status:', status)
+        if (process.env.NODE_ENV !== 'production') {
+          console.log('[useRefreshSessionToken] onError — status:', status)
+          if (status === 401 || status === 403) {
+            console.warn('[useRefreshSessionToken] 401/403 — clearing token')
+          }
+        }
         if (status === 401 || status === 403) {
-          console.warn('[useRefreshSessionToken] 401/403 — clearing token')
           setSessionToken('')
         }
       },

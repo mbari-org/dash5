@@ -14,14 +14,18 @@ export const useCreateLogin = (config: {
     },
     {
       onSettled: (data, error) => {
-        console.log(
-          '[useCreateLogin] onSettled — token length:',
-          data?.token?.length ?? 0,
-          '| has error:',
-          !!error
-        )
-        if (error) {
-          console.error('[useCreateLogin] login failed, clearing token:', error)
+        if (process.env.NODE_ENV !== 'production') {
+          console.log(
+            '[useCreateLogin] onSettled — token length:',
+            data?.token?.length ?? 0,
+            '| has error:',
+            !!error
+          )
+          if (error) {
+            const message =
+              error instanceof Error ? error.message : 'login request failed'
+            console.error('[useCreateLogin] login failed:', message)
+          }
         }
         setSessionToken(data?.token ?? '')
       },

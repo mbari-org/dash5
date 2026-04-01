@@ -13,26 +13,31 @@ const useSessionToken = (name: string) => {
 
   useEffect(() => {
     const stored = getCookie(name)
-    console.log(
-      '[useSessionToken] hydrate — raw cookie length:',
-      stored?.length ?? 0,
-      '| has value:',
-      stored?.length > 0
-    )
+    if (process.env.NODE_ENV !== 'production') {
+      console.log(
+        '[useSessionToken] hydrate — cookie length:',
+        stored?.length ?? 0,
+        '| has value:',
+        stored?.length > 0
+      )
+      if (!stored) {
+        console.warn(
+          '[useSessionToken] cookie is empty on hydrate — user will see login page'
+        )
+      }
+    }
     if (stored) {
       setSessionToken_(stored)
-    } else {
-      console.warn(
-        '[useSessionToken] cookie is empty on hydrate — user will see login page'
-      )
     }
   }, [name])
 
   const setSessionToken = (token: string) => {
-    console.log(
-      '[useSessionToken] setSessionToken — length:',
-      token?.length ?? 0
-    )
+    if (process.env.NODE_ENV !== 'production') {
+      console.log(
+        '[useSessionToken] setSessionToken — length:',
+        token?.length ?? 0
+      )
+    }
     setSessionToken_(token)
     setCookie(name, token, {
       days: 7,
