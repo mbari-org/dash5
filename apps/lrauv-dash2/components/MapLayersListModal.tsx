@@ -143,8 +143,8 @@ const TreeItem: React.FC<TreeItemProps> = ({
                   : 'Click to enable spotlight'
               }
               style={{
-                width: '20px',
-                height: '20px',
+                width: '22px',
+                height: '22px',
                 flexShrink: 0,
                 borderRadius: '50%',
                 background: 'transparent',
@@ -160,8 +160,8 @@ const TreeItem: React.FC<TreeItemProps> = ({
               <FontAwesomeIcon
                 icon={faStar}
                 style={{
-                  color: isStarred ? '#FFD700' : '#9ca3af',
-                  fontSize: '10px',
+                  color: isStarred ? '#F57C00' : '#9ca3af',
+                  fontSize: '14px',
                 }}
               />
             </button>
