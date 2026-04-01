@@ -9,7 +9,7 @@ import {
   faMapMarkerAlt,
   faCircle,
   faStar,
-  faCompress,
+  faArrowsToCircle,
 } from '@fortawesome/free-solid-svg-icons'
 import { useSelectedStations } from './SelectedStationContext'
 import { useMarkers } from './MarkerContext'
@@ -196,7 +196,7 @@ const TreeItem: React.FC<TreeItemProps> = ({
               }}
             >
               <FontAwesomeIcon
-                icon={faCompress}
+                icon={faArrowsToCircle}
                 style={{ color: '#6b7280', fontSize: '16px' }}
               />
             </button>
