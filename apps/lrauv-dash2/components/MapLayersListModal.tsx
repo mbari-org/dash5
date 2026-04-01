@@ -263,7 +263,26 @@ export const MapLayersListModal: React.FC<{
   const [modalPosition, setModalPosition] = useState<
     { top: number; left: number } | undefined
   >(anchorPosition)
+  const [isFadingOut, setIsFadingOut] = useState(false)
   const modalRef = useRef<HTMLDivElement>(null)
+
+  const handleClose = useCallback(() => {
+    setIsFadingOut(true)
+    setTimeout(() => {
+      onClose()
+    }, 250)
+  }, [onClose])
+
+  // Click-outside to dismiss
+  useEffect(() => {
+    const handleMouseDown = (e: MouseEvent) => {
+      if (modalRef.current && !modalRef.current.contains(e.target as Node)) {
+        handleClose()
+      }
+    }
+    document.addEventListener('mousedown', handleMouseDown)
+    return () => document.removeEventListener('mousedown', handleMouseDown)
+  }, [handleClose])
 
   useEffect(() => {
     if (!anchorPosition || !modalRef.current) return
@@ -410,188 +429,193 @@ export const MapLayersListModal: React.FC<{
 
   return (
     <>
-      <Modal
-        title={
-          <div>
-            <div className="md text-align-center font-italic bg-white text-sm text-gray-400">
-              <i>Select the map layers to display</i>
-              <br />
-              <br />
-              <br />
-            </div>
-            <div className="flex items-center justify-between">
-              <div className="stations text-align-center mb-2 bg-white text-lg font-bold underline">
-                MAP LAYERS
+      <div ref={modalRef}>
+        <Modal
+          title={
+            <div>
+              <div className="md text-align-center font-italic bg-white text-sm text-gray-400">
+                <i>Select the map layers to display</i>
+                <br />
+                <br />
+                <br />
+              </div>
+              <div className="flex items-center justify-between">
+                <div className="stations text-align-center mb-2 bg-white text-lg font-bold underline">
+                  MAP LAYERS
+                </div>
               </div>
             </div>
-          </div>
-        }
-        confirmButtonText="Close"
-        onClose={onClose}
-        snapTo={!modalPosition ? 'top-left' : undefined}
-        open
-        fullWidthBody={true}
-        style={{
-          maxHeight: '70vh',
-          background: '#ffffff',
-          color: 'blue',
-          position: modalPosition ? 'fixed' : undefined,
-          top: modalPosition ? `${modalPosition.top}px` : undefined,
-          left: modalPosition ? `${modalPosition.left}px` : undefined,
-          zIndex: 1000,
-          display: 'flex',
-          flexDirection: 'column',
-          overflow: 'hidden',
-          width: 'auto',
-          minWidth: '350px',
-          paddingBottom: '0px',
-          paddingTop: '10px',
-          marginBottom: '0px',
-          marginTop: '0px',
-        }}
-        className="m-0 p-0"
-      >
-        <div
-          ref={modalRef}
-          className="custom-scrollbar flex-grow"
+          }
+          confirmButtonText="Close"
+          onClose={handleClose}
+          snapTo={!modalPosition ? 'top-left' : undefined}
+          open
+          fullWidthBody={true}
           style={{
-            overflowY: 'auto',
-            background: '#e3f2fd',
-            padding: '10px',
-            width: '100%',
-            margin: '0px 0px 20px 0px',
-            borderRadius: '4px',
-            minHeight: '0',
-            maxHeight: 'calc(70vh - 160px)',
-          }}
-        >
-          {/* Main tree structure */}
-          <div className="tree-view">
-            {/* Markers Section */}
-            <TreeItem
-              label="Markers"
-              isExpanded={expandedSections.markers}
-              isChecked={
-                selectedMarkers.length === layerMarkers.length &&
-                layerMarkers.length > 0
-              }
-              onToggleExpand={() => toggleExpanded('markers')}
-              onToggleCheck={
-                layerMarkers.length > 0
-                  ? handleToggleSelectAllMarkers
-                  : undefined
-              }
-              icon={faMapMarkerAlt}
-              iconColor="red"
-              disabled={layerMarkers.length === 0}
-            >
-              {layerMarkers.map((marker) => (
-                <TreeItem
-                  key={`marker-${marker.id}`}
-                  label={marker.label || `Marker ${marker.id}`}
-                  isChecked={marker.visible !== false}
-                  onToggleCheck={() =>
-                    toggleMarkerVisibility(marker.id.toString())
-                  }
-                  icon={faMapMarkerAlt}
-                  iconColor="red"
-                />
-              ))}
-              {layerMarkers.length === 0 && (
-                <div className="py-2 pl-10 text-sm italic text-gray-500">
-                  No markers saved to layers
-                </div>
-              )}
-            </TreeItem>
-
-            {/* Stations Section */}
-            <TreeItem
-              label="Stations"
-              isExpanded={expandedSections.stations}
-              isChecked={
-                selectedStations.length === stations?.length &&
-                stations?.length > 0
-              }
-              onToggleExpand={() => toggleExpanded('stations')}
-              onToggleCheck={handleToggleSelectAllStations}
-              icon={faCircle}
-              iconColor="white"
-            >
-              {/* Render individual stations without the grouping layer */}
-              {stations?.map((station) => (
-                <TreeItem
-                  key={`station-${station.name}`}
-                  label={station.name}
-                  isChecked={isStationSelected(station.name)}
-                  onToggleCheck={() => {
-                    if (isStationSelected(station.name)) {
-                      setSelectedStations(
-                        selectedStations.filter((s) => s.name !== station.name)
-                      )
-                    } else {
-                      setSelectedStations([
-                        ...selectedStations,
-                        {
-                          name: station.name,
-                          geojson: station.geojson,
-                          lat: station.geojson.geometry.coordinates[1],
-                          lon: station.geojson.geometry.coordinates[0],
-                        },
-                      ])
-                    }
-                  }}
-                  isStarred={starredStations.includes(station.name)}
-                  onStarClick={() => toggleStarStation(station.name)}
-                  onMouseEnterStar={() => {
-                    if (starredStations.includes(station.name)) {
-                      setHighlightedStationName(station.name)
-                    }
-                  }}
-                  onMouseLeaveStar={() => setHighlightedStationName(null)}
-                  onCenterClick={() =>
-                    setFlyToRequest({
-                      lat: station.geojson.geometry.coordinates[1],
-                      lon: station.geojson.geometry.coordinates[0],
-                    })
-                  }
-                />
-              ))}
-              {Object.keys(stationGroups).length === 0 ? (
-                <div className="py-2 pl-10 text-sm italic text-gray-500">
-                  No stations available
-                </div>
-              ) : null}
-            </TreeItem>
-          </div>
-        </div>
-        {/* Footer placed inside the modal content */}
-        <div
-          className="border-t border-gray-200 bg-white"
-          style={{
-            padding: '8px 0',
+            maxHeight: '70vh',
+            background: '#ffffff',
+            color: 'blue',
+            position: modalPosition ? 'fixed' : undefined,
+            top: modalPosition ? `${modalPosition.top}px` : undefined,
+            left: modalPosition ? `${modalPosition.left}px` : undefined,
+            zIndex: 1000,
+            display: 'flex',
+            flexDirection: 'column',
+            overflow: 'hidden',
             width: 'auto',
-            background: '#e3f2fd',
-            marginRight: '0px',
-            marginLeft: '0px',
-            marginBottom: '0',
-            borderRadius: '4px',
-            flexShrink: 0,
-            height: '60px',
+            minWidth: '350px',
+            paddingBottom: '0px',
+            paddingTop: '10px',
+            opacity: isFadingOut ? 0 : 1,
+            transition: 'opacity 0.25s ease-out',
+            marginBottom: '0px',
+            marginTop: '0px',
           }}
+          className="m-0 p-0"
         >
-          <div className="flex justify-end pr-3">
-            <button
-              onClick={onClose}
-              className="rounded bg-blue-500 px-4 py-2 text-white hover:bg-blue-800"
-              style={{
-                marginRight: '20px',
-              }}
-            >
-              Close
-            </button>
+          <div
+            className="custom-scrollbar flex-grow"
+            style={{
+              overflowY: 'auto',
+              background: '#e3f2fd',
+              padding: '10px',
+              width: '100%',
+              margin: '0px 0px 20px 0px',
+              borderRadius: '4px',
+              minHeight: '0',
+              maxHeight: 'calc(70vh - 160px)',
+            }}
+          >
+            {/* Main tree structure */}
+            <div className="tree-view">
+              {/* Markers Section */}
+              <TreeItem
+                label="Markers"
+                isExpanded={expandedSections.markers}
+                isChecked={
+                  selectedMarkers.length === layerMarkers.length &&
+                  layerMarkers.length > 0
+                }
+                onToggleExpand={() => toggleExpanded('markers')}
+                onToggleCheck={
+                  layerMarkers.length > 0
+                    ? handleToggleSelectAllMarkers
+                    : undefined
+                }
+                icon={faMapMarkerAlt}
+                iconColor="red"
+                disabled={layerMarkers.length === 0}
+              >
+                {layerMarkers.map((marker) => (
+                  <TreeItem
+                    key={`marker-${marker.id}`}
+                    label={marker.label || `Marker ${marker.id}`}
+                    isChecked={marker.visible !== false}
+                    onToggleCheck={() =>
+                      toggleMarkerVisibility(marker.id.toString())
+                    }
+                    icon={faMapMarkerAlt}
+                    iconColor="red"
+                  />
+                ))}
+                {layerMarkers.length === 0 && (
+                  <div className="py-2 pl-10 text-sm italic text-gray-500">
+                    No markers saved to layers
+                  </div>
+                )}
+              </TreeItem>
+
+              {/* Stations Section */}
+              <TreeItem
+                label="Stations"
+                isExpanded={expandedSections.stations}
+                isChecked={
+                  selectedStations.length === stations?.length &&
+                  stations?.length > 0
+                }
+                onToggleExpand={() => toggleExpanded('stations')}
+                onToggleCheck={handleToggleSelectAllStations}
+                icon={faCircle}
+                iconColor="white"
+              >
+                {/* Render individual stations without the grouping layer */}
+                {stations?.map((station) => (
+                  <TreeItem
+                    key={`station-${station.name}`}
+                    label={station.name}
+                    isChecked={isStationSelected(station.name)}
+                    onToggleCheck={() => {
+                      if (isStationSelected(station.name)) {
+                        setSelectedStations(
+                          selectedStations.filter(
+                            (s) => s.name !== station.name
+                          )
+                        )
+                      } else {
+                        setSelectedStations([
+                          ...selectedStations,
+                          {
+                            name: station.name,
+                            geojson: station.geojson,
+                            lat: station.geojson.geometry.coordinates[1],
+                            lon: station.geojson.geometry.coordinates[0],
+                          },
+                        ])
+                      }
+                    }}
+                    isStarred={starredStations.includes(station.name)}
+                    onStarClick={() => toggleStarStation(station.name)}
+                    onMouseEnterStar={() => {
+                      if (starredStations.includes(station.name)) {
+                        setHighlightedStationName(station.name)
+                      }
+                    }}
+                    onMouseLeaveStar={() => setHighlightedStationName(null)}
+                    onCenterClick={() =>
+                      setFlyToRequest({
+                        lat: station.geojson.geometry.coordinates[1],
+                        lon: station.geojson.geometry.coordinates[0],
+                      })
+                    }
+                  />
+                ))}
+                {Object.keys(stationGroups).length === 0 ? (
+                  <div className="py-2 pl-10 text-sm italic text-gray-500">
+                    No stations available
+                  </div>
+                ) : null}
+              </TreeItem>
+            </div>
           </div>
-        </div>
-      </Modal>
+          {/* Footer placed inside the modal content */}
+          <div
+            className="border-t border-gray-200 bg-white"
+            style={{
+              padding: '8px 0',
+              width: 'auto',
+              background: '#e3f2fd',
+              marginRight: '0px',
+              marginLeft: '0px',
+              marginBottom: '0',
+              borderRadius: '4px',
+              flexShrink: 0,
+              height: '60px',
+            }}
+          >
+            <div className="flex justify-end pr-3">
+              <button
+                onClick={onClose}
+                className="rounded bg-blue-500 px-4 py-2 text-white hover:bg-blue-800"
+                style={{
+                  marginRight: '20px',
+                }}
+              >
+                Close
+              </button>
+            </div>
+          </div>
+        </Modal>
+      </div>
     </>
   )
 }
