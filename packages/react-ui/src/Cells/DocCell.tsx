@@ -48,13 +48,6 @@ export const DocCell: React.FC<DocCellProps> = ({
   docId,
 }) => {
   const moreButtonRef = useRef<HTMLDivElement | null>(null)
-  const labelAsArray = label.split(' ')
-  const truncatedLabel = labelAsArray
-    .filter((word, i) => {
-      if (i < 3) return word
-      if (labelAsArray[2] === '-' && i === 3) return word
-    })
-    .join(' ')
 
   const handleMoreClick = () => {
     onMoreClick(
@@ -75,7 +68,7 @@ export const DocCell: React.FC<DocCellProps> = ({
             className="w-full truncate text-left font-light text-primary-600"
             onClick={swallow(onSelect)}
           >
-            {truncatedLabel}
+            {label}
           </button>
           <ul className="flex flex-col">
             {attachments?.map((attachment) => (

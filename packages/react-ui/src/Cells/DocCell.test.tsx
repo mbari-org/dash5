@@ -47,3 +47,11 @@ test('should render the more options button', async () => {
 
   expect(screen.getByLabelText(/more options/i)).toBeInTheDocument()
 })
+
+test('should render full long multi-word label text', async () => {
+  const longLabel =
+    'Pre deployment engineering maintenance log with extended diagnostics and checks'
+  render(<DocCell {...props} label={longLabel} />)
+
+  expect(screen.getByRole('button', { name: longLabel })).toBeInTheDocument()
+})
