@@ -161,6 +161,7 @@ const statusPillStyle = (status?: string): React.CSSProperties => {
         borderColor: '#86efac',
       }
     case 'pending':
+    case 'tbd':
       return {
         backgroundColor: '#f5f5f4',
         color: '#44403c',
@@ -327,7 +328,9 @@ export const ScheduleEventDetailsModal: React.FC<
                 className={statusPillClass(event.status)}
                 style={statusPillStyle(event.status)}
               >
-                {event.status || 'unknown'}
+                {event.status?.toLowerCase() === 'tbd'
+                  ? 'Pending'
+                  : event.status || 'unknown'}
               </span>
             </div>
           </div>
