@@ -9,7 +9,7 @@ import {
   faMapMarkerAlt,
   faCircle,
   faStar,
-  faCrosshairs,
+  faCompress,
 } from '@fortawesome/free-solid-svg-icons'
 import { useSelectedStations } from './SelectedStationContext'
 import { useMarkers } from './MarkerContext'
@@ -196,7 +196,7 @@ const TreeItem: React.FC<TreeItemProps> = ({
               }}
             >
               <FontAwesomeIcon
-                icon={faCrosshairs}
+                icon={faCompress}
                 style={{ color: '#6b7280', fontSize: '12px' }}
               />
             </button>
