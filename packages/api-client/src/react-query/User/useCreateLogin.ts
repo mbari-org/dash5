@@ -13,7 +13,16 @@ export const useCreateLogin = (config: {
       return createLogin(params, { instance })
     },
     {
-      onSettled: data => {
+      onSettled: (data, error) => {
+        console.log(
+          '[useCreateLogin] onSettled — token length:',
+          data?.token?.length ?? 0,
+          '| has error:',
+          !!error
+        )
+        if (error) {
+          console.error('[useCreateLogin] login failed, clearing token:', error)
+        }
         setSessionToken(data?.token ?? '')
       },
     }
