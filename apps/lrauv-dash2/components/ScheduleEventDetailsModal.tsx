@@ -2,9 +2,63 @@ import { Modal } from '@mbari/react-ui'
 import { DateTime } from 'luxon'
 import { useRouter } from 'next/router'
 import { capitalize } from '@mbari/utils'
-import { useState } from 'react'
+import { useState, useCallback } from 'react'
 import useGlobalModalId from '../lib/useGlobalModalId'
 import useCurrentDeployment from '../lib/useCurrentDeployment'
+
+const CopyButton: React.FC<{ getText: () => string }> = ({ getText }) => {
+  const [copied, setCopied] = useState(false)
+  const [hovered, setHovered] = useState(false)
+
+  const handleCopy = useCallback(() => {
+    navigator.clipboard.writeText(getText()).then(() => {
+      setCopied(true)
+      setTimeout(() => setCopied(false), 2000)
+    })
+  }, [getText])
+
+  return (
+    <span className="relative ml-auto inline-flex items-center">
+      <button
+        type="button"
+        onClick={handleCopy}
+        onMouseEnter={() => setHovered(true)}
+        onMouseLeave={() => setHovered(false)}
+        className="rounded p-0.5 text-stone-400 hover:bg-stone-200 hover:text-stone-600 focus:outline-none"
+        aria-label="Copy to clipboard"
+      >
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          className="h-4 w-4"
+          fill="none"
+          viewBox="0 0 24 24"
+          stroke="currentColor"
+          strokeWidth={1.8}
+        >
+          <rect
+            x="9"
+            y="9"
+            width="13"
+            height="13"
+            rx="2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          />
+          <path
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"
+          />
+        </svg>
+      </button>
+      {(hovered || copied) && (
+        <span className="pointer-events-none absolute right-full top-1/2 mr-1.5 -translate-y-1/2 whitespace-nowrap rounded bg-stone-700 px-2 py-0.5 text-[11px] text-white shadow">
+          {copied ? 'Copied!' : 'Copy'}
+        </span>
+      )}
+    </span>
+  )
+}
 
 export interface ScheduleEventDetailsModalProps {
   onClose: () => void
@@ -16,6 +70,49 @@ const formatTime = (unixTime?: number) => {
   return `${dt.toFormat('MMM d, yyyy HH:mm:ss')} (${
     dt.toRelative() ?? 'just now'
   })`
+}
+
+const TimeBlock: React.FC<{ unixTime?: number }> = ({ unixTime }) => {
+  if (unixTime == null) return <span>N/A</span>
+  const dt = DateTime.fromMillis(unixTime)
+  return (
+    <>
+      <span>{dt.toFormat('MMM d, yyyy HH:mm:ss')}</span>
+      <br />
+      <span className="text-stone-500">({dt.toRelative() ?? 'just now'})</span>
+    </>
+  )
+}
+
+const formatScheduleDate = (scheduleDate?: string): string => {
+  if (!scheduleDate) return 'N/A'
+  if (scheduleDate.toLowerCase() === 'asap') return 'ASAP'
+  const match = scheduleDate.match(/^(\d{4})(\d{2})(\d{2})}T(\d{2})(\d{2})$/)
+  if (!match) return scheduleDate
+  const utc = DateTime.fromObject(
+    {
+      year: parseInt(match[1]),
+      month: parseInt(match[2]),
+      day: parseInt(match[3]),
+      hour: parseInt(match[4]),
+      minute: parseInt(match[5]),
+    },
+    { zone: 'utc' }
+  ).toLocal()
+  return `${utc.toFormat('MMM d, yyyy HH:mm')} (local)`
+}
+
+const formatVia = (via?: 'cell' | 'sat' | 'cellsat'): string => {
+  switch (via) {
+    case 'cell':
+      return 'Cell'
+    case 'sat':
+      return 'Satellite'
+    case 'cellsat':
+      return 'Cell + Satellite'
+    default:
+      return 'N/A'
+  }
 }
 
 const splitCommandSegments = (value?: string) => {
@@ -99,6 +196,21 @@ export const ScheduleEventDetailsModal: React.FC<
     .join(' ')
   const headerTitle = `${vehicleDeployment} - Mission Details`
   const segments = splitCommandSegments(event.eventData || event.eventText)
+  const cleanLabel =
+    (event.label || 'Unknown')
+      .replace(/\d{8}}T\d{4}\s*/g, '')
+      .replace(/^["'\s]+/, '')
+      .replace(/^load\s+/i, '')
+      .replace(/\.(tl|xml|py)$/i, '')
+      .trim() || 'Unknown'
+
+  const isScheduledStart =
+    !!event.scheduleDate && event.scheduleDate.toLowerCase() !== 'asap'
+  const isActiveOrDone = ['running', 'completed', 'cancelled'].includes(
+    event.status?.toLowerCase() ?? ''
+  )
+  const startedLabel =
+    isScheduledStart && !isActiveOrDone ? 'Queued' : 'Started'
 
   return (
     <Modal
@@ -108,7 +220,7 @@ export const ScheduleEventDetailsModal: React.FC<
       allowPointerEventsOnChildren
       onClose={onClose}
       title={headerTitle}
-      className="md:max-w-3xl lg:max-w-4xl"
+      className="w-[90vw] max-w-5xl"
       headerClassName="!items-center"
       headerStyle={{ backgroundColor: '#BFDBFE' }}
       dragButtonClassName="!ml-0 !my-0 !rounded-none !bg-transparent !bg-opacity-0 hover:!bg-transparent hover:!bg-opacity-0 !items-center"
@@ -126,16 +238,18 @@ export const ScheduleEventDetailsModal: React.FC<
       closeButtonStyle={{ color: '#0369A1' }}
       style={{ maxHeight: '80vh' }}
     >
-      <div className="space-y-4 text-sm text-stone-800">
+      <div className="space-y-4 text-base text-stone-900">
         <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
-          <div>
-            <p className="text-xs uppercase tracking-wide text-stone-500">
+          <div className="min-w-0">
+            <p className="text-sm uppercase tracking-wide text-stone-500">
               Name
             </p>
-            <p className="break-all font-medium">{event.label || 'Unknown'}</p>
+            <p className="font-medium whitespace-nowrap overflow-hidden text-ellipsis">
+              {cleanLabel}
+            </p>
           </div>
           <div>
-            <div className="flex items-center text-xs tracking-wide text-stone-500">
+            <div className="flex items-center text-sm tracking-wide text-stone-500">
               <span className="uppercase">Status</span>
               <span className="relative ml-1 inline-flex align-middle">
                 <button
@@ -152,9 +266,8 @@ export const ScheduleEventDetailsModal: React.FC<
                 </button>
                 {showStatusTooltip && (
                   <div
-                    className="leading-3.5 pointer-events-none absolute left-full top-0 z-[9999] ml-2 -translate-y-2/3 rounded border px-3 py-2 text-[11px] normal-case text-stone-700 shadow-lg"
+                    className="pointer-events-none absolute left-0 top-full z-[9999] mt-1 w-64 -translate-x-1/2 rounded border px-3 py-2 text-xs normal-case leading-relaxed text-stone-700 shadow-lg"
                     style={{
-                      width: 'calc(28rem - 30px)',
                       borderColor: '#bae6fd',
                       backgroundColor: '#fffbeb',
                     }}
@@ -164,7 +277,8 @@ export const ScheduleEventDetailsModal: React.FC<
                       executing.
                     </p>
                     <p className="mt-1 normal-case">
-                      <strong>Pending</strong>: queued and waiting to run.
+                      <strong>Pending</strong>: queued and waiting to run at the
+                      scheduled time.
                     </p>
                     <p className="mt-1 normal-case">
                       <strong>Completed</strong>: finished normally.
@@ -192,13 +306,21 @@ export const ScheduleEventDetailsModal: React.FC<
             </div>
           </div>
           <div>
-            <p className="text-xs uppercase tracking-wide text-stone-500">
-              Started
+            <p
+              className={`text-sm uppercase tracking-wide ${
+                isScheduledStart && !isActiveOrDone
+                  ? 'text-sky-600'
+                  : 'text-stone-500'
+              }`}
+            >
+              {startedLabel}
             </p>
-            <p className="font-medium">{formatTime(event.startedAt)}</p>
+            <p className="font-medium">
+              <TimeBlock unixTime={event.startedAt} />
+            </p>
           </div>
           <div>
-            <div className="flex items-center text-xs tracking-wide text-stone-500">
+            <div className="flex items-center text-sm tracking-wide text-stone-500">
               <span className="uppercase">Ended</span>
               <span className="relative ml-1 inline-flex align-middle">
                 <button
@@ -215,9 +337,8 @@ export const ScheduleEventDetailsModal: React.FC<
                 </button>
                 {showEndedTooltip && (
                   <div
-                    className="leading-3.5 pointer-events-none absolute left-full top-0 z-[9999] ml-2 -translate-y-2/3 rounded border px-3 py-2 text-[11px] normal-case text-stone-700 shadow-lg"
+                    className="pointer-events-none absolute left-0 top-full z-[9999] mt-1 w-64 -translate-x-1/2 rounded border px-3 py-2 text-xs normal-case leading-relaxed text-stone-700 shadow-lg"
                     style={{
-                      width: 'calc(28rem - 30px)',
                       borderColor: '#bae6fd',
                       backgroundColor: '#fffbeb',
                     }}
@@ -238,32 +359,61 @@ export const ScheduleEventDetailsModal: React.FC<
                 )}
               </span>
             </div>
-            <p className="font-medium">
-              {event.status === 'running' || event.status === 'pending'
-                ? 'TBD'
-                : formatTime(event.endedAt)}
-            </p>
+            <div className="mt-0.5">
+              {!['completed', 'cancelled'].includes(
+                event.status?.toLowerCase() ?? ''
+              ) ? (
+                <span
+                  className={statusPillClass()}
+                  style={statusPillStyle('pending')}
+                >
+                  TBD
+                </span>
+              ) : (
+                <p className="font-medium">
+                  <TimeBlock unixTime={event.endedAt} />
+                </p>
+              )}
+            </div>
           </div>
           <div>
-            <p className="text-xs uppercase tracking-wide text-stone-500">
+            <p className="text-sm uppercase tracking-wide text-stone-500">
               Type
             </p>
             <p className="font-medium">{event.commandType}</p>
           </div>
           <div>
-            <p className="text-xs uppercase tracking-wide text-stone-500">
+            <p className="text-sm uppercase tracking-wide text-stone-500">
               Vehicle
             </p>
             <p className="font-medium">{event.vehicleName || 'n/a'}</p>
           </div>
           <div>
-            <p className="text-xs uppercase tracking-wide text-stone-500">
+            <p
+              className={`text-sm uppercase tracking-wide ${
+                isScheduledStart ? 'text-sky-600' : 'text-stone-500'
+              }`}
+            >
+              Scheduled Start
+            </p>
+            <p className="font-medium">
+              {formatScheduleDate(event.scheduleDate)}
+            </p>
+          </div>
+          <div>
+            <p className="text-sm uppercase tracking-wide text-stone-500">
+              Send Via
+            </p>
+            <p className="font-medium">{formatVia(event.via)}</p>
+          </div>
+          <div>
+            <p className="text-sm uppercase tracking-wide text-stone-500">
               Operator
             </p>
             <p className="font-medium">{event.user || 'Unknown'}</p>
           </div>
           <div>
-            <p className="text-xs uppercase tracking-wide text-stone-500">
+            <p className="text-sm uppercase tracking-wide text-stone-500">
               Event ID
             </p>
             <p className="font-medium">{event.eventId}</p>
@@ -271,17 +421,17 @@ export const ScheduleEventDetailsModal: React.FC<
         </div>
 
         <div>
-          <p className="text-xs uppercase tracking-wide text-stone-500">
+          <p className="text-sm uppercase tracking-wide text-stone-500">
             Summary Parameters
           </p>
-          <p className="mt-1 rounded border border-stone-200 bg-stone-50 p-2 font-mono text-xs">
+          <p className="mt-1 rounded border border-stone-300 bg-stone-100 p-2 font-mono text-sm text-stone-900">
             {event.secondary || 'No parsed parameters available'}
           </p>
         </div>
 
         {!!event.note && (
           <div>
-            <p className="text-xs uppercase tracking-wide text-stone-500">
+            <p className="text-sm uppercase tracking-wide text-stone-500">
               Note
             </p>
             <p className="mt-1 rounded border border-stone-200 bg-stone-50 p-2">
@@ -292,10 +442,13 @@ export const ScheduleEventDetailsModal: React.FC<
 
         {segments.length > 0 && (
           <div>
-            <p className="text-xs uppercase tracking-wide text-stone-500">
-              Parsed Command Segments
-            </p>
-            <ul className="mt-1 max-h-36 space-y-1 overflow-auto rounded border border-stone-200 bg-stone-50 p-2 font-mono text-xs">
+            <div className="flex items-center">
+              <p className="text-sm uppercase tracking-wide text-stone-500">
+                Parsed Command Segments
+              </p>
+              <CopyButton getText={() => segments.join('\n')} />
+            </div>
+            <ul className="mt-1 max-h-36 space-y-1 overflow-auto rounded border border-stone-300 bg-stone-100 p-2 font-mono text-sm text-stone-900">
               {segments.map((segment) => (
                 <li key={segment} className="break-all">
                   {segment}
@@ -306,10 +459,15 @@ export const ScheduleEventDetailsModal: React.FC<
         )}
 
         <div>
-          <p className="text-xs uppercase tracking-wide text-stone-500">
-            Raw Payload
-          </p>
-          <pre className="mt-1 max-h-48 overflow-auto whitespace-pre-wrap break-all rounded border border-stone-200 bg-stone-50 p-2 font-mono text-xs">
+          <div className="flex items-center">
+            <p className="text-sm uppercase tracking-wide text-stone-500">
+              Raw Payload
+            </p>
+            <CopyButton
+              getText={() => event.eventData || event.eventText || ''}
+            />
+          </div>
+          <pre className="mt-1 max-h-48 overflow-auto whitespace-pre-wrap break-all rounded border border-stone-300 bg-stone-100 p-2 font-mono text-sm text-stone-900">
             {event.eventData || event.eventText || 'No payload available'}
           </pre>
         </div>

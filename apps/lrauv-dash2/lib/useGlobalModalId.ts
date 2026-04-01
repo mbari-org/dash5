@@ -59,6 +59,8 @@ export interface GlobalModalMetaData {
     startedAt?: number
     endedAt?: number
     vehicleName?: string
+    scheduleDate?: string
+    via?: 'cell' | 'sat' | 'cellsat'
   } | null
 }
 

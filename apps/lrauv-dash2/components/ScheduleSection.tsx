@@ -21,6 +21,7 @@ import {
   useDeploymentCommandStatus,
   useInfiniteEvents,
   useMissionStartedEvent,
+  getVia,
 } from '@mbari/api-client'
 import useGlobalModalId from '../lib/useGlobalModalId'
 import {
@@ -404,6 +405,13 @@ export const ScheduleSection: React.FC<ScheduleSectionProps> = ({
     const cellCommandType: 'mission' | 'command' = isMission
       ? 'mission'
       : 'command'
+    const rawText = mission?.event.data ?? mission?.event.text ?? ''
+    const schedDateMatch = rawText.match(/sched\s+(\d{8}}T\d{4})/)
+    const scheduleDate = rawText.match(/sched\s+asap/i)
+      ? 'asap'
+      : schedDateMatch
+      ? schedDateMatch[1]
+      : undefined
 
     return mission ? (
       <ScheduleCell
@@ -449,6 +457,8 @@ export const ScheduleSection: React.FC<ScheduleSectionProps> = ({
                 startedAt: mission.event.unixTime,
                 endedAt: mission.endedAt,
                 vehicleName,
+                scheduleDate,
+                via: getVia(mission.event.note) ?? undefined,
               },
             },
           })
