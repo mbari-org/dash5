@@ -27,6 +27,9 @@ import useGlobalModalId from '../lib/useGlobalModalId'
 import {
   missionNameFromStartedText,
   missionNameFromEventData,
+  missionPathFromEventData,
+  normalizeMissionName,
+  normalizeMissionPath,
 } from '../lib/missionUtils'
 import { toast } from 'react-hot-toast'
 
@@ -66,6 +69,16 @@ const toScheduleCellStatus = (status: string): ScheduleCellStatus =>
     ? (status as ScheduleCellStatus)
     : 'completed'
 
+const missionKeysMatch = (leftPath: string, rightPath: string) => {
+  if (!leftPath || !rightPath) return false
+  const leftHasPath = leftPath.includes('/')
+  const rightHasPath = rightPath.includes('/')
+
+  if (leftHasPath && rightHasPath) return leftPath === rightPath
+
+  return normalizeMissionName(leftPath) === normalizeMissionName(rightPath)
+}
+
 export const parseMissionCommand = (name: string) => {
   const info = name
     .split(' ')
@@ -87,16 +100,11 @@ export const isMissionCommand = (
   commandText?: string
 ): boolean => {
   const text = commandText || commandData || ''
-  // Check if it contains "load" followed by a mission file (.xml or .tl) and "run"
-  const hasLoad = /\bload\s+[A-Za-z0-9_/]+\.(?:xml|tl)/i.test(text)
+  // Accept load paths with or without file extension.
+  const hasLoad = /\bload\s+[A-Za-z0-9_/.-]+(?:\.(?:xml|tl))?\b/i.test(text)
   const hasRun = /\brun\b/i.test(text)
   return hasLoad && hasRun
 }
-
-export {
-  missionNameFromStartedText,
-  missionNameFromEventData,
-} from '../lib/missionUtils'
 
 export const ScheduleSection: React.FC<ScheduleSectionProps> = ({
   currentDeploymentId,
@@ -181,47 +189,114 @@ export const ScheduleSection: React.FC<ScheduleSectionProps> = ({
       }))
     }
 
-    // Enrich each item's status and endedAt from the mission-started timeline.
-    // For missions with the same name that ran multiple times, we match using
-    // the closest timeline entry whose startedAt is within 5 minutes of the
-    // event's unixTime.
-    const MATCH_WINDOW_MS = 5 * 60 * 1000
+    // Enrich each item's status/endedAt from mission-started events.
+    // Priority:
+    // 1) interval containment (startedAt <= eventTime < endedAt) for exact runs
+    // 2) nearest-by-time within a small window as conservative fallback
+    //
+    // For pre-queued missions (sched TIMESTAMP "..."), use the scheduled start
+    // time as the reference point instead of the command send time, since the
+    // vehicle won't start until that time and the match window would otherwise
+    // be too far off.
+    const MATCH_WINDOW_MS = 10 * 60 * 1000
+
+    const parseScheduledUnixTime = (
+      data?: string,
+      text?: string
+    ): number | undefined => {
+      const raw = data ?? text ?? ''
+      // Format: 20260401}T0600 or 20260331T18 or 20260331T1800 (UTC)
+      const m =
+        raw.match(/sched\s+(\d{4})(\d{2})(\d{2})}T(\d{2})(\d{2})/) ||
+        raw.match(/sched\s+(\d{4})(\d{2})(\d{2})T(\d{2})(\d{2})?/)
+      if (!m) return undefined
+      const dt = DateTime.fromObject(
+        {
+          year: parseInt(m[1]),
+          month: parseInt(m[2]),
+          day: parseInt(m[3]),
+          hour: parseInt(m[4]),
+          minute: m[5] ? parseInt(m[5]) : 0,
+        },
+        { zone: 'utc' }
+      )
+      return dt.isValid ? dt.toMillis() : undefined
+    }
+
     const enriched = items.map((item) => {
       if (item.status !== 'TBD') return item
-      const missionName = missionNameFromEventData(item.event.data)
-      if (!missionName || item.event.unixTime == null) return item
+      const missionPath =
+        missionPathFromEventData(item.event.data) ||
+        missionPathFromEventData(item.event.text)
+      if (!missionPath || item.event.unixTime == null) return item
 
-      const candidates = missionTimeline.filter((t) => t.name === missionName)
+      // Use scheduled time as reference if available, else fall back to send time
+      const scheduledTime = parseScheduledUnixTime(
+        item.event.data,
+        item.event.text
+      )
+      const referenceTime = scheduledTime ?? item.event.unixTime
+
+      const candidates = missionTimeline.filter((t) =>
+        missionKeysMatch(normalizeMissionPath(t.name), missionPath)
+      )
       if (!candidates.length) return item
 
-      // Pick the timeline entry whose startedAt is nearest to the event time.
+      const inInterval = candidates.find(
+        (candidate) =>
+          referenceTime >= candidate.startedAt &&
+          (candidate.endedAt == null || referenceTime < candidate.endedAt)
+      )
+      if (inInterval) {
+        return {
+          ...item,
+          status: inInterval.status,
+          endedAt: inInterval.endedAt,
+        }
+      }
+
+      // Fallback: pick nearest timeline entry by start time.
       const best = candidates.reduce((prev, curr) =>
-        Math.abs(curr.startedAt - item.event.unixTime!) <
-        Math.abs(prev.startedAt - item.event.unixTime!)
+        Math.abs(curr.startedAt - referenceTime) <
+        Math.abs(prev.startedAt - referenceTime)
           ? curr
           : prev
       )
 
       // Only enrich if within the match window to avoid false positives.
-      if (Math.abs(best.startedAt - item.event.unixTime) > MATCH_WINDOW_MS)
+      if (Math.abs(best.startedAt - referenceTime) > MATCH_WINDOW_MS)
         return item
 
       return { ...item, status: best.status, endedAt: best.endedAt }
     })
 
-    // Inject the currently running mission at the top if it was auto-triggered
-    // by MissionManager (not found in the operator command log).
+    // Ensure the currently running mission is represented as running.
+    // If it already exists but isn't marked running, promote that row to running.
+    // Otherwise inject a synthetic running row at the top.
     const currentMissionEntry = missionTimeline[0]
     if (currentMissionEntry) {
-      // Check both data and text fields so missions present via either path
-      // are correctly detected as already in the list.
-      const alreadyInList = enriched.some(
-        (item) =>
-          missionNameFromEventData(item.event.data) ===
-            currentMissionEntry.name ||
-          missionNameFromEventData(item.event.text) === currentMissionEntry.name
-      )
-      if (!alreadyInList) {
+      const currentMissionPath = normalizeMissionPath(currentMissionEntry.name)
+      if (!currentMissionPath) return enriched
+
+      const matchingMissionIndex = enriched.findIndex((item) => {
+        const fromDataPath = missionPathFromEventData(item.event.data)
+        const fromTextPath = missionPathFromEventData(item.event.text)
+        return (
+          missionKeysMatch(fromDataPath, currentMissionPath) ||
+          missionKeysMatch(fromTextPath, currentMissionPath)
+        )
+      })
+
+      if (matchingMissionIndex >= 0) {
+        const matchingItem = enriched[matchingMissionIndex]
+        if (matchingItem.status !== 'running') {
+          enriched[matchingMissionIndex] = {
+            ...matchingItem,
+            status: 'running',
+            endedAt: undefined,
+          }
+        }
+      } else {
         const currentRawEvent = missionStartedResponse.data?.[0]
         if (currentRawEvent) {
           enriched.unshift({
@@ -253,9 +328,8 @@ export const ScheduleSection: React.FC<ScheduleSectionProps> = ({
 
   const scheduledTypes = ['pending', 'running']
   const staticHeaderCellOffset = activeDeployment ? 1 : 0
-  // Filter bar always sits immediately after the "Schedule is running" banner
-  // so running missions appear below it — consistent regardless of vehicle.
-  const hasPastSchedule = (missions?.length ?? 0) > 0
+  const hasPastSchedule =
+    missions?.some((v) => !scheduledTypes.includes(v.status)) ?? false
   const staticFilterCellOffset = hasPastSchedule ? 1 : 0
   const indexOfPastSchedule = staticHeaderCellOffset
 
@@ -273,7 +347,7 @@ export const ScheduleSection: React.FC<ScheduleSectionProps> = ({
       (v) =>
         !scheduleFilter ||
         scheduleFilter === 'all' ||
-        v.status === scheduleFilter
+        toScheduleCellStatus(v.status) === scheduleFilter
     )
     .filter(
       (v) =>
