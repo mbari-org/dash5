@@ -539,47 +539,57 @@ export const MapLayersListModal: React.FC<{
                 icon={faCircle}
                 iconColor="white"
               >
-                {/* Render individual stations without the grouping layer */}
-                {stations?.map((station) => (
-                  <TreeItem
-                    key={`station-${station.name}`}
-                    label={station.name}
-                    isChecked={isStationSelected(station.name)}
-                    onToggleCheck={() => {
-                      if (isStationSelected(station.name)) {
-                        setSelectedStations(
-                          selectedStations.filter(
-                            (s) => s.name !== station.name
+                {/* Starred stations first (alphabetical), then unstarred in original API order */}
+                {[...(stations ?? [])]
+                  .sort((a, b) => {
+                    const aStarred = starredStations.includes(a.name)
+                    const bStarred = starredStations.includes(b.name)
+                    if (aStarred && bStarred)
+                      return a.name.localeCompare(b.name)
+                    if (aStarred) return -1
+                    if (bStarred) return 1
+                    return 0
+                  })
+                  .map((station) => (
+                    <TreeItem
+                      key={`station-${station.name}`}
+                      label={station.name}
+                      isChecked={isStationSelected(station.name)}
+                      onToggleCheck={() => {
+                        if (isStationSelected(station.name)) {
+                          setSelectedStations(
+                            selectedStations.filter(
+                              (s) => s.name !== station.name
+                            )
                           )
-                        )
-                      } else {
-                        setSelectedStations([
-                          ...selectedStations,
-                          {
-                            name: station.name,
-                            geojson: station.geojson,
-                            lat: station.geojson.geometry.coordinates[1],
-                            lon: station.geojson.geometry.coordinates[0],
-                          },
-                        ])
+                        } else {
+                          setSelectedStations([
+                            ...selectedStations,
+                            {
+                              name: station.name,
+                              geojson: station.geojson,
+                              lat: station.geojson.geometry.coordinates[1],
+                              lon: station.geojson.geometry.coordinates[0],
+                            },
+                          ])
+                        }
+                      }}
+                      isStarred={starredStations.includes(station.name)}
+                      onStarClick={() => toggleStarStation(station.name)}
+                      onMouseEnterStar={() => {
+                        if (starredStations.includes(station.name)) {
+                          setHighlightedStationName(station.name)
+                        }
+                      }}
+                      onMouseLeaveStar={() => setHighlightedStationName(null)}
+                      onCenterClick={() =>
+                        setFlyToRequest({
+                          lat: station.geojson.geometry.coordinates[1],
+                          lon: station.geojson.geometry.coordinates[0],
+                        })
                       }
-                    }}
-                    isStarred={starredStations.includes(station.name)}
-                    onStarClick={() => toggleStarStation(station.name)}
-                    onMouseEnterStar={() => {
-                      if (starredStations.includes(station.name)) {
-                        setHighlightedStationName(station.name)
-                      }
-                    }}
-                    onMouseLeaveStar={() => setHighlightedStationName(null)}
-                    onCenterClick={() =>
-                      setFlyToRequest({
-                        lat: station.geojson.geometry.coordinates[1],
-                        lon: station.geojson.geometry.coordinates[0],
-                      })
-                    }
-                  />
-                ))}
+                    />
+                  ))}
                 {Object.keys(stationGroups).length === 0 ? (
                   <div className="py-2 pl-10 text-sm italic text-gray-500">
                     No stations available
