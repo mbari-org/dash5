@@ -1,9 +1,5 @@
 import React, { useMemo, useState } from 'react'
-import {
-  EventType,
-  useInfiniteEvents,
-  useTethysApiContext,
-} from '@mbari/api-client'
+import { useInfiniteEvents, useTethysApiContext } from '@mbari/api-client'
 import {
   Virtualizer,
   LogCell,
@@ -18,10 +14,15 @@ import { MultiValue } from 'react-select'
 import { DateTime } from 'luxon'
 import formatEvent, {
   displayNameForEventType,
-  eventFilters,
   isUploadEvent,
 } from '../lib/formatEvent'
-import { applyEventFilters } from '../lib/eventFilterUtils'
+import {
+  applySelectedFilters,
+  defaultModalSelections,
+  deriveEventTypes,
+  hasAllNonDataFiltersSelected,
+  modalVisibleFilterIds,
+} from '../lib/logFilters'
 import { handleCopyEventLogs } from '../lib/handleCopyEventLogs'
 import { createLogger, useDebounce } from '@mbari/utils'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
@@ -51,8 +52,6 @@ const styles = {
   emptyLogBannerIcon: 'mr-1 flex-shrink-0 text-amber-600',
 }
 
-const DATA_FILTER_ID = 'Data'
-
 const LogsSection: React.FC<LogsSectionProps> = ({
   vehicleName,
   from,
@@ -65,44 +64,37 @@ const LogsSection: React.FC<LogsSectionProps> = ({
   }
 
   const { siteConfig } = useTethysApiContext()
-  const [filters, setFilters] = useState<MultiValue<SelectOption>>(() =>
-    Object.keys(eventFilters)
-      .filter((id) => id !== DATA_FILTER_ID)
-      .map((id) => ({ id, name: id }))
+  const [filters, setFilters] = useState<MultiValue<SelectOption>>(
+    defaultModalSelections
   )
   const [filtersOpen, setFiltersOpen] = useState(false)
   const [searchText, setSearchText] = useState('')
   const debouncedSearchText = useDebounce(searchText, 250)
   const [includeDataEvents, setIncludeDataEvents] = useState(false)
 
-  const modalEventFilterIds = useMemo(
-    () => Object.keys(eventFilters).filter((id) => id !== DATA_FILTER_ID),
-    []
-  )
+  const modalFilterIds = modalVisibleFilterIds()
 
   const eventFilterOptions = useMemo(
     () =>
-      modalEventFilterIds.map((id) => ({
+      modalFilterIds.map((id) => ({
         id,
         label: id,
       })),
-    [modalEventFilterIds]
+    [modalFilterIds]
   )
-  const allFiltersSelected = useMemo(
-    () => filters.length === modalEventFilterIds.length,
-    [filters, modalEventFilterIds]
+  const allNonDataFiltersSelected = useMemo(
+    () => hasAllNonDataFiltersSelected(filters.map((f) => f.id)),
+    [filters]
   )
 
-  const eventTypes = useMemo((): EventType[] | undefined => {
-    if (!filters.length || allFiltersSelected) return undefined
-    const base = filters
-      .flatMap(({ id }) => eventFilters[id].eventTypes)
-      .filter((k, i, a) => a.indexOf(k) === i)
-    if (includeDataEvents && !base.includes('dataProcessed')) {
-      return [...base, 'dataProcessed']
-    }
-    return base
-  }, [filters, allFiltersSelected, includeDataEvents])
+  const eventTypes = useMemo(
+    () =>
+      deriveEventTypes(
+        filters.map((f) => f.id),
+        includeDataEvents
+      ),
+    [filters, includeDataEvents]
+  )
 
   const deploymentParams = useMemo(
     () => ({
@@ -142,11 +134,14 @@ const LogsSection: React.FC<LogsSectionProps> = ({
   const flatData = useMemo(() => {
     if (filters.length === 0) return []
     if (!data?.pages) return []
-    let events = data.pages.flat()
-    if (filters.length && !allFiltersSelected) {
-      const selectedFilterNames = filters.map(({ id }) => id)
-      events = applyEventFilters(events, selectedFilterNames)
-    }
+    let events = applySelectedFilters(
+      data.pages.flat(),
+      filters.map(({ id }) => id),
+      {
+        includeDataEvents,
+        allNonDataFiltersSelected,
+      }
+    )
     if (debouncedSearchText.trim().length) {
       const searchTerm = debouncedSearchText.toLowerCase()
       events = events.filter((e) => {
@@ -161,14 +156,11 @@ const LogsSection: React.FC<LogsSectionProps> = ({
         return parts.some((p) => p.toLowerCase().includes(searchTerm))
       })
     }
-    if (!includeDataEvents) {
-      events = events.filter((e) => e.eventType !== 'dataProcessed')
-    }
     return events
   }, [
     data?.pages,
     filters,
-    allFiltersSelected,
+    allNonDataFiltersSelected,
     debouncedSearchText,
     includeDataEvents,
   ])
