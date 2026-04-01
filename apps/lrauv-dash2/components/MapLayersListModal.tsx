@@ -147,7 +147,7 @@ const TreeItem: React.FC<TreeItemProps> = ({
                 height: '22px',
                 flexShrink: 0,
                 borderRadius: '50%',
-                background: 'transparent',
+                background: '#fff',
                 border: 0,
                 padding: 0,
                 boxShadow: '0 1px 3px rgba(0,0,0,0.35)',
