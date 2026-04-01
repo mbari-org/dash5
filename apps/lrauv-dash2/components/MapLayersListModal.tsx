@@ -181,8 +181,8 @@ const TreeItem: React.FC<TreeItemProps> = ({
               aria-label="Center map on station"
               title="Center map on this station"
               style={{
-                width: '26px',
-                height: '26px',
+                width: '22px',
+                height: '22px',
                 flexShrink: 0,
                 borderRadius: '3px',
                 background: '#fff',
