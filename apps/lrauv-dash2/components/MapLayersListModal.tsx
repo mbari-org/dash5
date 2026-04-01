@@ -181,8 +181,8 @@ const TreeItem: React.FC<TreeItemProps> = ({
               aria-label="Center map on station"
               title="Center map on this station"
               style={{
-                width: '22px',
-                height: '22px',
+                width: '26px',
+                height: '26px',
                 flexShrink: 0,
                 borderRadius: '3px',
                 background: '#fff',
@@ -197,7 +197,7 @@ const TreeItem: React.FC<TreeItemProps> = ({
             >
               <FontAwesomeIcon
                 icon={faCompress}
-                style={{ color: '#6b7280', fontSize: '12px' }}
+                style={{ color: '#6b7280', fontSize: '16px' }}
               />
             </button>
           )}
