@@ -26,9 +26,7 @@ const useSessionToken = (name: string) => {
         )
       }
     }
-    if (stored) {
-      setSessionToken_(stored)
-    }
+    setSessionToken_(stored || '')
   }, [name])
 
   const setSessionToken = (token: string) => {
