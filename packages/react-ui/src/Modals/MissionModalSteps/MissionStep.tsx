@@ -36,6 +36,10 @@ export const MissionStep: React.FC<MissionStepProps> = ({
   const [sortColumn, setSortColumn] = useState<number | null | undefined>(null)
   const [sortDirection, setSortDirection] = useState<SortDirection>(null)
 
+  const runsCategory =
+    selectedCategory?.match(/recent runs/i) ||
+    selectedCategory?.match(/frequent runs/i)
+
   // Reset filters when the category changes
   useEffect(() => {
     setSearchTerm('')
@@ -138,9 +142,7 @@ export const MissionStep: React.FC<MissionStepProps> = ({
             htmlFor="showAllVehicleMissions"
             onClick={(e) => e.stopPropagation()}
             className={`flex items-center text-sm ${
-              selectedCategory?.match(/recent runs/i)
-                ? 'cursor-pointer'
-                : 'opacity-40'
+              runsCategory ? 'cursor-pointer' : 'opacity-40'
             }`}
           >
             <input
@@ -149,13 +151,13 @@ export const MissionStep: React.FC<MissionStepProps> = ({
               type="checkbox"
               className="mr-1 h-4 w-4 cursor-pointer disabled:cursor-not-allowed"
               checked={showAllVehicleMissions}
-              disabled={!selectedCategory?.match(/recent runs/i)}
+              disabled={!runsCategory}
               onChange={(e) => {
                 e.stopPropagation()
                 handleShowAllVehicleMissions?.(e.target.checked)
               }}
             />
-            Show recent runs for all vehicles
+            Show runs for all vehicles
           </label>
         </li>
         <li className="col-span-3 flex items-center">

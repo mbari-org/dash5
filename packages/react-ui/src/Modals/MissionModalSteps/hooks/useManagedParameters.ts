@@ -36,11 +36,13 @@ const useManagedParameters = ({
   safetyParams,
   commsParams,
   defaultOverrides,
+  selectionKey,
 }: {
   parameters: ParameterProps[]
   safetyParams: ParameterProps[]
   commsParams: ParameterProps[]
   defaultOverrides?: ParameterProps[]
+  selectionKey?: string | null
 }) => {
   // Local state: only the user overrides. Base parameter arrays remain props.
   const [overrideMap, setOverrideMap] = useState<
@@ -51,6 +53,7 @@ const useManagedParameters = ({
   // If they haven't, we can safely re-sync `overrideMap` when `defaultOverrides`
   // updates asynchronously (e.g. frequent runs finishing override parsing).
   const hasUserModifiedRef = useRef(false)
+  const isFirstSelectionKeyEffect = useRef(true)
 
   // Re-derive parameter lists whenever overrides or base lists change.
   const updatedParameters = useMemo(
@@ -107,6 +110,16 @@ const useManagedParameters = ({
   const overrideCount =
     safetyCommsParams.filter((p) => p.overrideValue).length +
     overriddenMissionParams.length
+
+  // Switching mission selection clears local overrides so we don't keep another run's edits.
+  useEffect(() => {
+    if (isFirstSelectionKeyEffect.current) {
+      isFirstSelectionKeyEffect.current = false
+      return
+    }
+    hasUserModifiedRef.current = false
+    setOverrideMap({})
+  }, [selectionKey])
 
   // Initialize overrides once
   useEffect(() => {
