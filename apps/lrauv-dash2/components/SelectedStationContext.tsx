@@ -30,6 +30,10 @@ export interface SelectedStationsContextProps {
   toggleStarStation: (name: string) => void
   highlightedStationName: string | null
   setHighlightedStationName: React.Dispatch<React.SetStateAction<string | null>>
+  flyToRequest: { lat: number; lon: number } | null
+  setFlyToRequest: React.Dispatch<
+    React.SetStateAction<{ lat: number; lon: number } | null>
+  >
   debug: {
     providerId: string
     instanceCount: number
@@ -79,6 +83,11 @@ export const SelectedStationsProvider: React.FC<{
   const [highlightedStationName, setHighlightedStationName] = useState<
     string | null
   >(null)
+
+  const [flyToRequest, setFlyToRequest] = useState<{
+    lat: number
+    lon: number
+  } | null>(null)
 
   useEffect(() => {
     if (typeof window !== 'undefined') {
@@ -225,6 +234,8 @@ export const SelectedStationsProvider: React.FC<{
         toggleStarStation,
         highlightedStationName,
         setHighlightedStationName,
+        flyToRequest,
+        setFlyToRequest,
         debug: {
           providerId,
           instanceCount: instanceCounter,

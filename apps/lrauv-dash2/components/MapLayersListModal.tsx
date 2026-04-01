@@ -9,6 +9,7 @@ import {
   faMapMarkerAlt,
   faCircle,
   faStar,
+  faExpand,
 } from '@fortawesome/free-solid-svg-icons'
 import { useSelectedStations } from './SelectedStationContext'
 import { useMarkers } from './MarkerContext'
@@ -33,6 +34,7 @@ interface TreeItemProps {
   onStarClick?: () => void
   onMouseEnterStar?: () => void
   onMouseLeaveStar?: () => void
+  onCenterClick?: () => void
 }
 
 const TreeItem: React.FC<TreeItemProps> = ({
@@ -49,6 +51,7 @@ const TreeItem: React.FC<TreeItemProps> = ({
   onStarClick,
   onMouseEnterStar,
   onMouseLeaveStar,
+  onCenterClick,
 }) => {
   const hasChildren = React.Children.count(children) > 0
 
@@ -167,6 +170,37 @@ const TreeItem: React.FC<TreeItemProps> = ({
             </button>
           )}
           <span className="text-sm font-medium">{label}</span>
+          {onCenterClick !== undefined && (
+            <button
+              onClick={(e) => {
+                e.preventDefault()
+                e.stopPropagation()
+                onCenterClick()
+              }}
+              className="ml-2 focus:outline-none"
+              aria-label="Center map on station"
+              title="Center map on this station"
+              style={{
+                width: '22px',
+                height: '22px',
+                flexShrink: 0,
+                borderRadius: '50%',
+                background: '#fff',
+                border: 0,
+                padding: 0,
+                boxShadow: '0 1px 3px rgba(0,0,0,0.35)',
+                display: 'inline-flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                cursor: 'pointer',
+              }}
+            >
+              <FontAwesomeIcon
+                icon={faExpand}
+                style={{ color: '#6b7280', fontSize: '10px' }}
+              />
+            </button>
+          )}
         </label>
       </div>
 
@@ -200,6 +234,7 @@ export const MapLayersListModal: React.FC<{
     starredStations,
     toggleStarStation,
     setHighlightedStationName,
+    setFlyToRequest,
   } = useSelectedStations()
   const {
     markers,
@@ -506,6 +541,12 @@ export const MapLayersListModal: React.FC<{
                     }
                   }}
                   onMouseLeaveStar={() => setHighlightedStationName(null)}
+                  onCenterClick={() =>
+                    setFlyToRequest({
+                      lat: station.geojson.geometry.coordinates[1],
+                      lon: station.geojson.geometry.coordinates[0],
+                    })
+                  }
                 />
               ))}
               {Object.keys(stationGroups).length === 0 ? (
