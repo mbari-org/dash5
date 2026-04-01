@@ -142,17 +142,15 @@ const TreeItem: React.FC<TreeItemProps> = ({
                   ? 'Hover to spotlight on map'
                   : 'Click to enable spotlight'
               }
-              style={{ width: '16px', height: '16px', flexShrink: 0 }}
+              style={{ width: '20px', height: '20px', flexShrink: 0 }}
             >
               <span
                 style={{
                   position: 'absolute',
                   inset: 0,
                   borderRadius: '50%',
-                  border: `2px solid ${isStarred ? '#FFD700' : '#9ca3af'}`,
-                  backgroundColor: isStarred
-                    ? 'rgba(255,215,0,0.15)'
-                    : 'transparent',
+                  border: '2px solid #000',
+                  backgroundColor: 'white',
                 }}
               />
               <FontAwesomeIcon
@@ -163,7 +161,7 @@ const TreeItem: React.FC<TreeItemProps> = ({
                   left: '50%',
                   transform: 'translate(-50%, -50%)',
                   color: isStarred ? '#FFD700' : '#9ca3af',
-                  fontSize: '8px',
+                  fontSize: '10px',
                 }}
               />
             </button>
