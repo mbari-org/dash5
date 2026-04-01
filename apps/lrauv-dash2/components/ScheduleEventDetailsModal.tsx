@@ -441,7 +441,7 @@ export const ScheduleEventDetailsModal: React.FC<
                     </span>
                     {showScheduledStartTooltip && (
                       <span
-                        className="pointer-events-none absolute bottom-full left-1/2 mb-1 -translate-x-1/2 whitespace-nowrap rounded border px-2 py-0.5 text-[10px] font-normal normal-case shadow"
+                        className="pointer-events-none absolute left-full top-1/2 ml-2 -translate-y-1/2 whitespace-nowrap rounded border px-3 py-1.5 text-xs font-normal normal-case shadow"
                         style={{
                           borderColor: '#6ee7b7',
                           backgroundColor: '#ecfdf5',
