@@ -323,7 +323,13 @@ export const MapLayersListModal: React.FC<{
       if (modalRef.current && !modalRef.current.contains(e.target as Node)) {
         // Don't stop propagation here so Leaflet can begin a pan/drag on the
         // same gesture. Flag the paired click so IT gets consumed instead.
+        // If the gesture becomes a drag, the browser won't fire a click and
+        // justClosedRef would stay true — clear it via a short timeout so
+        // subsequent unrelated clicks are not incorrectly consumed.
         justClosedRef.current = true
+        window.setTimeout(() => {
+          justClosedRef.current = false
+        }, 300)
         handleClose()
       }
     }
