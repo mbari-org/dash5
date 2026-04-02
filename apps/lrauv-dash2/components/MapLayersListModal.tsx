@@ -251,8 +251,6 @@ export const MapLayersListModal: React.FC<{
     selectAllMarkers, // Make sure these are imported
     deselectAllMarkers,
   } = useMarkers()
-  const [searchTerm, setSearchTerm] = useState('')
-
   // Track expansion state of tree nodes
   const [expandedSections, setExpandedSections] = useState<
     Record<SectionName, boolean>
@@ -441,15 +439,6 @@ export const MapLayersListModal: React.FC<{
     deselectAllMarkers,
   ])
 
-  // Group stations by name
-  const stationGroups =
-    stations?.reduce((acc, station) => {
-      const groupName = station.name || String(station)
-      const group = acc[groupName] || []
-      group.push(station)
-      return { ...acc, [groupName]: group }
-    }, {} as Record<string, any[]>) ?? {}
-
   // Check if a station is selected
   const isStationSelected = (stationName: string): boolean => {
     return selectedStations.some((s) => s.name === stationName)
@@ -479,41 +468,6 @@ export const MapLayersListModal: React.FC<{
       })
       .map(({ station }) => station)
   }, [stations, starredSet])
-
-  // Check if all stations in a group are selected
-  const areAllStationsInGroupSelected = (groupName: string): boolean => {
-    const groupStations = stationGroups[groupName] || []
-    return groupStations.every((station) =>
-      selectedStations.some((s) => s.name === station.name)
-    )
-  }
-
-  // Toggle selection for a station group
-  const toggleStationGroupSelection = (groupName: string): void => {
-    if (areAllStationsInGroupSelected(groupName)) {
-      // If all selected, deselect all in group
-      setSelectedStations(
-        selectedStations.filter(
-          (s) =>
-            !stationGroups[groupName].some((station) => station.name === s.name)
-        )
-      )
-    } else {
-      // If not all selected, select all in group
-      const groupStationsToAdd = stationGroups[groupName]
-        .filter(
-          (station) => !selectedStations.some((s) => s.name === station.name)
-        )
-        .map((station) => ({
-          name: station.name,
-          geojson: station.geojson,
-          lat: station.geojson.geometry.coordinates[1],
-          lon: station.geojson.geometry.coordinates[0],
-        }))
-
-      setSelectedStations([...selectedStations, ...groupStationsToAdd])
-    }
-  }
 
   return (
     <>
