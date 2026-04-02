@@ -273,8 +273,12 @@ const ConnectedVehicleCellComponent: React.FC<{
       <VehicleHeader
         name={capitalize(name)}
         deployment={active ? lastDeployment?.name ?? 'loading' : 'Not Deployed'}
-        color={contextColor} // Use context color here
-        timeSpanSinceDeployment={active ? timeSpanSinceDeployment : undefined}
+        color={contextColor}
+        timeSpanSinceDeployment={
+          active && !recovered ? timeSpanSinceDeployment : undefined
+        }
+        recovered={recovered ? true : undefined}
+        recoveredAt={recovered ? timeSpanSinceRecovery : undefined}
         onToggle={handleToggle}
         open={isOpen}
       />

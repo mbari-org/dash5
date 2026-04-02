@@ -1,11 +1,7 @@
-import React, { useCallback, useState } from 'react'
+import React from 'react'
 import clsx from 'clsx'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { faChevronDown, faChevronLeft } from '@fortawesome/free-solid-svg-icons'
-import { ToolTip } from '../Navigation'
-import { createLogger } from '@mbari/utils'
-
-const logger = createLogger('VehicleHeader')
 
 export interface VehicleHeaderProps {
   className?: string
@@ -16,6 +12,8 @@ export interface VehicleHeaderProps {
   onToggle: () => void
   open?: boolean
   timeSpanSinceDeployment?: string
+  recovered?: boolean
+  recoveredAt?: string
 }
 
 const styles = {
@@ -31,11 +29,13 @@ export const VehicleHeader: React.FC<VehicleHeaderProps> = ({
   className,
   style,
   name,
-  color, // Keep accepting color as a prop
+  color,
   deployment,
   onToggle,
   open,
   timeSpanSinceDeployment,
+  recovered,
+  recoveredAt,
 }) => {
   return (
     <div className={clsx('', className)} style={style}>
@@ -54,7 +54,14 @@ export const VehicleHeader: React.FC<VehicleHeaderProps> = ({
         <span className={styles.label}>
           {name}: {deployment}
         </span>
-        {timeSpanSinceDeployment ? (
+        {recovered ? (
+          <span
+            className="ml-2 flex-shrink-0 rounded-full bg-green-100 px-2 py-0.5 text-xs font-semibold text-green-800"
+            title={recoveredAt ? `Recovered ${recoveredAt}` : 'Recovered'}
+          >
+            Recovered
+          </span>
+        ) : timeSpanSinceDeployment ? (
           <span className={styles.secondary}>
             began {timeSpanSinceDeployment}
           </span>

@@ -31,6 +31,7 @@ export interface ScheduleSectionProps {
   vehicleName: string
   currentDeploymentId?: number
   activeDeployment?: boolean
+  isRecovered?: boolean
 }
 
 export interface CommandStatusItem {
@@ -77,6 +78,7 @@ export const ScheduleSection: React.FC<ScheduleSectionProps> = ({
   currentDeploymentId,
   activeDeployment,
   vehicleName,
+  isRecovered,
 }) => {
   const { setGlobalModalId } = useGlobalModalId()
   const [scheduleFilter, setScheduleFilter] = useState<string>('')
@@ -114,7 +116,13 @@ export const ScheduleSection: React.FC<ScheduleSectionProps> = ({
   const missions: CommandStatusItem[] = useMemo(() => {
     if (deploymentLogsOnly) {
       const cs = deploymentResponse.data?.commandStatuses ?? []
-      return cs as unknown as CommandStatusItem[]
+      const items = cs as unknown as CommandStatusItem[]
+      if (isRecovered) {
+        return items.map((item) =>
+          item.status === 'pending' ? { ...item, status: 'completed' } : item
+        )
+      }
+      return items
     }
     const pages = allLogsResponse.data?.pages ?? []
     const flat = pages.flat()
@@ -130,7 +138,12 @@ export const ScheduleSection: React.FC<ScheduleSectionProps> = ({
       },
       status: 'TBD',
     }))
-  }, [deploymentLogsOnly, deploymentResponse.data, allLogsResponse.data])
+  }, [
+    deploymentLogsOnly,
+    deploymentResponse.data,
+    allLogsResponse.data,
+    isRecovered,
+  ])
 
   const scheduledTypes = ['pending', 'running']
   const staticHeaderCellOffset = activeDeployment ? 1 : 0

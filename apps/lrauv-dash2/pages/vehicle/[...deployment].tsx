@@ -236,6 +236,11 @@ const Vehicle: NextPage = () => {
         DateTime.fromMillis(lastDeployment.startEvent.unixTime).toMillis() >
           DateTime.now().toMillis())
   )
+  const isRecovered = Boolean(lastDeployment?.recoverEvent)
+  const recoveredAt = lastDeployment?.recoverEvent?.unixTime
+    ? DateTime.fromMillis(lastDeployment.recoverEvent.unixTime).toRelative() ??
+      undefined
+    : undefined
   const handleRoleReassign = () => setGlobalModalId({ id: 'reassign' })
   const handleNewDeployment = () => setGlobalModalId({ id: 'newDeployment' })
   const handleEditDeployment = () => setGlobalModalId({ id: 'editDeployment' })
@@ -390,6 +395,7 @@ const Vehicle: NextPage = () => {
           onCallLabel={onCallLabel}
           activeDeployment={deployment.active}
           currentDeploymentId={deployment.deploymentId as number}
+          isRecovered={isRecovered}
         />
       )}
     </section>
@@ -416,6 +422,8 @@ const Vehicle: NextPage = () => {
               }
               onRoleReassign={handleRoleReassign}
               loadingPicAndOnCall={loadingPicAndOnCall || authLoading}
+              recovered={isRecovered}
+              recoveredAt={recoveredAt}
               supportIcon1={
                 pingEvent?.reachable ? <ConnectedIcon /> : <NotConnectedIcon />
               }
