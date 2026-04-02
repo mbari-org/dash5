@@ -281,15 +281,38 @@ export const MapLayersListModal: React.FC<{
   const { data: tileLayers } = useTileLayers()
   const { data: kmlLayers } = useKmlLayers()
   // Track expansion state of tree nodes
+  const EXPANDED_STORAGE_KEY = 'mapLayersExpandedSections'
+
   const [expandedSections, setExpandedSections] = useState<
     Record<SectionName, boolean>
-  >({
-    stations: false,
-    markers: false,
-    polygons: false,
-    tileLayers: false,
-    kmlLayers: false,
-    // Individual station groups can be added as needed
+  >(() => {
+    try {
+      const stored =
+        typeof window !== 'undefined'
+          ? localStorage.getItem(EXPANDED_STORAGE_KEY)
+          : null
+      if (stored) {
+        const parsed = JSON.parse(stored)
+        if (typeof parsed === 'object' && parsed !== null) {
+          return {
+            stations: parsed.stations ?? false,
+            markers: parsed.markers ?? false,
+            polygons: parsed.polygons ?? false,
+            tileLayers: parsed.tileLayers ?? false,
+            kmlLayers: parsed.kmlLayers ?? false,
+          }
+        }
+      }
+    } catch {
+      // fall through to defaults
+    }
+    return {
+      stations: false,
+      markers: false,
+      polygons: false,
+      tileLayers: false,
+      kmlLayers: false,
+    }
   })
   const [modalPosition, setModalPosition] = useState<
     { top: number; left: number } | undefined
@@ -421,10 +444,17 @@ export const MapLayersListModal: React.FC<{
   }, [anchorPosition])
 
   const toggleExpanded = useCallback((section: SectionName) => {
-    setExpandedSections((prev) => ({
-      ...prev,
-      [section]: !prev[section],
-    }))
+    setExpandedSections((prev) => {
+      const next = { ...prev, [section]: !prev[section] }
+      try {
+        if (typeof window !== 'undefined') {
+          localStorage.setItem(EXPANDED_STORAGE_KEY, JSON.stringify(next))
+        }
+      } catch {
+        // storage unavailable — continue without persisting
+      }
+      return next
+    })
   }, [])
 
   // Pre-computed list of stations with valid coordinates — used by select-all
