@@ -1,7 +1,6 @@
 import dynamic from 'next/dynamic'
 import { useRouter } from 'next/router'
 import React, { useCallback, useState, useRef, useEffect, useMemo } from 'react'
-import { useMap } from 'react-leaflet'
 import { useManagedWaypoints } from '@mbari/react-ui'
 import useGoogleElevator from '../lib/useGoogleElevator'
 import { VPosDetail } from '@mbari/api-client'
@@ -54,6 +53,9 @@ const MapClickHandler = dynamic(() => import('./MapClickHandler'), {
 const CustomMarkerSet = dynamic(() => import('./CustomMarkerSet'), {
   ssr: false,
 })
+const MapFlyTo = dynamic(() => import('./MapFlyTo'), {
+  ssr: false,
+})
 const PlatformPaths = dynamic(
   () =>
     import('./PlatformPaths').then((mod) => ({ default: mod.PlatformPaths })),
@@ -69,23 +71,6 @@ interface DeploymentMapProps {
   onScrub?: (time?: number | null) => void
   startTime?: number | null
   endTime?: number | null
-}
-
-const MapFlyTo: React.FC = () => {
-  const map = useMap()
-  const { flyToRequest, setFlyToRequest } = useSelectedStations()
-
-  useEffect(() => {
-    if (flyToRequest) {
-      map.flyTo(
-        [flyToRequest.lat, flyToRequest.lon],
-        Math.max(map.getZoom(), 13)
-      )
-      setFlyToRequest(null)
-    }
-  }, [flyToRequest, map, setFlyToRequest])
-
-  return null
 }
 
 const DeploymentMap: React.FC<DeploymentMapProps> = ({
@@ -107,7 +92,14 @@ const DeploymentMap: React.FC<DeploymentMapProps> = ({
     (index: number, { lat, lng }: { lat: number; lng: number }) =>
       handleWaypointsUpdate(
         updatedWaypoints.map((m, i) =>
-          i === index ? { ...m, lat: lat.toString(), lon: lng.toString() } : m
+          i === index
+            ? {
+                ...m,
+                lat: lat.toString(),
+                lon: lng.toString(),
+                stationName: 'Custom',
+              }
+            : m
         )
       ),
     [updatedWaypoints, handleWaypointsUpdate]

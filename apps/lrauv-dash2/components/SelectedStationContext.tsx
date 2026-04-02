@@ -72,7 +72,11 @@ export const SelectedStationsProvider: React.FC<{
     if (typeof window !== 'undefined') {
       try {
         const stored = localStorage.getItem(STARRED_STORAGE_KEY)
-        return stored ? JSON.parse(stored) : []
+        if (!stored) {
+          return []
+        }
+        const parsed = JSON.parse(stored)
+        return Array.isArray(parsed) ? parsed : []
       } catch {
         return []
       }

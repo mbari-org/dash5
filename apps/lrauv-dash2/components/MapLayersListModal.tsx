@@ -1,6 +1,5 @@
 import React, { useCallback, useState, useRef, useEffect, useMemo } from 'react'
 import Tippy from '@tippyjs/react'
-import 'tippy.js/dist/tippy.css'
 import { useStations } from '@mbari/api-client'
 import { Modal } from '@mbari/react-ui'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
@@ -141,6 +140,7 @@ const TreeItem: React.FC<TreeItemProps> = ({
               placement="top-start"
             >
               <button
+                type="button"
                 onClick={(e) => {
                   e.preventDefault()
                   e.stopPropagation()
@@ -179,6 +179,7 @@ const TreeItem: React.FC<TreeItemProps> = ({
           {onCenterClick !== undefined && (
             <Tippy content="Center map on this station" placement="top-start">
               <button
+                type="button"
                 onClick={(e) => {
                   e.preventDefault()
                   e.stopPropagation()
