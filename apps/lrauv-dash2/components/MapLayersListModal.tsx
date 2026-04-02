@@ -233,7 +233,7 @@ const TreeItem: React.FC<TreeItemProps> = ({
 export const MapLayersListModal: React.FC<{
   onClose: () => void
   anchorPosition?: { top: number; left: number }
-}> = ({ onClose, anchorPosition, ...modalProps }) => {
+}> = ({ onClose, anchorPosition }) => {
   // Move all hooks to the top level
   const { data: stations } = useStations()
   const {
@@ -267,15 +267,18 @@ export const MapLayersListModal: React.FC<{
   const [isFadingOut, setIsFadingOut] = useState(false)
   const modalRef = useRef<HTMLDivElement>(null)
   const closeTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  // Ref mirror so event-handler closures always read the latest value
+  const isFadingOutRef = useRef(false)
 
   const handleClose = useCallback(() => {
-    if (isFadingOut) return
+    if (isFadingOutRef.current) return
+    isFadingOutRef.current = true
     setIsFadingOut(true)
     setHighlightedStationName(null)
     closeTimerRef.current = setTimeout(() => {
       onClose()
     }, 250)
-  }, [isFadingOut, onClose, setHighlightedStationName])
+  }, [onClose, setHighlightedStationName])
 
   // Cleanup timer on unmount
   useEffect(() => {
@@ -287,6 +290,9 @@ export const MapLayersListModal: React.FC<{
   // Click-outside to dismiss
   useEffect(() => {
     const handleOutsideCapture = (e: MouseEvent) => {
+      // If already fading out, let events through immediately so the map is
+      // interactive again during the 250 ms fade window.
+      if (isFadingOutRef.current) return
       if (modalRef.current && !modalRef.current.contains(e.target as Node)) {
         // Stop propagation on click to prevent map click-actions (waypoint
         // placement, custom markers, etc.) firing alongside the dismiss.
@@ -299,6 +305,9 @@ export const MapLayersListModal: React.FC<{
     }
 
     const handleOutsideMouseDown = (e: MouseEvent) => {
+      // If already fading out, let events through immediately so the map is
+      // interactive again during the 250 ms fade window.
+      if (isFadingOutRef.current) return
       if (modalRef.current && !modalRef.current.contains(e.target as Node)) {
         // Dismiss on mousedown (without blocking propagation) so the user
         // can immediately start panning the map on the same gesture.
