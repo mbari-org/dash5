@@ -730,6 +730,18 @@ const DeploymentMap: React.FC<DeploymentMapProps> = ({
           })}
           <PlatformPaths />
           <MapFlyTo />
+          <VehiclePath
+            name={vehicleName as string}
+            key={`path${vehicleName}`}
+            from={startTime as number}
+            to={endTime as number}
+            indicatorTime={indicatorTime}
+            onScrub={handleMapScrub}
+            onGPSFix={handleGPSFix}
+            onPositionDataLoaded={markInitialLoadDone}
+            // Disable map auto-fit centering when scrubbing the timeline
+            disableAutoFit={isTimelineScrubbing}
+          />
           {plottedWaypoints?.length ? (
             <>
               {plottedWaypoints.map(({ waypoint, originalIndex }) => {
@@ -767,20 +779,7 @@ const DeploymentMap: React.FC<DeploymentMapProps> = ({
                 fitTrigger={waypointFitTrigger}
               />
             </>
-          ) : (
-            <VehiclePath
-              name={vehicleName as string}
-              key={`path${vehicleName}`}
-              from={startTime as number}
-              to={endTime as number}
-              indicatorTime={indicatorTime}
-              onScrub={handleMapScrub}
-              onGPSFix={handleGPSFix}
-              onPositionDataLoaded={markInitialLoadDone}
-              // Disable map auto-fit centering when scrubbing the timeline
-              disableAutoFit={isTimelineScrubbing}
-            />
-          )}
+          ) : null}
         </Map>
         <MapRefreshButton
           onClick={refreshAll}

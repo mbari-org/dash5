@@ -266,6 +266,10 @@ export const MapLayersListModal: React.FC<{
   >(anchorPosition)
   const [isFadingOut, setIsFadingOut] = useState(false)
   const modalRef = useRef<HTMLDivElement>(null)
+  // Separate ref for the dialog content element — used for getBoundingClientRect
+  // measurements. modalRef wraps the fixed-position overlay and would report 0x0;
+  // dialogRef points to the actual sized panel inside so position clamping works.
+  const dialogRef = useRef<HTMLDivElement>(null)
   const closeTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   // Ref mirror so event-handler closures always read the latest fading state.
   const isFadingOutRef = useRef(false)
@@ -339,10 +343,9 @@ export const MapLayersListModal: React.FC<{
   }, [handleClose])
 
   useEffect(() => {
-    if (!anchorPosition || !modalRef.current) return
+    if (!anchorPosition || !dialogRef.current) return
 
-    const modalElement = modalRef.current
-    const modalRect = modalElement.getBoundingClientRect()
+    const modalRect = dialogRef.current.getBoundingClientRect()
     const viewportHeight = window.innerHeight
     const viewportWidth = window.innerWidth
 
@@ -547,6 +550,12 @@ export const MapLayersListModal: React.FC<{
           }}
           className="m-0 p-0"
         >
+          {/* Invisible inner anchor for getBoundingClientRect — the outer
+              wrapper div is position:fixed and may report 0x0 */}
+          <div
+            ref={dialogRef}
+            style={{ position: 'absolute', inset: 0, pointerEvents: 'none' }}
+          />
           <div
             className="custom-scrollbar flex-grow"
             style={{
