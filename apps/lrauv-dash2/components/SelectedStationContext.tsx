@@ -30,9 +30,17 @@ export interface SelectedStationsContextProps {
   toggleStarStation: (name: string) => void
   highlightedStationName: string | null
   setHighlightedStationName: React.Dispatch<React.SetStateAction<string | null>>
-  flyToRequest: { lat: number; lon: number } | null
+  flyToRequest: {
+    lat: number
+    lon: number
+    bounds?: [[number, number], [number, number]]
+  } | null
   setFlyToRequest: React.Dispatch<
-    React.SetStateAction<{ lat: number; lon: number } | null>
+    React.SetStateAction<{
+      lat: number
+      lon: number
+      bounds?: [[number, number], [number, number]]
+    } | null>
   >
   debug: {
     providerId: string
@@ -91,6 +99,7 @@ export const SelectedStationsProvider: React.FC<{
   const [flyToRequest, setFlyToRequest] = useState<{
     lat: number
     lon: number
+    bounds?: [[number, number], [number, number]]
   } | null>(null)
 
   useEffect(() => {

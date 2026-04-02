@@ -8,10 +8,14 @@ const MapFlyTo: React.FC = () => {
 
   useEffect(() => {
     if (flyToRequest) {
-      map.flyTo(
-        [flyToRequest.lat, flyToRequest.lon],
-        Math.max(map.getZoom(), 13)
-      )
+      if (flyToRequest.bounds) {
+        map.flyToBounds(flyToRequest.bounds, { padding: [40, 40] })
+      } else {
+        map.flyTo(
+          [flyToRequest.lat, flyToRequest.lon],
+          Math.max(map.getZoom(), 13)
+        )
+      }
       setFlyToRequest(null)
     }
   }, [flyToRequest, map, setFlyToRequest])

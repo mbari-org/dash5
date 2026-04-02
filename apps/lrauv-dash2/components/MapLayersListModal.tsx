@@ -762,9 +762,14 @@ export const MapLayersListModal: React.FC<{
                 iconColor="#6366f1"
               >
                 {(polygons ?? []).map((polygon) => {
-                  // Compute bounding-box center across all features so we can
-                  // fly the map to the polygon when the center button is clicked.
-                  let polygonCenter: { lat: number; lon: number } | null = null
+                  // Compute bounding box across all features so we can
+                  // use fitBounds to frame the full polygon extent.
+                  let polygonBounds: {
+                    minLat: number
+                    maxLat: number
+                    minLon: number
+                    maxLon: number
+                  } | null = null
                   try {
                     let minLat = Infinity,
                       maxLat = -Infinity,
@@ -794,13 +799,10 @@ export const MapLayersListModal: React.FC<{
                       isFinite(minLon) &&
                       isFinite(maxLon)
                     ) {
-                      polygonCenter = {
-                        lat: (minLat + maxLat) / 2,
-                        lon: (minLon + maxLon) / 2,
-                      }
+                      polygonBounds = { minLat, maxLat, minLon, maxLon }
                     }
                   } catch {
-                    // leave polygonCenter null if coords can't be parsed
+                    // leave polygonBounds null if coords can't be parsed
                   }
 
                   return (
@@ -816,11 +818,27 @@ export const MapLayersListModal: React.FC<{
                         )
                       }}
                       onCenterClick={
-                        polygonCenter
+                        polygonBounds
                           ? () =>
                               setFlyToRequest({
-                                lat: polygonCenter!.lat,
-                                lon: polygonCenter!.lon,
+                                lat:
+                                  (polygonBounds!.minLat +
+                                    polygonBounds!.maxLat) /
+                                  2,
+                                lon:
+                                  (polygonBounds!.minLon +
+                                    polygonBounds!.maxLon) /
+                                  2,
+                                bounds: [
+                                  [
+                                    polygonBounds!.minLat,
+                                    polygonBounds!.minLon,
+                                  ],
+                                  [
+                                    polygonBounds!.maxLat,
+                                    polygonBounds!.maxLon,
+                                  ],
+                                ],
                               })
                           : undefined
                       }
