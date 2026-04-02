@@ -455,18 +455,24 @@ export const MapLayersListModal: React.FC<{
     () => new Set(starredStations ?? []),
     [starredStations]
   )
-  const sortedStations = useMemo(
-    () =>
-      [...(stations ?? [])].sort((a, b) => {
-        const aStarred = starredSet.has(a.name)
-        const bStarred = starredSet.has(b.name)
-        if (aStarred && bStarred) return a.name.localeCompare(b.name)
+  const sortedStations = useMemo(() => {
+    const list = stations ?? []
+    // Decorate with original index so unstarred stations always preserve
+    // API order regardless of JS engine sort stability guarantees.
+    return list
+      .map((station, index) => ({ station, index }))
+      .sort((a, b) => {
+        const aStarred = starredSet.has(a.station.name)
+        const bStarred = starredSet.has(b.station.name)
+        if (aStarred && bStarred)
+          return a.station.name.localeCompare(b.station.name)
         if (aStarred) return -1
         if (bStarred) return 1
-        return 0
-      }),
-    [stations, starredSet]
-  )
+        // Both unstarred: preserve original API order
+        return a.index - b.index
+      })
+      .map(({ station }) => station)
+  }, [stations, starredSet])
 
   // Check if all stations in a group are selected
   const areAllStationsInGroupSelected = (groupName: string): boolean => {
