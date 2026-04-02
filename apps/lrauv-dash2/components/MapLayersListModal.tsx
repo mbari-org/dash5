@@ -267,8 +267,12 @@ export const MapLayersListModal: React.FC<{
   const [isFadingOut, setIsFadingOut] = useState(false)
   const modalRef = useRef<HTMLDivElement>(null)
   const closeTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
-  // Ref mirror so event-handler closures always read the latest value
+  // Ref mirror so event-handler closures always read the latest fading state.
   const isFadingOutRef = useRef(false)
+  // Set to true by the closing mousedown so the paired click from the SAME
+  // gesture is still consumed (preventing map click-actions on close), then
+  // cleared. Subsequent gestures during the fade pass through freely.
+  const justClosedRef = useRef(false)
 
   const handleClose = useCallback(() => {
     if (isFadingOutRef.current) return
@@ -290,14 +294,19 @@ export const MapLayersListModal: React.FC<{
   // Click-outside to dismiss
   useEffect(() => {
     const handleOutsideCapture = (e: MouseEvent) => {
-      // If already fading out, let events through immediately so the map is
-      // interactive again during the 250 ms fade window.
+      // The mousedown from the closing gesture set justClosedRef. Consume this
+      // paired click to prevent map click-actions, then clear the flag so all
+      // subsequent clicks during the fade pass through to the map.
+      if (justClosedRef.current) {
+        justClosedRef.current = false
+        e.preventDefault()
+        e.stopPropagation()
+        return
+      }
+      // Already fading from a prior gesture — let events through so the map
+      // is fully interactive during the 250 ms fade window.
       if (isFadingOutRef.current) return
       if (modalRef.current && !modalRef.current.contains(e.target as Node)) {
-        // Stop propagation on click to prevent map click-actions (waypoint
-        // placement, custom markers, etc.) firing alongside the dismiss.
-        // mousedown is intentionally NOT stopped so Leaflet can still begin
-        // a pan/drag gesture on the same gesture that closes the modal.
         e.preventDefault()
         e.stopPropagation()
         handleClose()
@@ -305,12 +314,12 @@ export const MapLayersListModal: React.FC<{
     }
 
     const handleOutsideMouseDown = (e: MouseEvent) => {
-      // If already fading out, let events through immediately so the map is
-      // interactive again during the 250 ms fade window.
+      // Already fading — let all subsequent gestures reach the map.
       if (isFadingOutRef.current) return
       if (modalRef.current && !modalRef.current.contains(e.target as Node)) {
-        // Dismiss on mousedown (without blocking propagation) so the user
-        // can immediately start panning the map on the same gesture.
+        // Don't stop propagation here so Leaflet can begin a pan/drag on the
+        // same gesture. Flag the paired click so IT gets consumed instead.
+        justClosedRef.current = true
         handleClose()
       }
     }
