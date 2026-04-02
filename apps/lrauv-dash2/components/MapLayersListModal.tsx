@@ -130,7 +130,7 @@ const TreeItem: React.FC<TreeItemProps> = ({
               />
             )
           ) : null}
-          {onStarClick !== undefined && (
+          {onStarClick !== undefined && !disabled && (
             <Tippy
               content={
                 isStarred
