@@ -556,6 +556,7 @@ export const MapLayersListModal: React.FC<{
             paddingBottom: '0px',
             paddingTop: '10px',
             opacity: isFadingOut ? 0 : 1,
+            pointerEvents: isFadingOut ? 'none' : 'auto',
             transition: 'opacity 0.25s ease-out',
             marginBottom: '0px',
             marginTop: '0px',
