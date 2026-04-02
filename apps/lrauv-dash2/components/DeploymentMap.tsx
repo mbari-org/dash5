@@ -56,6 +56,15 @@ const CustomMarkerSet = dynamic(() => import('./CustomMarkerSet'), {
 const MapFlyTo = dynamic(() => import('./MapFlyTo'), {
   ssr: false,
 })
+const PolygonLayers = dynamic(() => import('./PolygonLayers'), {
+  ssr: false,
+})
+const TileLayerOverlays = dynamic(() => import('./TileLayerOverlays'), {
+  ssr: false,
+})
+const KmlLayers = dynamic(() => import('./KmlLayers'), {
+  ssr: false,
+})
 const PlatformPaths = dynamic(
   () =>
     import('./PlatformPaths').then((mod) => ({ default: mod.PlatformPaths })),
@@ -719,10 +728,17 @@ const DeploymentMap: React.FC<DeploymentMapProps> = ({
                 name={station.name}
                 lat={lat}
                 lng={lng}
+                color={
+                  (station.geojson as { properties?: { color?: string } })
+                    .properties?.color
+                }
                 isHighlighted={highlightedStationName === station.name}
               />
             )
           })}
+          <PolygonLayers />
+          <TileLayerOverlays />
+          <KmlLayers />
           <PlatformPaths />
           <MapFlyTo />
           <VehiclePath

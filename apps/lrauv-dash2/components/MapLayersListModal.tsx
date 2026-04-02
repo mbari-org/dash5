@@ -1,6 +1,11 @@
 import React, { useCallback, useState, useRef, useEffect, useMemo } from 'react'
 import Tippy from '@tippyjs/react'
-import { useStations } from '@mbari/api-client'
+import {
+  useStations,
+  usePolygons,
+  useTileLayers,
+  useKmlLayers,
+} from '@mbari/api-client'
 import { Modal } from '@mbari/react-ui'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { IconProp } from '@fortawesome/fontawesome-svg-core'
@@ -11,11 +16,23 @@ import {
   faCircle,
   faStar,
   faArrowsToCircle,
+  faDrawPolygon,
+  faLayerGroup,
+  faFileCode,
 } from '@fortawesome/free-solid-svg-icons'
 import { useSelectedStations } from './SelectedStationContext'
+import { useSelectedPolygons } from './SelectedPolygonsContext'
+import { useSelectedTileLayers } from './SelectedTileLayersContext'
+import { useSelectedKmlLayers } from './SelectedKmlLayersContext'
 import { useMarkers } from './MarkerContext'
 
-type SectionName = 'stations' | 'markers' | `station-${string}`
+type SectionName =
+  | 'stations'
+  | 'markers'
+  | 'polygons'
+  | 'tileLayers'
+  | 'kmlLayers'
+  | `station-${string}`
 
 // TreeItem component for the tree structure
 interface TreeItemProps {
@@ -257,12 +274,21 @@ export const MapLayersListModal: React.FC<{
     selectAllMarkers,
     deselectAllMarkers,
   } = useMarkers()
+  const { selectedPolygons, setSelectedPolygons } = useSelectedPolygons()
+  const { selectedTileLayers, setSelectedTileLayers } = useSelectedTileLayers()
+  const { selectedKmlLayers, setSelectedKmlLayers } = useSelectedKmlLayers()
+  const { data: polygons } = usePolygons()
+  const { data: tileLayers } = useTileLayers()
+  const { data: kmlLayers } = useKmlLayers()
   // Track expansion state of tree nodes
   const [expandedSections, setExpandedSections] = useState<
     Record<SectionName, boolean>
   >({
     stations: false,
     markers: false,
+    polygons: false,
+    tileLayers: false,
+    kmlLayers: false,
     // Individual station groups can be added as needed
   })
   const [modalPosition, setModalPosition] = useState<
@@ -703,6 +729,162 @@ export const MapLayersListModal: React.FC<{
                 {stations !== undefined && stations.length === 0 ? (
                   <div className="py-2 pl-10 text-sm italic text-gray-500">
                     No stations available
+                  </div>
+                ) : null}
+              </TreeItem>
+
+              {/* Polygons Section */}
+              <TreeItem
+                label="Polygons"
+                isExpanded={expandedSections.polygons}
+                isChecked={
+                  (polygons?.length ?? 0) > 0 &&
+                  selectedPolygons.length === (polygons?.length ?? 0)
+                }
+                onToggleExpand={() => toggleExpanded('polygons')}
+                onToggleCheck={
+                  (polygons?.length ?? 0) > 0
+                    ? () => {
+                        if (
+                          selectedPolygons.length === (polygons?.length ?? 0)
+                        ) {
+                          setSelectedPolygons([])
+                        } else {
+                          setSelectedPolygons(
+                            (polygons ?? []).map((p) => p.name)
+                          )
+                        }
+                      }
+                    : undefined
+                }
+                disabled={(polygons?.length ?? 0) === 0}
+                icon={faDrawPolygon}
+                iconColor="#6366f1"
+              >
+                {(polygons ?? []).map((polygon) => (
+                  <TreeItem
+                    key={`polygon-${polygon.name}`}
+                    label={polygon.name}
+                    isChecked={selectedPolygons.includes(polygon.name)}
+                    onToggleCheck={() => {
+                      setSelectedPolygons((prev) =>
+                        prev.includes(polygon.name)
+                          ? prev.filter((n) => n !== polygon.name)
+                          : [...prev, polygon.name]
+                      )
+                    }}
+                  />
+                ))}
+                {polygons !== undefined && polygons.length === 0 ? (
+                  <div className="py-2 pl-10 text-sm italic text-gray-500">
+                    No polygons available
+                  </div>
+                ) : null}
+              </TreeItem>
+
+              {/* TILE Layers Section */}
+              <TreeItem
+                label="TILE Layers"
+                isExpanded={expandedSections.tileLayers}
+                isChecked={
+                  (tileLayers?.length ?? 0) > 0 &&
+                  selectedTileLayers.length === (tileLayers?.length ?? 0)
+                }
+                onToggleExpand={() => toggleExpanded('tileLayers')}
+                onToggleCheck={
+                  (tileLayers?.length ?? 0) > 0
+                    ? () => {
+                        if (
+                          selectedTileLayers.length ===
+                          (tileLayers?.length ?? 0)
+                        ) {
+                          setSelectedTileLayers([])
+                        } else {
+                          setSelectedTileLayers(
+                            (tileLayers ?? []).map((t) => t.name)
+                          )
+                        }
+                      }
+                    : undefined
+                }
+                disabled={(tileLayers?.length ?? 0) === 0}
+                icon={faLayerGroup}
+                iconColor="#0ea5e9"
+              >
+                {(tileLayers ?? []).map((tile) => (
+                  <TreeItem
+                    key={`tile-${tile.name}`}
+                    label={tile.name}
+                    isChecked={selectedTileLayers.includes(tile.name)}
+                    onToggleCheck={() => {
+                      setSelectedTileLayers((prev) =>
+                        prev.includes(tile.name)
+                          ? prev.filter((n) => n !== tile.name)
+                          : [...prev, tile.name]
+                      )
+                    }}
+                  />
+                ))}
+                {tileLayers !== undefined && tileLayers.length === 0 ? (
+                  <div className="py-2 pl-10 text-sm italic text-gray-500">
+                    No tile layers available
+                  </div>
+                ) : null}
+              </TreeItem>
+
+              {/* KML Layers Section */}
+              <TreeItem
+                label="KML Layers"
+                isExpanded={expandedSections.kmlLayers}
+                isChecked={
+                  (kmlLayers?.length ?? 0) > 0 &&
+                  selectedKmlLayers.length === (kmlLayers?.length ?? 0)
+                }
+                onToggleExpand={() => toggleExpanded('kmlLayers')}
+                onToggleCheck={
+                  (kmlLayers?.length ?? 0) > 0
+                    ? () => {
+                        if (
+                          selectedKmlLayers.length === (kmlLayers?.length ?? 0)
+                        ) {
+                          setSelectedKmlLayers([])
+                        } else {
+                          setSelectedKmlLayers(
+                            (kmlLayers ?? []).map((k) => k.name)
+                          )
+                        }
+                      }
+                    : undefined
+                }
+                disabled={(kmlLayers?.length ?? 0) === 0}
+                icon={faFileCode}
+                iconColor="#16a34a"
+              >
+                {(kmlLayers ?? []).map((kml) => {
+                  const isKmz = kml.path.endsWith('.kmz')
+                  return (
+                    <TreeItem
+                      key={`kml-${kml.name}`}
+                      label={kml.name}
+                      isChecked={selectedKmlLayers.includes(kml.name)}
+                      disabled={isKmz}
+                      onToggleCheck={
+                        isKmz
+                          ? undefined
+                          : () => {
+                              setSelectedKmlLayers((prev) =>
+                                prev.includes(kml.name)
+                                  ? prev.filter((n) => n !== kml.name)
+                                  : [...prev, kml.name]
+                              )
+                            }
+                      }
+                    />
+                  )
+                })}
+                {kmlLayers !== undefined && kmlLayers.length === 0 ? (
+                  <div className="py-2 pl-10 text-sm italic text-gray-500">
+                    No KML layers available
                   </div>
                 ) : null}
               </TreeItem>

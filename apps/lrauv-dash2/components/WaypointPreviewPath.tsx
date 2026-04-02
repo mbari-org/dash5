@@ -12,12 +12,11 @@ export interface Coord {
 const WaypointPreviewPath: React.FC<{
   waypoints?: Coord[]
   fitTrigger?: number
-}> = ({ waypoints, fitTrigger }) => {
+}> = ({ waypoints }) => {
   const map = useMap()
 
   const polyRef = useRef<L.Polyline | null>(null)
   const fit = useRef<string | null | undefined>(null)
-  const lastFitTrigger = useRef<number | undefined>(undefined)
   const route = waypoints
   const routeAsString = waypoints?.flat().join()
   const decorator = useRef<L.PolylineDecorator | null>(null)
@@ -42,23 +41,30 @@ const WaypointPreviewPath: React.FC<{
         ],
       }).addTo(map)
     }
-    const routeChanged = fit.current !== routeAsString
-    const triggerChanged =
-      fitTrigger != null && fitTrigger !== lastFitTrigger.current
-
-    if (routeChanged || triggerChanged) {
+    if (fit.current !== routeAsString && route) {
       if (route?.length) {
-        map.fitBounds(route.map((r) => [r.lat, r.lon]) as [number, number][])
+        try {
+          map.fitBounds(
+            route.map((r) => [r.lat, r.lon]) as [number, number][],
+            { animate: false }
+          )
+          fit.current = routeAsString
+        } catch {
+          // noop; map pane may not be ready — leave fit.current unchanged so
+          // a subsequent render can retry fitBounds for the same route
+        }
+      } else {
+        // Route cleared — update fit.current so that re-selecting the same
+        // waypoints later triggers fitBounds again instead of being skipped.
+        fit.current = routeAsString
       }
-      fit.current = routeAsString
-      lastFitTrigger.current = fitTrigger
     }
     return () => {
       if (decorator.current) {
         decorator.current.removeFrom(map)
       }
     }
-  }, [route, map, routeAsString, color, fitTrigger])
+  }, [route, map, routeAsString, color])
   return route ? (
     <>
       {waypoints && (

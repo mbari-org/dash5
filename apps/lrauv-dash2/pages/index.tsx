@@ -9,6 +9,9 @@ import useTrackedVehicles from '../lib/useTrackedVehicles'
 import { SharedPathContextProvider } from '../components/SharedPathContextProvider'
 import { SelectedPlatformsProvider } from '../components/SelectedPlatformContext'
 import { SelectedStationsProvider } from '../components/SelectedStationContext'
+import { SelectedPolygonsProvider } from '../components/SelectedPolygonsContext'
+import { SelectedTileLayersProvider } from '../components/SelectedTileLayersContext'
+import { SelectedKmlLayersProvider } from '../components/SelectedKmlLayersContext'
 import { useRouter } from 'next/router'
 import useGlobalModalId from '../lib/useGlobalModalId'
 import useGoogleElevator from '../lib/useGoogleElevator'
@@ -802,80 +805,91 @@ const OverviewPage: NextPage = () => {
     <SharedPathContextProvider>
       <SelectedPlatformsProvider>
         <SelectedStationsProvider>
-          <div className={styles.content}>
-            <Layout>
-              {trackedVehicles?.length ? (
-                <>
-                  <OverviewToolbar deployment={{ name: 'Overview', id: '0' }} />
+          <SelectedPolygonsProvider>
+            <SelectedTileLayersProvider>
+              <SelectedKmlLayersProvider>
+                <div className={styles.content}>
+                  <Layout>
+                    {trackedVehicles?.length ? (
+                      <>
+                        <OverviewToolbar
+                          deployment={{ name: 'Overview', id: '0' }}
+                        />
 
-                  <div
-                    className={styles.content}
-                    data-testid="vehicle-dashboard"
-                  >
-                    {/* Single map instance: render one layout to avoid duplicate controls */}
-                    {isDesktop ? (
-                      <div className="h-full w-full">
-                        <Allotment
-                          separator
-                          snap
-                          defaultSizes={[75, 25]}
-                          proportionalLayout
+                        <div
+                          className={styles.content}
+                          data-testid="vehicle-dashboard"
                         >
-                          <Allotment.Pane>{primarySection}</Allotment.Pane>
-                          <Allotment.Pane priority={LayoutPriority.High}>
-                            {secondarySection}
-                          </Allotment.Pane>
-                        </Allotment>
-                      </div>
-                    ) : (
-                      <div className="flex h-full w-full flex-col">
-                        <div className="flex shrink-0 items-center gap-2 border-b border-slate-200 bg-white px-4 py-2">
-                          <button
-                            type="button"
-                            onClick={() => setMobileView('map')}
-                            className={
-                              mobileView === 'map'
-                                ? 'rounded bg-secondary-300/60 px-3 py-1 text-sm font-bold text-black'
-                                : 'rounded px-3 py-1 text-sm font-bold text-slate-600'
-                            }
-                          >
-                            Map
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() => setMobileView('list')}
-                            className={
-                              mobileView === 'list'
-                                ? 'rounded bg-secondary-300/60 px-3 py-1 text-sm font-bold text-black'
-                                : 'rounded px-3 py-1 text-sm font-bold text-slate-600'
-                            }
-                          >
-                            Vehicles
-                          </button>
-                        </div>
+                          {/* Single map instance: render one layout to avoid duplicate controls */}
+                          {isDesktop ? (
+                            <div className="h-full w-full">
+                              <Allotment
+                                separator
+                                snap
+                                defaultSizes={[75, 25]}
+                                proportionalLayout
+                              >
+                                <Allotment.Pane>
+                                  {primarySection}
+                                </Allotment.Pane>
+                                <Allotment.Pane priority={LayoutPriority.High}>
+                                  {secondarySection}
+                                </Allotment.Pane>
+                              </Allotment>
+                            </div>
+                          ) : (
+                            <div className="flex h-full w-full flex-col">
+                              <div className="flex shrink-0 items-center gap-2 border-b border-slate-200 bg-white px-4 py-2">
+                                <button
+                                  type="button"
+                                  onClick={() => setMobileView('map')}
+                                  className={
+                                    mobileView === 'map'
+                                      ? 'rounded bg-secondary-300/60 px-3 py-1 text-sm font-bold text-black'
+                                      : 'rounded px-3 py-1 text-sm font-bold text-slate-600'
+                                  }
+                                >
+                                  Map
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={() => setMobileView('list')}
+                                  className={
+                                    mobileView === 'list'
+                                      ? 'rounded bg-secondary-300/60 px-3 py-1 text-sm font-bold text-black'
+                                      : 'rounded px-3 py-1 text-sm font-bold text-slate-600'
+                                  }
+                                >
+                                  Vehicles
+                                </button>
+                              </div>
 
-                        <div className="min-h-0 flex-1 overflow-hidden">
-                          {mobileView === 'map'
-                            ? primarySection
-                            : secondarySection}
+                              <div className="min-h-0 flex-1 overflow-hidden">
+                                {mobileView === 'map'
+                                  ? primarySection
+                                  : secondarySection}
+                              </div>
+                            </div>
+                          )}
                         </div>
-                      </div>
+                      </>
+                    ) : (
+                      <>
+                        <p className="p-6 text-xl" aria-label="get started">
+                          To get started you must add at least one vehicle to
+                          track.
+                        </p>
+                        <VehicleDeploymentDropdown
+                          className="mx-6 max-h-96 w-96"
+                          scrollable
+                        />
+                      </>
                     )}
-                  </div>
-                </>
-              ) : (
-                <>
-                  <p className="p-6 text-xl" aria-label="get started">
-                    To get started you must add at least one vehicle to track.
-                  </p>
-                  <VehicleDeploymentDropdown
-                    className="mx-6 max-h-96 w-96"
-                    scrollable
-                  />
-                </>
-              )}
-            </Layout>
-          </div>
+                  </Layout>
+                </div>
+              </SelectedKmlLayersProvider>
+            </SelectedTileLayersProvider>
+          </SelectedPolygonsProvider>
         </SelectedStationsProvider>
       </SelectedPlatformsProvider>
     </SharedPathContextProvider>
