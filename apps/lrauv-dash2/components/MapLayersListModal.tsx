@@ -611,9 +611,14 @@ export const MapLayersListModal: React.FC<{
                   ).length === validStations.length
                 }
                 onToggleExpand={() => toggleExpanded('stations')}
-                onToggleCheck={handleToggleSelectAllStations}
+                onToggleCheck={
+                  validStations.length > 0
+                    ? handleToggleSelectAllStations
+                    : undefined
+                }
                 icon={faCircle}
                 iconColor="white"
+                disabled={validStations.length === 0}
               >
                 {/* Starred stations first (alphabetical), then unstarred in original API order */}
                 {sortedStations.map((station) => {
