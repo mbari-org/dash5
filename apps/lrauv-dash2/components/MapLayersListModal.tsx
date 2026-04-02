@@ -761,20 +761,72 @@ export const MapLayersListModal: React.FC<{
                 icon={faDrawPolygon}
                 iconColor="#6366f1"
               >
-                {(polygons ?? []).map((polygon) => (
-                  <TreeItem
-                    key={`polygon-${polygon.name}`}
-                    label={polygon.name}
-                    isChecked={selectedPolygons.includes(polygon.name)}
-                    onToggleCheck={() => {
-                      setSelectedPolygons((prev) =>
-                        prev.includes(polygon.name)
-                          ? prev.filter((n) => n !== polygon.name)
-                          : [...prev, polygon.name]
-                      )
-                    }}
-                  />
-                ))}
+                {(polygons ?? []).map((polygon) => {
+                  // Compute bounding-box center across all features so we can
+                  // fly the map to the polygon when the center button is clicked.
+                  let polygonCenter: { lat: number; lon: number } | null = null
+                  try {
+                    let minLat = Infinity,
+                      maxLat = -Infinity,
+                      minLon = Infinity,
+                      maxLon = -Infinity
+                    const collectCoord = (coord: unknown) => {
+                      if (
+                        Array.isArray(coord) &&
+                        coord.length >= 2 &&
+                        typeof coord[0] === 'number' &&
+                        typeof coord[1] === 'number'
+                      ) {
+                        minLon = Math.min(minLon, coord[0])
+                        maxLon = Math.max(maxLon, coord[0])
+                        minLat = Math.min(minLat, coord[1])
+                        maxLat = Math.max(maxLat, coord[1])
+                      } else if (Array.isArray(coord)) {
+                        coord.forEach(collectCoord)
+                      }
+                    }
+                    ;(polygon.geojson?.features ?? []).forEach((f) =>
+                      collectCoord(f.geometry?.coordinates)
+                    )
+                    if (
+                      isFinite(minLat) &&
+                      isFinite(maxLat) &&
+                      isFinite(minLon) &&
+                      isFinite(maxLon)
+                    ) {
+                      polygonCenter = {
+                        lat: (minLat + maxLat) / 2,
+                        lon: (minLon + maxLon) / 2,
+                      }
+                    }
+                  } catch {
+                    // leave polygonCenter null if coords can't be parsed
+                  }
+
+                  return (
+                    <TreeItem
+                      key={`polygon-${polygon.name}`}
+                      label={polygon.name}
+                      isChecked={selectedPolygons.includes(polygon.name)}
+                      onToggleCheck={() => {
+                        setSelectedPolygons((prev) =>
+                          prev.includes(polygon.name)
+                            ? prev.filter((n) => n !== polygon.name)
+                            : [...prev, polygon.name]
+                        )
+                      }}
+                      onCenterClick={
+                        polygonCenter
+                          ? () =>
+                              setFlyToRequest({
+                                lat: polygonCenter!.lat,
+                                lon: polygonCenter!.lon,
+                              })
+                          : undefined
+                      }
+                    />
+                  )
+                })}
                 {polygons !== undefined && polygons.length === 0 ? (
                   <div className="py-2 pl-10 text-sm italic text-gray-500">
                     No polygons available
