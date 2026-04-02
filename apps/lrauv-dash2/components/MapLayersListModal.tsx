@@ -138,6 +138,7 @@ const TreeItem: React.FC<TreeItemProps> = ({
                   : 'Click to enable spotlight'
               }
               placement="top-start"
+              appendTo="parent"
             >
               <button
                 type="button"
@@ -178,7 +179,11 @@ const TreeItem: React.FC<TreeItemProps> = ({
           )}
           <span className="text-sm font-medium">{label}</span>
           {onCenterClick !== undefined && (
-            <Tippy content="Center map on this station" placement="top-start">
+            <Tippy
+              content="Center map on this station"
+              placement="top-start"
+              appendTo="parent"
+            >
               <button
                 type="button"
                 onClick={(e) => {
@@ -322,13 +327,14 @@ export const MapLayersListModal: React.FC<{
       if (modalRef.current && !modalRef.current.contains(e.target as Node)) {
         // Don't stop propagation here so Leaflet can begin a pan/drag on the
         // same gesture. Flag the paired click so IT gets consumed instead.
-        // If the gesture becomes a drag, the browser won't fire a click and
-        // justClosedRef would stay true — clear it via a short timeout so
-        // subsequent unrelated clicks are not incorrectly consumed.
+        // Clear via mouseup (gesture end) rather than a fixed timeout so we
+        // don't miss long-press or delayed-click scenarios.
         justClosedRef.current = true
-        window.setTimeout(() => {
+        const clearJustClosed = () => {
           justClosedRef.current = false
-        }, 300)
+          document.removeEventListener('mouseup', clearJustClosed, true)
+        }
+        document.addEventListener('mouseup', clearJustClosed, true)
         handleClose()
       }
     }
