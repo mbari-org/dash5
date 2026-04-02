@@ -250,7 +250,6 @@ const Vehicle: NextPage = () => {
     recoverEvent: lastDeployment?.recoverEvent,
     startEventUnix: lastDeployment?.startEvent?.unixTime,
   })
-
   const isRecovered = Boolean(lastDeployment?.recoverEvent)
   const recoveredAt = lastDeployment?.recoverEvent?.unixTime
     ? DateTime.fromMillis(lastDeployment.recoverEvent.unixTime).toRelative() ??

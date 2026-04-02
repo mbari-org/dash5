@@ -155,6 +155,16 @@ export const OverviewToolbar: React.FC<OverviewToolbarProps> = ({
             />
           )}
         </li>
+        {recovered && (
+          <li className="ml-3 flex items-center">
+            <span
+              className="rounded-full bg-green-100 px-3 py-1 text-sm font-semibold text-green-800"
+              title={recoveredAt ? `Recovered ${recoveredAt}` : 'Recovered'}
+            >
+              Recovered
+            </span>
+          </li>
+        )}
         {onEditDeployment ? (
           <li data-testid="deploymentDetails" className="ml-2">
             <IconButton
