@@ -130,7 +130,7 @@ const TreeItem: React.FC<TreeItemProps> = ({
               />
             )
           ) : null}
-          {onStarClick !== undefined && !disabled && (
+          {onStarClick !== undefined && (!disabled || isStarred) && (
             <Tippy
               content={
                 isStarred
@@ -254,7 +254,7 @@ export const MapLayersListModal: React.FC<{
     markers,
     selectedMarkers,
     toggleMarkerVisibility,
-    selectAllMarkers, // Make sure these are imported
+    selectAllMarkers,
     deselectAllMarkers,
   } = useMarkers()
   // Track expansion state of tree nodes
