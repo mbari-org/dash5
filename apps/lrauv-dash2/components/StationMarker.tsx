@@ -26,7 +26,8 @@ const StationMarker: React.FC<StationMarkerProps> = ({
             color="red"
             weight={2}
             fillOpacity={0}
-            pathOptions={{ dashArray: '6 5' }}
+            pathOptions={{ dashArray: '6 5', interactive: false }}
+            interactive={false}
           />
           {/* Inner yellow dashed spotlight ring */}
           <CircleMarker
@@ -36,7 +37,8 @@ const StationMarker: React.FC<StationMarkerProps> = ({
             color="#FFD700"
             weight={2}
             fillOpacity={0}
-            pathOptions={{ dashArray: '6 5' }}
+            pathOptions={{ dashArray: '6 5', interactive: false }}
+            interactive={false}
           />
         </>
       )}

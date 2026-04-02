@@ -179,6 +179,10 @@ const DeploymentMap: React.FC<DeploymentMapProps> = ({
   const [showPlatformsModal, setShowPlatformsModal] = useState(false)
   const { selectedStations, highlightedStationName } = useSelectedStations()
   const [colorModalOpen, setColorModalOpen] = useState(false)
+  const [waypointFitTrigger, setWaypointFitTrigger] = useState(0)
+  const prevFocusedWaypointIndexRef = useRef<number | null | undefined>(
+    undefined
+  )
   const [colorModalPosition, setColorModalPosition] = useState<{
     top: number
     left: number
@@ -212,6 +216,16 @@ const DeploymentMap: React.FC<DeploymentMapProps> = ({
       latestVehicle.current = vehicleName
     }
   }, [vehicleName, setLatestGPS])
+
+  // Bump fitTrigger when leaving waypoint focus mode so WaypointPreviewPath
+  // re-fits bounds even when the route coordinates didn't change.
+  useEffect(() => {
+    const prev = prevFocusedWaypointIndexRef.current
+    if (typeof prev === 'number' && focusedWaypointIndex == null) {
+      setWaypointFitTrigger((n) => n + 1)
+    }
+    prevFocusedWaypointIndexRef.current = focusedWaypointIndex
+  }, [focusedWaypointIndex])
 
   useEffect(() => {
     if (mapRef?.current && !showVehicleColors) {
@@ -755,6 +769,7 @@ const DeploymentMap: React.FC<DeploymentMapProps> = ({
                   lat: Number(waypoint.lat),
                   lon: Number(waypoint.lon),
                 }))}
+                fitTrigger={waypointFitTrigger}
               />
             </>
           ) : (

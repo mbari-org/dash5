@@ -265,13 +265,23 @@ export const MapLayersListModal: React.FC<{
   >(anchorPosition)
   const [isFadingOut, setIsFadingOut] = useState(false)
   const modalRef = useRef<HTMLDivElement>(null)
+  const closeTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   const handleClose = useCallback(() => {
+    if (isFadingOut) return
     setIsFadingOut(true)
-    setTimeout(() => {
+    setHighlightedStationName(null)
+    closeTimerRef.current = setTimeout(() => {
       onClose()
     }, 250)
-  }, [onClose])
+  }, [isFadingOut, onClose, setHighlightedStationName])
+
+  // Cleanup timer on unmount
+  useEffect(() => {
+    return () => {
+      if (closeTimerRef.current) clearTimeout(closeTimerRef.current)
+    }
+  }, [])
 
   // Click-outside to dismiss
   useEffect(() => {
@@ -575,7 +585,15 @@ export const MapLayersListModal: React.FC<{
                         }
                       }}
                       isStarred={starredStations.includes(station.name)}
-                      onStarClick={() => toggleStarStation(station.name)}
+                      onStarClick={() => {
+                        const isCurrentlyStarred = starredStations.includes(
+                          station.name
+                        )
+                        if (isCurrentlyStarred) {
+                          setHighlightedStationName(null)
+                        }
+                        toggleStarStation(station.name)
+                      }}
                       onMouseEnterStar={() => {
                         if (starredStations.includes(station.name)) {
                           setHighlightedStationName(station.name)
@@ -615,7 +633,7 @@ export const MapLayersListModal: React.FC<{
           >
             <div className="flex justify-end pr-3">
               <button
-                onClick={onClose}
+                onClick={handleClose}
                 className="rounded bg-blue-500 px-4 py-2 text-white hover:bg-blue-800"
                 style={{
                   marginRight: '20px',
