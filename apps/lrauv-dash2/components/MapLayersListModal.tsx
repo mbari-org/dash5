@@ -110,6 +110,7 @@ const TreeItem: React.FC<TreeItemProps> = ({
             type="checkbox"
             checked={isChecked}
             onChange={onToggleCheck}
+            readOnly={!onToggleCheck}
             disabled={disabled}
             className="mapLayersCheckbox mr-2"
             style={{
@@ -390,17 +391,15 @@ export const MapLayersListModal: React.FC<{
 
   // Existing handlers for stations
   const handleSelectAllStations = useCallback(() => {
-    if (stations) {
-      setSelectedStations(
-        stations.map((station) => ({
-          name: station.name,
-          geojson: station.geojson,
-          lat: station.geojson.geometry.coordinates[1],
-          lon: station.geojson.geometry.coordinates[0],
-        }))
-      )
-    }
-  }, [stations, setSelectedStations])
+    setSelectedStations(
+      validStations.map((station) => ({
+        name: station.name,
+        geojson: station.geojson,
+        lat: station.geojson.geometry.coordinates[1],
+        lon: station.geojson.geometry.coordinates[0],
+      }))
+    )
+  }, [validStations, setSelectedStations])
 
   // Deselect all stations
   const handleDeselectAllStations = useCallback(() => {
@@ -409,14 +408,17 @@ export const MapLayersListModal: React.FC<{
 
   // Toggle select all stations
   const handleToggleSelectAllStations = useCallback(() => {
-    if (selectedStations.length === stations?.length) {
+    const selectedValidCount = selectedStations.filter((s) =>
+      validStations.some((v) => v.name === s.name)
+    ).length
+    if (selectedValidCount === validStations.length) {
       handleDeselectAllStations()
     } else {
       handleSelectAllStations()
     }
   }, [
     selectedStations,
-    stations,
+    validStations,
     handleSelectAllStations,
     handleDeselectAllStations,
   ])
@@ -481,6 +483,20 @@ export const MapLayersListModal: React.FC<{
       })
       .map(({ station }) => station)
   }, [stations, starredSet])
+
+  // Pre-computed list of stations with valid coordinates — used by select-all
+  // logic and the header checkbox so stations with invalid coords are excluded.
+  const validStations = useMemo(
+    () =>
+      (stations ?? []).filter((station) => {
+        const coords = station.geojson?.geometry?.coordinates
+        return (
+          Number.isFinite(coords?.[1] as number) &&
+          Number.isFinite(coords?.[0] as number)
+        )
+      }),
+    [stations]
+  )
 
   return (
     <>
@@ -592,8 +608,10 @@ export const MapLayersListModal: React.FC<{
                 label="Stations"
                 isExpanded={expandedSections.stations}
                 isChecked={
-                  selectedStations.length === stations?.length &&
-                  stations?.length > 0
+                  validStations.length > 0 &&
+                  selectedStations.filter((s) =>
+                    validStations.some((v) => v.name === s.name)
+                  ).length === validStations.length
                 }
                 onToggleExpand={() => toggleExpanded('stations')}
                 onToggleCheck={handleToggleSelectAllStations}
