@@ -33,13 +33,13 @@ export interface SelectedStationsContextProps {
   flyToRequest: {
     lat: number
     lon: number
-    geoJson?: object
+    bounds?: [[number, number], [number, number]]
   } | null
   setFlyToRequest: React.Dispatch<
     React.SetStateAction<{
       lat: number
       lon: number
-      geoJson?: object
+      bounds?: [[number, number], [number, number]]
     } | null>
   >
   debug: {
@@ -99,7 +99,7 @@ export const SelectedStationsProvider: React.FC<{
   const [flyToRequest, setFlyToRequest] = useState<{
     lat: number
     lon: number
-    geoJson?: object
+    bounds?: [[number, number], [number, number]]
   } | null>(null)
 
   useEffect(() => {
