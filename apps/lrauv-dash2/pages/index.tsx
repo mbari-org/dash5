@@ -23,6 +23,8 @@ import { StationsListModal } from '../components/StationsListModal'
 import { MapLayersListModal } from '../components/MapLayersListModal'
 import { useSelectedStations } from '../components/SelectedStationContext'
 import { useMarkers } from '../components/MarkerContext'
+
+const MapFlyTo = dynamic(() => import('../components/MapFlyTo'), { ssr: false })
 import toast from 'react-hot-toast'
 import { createLogger } from '@mbari/utils'
 import { PlatformsListModal } from '../components/PlatformsListModal'
@@ -723,6 +725,7 @@ const OverViewMap: React.FC<{
               />
             )
           })}
+          <MapFlyTo />
         </Map>
         <MapRefreshButton
           onClick={refreshAll}
