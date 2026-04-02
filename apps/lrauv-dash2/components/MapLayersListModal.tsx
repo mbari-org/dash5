@@ -281,6 +281,9 @@ export const MapLayersListModal: React.FC<{
   // gesture is still consumed (preventing map click-actions on close), then
   // cleared. Subsequent gestures during the fade pass through freely.
   const justClosedRef = useRef(false)
+  // Tracked so effect cleanup can remove it if the component unmounts while
+  // the mouse is still held down (before mouseup fires).
+  const clearJustClosedRef = useRef<(() => void) | null>(null)
 
   const handleClose = useCallback(() => {
     if (isFadingOutRef.current) return
@@ -333,12 +336,16 @@ export const MapLayersListModal: React.FC<{
         // be consumed by handleOutsideCapture below.
         justClosedRef.current = true
         const clearJustClosed = () => {
-          document.removeEventListener('mouseup', clearJustClosed, true)
+          clearJustClosedRef.current = null
           setTimeout(() => {
             justClosedRef.current = false
           }, 0)
         }
-        document.addEventListener('mouseup', clearJustClosed, true)
+        clearJustClosedRef.current = clearJustClosed
+        document.addEventListener('mouseup', clearJustClosed, {
+          capture: true,
+          once: true,
+        })
         handleClose()
       }
     }
@@ -354,6 +361,14 @@ export const MapLayersListModal: React.FC<{
       document.removeEventListener('click', handleOutsideCapture, {
         capture: true,
       })
+      // Remove the pending mouseup listener if the component unmounts while
+      // the mouse is still held down (before mouseup fires).
+      if (clearJustClosedRef.current) {
+        document.removeEventListener('mouseup', clearJustClosedRef.current, {
+          capture: true,
+        })
+        clearJustClosedRef.current = null
+      }
     }
   }, [handleClose])
 
