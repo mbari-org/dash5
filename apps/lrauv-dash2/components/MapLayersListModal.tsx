@@ -102,19 +102,21 @@ const TreeItem: React.FC<TreeItemProps> = ({
 
         <label
           className={`flex w-full ${
-            disabled ? 'cursor-null opacity-60' : 'cursor-pointer'
+            disabled ? 'cursor-not-allowed opacity-60' : 'cursor-pointer'
           } items-center`}
+          title={disabled ? 'No valid coordinates' : undefined}
         >
           <input
             type="checkbox"
             checked={isChecked}
             onChange={onToggleCheck}
+            disabled={disabled}
             className="mapLayersCheckbox mr-2"
             style={{
               width: '18px',
               height: '18px',
               accentColor: '#3182ce',
-              cursor: disabled ? 'none' : 'pointer',
+              cursor: disabled ? 'not-allowed' : 'pointer',
             }}
           />
           {icon ? (
@@ -607,6 +609,7 @@ export const MapLayersListModal: React.FC<{
                     <TreeItem
                       key={`station-${station.name}`}
                       label={station.name}
+                      disabled={!hasValidCoords}
                       isChecked={isStationSelected(station.name)}
                       onToggleCheck={() => {
                         if (isStationSelected(station.name)) {
