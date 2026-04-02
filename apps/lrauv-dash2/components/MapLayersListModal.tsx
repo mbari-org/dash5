@@ -150,6 +150,7 @@ const TreeItem: React.FC<TreeItemProps> = ({
                 onMouseLeave={onMouseLeaveStar}
                 className="mr-1 focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-blue-500"
                 aria-label={isStarred ? 'Unstar station' : 'Star station'}
+                aria-pressed={isStarred}
                 style={{
                   width: '22px',
                   height: '22px',

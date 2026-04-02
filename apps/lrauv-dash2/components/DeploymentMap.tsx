@@ -717,7 +717,12 @@ const DeploymentMap: React.FC<DeploymentMapProps> = ({
             const lng = station.geojson.geometry.coordinates[0]
             const lat = station.geojson.geometry.coordinates[1]
 
-            if (lng == null || lat == null || !isFinite(lng) || !isFinite(lat))
+            if (
+              lng == null ||
+              lat == null ||
+              !Number.isFinite(lng) ||
+              !Number.isFinite(lat)
+            )
               return null
             return (
               <StationMarker
