@@ -148,7 +148,7 @@ const TreeItem: React.FC<TreeItemProps> = ({
                 }}
                 onMouseEnter={onMouseEnterStar}
                 onMouseLeave={onMouseLeaveStar}
-                className="mr-1 focus:outline-none"
+                className="mr-1 focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-blue-500"
                 aria-label={isStarred ? 'Unstar station' : 'Star station'}
                 style={{
                   width: '22px',
@@ -185,7 +185,7 @@ const TreeItem: React.FC<TreeItemProps> = ({
                   e.stopPropagation()
                   onCenterClick()
                 }}
-                className="ml-2 focus:outline-none"
+                className="ml-2 focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-blue-500"
                 aria-label="Center map on station"
                 style={{
                   width: '20px',
@@ -446,6 +446,25 @@ export const MapLayersListModal: React.FC<{
     return selectedStations.some((s) => s.name === stationName)
   }
 
+  // Memoized starred Set and sorted station list to avoid repeated .includes()
+  // calls inside the sort comparator on every render.
+  const starredSet = useMemo(
+    () => new Set(starredStations ?? []),
+    [starredStations]
+  )
+  const sortedStations = useMemo(
+    () =>
+      [...(stations ?? [])].sort((a, b) => {
+        const aStarred = starredSet.has(a.name)
+        const bStarred = starredSet.has(b.name)
+        if (aStarred && bStarred) return a.name.localeCompare(b.name)
+        if (aStarred) return -1
+        if (bStarred) return 1
+        return 0
+      }),
+    [stations, starredSet]
+  )
+
   // Check if all stations in a group are selected
   const areAllStationsInGroupSelected = (groupName: string): boolean => {
     const groupStations = stationGroups[groupName] || []
@@ -594,64 +613,52 @@ export const MapLayersListModal: React.FC<{
                 iconColor="white"
               >
                 {/* Starred stations first (alphabetical), then unstarred in original API order */}
-                {[...(stations ?? [])]
-                  .sort((a, b) => {
-                    const aStarred = starredStations.includes(a.name)
-                    const bStarred = starredStations.includes(b.name)
-                    if (aStarred && bStarred)
-                      return a.name.localeCompare(b.name)
-                    if (aStarred) return -1
-                    if (bStarred) return 1
-                    return 0
-                  })
-                  .map((station) => (
-                    <TreeItem
-                      key={`station-${station.name}`}
-                      label={station.name}
-                      isChecked={isStationSelected(station.name)}
-                      onToggleCheck={() => {
-                        if (isStationSelected(station.name)) {
-                          setSelectedStations(
-                            selectedStations.filter(
-                              (s) => s.name !== station.name
-                            )
+                {sortedStations.map((station) => (
+                  <TreeItem
+                    key={`station-${station.name}`}
+                    label={station.name}
+                    isChecked={isStationSelected(station.name)}
+                    onToggleCheck={() => {
+                      if (isStationSelected(station.name)) {
+                        setSelectedStations(
+                          selectedStations.filter(
+                            (s) => s.name !== station.name
                           )
-                        } else {
-                          setSelectedStations([
-                            ...selectedStations,
-                            {
-                              name: station.name,
-                              geojson: station.geojson,
-                              lat: station.geojson.geometry.coordinates[1],
-                              lon: station.geojson.geometry.coordinates[0],
-                            },
-                          ])
-                        }
-                      }}
-                      isStarred={starredStations.includes(station.name)}
-                      onStarClick={() => {
-                        const isCurrentlyStarred = starredStations.includes(
-                          station.name
                         )
-                        if (isCurrentlyStarred) {
-                          setHighlightedStationName(null)
-                        }
-                        toggleStarStation(station.name)
-                      }}
-                      onMouseEnterStar={() => {
-                        if (starredStations.includes(station.name)) {
-                          setHighlightedStationName(station.name)
-                        }
-                      }}
-                      onMouseLeaveStar={() => setHighlightedStationName(null)}
-                      onCenterClick={() =>
-                        setFlyToRequest({
-                          lat: station.geojson.geometry.coordinates[1],
-                          lon: station.geojson.geometry.coordinates[0],
-                        })
+                      } else {
+                        setSelectedStations([
+                          ...selectedStations,
+                          {
+                            name: station.name,
+                            geojson: station.geojson,
+                            lat: station.geojson.geometry.coordinates[1],
+                            lon: station.geojson.geometry.coordinates[0],
+                          },
+                        ])
                       }
-                    />
-                  ))}
+                    }}
+                    isStarred={starredSet.has(station.name)}
+                    onStarClick={() => {
+                      const isCurrentlyStarred = starredSet.has(station.name)
+                      if (isCurrentlyStarred) {
+                        setHighlightedStationName(null)
+                      }
+                      toggleStarStation(station.name)
+                    }}
+                    onMouseEnterStar={() => {
+                      if (starredSet.has(station.name)) {
+                        setHighlightedStationName(station.name)
+                      }
+                    }}
+                    onMouseLeaveStar={() => setHighlightedStationName(null)}
+                    onCenterClick={() =>
+                      setFlyToRequest({
+                        lat: station.geojson.geometry.coordinates[1],
+                        lon: station.geojson.geometry.coordinates[0],
+                      })
+                    }
+                  />
+                ))}
                 {stations !== undefined && stations.length === 0 ? (
                   <div className="py-2 pl-10 text-sm italic text-gray-500">
                     No stations available

@@ -72,7 +72,8 @@ const StationMarker: React.FC<StationMarkerProps> = ({
             />
           </>
         )}
-        {/* Geographic radius circle — rendered in meters on the map */}
+        {/* Geographic radius circle — non-interactive so it doesn't block
+            pan/drag or create a huge hover target; tooltip lives on center dot */}
         <Circle
           center={[lat, lng]}
           radius={radiusMeters}
@@ -80,10 +81,10 @@ const StationMarker: React.FC<StationMarkerProps> = ({
           weight={2}
           fillColor={CIRCLE_STATION_COLOR}
           fillOpacity={0.08}
-        >
-          {tooltip}
-        </Circle>
-        {/* Small center dot so the station is still click/hover-able */}
+          interactive={false}
+          pathOptions={{ interactive: false }}
+        />
+        {/* Small center dot — the only interactive element; carries the tooltip */}
         <CircleMarker
           center={[lat, lng]}
           radius={4}
