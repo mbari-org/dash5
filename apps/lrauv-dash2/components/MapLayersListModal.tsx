@@ -650,7 +650,12 @@ export const MapLayersListModal: React.FC<{
                     onStarClick={() => {
                       const isCurrentlyStarred = starredSet.has(station.name)
                       if (isCurrentlyStarred) {
+                        // Un-starring: clear any active spotlight
                         setHighlightedStationName(null)
+                      } else {
+                        // Starring while hovering: immediately show spotlight
+                        // so the user doesn't need to mouse-out and back
+                        setHighlightedStationName(station.name)
                       }
                       toggleStarStation(station.name)
                     }}
