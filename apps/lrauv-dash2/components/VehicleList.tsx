@@ -27,10 +27,10 @@ import { DateTime } from 'luxon'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { faCheck, faSync } from '@fortawesome/free-solid-svg-icons'
 import useGlobalModalId from '../lib/useGlobalModalId'
-import { useTethysSubscriptionEvent } from '../lib/useWebSocketListeners'
 import { useLastCommsTime } from '../lib/useLastCommsTime'
 import { useNeedCommsTime } from '../lib/useNeedCommsTime'
 import { useTick } from '../lib/useTick'
+import { useVehicleStatus } from '../lib/useVehicleStatus'
 
 const parsePos = (pos: string | number) => parseFloat(`${pos}`).toFixed(3)
 const calcPosition = (lat?: number | string, long?: number | string) =>
@@ -97,8 +97,6 @@ const ConnectedVehicleCellComponent: React.FC<{
       enabled: !!name && !!lastDeployment?.lastEvent,
     }
   )
-  const pingEvent = useTethysSubscriptionEvent('VehiclePingResult', name)
-
   const mission = missionStartedEvent?.[0]?.text.replace(/started mission/i, '')
   const isLoading = positionLoading || vehicleInfoLoading
 
@@ -136,6 +134,14 @@ const ConnectedVehicleCellComponent: React.FC<{
     }
   )
   const nowMs = useTick(60_000)
+  const { isLikelySurfaced } = useVehicleStatus({
+    vehicleName: name,
+    lastSatCommsTime,
+    lastCellCommsTime,
+    nowMs,
+    recoverEvent: lastDeployment?.recoverEvent,
+    startEventUnix: lastDeployment?.startEvent?.unixTime,
+  })
   const nowDT = DateTime.fromMillis(nowMs)
 
   const lastCellCommsDT = lastCellCommsTime
@@ -314,7 +320,7 @@ const ConnectedVehicleCellComponent: React.FC<{
           lastSatellite={
             vehicle?.text_gpsago?.length
               ? `${vehicle.text_gpsago}${
-                  pingEvent?.reachable ? ', likely on surface' : ''
+                  isLikelySurfaced ? ', likely on surface' : ''
                 }`
               : undefined
           }

@@ -2,21 +2,23 @@ import { useEffect, useMemo, useState } from 'react'
 import { NextPage } from 'next'
 import { useRouter } from 'next/router'
 import { DateTime } from 'luxon'
-import { getAdjustedUnixTime } from '@mbari/utils'
+import {
+  getAdjustedUnixTime,
+  humanize,
+  createRoleLabel,
+  calculateRelativeNextComm,
+} from '@mbari/utils'
 
 import {
   Tab,
   TabGroup,
   DeploymentInfo,
-  UnderwaterIcon,
-  SurfacedIcon,
   ConnectedIcon,
   NotConnectedIcon,
   MissionProgressToolbar,
   OverviewToolbar,
   VehicleCommsCell,
   VehicleInfoCell,
-  PluggedInIcon,
 } from '@mbari/react-ui'
 import {
   useDeployments,
@@ -33,20 +35,18 @@ import VehicleDiagram from '../../components/VehicleDiagram'
 import VehicleAccordion from '../../components/VehicleAccordion'
 import useGlobalModalId from '../../lib/useGlobalModalId'
 import useCurrentDeployment from '../../lib/useCurrentDeployment'
-import { humanize } from '@mbari/utils'
 import useGlobalDrawerState from '../../lib/useGlobalDrawerState'
 import dynamic from 'next/dynamic'
-import { useTethysSubscriptionEvent } from '../../lib/useWebSocketListeners'
 import { useLastCommsTime } from '../../lib/useLastCommsTime'
 import { Allotment } from 'allotment'
 import 'allotment/dist/style.css'
 import { useGoogleMaps } from '../../lib/useGoogleMaps'
 import { SelectedStationsProvider } from '../../components/SelectedStationContext'
 import { SelectedPlatformsProvider } from '../../components/SelectedPlatformContext'
-import { createRoleLabel } from '@mbari/utils'
 import { useNeedCommsTime } from '../../lib/useNeedCommsTime'
-import { calculateRelativeNextComm } from '@mbari/utils'
 import { useTick } from '../../lib/useTick'
+import { useVehicleStatus } from '../../lib/useVehicleStatus'
+import { vehiclePhysicalStatusIcon } from '../../lib/vehiclePhysicalStatusIcon'
 
 // Every flex parent of the map needs `min-h-0`
 // Without it, Leaflet sometimes shows gray tiles
@@ -229,13 +229,21 @@ const Vehicle: NextPage = () => {
     ? DateTime.fromMillis(nextCommTimeMs)
     : null
 
-  // Vehicle is plugged in if there's a recoverEvent in lastDeployment or lastDeployment start time is in the future (preparing for mission)
-  const isPluggedIn = Boolean(
-    lastDeployment?.recoverEvent ||
-      (lastDeployment?.startEvent?.unixTime &&
-        DateTime.fromMillis(lastDeployment.startEvent.unixTime).toMillis() >
-          DateTime.now().toMillis())
-  )
+  const {
+    pingEvent,
+    cellPingReachable,
+    isPluggedIn,
+    isLikelySurfaced,
+    physicalStatus,
+  } = useVehicleStatus({
+    vehicleName,
+    lastSatCommsTime,
+    lastCellCommsTime,
+    nowMs,
+    recoverEvent: lastDeployment?.recoverEvent,
+    startEventUnix: lastDeployment?.startEvent?.unixTime,
+  })
+
   const handleRoleReassign = () => setGlobalModalId({ id: 'reassign' })
   const handleNewDeployment = () => setGlobalModalId({ id: 'newDeployment' })
   const handleEditDeployment = () => setGlobalModalId({ id: 'editDeployment' })
@@ -287,15 +295,7 @@ const Vehicle: NextPage = () => {
     setGlobalModalId({ id: 'battery' })
   }
 
-  const pingEvent = useTethysSubscriptionEvent('VehiclePingResult', vehicleName)
-
-  const vehicleStatusIcon = isPluggedIn ? (
-    <PluggedInIcon />
-  ) : pingEvent?.reachable ? (
-    <SurfacedIcon />
-  ) : (
-    <UnderwaterIcon />
-  )
+  const vehicleStatusIcon = vehiclePhysicalStatusIcon(physicalStatus)
 
   const primarySection = (
     <section className={styles.primary}>
@@ -417,7 +417,7 @@ const Vehicle: NextPage = () => {
               onRoleReassign={handleRoleReassign}
               loadingPicAndOnCall={loadingPicAndOnCall}
               supportIcon1={
-                pingEvent?.reachable ? <ConnectedIcon /> : <NotConnectedIcon />
+                cellPingReachable ? <ConnectedIcon /> : <NotConnectedIcon />
               }
               supportIcon2={vehicleStatusIcon}
               onSelectNewDeployment={handleNewDeployment}
@@ -427,14 +427,10 @@ const Vehicle: NextPage = () => {
               onIcon1hover={() => (
                 <VehicleCommsCell
                   icon={
-                    pingEvent?.reachable ? (
-                      <ConnectedIcon />
-                    ) : (
-                      <NotConnectedIcon />
-                    )
+                    cellPingReachable ? <ConnectedIcon /> : <NotConnectedIcon />
                   }
                   headline={`Cell Comms: ${
-                    pingEvent?.reachable ? 'Connected' : 'Not Connected'
+                    cellPingReachable ? 'Connected' : 'Not Connected'
                   }`}
                   host={pingEvent?.hostName ?? 'Not available'}
                   lastPing={
@@ -449,7 +445,7 @@ const Vehicle: NextPage = () => {
               onIcon2hover={() => (
                 <VehicleInfoCell
                   isPluggedIn={isPluggedIn}
-                  isReachable={pingEvent?.reachable}
+                  isReachable={isLikelySurfaced}
                   nextCommsTime={nextCommsTime}
                   lastPluggedInTime={
                     lastDeployment?.recoverEvent?.unixTime
