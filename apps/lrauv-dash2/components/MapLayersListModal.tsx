@@ -14,9 +14,6 @@ import {
 } from '@fortawesome/free-solid-svg-icons'
 import { useSelectedStations } from './SelectedStationContext'
 import { useMarkers } from './MarkerContext'
-import { createLogger } from '@mbari/utils'
-
-const logger = createLogger('MapLayersListModal')
 
 type SectionName = 'stations' | 'markers' | `station-${string}`
 
