@@ -286,13 +286,26 @@ export const MapLayersListModal: React.FC<{
 
   // Click-outside to dismiss
   useEffect(() => {
-    const handleMouseDown = (e: MouseEvent) => {
+    const handleOutsideCapture = (e: MouseEvent) => {
       if (modalRef.current && !modalRef.current.contains(e.target as Node)) {
+        e.preventDefault()
+        e.stopPropagation()
         handleClose()
       }
     }
-    document.addEventListener('mousedown', handleMouseDown)
-    return () => document.removeEventListener('mousedown', handleMouseDown)
+
+    document.addEventListener('mousedown', handleOutsideCapture, {
+      capture: true,
+    })
+    document.addEventListener('click', handleOutsideCapture, { capture: true })
+    return () => {
+      document.removeEventListener('mousedown', handleOutsideCapture, {
+        capture: true,
+      })
+      document.removeEventListener('click', handleOutsideCapture, {
+        capture: true,
+      })
+    }
   }, [handleClose])
 
   useEffect(() => {

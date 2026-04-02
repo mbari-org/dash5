@@ -729,7 +729,7 @@ const DeploymentMap: React.FC<DeploymentMapProps> = ({
           <MapFlyTo />
           {plottedWaypoints?.length ? (
             <>
-              {plottedWaypoints.map(({ waypoint, originalIndex }, i) => {
+              {plottedWaypoints.map(({ waypoint, originalIndex }) => {
                 const waypointNumber = Number(
                   waypoint.latName?.match(/\d+/)?.[0] ?? originalIndex + 1
                 )
