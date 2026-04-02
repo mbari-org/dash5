@@ -329,12 +329,16 @@ export const MapLayersListModal: React.FC<{
       if (modalRef.current && !modalRef.current.contains(e.target as Node)) {
         // Don't stop propagation here so Leaflet can begin a pan/drag on the
         // same gesture. Flag the paired click so IT gets consumed instead.
-        // Clear via mouseup (gesture end) rather than a fixed timeout so we
-        // don't miss long-press or delayed-click scenarios.
+        // Remove the mouseup listener on gesture end, but defer the actual
+        // flag clear to the next macrotask so the paired click event (which
+        // fires after mouseup) can still observe justClosedRef as true and
+        // be consumed by handleOutsideCapture below.
         justClosedRef.current = true
         const clearJustClosed = () => {
-          justClosedRef.current = false
           document.removeEventListener('mouseup', clearJustClosed, true)
+          setTimeout(() => {
+            justClosedRef.current = false
+          }, 0)
         }
         document.addEventListener('mouseup', clearJustClosed, true)
         handleClose()
