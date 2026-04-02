@@ -85,6 +85,7 @@ const DeploymentMap: React.FC<DeploymentMapProps> = ({
   const {
     updatedWaypoints,
     handleWaypointsUpdate,
+    clearWaypoint,
     editable,
     focusedWaypointIndex,
   } = useManagedWaypoints()
@@ -105,18 +106,6 @@ const DeploymentMap: React.FC<DeploymentMapProps> = ({
         )
       )
     },
-    [updatedWaypoints, handleWaypointsUpdate]
-  )
-
-  const handleDeleteWaypoint = useCallback(
-    (index: number) =>
-      handleWaypointsUpdate(
-        updatedWaypoints.map((m, i) =>
-          i === index
-            ? { ...m, lat: 'NaN', lon: 'NaN', stationName: 'Custom' }
-            : m
-        )
-      ),
     [updatedWaypoints, handleWaypointsUpdate]
   )
 
@@ -767,9 +756,7 @@ const DeploymentMap: React.FC<DeploymentMapProps> = ({
                       })
                     }
                     onDelete={
-                      editable
-                        ? () => handleDeleteWaypoint(originalIndex)
-                        : undefined
+                      editable ? () => clearWaypoint(originalIndex) : undefined
                     }
                   />
                 )
