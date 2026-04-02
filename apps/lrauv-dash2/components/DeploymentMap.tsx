@@ -89,19 +89,22 @@ const DeploymentMap: React.FC<DeploymentMapProps> = ({
     focusedWaypointIndex,
   } = useManagedWaypoints()
   const handleDragEnd = useCallback(
-    (index: number, { lat, lng }: { lat: number; lng: number }) =>
-      handleWaypointsUpdate(
+    (index: number, { lat, lng }: { lat: number; lng: number }) => {
+      const roundedLat = Number(lat.toFixed(5))
+      const roundedLng = Number(lng.toFixed(5))
+      return handleWaypointsUpdate(
         updatedWaypoints.map((m, i) =>
           i === index
             ? {
                 ...m,
-                lat: lat.toString(),
-                lon: lng.toString(),
+                lat: roundedLat.toString(),
+                lon: roundedLng.toString(),
                 stationName: 'Custom',
               }
             : m
         )
-      ),
+      )
+    },
     [updatedWaypoints, handleWaypointsUpdate]
   )
 

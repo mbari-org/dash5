@@ -288,18 +288,30 @@ export const MapLayersListModal: React.FC<{
   useEffect(() => {
     const handleOutsideCapture = (e: MouseEvent) => {
       if (modalRef.current && !modalRef.current.contains(e.target as Node)) {
+        // Stop propagation on click to prevent map click-actions (waypoint
+        // placement, custom markers, etc.) firing alongside the dismiss.
+        // mousedown is intentionally NOT stopped so Leaflet can still begin
+        // a pan/drag gesture on the same gesture that closes the modal.
         e.preventDefault()
         e.stopPropagation()
         handleClose()
       }
     }
 
-    document.addEventListener('mousedown', handleOutsideCapture, {
+    const handleOutsideMouseDown = (e: MouseEvent) => {
+      if (modalRef.current && !modalRef.current.contains(e.target as Node)) {
+        // Dismiss on mousedown (without blocking propagation) so the user
+        // can immediately start panning the map on the same gesture.
+        handleClose()
+      }
+    }
+
+    document.addEventListener('mousedown', handleOutsideMouseDown, {
       capture: true,
     })
     document.addEventListener('click', handleOutsideCapture, { capture: true })
     return () => {
-      document.removeEventListener('mousedown', handleOutsideCapture, {
+      document.removeEventListener('mousedown', handleOutsideMouseDown, {
         capture: true,
       })
       document.removeEventListener('click', handleOutsideCapture, {
@@ -622,7 +634,7 @@ export const MapLayersListModal: React.FC<{
                       }
                     />
                   ))}
-                {Object.keys(stationGroups).length === 0 ? (
+                {stations !== undefined && stations.length === 0 ? (
                   <div className="py-2 pl-10 text-sm italic text-gray-500">
                     No stations available
                   </div>
