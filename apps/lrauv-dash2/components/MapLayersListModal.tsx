@@ -609,7 +609,7 @@ export const MapLayersListModal: React.FC<{
                               (s) => s.name !== station.name
                             )
                           )
-                        } else {
+                        } else if (hasValidCoords) {
                           setSelectedStations([
                             ...selectedStations,
                             {
