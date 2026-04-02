@@ -628,57 +628,69 @@ export const MapLayersListModal: React.FC<{
                 iconColor="white"
               >
                 {/* Starred stations first (alphabetical), then unstarred in original API order */}
-                {sortedStations.map((station) => (
-                  <TreeItem
-                    key={`station-${station.name}`}
-                    label={station.name}
-                    isChecked={isStationSelected(station.name)}
-                    onToggleCheck={() => {
-                      if (isStationSelected(station.name)) {
-                        setSelectedStations(
-                          selectedStations.filter(
-                            (s) => s.name !== station.name
+                {sortedStations.map((station) => {
+                  const coords = station.geojson?.geometry?.coordinates
+                  const stationLon = coords?.[0]
+                  const stationLat = coords?.[1]
+                  const hasValidCoords =
+                    Number.isFinite(stationLat as number) &&
+                    Number.isFinite(stationLon as number)
+
+                  return (
+                    <TreeItem
+                      key={`station-${station.name}`}
+                      label={station.name}
+                      isChecked={isStationSelected(station.name)}
+                      onToggleCheck={() => {
+                        if (isStationSelected(station.name)) {
+                          setSelectedStations(
+                            selectedStations.filter(
+                              (s) => s.name !== station.name
+                            )
                           )
-                        )
-                      } else {
-                        setSelectedStations([
-                          ...selectedStations,
-                          {
-                            name: station.name,
-                            geojson: station.geojson,
-                            lat: station.geojson.geometry.coordinates[1],
-                            lon: station.geojson.geometry.coordinates[0],
-                          },
-                        ])
+                        } else {
+                          setSelectedStations([
+                            ...selectedStations,
+                            {
+                              name: station.name,
+                              geojson: station.geojson,
+                              lat: stationLat as number,
+                              lon: stationLon as number,
+                            },
+                          ])
+                        }
+                      }}
+                      isStarred={starredSet.has(station.name)}
+                      onStarClick={() => {
+                        const isCurrentlyStarred = starredSet.has(station.name)
+                        if (isCurrentlyStarred) {
+                          // Un-starring: clear any active spotlight
+                          setHighlightedStationName(null)
+                        } else {
+                          // Starring while hovering: immediately show spotlight
+                          // so the user doesn't need to mouse-out and back
+                          setHighlightedStationName(station.name)
+                        }
+                        toggleStarStation(station.name)
+                      }}
+                      onMouseEnterStar={() => {
+                        if (starredSet.has(station.name)) {
+                          setHighlightedStationName(station.name)
+                        }
+                      }}
+                      onMouseLeaveStar={() => setHighlightedStationName(null)}
+                      onCenterClick={
+                        hasValidCoords
+                          ? () =>
+                              setFlyToRequest({
+                                lat: stationLat as number,
+                                lon: stationLon as number,
+                              })
+                          : undefined
                       }
-                    }}
-                    isStarred={starredSet.has(station.name)}
-                    onStarClick={() => {
-                      const isCurrentlyStarred = starredSet.has(station.name)
-                      if (isCurrentlyStarred) {
-                        // Un-starring: clear any active spotlight
-                        setHighlightedStationName(null)
-                      } else {
-                        // Starring while hovering: immediately show spotlight
-                        // so the user doesn't need to mouse-out and back
-                        setHighlightedStationName(station.name)
-                      }
-                      toggleStarStation(station.name)
-                    }}
-                    onMouseEnterStar={() => {
-                      if (starredSet.has(station.name)) {
-                        setHighlightedStationName(station.name)
-                      }
-                    }}
-                    onMouseLeaveStar={() => setHighlightedStationName(null)}
-                    onCenterClick={() =>
-                      setFlyToRequest({
-                        lat: station.geojson.geometry.coordinates[1],
-                        lon: station.geojson.geometry.coordinates[0],
-                      })
-                    }
-                  />
-                ))}
+                    />
+                  )
+                })}
                 {stations !== undefined && stations.length === 0 ? (
                   <div className="py-2 pl-10 text-sm italic text-gray-500">
                     No stations available

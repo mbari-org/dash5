@@ -99,6 +99,46 @@ export const SelectedStationsProvider: React.FC<{
     }
   }, [starredStations])
 
+  // Sync starredStations across tabs and on tab re-focus (mirrors the
+  // selectedStations cross-tab sync logic already present in this provider).
+  useEffect(() => {
+    if (typeof window === 'undefined') return
+
+    const parseStarred = (raw: string | null): string[] => {
+      try {
+        if (!raw) return []
+        const parsed = JSON.parse(raw)
+        return Array.isArray(parsed) ? parsed : []
+      } catch {
+        return []
+      }
+    }
+
+    const handleStorageChange = (e: StorageEvent) => {
+      if (e.key !== STARRED_STORAGE_KEY) return
+      const next = parseStarred(e.newValue)
+      setStarredStations((current) =>
+        JSON.stringify(current) === JSON.stringify(next) ? current : next
+      )
+    }
+
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'visible') {
+        const next = parseStarred(localStorage.getItem(STARRED_STORAGE_KEY))
+        setStarredStations((current) =>
+          JSON.stringify(current) === JSON.stringify(next) ? current : next
+        )
+      }
+    }
+
+    window.addEventListener('storage', handleStorageChange)
+    document.addEventListener('visibilitychange', handleVisibilityChange)
+    return () => {
+      window.removeEventListener('storage', handleStorageChange)
+      document.removeEventListener('visibilitychange', handleVisibilityChange)
+    }
+  }, [])
+
   const toggleStarStation = (name: string) => {
     setStarredStations((prev) =>
       prev.includes(name) ? prev.filter((n) => n !== name) : [...prev, name]
