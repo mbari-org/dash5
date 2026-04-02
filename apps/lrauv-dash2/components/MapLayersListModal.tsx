@@ -389,6 +389,20 @@ export const MapLayersListModal: React.FC<{
     }))
   }, [])
 
+  // Pre-computed list of stations with valid coordinates — used by select-all
+  // logic and the header checkbox so stations with invalid coords are excluded.
+  const validStations = useMemo(
+    () =>
+      (stations ?? []).filter((station) => {
+        const coords = station.geojson?.geometry?.coordinates
+        return (
+          Number.isFinite(coords?.[1] as number) &&
+          Number.isFinite(coords?.[0] as number)
+        )
+      }),
+    [stations]
+  )
+
   // Existing handlers for stations
   const handleSelectAllStations = useCallback(() => {
     setSelectedStations(
@@ -483,20 +497,6 @@ export const MapLayersListModal: React.FC<{
       })
       .map(({ station }) => station)
   }, [stations, starredSet])
-
-  // Pre-computed list of stations with valid coordinates — used by select-all
-  // logic and the header checkbox so stations with invalid coords are excluded.
-  const validStations = useMemo(
-    () =>
-      (stations ?? []).filter((station) => {
-        const coords = station.geojson?.geometry?.coordinates
-        return (
-          Number.isFinite(coords?.[1] as number) &&
-          Number.isFinite(coords?.[0] as number)
-        )
-      }),
-    [stations]
-  )
 
   return (
     <>
