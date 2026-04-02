@@ -792,49 +792,6 @@ export const MapLayersListModal: React.FC<{
                 iconColor="#6366f1"
               >
                 {(polygons ?? []).map((polygon) => {
-                  // Compute bounding box across all features so we can
-                  // use fitBounds to frame the full polygon extent.
-                  let polygonBounds: {
-                    minLat: number
-                    maxLat: number
-                    minLon: number
-                    maxLon: number
-                  } | null = null
-                  try {
-                    let minLat = Infinity,
-                      maxLat = -Infinity,
-                      minLon = Infinity,
-                      maxLon = -Infinity
-                    const collectCoord = (coord: unknown) => {
-                      if (
-                        Array.isArray(coord) &&
-                        coord.length >= 2 &&
-                        typeof coord[0] === 'number' &&
-                        typeof coord[1] === 'number'
-                      ) {
-                        minLon = Math.min(minLon, coord[0])
-                        maxLon = Math.max(maxLon, coord[0])
-                        minLat = Math.min(minLat, coord[1])
-                        maxLat = Math.max(maxLat, coord[1])
-                      } else if (Array.isArray(coord)) {
-                        coord.forEach(collectCoord)
-                      }
-                    }
-                    ;(polygon.geojson?.features ?? []).forEach((f) =>
-                      collectCoord(f.geometry?.coordinates)
-                    )
-                    if (
-                      isFinite(minLat) &&
-                      isFinite(maxLat) &&
-                      isFinite(minLon) &&
-                      isFinite(maxLon)
-                    ) {
-                      polygonBounds = { minLat, maxLat, minLon, maxLon }
-                    }
-                  } catch {
-                    // leave polygonBounds null if coords can't be parsed
-                  }
-
                   return (
                     <TreeItem
                       key={`polygon-${polygon.name}`}
@@ -848,27 +805,12 @@ export const MapLayersListModal: React.FC<{
                         )
                       }}
                       onCenterClick={
-                        polygonBounds
+                        polygon.geojson?.features?.length
                           ? () =>
                               setFlyToRequest({
-                                lat:
-                                  (polygonBounds!.minLat +
-                                    polygonBounds!.maxLat) /
-                                  2,
-                                lon:
-                                  (polygonBounds!.minLon +
-                                    polygonBounds!.maxLon) /
-                                  2,
-                                bounds: [
-                                  [
-                                    polygonBounds!.minLat,
-                                    polygonBounds!.minLon,
-                                  ],
-                                  [
-                                    polygonBounds!.maxLat,
-                                    polygonBounds!.maxLon,
-                                  ],
-                                ],
+                                lat: 0,
+                                lon: 0,
+                                geoJson: polygon.geojson,
                               })
                           : undefined
                       }
