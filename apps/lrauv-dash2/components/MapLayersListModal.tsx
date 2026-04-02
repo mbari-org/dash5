@@ -488,7 +488,6 @@ export const MapLayersListModal: React.FC<{
               </div>
             </div>
           }
-          confirmButtonText="Close"
           onClose={handleClose}
           snapTo={!modalPosition ? 'top-left' : undefined}
           open
