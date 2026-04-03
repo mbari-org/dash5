@@ -1,5 +1,6 @@
 import React from 'react'
 import { GeoJSON, Tooltip } from 'react-leaflet'
+import type { GeoJsonObject } from 'geojson'
 import { usePolygons } from '@mbari/api-client'
 import { useSelectedPolygons } from './SelectedPolygonsContext'
 
@@ -18,7 +19,7 @@ const PolygonLayers: React.FC = () => {
           return (
             <GeoJSON
               key={p.name}
-              data={p.geojson as unknown as GeoJSON.GeoJsonObject}
+              data={p.geojson as unknown as GeoJsonObject}
               style={() => ({
                 color,
                 weight: 2,

@@ -45,6 +45,7 @@ interface TreeItemProps {
   iconColor?: string
   children?: React.ReactNode
   disabled?: boolean
+  disabledTitle?: string
   isStarred?: boolean
   onStarClick?: () => void
   onMouseEnterStar?: () => void
@@ -62,6 +63,7 @@ const TreeItem: React.FC<TreeItemProps> = ({
   iconColor,
   children,
   disabled = false,
+  disabledTitle,
   isStarred,
   onStarClick,
   onMouseEnterStar,
@@ -118,7 +120,7 @@ const TreeItem: React.FC<TreeItemProps> = ({
           className={`flex w-full ${
             disabled ? 'cursor-not-allowed opacity-60' : 'cursor-pointer'
           } items-center`}
-          title={disabled ? 'No valid coordinates' : undefined}
+          title={disabled ? disabledTitle ?? 'Not available' : undefined}
         >
           <input
             type="checkbox"
@@ -705,6 +707,7 @@ export const MapLayersListModal: React.FC<{
                       key={`station-${station.name}`}
                       label={station.name}
                       disabled={!hasValidCoords}
+                      disabledTitle="No valid coordinates"
                       isChecked={isStationSelected(station.name)}
                       onToggleCheck={() => {
                         if (isStationSelected(station.name)) {
@@ -933,61 +936,68 @@ export const MapLayersListModal: React.FC<{
               </TreeItem>
 
               {/* KML Layers Section */}
-              <TreeItem
-                label="KML Layers"
-                isExpanded={expandedSections.kmlLayers}
-                isChecked={
-                  (kmlLayers?.length ?? 0) > 0 &&
-                  selectedKmlLayers.length === (kmlLayers?.length ?? 0)
-                }
-                onToggleExpand={() => toggleExpanded('kmlLayers')}
-                onToggleCheck={
-                  (kmlLayers?.length ?? 0) > 0
-                    ? () => {
-                        if (
-                          selectedKmlLayers.length === (kmlLayers?.length ?? 0)
-                        ) {
-                          setSelectedKmlLayers([])
-                        } else {
-                          setSelectedKmlLayers(
-                            (kmlLayers ?? []).map((k) => k.name)
-                          )
-                        }
-                      }
-                    : undefined
-                }
-                disabled={(kmlLayers?.length ?? 0) === 0}
-                icon={faFileCode}
-                iconColor="#16a34a"
-              >
-                {(kmlLayers ?? []).map((kml) => {
-                  const isKmz = kml.path.endsWith('.kmz')
-                  return (
-                    <TreeItem
-                      key={`kml-${kml.name}`}
-                      label={kml.name}
-                      isChecked={selectedKmlLayers.includes(kml.name)}
-                      disabled={isKmz}
-                      onToggleCheck={
-                        isKmz
-                          ? undefined
-                          : () => {
-                              setSelectedKmlLayers((prev) =>
-                                prev.includes(kml.name)
-                                  ? prev.filter((n) => n !== kml.name)
-                                  : [...prev, kml.name]
-                              )
+              {(() => {
+                const selectableKmlLayers = (kmlLayers ?? []).filter(
+                  (k) => !k.path.toLowerCase().endsWith('.kmz')
+                )
+                const selectableNames = selectableKmlLayers.map((k) => k.name)
+                const allSelected =
+                  selectableNames.length > 0 &&
+                  selectableNames.every((n) => selectedKmlLayers.includes(n))
+                return (
+                  <TreeItem
+                    label="KML Layers"
+                    isExpanded={expandedSections.kmlLayers}
+                    isChecked={allSelected}
+                    onToggleExpand={() => toggleExpanded('kmlLayers')}
+                    onToggleCheck={
+                      selectableNames.length > 0
+                        ? () => {
+                            if (allSelected) {
+                              setSelectedKmlLayers([])
+                            } else {
+                              setSelectedKmlLayers(selectableNames)
                             }
-                      }
-                    />
-                  )
-                })}
-                {kmlLayers !== undefined && kmlLayers.length === 0 ? (
-                  <div className="py-2 pl-10 text-sm italic text-gray-500">
-                    No KML layers available
-                  </div>
-                ) : null}
-              </TreeItem>
+                          }
+                        : undefined
+                    }
+                    disabled={(kmlLayers?.length ?? 0) === 0}
+                    icon={faFileCode}
+                    iconColor="#16a34a"
+                  >
+                    {(kmlLayers ?? []).map((kml) => {
+                      const isKmz = kml.path.toLowerCase().endsWith('.kmz')
+                      return (
+                        <TreeItem
+                          key={`kml-${kml.name}`}
+                          label={kml.name}
+                          isChecked={
+                            !isKmz && selectedKmlLayers.includes(kml.name)
+                          }
+                          disabled={isKmz}
+                          disabledTitle=".kmz files are not yet supported"
+                          onToggleCheck={
+                            isKmz
+                              ? undefined
+                              : () => {
+                                  setSelectedKmlLayers((prev) =>
+                                    prev.includes(kml.name)
+                                      ? prev.filter((n) => n !== kml.name)
+                                      : [...prev, kml.name]
+                                  )
+                                }
+                          }
+                        />
+                      )
+                    })}
+                    {kmlLayers !== undefined && kmlLayers.length === 0 ? (
+                      <div className="py-2 pl-10 text-sm italic text-gray-500">
+                        No KML layers available
+                      </div>
+                    ) : null}
+                  </TreeItem>
+                )
+              })()}
             </div>
           </div>
           {/* Footer placed inside the modal content */}

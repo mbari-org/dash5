@@ -12,11 +12,12 @@ export interface Coord {
 const WaypointPreviewPath: React.FC<{
   waypoints?: Coord[]
   fitTrigger?: number
-}> = ({ waypoints }) => {
+}> = ({ waypoints, fitTrigger }) => {
   const map = useMap()
 
   const polyRef = useRef<L.Polyline | null>(null)
   const fit = useRef<string | null | undefined>(null)
+  const lastFitTrigger = useRef<number | null | undefined>(null)
   const route = waypoints
   const routeAsString = waypoints?.flat().join()
   const decorator = useRef<L.PolylineDecorator | null>(null)
@@ -41,7 +42,11 @@ const WaypointPreviewPath: React.FC<{
         ],
       }).addTo(map)
     }
-    if (fit.current !== routeAsString && route) {
+    const routeChanged = fit.current !== routeAsString
+    const triggerChanged =
+      fitTrigger != null && fitTrigger !== lastFitTrigger.current
+
+    if (routeChanged || triggerChanged) {
       if (route?.length) {
         try {
           map.fitBounds(
@@ -58,13 +63,14 @@ const WaypointPreviewPath: React.FC<{
         // waypoints later triggers fitBounds again instead of being skipped.
         fit.current = routeAsString
       }
+      lastFitTrigger.current = fitTrigger
     }
     return () => {
       if (decorator.current) {
         decorator.current.removeFrom(map)
       }
     }
-  }, [route, map, routeAsString, color])
+  }, [route, map, routeAsString, color, fitTrigger])
   return route ? (
     <>
       {waypoints && (

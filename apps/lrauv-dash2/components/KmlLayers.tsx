@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react'
 import { GeoJSON, Tooltip } from 'react-leaflet'
+import type { GeoJsonObject } from 'geojson'
 import { kml as kmlToGeoJSON } from '@tmcw/togeojson'
 import {
   useKmlLayers,
@@ -10,7 +11,7 @@ import { useSelectedKmlLayers } from './SelectedKmlLayersContext'
 
 interface KmlGeoJSON {
   name: string
-  geojson: GeoJSON.GeoJsonObject | null
+  geojson: GeoJsonObject | null
 }
 
 const KmlLayers: React.FC = () => {
@@ -29,6 +30,8 @@ const KmlLayers: React.FC = () => {
       (k) => selectedKmlLayers.includes(k.name) && k.path.endsWith('.kml')
     )
 
+    let cancelled = false
+
     Promise.all(
       toFetch.map(async (k) => {
         try {
@@ -38,13 +41,19 @@ const KmlLayers: React.FC = () => {
           )
           const parser = new DOMParser()
           const kmlDoc = parser.parseFromString(rawKml, 'text/xml')
-          const geojson = kmlToGeoJSON(kmlDoc) as GeoJSON.GeoJsonObject
+          const geojson = kmlToGeoJSON(kmlDoc) as GeoJsonObject
           return { name: k.name, geojson }
         } catch {
           return { name: k.name, geojson: null }
         }
       })
-    ).then(setKmlData)
+    ).then((results) => {
+      if (!cancelled) setKmlData(results)
+    })
+
+    return () => {
+      cancelled = true
+    }
   }, [selectedKmlLayers, kmlLayerList, axiosInstance])
 
   if (kmlData.length === 0) return null
