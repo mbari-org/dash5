@@ -95,6 +95,30 @@ const OverViewMap: React.FC<{
 }> = ({ trackedVehicles }) => {
   // Add mapRef to store the Leaflet map instance
   const mapRef = useRef<L.Map | null>(null)
+  const mapContainerRef = useRef<HTMLDivElement | null>(null)
+
+  // Call invalidateSize whenever the container resizes (fixes partial-map rendering
+  // after refresh) and once on mount.  Using ResizeObserver avoids the unsafe
+  // setTimeout-in-render-prop pattern that caused the "state update before mount" warning.
+  useEffect(() => {
+    const container = mapContainerRef.current
+    if (!container) return
+
+    const invalidate = () => {
+      try {
+        mapRef.current?.invalidateSize()
+      } catch {
+        // map not ready yet — ResizeObserver will retry on next resize
+      }
+    }
+
+    // Call once immediately after mount
+    invalidate()
+
+    const observer = new ResizeObserver(invalidate)
+    observer.observe(container)
+    return () => observer.disconnect()
+  }, [])
   const router = useRouter()
   const { handleDepthRequest, elevationAvailable } = useGoogleElevator()
   const [center, setCenter] = useState<undefined | [number, number]>()
@@ -597,7 +621,7 @@ const OverViewMap: React.FC<{
       {showPlatformsModal ? (
         <PlatformsListModal onClose={handleClosePlatforms} />
       ) : null}
-      <div className="relative h-full w-full">
+      <div className="relative h-full w-full" ref={mapContainerRef}>
         <Map
           key={`overview-map-${router.asPath}`}
           ref={mapRef}
@@ -605,15 +629,6 @@ const OverViewMap: React.FC<{
           onMapReady={(map) => {
             logger.debug('🌍 Map ready callback triggered in OverViewMap')
             mapRef.current = map
-            ;[200, 800].forEach((delay) => {
-              setTimeout(() => {
-                try {
-                  map.invalidateSize()
-                } catch (e) {
-                  logger.warn('Could not invalidate map size:', e)
-                }
-              }, delay)
-            })
           }}
           trackedVehicles={trackedVehicles?.map((vehicle) => ({
             ...vehicle,
