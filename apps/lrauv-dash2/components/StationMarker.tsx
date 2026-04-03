@@ -138,7 +138,7 @@ const StationMarker: React.FC<StationMarkerProps> = ({
         radius={5}
         fillColor="transparent"
         color={markerColor}
-          fillOpacity={0}
+        fillOpacity={0}
       >
         {tooltip}
       </CircleMarker>
