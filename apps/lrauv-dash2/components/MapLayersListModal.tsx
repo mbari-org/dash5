@@ -51,6 +51,7 @@ interface TreeItemProps {
   onMouseEnterStar?: () => void
   onMouseLeaveStar?: () => void
   onCenterClick?: () => void
+  centerLabel?: string
 }
 
 const TreeItem: React.FC<TreeItemProps> = ({
@@ -69,6 +70,7 @@ const TreeItem: React.FC<TreeItemProps> = ({
   onMouseEnterStar,
   onMouseLeaveStar,
   onCenterClick,
+  centerLabel = 'Center map on this item',
 }) => {
   const hasChildren = React.Children.count(children) > 0
 
@@ -199,7 +201,7 @@ const TreeItem: React.FC<TreeItemProps> = ({
           <span className="text-sm font-medium">{label}</span>
           {onCenterClick !== undefined && (
             <Tippy
-              content="Center map on this station"
+              content={centerLabel}
               placement="top-start"
               appendTo="parent"
             >
@@ -211,7 +213,7 @@ const TreeItem: React.FC<TreeItemProps> = ({
                   onCenterClick()
                 }}
                 className="ml-2 focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-blue-500"
-                aria-label="Center map on station"
+                aria-label={centerLabel}
                 style={{
                   width: '20px',
                   height: '20px',
@@ -284,6 +286,53 @@ export const MapLayersListModal: React.FC<{
   const { data: kmlLayers } = useKmlLayers()
   // Track expansion state of tree nodes
   const EXPANDED_STORAGE_KEY = 'mapLayersExpandedSections'
+
+  // Memoize polygon bounding boxes — avoids re-walking all GeoJSON coordinates
+  // on every render (can be expensive for large datasets like US Shipping Lanes).
+  const polygonBoundsMap = useMemo(() => {
+    const map = new Map<
+      string,
+      { minLat: number; maxLat: number; minLon: number; maxLon: number } | null
+    >()
+    ;(polygons ?? []).forEach((polygon) => {
+      try {
+        let minLat = Infinity,
+          maxLat = -Infinity,
+          minLon = Infinity,
+          maxLon = -Infinity
+        const collectCoord = (coord: unknown) => {
+          if (
+            Array.isArray(coord) &&
+            coord.length >= 2 &&
+            typeof coord[0] === 'number' &&
+            typeof coord[1] === 'number'
+          ) {
+            minLon = Math.min(minLon, coord[0])
+            maxLon = Math.max(maxLon, coord[0])
+            minLat = Math.min(minLat, coord[1])
+            maxLat = Math.max(maxLat, coord[1])
+          } else if (Array.isArray(coord)) {
+            coord.forEach(collectCoord)
+          }
+        }
+        ;(polygon.geojson?.features ?? []).forEach((f) =>
+          collectCoord(f.geometry?.coordinates)
+        )
+        map.set(
+          polygon.name,
+          isFinite(minLat) &&
+            isFinite(maxLat) &&
+            isFinite(minLon) &&
+            isFinite(maxLon)
+            ? { minLat, maxLat, minLon, maxLon }
+            : null
+        )
+      } catch {
+        map.set(polygon.name, null)
+      }
+    })
+    return map
+  }, [polygons])
 
   const [expandedSections, setExpandedSections] = useState<
     Record<SectionName, boolean>
@@ -756,6 +805,7 @@ export const MapLayersListModal: React.FC<{
                               })
                           : undefined
                       }
+                      centerLabel="Center map on this station"
                     />
                   )
                 })}
@@ -795,48 +845,8 @@ export const MapLayersListModal: React.FC<{
                 iconColor="#6366f1"
               >
                 {(polygons ?? []).map((polygon) => {
-                  // Compute bounding box across all features so we can
-                  // use fitBounds to frame the full polygon extent.
-                  let polygonBounds: {
-                    minLat: number
-                    maxLat: number
-                    minLon: number
-                    maxLon: number
-                  } | null = null
-                  try {
-                    let minLat = Infinity,
-                      maxLat = -Infinity,
-                      minLon = Infinity,
-                      maxLon = -Infinity
-                    const collectCoord = (coord: unknown) => {
-                      if (
-                        Array.isArray(coord) &&
-                        coord.length >= 2 &&
-                        typeof coord[0] === 'number' &&
-                        typeof coord[1] === 'number'
-                      ) {
-                        minLon = Math.min(minLon, coord[0])
-                        maxLon = Math.max(maxLon, coord[0])
-                        minLat = Math.min(minLat, coord[1])
-                        maxLat = Math.max(maxLat, coord[1])
-                      } else if (Array.isArray(coord)) {
-                        coord.forEach(collectCoord)
-                      }
-                    }
-                    ;(polygon.geojson?.features ?? []).forEach((f) =>
-                      collectCoord(f.geometry?.coordinates)
-                    )
-                    if (
-                      isFinite(minLat) &&
-                      isFinite(maxLat) &&
-                      isFinite(minLon) &&
-                      isFinite(maxLon)
-                    ) {
-                      polygonBounds = { minLat, maxLat, minLon, maxLon }
-                    }
-                  } catch {
-                    // leave polygonBounds null if coords can't be parsed
-                  }
+                  const polygonBounds =
+                    polygonBoundsMap.get(polygon.name) ?? null
 
                   return (
                     <TreeItem
@@ -875,6 +885,7 @@ export const MapLayersListModal: React.FC<{
                               })
                           : undefined
                       }
+                      centerLabel="Center map on this polygon"
                     />
                   )
                 })}

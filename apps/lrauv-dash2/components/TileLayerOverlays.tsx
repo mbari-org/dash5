@@ -27,6 +27,19 @@ const LEAFLET_ONLY_KEYS = new Set([
   'subdomains',
 ])
 
+// Coerce an option value to a number, returning the fallback if it can't be parsed.
+const toNum = (val: unknown, fallback: number): number => {
+  const n = Number(val)
+  return isFinite(n) ? n : fallback
+}
+
+// Normalize WMS transparent: accept boolean true/false or any-case string "true"/"false".
+const toTransparent = (val: unknown): boolean => {
+  if (typeof val === 'boolean') return val
+  if (typeof val === 'string') return val.toLowerCase() === 'true'
+  return true
+}
+
 const TileLayerOverlays: React.FC = () => {
   const { data: tileLayers } = useTileLayers()
   const { selectedTileLayers } = useSelectedTileLayers()
@@ -38,25 +51,31 @@ const TileLayerOverlays: React.FC = () => {
       {tileLayers
         .filter((t) => selectedTileLayers.includes(t.name))
         .map((t) => {
-          const opacity = (t.options?.opacity as number) ?? 1
+          const opts = (t.options ?? {}) as Record<string, unknown>
+          const opacity = toNum(opts.opacity, 1)
 
           if (t.wms) {
-            const opts = (t.options ?? {}) as Record<string, string>
-            const {
-              layers = '',
-              format = 'image/png',
-              transparent = 'true',
-              version = '1.1.1',
-              styles = '',
-              ...rest
-            } = opts
+            const layers = String(opts.layers ?? '')
+            const format = String(opts.format ?? 'image/png')
+            const transparent = toTransparent(opts.transparent)
+            const version = String(opts.version ?? '1.1.1')
+            const styles = String(opts.styles ?? '')
 
-            // Filter out Leaflet display-only keys so they aren't sent as
-            // WMS query parameters (which would break server caching).
+            // Collect any remaining keys that are valid WMS params (not Leaflet-only).
             const wmsParams = Object.fromEntries(
-              Object.entries(rest).filter(
-                ([key]) => !LEAFLET_ONLY_KEYS.has(key)
-              )
+              Object.entries(opts)
+                .filter(([key]) => !LEAFLET_ONLY_KEYS.has(key))
+                .filter(
+                  ([key]) =>
+                    ![
+                      'layers',
+                      'format',
+                      'transparent',
+                      'version',
+                      'styles',
+                    ].includes(key)
+                )
+                .map(([key, val]) => [key, String(val)])
             )
 
             return (
@@ -65,7 +84,7 @@ const TileLayerOverlays: React.FC = () => {
                 url={t.urlTemplate}
                 layers={layers}
                 format={format}
-                transparent={transparent === 'true'}
+                transparent={transparent}
                 version={version}
                 styles={styles}
                 opacity={opacity}
@@ -83,10 +102,16 @@ const TileLayerOverlays: React.FC = () => {
               key={t.name}
               url={t.urlTemplate}
               opacity={opacity}
-              attribution={t.options?.attribution as string | undefined}
-              maxZoom={t.options?.maxZoom as number | undefined}
-              tileSize={t.options?.tileSize as number | undefined}
-              tms={t.options?.tms as boolean | undefined}
+              attribution={
+                opts.attribution != null ? String(opts.attribution) : undefined
+              }
+              maxZoom={
+                opts.maxZoom != null ? toNum(opts.maxZoom, 18) : undefined
+              }
+              tileSize={
+                opts.tileSize != null ? toNum(opts.tileSize, 256) : undefined
+              }
+              tms={opts.tms != null ? Boolean(opts.tms) : undefined}
             />
           )
         })}

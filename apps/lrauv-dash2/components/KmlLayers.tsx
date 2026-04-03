@@ -27,7 +27,9 @@ const KmlLayers: React.FC = () => {
     }
 
     const toFetch = kmlLayerList.filter(
-      (k) => selectedKmlLayers.includes(k.name) && k.path.endsWith('.kml')
+      (k) =>
+        selectedKmlLayers.includes(k.name) &&
+        k.path.toLowerCase().endsWith('.kml')
     )
 
     let cancelled = false
