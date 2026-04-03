@@ -88,6 +88,21 @@ const TileLayerOverlays: React.FC = () => {
                 version={version}
                 styles={styles}
                 opacity={opacity}
+                attribution={
+                  opts.attribution != null
+                    ? String(opts.attribution)
+                    : undefined
+                }
+                maxZoom={
+                  opts.maxZoom != null ? toNum(opts.maxZoom, 18) : undefined
+                }
+                minZoom={
+                  opts.minZoom != null ? toNum(opts.minZoom, 0) : undefined
+                }
+                tileSize={
+                  opts.tileSize != null ? toNum(opts.tileSize, 256) : undefined
+                }
+                zIndex={opts.zIndex != null ? toNum(opts.zIndex, 1) : undefined}
                 params={
                   Object.keys(wmsParams).length > 0
                     ? { layers, ...wmsParams }

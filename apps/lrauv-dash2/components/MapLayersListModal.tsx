@@ -120,7 +120,9 @@ const TreeItem: React.FC<TreeItemProps> = ({
 
         <label
           className={`flex w-full ${
-            disabled ? 'cursor-not-allowed opacity-60' : 'cursor-pointer'
+            disabled || !onToggleCheck
+              ? 'cursor-not-allowed opacity-60'
+              : 'cursor-pointer'
           } items-center`}
           title={disabled ? disabledTitle ?? 'Not available' : undefined}
         >
@@ -129,13 +131,13 @@ const TreeItem: React.FC<TreeItemProps> = ({
             checked={isChecked}
             onChange={onToggleCheck}
             readOnly={!onToggleCheck}
-            disabled={disabled}
+            disabled={disabled || !onToggleCheck}
             className="mapLayersCheckbox mr-2"
             style={{
               width: '18px',
               height: '18px',
               accentColor: '#3182ce',
-              cursor: disabled ? 'not-allowed' : 'pointer',
+              cursor: disabled || !onToggleCheck ? 'not-allowed' : 'pointer',
             }}
           />
           {icon ? (
@@ -972,7 +974,7 @@ export const MapLayersListModal: React.FC<{
                           }
                         : undefined
                     }
-                    disabled={(kmlLayers?.length ?? 0) === 0}
+                    disabled={selectableNames.length === 0}
                     icon={faFileCode}
                     iconColor="#16a34a"
                   >
