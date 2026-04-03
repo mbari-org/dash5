@@ -23,8 +23,6 @@ import { StationsListModal } from '../components/StationsListModal'
 import { MapLayersListModal } from '../components/MapLayersListModal'
 import { useSelectedStations } from '../components/SelectedStationContext'
 import { useMarkers } from '../components/MarkerContext'
-
-const MapFlyTo = dynamic(() => import('../components/MapFlyTo'), { ssr: false })
 import toast from 'react-hot-toast'
 import { createLogger } from '@mbari/utils'
 import { PlatformsListModal } from '../components/PlatformsListModal'
@@ -52,6 +50,21 @@ const VehiclePath = dynamic(() => import('../components/VehiclePath'), {
 })
 
 const StationMarker = dynamic(() => import('../components/StationMarker'), {
+  ssr: false,
+})
+
+const MapFlyTo = dynamic(() => import('../components/MapFlyTo'), { ssr: false })
+
+const PolygonLayers = dynamic(() => import('../components/PolygonLayers'), {
+  ssr: false,
+})
+
+const TileLayerOverlays = dynamic(
+  () => import('../components/TileLayerOverlays'),
+  { ssr: false }
+)
+
+const KmlLayers = dynamic(() => import('../components/KmlLayers'), {
   ssr: false,
 })
 
@@ -722,9 +735,16 @@ const OverViewMap: React.FC<{
                 name={station.name}
                 lat={lat}
                 lng={lng}
+                color={
+                  (station.geojson as { properties?: { color?: string } })
+                    .properties?.color
+                }
               />
             )
           })}
+          <PolygonLayers />
+          <TileLayerOverlays />
+          <KmlLayers />
           <MapFlyTo />
         </Map>
         <MapRefreshButton

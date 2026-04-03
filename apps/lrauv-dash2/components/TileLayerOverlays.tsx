@@ -3,6 +3,30 @@ import { TileLayer, WMSTileLayer } from 'react-leaflet'
 import { useTileLayers } from '@mbari/api-client'
 import { useSelectedTileLayers } from './SelectedTileLayersContext'
 
+// Keys that are Leaflet display options and must NOT be forwarded as WMS
+// query-string parameters.
+const LEAFLET_ONLY_KEYS = new Set([
+  'opacity',
+  'attribution',
+  'maxZoom',
+  'minZoom',
+  'tileSize',
+  'tms',
+  'zIndex',
+  'className',
+  'detectRetina',
+  'crossOrigin',
+  'keepBuffer',
+  'updateWhenIdle',
+  'updateWhenZooming',
+  'updateInterval',
+  'maxNativeZoom',
+  'minNativeZoom',
+  'noWrap',
+  'pane',
+  'subdomains',
+])
+
 const TileLayerOverlays: React.FC = () => {
   const { data: tileLayers } = useTileLayers()
   const { selectedTileLayers } = useSelectedTileLayers()
@@ -26,6 +50,15 @@ const TileLayerOverlays: React.FC = () => {
               styles = '',
               ...rest
             } = opts
+
+            // Filter out Leaflet display-only keys so they aren't sent as
+            // WMS query parameters (which would break server caching).
+            const wmsParams = Object.fromEntries(
+              Object.entries(rest).filter(
+                ([key]) => !LEAFLET_ONLY_KEYS.has(key)
+              )
+            )
+
             return (
               <WMSTileLayer
                 key={t.name}
@@ -37,7 +70,9 @@ const TileLayerOverlays: React.FC = () => {
                 styles={styles}
                 opacity={opacity}
                 params={
-                  Object.keys(rest).length > 0 ? { layers, ...rest } : undefined
+                  Object.keys(wmsParams).length > 0
+                    ? { layers, ...wmsParams }
+                    : undefined
                 }
               />
             )
