@@ -34,22 +34,30 @@ describe('getKmlLayer', () => {
   })
 
   it('should throw for unexpected response shapes', async () => {
+    expect.assertions(1)
     server.use(
       rest.get('/info/map/kmlLayer', (_req, res, ctx) =>
         res.once(ctx.status(200), ctx.json({ unexpected: true }))
       )
     )
-    await expect(getKmlLayer({ path: '/kml/test.kml' })).rejects.toThrow(
-      /Unexpected response format/
-    )
+    try {
+      await getKmlLayer({ path: '/kml/test.kml' })
+    } catch (error) {
+      expect((error as Error).message).toMatch('Unexpected response format')
+    }
   })
 
   it('should throw when the server returns an error', async () => {
+    expect.assertions(1)
     server.use(
       rest.get('/info/map/kmlLayer', (_req, res, ctx) =>
         res.once(ctx.status(500))
       )
     )
-    await expect(getKmlLayer({ path: '/kml/test.kml' })).rejects.toBeDefined()
+    try {
+      await getKmlLayer({ path: '/kml/test.kml' })
+    } catch (error) {
+      expect(error).toBeDefined()
+    }
   })
 })

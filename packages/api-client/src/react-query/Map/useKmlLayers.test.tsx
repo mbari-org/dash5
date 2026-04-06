@@ -6,7 +6,15 @@ import { QueryClient } from 'react-query'
 import { rest } from 'msw'
 import { setupServer } from 'msw/node'
 import { MockProviders } from '../queryTestHelpers'
-import { mockKmlLayers } from '../../axios/Map/getKmlLayers.test'
+
+const mockKmlLayers = [
+  { name: 'Untitled_Polygon.kml', path: '/kml/Untitled_Polygon.kml' },
+  {
+    name: 'Lake Erie survey',
+    path: '/kml/t1.21217.1616.LakeErie.143.250m.kml',
+  },
+  { name: 'Archive overlay', path: '/kml/archive.kmz' },
+]
 
 const server = setupServer(
   rest.get('/info/map/kmlLayers', (_req, res, ctx) => {

@@ -54,11 +54,16 @@ describe('getPolygons', () => {
   })
 
   it('should throw when the server returns an error', async () => {
+    expect.assertions(1)
     server.use(
       rest.get('/map/layers/polygons', (_req, res, ctx) =>
         res.once(ctx.status(500))
       )
     )
-    await expect(getPolygons()).rejects.toBeDefined()
+    try {
+      await getPolygons()
+    } catch (error) {
+      expect(error).toBeDefined()
+    }
   })
 })

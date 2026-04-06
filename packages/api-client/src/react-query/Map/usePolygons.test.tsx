@@ -6,7 +6,35 @@ import { QueryClient } from 'react-query'
 import { rest } from 'msw'
 import { setupServer } from 'msw/node'
 import { MockProviders } from '../queryTestHelpers'
-import { mockResponse } from '../../axios/Map/getPolygons.test'
+
+const mockResponse = [
+  {
+    name: 'US Shipping Lanes',
+    geojson: {
+      type: 'FeatureCollection',
+      name: 'US Shipping Lanes',
+      properties: { color: '#3388ff' },
+      features: [
+        {
+          type: 'Feature',
+          properties: {},
+          geometry: {
+            type: 'Polygon',
+            coordinates: [
+              [
+                [-120, 35],
+                [-118, 35],
+                [-118, 37],
+                [-120, 37],
+                [-120, 35],
+              ],
+            ],
+          },
+        },
+      ],
+    },
+  },
+]
 
 const server = setupServer(
   rest.get('/map/layers/polygons', (_req, res, ctx) => {

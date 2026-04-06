@@ -6,7 +6,26 @@ import { QueryClient } from 'react-query'
 import { rest } from 'msw'
 import { setupServer } from 'msw/node'
 import { MockProviders } from '../queryTestHelpers'
-import { mockTileLayers } from '../../axios/Map/getTileLayers.test'
+
+const mockTileLayers = [
+  {
+    name: 'SST 1 Day Composite',
+    urlTemplate: 'https://example.com/wms',
+    wms: true,
+    options: {
+      layers: 'sst_1day',
+      format: 'image/png',
+      transparent: 'true',
+      opacity: 0.8,
+    },
+  },
+  {
+    name: 'Cell phone coverage map',
+    urlTemplate: 'https://tiles.example.com/{z}/{x}/{y}.png',
+    wms: false,
+    options: { attribution: 'Coverage &copy; Example', maxZoom: 18 },
+  },
+]
 
 const server = setupServer(
   rest.get('/info/map/tileLayers', (_req, res, ctx) => {

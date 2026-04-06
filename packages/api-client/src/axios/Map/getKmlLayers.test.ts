@@ -34,11 +34,16 @@ describe('getKmlLayers', () => {
   })
 
   it('should throw when the server returns an error', async () => {
+    expect.assertions(1)
     server.use(
       rest.get('/info/map/kmlLayers', (_req, res, ctx) =>
         res.once(ctx.status(500))
       )
     )
-    await expect(getKmlLayers()).rejects.toBeDefined()
+    try {
+      await getKmlLayers()
+    } catch (error) {
+      expect(error).toBeDefined()
+    }
   })
 })

@@ -47,11 +47,16 @@ describe('getTileLayers', () => {
   })
 
   it('should throw when the server returns an error', async () => {
+    expect.assertions(1)
     server.use(
       rest.get('/info/map/tileLayers', (_req, res, ctx) =>
         res.once(ctx.status(500))
       )
     )
-    await expect(getTileLayers()).rejects.toBeDefined()
+    try {
+      await getTileLayers()
+    } catch (error) {
+      expect(error).toBeDefined()
+    }
   })
 })
