@@ -213,7 +213,7 @@ const MissionModalBody: React.FC<MissionModalViewProps> = ({
       setAlternateAddress(null)
     }
     // When returning to the select mission step, clear mission selection and overrides
-    if (currentStep === steps.indexOf('Mission') + 1) {
+    if (!showSummary && currentStep === steps.indexOf('Mission') + 1) {
       handleSelectMission(null)
       resetOverrides()
     }
@@ -256,7 +256,7 @@ const MissionModalBody: React.FC<MissionModalViewProps> = ({
               lonName &&
               lat !== '' &&
               lon !== ''
-          ) || !!focusedWaypointIndex
+          ) || focusedWaypointIndex != null
         )
       case steps.indexOf('Schedule'):
         return (

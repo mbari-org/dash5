@@ -4,17 +4,6 @@ import { useRefreshSessionToken } from '../User/useRefreshSessionToken'
 import { TethysApiContext, TethysApiContextProfile } from './TethysApiContext'
 import { getInstance } from '../../axios/getInstance'
 import { useSiteConfig } from '../Info/useSiteConfig'
-
-const decodeBase64Url = (input: string): string => {
-  const normalized = input.replace(/-/g, '+').replace(/_/g, '/')
-  const padding =
-    normalized.length % 4 === 0 ? '' : '='.repeat(4 - (normalized.length % 4))
-  const withPadding = `${normalized}${padding}`
-
-  if (typeof atob === 'function') return atob(withPadding)
-  throw new Error('Base64url decoder unavailable')
-}
-
 // Decode the JWT payload to extract profile fields (firstName, lastName, email,
 // roles). The TethysDash /user/token endpoint validates the token but may omit
 // these fields from its JSON response; the JWT itself always carries them.
@@ -27,9 +16,7 @@ const decodeJWTProfile = (
   roles: string[]
 }> => {
   try {
-    const payloadSegment = token.split('.')[1]
-    if (!payloadSegment) return {}
-    const payload = JSON.parse(decodeBase64Url(payloadSegment))
+    const payload = JSON.parse(atob(token.split('.')[1]))
     return {
       firstName: payload.firstName,
       lastName: payload.lastName,
@@ -58,15 +45,8 @@ export const TethysApiProvider: React.FC<TethysApiProviderProps> = ({
   onSessionEnd,
   onSessionStart,
 }) => {
-  // We have to track a lot of state related to the auth token.
-  // If an initial token is supplied we'll want to refresh it
-  // on mount. If not, we'll want to create a new one. But we
-  // don't want to do this on mount if the user is logged out.
-  // So we'll use a ref to track the token and only refresh it
-  // if it doesn't match the currentUser's token or if the user
-  // has logged out -- something we are explicitly tracking as
-  // additional state here via `loggedOut`.
-  const lastInitialToken = useRef(null as string | null)
+  // Track whether the user has explicitly logged out so we avoid
+  // re-authenticating on a stale token after logout.
   const [loggedOut, setLoggedOut] = React.useState(false)
   const [currentUser, setCurrentUser] = React.useState<
     TethysApiContextProfile | undefined
@@ -110,27 +90,22 @@ export const TethysApiProvider: React.FC<TethysApiProviderProps> = ({
   // (e.g. no firstName/lastName). The JWT payload itself contains the full
   // profile, so we decode it as a fallback to avoid "uu" initials.
   useEffect(() => {
-    if (!loggedOut && refreshedSession.data) {
-      const apiProfile = refreshedSession.data
-      const responseToken = apiProfile.token
-      const token = responseToken || existingToken || sessionToken
-      if (!token) return
-
-      const isInitialHydration = !existingToken
-      const hasRotatedToken = !!responseToken && responseToken !== existingToken
-      if (!isInitialHydration && !hasRotatedToken) return
-
-      const profile = apiProfile.firstName
-        ? apiProfile
-        : decodeJWTProfile(token)
-      setCurrentUser({ ...profile, ...apiProfile, token })
+    if (!loggedOut && refreshedSession.data && !existingToken) {
+      const token = refreshedSession.data.token || sessionToken
+      if (token) {
+        const apiProfile = refreshedSession.data
+        const profile = apiProfile.firstName
+          ? apiProfile
+          : decodeJWTProfile(token)
+        setCurrentUser({ ...profile, ...apiProfile, token })
+      }
     }
   }, [
     refreshedSession.data,
-    lastInitialToken,
     existingToken,
     sessionToken,
     loggedOut,
+    setCurrentUser,
   ])
 
   // This handler is available in theTethysApiContext for use in components
@@ -157,16 +132,19 @@ export const TethysApiProvider: React.FC<TethysApiProviderProps> = ({
     onSessionEnd?.()
   }, [setCurrentUser, setError, setLoggedOut, onSessionEnd])
 
-  // When the server rejects the session token (e.g. expired JWT → 401), clear
-  // auth state so the login prompt is shown rather than a broken "authenticated"
-  // UI with an expired token. Only fires when the user was actively logged in
-  // (existingToken is truthy) to avoid interfering with the initial page load
-  // path where the user was never authenticated.
+  // When the server explicitly rejects the session token (401/403), clear auth
+  // state so the login prompt is shown. We intentionally ignore other error
+  // codes (500, network timeouts, etc.) so transient server errors do not log
+  // the user out of an otherwise valid session.
   useEffect(() => {
-    if (refreshedSession.isError && existingToken && !loggedOut) {
+    const status = (
+      refreshedSession.error as { response?: { status?: number } }
+    )?.response?.status
+    const isAuthError = status === 401 || status === 403
+    if (isAuthError && existingToken && !loggedOut) {
       logout()
     }
-  }, [refreshedSession.isError, existingToken, loggedOut, logout])
+  }, [refreshedSession.error, existingToken, loggedOut, logout])
 
   // Remain in loading state while a session token exists in the cookie but
   // currentUser hasn't been hydrated yet. This bridges the one-render gap
@@ -177,7 +155,7 @@ export const TethysApiProvider: React.FC<TethysApiProviderProps> = ({
     (sessionToken?.length ?? 0) > 0 &&
     !currentUser &&
     !loggedOut &&
-    !refreshedSession.isError
+    !refreshedSession.error
 
   return (
     <TethysApiContext.Provider
