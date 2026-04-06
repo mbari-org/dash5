@@ -19,6 +19,10 @@ interface Station {
       type: string
       coordinates: [number, number]
     }
+    properties?: {
+      color?: string
+      weight?: number
+    }
   }
 }
 

@@ -735,10 +735,7 @@ const OverViewMap: React.FC<{
                 name={station.name}
                 lat={lat}
                 lng={lng}
-                color={
-                  (station.geojson as { properties?: { color?: string } })
-                    .properties?.color
-                }
+                color={station.geojson.properties?.color}
               />
             )
           })}

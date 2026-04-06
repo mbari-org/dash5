@@ -5,7 +5,9 @@ const readNames = (storageKey: string): string[] => {
   try {
     const stored = localStorage.getItem(storageKey)
     const parsed = stored ? JSON.parse(stored) : []
-    return Array.isArray(parsed) ? parsed : []
+    return Array.isArray(parsed)
+      ? parsed.filter((value): value is string => typeof value === 'string')
+      : []
   } catch {
     return []
   }
