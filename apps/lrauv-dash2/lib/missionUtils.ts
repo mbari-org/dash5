@@ -25,7 +25,7 @@ export const missionNameFromStartedText = (text: string): string =>
  * e.g. "load Science/circle_acoustic_contact.tl;set ...;run" → "circle_acoustic_contact"
  */
 export const missionNameFromEventData = (data?: string): string => {
-  const withExtension = data?.match(/[A-Za-z0-9_/]+\.(?:xml|tl)/i)?.[0]
+  const withExtension = data?.match(/[A-Za-z0-9_/.-]+\.(?:xml|tl)/i)?.[0]
   if (withExtension) {
     return (
       withExtension
@@ -47,7 +47,7 @@ export const missionNameFromEventData = (data?: string): string => {
 }
 
 export const missionPathFromEventData = (data?: string): string => {
-  const withExtension = data?.match(/[A-Za-z0-9_/]+\.(?:xml|tl)/i)?.[0]
+  const withExtension = data?.match(/[A-Za-z0-9_/.-]+\.(?:xml|tl)/i)?.[0]
   if (withExtension) return normalizeMissionPath(withExtension)
 
   // Fallback for mission loads with no extension, e.g. "load Maintenance/calibration;run"

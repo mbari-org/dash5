@@ -72,6 +72,18 @@ describe('missionNameFromEventData', () => {
       'calibration'
     )
   })
+
+  test('extracts mission name from path with dashes and dots in filename', () => {
+    expect(
+      missionNameFromEventData('load Science/mbari-echo-5.25.tl;run')
+    ).toBe('mbari-echo-5.25')
+  })
+
+  test('extracts mission name from directory with dashes', () => {
+    expect(missionNameFromEventData('load Long-Range/default.tl;run')).toBe(
+      'default'
+    )
+  })
 })
 
 describe('normalizeMissionName', () => {
@@ -103,6 +115,12 @@ describe('missionPathFromEventData', () => {
     expect(missionPathFromEventData('load Science/default.tl;run')).toBe(
       'science/default'
     )
+  })
+
+  test('extracts full path for mission with dashes and dots in filename', () => {
+    expect(
+      missionPathFromEventData('load Science/mbari-echo-5.25.tl;run')
+    ).toBe('science/mbari-echo-5.25')
   })
 
   test('extracts full mission path from load without extension', () => {

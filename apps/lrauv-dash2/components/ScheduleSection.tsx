@@ -295,7 +295,6 @@ export const ScheduleSection: React.FC<ScheduleSectionProps> = ({
   const hasPastSchedule =
     missions?.some((v) => !scheduledTypes.includes(v.status)) ?? false
   const staticFilterCellOffset = hasPastSchedule ? 1 : 0
-  const indexOfPastSchedule = staticHeaderCellOffset
 
   const handleScheduleSearch = (e: React.ChangeEvent<HTMLInputElement>) => {
     setScheduleSearch(e.target.value)
@@ -304,6 +303,11 @@ export const ScheduleSection: React.FC<ScheduleSectionProps> = ({
   const scheduledCells = missions?.filter((v) =>
     scheduledTypes.includes(v.status)
   )
+
+  // Place the "Schedule History" heading at the boundary between scheduled
+  // (pending/running) items and historical items, not at the top.
+  const indexOfPastSchedule =
+    staticHeaderCellOffset + (scheduledCells?.length ?? 0)
 
   const historicCells = missions
     ?.filter((v) => !scheduledTypes.includes(v.status))
@@ -431,9 +435,13 @@ export const ScheduleSection: React.FC<ScheduleSectionProps> = ({
         />
       )
     }
-    // Filter bar is always at staticHeaderCellOffset, so all mission cells
-    // need the full combined offset subtracted.
-    const indexOffset = -(staticHeaderCellOffset + staticFilterCellOffset)
+    // Scheduled cells appear before the heading — subtract only the deployment
+    // header offset.  Historical cells appear after the heading — also subtract
+    // the heading row itself (staticFilterCellOffset).
+    const indexOffset =
+      index < indexOfPastSchedule
+        ? -staticHeaderCellOffset
+        : -(staticHeaderCellOffset + staticFilterCellOffset)
     const mission = results[index + indexOffset]
     const { name: missionName, parameters: missionParams } =
       parseMissionCommand(mission?.event.data ?? '')
