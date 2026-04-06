@@ -52,8 +52,20 @@ const TileLayerOverlays: React.FC = () => {
       {tileLayers
         .filter((t) => selectedTileLayers.includes(t.name))
         .map((t) => {
+          // Skip layers with no URL — a missing/empty urlTemplate would cause
+          // Leaflet to behave unpredictably.
+          if (!t.urlTemplate || t.urlTemplate.trim() === '') {
+            console.warn(
+              `[TileLayerOverlays] Skipping "${t.name}": empty urlTemplate`
+            )
+            return null
+          }
+
           const opts = (t.options ?? {}) as Record<string, unknown>
           const opacity = toNum(opts.opacity, 1)
+          // Always resolve to a positive integer; never pass 0 to Leaflet
+          // because tileSize=0 causes the "infinite tiles" error.
+          const tileSize = toNum(opts.tileSize ?? 256, 256, 1)
 
           if (t.wms) {
             const layers = String(opts.layers ?? '')
@@ -100,11 +112,7 @@ const TileLayerOverlays: React.FC = () => {
                 minZoom={
                   opts.minZoom != null ? toNum(opts.minZoom, 0) : undefined
                 }
-                tileSize={
-                  opts.tileSize != null
-                    ? toNum(opts.tileSize, 256, 1)
-                    : undefined
-                }
+                tileSize={tileSize}
                 zIndex={opts.zIndex != null ? toNum(opts.zIndex, 1) : undefined}
                 params={
                   Object.keys(wmsParams).length > 0
@@ -126,9 +134,7 @@ const TileLayerOverlays: React.FC = () => {
               maxZoom={
                 opts.maxZoom != null ? toNum(opts.maxZoom, 18) : undefined
               }
-              tileSize={
-                opts.tileSize != null ? toNum(opts.tileSize, 256, 1) : undefined
-              }
+              tileSize={tileSize}
               tms={opts.tms != null ? Boolean(opts.tms) : undefined}
             />
           )
