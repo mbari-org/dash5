@@ -59,10 +59,6 @@ describe('getPolygons', () => {
         res.once(ctx.status(500))
       )
     )
-    try {
-      await getPolygons()
-    } catch (error) {
-      expect(error).toBeDefined()
-    }
+    await expect(getPolygons()).rejects.toBeDefined()
   })
 })

@@ -52,10 +52,6 @@ describe('getTileLayers', () => {
         res.once(ctx.status(500))
       )
     )
-    try {
-      await getTileLayers()
-    } catch (error) {
-      expect(error).toBeDefined()
-    }
+    await expect(getTileLayers()).rejects.toBeDefined()
   })
 })

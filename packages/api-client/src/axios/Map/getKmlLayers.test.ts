@@ -39,10 +39,6 @@ describe('getKmlLayers', () => {
         res.once(ctx.status(500))
       )
     )
-    try {
-      await getKmlLayers()
-    } catch (error) {
-      expect(error).toBeDefined()
-    }
+    await expect(getKmlLayers()).rejects.toBeDefined()
   })
 })
