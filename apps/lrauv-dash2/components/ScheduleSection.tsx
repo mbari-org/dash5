@@ -25,7 +25,6 @@ import {
 import useGlobalModalId from '../lib/useGlobalModalId'
 import {
   missionNameFromStartedText,
-  missionNameFromEventData,
   missionPathFromEventData,
   normalizeMissionName,
   normalizeMissionPath,
