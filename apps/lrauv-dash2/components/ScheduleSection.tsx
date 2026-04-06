@@ -495,8 +495,8 @@ export const ScheduleSection: React.FC<ScheduleSectionProps> = ({
 
     if (commandType === 'mission' || isMission) {
       const missionPath =
-        event?.data?.match(/[A-Za-z0-9_/]+\.(?:xml|tl)/)?.[0] ??
-        event?.text?.match(/[A-Za-z0-9_/]+\.(?:xml|tl)/)?.[0] ??
+        missionPathFromEventData(event?.data) ||
+        missionPathFromEventData(event?.text) ||
         ''
       setGlobalModalId({
         id: 'newMission',
