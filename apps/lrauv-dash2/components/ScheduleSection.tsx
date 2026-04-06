@@ -466,8 +466,19 @@ export const ScheduleSection: React.FC<ScheduleSectionProps> = ({
         description={(() => {
           if (mission.event.unixTime == null) return ''
           const dt = DateTime.fromMillis(mission.event.unixTime)
-          const relative = dt.toRelative({ style: 'short' })
-          const relativePart = relative ? ` (${relative})` : ''
+          const totalMinutes = Math.round(
+            DateTime.now().diff(dt, 'minutes').minutes
+          )
+          let relativePart = ''
+          if (totalMinutes >= 0) {
+            if (totalMinutes < 60) {
+              relativePart = ` (${totalMinutes} min. ago)`
+            } else {
+              const h = Math.floor(totalMinutes / 60)
+              const m = totalMinutes % 60
+              relativePart = m > 0 ? ` (${h}h ${m}m ago)` : ` (${h}h ago)`
+            }
+          }
           return `${isMission ? 'Started' : 'Ran'} ${dt.toFormat(
             'H:mm'
           )}${relativePart}`
