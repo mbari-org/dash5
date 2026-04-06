@@ -67,6 +67,11 @@ const TileLayerOverlays: React.FC = () => {
           // because tileSize=0 causes the "infinite tiles" error.
           const tileSize = toNum(opts.tileSize ?? 256, 256, 1)
 
+          // Strip any trailing `?` from the URL — Leaflet appends its own
+          // query string, so a trailing `?` results in a `?&service=WMS...`
+          // double-separator in the final request URL.
+          const url = t.urlTemplate.replace(/\?$/, '')
+
           if (t.wms) {
             const layers = String(opts.layers ?? '')
             const format = String(opts.format ?? 'image/png')
@@ -94,7 +99,7 @@ const TileLayerOverlays: React.FC = () => {
             return (
               <WMSTileLayer
                 key={t.name}
-                url={t.urlTemplate}
+                url={url}
                 layers={layers}
                 format={format}
                 transparent={transparent}
@@ -126,7 +131,7 @@ const TileLayerOverlays: React.FC = () => {
           return (
             <TileLayer
               key={t.name}
-              url={t.urlTemplate}
+              url={url}
               opacity={opacity}
               attribution={
                 opts.attribution != null ? String(opts.attribution) : undefined
