@@ -819,134 +819,152 @@ export const MapLayersListModal: React.FC<{
               </TreeItem>
 
               {/* Polygons Section */}
-              <TreeItem
-                label="Polygons"
-                isExpanded={expandedSections.polygons}
-                isChecked={
-                  (polygons?.length ?? 0) > 0 &&
-                  selectedPolygons.length === (polygons?.length ?? 0)
-                }
-                onToggleExpand={() => toggleExpanded('polygons')}
-                onToggleCheck={
-                  (polygons?.length ?? 0) > 0
-                    ? () => {
-                        if (
-                          selectedPolygons.length === (polygons?.length ?? 0)
-                        ) {
-                          setSelectedPolygons([])
-                        } else {
-                          setSelectedPolygons(
-                            (polygons ?? []).map((p) => p.name)
-                          )
-                        }
-                      }
-                    : undefined
-                }
-                disabled={(polygons?.length ?? 0) === 0}
-                icon={faDrawPolygon}
-                iconColor="#6366f1"
-              >
-                {(polygons ?? []).map((polygon) => {
-                  const polygonBounds =
-                    polygonBoundsMap.get(polygon.name) ?? null
+              {(() => {
+                const polygonNames = (polygons ?? []).map((p) => p.name)
+                const allPolygonsSelected =
+                  polygonNames.length > 0 &&
+                  polygonNames.every((n) => selectedPolygons.includes(n))
+                return (
+                  <TreeItem
+                    label="Polygons"
+                    isExpanded={expandedSections.polygons}
+                    isChecked={allPolygonsSelected}
+                    onToggleExpand={() => toggleExpanded('polygons')}
+                    onToggleCheck={
+                      polygonNames.length > 0
+                        ? () => {
+                            if (allPolygonsSelected) {
+                              setSelectedPolygons([])
+                            } else {
+                              setSelectedPolygons(polygonNames)
+                            }
+                          }
+                        : undefined
+                    }
+                    disabled={(polygons?.length ?? 0) === 0}
+                    icon={faDrawPolygon}
+                    iconColor="#6366f1"
+                  >
+                    {(polygons ?? []).map((polygon) => {
+                      const polygonBounds =
+                        polygonBoundsMap.get(polygon.name) ?? null
 
-                  return (
-                    <TreeItem
-                      key={`polygon-${polygon.name}`}
-                      label={polygon.name}
-                      isChecked={selectedPolygons.includes(polygon.name)}
-                      onToggleCheck={() => {
-                        setSelectedPolygons((prev) =>
-                          prev.includes(polygon.name)
-                            ? prev.filter((n) => n !== polygon.name)
-                            : [...prev, polygon.name]
-                        )
-                      }}
-                      onCenterClick={
-                        polygonBounds
-                          ? () =>
-                              setFlyToRequest({
-                                lat:
-                                  (polygonBounds!.minLat +
-                                    polygonBounds!.maxLat) /
-                                  2,
-                                lon:
-                                  (polygonBounds!.minLon +
-                                    polygonBounds!.maxLon) /
-                                  2,
-                                bounds: [
-                                  [
-                                    polygonBounds!.minLat,
-                                    polygonBounds!.minLon,
-                                  ],
-                                  [
-                                    polygonBounds!.maxLat,
-                                    polygonBounds!.maxLon,
-                                  ],
-                                ],
-                              })
-                          : undefined
-                      }
-                      centerLabel="Center map on this polygon"
-                    />
-                  )
-                })}
-                {polygons !== undefined && polygons.length === 0 ? (
-                  <div className="py-2 pl-10 text-sm italic text-gray-500">
-                    No polygons available
-                  </div>
-                ) : null}
-              </TreeItem>
+                      return (
+                        <TreeItem
+                          key={`polygon-${polygon.name}`}
+                          label={polygon.name}
+                          isChecked={selectedPolygons.includes(polygon.name)}
+                          onToggleCheck={() => {
+                            setSelectedPolygons((prev) =>
+                              prev.includes(polygon.name)
+                                ? prev.filter((n) => n !== polygon.name)
+                                : [...prev, polygon.name]
+                            )
+                          }}
+                          onCenterClick={
+                            polygonBounds
+                              ? () =>
+                                  setFlyToRequest({
+                                    lat:
+                                      (polygonBounds!.minLat +
+                                        polygonBounds!.maxLat) /
+                                      2,
+                                    lon:
+                                      (polygonBounds!.minLon +
+                                        polygonBounds!.maxLon) /
+                                      2,
+                                    bounds: [
+                                      [
+                                        polygonBounds!.minLat,
+                                        polygonBounds!.minLon,
+                                      ],
+                                      [
+                                        polygonBounds!.maxLat,
+                                        polygonBounds!.maxLon,
+                                      ],
+                                    ],
+                                  })
+                              : undefined
+                          }
+                          centerLabel="Center map on this polygon"
+                        />
+                      )
+                    })}
+                    {polygons !== undefined && polygons.length === 0 ? (
+                      <div className="py-2 pl-10 text-sm italic text-gray-500">
+                        No polygons available
+                      </div>
+                    ) : null}
+                  </TreeItem>
+                )
+              })()}
 
               {/* TILE Layers Section */}
-              <TreeItem
-                label="TILE Layers"
-                isExpanded={expandedSections.tileLayers}
-                isChecked={
-                  (tileLayers?.length ?? 0) > 0 &&
-                  selectedTileLayers.length === (tileLayers?.length ?? 0)
-                }
-                onToggleExpand={() => toggleExpanded('tileLayers')}
-                onToggleCheck={
-                  (tileLayers?.length ?? 0) > 0
-                    ? () => {
-                        if (
-                          selectedTileLayers.length ===
-                          (tileLayers?.length ?? 0)
-                        ) {
-                          setSelectedTileLayers([])
-                        } else {
-                          setSelectedTileLayers(
-                            (tileLayers ?? []).map((t) => t.name)
-                          )
-                        }
-                      }
-                    : undefined
-                }
-                disabled={(tileLayers?.length ?? 0) === 0}
-                icon={faLayerGroup}
-                iconColor="#0ea5e9"
-              >
-                {(tileLayers ?? []).map((tile) => (
+              {(() => {
+                const renderableTileLayers = (tileLayers ?? []).filter(
+                  (t) => t.urlTemplate && t.urlTemplate.trim() !== ''
+                )
+                const renderableNames = renderableTileLayers.map((t) => t.name)
+                const allTilesSelected =
+                  renderableNames.length > 0 &&
+                  renderableNames.every((n) => selectedTileLayers.includes(n))
+                return (
                   <TreeItem
-                    key={`tile-${tile.name}`}
-                    label={tile.name}
-                    isChecked={selectedTileLayers.includes(tile.name)}
-                    onToggleCheck={() => {
-                      setSelectedTileLayers((prev) =>
-                        prev.includes(tile.name)
-                          ? prev.filter((n) => n !== tile.name)
-                          : [...prev, tile.name]
+                    label="TILE Layers"
+                    isExpanded={expandedSections.tileLayers}
+                    isChecked={allTilesSelected}
+                    onToggleExpand={() => toggleExpanded('tileLayers')}
+                    onToggleCheck={
+                      renderableNames.length > 0
+                        ? () => {
+                            if (allTilesSelected) {
+                              setSelectedTileLayers([])
+                            } else {
+                              setSelectedTileLayers(renderableNames)
+                            }
+                          }
+                        : undefined
+                    }
+                    disabled={(tileLayers?.length ?? 0) === 0}
+                    icon={faLayerGroup}
+                    iconColor="#0ea5e9"
+                  >
+                    {(tileLayers ?? []).map((tile) => {
+                      const hasValidUrl =
+                        tile.urlTemplate && tile.urlTemplate.trim() !== ''
+                      return (
+                        <TreeItem
+                          key={`tile-${tile.name}`}
+                          label={tile.name}
+                          isChecked={selectedTileLayers.includes(tile.name)}
+                          onToggleCheck={
+                            hasValidUrl
+                              ? () => {
+                                  setSelectedTileLayers((prev) =>
+                                    prev.includes(tile.name)
+                                      ? prev.filter((n) => n !== tile.name)
+                                      : [...prev, tile.name]
+                                  )
+                                }
+                              : undefined
+                          }
+                          disabled={!hasValidUrl}
+                          disabledTitle={
+                            !hasValidUrl
+                              ? 'Layer has no URL configured'
+                              : undefined
+                          }
+                        />
                       )
-                    }}
-                  />
-                ))}
-                {tileLayers !== undefined && tileLayers.length === 0 ? (
-                  <div className="py-2 pl-10 text-sm italic text-gray-500">
-                    No tile layers available
-                  </div>
-                ) : null}
-              </TreeItem>
+                    })}
+                    {tileLayers !== undefined && tileLayers.length === 0 ? (
+                      <div className="py-2 pl-10 text-sm italic text-gray-500">
+                        No tile layers available
+                      </div>
+                    ) : null}
+                  </TreeItem>
+                )
+              })()}
 
               {/* KML Layers Section */}
               {(() => {

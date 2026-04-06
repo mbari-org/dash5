@@ -1,4 +1,4 @@
-import React from 'react'
+import React, { useEffect, useRef } from 'react'
 import { Pane, TileLayer, WMSTileLayer } from 'react-leaflet'
 import L from 'leaflet'
 import { useTileLayers } from '@mbari/api-client'
@@ -59,6 +59,33 @@ const toTransparent = (val: unknown): boolean => {
 const TileLayerOverlays: React.FC = () => {
   const { data: tileLayers } = useTileLayers()
   const { selectedTileLayers } = useSelectedTileLayers()
+  // Track which invalid-URL layers have already been warned about so the
+  // console is not spammed on every re-render.
+  const warnedRef = useRef<Set<string>>(new Set())
+
+  // Compute the names of selected layers that have no usable URL.
+  const invalidSelectedNames = (tileLayers ?? [])
+    .filter(
+      (t) =>
+        selectedTileLayers.includes(t.name) &&
+        (!t.urlTemplate || t.urlTemplate.trim() === '')
+    )
+    .map((t) => t.name)
+    .join(',')
+
+  useEffect(() => {
+    invalidSelectedNames
+      .split(',')
+      .filter(Boolean)
+      .forEach((name) => {
+        if (!warnedRef.current.has(name)) {
+          warnedRef.current.add(name)
+          console.warn(
+            `[TileLayerOverlays] Skipping "${name}": empty urlTemplate`
+          )
+        }
+      })
+  }, [invalidSelectedNames])
 
   if (!tileLayers || selectedTileLayers.length === 0) return null
 
@@ -72,12 +99,8 @@ const TileLayerOverlays: React.FC = () => {
       {tileLayers
         .filter((t) => selectedTileLayers.includes(t.name))
         .map((t) => {
-          // Skip layers with no URL — a missing/empty urlTemplate would cause
-          // Leaflet to behave unpredictably.
+          // Skip layers with no URL (already warned via useEffect above).
           if (!t.urlTemplate || t.urlTemplate.trim() === '') {
-            console.warn(
-              `[TileLayerOverlays] Skipping "${t.name}": empty urlTemplate`
-            )
             return null
           }
 

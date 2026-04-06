@@ -7,9 +7,9 @@ export interface GetKmlLayerParams {
 }
 
 // Thin wrapper over getMapKmlLayer that normalises the response to a plain
-// string.  The /info/map/kmlLayer endpoint may return either a JSON envelope
-// { result: '<kml...>' } (handled by getMapKmlLayer) or a raw XML string
-// depending on the server version.
+// string. The /info/map/kmlLayer endpoint may return either a JSON envelope
+// { result: '<kml...>' } or a raw XML string depending on the server
+// version, and this wrapper unwraps either shape to return the KML string.
 export const getKmlLayer = async (
   params: GetKmlLayerParams,
   { debug, instance = getInstance(), ...config }: RequestConfig = {}
