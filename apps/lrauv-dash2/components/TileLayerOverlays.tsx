@@ -1,5 +1,5 @@
 import React from 'react'
-import { TileLayer, WMSTileLayer } from 'react-leaflet'
+import { Pane, TileLayer, WMSTileLayer } from 'react-leaflet'
 import L from 'leaflet'
 import { useTileLayers } from '@mbari/api-client'
 import { useSelectedTileLayers } from './SelectedTileLayersContext'
@@ -64,6 +64,11 @@ const TileLayerOverlays: React.FC = () => {
 
   return (
     <>
+      {/* Render overlay tiles in a custom pane above the Google Maps base layer.
+          Leaflet's tilePane sits at z-index 200; GoogleMutant can render above
+          it, so we use z-index 450 (above overlayPane:400, below markerPane:600)
+          to guarantee WMS/XYZ overlays are always visible on top of the base map. */}
+      <Pane name="tileOverlayPane" style={{ zIndex: 450 }} />
       {tileLayers
         .filter((t) => selectedTileLayers.includes(t.name))
         .map((t) => {
@@ -131,6 +136,7 @@ const TileLayerOverlays: React.FC = () => {
                 styles={styles}
                 opacity={opacity}
                 crs={crs}
+                pane="tileOverlayPane"
                 attribution={
                   opts.attribution != null
                     ? String(opts.attribution)
@@ -158,6 +164,7 @@ const TileLayerOverlays: React.FC = () => {
               key={t.name}
               url={url}
               opacity={opacity}
+              pane="tileOverlayPane"
               attribution={
                 opts.attribution != null ? String(opts.attribution) : undefined
               }
