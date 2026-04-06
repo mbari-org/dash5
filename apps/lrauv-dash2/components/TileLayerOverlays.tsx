@@ -1,5 +1,6 @@
 import React from 'react'
 import { TileLayer, WMSTileLayer } from 'react-leaflet'
+import L from 'leaflet'
 import { useTileLayers } from '@mbari/api-client'
 import { useSelectedTileLayers } from './SelectedTileLayersContext'
 
@@ -25,7 +26,21 @@ const LEAFLET_ONLY_KEYS = new Set([
   'noWrap',
   'pane',
   'subdomains',
+  // srs is handled via the crs prop below — don't forward as a raw WMS param
+  // or it will conflict with the CRS/SRS Leaflet computes from the map's CRS.
+  'srs',
 ])
+
+// Map an SRS code from the API options to a Leaflet CRS object so that
+// Leaflet computes bounding-box coordinates in the correct coordinate system.
+const getCRS = (srs: unknown): L.CRS | undefined => {
+  if (typeof srs !== 'string') return undefined
+  const code = srs.toUpperCase().replace('EPSG:', 'EPSG:')
+  if (code === 'EPSG:4326' || code === 'CRS:84') return L.CRS.EPSG4326
+  if (code === 'EPSG:3857' || code === 'EPSG:900913') return L.CRS.EPSG3857
+  if (code === 'EPSG:3395') return L.CRS.EPSG3395
+  return undefined
+}
 
 // Coerce an option value to a number, returning the fallback if it can't be
 // parsed or falls below an optional minimum (e.g. tileSize must be > 0).
@@ -96,6 +111,8 @@ const TileLayerOverlays: React.FC = () => {
                 .map(([key, val]) => [key, String(val)])
             )
 
+            const crs = getCRS(opts.srs)
+
             return (
               <WMSTileLayer
                 key={t.name}
@@ -106,6 +123,7 @@ const TileLayerOverlays: React.FC = () => {
                 version={version}
                 styles={styles}
                 opacity={opacity}
+                crs={crs}
                 attribution={
                   opts.attribution != null
                     ? String(opts.attribution)
