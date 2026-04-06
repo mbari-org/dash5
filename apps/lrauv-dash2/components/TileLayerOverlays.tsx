@@ -100,12 +100,19 @@ const TileLayerOverlays: React.FC = () => {
                 .filter(([key]) => !LEAFLET_ONLY_KEYS.has(key))
                 .filter(
                   ([key]) =>
+                    // These are either handled as explicit top-level props above
+                    // or generated automatically by Leaflet — exclude from params
+                    // to avoid duplicates in the WMS request URL.
                     ![
                       'layers',
                       'format',
                       'transparent',
                       'version',
                       'styles',
+                      'service',
+                      'request',
+                      'width',
+                      'height',
                     ].includes(key)
                 )
                 .map(([key, val]) => [key, String(val)])
