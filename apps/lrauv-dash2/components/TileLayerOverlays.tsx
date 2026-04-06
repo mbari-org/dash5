@@ -27,10 +27,11 @@ const LEAFLET_ONLY_KEYS = new Set([
   'subdomains',
 ])
 
-// Coerce an option value to a number, returning the fallback if it can't be parsed.
-const toNum = (val: unknown, fallback: number): number => {
+// Coerce an option value to a number, returning the fallback if it can't be
+// parsed or falls below an optional minimum (e.g. tileSize must be > 0).
+const toNum = (val: unknown, fallback: number, min = -Infinity): number => {
   const n = Number(val)
-  return isFinite(n) ? n : fallback
+  return isFinite(n) && n >= min ? n : fallback
 }
 
 // Normalize WMS transparent: accept boolean true/false or any-case string "true"/"false".
@@ -100,7 +101,9 @@ const TileLayerOverlays: React.FC = () => {
                   opts.minZoom != null ? toNum(opts.minZoom, 0) : undefined
                 }
                 tileSize={
-                  opts.tileSize != null ? toNum(opts.tileSize, 256) : undefined
+                  opts.tileSize != null
+                    ? toNum(opts.tileSize, 256, 1)
+                    : undefined
                 }
                 zIndex={opts.zIndex != null ? toNum(opts.zIndex, 1) : undefined}
                 params={
@@ -124,7 +127,7 @@ const TileLayerOverlays: React.FC = () => {
                 opts.maxZoom != null ? toNum(opts.maxZoom, 18) : undefined
               }
               tileSize={
-                opts.tileSize != null ? toNum(opts.tileSize, 256) : undefined
+                opts.tileSize != null ? toNum(opts.tileSize, 256, 1) : undefined
               }
               tms={opts.tms != null ? Boolean(opts.tms) : undefined}
             />
