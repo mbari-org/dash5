@@ -4,6 +4,7 @@ import {
   normalizeMissionName,
   normalizeMissionPath,
   missionPathFromEventData,
+  rawMissionPathFromEventData,
 } from '../lib/missionUtils'
 
 describe('missionNameFromStartedText', () => {
@@ -131,5 +132,29 @@ describe('missionPathFromEventData', () => {
 
   test('returns empty string when no mission path is present', () => {
     expect(missionPathFromEventData('sched stop')).toBe('')
+  })
+})
+
+describe('rawMissionPathFromEventData', () => {
+  test('preserves original case and extension', () => {
+    expect(
+      rawMissionPathFromEventData('load Science/profile_station.tl;run')
+    ).toBe('Science/profile_station.tl')
+  })
+
+  test('preserves mixed-case directory', () => {
+    expect(rawMissionPathFromEventData('load Long-Range/Default.xml;run')).toBe(
+      'Long-Range/Default.xml'
+    )
+  })
+
+  test('returns extensionless path as-is when no extension present', () => {
+    expect(
+      rawMissionPathFromEventData('load Maintenance/calibration;run')
+    ).toBe('Maintenance/calibration')
+  })
+
+  test('returns empty string when no mission path present', () => {
+    expect(rawMissionPathFromEventData('stop')).toBe('')
   })
 })

@@ -26,6 +26,7 @@ import useGlobalModalId from '../lib/useGlobalModalId'
 import {
   missionNameFromStartedText,
   missionPathFromEventData,
+  rawMissionPathFromEventData,
   normalizeMissionName,
   normalizeMissionPath,
 } from '../lib/missionUtils'
@@ -512,9 +513,11 @@ export const ScheduleSection: React.FC<ScheduleSectionProps> = ({
     const isMission = isMissionCommand(event?.data, event?.text)
 
     if (commandType === 'mission' || isMission) {
+      // Use the raw (unnormalized) path so MissionModal can auto-select the
+      // correct entry from the mission list (which expects original case + extension).
       const missionPath =
-        missionPathFromEventData(event?.data) ||
-        missionPathFromEventData(event?.text) ||
+        rawMissionPathFromEventData(event?.data) ||
+        rawMissionPathFromEventData(event?.text) ||
         ''
       setGlobalModalId({
         id: 'newMission',

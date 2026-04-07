@@ -55,3 +55,17 @@ export const missionPathFromEventData = (data?: string): string => {
   if (!loadMatch) return ''
   return normalizeMissionPath(loadMatch)
 }
+
+/**
+ * Extracts the raw mission path from a run/command event data string,
+ * preserving original case and file extension for use as a modal pre-fill
+ * value (e.g. "Science/profile_station.tl"). Use missionPathFromEventData
+ * for internal matching, which normalizes case and strips the extension.
+ */
+export const rawMissionPathFromEventData = (data?: string): string => {
+  const withExtension = data?.match(/[A-Za-z0-9_/.-]+\.(?:xml|tl)/i)?.[0]
+  if (withExtension) return withExtension
+
+  const loadMatch = data?.match(/\bload\s+([A-Za-z0-9_/.-]+)\b/i)?.[1]
+  return loadMatch ?? ''
+}

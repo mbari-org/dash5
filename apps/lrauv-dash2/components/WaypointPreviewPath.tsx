@@ -19,7 +19,8 @@ const WaypointPreviewPath: React.FC<{
   const fit = useRef<string | null | undefined>(null)
   const lastFitTrigger = useRef<number | undefined>(undefined)
   const route = waypoints
-  const routeAsString = waypoints?.flat().join()
+  const routeAsString =
+    waypoints?.map((r) => `${r.lat},${r.lon}`).join('|') ?? null
   const decorator = useRef<L.PolylineDecorator | null>(null)
   const color = WAYPOINT_ICON_COLOR
 
