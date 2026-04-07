@@ -737,7 +737,7 @@ export const MapLayersListModal: React.FC<{
           />
           {/* Search & filter bar */}
           <div className="flex items-center gap-2 bg-white px-2 pb-2">
-            <div className="relative flex-1">
+            <div className="relative w-44">
               <FontAwesomeIcon
                 icon={faMagnifyingGlass}
                 className="pointer-events-none absolute left-2 top-1/2 -translate-y-1/2 text-gray-400"
@@ -748,7 +748,7 @@ export const MapLayersListModal: React.FC<{
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 placeholder="Search layers..."
-                className="w-full rounded border border-gray-300 py-1 pl-6 pr-6 text-sm focus:outline-none focus:ring-1 focus:ring-blue-400"
+                className="w-full rounded border border-gray-300 py-1 pl-6 pr-6 text-sm text-gray-900 focus:outline-none focus:ring-1 focus:ring-blue-400"
               />
               {searchQuery && (
                 <button
@@ -763,12 +763,12 @@ export const MapLayersListModal: React.FC<{
                 </button>
               )}
             </div>
-            <label className="flex cursor-pointer items-center gap-1 whitespace-nowrap text-xs text-gray-600">
+            <label className="flex cursor-pointer items-center gap-1.5 whitespace-nowrap text-xs text-gray-600">
               <input
                 type="checkbox"
                 checked={showSelectedOnly}
                 onChange={(e) => setShowSelectedOnly(e.target.checked)}
-                className="accent-blue-600"
+                className="h-5 w-5 cursor-pointer accent-blue-600"
               />
               Selected only
             </label>
