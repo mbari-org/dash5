@@ -2,6 +2,7 @@ import React from 'react'
 import clsx from 'clsx'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { faChevronDown, faChevronLeft } from '@fortawesome/free-solid-svg-icons'
+import { RecoveredPill } from './RecoveredPill'
 
 export interface VehicleHeaderProps {
   className?: string
@@ -55,9 +56,10 @@ export const VehicleHeader: React.FC<VehicleHeaderProps> = ({
           {name}: {deployment}
         </span>
         {recovered ? (
-          <span className="ml-2 flex-shrink-0 rounded-full bg-green-100 px-2 py-0.5 text-xs font-semibold text-green-800">
-            {recoveredAt ? `Recovered ${recoveredAt}` : 'Recovered'}
-          </span>
+          <RecoveredPill
+            recoveredAt={recoveredAt}
+            className="ml-2 flex-shrink-0 rounded-full bg-green-100 px-2 py-0.5 text-xs font-semibold text-green-800"
+          />
         ) : timeSpanSinceDeployment ? (
           <span className={styles.secondary}>
             began {timeSpanSinceDeployment}
