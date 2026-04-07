@@ -769,7 +769,7 @@ export const MapLayersListModal: React.FC<{
                 checked={showSelectedOnly}
                 onChange={(e) => setShowSelectedOnly(e.target.checked)}
                 className="h-5 w-5 cursor-pointer accent-blue-600"
-              />
+              />{' '}
               Only display selected
             </label>
           </div>
