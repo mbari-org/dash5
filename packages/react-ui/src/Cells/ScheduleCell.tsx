@@ -3,13 +3,13 @@ import clsx from 'clsx'
 import { swallow } from '@mbari/utils'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import {
-  faClock,
   faEllipsisV,
   faCheck,
   faTimes,
   faPauseCircle,
   faPersonRunning,
 } from '@fortawesome/free-solid-svg-icons'
+import { faClock } from '@fortawesome/free-regular-svg-icons'
 import { IconProp } from '@fortawesome/fontawesome-svg-core'
 import { IconButton } from '../Navigation'
 import { CommandType } from '../types'
