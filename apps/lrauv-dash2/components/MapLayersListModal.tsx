@@ -19,7 +19,6 @@ import {
   faDrawPolygon,
   faLayerGroup,
   faFileCode,
-  faMagnifyingGlass,
   faXmark,
 } from '@fortawesome/free-solid-svg-icons'
 import { useSelectedStations } from './SelectedStationContext'
@@ -738,17 +737,12 @@ export const MapLayersListModal: React.FC<{
           {/* Search & filter bar */}
           <div className="flex items-center gap-4 bg-white px-2 pb-2">
             <div className="relative w-44">
-              <FontAwesomeIcon
-                icon={faMagnifyingGlass}
-                className="pointer-events-none absolute left-2 top-1/2 -translate-y-1/2 text-gray-400"
-                style={{ fontSize: '12px' }}
-              />
               <input
                 type="text"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder="Search layers..."
-                className="w-full rounded border border-gray-300 py-1 pl-6 pr-6 text-sm text-gray-900 focus:outline-none focus:ring-1 focus:ring-blue-400"
+                placeholder="Filter platforms..."
+                className="w-full rounded border border-gray-300 py-1 pl-2 pr-6 text-sm text-gray-900 focus:outline-none focus:ring-1 focus:ring-blue-400"
               />
               {searchQuery && (
                 <button
