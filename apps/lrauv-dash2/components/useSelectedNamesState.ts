@@ -26,8 +26,13 @@ export const useSelectedNamesState = (storageKey: string) => {
   )
 
   useEffect(() => {
-    if (typeof window !== 'undefined') {
-      localStorage.setItem(storageKey, JSON.stringify(selectedNames))
+    if (typeof window === 'undefined') return
+    try {
+      const serialized = JSON.stringify(selectedNames)
+      if (localStorage.getItem(storageKey) === serialized) return
+      localStorage.setItem(storageKey, serialized)
+    } catch {
+      // Ignore storage failures so persistence issues do not crash the UI.
     }
   }, [storageKey, selectedNames])
 

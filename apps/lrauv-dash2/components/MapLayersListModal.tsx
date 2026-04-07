@@ -662,21 +662,26 @@ export const MapLayersListModal: React.FC<{
   }, [polygons, showSelectedOnly, q, selectedPolygons])
 
   const filteredTileLayers = useMemo(() => {
-    let list = (tileLayers ?? []).filter(
-      (t) => t.urlTemplate && t.urlTemplate.trim() !== ''
-    )
+    let list = tileLayers ?? []
     if (showSelectedOnly)
-      list = list.filter((t) => selectedTileLayers.includes(t.name))
+      list = list.filter(
+        (t) =>
+          t.urlTemplate &&
+          t.urlTemplate.trim() !== '' &&
+          selectedTileLayers.includes(t.name)
+      )
     if (q) list = list.filter((t) => t.name.toLowerCase().includes(q))
     return list
   }, [tileLayers, showSelectedOnly, q, selectedTileLayers])
 
   const filteredKmlLayers = useMemo(() => {
-    let list = (kmlLayers ?? []).filter(
-      (k) => !k.path.toLowerCase().endsWith('.kmz')
-    )
+    let list = kmlLayers ?? []
     if (showSelectedOnly)
-      list = list.filter((k) => selectedKmlLayers.includes(k.name))
+      list = list.filter(
+        (k) =>
+          !k.path.toLowerCase().endsWith('.kmz') &&
+          selectedKmlLayers.includes(k.name)
+      )
     if (q) list = list.filter((k) => k.name.toLowerCase().includes(q))
     return list
   }, [kmlLayers, showSelectedOnly, q, selectedKmlLayers])
@@ -734,7 +739,7 @@ export const MapLayersListModal: React.FC<{
                 type="text"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder="Filter platforms..."
+                placeholder="Filter layers..."
                 className="w-full rounded border border-gray-300 py-2 pl-3 pr-6 text-base text-gray-900"
               />
               {searchQuery && (
@@ -785,8 +790,8 @@ export const MapLayersListModal: React.FC<{
                       : expandedSections.markers
                   }
                   isChecked={
-                    selectedMarkers.length === layerMarkers.length &&
-                    layerMarkers.length > 0
+                    layerMarkers.length > 0 &&
+                    layerMarkers.every((marker) => marker.visible !== false)
                   }
                   onToggleExpand={() => toggleExpanded('markers')}
                   onToggleCheck={
@@ -1116,18 +1121,27 @@ export const MapLayersListModal: React.FC<{
                       iconColor="#16a34a"
                     >
                       {filteredKmlLayers.map((kml) => {
+                        const isKmz = kml.path.toLowerCase().endsWith('.kmz')
                         return (
                           <TreeItem
                             key={`kml-${kml.name}`}
                             label={kml.name}
-                            isChecked={selectedKmlLayers.includes(kml.name)}
-                            onToggleCheck={() => {
-                              setSelectedKmlLayers((prev) =>
-                                prev.includes(kml.name)
-                                  ? prev.filter((n) => n !== kml.name)
-                                  : [...prev, kml.name]
-                              )
-                            }}
+                            isChecked={
+                              !isKmz && selectedKmlLayers.includes(kml.name)
+                            }
+                            disabled={isKmz}
+                            disabledTitle=".kmz files are not yet supported"
+                            onToggleCheck={
+                              isKmz
+                                ? undefined
+                                : () => {
+                                    setSelectedKmlLayers((prev) =>
+                                      prev.includes(kml.name)
+                                        ? prev.filter((n) => n !== kml.name)
+                                        : [...prev, kml.name]
+                                    )
+                                  }
+                            }
                           />
                         )
                       })}

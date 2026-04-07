@@ -1,4 +1,4 @@
-import React, { useEffect, useRef } from 'react'
+import React, { useEffect, useRef, useMemo } from 'react'
 import { Pane, TileLayer, WMSTileLayer } from 'react-leaflet'
 import L from 'leaflet'
 import { useTileLayers } from '@mbari/api-client'
@@ -64,27 +64,27 @@ const TileLayerOverlays: React.FC = () => {
   const warnedRef = useRef<Set<string>>(new Set())
 
   // Compute the names of selected layers that have no usable URL.
-  const invalidSelectedNames = (tileLayers ?? [])
-    .filter(
-      (t) =>
-        selectedTileLayers.includes(t.name) &&
-        (!t.urlTemplate || t.urlTemplate.trim() === '')
-    )
-    .map((t) => t.name)
-    .join(',')
+  const invalidSelectedNames = useMemo(
+    () =>
+      (tileLayers ?? [])
+        .filter(
+          (t) =>
+            selectedTileLayers.includes(t.name) &&
+            (!t.urlTemplate || t.urlTemplate.trim() === '')
+        )
+        .map((t) => t.name),
+    [tileLayers, selectedTileLayers]
+  )
 
   useEffect(() => {
-    invalidSelectedNames
-      .split(',')
-      .filter(Boolean)
-      .forEach((name) => {
-        if (!warnedRef.current.has(name)) {
-          warnedRef.current.add(name)
-          console.warn(
-            `[TileLayerOverlays] Skipping "${name}": empty urlTemplate`
-          )
-        }
-      })
+    invalidSelectedNames.forEach((name) => {
+      if (!warnedRef.current.has(name)) {
+        warnedRef.current.add(name)
+        console.warn(
+          `[TileLayerOverlays] Skipping "${name}": empty urlTemplate`
+        )
+      }
+    })
   }, [invalidSelectedNames])
 
   if (!tileLayers || selectedTileLayers.length === 0) return null
