@@ -128,7 +128,7 @@ const TreeItem: React.FC<TreeItemProps> = ({
             onChange={onToggleCheck}
             readOnly={!onToggleCheck}
             disabled={disabled || !onToggleCheck}
-            className="mapLayersCheckbox mr-2 h-[18px] w-[18px] accent-blue-600"
+            className="mapLayersCheckbox mr-2 h-[19px] w-[19px] accent-blue-600"
             style={{
               cursor: disabled || !onToggleCheck ? 'not-allowed' : 'pointer',
             }}
