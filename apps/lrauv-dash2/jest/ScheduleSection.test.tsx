@@ -30,6 +30,7 @@ export const mockResponse = {
 
 // A command-status payload representing a running mission.
 const runningMissionCommandStatus = {
+  eventTypes: 'command,run',
   commandStatuses: [
     {
       event: {
@@ -107,8 +108,11 @@ const server = setupServer(
   rest.get('/events', (_req, res, ctx) => {
     return res(ctx.status(200), ctx.json({ result: [] }))
   }),
-  rest.get('/deployment/:id/command-status', (_req, res, ctx) => {
-    return res(ctx.status(200), ctx.json({ result: {} }))
+  rest.get('/deployments/commandStatus', (_req, res, ctx) => {
+    return res(
+      ctx.status(200),
+      ctx.json({ result: { eventTypes: 'command,run', commandStatuses: [] } })
+    )
   })
 )
 
@@ -128,7 +132,7 @@ test('should render the component', async () => {
 
 test('marks a mission as running when mission-started event matches a command event', async () => {
   server.use(
-    rest.get('/deployment/:id/command-status', (_req, res, ctx) =>
+    rest.get('/deployments/commandStatus', (_req, res, ctx) =>
       res(ctx.status(200), ctx.json({ result: runningMissionCommandStatus }))
     ),
     rest.get('/events/mission-started', (_req, res, ctx) =>
@@ -149,22 +153,25 @@ test('marks a mission as running when mission-started event matches a command ev
 
 test('injects a synthetic running row when no command event matches current mission', async () => {
   server.use(
-    rest.get('/deployment/:id/command-status', (_req, res, ctx) =>
+    rest.get('/deployments/commandStatus', (_req, res, ctx) =>
       res(
         ctx.status(200),
         ctx.json({
-          commandStatuses: [
-            {
-              event: {
-                data: 'sched resume',
-                unixTime: Date.now() - 200 * 1000,
-                eventId: 99,
-                eventType: 'command',
-                text: null,
+          result: {
+            eventTypes: 'command',
+            commandStatuses: [
+              {
+                event: {
+                  data: 'sched resume',
+                  unixTime: Date.now() - 200 * 1000,
+                  eventId: 99,
+                  eventType: 'command',
+                  text: null,
+                },
+                status: 'completed',
               },
-              status: 'completed',
-            },
-          ],
+            ],
+          },
         })
       )
     ),
@@ -187,7 +194,7 @@ test('injects a synthetic running row when no command event matches current miss
 
 test('classifies older mission as completed when a newer mission-started event exists', async () => {
   server.use(
-    rest.get('/deployment/:id/command-status', (_req, res, ctx) =>
+    rest.get('/deployments/commandStatus', (_req, res, ctx) =>
       res(ctx.status(200), ctx.json({ result: runningMissionCommandStatus }))
     ),
     rest.get('/events/mission-started', (_req, res, ctx) =>
