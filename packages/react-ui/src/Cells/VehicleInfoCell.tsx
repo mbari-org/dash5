@@ -80,7 +80,9 @@ export const VehicleInfoCell: React.FC<VehicleInfoCellProps> = ({
             ? 'Today'
             : lastSatCommsTime.toFormat('MMM d')
         } at ${lastSatCommsTime.toFormat('hh:mm:ss')} (${formatCompactDuration(
-          lastSatCommsTime
+          lastSatCommsTime,
+          DateTime.now(),
+          { maxDays: 6 }
         )})`
 
   const lastCellFormatted =
@@ -91,7 +93,9 @@ export const VehicleInfoCell: React.FC<VehicleInfoCellProps> = ({
             ? 'Today'
             : lastCellCommsTime.toFormat('MMM d')
         } at ${lastCellCommsTime.toFormat('hh:mm:ss')} (${formatCompactDuration(
-          lastCellCommsTime
+          lastCellCommsTime,
+          DateTime.now(),
+          { maxDays: 6 }
         )})`
 
   // Format estimate if available and not plugged in
@@ -99,7 +103,7 @@ export const VehicleInfoCell: React.FC<VehicleInfoCellProps> = ({
     ? nextCommsTime.toMillis() > DateTime.now().toMillis()
     : false
   const estimateDuration = nextCommsTime
-    ? formatCompactDuration(nextCommsTime)
+    ? formatCompactDuration(nextCommsTime, DateTime.now(), { maxDays: 6 })
     : ''
   const estimate =
     isPluggedIn || !nextCommsTime
@@ -117,7 +121,9 @@ export const VehicleInfoCell: React.FC<VehicleInfoCellProps> = ({
             ? 'Today'
             : lastPluggedInTime.toFormat('MMM d')
         } at ${lastPluggedInTime.toFormat('hh:mm:ss')} (${formatCompactDuration(
-          lastPluggedInTime
+          lastPluggedInTime,
+          DateTime.now(),
+          { maxDays: 6 }
         )})`
 
   return (

@@ -149,14 +149,14 @@ const ConnectedVehicleCellComponent: React.FC<{
     ? lastCellCommsDT.toFormat('HH:mm')
     : vehicle?.text_cell
   const formattedCellAgo = lastCellCommsDT
-    ? `${formatCompactDuration(lastCellCommsDT, nowDT)} ago`
+    ? `${formatCompactDuration(lastCellCommsDT, nowDT, { maxDays: 6 })} ago`
     : vehicle?.text_cellago
 
   const formattedSatTime = lastSatCommsDT
     ? lastSatCommsDT.toFormat('HH:mm')
     : vehicle?.text_sat
   const formattedSatAgo = lastSatCommsDT
-    ? `${formatCompactDuration(lastSatCommsDT, nowDT)} ago`
+    ? `${formatCompactDuration(lastSatCommsDT, nowDT, { maxDays: 6 })} ago`
     : vehicle?.text_commago
 
   const { text: nextCommsText } = calculateRelativeNextComm(

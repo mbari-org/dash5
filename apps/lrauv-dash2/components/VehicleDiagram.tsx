@@ -53,14 +53,18 @@ const VehicleDiagram: React.FC<{
     ? lastCellCommsDT.toFormat('HH:mm')
     : vehicle?.text_cell
   const formattedCellAgo = lastCellCommsDT
-    ? `${formatCompactDuration(lastCellCommsDT)} ago`
+    ? `${formatCompactDuration(lastCellCommsDT, DateTime.now(), {
+        maxDays: 6,
+      })} ago`
     : vehicle?.text_cellago
 
   const formattedSatTime = lastSatCommsDT
     ? lastSatCommsDT.toFormat('HH:mm')
     : vehicle?.text_sat
   const formattedSatAgo = lastSatCommsDT
-    ? `${formatCompactDuration(lastSatCommsDT)} ago`
+    ? `${formatCompactDuration(lastSatCommsDT, DateTime.now(), {
+        maxDays: 6,
+      })} ago`
     : vehicle?.text_commago
 
   const formattedNextComm = nextCommsText ?? vehicle?.text_nextcomm

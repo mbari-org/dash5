@@ -12,6 +12,7 @@ import {
   LoadMoreButton,
 } from '@mbari/react-ui'
 import { DateTime } from 'luxon'
+import { formatCompactDuration } from '@mbari/utils'
 import { faPlus } from '@fortawesome/free-solid-svg-icons'
 import clsx from 'clsx'
 import { Select } from '@mbari/react-ui/dist/Fields/Select'
@@ -466,19 +467,8 @@ export const ScheduleSection: React.FC<ScheduleSectionProps> = ({
         description={(() => {
           if (mission.event.unixTime == null) return ''
           const dt = DateTime.fromMillis(mission.event.unixTime)
-          const totalMinutes = Math.round(
-            DateTime.now().diff(dt, 'minutes').minutes
-          )
-          let relativePart = ''
-          if (totalMinutes >= 0) {
-            if (totalMinutes < 60) {
-              relativePart = ` (${totalMinutes} min. ago)`
-            } else {
-              const h = Math.floor(totalMinutes / 60)
-              const m = totalMinutes % 60
-              relativePart = m > 0 ? ` (${h}h ${m}m ago)` : ` (${h}h ago)`
-            }
-          }
+          const elapsed = formatCompactDuration(dt)
+          const relativePart = dt <= DateTime.now() ? ` (${elapsed} ago)` : ''
           return `${isMission ? 'Started' : 'Ran'} ${dt.toFormat(
             'H:mm'
           )}${relativePart}`
