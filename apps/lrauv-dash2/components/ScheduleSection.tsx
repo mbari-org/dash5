@@ -185,6 +185,18 @@ export const ScheduleSection: React.FC<ScheduleSectionProps> = ({
   const showLoadMore = !deploymentLogsOnly && !!hasNextPage
   const totalCellCount = baseTotalCellCount + (showLoadMore ? 1 : 0)
 
+  const validScheduleCellStatuses: ScheduleCellStatus[] = [
+    'pending',
+    'running',
+    'cancelled',
+    'completed',
+    'paused',
+  ]
+  const toScheduleCellStatus = (s: string): ScheduleCellStatus =>
+    validScheduleCellStatuses.includes(s as ScheduleCellStatus)
+      ? (s as ScheduleCellStatus)
+      : 'pending'
+
   const menuRef = useRef<HTMLDivElement | null>(null)
   const [currentMoreMenu, setCurrentMoreMenu] = useState<{
     eventId?: number
@@ -291,7 +303,7 @@ export const ScheduleSection: React.FC<ScheduleSectionProps> = ({
         status={
           mission.status === 'TBD'
             ? 'completed'
-            : (mission.status as ScheduleCellStatus)
+            : toScheduleCellStatus(mission.status)
         }
         name={mission.event.user ?? 'Unknown'}
         scheduleStatus={
