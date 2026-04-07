@@ -686,10 +686,11 @@ export const MapLayersListModal: React.FC<{
       <div ref={modalRef}>
         <Modal
           title={
-            <div className="mb-3">
+            <div>
               <div className="text-xl font-bold">
                 Select the map layers to display
               </div>
+              <br />
             </div>
           }
           onClose={handleClose}
