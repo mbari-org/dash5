@@ -2,13 +2,20 @@ import { Modal } from '@mbari/react-ui'
 import { DateTime } from 'luxon'
 import { useRouter } from 'next/router'
 import { capitalize } from '@mbari/utils'
-import { useState, useCallback } from 'react'
+import { useState, useCallback, useEffect, useRef } from 'react'
 import useGlobalModalId from '../lib/useGlobalModalId'
 import useCurrentDeployment from '../lib/useCurrentDeployment'
 
 const CopyButton: React.FC<{ getText: () => string }> = ({ getText }) => {
   const [copied, setCopied] = useState(false)
   const [hovered, setHovered] = useState(false)
+  const copiedTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+
+  useEffect(() => {
+    return () => {
+      if (copiedTimeoutRef.current) clearTimeout(copiedTimeoutRef.current)
+    }
+  }, [])
 
   const handleCopy = useCallback(() => {
     if (!navigator.clipboard?.writeText) return
@@ -16,7 +23,11 @@ const CopyButton: React.FC<{ getText: () => string }> = ({ getText }) => {
       .writeText(getText())
       .then(() => {
         setCopied(true)
-        setTimeout(() => setCopied(false), 2000)
+        if (copiedTimeoutRef.current) clearTimeout(copiedTimeoutRef.current)
+        copiedTimeoutRef.current = setTimeout(() => {
+          setCopied(false)
+          copiedTimeoutRef.current = null
+        }, 2000)
       })
       .catch(() => {
         // Fail gracefully when clipboard access is unavailable or denied
@@ -544,8 +555,8 @@ export const ScheduleEventDetailsModal: React.FC<
               <CopyButton getText={() => segments.join('\n')} />
             </div>
             <ul className="mt-1 max-h-36 space-y-1 overflow-auto rounded border border-stone-300 bg-stone-100 p-2 font-mono text-sm text-stone-900">
-              {segments.map((segment) => (
-                <li key={segment} className="break-all">
+              {segments.map((segment, idx) => (
+                <li key={`${idx}-${segment}`} className="break-all">
                   {segment}
                 </li>
               ))}

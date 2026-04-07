@@ -63,10 +63,13 @@ const VALID_SCHEDULE_CELL_STATUSES: ScheduleCellStatus[] = [
   'paused',
 ]
 
-const toScheduleCellStatus = (status: string): ScheduleCellStatus =>
-  VALID_SCHEDULE_CELL_STATUSES.includes(status as ScheduleCellStatus)
-    ? (status as ScheduleCellStatus)
-    : 'completed'
+const toScheduleCellStatus = (status: string): ScheduleCellStatus => {
+  const s = status.trim().toLowerCase()
+  if (s === 'tbd') return 'pending'
+  return VALID_SCHEDULE_CELL_STATUSES.includes(s as ScheduleCellStatus)
+    ? (s as ScheduleCellStatus)
+    : 'pending'
+}
 
 const missionKeysMatch = (leftPath: string, rightPath: string) => {
   if (!leftPath || !rightPath) return false
@@ -303,7 +306,7 @@ export const ScheduleSection: React.FC<ScheduleSectionProps> = ({
               // Construct a command-format data string so parseMissionCommand
               // produces a consistent label and "Use for new mission" receives
               // a valid path. GetMissionStartedEventResponse has no data field.
-              data: `load ${currentMissionEntry.name}.tl;run`,
+              data: `load ${currentMissionEntry.name};run`,
               unixTime: currentRawEvent.unixTime,
               eventId: currentRawEvent.eventId,
               eventType: 'run',
