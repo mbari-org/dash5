@@ -686,7 +686,7 @@ export const MapLayersListModal: React.FC<{
       <div ref={modalRef}>
         <Modal
           title={
-            <div>
+            <div className="mb-3">
               <div className="text-xl font-bold">
                 Select the map layers to display
               </div>
@@ -727,7 +727,7 @@ export const MapLayersListModal: React.FC<{
             style={{ position: 'absolute', inset: 0, pointerEvents: 'none' }}
           />
           {/* Search & filter bar */}
-          <div className="flex items-center gap-4 bg-white px-2 pb-2 pt-3">
+          <div className="flex items-center gap-4 bg-white px-2 pb-2">
             <div className="relative w-44">
               <input
                 type="text"
