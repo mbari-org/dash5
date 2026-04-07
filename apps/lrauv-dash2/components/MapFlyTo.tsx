@@ -1,10 +1,10 @@
 import React, { useEffect } from 'react'
 import { useMap } from 'react-leaflet'
-import { useSelectedStations } from './SelectedStationContext'
+import { useMapCamera } from './MapCameraContext'
 
 const MapFlyTo: React.FC = () => {
   const map = useMap()
-  const { flyToRequest, setFlyToRequest } = useSelectedStations()
+  const { flyToRequest, setFlyToRequest } = useMapCamera()
 
   useEffect(() => {
     if (flyToRequest) {

@@ -21,6 +21,7 @@ import {
   faFileCode,
 } from '@fortawesome/free-solid-svg-icons'
 import { useSelectedStations } from './SelectedStationContext'
+import { useMapCamera } from './MapCameraContext'
 import { useSelectedPolygons } from './SelectedPolygonsContext'
 import { useSelectedTileLayers } from './SelectedTileLayersContext'
 import { useSelectedKmlLayers } from './SelectedKmlLayersContext'
@@ -271,8 +272,8 @@ export const MapLayersListModal: React.FC<{
     starredStations,
     toggleStarStation,
     setHighlightedStationName,
-    setFlyToRequest,
   } = useSelectedStations()
+  const { setFlyToRequest } = useMapCamera()
   const {
     markers,
     selectedMarkers,
@@ -291,6 +292,9 @@ export const MapLayersListModal: React.FC<{
 
   // Memoize polygon bounding boxes — avoids re-walking all GeoJSON coordinates
   // on every render (can be expensive for large datasets like US Shipping Lanes).
+  // Note: uses a naive global min/max, which is correct for regional (Pacific/CA)
+  // data but will produce incorrect bounds for features that cross the antimeridian
+  // (±180° longitude). Acceptable tradeoff for the current product scope.
   const polygonBoundsMap = useMemo(() => {
     const map = new Map<
       string,
