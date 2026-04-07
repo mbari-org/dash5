@@ -37,3 +37,15 @@ test('should render the color', async () => {
     'background-color: rgb(0, 255, 0);'
   )
 })
+
+test('should render the Recovered pill when recovered is true', async () => {
+  render(<VehicleHeader {...props} recovered={true} recoveredAt="2h ago" />)
+  expect(screen.getByText(/recovered 2h ago/i)).toBeInTheDocument()
+  expect(screen.queryByText(/began/i)).not.toBeInTheDocument()
+})
+
+test('should render the Recovered pill without timestamp when recoveredAt is not provided', async () => {
+  render(<VehicleHeader {...props} recovered={true} />)
+  expect(screen.getByText('Recovered')).toBeInTheDocument()
+  expect(screen.queryByText(/began/i)).not.toBeInTheDocument()
+})
