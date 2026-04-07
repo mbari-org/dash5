@@ -736,7 +736,7 @@ export const MapLayersListModal: React.FC<{
             style={{ position: 'absolute', inset: 0, pointerEvents: 'none' }}
           />
           {/* Search & filter bar */}
-          <div className="flex items-center gap-2 bg-white px-2 pb-2">
+          <div className="flex items-center gap-4 bg-white px-2 pb-2">
             <div className="relative w-44">
               <FontAwesomeIcon
                 icon={faMagnifyingGlass}
@@ -763,7 +763,7 @@ export const MapLayersListModal: React.FC<{
                 </button>
               )}
             </div>
-            <label className="flex cursor-pointer items-center gap-1.5 whitespace-nowrap text-xs text-gray-600">
+            <label className="flex cursor-pointer items-center gap-1.5 whitespace-nowrap text-sm text-gray-700">
               <input
                 type="checkbox"
                 checked={showSelectedOnly}
