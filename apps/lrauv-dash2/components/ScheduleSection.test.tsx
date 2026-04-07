@@ -89,10 +89,14 @@ test('pending items render as completed in deployment-logs view when isRecovered
     await screen.findByRole('button', { name: /displaying all logs/i })
   )
 
-  // With isRecovered=true, the pending item is remapped to 'completed' and
-  // moves into historicCells — so the "Schedule History" heading appears
+  // With isRecovered=true, pending items are remapped to 'completed':
+  // - the "Schedule History" heading appears (item moved to historicCells)
+  // - the ScheduleCell renders a completed icon (title="completed")
+  // - no pending icon is present
   await waitFor(() => {
     expect(screen.getByText(/schedule history/i)).toBeInTheDocument()
+    expect(screen.getByTitle('completed')).toBeInTheDocument()
+    expect(screen.queryByTitle('pending')).not.toBeInTheDocument()
   })
 })
 
@@ -108,9 +112,12 @@ test('pending items remain pending in deployment-logs view when isRecovered is f
     await screen.findByRole('button', { name: /displaying all logs/i })
   )
 
-  // With isRecovered=false, the pending item stays in scheduledCells —
-  // no historicCells exist so the "Schedule History" heading should not appear
+  // With isRecovered=false, items stay pending in scheduledCells:
+  // - no "Schedule History" heading (no historicCells)
+  // - the ScheduleCell renders a pending icon (title="pending")
   await waitFor(() => {
     expect(screen.queryByText(/schedule history/i)).not.toBeInTheDocument()
+    expect(screen.getByTitle('pending')).toBeInTheDocument()
+    expect(screen.queryByTitle('completed')).not.toBeInTheDocument()
   })
 })
