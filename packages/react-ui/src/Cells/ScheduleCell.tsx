@@ -104,9 +104,8 @@ export const ScheduleCell: React.FC<ScheduleCellProps> = ({
   })()
 
   const labelColor = (() => {
-    if (scheduleStatus === 'paused') return 'text-orange-400'
-    if (status === 'completed') return 'text-teal-600'
-    return 'text-primary-600'
+    if (status === 'running') return 'text-primary-600'
+    return 'text-teal-600'
   })()
 
   const handleMoreClick = () => {
