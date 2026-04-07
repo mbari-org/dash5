@@ -2,7 +2,6 @@ import { OverviewToolbar } from '@mbari/react-ui'
 import { NextPage } from 'next'
 import Layout from '../components/Layout'
 import React, { useCallback, useEffect, useRef, useState } from 'react'
-import ResizeObserver from 'resize-observer-polyfill'
 import dynamic from 'next/dynamic'
 import VehicleDeploymentDropdown from '../components/VehicleDeploymentDropdown'
 import VehicleList from '../components/VehicleList'
@@ -22,7 +21,7 @@ import { MapLayersListModal } from '../components/MapLayersListModal'
 import { useSelectedStations } from '../components/SelectedStationContext'
 import { useMarkers } from '../components/MarkerContext'
 import toast from 'react-hot-toast'
-import { createLogger } from '@mbari/utils'
+import { createLogger, useResizeObserver } from '@mbari/utils'
 import { PlatformsListModal } from '../components/PlatformsListModal'
 import { useRefreshPositions } from '../lib/useRefreshPositions'
 import VehicleColorsModal from '../components/VehicleColorsModal'
@@ -99,27 +98,12 @@ const OverViewMap: React.FC<{
   const mapContainerRef = useRef<HTMLDivElement | null>(null)
 
   // Call invalidateSize whenever the container resizes (fixes partial-map rendering
-  // after refresh) and once on mount.  Using ResizeObserver avoids the unsafe
-  // setTimeout-in-render-prop pattern that caused the "state update before mount" warning.
+  // after refresh). useResizeObserver is polyfilled and throttled (100 ms by default).
+  const { size } = useResizeObserver({ element: mapContainerRef })
   useEffect(() => {
-    const container = mapContainerRef.current
-    if (!container) return
-
-    const invalidate = () => {
-      try {
-        mapRef.current?.invalidateSize()
-      } catch {
-        // map not ready yet — ResizeObserver will retry on next resize
-      }
-    }
-
-    // Call once immediately after mount
-    invalidate()
-
-    const observer = new ResizeObserver(invalidate)
-    observer.observe(container)
-    return () => observer.disconnect()
-  }, [])
+    if (!mapRef.current) return
+    mapRef.current.invalidateSize()
+  }, [size])
   const router = useRouter()
   const { handleDepthRequest, elevationAvailable } = useGoogleElevator()
   const [center, setCenter] = useState<undefined | [number, number]>()
