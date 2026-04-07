@@ -51,7 +51,7 @@ const styles = {
   text: 'text-stone-500 opacity-90',
   textLight: 'text-stone-500 opacity-60',
   descriptionContainer: 'flex flex-col pr-10 pl-4',
-  open: 'font-semibold',
+  open: '',
   closed: 'opacity-60',
 }
 
@@ -64,8 +64,8 @@ const icons: { [key: string]: IconProp } = {
 }
 
 export const ScheduleCellBackgrounds = {
-  running: 'bg-violet-50 hover:bg-violet-100',
-  paused: 'bg-orange-50 hover:bg-orange-100',
+  running: 'bg-white hover:bg-stone-50',
+  paused: 'bg-white hover:bg-stone-50',
   default: 'bg-white hover:bg-stone-50',
 }
 
