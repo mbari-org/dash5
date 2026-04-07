@@ -19,6 +19,8 @@ import {
   faDrawPolygon,
   faLayerGroup,
   faFileCode,
+  faMagnifyingGlass,
+  faXmark,
 } from '@fortawesome/free-solid-svg-icons'
 import { useSelectedStations } from './SelectedStationContext'
 import { useMapCamera } from './MapCameraContext'
@@ -626,6 +628,60 @@ export const MapLayersListModal: React.FC<{
       .map(({ station }) => station)
   }, [stations, starredSet])
 
+  // Search & filter state
+  const [searchQuery, setSearchQuery] = useState('')
+  const [showSelectedOnly, setShowSelectedOnly] = useState(false)
+  const isFiltering = searchQuery.trim() !== '' || showSelectedOnly
+  const q = searchQuery.trim().toLowerCase()
+
+  const filteredStations = useMemo(() => {
+    let list = sortedStations
+    if (showSelectedOnly)
+      list = list.filter((s) =>
+        selectedStations.some((sel) => sel.name === s.name)
+      )
+    if (q) list = list.filter((s) => s.name.toLowerCase().includes(q))
+    return list
+  }, [sortedStations, showSelectedOnly, q, selectedStations])
+
+  const filteredMarkers = useMemo(() => {
+    let list = layerMarkers
+    if (showSelectedOnly) list = list.filter((m) => m.visible !== false)
+    if (q)
+      list = list.filter((m) =>
+        (m.label || `Marker ${m.id}`).toLowerCase().includes(q)
+      )
+    return list
+  }, [layerMarkers, showSelectedOnly, q])
+
+  const filteredPolygons = useMemo(() => {
+    let list = polygons ?? []
+    if (showSelectedOnly)
+      list = list.filter((p) => selectedPolygons.includes(p.name))
+    if (q) list = list.filter((p) => p.name.toLowerCase().includes(q))
+    return list
+  }, [polygons, showSelectedOnly, q, selectedPolygons])
+
+  const filteredTileLayers = useMemo(() => {
+    let list = (tileLayers ?? []).filter(
+      (t) => t.urlTemplate && t.urlTemplate.trim() !== ''
+    )
+    if (showSelectedOnly)
+      list = list.filter((t) => selectedTileLayers.includes(t.name))
+    if (q) list = list.filter((t) => t.name.toLowerCase().includes(q))
+    return list
+  }, [tileLayers, showSelectedOnly, q, selectedTileLayers])
+
+  const filteredKmlLayers = useMemo(() => {
+    let list = (kmlLayers ?? []).filter(
+      (k) => !k.path.toLowerCase().endsWith('.kmz')
+    )
+    if (showSelectedOnly)
+      list = list.filter((k) => selectedKmlLayers.includes(k.name))
+    if (q) list = list.filter((k) => k.name.toLowerCase().includes(q))
+    return list
+  }, [kmlLayers, showSelectedOnly, q, selectedKmlLayers])
+
   return (
     <>
       <div ref={modalRef}>
@@ -662,7 +718,7 @@ export const MapLayersListModal: React.FC<{
             flexDirection: 'column',
             overflow: 'hidden',
             width: 'auto',
-            minWidth: '350px',
+            minWidth: '420px',
             paddingBottom: '0px',
             paddingTop: '10px',
             opacity: isFadingOut ? 0 : 1,
@@ -679,6 +735,44 @@ export const MapLayersListModal: React.FC<{
             ref={dialogRef}
             style={{ position: 'absolute', inset: 0, pointerEvents: 'none' }}
           />
+          {/* Search & filter bar */}
+          <div className="flex items-center gap-2 bg-white px-2 pb-2">
+            <div className="relative flex-1">
+              <FontAwesomeIcon
+                icon={faMagnifyingGlass}
+                className="pointer-events-none absolute left-2 top-1/2 -translate-y-1/2 text-gray-400"
+                style={{ fontSize: '12px' }}
+              />
+              <input
+                type="text"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                placeholder="Search layers..."
+                className="w-full rounded border border-gray-300 py-1 pl-6 pr-6 text-sm focus:outline-none focus:ring-1 focus:ring-blue-400"
+              />
+              {searchQuery && (
+                <button
+                  onClick={() => setSearchQuery('')}
+                  className="absolute right-1.5 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                  aria-label="Clear search"
+                >
+                  <FontAwesomeIcon
+                    icon={faXmark}
+                    style={{ fontSize: '12px' }}
+                  />
+                </button>
+              )}
+            </div>
+            <label className="flex cursor-pointer items-center gap-1 whitespace-nowrap text-xs text-gray-600">
+              <input
+                type="checkbox"
+                checked={showSelectedOnly}
+                onChange={(e) => setShowSelectedOnly(e.target.checked)}
+                className="accent-blue-600"
+              />
+              Selected only
+            </label>
+          </div>
           <div
             className="custom-scrollbar flex-grow"
             style={{
@@ -695,347 +789,380 @@ export const MapLayersListModal: React.FC<{
             {/* Main tree structure */}
             <div className="tree-view">
               {/* Markers Section */}
-              <TreeItem
-                label="Markers"
-                isExpanded={expandedSections.markers}
-                isChecked={
-                  selectedMarkers.length === layerMarkers.length &&
-                  layerMarkers.length > 0
-                }
-                onToggleExpand={() => toggleExpanded('markers')}
-                onToggleCheck={
-                  layerMarkers.length > 0
-                    ? handleToggleSelectAllMarkers
-                    : undefined
-                }
-                icon={faMapMarkerAlt}
-                iconColor="red"
-                disabled={layerMarkers.length === 0}
-              >
-                {layerMarkers.map((marker) => (
-                  <TreeItem
-                    key={`marker-${marker.id}`}
-                    label={marker.label || `Marker ${marker.id}`}
-                    isChecked={marker.visible !== false}
-                    onToggleCheck={() =>
-                      toggleMarkerVisibility(marker.id.toString())
-                    }
-                    icon={faMapMarkerAlt}
-                    iconColor="red"
-                  />
-                ))}
-                {layerMarkers.length === 0 && (
-                  <div className="py-2 pl-10 text-sm italic text-gray-500">
-                    No markers saved to layers
-                  </div>
-                )}
-              </TreeItem>
+              {(!isFiltering || filteredMarkers.length > 0) && (
+                <TreeItem
+                  label="Markers"
+                  isExpanded={
+                    isFiltering
+                      ? filteredMarkers.length > 0
+                      : expandedSections.markers
+                  }
+                  isChecked={
+                    selectedMarkers.length === layerMarkers.length &&
+                    layerMarkers.length > 0
+                  }
+                  onToggleExpand={() => toggleExpanded('markers')}
+                  onToggleCheck={
+                    layerMarkers.length > 0
+                      ? handleToggleSelectAllMarkers
+                      : undefined
+                  }
+                  icon={faMapMarkerAlt}
+                  iconColor="red"
+                  disabled={layerMarkers.length === 0}
+                >
+                  {filteredMarkers.map((marker) => (
+                    <TreeItem
+                      key={`marker-${marker.id}`}
+                      label={marker.label || `Marker ${marker.id}`}
+                      isChecked={marker.visible !== false}
+                      onToggleCheck={() =>
+                        toggleMarkerVisibility(marker.id.toString())
+                      }
+                      icon={faMapMarkerAlt}
+                      iconColor="red"
+                    />
+                  ))}
+                  {layerMarkers.length === 0 && (
+                    <div className="py-2 pl-10 text-sm italic text-gray-500">
+                      No markers saved to layers
+                    </div>
+                  )}
+                </TreeItem>
+              )}
 
               {/* Stations Section */}
-              <TreeItem
-                label="Stations"
-                isExpanded={expandedSections.stations}
-                isChecked={
-                  validStations.length > 0 &&
-                  selectedStations.filter((s) =>
-                    validStations.some((v) => v.name === s.name)
-                  ).length === validStations.length
-                }
-                onToggleExpand={() => toggleExpanded('stations')}
-                onToggleCheck={
-                  validStations.length > 0
-                    ? handleToggleSelectAllStations
-                    : undefined
-                }
-                icon={faCircle}
-                iconColor="white"
-                disabled={validStations.length === 0}
-              >
-                {/* Starred stations first (alphabetical), then unstarred in original API order */}
-                {sortedStations.map((station) => {
-                  const coords = station.geojson?.geometry?.coordinates
-                  const stationLon = coords?.[0]
-                  const stationLat = coords?.[1]
-                  const hasValidCoords =
-                    Number.isFinite(stationLat as number) &&
-                    Number.isFinite(stationLon as number)
+              {(!isFiltering || filteredStations.length > 0) && (
+                <TreeItem
+                  label="Stations"
+                  isExpanded={
+                    isFiltering
+                      ? filteredStations.length > 0
+                      : expandedSections.stations
+                  }
+                  isChecked={
+                    validStations.length > 0 &&
+                    selectedStations.filter((s) =>
+                      validStations.some((v) => v.name === s.name)
+                    ).length === validStations.length
+                  }
+                  onToggleExpand={() => toggleExpanded('stations')}
+                  onToggleCheck={
+                    validStations.length > 0
+                      ? handleToggleSelectAllStations
+                      : undefined
+                  }
+                  icon={faCircle}
+                  iconColor="white"
+                  disabled={validStations.length === 0}
+                >
+                  {/* Starred stations first (alphabetical), then unstarred in original API order */}
+                  {filteredStations.map((station) => {
+                    const coords = station.geojson?.geometry?.coordinates
+                    const stationLon = coords?.[0]
+                    const stationLat = coords?.[1]
+                    const hasValidCoords =
+                      Number.isFinite(stationLat as number) &&
+                      Number.isFinite(stationLon as number)
 
-                  return (
-                    <TreeItem
-                      key={`station-${station.name}`}
-                      label={station.name}
-                      disabled={!hasValidCoords}
-                      disabledTitle="No valid coordinates"
-                      isChecked={isStationSelected(station.name)}
-                      onToggleCheck={() => {
-                        if (isStationSelected(station.name)) {
-                          setSelectedStations(
-                            selectedStations.filter(
-                              (s) => s.name !== station.name
+                    return (
+                      <TreeItem
+                        key={`station-${station.name}`}
+                        label={station.name}
+                        disabled={!hasValidCoords}
+                        disabledTitle="No valid coordinates"
+                        isChecked={isStationSelected(station.name)}
+                        onToggleCheck={() => {
+                          if (isStationSelected(station.name)) {
+                            setSelectedStations(
+                              selectedStations.filter(
+                                (s) => s.name !== station.name
+                              )
                             )
-                          )
-                        } else if (hasValidCoords) {
-                          setSelectedStations([
-                            ...selectedStations,
-                            {
-                              name: station.name,
-                              geojson: station.geojson,
-                              lat: stationLat as number,
-                              lon: stationLon as number,
-                            },
-                          ])
-                        }
-                      }}
-                      isStarred={starredSet.has(station.name)}
-                      onStarClick={() => {
-                        const isCurrentlyStarred = starredSet.has(station.name)
-                        if (isCurrentlyStarred) {
-                          // Un-starring: clear any active spotlight
-                          setHighlightedStationName(null)
-                        } else {
-                          // Starring while hovering: immediately show spotlight
-                          // so the user doesn't need to mouse-out and back
-                          setHighlightedStationName(station.name)
-                        }
-                        toggleStarStation(station.name)
-                      }}
-                      onMouseEnterStar={() => {
-                        if (starredSet.has(station.name)) {
-                          setHighlightedStationName(station.name)
-                        }
-                      }}
-                      onMouseLeaveStar={() => setHighlightedStationName(null)}
-                      onCenterClick={
-                        hasValidCoords
-                          ? () =>
-                              setFlyToRequest({
+                          } else if (hasValidCoords) {
+                            setSelectedStations([
+                              ...selectedStations,
+                              {
+                                name: station.name,
+                                geojson: station.geojson,
                                 lat: stationLat as number,
                                 lon: stationLon as number,
-                              })
-                          : undefined
-                      }
-                      centerLabel="Center map on this station"
-                    />
-                  )
-                })}
-                {stations !== undefined && stations.length === 0 ? (
-                  <div className="py-2 pl-10 text-sm italic text-gray-500">
-                    No stations available
-                  </div>
-                ) : null}
-              </TreeItem>
+                              },
+                            ])
+                          }
+                        }}
+                        isStarred={starredSet.has(station.name)}
+                        onStarClick={() => {
+                          const isCurrentlyStarred = starredSet.has(
+                            station.name
+                          )
+                          if (isCurrentlyStarred) {
+                            // Un-starring: clear any active spotlight
+                            setHighlightedStationName(null)
+                          } else {
+                            // Starring while hovering: immediately show spotlight
+                            // so the user doesn't need to mouse-out and back
+                            setHighlightedStationName(station.name)
+                          }
+                          toggleStarStation(station.name)
+                        }}
+                        onMouseEnterStar={() => {
+                          if (starredSet.has(station.name)) {
+                            setHighlightedStationName(station.name)
+                          }
+                        }}
+                        onMouseLeaveStar={() => setHighlightedStationName(null)}
+                        onCenterClick={
+                          hasValidCoords
+                            ? () =>
+                                setFlyToRequest({
+                                  lat: stationLat as number,
+                                  lon: stationLon as number,
+                                })
+                            : undefined
+                        }
+                        centerLabel="Center map on this station"
+                      />
+                    )
+                  })}
+                  {stations !== undefined && stations.length === 0 ? (
+                    <div className="py-2 pl-10 text-sm italic text-gray-500">
+                      No stations available
+                    </div>
+                  ) : null}
+                </TreeItem>
+              )}
 
               {/* Polygons Section */}
-              {(() => {
-                const polygonNames = (polygons ?? []).map((p) => p.name)
-                const allPolygonsSelected =
-                  polygonNames.length > 0 &&
-                  polygonNames.every((n) => selectedPolygons.includes(n))
-                return (
-                  <TreeItem
-                    label="Polygons"
-                    isExpanded={expandedSections.polygons}
-                    isChecked={allPolygonsSelected}
-                    onToggleExpand={() => toggleExpanded('polygons')}
-                    onToggleCheck={
-                      polygonNames.length > 0
-                        ? () => {
-                            if (allPolygonsSelected) {
-                              setSelectedPolygons([])
-                            } else {
-                              setSelectedPolygons(polygonNames)
+              {(!isFiltering || filteredPolygons.length > 0) &&
+                (() => {
+                  const polygonNames = (polygons ?? []).map((p) => p.name)
+                  const allPolygonsSelected =
+                    polygonNames.length > 0 &&
+                    polygonNames.every((n) => selectedPolygons.includes(n))
+                  return (
+                    <TreeItem
+                      label="Polygons"
+                      isExpanded={
+                        isFiltering
+                          ? filteredPolygons.length > 0
+                          : expandedSections.polygons
+                      }
+                      isChecked={allPolygonsSelected}
+                      onToggleExpand={() => toggleExpanded('polygons')}
+                      onToggleCheck={
+                        polygonNames.length > 0
+                          ? () => {
+                              if (allPolygonsSelected) {
+                                setSelectedPolygons([])
+                              } else {
+                                setSelectedPolygons(polygonNames)
+                              }
                             }
-                          }
-                        : undefined
-                    }
-                    disabled={(polygons?.length ?? 0) === 0}
-                    icon={faDrawPolygon}
-                    iconColor="#6366f1"
-                  >
-                    {(polygons ?? []).map((polygon) => {
-                      const polygonBounds =
-                        polygonBoundsMap.get(polygon.name) ?? null
+                          : undefined
+                      }
+                      disabled={(polygons?.length ?? 0) === 0}
+                      icon={faDrawPolygon}
+                      iconColor="#6366f1"
+                    >
+                      {filteredPolygons.map((polygon) => {
+                        const polygonBounds =
+                          polygonBoundsMap.get(polygon.name) ?? null
 
-                      return (
-                        <TreeItem
-                          key={`polygon-${polygon.name}`}
-                          label={polygon.name}
-                          isChecked={selectedPolygons.includes(polygon.name)}
-                          onToggleCheck={() => {
-                            setSelectedPolygons((prev) =>
-                              prev.includes(polygon.name)
-                                ? prev.filter((n) => n !== polygon.name)
-                                : [...prev, polygon.name]
-                            )
-                          }}
-                          onCenterClick={
-                            polygonBounds
-                              ? () =>
-                                  setFlyToRequest({
-                                    lat:
-                                      (polygonBounds!.minLat +
-                                        polygonBounds!.maxLat) /
-                                      2,
-                                    lon:
-                                      (polygonBounds!.minLon +
-                                        polygonBounds!.maxLon) /
-                                      2,
-                                    bounds: [
-                                      [
-                                        polygonBounds!.minLat,
-                                        polygonBounds!.minLon,
+                        return (
+                          <TreeItem
+                            key={`polygon-${polygon.name}`}
+                            label={polygon.name}
+                            isChecked={selectedPolygons.includes(polygon.name)}
+                            onToggleCheck={() => {
+                              setSelectedPolygons((prev) =>
+                                prev.includes(polygon.name)
+                                  ? prev.filter((n) => n !== polygon.name)
+                                  : [...prev, polygon.name]
+                              )
+                            }}
+                            onCenterClick={
+                              polygonBounds
+                                ? () =>
+                                    setFlyToRequest({
+                                      lat:
+                                        (polygonBounds!.minLat +
+                                          polygonBounds!.maxLat) /
+                                        2,
+                                      lon:
+                                        (polygonBounds!.minLon +
+                                          polygonBounds!.maxLon) /
+                                        2,
+                                      bounds: [
+                                        [
+                                          polygonBounds!.minLat,
+                                          polygonBounds!.minLon,
+                                        ],
+                                        [
+                                          polygonBounds!.maxLat,
+                                          polygonBounds!.maxLon,
+                                        ],
                                       ],
-                                      [
-                                        polygonBounds!.maxLat,
-                                        polygonBounds!.maxLon,
-                                      ],
-                                    ],
-                                  })
-                              : undefined
-                          }
-                          centerLabel="Center map on this polygon"
-                        />
-                      )
-                    })}
-                    {polygons !== undefined && polygons.length === 0 ? (
-                      <div className="py-2 pl-10 text-sm italic text-gray-500">
-                        No polygons available
-                      </div>
-                    ) : null}
-                  </TreeItem>
-                )
-              })()}
+                                    })
+                                : undefined
+                            }
+                            centerLabel="Center map on this polygon"
+                          />
+                        )
+                      })}
+                      {polygons !== undefined && polygons.length === 0 ? (
+                        <div className="py-2 pl-10 text-sm italic text-gray-500">
+                          No polygons available
+                        </div>
+                      ) : null}
+                    </TreeItem>
+                  )
+                })()}
 
               {/* TILE Layers Section */}
-              {(() => {
-                const renderableTileLayers = (tileLayers ?? []).filter(
-                  (t) => t.urlTemplate && t.urlTemplate.trim() !== ''
-                )
-                const renderableNames = renderableTileLayers.map((t) => t.name)
-                const allTilesSelected =
-                  renderableNames.length > 0 &&
-                  renderableNames.every((n) => selectedTileLayers.includes(n))
-                return (
-                  <TreeItem
-                    label="TILE Layers"
-                    isExpanded={expandedSections.tileLayers}
-                    isChecked={allTilesSelected}
-                    onToggleExpand={() => toggleExpanded('tileLayers')}
-                    onToggleCheck={
-                      renderableNames.length > 0
-                        ? () => {
-                            if (allTilesSelected) {
-                              setSelectedTileLayers([])
-                            } else {
-                              setSelectedTileLayers(renderableNames)
+              {(!isFiltering || filteredTileLayers.length > 0) &&
+                (() => {
+                  const renderableTileLayers = (tileLayers ?? []).filter(
+                    (t) => t.urlTemplate && t.urlTemplate.trim() !== ''
+                  )
+                  const renderableNames = renderableTileLayers.map(
+                    (t) => t.name
+                  )
+                  const allTilesSelected =
+                    renderableNames.length > 0 &&
+                    renderableNames.every((n) => selectedTileLayers.includes(n))
+                  return (
+                    <TreeItem
+                      label="TILE Layers"
+                      isExpanded={
+                        isFiltering
+                          ? filteredTileLayers.length > 0
+                          : expandedSections.tileLayers
+                      }
+                      isChecked={allTilesSelected}
+                      onToggleExpand={() => toggleExpanded('tileLayers')}
+                      onToggleCheck={
+                        renderableNames.length > 0
+                          ? () => {
+                              if (allTilesSelected) {
+                                setSelectedTileLayers([])
+                              } else {
+                                setSelectedTileLayers(renderableNames)
+                              }
                             }
-                          }
-                        : undefined
-                    }
-                    disabled={(tileLayers?.length ?? 0) === 0}
-                    icon={faLayerGroup}
-                    iconColor="#0ea5e9"
-                  >
-                    {(tileLayers ?? []).map((tile) => {
-                      const hasValidUrl =
-                        tile.urlTemplate && tile.urlTemplate.trim() !== ''
-                      return (
-                        <TreeItem
-                          key={`tile-${tile.name}`}
-                          label={tile.name}
-                          isChecked={selectedTileLayers.includes(tile.name)}
-                          onToggleCheck={
-                            hasValidUrl
-                              ? () => {
-                                  setSelectedTileLayers((prev) =>
-                                    prev.includes(tile.name)
-                                      ? prev.filter((n) => n !== tile.name)
-                                      : [...prev, tile.name]
-                                  )
-                                }
-                              : undefined
-                          }
-                          disabled={!hasValidUrl}
-                          disabledTitle={
-                            !hasValidUrl
-                              ? 'Layer has no URL configured'
-                              : undefined
-                          }
-                        />
-                      )
-                    })}
-                    {tileLayers !== undefined && tileLayers.length === 0 ? (
-                      <div className="py-2 pl-10 text-sm italic text-gray-500">
-                        No tile layers available
-                      </div>
-                    ) : null}
-                  </TreeItem>
-                )
-              })()}
+                          : undefined
+                      }
+                      disabled={(tileLayers?.length ?? 0) === 0}
+                      icon={faLayerGroup}
+                      iconColor="#0ea5e9"
+                    >
+                      {filteredTileLayers.map((tile) => {
+                        const hasValidUrl =
+                          tile.urlTemplate && tile.urlTemplate.trim() !== ''
+                        return (
+                          <TreeItem
+                            key={`tile-${tile.name}`}
+                            label={tile.name}
+                            isChecked={selectedTileLayers.includes(tile.name)}
+                            onToggleCheck={
+                              hasValidUrl
+                                ? () => {
+                                    setSelectedTileLayers((prev) =>
+                                      prev.includes(tile.name)
+                                        ? prev.filter((n) => n !== tile.name)
+                                        : [...prev, tile.name]
+                                    )
+                                  }
+                                : undefined
+                            }
+                            disabled={!hasValidUrl}
+                            disabledTitle={
+                              !hasValidUrl
+                                ? 'Layer has no URL configured'
+                                : undefined
+                            }
+                          />
+                        )
+                      })}
+                      {tileLayers !== undefined && tileLayers.length === 0 ? (
+                        <div className="py-2 pl-10 text-sm italic text-gray-500">
+                          No tile layers available
+                        </div>
+                      ) : null}
+                    </TreeItem>
+                  )
+                })()}
 
               {/* KML Layers Section */}
-              {(() => {
-                const selectableKmlLayers = (kmlLayers ?? []).filter(
-                  (k) => !k.path.toLowerCase().endsWith('.kmz')
-                )
-                const selectableNames = selectableKmlLayers.map((k) => k.name)
-                const allSelected =
-                  selectableNames.length > 0 &&
-                  selectableNames.every((n) => selectedKmlLayers.includes(n))
-                return (
-                  <TreeItem
-                    label="KML Layers"
-                    isExpanded={expandedSections.kmlLayers}
-                    isChecked={allSelected}
-                    onToggleExpand={() => toggleExpanded('kmlLayers')}
-                    onToggleCheck={
-                      selectableNames.length > 0
-                        ? () => {
-                            if (allSelected) {
-                              setSelectedKmlLayers([])
-                            } else {
-                              setSelectedKmlLayers(selectableNames)
+              {(!isFiltering || filteredKmlLayers.length > 0) &&
+                (() => {
+                  const selectableKmlLayers = (kmlLayers ?? []).filter(
+                    (k) => !k.path.toLowerCase().endsWith('.kmz')
+                  )
+                  const selectableNames = selectableKmlLayers.map((k) => k.name)
+                  const allSelected =
+                    selectableNames.length > 0 &&
+                    selectableNames.every((n) => selectedKmlLayers.includes(n))
+                  return (
+                    <TreeItem
+                      label="KML Layers"
+                      isExpanded={
+                        isFiltering
+                          ? filteredKmlLayers.length > 0
+                          : expandedSections.kmlLayers
+                      }
+                      isChecked={allSelected}
+                      onToggleExpand={() => toggleExpanded('kmlLayers')}
+                      onToggleCheck={
+                        selectableNames.length > 0
+                          ? () => {
+                              if (allSelected) {
+                                setSelectedKmlLayers([])
+                              } else {
+                                setSelectedKmlLayers(selectableNames)
+                              }
                             }
-                          }
-                        : undefined
-                    }
-                    disabled={selectableNames.length === 0}
-                    icon={faFileCode}
-                    iconColor="#16a34a"
-                  >
-                    {(kmlLayers ?? []).map((kml) => {
-                      const isKmz = kml.path.toLowerCase().endsWith('.kmz')
-                      return (
-                        <TreeItem
-                          key={`kml-${kml.name}`}
-                          label={kml.name}
-                          isChecked={
-                            !isKmz && selectedKmlLayers.includes(kml.name)
-                          }
-                          disabled={isKmz}
-                          disabledTitle=".kmz files are not yet supported"
-                          onToggleCheck={
-                            isKmz
-                              ? undefined
-                              : () => {
-                                  setSelectedKmlLayers((prev) =>
-                                    prev.includes(kml.name)
-                                      ? prev.filter((n) => n !== kml.name)
-                                      : [...prev, kml.name]
-                                  )
-                                }
-                          }
-                        />
-                      )
-                    })}
-                    {kmlLayers !== undefined && kmlLayers.length === 0 ? (
-                      <div className="py-2 pl-10 text-sm italic text-gray-500">
-                        No KML layers available
-                      </div>
-                    ) : null}
-                  </TreeItem>
-                )
-              })()}
+                          : undefined
+                      }
+                      disabled={selectableNames.length === 0}
+                      icon={faFileCode}
+                      iconColor="#16a34a"
+                    >
+                      {filteredKmlLayers.map((kml) => {
+                        return (
+                          <TreeItem
+                            key={`kml-${kml.name}`}
+                            label={kml.name}
+                            isChecked={selectedKmlLayers.includes(kml.name)}
+                            onToggleCheck={() => {
+                              setSelectedKmlLayers((prev) =>
+                                prev.includes(kml.name)
+                                  ? prev.filter((n) => n !== kml.name)
+                                  : [...prev, kml.name]
+                              )
+                            }}
+                          />
+                        )
+                      })}
+                      {kmlLayers !== undefined && kmlLayers.length === 0 ? (
+                        <div className="py-2 pl-10 text-sm italic text-gray-500">
+                          No KML layers available
+                        </div>
+                      ) : null}
+                    </TreeItem>
+                  )
+                })()}
+              {/* No results message when filtering */}
+              {isFiltering &&
+                filteredMarkers.length === 0 &&
+                filteredStations.length === 0 &&
+                filteredPolygons.length === 0 &&
+                filteredTileLayers.length === 0 &&
+                filteredKmlLayers.length === 0 && (
+                  <div className="py-6 text-center text-sm italic text-gray-500">
+                    No layers match your search
+                  </div>
+                )}
             </div>
           </div>
           {/* Footer placed inside the modal content */}
