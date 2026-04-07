@@ -298,11 +298,16 @@ export const ScheduleEventDetailsModal: React.FC<
                   onBlur={() => setShowStatusTooltip(false)}
                   onClick={() => setShowStatusTooltip((prev) => !prev)}
                   aria-label="Status field help"
+                  aria-describedby={
+                    showStatusTooltip ? 'status-field-tooltip' : undefined
+                  }
                 >
                   ?
                 </button>
                 {showStatusTooltip && (
                   <div
+                    id="status-field-tooltip"
+                    role="tooltip"
                     className="pointer-events-none absolute left-0 top-full z-[9999] mt-1 w-64 -translate-x-1/2 rounded border px-3 py-2 text-xs normal-case leading-relaxed text-stone-700 shadow-lg"
                     style={{
                       borderColor: '#bae6fd',
@@ -369,11 +374,16 @@ export const ScheduleEventDetailsModal: React.FC<
                   onBlur={() => setShowEndedTooltip(false)}
                   onClick={() => setShowEndedTooltip((prev) => !prev)}
                   aria-label="Ended field help"
+                  aria-describedby={
+                    showEndedTooltip ? 'ended-field-tooltip' : undefined
+                  }
                 >
                   ?
                 </button>
                 {showEndedTooltip && (
                   <div
+                    id="ended-field-tooltip"
+                    role="tooltip"
                     className="pointer-events-none absolute left-0 top-full z-[9999] mt-1 w-64 -translate-x-1/2 rounded border px-3 py-2 text-xs normal-case leading-relaxed text-stone-700 shadow-lg"
                     style={{
                       borderColor: '#bae6fd',
