@@ -11,10 +11,16 @@ const CopyButton: React.FC<{ getText: () => string }> = ({ getText }) => {
   const [hovered, setHovered] = useState(false)
 
   const handleCopy = useCallback(() => {
-    navigator.clipboard.writeText(getText()).then(() => {
-      setCopied(true)
-      setTimeout(() => setCopied(false), 2000)
-    })
+    if (!navigator.clipboard?.writeText) return
+    navigator.clipboard
+      .writeText(getText())
+      .then(() => {
+        setCopied(true)
+        setTimeout(() => setCopied(false), 2000)
+      })
+      .catch(() => {
+        // Fail gracefully when clipboard access is unavailable or denied
+      })
   }, [getText])
 
   return (
@@ -62,14 +68,6 @@ const CopyButton: React.FC<{ getText: () => string }> = ({ getText }) => {
 
 export interface ScheduleEventDetailsModalProps {
   onClose: () => void
-}
-
-const formatTime = (unixTime?: number) => {
-  if (unixTime == null) return 'N/A'
-  const dt = DateTime.fromMillis(unixTime)
-  return `${dt.toFormat('MMM d, yyyy HH:mm:ss')} (${
-    dt.toRelative() ?? 'just now'
-  })`
 }
 
 const TimeBlock: React.FC<{ unixTime?: number }> = ({ unixTime }) => {
@@ -148,7 +146,7 @@ const splitCommandSegments = (value?: string) => {
     .filter(Boolean)
 }
 
-const statusPillClass = (status?: string) => {
+const statusPillClass = (_status?: string) => {
   return 'rounded-full border px-2 py-0.5 text-xs font-semibold'
 }
 
@@ -226,7 +224,7 @@ export const ScheduleEventDetailsModal: React.FC<
   const segments = splitCommandSegments(event.eventData || event.eventText)
   const cleanLabel =
     (event.label || 'Unknown')
-      .replace(/\d{8}}T\d{4}\s*/g, '')
+      .replace(/\d{8}T\d{4}\s*/g, '')
       .replace(/\d{8}T\d{2,4}\s*/g, '')
       .replace(/^["'\s]+/, '')
       .replace(/^load\s+/i, '')
