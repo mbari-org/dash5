@@ -55,11 +55,8 @@ export const VehicleHeader: React.FC<VehicleHeaderProps> = ({
           {name}: {deployment}
         </span>
         {recovered ? (
-          <span
-            className="ml-2 flex-shrink-0 rounded-full bg-green-100 px-2 py-0.5 text-xs font-semibold text-green-800"
-            title={recoveredAt ? `Recovered ${recoveredAt}` : 'Recovered'}
-          >
-            Recovered
+          <span className="ml-2 flex-shrink-0 rounded-full bg-green-100 px-2 py-0.5 text-xs font-semibold text-green-800">
+            {recoveredAt ? `Recovered ${recoveredAt}` : 'Recovered'}
           </span>
         ) : timeSpanSinceDeployment ? (
           <span className={styles.secondary}>
