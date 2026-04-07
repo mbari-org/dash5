@@ -742,7 +742,7 @@ export const MapLayersListModal: React.FC<{
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 placeholder="Filter platforms..."
-                className="w-full rounded border border-gray-300 py-1 pl-2 pr-6 text-sm text-gray-900 focus:outline-none focus:ring-1 focus:ring-blue-400"
+                className="w-full rounded border border-gray-300 py-1 pl-2 pr-6 text-sm text-gray-900"
               />
               {searchQuery && (
                 <button
