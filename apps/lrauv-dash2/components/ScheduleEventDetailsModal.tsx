@@ -207,8 +207,8 @@ export const ScheduleEventDetailsModal: React.FC<
   if (!event) return null
 
   const deploymentId =
-    (router.query?.deployment?.[1] as string | undefined) ?? ''
-  const deploymentLabel = deployment?.name ?? deploymentId ?? 'Deployment n/a'
+    (router.query?.deployment?.[1] as string | undefined) || ''
+  const deploymentLabel = deployment?.name || deploymentId || 'Deployment n/a'
   const vehicleLabel = event.vehicleName
     ? capitalize(event.vehicleName)
     : 'Vehicle n/a'
@@ -224,7 +224,7 @@ export const ScheduleEventDetailsModal: React.FC<
   const segments = splitCommandSegments(event.eventData || event.eventText)
   const cleanLabel =
     (event.label || 'Unknown')
-      .replace(/\d{8}T\d{4}\s*/g, '')
+      .replace(/\d{8}}T\d{4}\s*/g, '')
       .replace(/\d{8}T\d{2,4}\s*/g, '')
       .replace(/^["'\s]+/, '')
       .replace(/^load\s+/i, '')

@@ -26,7 +26,6 @@ import {
 import useGlobalModalId from '../lib/useGlobalModalId'
 import {
   missionNameFromStartedText,
-  missionNameFromEventData,
   missionPathFromEventData,
   normalizeMissionName,
   normalizeMissionPath,
@@ -480,7 +479,7 @@ export const ScheduleSection: React.FC<ScheduleSectionProps> = ({
       ? 'mission'
       : 'command'
     const rawText = mission?.event.data ?? mission?.event.text ?? ''
-    const schedDateMatch = rawText.match(/sched\s+(\d{8}T\d{4}|\d{8}T\d{2,4})/)
+    const schedDateMatch = rawText.match(/sched\s+(\d{8}}T\d{4}|\d{8}T\d{2,4})/)
     const scheduleDate = rawText.match(/sched\s+asap/i)
       ? 'asap'
       : schedDateMatch
