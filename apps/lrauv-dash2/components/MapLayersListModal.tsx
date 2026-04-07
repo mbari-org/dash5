@@ -735,7 +735,7 @@ export const MapLayersListModal: React.FC<{
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 placeholder="Filter platforms..."
-                className="w-full rounded border border-gray-300 py-1 pl-2 pr-6 text-sm text-gray-900"
+                className="w-full rounded border border-gray-300 py-2 pl-3 pr-6 text-base text-gray-900"
               />
               {searchQuery && (
                 <button
@@ -750,7 +750,7 @@ export const MapLayersListModal: React.FC<{
                 </button>
               )}
             </div>
-            <label className="flex cursor-pointer items-center gap-1.5 whitespace-nowrap text-sm text-gray-700">
+            <label className="flex cursor-pointer items-center gap-1.5 whitespace-nowrap text-base text-gray-700">
               <input
                 type="checkbox"
                 checked={showSelectedOnly}
