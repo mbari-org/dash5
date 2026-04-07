@@ -687,7 +687,7 @@ export const MapLayersListModal: React.FC<{
         <Modal
           title={
             <div>
-              <div className="text-xl font-bold">
+              <div className="text-center text-xl font-bold">
                 Select the map layers to display
               </div>
               <br />
