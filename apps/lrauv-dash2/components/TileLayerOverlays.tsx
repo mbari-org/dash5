@@ -56,6 +56,13 @@ const toTransparent = (val: unknown): boolean => {
   return true
 }
 
+// Normalize tms: accept boolean or any-case string "true"/"false" (string "false" must not be truthy).
+const toBool = (val: unknown): boolean => {
+  if (typeof val === 'boolean') return val
+  if (typeof val === 'string') return val.toLowerCase() === 'true'
+  return false
+}
+
 const TileLayerOverlays: React.FC = () => {
   const { data: tileLayers } = useTileLayers()
   const { selectedTileLayers } = useSelectedTileLayers()
@@ -196,7 +203,7 @@ const TileLayerOverlays: React.FC = () => {
                 opts.maxZoom != null ? toNum(opts.maxZoom, 18) : undefined
               }
               tileSize={tileSize}
-              tms={opts.tms != null ? Boolean(opts.tms) : undefined}
+              tms={opts.tms != null ? toBool(opts.tms) : undefined}
             />
           )
         })}
