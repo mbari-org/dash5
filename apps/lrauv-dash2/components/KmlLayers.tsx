@@ -2,12 +2,15 @@ import React, { useEffect, useState } from 'react'
 import { GeoJSON, Tooltip } from 'react-leaflet'
 import type { GeoJsonObject } from 'geojson'
 import { kml as kmlToGeoJSON } from '@tmcw/togeojson'
+import { createLogger } from '@mbari/utils'
 import {
   useKmlLayers,
   useTethysApiContext,
   getKmlLayer,
 } from '@mbari/api-client'
 import { useSelectedKmlLayers } from './SelectedKmlLayersContext'
+
+const logger = createLogger('KmlLayers')
 
 interface KmlGeoJSON {
   name: string
@@ -43,9 +46,16 @@ const KmlLayers: React.FC = () => {
           )
           const parser = new DOMParser()
           const kmlDoc = parser.parseFromString(rawKml, 'text/xml')
+          if (kmlDoc.getElementsByTagName('parsererror').length > 0) {
+            throw new Error(`Failed to parse KML for layer "${k.name}"`)
+          }
           const geojson = kmlToGeoJSON(kmlDoc) as GeoJsonObject
           return { name: k.name, geojson }
-        } catch {
+        } catch (error) {
+          logger.error(
+            `Failed to load KML layer "${k.name}" from path "${k.path}"`,
+            error
+          )
           return { name: k.name, geojson: null }
         }
       })

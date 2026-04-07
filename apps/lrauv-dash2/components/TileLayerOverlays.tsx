@@ -1,6 +1,7 @@
 import React, { useEffect, useRef, useMemo } from 'react'
 import { Pane, TileLayer, WMSTileLayer } from 'react-leaflet'
 import L from 'leaflet'
+import { createLogger } from '@mbari/utils'
 import { useTileLayers } from '@mbari/api-client'
 import { useSelectedTileLayers } from './SelectedTileLayersContext'
 
@@ -63,6 +64,8 @@ const toBool = (val: unknown): boolean => {
   return false
 }
 
+const logger = createLogger('TileLayerOverlays')
+
 const TileLayerOverlays: React.FC = () => {
   const { data: tileLayers } = useTileLayers()
   const { selectedTileLayers } = useSelectedTileLayers()
@@ -87,9 +90,7 @@ const TileLayerOverlays: React.FC = () => {
     invalidSelectedNames.forEach((name) => {
       if (!warnedRef.current.has(name)) {
         warnedRef.current.add(name)
-        console.warn(
-          `[TileLayerOverlays] Skipping "${name}": empty urlTemplate`
-        )
+        logger.warn(`Skipping "${name}": empty urlTemplate`)
       }
     })
   }, [invalidSelectedNames])
