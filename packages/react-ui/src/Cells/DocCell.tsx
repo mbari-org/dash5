@@ -23,7 +23,6 @@ export interface DocCellProps {
   time: string
   date: string
   label: string
-  secondary?: string
   attachments?: Attachment[]
   docInstanceId: number
   docId: number
@@ -43,7 +42,6 @@ export const DocCell: React.FC<DocCellProps> = ({
   time,
   date,
   label,
-  secondary,
   attachments,
   onMoreClick,
   docInstanceId,
@@ -67,20 +65,11 @@ export const DocCell: React.FC<DocCellProps> = ({
         </ul>
         <div className="col-span-6 pt-2 text-sm">
           <button
-            className="w-full truncate text-left font-light capitalize text-primary-600"
-            title={label}
+            className="w-full truncate text-left font-light text-primary-600"
             onClick={swallow(onSelect)}
           >
             {label}
           </button>
-          {secondary && (
-            <span
-              data-testid="doc-cell-secondary"
-              className="text-xs capitalize text-gray-400"
-            >
-              {secondary}
-            </span>
-          )}
           <ul className="flex flex-col">
             {attachments?.map((attachment) => (
               <li key={attachment.id}>

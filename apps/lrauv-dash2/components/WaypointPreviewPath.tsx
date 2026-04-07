@@ -19,8 +19,7 @@ const WaypointPreviewPath: React.FC<{
   const fit = useRef<string | null | undefined>(null)
   const lastFitTrigger = useRef<number | undefined>(undefined)
   const route = waypoints
-  const routeAsString =
-    waypoints?.map((r) => `${r.lat},${r.lon}`).join('|') ?? null
+  const routeAsString = waypoints?.flat().join()
   const decorator = useRef<L.PolylineDecorator | null>(null)
   const color = WAYPOINT_ICON_COLOR
 
@@ -49,21 +48,9 @@ const WaypointPreviewPath: React.FC<{
 
     if (routeChanged || triggerChanged) {
       if (route?.length) {
-        try {
-          map.fitBounds(
-            route.map((r) => [r.lat, r.lon]) as [number, number][],
-            { animate: false }
-          )
-          fit.current = routeAsString
-        } catch {
-          // noop; map pane may not be ready — leave fit.current unchanged so
-          // a subsequent render can retry fitBounds for the same route
-        }
-      } else {
-        // Route cleared — update fit.current so that re-selecting the same
-        // waypoints later triggers fitBounds again instead of being skipped.
-        fit.current = routeAsString
+        map.fitBounds(route.map((r) => [r.lat, r.lon]) as [number, number][])
       }
+      fit.current = routeAsString
       lastFitTrigger.current = fitTrigger
     }
     return () => {

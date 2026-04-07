@@ -145,7 +145,7 @@ const Vehicle: NextPage = () => {
         role: 'PIC',
         currentUser: currentUserName,
         authenticated,
-        loading: loadingPicAndOnCall || authLoading,
+        loading: loadingPicAndOnCall,
       })
     : ''
   const onCallLabel = onCalls?.length
@@ -154,7 +154,7 @@ const Vehicle: NextPage = () => {
         role: 'On-Call',
         currentUser: currentUserName,
         authenticated,
-        loading: loadingPicAndOnCall || authLoading,
+        loading: loadingPicAndOnCall,
       })
     : ''
 

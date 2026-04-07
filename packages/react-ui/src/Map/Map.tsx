@@ -592,18 +592,6 @@ const Map = React.forwardRef<L.Map, MapProps>(
 
             safeLogger.debug('Map instance created, initializing...')
 
-            // Guard against GoogleMutant async callbacks firing after the map
-            // has been removed. When map.remove() runs, Leaflet nulls
-            // _controlCorners, but GoogleMutant still has pending Google API
-            // callbacks that call _setupAttribution → crash. Patching fire()
-            // on this specific instance to be a no-op once the map is gone is
-            // the least-invasive fix without modifying the library.
-            const origFire = (map as any).fire.bind(map)
-            ;(map as any).fire = (...args: Parameters<typeof map.fire>) => {
-              if (!(map as any)._controlCorners) return map
-              return origFire(...args)
-            }
-
             // Store reference to actual Leaflet map
             mapRef.current = map
 
