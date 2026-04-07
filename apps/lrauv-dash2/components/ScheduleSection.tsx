@@ -319,6 +319,27 @@ export const ScheduleSection: React.FC<ScheduleSectionProps> = ({
       }
     }
 
+    // Promote any still-TBD rows that predate the currently running mission.
+    // A row whose scheduled/send time is before the running mission started
+    // was either already run (but not matched by name) or displaced — calling
+    // it 'pending' indefinitely is misleading. Future-scheduled rows are safe:
+    // their referenceTime (scheduled run time) will be after startedAt.
+    const currentRunningStartedAt = missionTimeline[0]?.startedAt
+    if (currentRunningStartedAt) {
+      for (let i = 0; i < enriched.length; i++) {
+        const item = enriched[i]
+        if (item.status !== 'TBD') continue
+        const scheduledTime = parseScheduledUnixTime(
+          item.event.data,
+          item.event.text
+        )
+        const referenceTime = scheduledTime ?? item.event.unixTime ?? 0
+        if (referenceTime < currentRunningStartedAt) {
+          enriched[i] = { ...item, status: 'completed' }
+        }
+      }
+    }
+
     return enriched
   }, [
     deploymentLogsOnly,
