@@ -231,7 +231,11 @@ export const ScheduleEventDetailsModal: React.FC<
   const vehicleDeployment = [vehicleLabel, deploymentWithoutVehicle]
     .filter(Boolean)
     .join(' ')
-  const headerTitle = `${vehicleDeployment} - Mission Details`
+  const detailsTitle =
+    event.commandType?.toLowerCase() === 'command'
+      ? 'Command Details'
+      : 'Mission Details'
+  const headerTitle = `${vehicleDeployment} - ${detailsTitle}`
   const segments = splitCommandSegments(event.eventData || event.eventText)
   const cleanLabel =
     (event.label || 'Unknown')
