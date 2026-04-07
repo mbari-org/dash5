@@ -90,13 +90,22 @@ const StationMarker: React.FC<StationMarkerProps> = ({
           interactive={false}
           pathOptions={{ interactive: false }}
         />
-        {/* Small center dot — the only interactive element; carries the tooltip */}
+        {/* White halo ring so the center dot is visible against same-colored vehicle paths */}
+        <CircleMarker
+          center={[lat, lng]}
+          radius={7}
+          fillColor="transparent"
+          color="white"
+          fillOpacity={0}
+          weight={3}
+          interactive={false}
+        />
         <CircleMarker
           center={[lat, lng]}
           radius={5}
-          color="white"
-          fillColor={markerColor}
-          fillOpacity={0.9}
+          color={markerColor}
+          fillColor="transparent"
+          fillOpacity={0}
           weight={2}
         >
           {tooltip}
@@ -133,12 +142,22 @@ const StationMarker: React.FC<StationMarkerProps> = ({
           />
         </>
       )}
+      {/* White halo ring so the marker is visible against same-colored vehicle paths */}
+      <CircleMarker
+        center={[lat, lng]}
+        radius={7}
+        fillColor="transparent"
+        color="white"
+        fillOpacity={0}
+        weight={3}
+        interactive={false}
+      />
       <CircleMarker
         center={[lat, lng]}
         radius={5}
-        fillColor="white"
+        fillColor="transparent"
         color={markerColor}
-        fillOpacity={0.9}
+        fillOpacity={0}
         weight={2}
       >
         {tooltip}
