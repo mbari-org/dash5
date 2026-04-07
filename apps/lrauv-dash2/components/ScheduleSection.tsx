@@ -151,7 +151,7 @@ export const ScheduleSection: React.FC<ScheduleSectionProps> = ({
   // Poll every 60s so running→ended transitions appear without a page refresh.
   const missionStartedResponse = useMissionStartedEvent(
     { vehicle: vehicleName, limit: 50 },
-    { enabled: !!vehicleName, staleTime: 30 * 1000, refetchInterval: 60 * 1000 }
+    { enabled: !!vehicleName, staleTime: 15 * 1000, refetchInterval: 30 * 1000 }
   )
 
   // Build a timeline: each entry knows its own start time and when it ended
