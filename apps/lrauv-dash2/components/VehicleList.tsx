@@ -283,7 +283,7 @@ const ConnectedVehicleCellComponent: React.FC<{
         timeSpanSinceDeployment={
           active && !recovered ? timeSpanSinceDeployment : undefined
         }
-        recovered={recovered ? true : undefined}
+        recovered={recovered}
         recoveredAt={recovered ? timeSpanSinceRecovery : undefined}
         onToggle={handleToggle}
         open={isOpen}
