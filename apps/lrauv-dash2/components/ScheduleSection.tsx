@@ -333,6 +333,7 @@ export const ScheduleSection: React.FC<ScheduleSectionProps> = ({
   const hasPastSchedule =
     missions?.some((v) => !scheduledTypes.includes(v.status)) ?? false
   const staticFilterCellOffset = hasPastSchedule ? 1 : 0
+  const indexOfPastSchedule = staticHeaderCellOffset
 
   const handleScheduleSearch = (e: React.ChangeEvent<HTMLInputElement>) => {
     setScheduleSearch(e.target.value)
@@ -341,9 +342,6 @@ export const ScheduleSection: React.FC<ScheduleSectionProps> = ({
   const scheduledCells = missions?.filter((v) =>
     scheduledTypes.includes(v.status)
   )
-
-  const indexOfPastSchedule =
-    staticHeaderCellOffset + (scheduledCells?.length ?? 0)
 
   const historicCells = missions
     ?.filter((v) => !scheduledTypes.includes(v.status))
@@ -526,7 +524,7 @@ export const ScheduleSection: React.FC<ScheduleSectionProps> = ({
               scheduleEvent: {
                 eventId: mission.event.eventId,
                 commandType: cellCommandType,
-                status: cellStatus,
+                status: mission.status,
                 label: missionName ?? 'Unknown',
                 secondary: missionParams ?? undefined,
                 user: mission.event.user ?? undefined,
