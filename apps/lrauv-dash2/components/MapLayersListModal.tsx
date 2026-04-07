@@ -1,4 +1,5 @@
 import React, { useCallback, useState, useRef, useEffect, useMemo } from 'react'
+import clsx from 'clsx'
 import Tippy from '@tippyjs/react'
 import {
   useStations,
@@ -10,7 +11,6 @@ import { Modal } from '@mbari/react-ui'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { IconProp } from '@fortawesome/fontawesome-svg-core'
 import {
-  faCaretDown,
   faCaretRight,
   faMapMarkerAlt,
   faCircle,
@@ -90,41 +90,36 @@ const TreeItem: React.FC<TreeItemProps> = ({
   )
 
   return (
-    <div className="tree-item">
+    <article className="tree-item">
       <div className="flex items-center py-2 pl-2">
         {hasChildren ? (
           <button
             onClick={onToggleExpand}
-            className="mr-1 text-gray-600 hover:text-blue-600 focus:outline-none"
+            className="mr-1 flex items-center text-gray-700 hover:text-blue-600 focus:outline-none"
             aria-label={isExpanded ? 'Collapse' : 'Expand'}
           >
             <FontAwesomeIcon
-              icon={isExpanded ? faCaretDown : faCaretRight}
+              icon={faCaretRight}
               size="sm"
+              className={clsx(
+                'transition-transform duration-200 ease-in-out motion-reduce:transition-none',
+                isExpanded ? 'rotate-90' : 'rotate-0'
+              )}
             />
           </button>
         ) : (
           <div className="tree-connector-wrapper ml-4 flex items-center">
-            <span
-              className="tree-connector"
-              style={{
-                display: 'inline-block',
-                width: '24px',
-                height: '2px',
-                backgroundColor: '#999',
-                marginLeft: '-35px',
-                marginRight: '8px',
-              }}
-            ></span>
+            <span className="tree-connector -ml-9 mr-2 inline-block h-0.5 w-7 rounded bg-stone-400" />
           </div>
         )}
 
         <label
-          className={`flex w-full ${
+          className={clsx(
+            'flex w-full items-center',
             disabled || !onToggleCheck
               ? 'cursor-not-allowed opacity-60'
               : 'cursor-pointer'
-          } items-center`}
+          )}
           title={disabled ? disabledTitle ?? 'Not available' : undefined}
         >
           <input
@@ -133,11 +128,8 @@ const TreeItem: React.FC<TreeItemProps> = ({
             onChange={onToggleCheck}
             readOnly={!onToggleCheck}
             disabled={disabled || !onToggleCheck}
-            className="mapLayersCheckbox mr-2"
+            className="mapLayersCheckbox mr-2 h-[18px] w-[18px] accent-blue-600"
             style={{
-              width: '18px',
-              height: '18px',
-              accentColor: '#3182ce',
               cursor: disabled || !onToggleCheck ? 'not-allowed' : 'pointer',
             }}
           />
@@ -242,21 +234,32 @@ const TreeItem: React.FC<TreeItemProps> = ({
         </label>
       </div>
 
-      {isExpanded && hasChildren && (
-        // This creates the vertical line connecting all children
+      {hasChildren && (
         <div
-          className="children-container"
-          style={{
-            marginLeft: '10px',
-            paddingLeft: '12px',
-            borderLeft: '2px solid #999',
-            position: 'relative',
-          }}
+          className={clsx(
+            'grid transition-[grid-template-rows] duration-200 ease-in-out motion-reduce:transition-none',
+            isExpanded ? 'grid-rows-[1fr]' : 'grid-rows-[0fr]'
+          )}
         >
-          {children}
+          <ul className="children-container relative ml-[10px] overflow-hidden pl-[12px]">
+            {React.Children.map(children, (child, idx) => {
+              const isLast = idx === React.Children.count(children) - 1
+              return (
+                <li key={idx} className="tree-row relative flex items-start">
+                  {/* vertical tree line — stops at midpoint of last child */}
+                  <span
+                    aria-hidden
+                    className="absolute -left-3 top-0 w-0.5 bg-stone-400"
+                    style={{ bottom: isLast ? '50%' : 0 }}
+                  />
+                  {child}
+                </li>
+              )
+            })}
+          </ul>
         </div>
       )}
-    </div>
+    </article>
   )
 }
 
