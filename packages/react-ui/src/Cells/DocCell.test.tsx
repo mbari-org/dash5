@@ -75,3 +75,11 @@ test('label button should have a title attribute matching the full label', async
   const button = screen.getByRole('button', { name: props.label })
   expect(button).toHaveAttribute('title', props.label)
 })
+
+test('should render full long multi-word label text', async () => {
+  const longLabel =
+    'Pre deployment engineering maintenance log with extended diagnostics and checks'
+  render(<DocCell {...props} label={longLabel} />)
+
+  expect(screen.getByRole('button', { name: longLabel })).toBeInTheDocument()
+})

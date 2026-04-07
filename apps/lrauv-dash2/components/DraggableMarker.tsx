@@ -52,6 +52,7 @@ const DraggableMarker: React.FC<DraggableMarkerProps> = ({
   isNew = false,
   savedToLayer = false,
   visible = true,
+  draggable = true,
   iconColor,
   onClick,
   onDragEnd,
@@ -495,7 +496,7 @@ const DraggableMarker: React.FC<DraggableMarkerProps> = ({
     <Marker
       ref={markerRef}
       position={markerPosition}
-      draggable={true}
+      draggable={draggable}
       icon={icon}
       eventHandlers={{
         dragend: () => {
