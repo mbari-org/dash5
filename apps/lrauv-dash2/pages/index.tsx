@@ -629,6 +629,9 @@ const OverViewMap: React.FC<{
           onMapReady={(map) => {
             logger.debug('🌍 Map ready callback triggered in OverViewMap')
             mapRef.current = map
+            requestAnimationFrame(() => {
+              map.invalidateSize()
+            })
           }}
           trackedVehicles={trackedVehicles?.map((vehicle) => ({
             ...vehicle,
