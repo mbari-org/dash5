@@ -2,6 +2,7 @@ import { OverviewToolbar } from '@mbari/react-ui'
 import { NextPage } from 'next'
 import Layout from '../components/Layout'
 import React, { useCallback, useEffect, useRef, useState } from 'react'
+import ResizeObserver from 'resize-observer-polyfill'
 import dynamic from 'next/dynamic'
 import VehicleDeploymentDropdown from '../components/VehicleDeploymentDropdown'
 import VehicleList from '../components/VehicleList'
@@ -629,9 +630,7 @@ const OverViewMap: React.FC<{
           onMapReady={(map) => {
             logger.debug('🌍 Map ready callback triggered in OverViewMap')
             mapRef.current = map
-            requestAnimationFrame(() => {
-              map.invalidateSize()
-            })
+            map.invalidateSize()
           }}
           trackedVehicles={trackedVehicles?.map((vehicle) => ({
             ...vehicle,
