@@ -35,7 +35,7 @@ const LEAFLET_ONLY_KEYS = new Set([
 // Leaflet computes bounding-box coordinates in the correct coordinate system.
 const getCRS = (srs: unknown): L.CRS | undefined => {
   if (typeof srs !== 'string') return undefined
-  const code = srs.toUpperCase().replace('EPSG:', 'EPSG:')
+  const code = srs.trim().toUpperCase()
   if (code === 'EPSG:4326' || code === 'CRS:84') return L.CRS.EPSG4326
   if (code === 'EPSG:3857' || code === 'EPSG:900913') return L.CRS.EPSG3857
   if (code === 'EPSG:3395') return L.CRS.EPSG3395

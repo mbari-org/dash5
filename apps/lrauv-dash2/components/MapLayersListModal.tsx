@@ -245,8 +245,14 @@ const TreeItem: React.FC<TreeItemProps> = ({
           <ul className="children-container relative ml-[10px] overflow-hidden pl-[12px]">
             {React.Children.toArray(children).map((child, idx, arr) => {
               const isLast = idx === arr.length - 1
+              const childKey = React.isValidElement<{ label?: string }>(child)
+                ? child.key ?? child.props.label ?? String(idx)
+                : String(idx)
               return (
-                <li key={idx} className="tree-row relative flex items-start">
+                <li
+                  key={childKey}
+                  className="tree-row relative flex items-start"
+                >
                   {/* vertical tree line — stops at midpoint of last child */}
                   <span
                     aria-hidden
@@ -739,6 +745,7 @@ export const MapLayersListModal: React.FC<{
                 type="text"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
+                aria-label="Filter layers"
                 placeholder="Filter layers..."
                 className="w-full rounded border border-gray-300 py-2 pl-3 pr-6 text-base text-gray-900"
               />
