@@ -286,7 +286,6 @@ export const MapLayersListModal: React.FC<{
   const { setFlyToRequest } = useMapCamera()
   const {
     markers,
-    selectedMarkers,
     toggleMarkerVisibility,
     selectAllMarkers,
     deselectAllMarkers,
