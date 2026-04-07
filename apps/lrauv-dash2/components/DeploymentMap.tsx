@@ -53,6 +53,9 @@ const MapClickHandler = dynamic(() => import('./MapClickHandler'), {
 const CustomMarkerSet = dynamic(() => import('./CustomMarkerSet'), {
   ssr: false,
 })
+const MapFlyTo = dynamic(() => import('./MapFlyTo'), {
+  ssr: false,
+})
 const PlatformPaths = dynamic(
   () =>
     import('./PlatformPaths').then((mod) => ({ default: mod.PlatformPaths })),
@@ -82,28 +85,27 @@ const DeploymentMap: React.FC<DeploymentMapProps> = ({
   const {
     updatedWaypoints,
     handleWaypointsUpdate,
+    clearWaypoint,
     editable,
     focusedWaypointIndex,
   } = useManagedWaypoints()
   const handleDragEnd = useCallback(
-    (index: number, { lat, lng }: { lat: number; lng: number }) =>
-      handleWaypointsUpdate(
-        updatedWaypoints.map((m, i) =>
-          i === index ? { ...m, lat: lat.toString(), lon: lng.toString() } : m
-        )
-      ),
-    [updatedWaypoints, handleWaypointsUpdate]
-  )
-
-  const handleDeleteWaypoint = useCallback(
-    (index: number) =>
-      handleWaypointsUpdate(
+    (index: number, { lat, lng }: { lat: number; lng: number }) => {
+      const roundedLat = Number(lat.toFixed(5))
+      const roundedLng = Number(lng.toFixed(5))
+      return handleWaypointsUpdate(
         updatedWaypoints.map((m, i) =>
           i === index
-            ? { ...m, lat: 'NaN', lon: 'NaN', stationName: 'Custom' }
+            ? {
+                ...m,
+                lat: roundedLat.toString(),
+                lon: roundedLng.toString(),
+                stationName: 'Custom',
+              }
             : m
         )
-      ),
+      )
+    },
     [updatedWaypoints, handleWaypointsUpdate]
   )
 
@@ -159,8 +161,12 @@ const DeploymentMap: React.FC<DeploymentMapProps> = ({
   const [showLayersModal, setShowLayersModal] = useState(false)
   const [showVehicleColors, setShowVehicleColors] = useState(false)
   const [showPlatformsModal, setShowPlatformsModal] = useState(false)
-  const { selectedStations } = useSelectedStations()
+  const { selectedStations, highlightedStationName } = useSelectedStations()
   const [colorModalOpen, setColorModalOpen] = useState(false)
+  const [waypointFitTrigger, setWaypointFitTrigger] = useState(0)
+  const prevFocusedWaypointIndexRef = useRef<number | null | undefined>(
+    undefined
+  )
   const [colorModalPosition, setColorModalPosition] = useState<{
     top: number
     left: number
@@ -194,6 +200,16 @@ const DeploymentMap: React.FC<DeploymentMapProps> = ({
       latestVehicle.current = vehicleName
     }
   }, [vehicleName, setLatestGPS])
+
+  // Bump fitTrigger when leaving waypoint focus mode so WaypointPreviewPath
+  // re-fits bounds even when the route coordinates didn't change.
+  useEffect(() => {
+    const prev = prevFocusedWaypointIndexRef.current
+    if (typeof prev === 'number' && focusedWaypointIndex == null) {
+      setWaypointFitTrigger((n) => n + 1)
+    }
+    prevFocusedWaypointIndexRef.current = focusedWaypointIndex
+  }, [focusedWaypointIndex])
 
   useEffect(() => {
     if (mapRef?.current && !showVehicleColors) {
@@ -690,20 +706,40 @@ const DeploymentMap: React.FC<DeploymentMapProps> = ({
             const lng = station.geojson.geometry.coordinates[0]
             const lat = station.geojson.geometry.coordinates[1]
 
-            if (!lng || !lat) return null
+            if (
+              lng == null ||
+              lat == null ||
+              !Number.isFinite(lng) ||
+              !Number.isFinite(lat)
+            )
+              return null
             return (
               <StationMarker
                 key={station.name}
                 name={station.name}
                 lat={lat}
                 lng={lng}
+                isHighlighted={highlightedStationName === station.name}
               />
             )
           })}
           <PlatformPaths />
+          <MapFlyTo />
+          <VehiclePath
+            name={vehicleName as string}
+            key={`path${vehicleName}`}
+            from={startTime as number}
+            to={endTime as number}
+            indicatorTime={indicatorTime}
+            onScrub={handleMapScrub}
+            onGPSFix={handleGPSFix}
+            onPositionDataLoaded={markInitialLoadDone}
+            // Disable map auto-fit centering when scrubbing the timeline
+            disableAutoFit={isTimelineScrubbing}
+          />
           {plottedWaypoints?.length ? (
             <>
-              {plottedWaypoints.map(({ waypoint, originalIndex }, i) => {
+              {plottedWaypoints.map(({ waypoint, originalIndex }) => {
                 const waypointNumber = Number(
                   waypoint.latName?.match(/\d+/)?.[0] ?? originalIndex + 1
                 )
@@ -720,9 +756,7 @@ const DeploymentMap: React.FC<DeploymentMapProps> = ({
                       })
                     }
                     onDelete={
-                      editable
-                        ? () => handleDeleteWaypoint(originalIndex)
-                        : undefined
+                      editable ? () => clearWaypoint(originalIndex) : undefined
                     }
                   />
                 )
@@ -735,22 +769,10 @@ const DeploymentMap: React.FC<DeploymentMapProps> = ({
                   lat: Number(waypoint.lat),
                   lon: Number(waypoint.lon),
                 }))}
+                fitTrigger={waypointFitTrigger}
               />
             </>
-          ) : (
-            <VehiclePath
-              name={vehicleName as string}
-              key={`path${vehicleName}`}
-              from={startTime as number}
-              to={endTime as number}
-              indicatorTime={indicatorTime}
-              onScrub={handleMapScrub}
-              onGPSFix={handleGPSFix}
-              onPositionDataLoaded={markInitialLoadDone}
-              // Disable map auto-fit centering when scrubbing the timeline
-              disableAutoFit={isTimelineScrubbing}
-            />
-          )}
+          ) : null}
         </Map>
         <MapRefreshButton
           onClick={refreshAll}

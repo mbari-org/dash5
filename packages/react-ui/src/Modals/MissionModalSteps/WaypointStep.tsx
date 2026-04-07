@@ -45,7 +45,7 @@ export const WaypointStep: React.FC<WaypointStepProps> = ({
 
   return (
     <article className="flex h-full flex-col">
-      {!focusedWaypointIndex ? (
+      {focusedWaypointIndex == null ? (
         <ul className="mx-4 flex pb-2">
           <li className="flex-grow self-center">
             Set up to {waypointCount} waypoint{waypointCount !== 1 && 's'} for{' '}

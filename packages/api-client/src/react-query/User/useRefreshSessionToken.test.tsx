@@ -1,5 +1,5 @@
 import '@testing-library/jest-dom'
-import React, { useState } from 'react'
+import React from 'react'
 import { render, screen, waitFor } from '@testing-library/react'
 import { useRefreshSessionToken } from './useRefreshSessionToken'
 import { QueryClientProvider, QueryClient } from 'react-query'
@@ -24,18 +24,15 @@ beforeAll(() => server.listen())
 afterEach(() => server.resetHandlers())
 afterAll(() => server.close())
 
+const mockSetSessionToken = jest.fn()
+
 const MockLogin: React.FC<{ testToken?: string }> = ({ testToken = '' }) => {
-  const [sessionToken, setSessionToken] = useState(testToken)
   const currentSession = useRefreshSessionToken({
-    sessionToken,
-    setSessionToken,
+    sessionToken: testToken,
+    setSessionToken: mockSetSessionToken,
     instance: axios.create(),
   })
-  return currentSession.isLoading ? null : (
-    <div data-testid="result">
-      {currentSession.data?.firstName ?? 'Not logged in'}
-    </div>
-  )
+  return <div data-testid="status">{currentSession.status}</div>
 }
 
 const MockComponent: React.FC<{
@@ -47,104 +44,103 @@ const MockComponent: React.FC<{
   </QueryClientProvider>
 )
 
-const MockTokenHook: React.FC<{
-  sessionToken: string
-  setSessionToken: (token: string) => void
-}> = ({ sessionToken, setSessionToken }) => {
-  useRefreshSessionToken({
-    sessionToken,
-    setSessionToken,
-    instance: axios.create(),
-  })
-  return null
-}
-
 describe('useRefreshSessionToken', () => {
-  it('should call setSessionToken with the new token when the response includes one', async () => {
-    server.use(
-      rest.get('/user/token', (_req, res, ctx) =>
-        res(ctx.status(200), ctx.json(mockResponse))
-      )
-    )
-
-    const setSessionToken = jest.fn()
-    render(
-      <QueryClientProvider client={new QueryClient()}>
-        <MockTokenHook
-          sessionToken="old-fake-token"
-          setSessionToken={setSessionToken}
-        />
-      </QueryClientProvider>
-    )
-
-    await waitFor(() =>
-      expect(setSessionToken).toHaveBeenCalledWith(mockResponse.result.token)
-    )
-  })
-
-  it('should not call setSessionToken when the response has no token field', async () => {
-    // Regression: the real okeanids /user/token endpoint returns 200 with user
-    // profile data but omits the token field. Before the fix (onSettled → onSuccess
-    // + guard), this caused setSessionToken('') to wipe the cookie.
-    server.use(
-      rest.get('/user/token', (_req, res, ctx) =>
-        res(
-          ctx.status(200),
-          ctx.json({
-            result: {
-              email: 'jim@sumocreations.com',
-              firstName: 'Jim',
-              lastName: 'Jeffers',
-              roles: ['operator'],
-              // token field intentionally absent
-            },
-          })
-        )
-      )
-    )
-
-    const setSessionToken = jest.fn()
-    const queryClient = new QueryClient({
-      defaultOptions: { queries: { retry: false } },
+  const createQueryClient = () =>
+    new QueryClient({
+      defaultOptions: {
+        queries: {
+          retry: false,
+        },
+      },
     })
-    render(
-      <QueryClientProvider client={queryClient}>
-        <MockTokenHook
-          sessionToken="existing-cookie-token"
-          setSessionToken={setSessionToken}
-        />
-      </QueryClientProvider>
-    )
 
-    await waitFor(() => expect(queryClient.isFetching()).toBe(0))
-
-    expect(setSessionToken).not.toHaveBeenCalled()
+  afterEach(() => {
+    mockSetSessionToken.mockReset()
   })
 
-  it('should not call setSessionToken when the token refresh fails', async () => {
-    // Regression: onSettled called setSessionToken('') on 401/500, wiping the cookie.
+  it.each([401, 403])(
+    'should clear token for auth failure status %i',
+    async (status) => {
+      server.use(
+        rest.get('/user/token', (_req, res, ctx) => {
+          return res(ctx.status(status), ctx.json({}))
+        })
+      )
+
+      render(
+        <MockComponent
+          queryClient={createQueryClient()}
+          testToken="test-token"
+        />
+      )
+
+      await waitFor(() => {
+        expect(screen.getByTestId('status')).toHaveTextContent('error')
+      })
+
+      expect(mockSetSessionToken).toHaveBeenCalledWith('')
+    }
+  )
+
+  it('should preserve token for server errors', async () => {
     server.use(
-      rest.get('/user/token', (_req, res, ctx) => res(ctx.status(401)))
+      rest.get('/user/token', (_req, res, ctx) => {
+        return res(ctx.status(500), ctx.json({}))
+      })
     )
 
-    const setSessionToken = jest.fn()
-    const queryClient = new QueryClient({
-      defaultOptions: { queries: { retry: false } },
-    })
     render(
-      <QueryClientProvider client={queryClient}>
-        <MockTokenHook
-          sessionToken="existing-cookie-token"
-          setSessionToken={setSessionToken}
-        />
-      </QueryClientProvider>
+      <MockComponent queryClient={createQueryClient()} testToken="test-token" />
     )
 
-    await waitFor(() => expect(queryClient.isFetching()).toBe(0))
-    expect(setSessionToken).not.toHaveBeenCalledWith('')
+    await waitFor(() => {
+      expect(screen.getByTestId('status')).toHaveTextContent('error')
+    })
+
+    expect(mockSetSessionToken).not.toHaveBeenCalled()
   })
 
-  it('should render the logout button and auth token after the user authenticates', async () => {
+  it('should preserve token for network errors', async () => {
+    server.use(
+      rest.get('/user/token', (_req, res, ctx) => {
+        return res.networkError('Failed to connect')
+      })
+    )
+
+    render(
+      <MockComponent queryClient={createQueryClient()} testToken="test-token" />
+    )
+
+    await waitFor(() => {
+      expect(screen.getByTestId('status')).toHaveTextContent('error')
+    })
+
+    expect(mockSetSessionToken).not.toHaveBeenCalled()
+  })
+
+  it('should preserve existing token when a successful response omits token', async () => {
+    // The TethysDash /user/token endpoint validates the token and returns the
+    // user profile without re-issuing a new token. The existing cookie must NOT
+    // be cleared — clearing it was the root cause of users being logged out on
+    // browser refresh in the static-export build.
+    server.use(
+      rest.get('/user/token', (_req, res, ctx) => {
+        return res(ctx.status(200), ctx.json({ result: {} }))
+      })
+    )
+
+    render(
+      <MockComponent queryClient={createQueryClient()} testToken="test-token" />
+    )
+
+    await waitFor(() => {
+      expect(screen.getByTestId('status')).toHaveTextContent('success')
+    })
+
+    expect(mockSetSessionToken).not.toHaveBeenCalled()
+  })
+
+  it('should set refreshed token when a successful response includes token', async () => {
     server.use(
       rest.get('/user/token', (_req, res, ctx) => {
         return res(ctx.status(200), ctx.json(mockResponse))
@@ -152,34 +148,13 @@ describe('useRefreshSessionToken', () => {
     )
 
     render(
-      <MockComponent
-        queryClient={new QueryClient()}
-        testToken="this-is-a-test"
-      />
+      <MockComponent queryClient={createQueryClient()} testToken="test-token" />
     )
+
     await waitFor(() => {
-      return screen.getByText(mockResponse.result.firstName)
+      expect(screen.getByTestId('status')).toHaveTextContent('success')
     })
 
-    expect(screen.queryByText(mockResponse.result.firstName)).toHaveTextContent(
-      mockResponse.result.firstName
-    )
-  })
-
-  it('should not render the logout button and auth token if the user is not able to authenticate', async () => {
-    server.use(
-      rest.get('/user/token', (_req, res, ctx) => {
-        return res(ctx.status(200), ctx.json(''))
-      })
-    )
-
-    render(<MockComponent queryClient={new QueryClient()} />)
-    await waitFor(() => {
-      return screen.getByText('Not logged in')
-    })
-
-    expect(
-      screen.queryByText(mockResponse.result.firstName)
-    ).not.toBeInTheDocument()
+    expect(mockSetSessionToken).toHaveBeenCalledWith(mockResponse.result.token)
   })
 })

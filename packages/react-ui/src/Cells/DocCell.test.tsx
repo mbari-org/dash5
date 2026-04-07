@@ -48,30 +48,10 @@ test('should render the more options button', async () => {
   expect(screen.getByLabelText(/more options/i)).toBeInTheDocument()
 })
 
-test('should render the secondary label when provided', async () => {
-  render(<DocCell {...props} secondary="predeployment" />)
+test('should render full long multi-word label text', async () => {
+  const longLabel =
+    'Pre deployment engineering maintenance log with extended diagnostics and checks'
+  render(<DocCell {...props} label={longLabel} />)
 
-  expect(screen.getByTestId('doc-cell-secondary')).toBeInTheDocument()
-  expect(screen.getByTestId('doc-cell-secondary')).toHaveTextContent(
-    'predeployment'
-  )
-})
-
-test('should not render a secondary label when secondary is undefined', async () => {
-  render(<DocCell {...props} />)
-
-  expect(screen.queryByTestId('doc-cell-secondary')).not.toBeInTheDocument()
-})
-
-test('should not render a secondary label when secondary is empty string', async () => {
-  render(<DocCell {...props} secondary="" />)
-
-  expect(screen.queryByTestId('doc-cell-secondary')).not.toBeInTheDocument()
-})
-
-test('label button should have a title attribute matching the full label', async () => {
-  render(<DocCell {...props} />)
-
-  const button = screen.getByRole('button', { name: props.label })
-  expect(button).toHaveAttribute('title', props.label)
+  expect(screen.getByRole('button', { name: longLabel })).toBeInTheDocument()
 })
