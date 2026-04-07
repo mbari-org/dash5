@@ -159,7 +159,7 @@ export const ScheduleSection: React.FC<ScheduleSectionProps> = ({
   const missionTimeline = useMemo(() => {
     const events = missionStartedResponse.data ?? []
     return events.map((evt, idx) => ({
-      name: missionNameFromStartedText(evt.text),
+      name: missionNameFromStartedText(evt.text ?? ''),
       startedAt: evt.unixTime,
       endedAt: idx > 0 ? events[idx - 1].unixTime : undefined,
       status: idx === 0 ? ('running' as const) : ('completed' as const),
@@ -264,12 +264,30 @@ export const ScheduleSection: React.FC<ScheduleSectionProps> = ({
       } else {
         const currentRawEvent = missionStartedResponse.data?.[0]
         if (currentRawEvent) {
+          // Prefer a raw path from an existing enriched row that matches the
+          // current mission — it preserves the original extension and casing.
+          // Fall back to the name from the mission-started text without a
+          // hard-coded extension so MissionModal can still attempt a match.
+          const existingMatch = enriched.find((item) => {
+            const fromDataPath = missionPathFromEventData(item.event.data)
+            const fromTextPath = missionPathFromEventData(item.event.text)
+            return (
+              missionKeysMatch(fromDataPath, currentMissionPath) ||
+              missionKeysMatch(fromTextPath, currentMissionPath)
+            )
+          })
+          const rawPath =
+            (existingMatch &&
+              (rawMissionPathFromEventData(existingMatch.event.data) ||
+                rawMissionPathFromEventData(existingMatch.event.text))) ||
+            currentMissionEntry.name
+
           enriched.unshift({
             event: {
               // Construct a command-format data string so parseMissionCommand
               // produces a consistent label and "Use for new mission" receives
               // a valid path. GetMissionStartedEventResponse has no data field.
-              data: `load ${currentMissionEntry.name}.tl;run`,
+              data: `load ${rawPath};run`,
               unixTime: currentRawEvent.unixTime,
               eventId: currentRawEvent.eventId,
               eventType: 'run',
