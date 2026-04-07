@@ -242,8 +242,8 @@ const TreeItem: React.FC<TreeItemProps> = ({
           )}
         >
           <ul className="children-container relative ml-[10px] overflow-hidden pl-[12px]">
-            {React.Children.map(children, (child, idx) => {
-              const isLast = idx === React.Children.count(children) - 1
+            {React.Children.toArray(children).map((child, idx, arr) => {
+              const isLast = idx === arr.length - 1
               return (
                 <li key={idx} className="tree-row relative flex items-start">
                   {/* vertical tree line — stops at midpoint of last child */}

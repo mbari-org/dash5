@@ -91,11 +91,12 @@ const TileLayerOverlays: React.FC = () => {
 
   return (
     <>
-      {/* Render overlay tiles in a custom pane above the Google Maps base layer.
-          Leaflet's tilePane sits at z-index 200; GoogleMutant can render above
-          it, so we use z-index 450 (above overlayPane:400, below markerPane:600)
-          to guarantee WMS/XYZ overlays are always visible on top of the base map. */}
-      <Pane name="tileOverlayPane" style={{ zIndex: 450 }} />
+      {/* Render overlay tiles in a custom pane below the vehicle path overlay.
+          Leaflet's overlayPane (z-index 400) contains vehicle paths and
+          station markers. Keeping tile overlays at z-index 250 ensures they
+          sit above the Google Maps base layer (~200) but under vehicle tracks
+          so paths remain visible when a tile layer is active. */}
+      <Pane name="tileOverlayPane" style={{ zIndex: 250 }} />
       {tileLayers
         .filter((t) => selectedTileLayers.includes(t.name))
         .map((t) => {
