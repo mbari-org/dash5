@@ -93,11 +93,11 @@ const StationMarker: React.FC<StationMarkerProps> = ({
         {/* Small center dot — the only interactive element; carries the tooltip */}
         <CircleMarker
           center={[lat, lng]}
-          radius={4}
-          color={markerColor}
+          radius={5}
+          color="white"
           fillColor={markerColor}
           fillOpacity={0.9}
-          weight={1}
+          weight={2}
         >
           {tooltip}
         </CircleMarker>
