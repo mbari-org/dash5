@@ -1,6 +1,9 @@
 import { useEffect, useState } from 'react'
 import { useTethysApiContext } from '@mbari/api-client'
 import { useQueryClient } from 'react-query'
+import { createLogger } from '@mbari/utils'
+
+const logger = createLogger('useWebSocketListeners')
 
 type SubscriptionEventType =
   | 'VehicleConnected'
@@ -41,7 +44,7 @@ export const useTethysSubscription = () => {
     }
     const websocket = new WebSocket(url)
     websocket.onopen = () => {
-      console.log('connected')
+      logger.debug('connected')
     }
     websocket.onmessage = (event) => {
       const data = JSON.parse(event.data) as TethysSubscriptionEvent
@@ -50,7 +53,7 @@ export const useTethysSubscription = () => {
           (data.eventName ?? null) as SubscriptionEventType
         )
       ) {
-        console.log('Unsupported event type: ', data.eventName)
+        logger.debug('Unsupported event type: ', data.eventName)
         return
       }
       const queryKey = [data.eventName, data.vehicleName, data.email].filter(

@@ -1,5 +1,8 @@
 import { useEffect, useState } from 'react'
 import { getCookie, setCookie } from 'react-use-cookie'
+import { createLogger } from '@mbari/utils'
+
+const logger = createLogger('useSessionToken')
 
 // react-use-cookie initializes via useState() on the server where
 // document.cookie is unavailable, so it always starts as ''. During
@@ -13,29 +16,20 @@ const useSessionToken = (name: string) => {
 
   useEffect(() => {
     const stored = getCookie(name)
-    if (process.env.NODE_ENV !== 'production') {
-      console.log(
-        '[useSessionToken] hydrate — cookie length:',
-        stored?.length ?? 0,
-        '| has value:',
-        stored?.length > 0
-      )
-      if (!stored) {
-        console.warn(
-          '[useSessionToken] cookie is empty on hydrate — user will see login page'
-        )
-      }
+    logger.debug(
+      'hydrate — cookie length:',
+      stored?.length ?? 0,
+      '| has value:',
+      stored?.length > 0
+    )
+    if (!stored) {
+      logger.debug('cookie is empty on hydrate — user will see login page')
     }
     setSessionToken_(stored || '')
   }, [name])
 
   const setSessionToken = (token: string) => {
-    if (process.env.NODE_ENV !== 'production') {
-      console.log(
-        '[useSessionToken] setSessionToken — length:',
-        token?.length ?? 0
-      )
-    }
+    logger.debug('setSessionToken — length:', token?.length ?? 0)
     setSessionToken_(token)
     setCookie(name, token, {
       days: 7,
@@ -43,13 +37,8 @@ const useSessionToken = (name: string) => {
       Secure:
         typeof window !== 'undefined' && window.location.protocol === 'https:',
     })
-    if (process.env.NODE_ENV !== 'production') {
-      const verify = getCookie(name)
-      console.log(
-        '[useSessionToken] post-write verify — cookie length:',
-        verify?.length ?? 0
-      )
-    }
+    const verify = getCookie(name)
+    logger.debug('post-write verify — cookie length:', verify?.length ?? 0)
   }
 
   return { sessionToken, setSessionToken }

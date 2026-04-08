@@ -53,7 +53,7 @@ export const getElevationService =
               // Create instance first, then assign
               const serviceInstance = new window.google.maps.ElevationService()
               elevatorInstance = serviceInstance
-              logger.info('✅ Elevation service initialized after wait')
+              logger.debug('✅ Elevation service initialized after wait')
               resolve(serviceInstance) // Resolve with instance, not the variable
               return true
             } catch (error) {

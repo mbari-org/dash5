@@ -24,7 +24,7 @@ export function useElevator() {
     getElevationService()
       .then(() => {
         setElevationAvailable(true)
-        logger.info('👍 Elevation service ready')
+        logger.debug('👍 Elevation service ready')
       })
       .catch(() => {
         setElevationAvailable(false)
