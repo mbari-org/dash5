@@ -441,7 +441,7 @@ export const ScheduleSection: React.FC<ScheduleSectionProps> = ({
           className={clsx(
             'flex px-4 py-2 text-sm',
             scheduleStatus === 'running'
-              ? ScheduleCellBackgrounds.running
+              ? 'bg-violet-100'
               : ScheduleCellBackgrounds.paused
           )}
         >
@@ -457,7 +457,7 @@ export const ScheduleSection: React.FC<ScheduleSectionProps> = ({
         </div>
       )
     }
-    if (index === indexOfPastSchedule && hasPastSchedule) {
+    if (index === staticHeaderCellOffset && hasPastSchedule) {
       return (
         <div className="grid grid-cols-3 gap-2 px-4 py-2">
           <span className="flex flex-col">
