@@ -398,9 +398,6 @@ export const ScheduleSection: React.FC<ScheduleSectionProps> = ({
     scheduledTypes.includes(toScheduleCellStatus(v.status))
   )
 
-  const indexOfPastSchedule =
-    staticHeaderCellOffset + (scheduledCells?.length ?? 0)
-
   const historicCells = missions
     ?.filter((v) => !scheduledTypes.includes(toScheduleCellStatus(v.status)))
     .filter(
@@ -419,8 +416,19 @@ export const ScheduleSection: React.FC<ScheduleSectionProps> = ({
     )
 
   const results = [scheduledCells, historicCells].flat()
+  const hasSeparator =
+    (scheduledCells?.length ?? 0) > 0 && (historicCells?.length ?? 0) > 0
+  const staticSeparatorCellOffset = hasSeparator ? 1 : 0
+  const indexOfSeparator = hasSeparator
+    ? staticHeaderCellOffset +
+      staticFilterCellOffset +
+      (scheduledCells?.length ?? 0)
+    : -1
   const baseTotalCellCount =
-    results.length + staticFilterCellOffset + staticHeaderCellOffset
+    results.length +
+    staticFilterCellOffset +
+    staticHeaderCellOffset +
+    staticSeparatorCellOffset
   const { hasNextPage, isFetchingNextPage, fetchNextPage } = allLogsResponse
   const showLoadMore = !deploymentLogsOnly && !!hasNextPage
   const totalCellCount = baseTotalCellCount + (showLoadMore ? 1 : 0)
@@ -527,9 +535,26 @@ export const ScheduleSection: React.FC<ScheduleSectionProps> = ({
         />
       )
     }
-    // Filter bar is always at staticHeaderCellOffset, so all mission cells
-    // need the full combined offset subtracted.
-    const indexOffset = -(staticHeaderCellOffset + staticFilterCellOffset)
+    if (index === indexOfSeparator) {
+      return (
+        <div className="flex items-center gap-2 px-4 py-1.5">
+          <div className="h-px flex-1 bg-stone-200" />
+          <span className="text-[10px] font-semibold uppercase tracking-widest text-stone-400">
+            Completed &amp; Earlier
+          </span>
+          <div className="h-px flex-1 bg-stone-200" />
+        </div>
+      )
+    }
+    // Header, filter bar, and separator are offsets — subtract all to reach
+    // the correct results[] index.
+    const indexOffset = -(
+      staticHeaderCellOffset +
+      staticFilterCellOffset +
+      (index > indexOfSeparator && indexOfSeparator >= 0
+        ? staticSeparatorCellOffset
+        : 0)
+    )
     const mission = results[index + indexOffset]
     const { name: missionName, parameters: missionParams } =
       parseMissionCommand(mission?.event.data ?? '')
