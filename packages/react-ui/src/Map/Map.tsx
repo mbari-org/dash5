@@ -507,6 +507,23 @@ const Map = React.forwardRef<L.Map, MapProps>(
       []
     )
 
+    // Suppress the GoogleMutant "_controlCorners" crash that fires when the
+    // map is removed while a pending Google Maps API callback still holds a
+    // reference to the layer. The existing map.fire() patch only covers events
+    // fired on the map itself; this catches the same error fired on the layer.
+    useEffect(() => {
+      const handleError = (e: ErrorEvent) => {
+        if (
+          e.error instanceof TypeError &&
+          e.message?.includes('_controlCorners')
+        ) {
+          e.preventDefault()
+        }
+      }
+      window.addEventListener('error', handleError)
+      return () => window.removeEventListener('error', handleError)
+    }, [])
+
     // Wait for map to be fully initialized before setting mapReady to true
     useEffect(() => {
       const timer = setTimeout(() => {
