@@ -598,7 +598,7 @@ export const ScheduleSection: React.FC<ScheduleSectionProps> = ({
             const timeStr = isToday
               ? scheduledDt.toFormat('H:mm')
               : scheduledDt.toFormat('MMM d, H:mm')
-            return `Queued for ${timeStr} UTC`
+            return `Sent and Queued for ${timeStr} UTC`
           }
 
           const relative = dt.toRelative()
