@@ -1,7 +1,7 @@
 import { OverviewToolbar } from '@mbari/react-ui'
 import { NextPage } from 'next'
 import Layout from '../components/Layout'
-import React, { useCallback, useEffect, useRef, useState } from 'react'
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import dynamic from 'next/dynamic'
 import VehicleDeploymentDropdown from '../components/VehicleDeploymentDropdown'
 import VehicleList from '../components/VehicleList'
@@ -9,12 +9,16 @@ import useTrackedVehicles from '../lib/useTrackedVehicles'
 import { SharedPathContextProvider } from '../components/SharedPathContextProvider'
 import { SelectedPlatformsProvider } from '../components/SelectedPlatformContext'
 import { SelectedStationsProvider } from '../components/SelectedStationContext'
+import { MapCameraProvider } from '../components/MapCameraContext'
+import { SelectedPolygonsProvider } from '../components/SelectedPolygonsContext'
+import { SelectedTileLayersProvider } from '../components/SelectedTileLayersContext'
+import { SelectedKmlLayersProvider } from '../components/SelectedKmlLayersContext'
 import { useRouter } from 'next/router'
 import useGlobalModalId from '../lib/useGlobalModalId'
 import useGoogleElevator from '../lib/useGoogleElevator'
 import { Allotment, LayoutPriority } from 'allotment'
 import { useGoogleMaps } from '../lib/useGoogleMaps'
-import { VPosDetail } from '@mbari/api-client'
+import { VPosDetail, useStations } from '@mbari/api-client'
 import 'allotment/dist/style.css'
 import { StationsListModal } from '../components/StationsListModal'
 import { MapLayersListModal } from '../components/MapLayersListModal'
@@ -47,6 +51,21 @@ const VehiclePath = dynamic(() => import('../components/VehiclePath'), {
 })
 
 const StationMarker = dynamic(() => import('../components/StationMarker'), {
+  ssr: false,
+})
+
+const MapFlyTo = dynamic(() => import('../components/MapFlyTo'), { ssr: false })
+
+const PolygonLayers = dynamic(() => import('../components/PolygonLayers'), {
+  ssr: false,
+})
+
+const TileLayerOverlays = dynamic(
+  () => import('../components/TileLayerOverlays'),
+  { ssr: false }
+)
+
+const KmlLayers = dynamic(() => import('../components/KmlLayers'), {
   ssr: false,
 })
 
@@ -109,7 +128,23 @@ const OverViewMap: React.FC<{
   const [viewMode, setViewMode] = useState<'center' | 'bounds' | null>(null)
   const [selectedMarkerId, setSelectedMarkerId] = useState<string | null>(null)
   const [defaultMarkerColor, setDefaultMarkerColor] = useState<string>('red')
-  const { selectedStations } = useSelectedStations()
+  const { selectedStations, highlightedStationName } = useSelectedStations()
+  const { data: allStations } = useStations()
+  const spotlightOnlyCoords = useMemo(() => {
+    if (!highlightedStationName) return null
+    if (selectedStations?.some((s) => s.name === highlightedStationName))
+      return null
+    const found = allStations?.find((s) => s.name === highlightedStationName)
+    if (!found) return null
+    const coords = found.geojson?.geometry?.coordinates
+    if (
+      !coords ||
+      !Number.isFinite(coords[1] as number) ||
+      !Number.isFinite(coords[0] as number)
+    )
+      return null
+    return { lat: coords[1] as number, lon: coords[0] as number }
+  }, [highlightedStationName, selectedStations, allStations])
   const [layersModalPosition, setLayersModalPosition] = useState({
     top: 0,
     left: 0,
@@ -717,9 +752,24 @@ const OverViewMap: React.FC<{
                 name={station.name}
                 lat={lat}
                 lng={lng}
+                color={station.geojson.properties?.color}
+                isHighlighted={highlightedStationName === station.name}
               />
             )
           })}
+          {spotlightOnlyCoords && (
+            <StationMarker
+              key={`spotlight-${highlightedStationName}`}
+              name={highlightedStationName ?? ''}
+              lat={spotlightOnlyCoords.lat}
+              lng={spotlightOnlyCoords.lon}
+              isHighlighted={true}
+            />
+          )}
+          <PolygonLayers />
+          <TileLayerOverlays />
+          <KmlLayers />
+          <MapFlyTo />
         </Map>
         <MapRefreshButton
           onClick={refreshAll}
@@ -802,80 +852,95 @@ const OverviewPage: NextPage = () => {
     <SharedPathContextProvider>
       <SelectedPlatformsProvider>
         <SelectedStationsProvider>
-          <div className={styles.content}>
-            <Layout>
-              {trackedVehicles?.length ? (
-                <>
-                  <OverviewToolbar deployment={{ name: 'Overview', id: '0' }} />
+          <MapCameraProvider>
+            <SelectedPolygonsProvider>
+              <SelectedTileLayersProvider>
+                <SelectedKmlLayersProvider>
+                  <div className={styles.content}>
+                    <Layout>
+                      {trackedVehicles?.length ? (
+                        <>
+                          <OverviewToolbar
+                            deployment={{ name: 'Overview', id: '0' }}
+                          />
 
-                  <div
-                    className={styles.content}
-                    data-testid="vehicle-dashboard"
-                  >
-                    {/* Single map instance: render one layout to avoid duplicate controls */}
-                    {isDesktop ? (
-                      <div className="h-full w-full">
-                        <Allotment
-                          separator
-                          snap
-                          defaultSizes={[75, 25]}
-                          proportionalLayout
-                        >
-                          <Allotment.Pane>{primarySection}</Allotment.Pane>
-                          <Allotment.Pane priority={LayoutPriority.High}>
-                            {secondarySection}
-                          </Allotment.Pane>
-                        </Allotment>
-                      </div>
-                    ) : (
-                      <div className="flex h-full w-full flex-col">
-                        <div className="flex shrink-0 items-center gap-2 border-b border-slate-200 bg-white px-4 py-2">
-                          <button
-                            type="button"
-                            onClick={() => setMobileView('map')}
-                            className={
-                              mobileView === 'map'
-                                ? 'rounded bg-secondary-300/60 px-3 py-1 text-sm font-bold text-black'
-                                : 'rounded px-3 py-1 text-sm font-bold text-slate-600'
-                            }
+                          <div
+                            className={styles.content}
+                            data-testid="vehicle-dashboard"
                           >
-                            Map
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() => setMobileView('list')}
-                            className={
-                              mobileView === 'list'
-                                ? 'rounded bg-secondary-300/60 px-3 py-1 text-sm font-bold text-black'
-                                : 'rounded px-3 py-1 text-sm font-bold text-slate-600'
-                            }
-                          >
-                            Vehicles
-                          </button>
-                        </div>
+                            {/* Single map instance: render one layout to avoid duplicate controls */}
+                            {isDesktop ? (
+                              <div className="h-full w-full">
+                                <Allotment
+                                  separator
+                                  snap
+                                  defaultSizes={[75, 25]}
+                                  proportionalLayout
+                                >
+                                  <Allotment.Pane>
+                                    {primarySection}
+                                  </Allotment.Pane>
+                                  <Allotment.Pane
+                                    priority={LayoutPriority.High}
+                                  >
+                                    {secondarySection}
+                                  </Allotment.Pane>
+                                </Allotment>
+                              </div>
+                            ) : (
+                              <div className="flex h-full w-full flex-col">
+                                <div className="flex shrink-0 items-center gap-2 border-b border-slate-200 bg-white px-4 py-2">
+                                  <button
+                                    type="button"
+                                    onClick={() => setMobileView('map')}
+                                    className={
+                                      mobileView === 'map'
+                                        ? 'rounded bg-secondary-300/60 px-3 py-1 text-sm font-bold text-black'
+                                        : 'rounded px-3 py-1 text-sm font-bold text-slate-600'
+                                    }
+                                  >
+                                    Map
+                                  </button>
+                                  <button
+                                    type="button"
+                                    onClick={() => setMobileView('list')}
+                                    className={
+                                      mobileView === 'list'
+                                        ? 'rounded bg-secondary-300/60 px-3 py-1 text-sm font-bold text-black'
+                                        : 'rounded px-3 py-1 text-sm font-bold text-slate-600'
+                                    }
+                                  >
+                                    Vehicles
+                                  </button>
+                                </div>
 
-                        <div className="min-h-0 flex-1 overflow-hidden">
-                          {mobileView === 'map'
-                            ? primarySection
-                            : secondarySection}
-                        </div>
-                      </div>
-                    )}
+                                <div className="min-h-0 flex-1 overflow-hidden">
+                                  {mobileView === 'map'
+                                    ? primarySection
+                                    : secondarySection}
+                                </div>
+                              </div>
+                            )}
+                          </div>
+                        </>
+                      ) : (
+                        <>
+                          <p className="p-6 text-xl" aria-label="get started">
+                            To get started you must add at least one vehicle to
+                            track.
+                          </p>
+                          <VehicleDeploymentDropdown
+                            className="mx-6 max-h-96 w-96"
+                            scrollable
+                          />
+                        </>
+                      )}
+                    </Layout>
                   </div>
-                </>
-              ) : (
-                <>
-                  <p className="p-6 text-xl" aria-label="get started">
-                    To get started you must add at least one vehicle to track.
-                  </p>
-                  <VehicleDeploymentDropdown
-                    className="mx-6 max-h-96 w-96"
-                    scrollable
-                  />
-                </>
-              )}
-            </Layout>
-          </div>
+                </SelectedKmlLayersProvider>
+              </SelectedTileLayersProvider>
+            </SelectedPolygonsProvider>
+          </MapCameraProvider>
         </SelectedStationsProvider>
       </SelectedPlatformsProvider>
     </SharedPathContextProvider>
