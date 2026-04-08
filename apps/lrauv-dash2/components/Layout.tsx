@@ -32,6 +32,7 @@ import { useTethysSubscription } from '../lib/useWebSocketListeners'
 import { HexColorPicker } from 'react-colorful'
 import { useCookies } from 'react-cookie'
 import EmailNotificationsModal from './EmailNotificationsModal'
+import ScheduleEventDetailsModal from './ScheduleEventDetailsModal'
 
 const Layout: React.FC<{ children?: React.ReactNode }> = ({ children }) => {
   const [showLogin, setLogin] = useState(false)
@@ -221,6 +222,9 @@ const Layout: React.FC<{ children?: React.ReactNode }> = ({ children }) => {
         requireAuthentication(
           <EmailNotificationsModal onClose={setModal(null)} />
         )}
+      {globalModalId?.id === 'scheduleEventDetails' && (
+        <ScheduleEventDetailsModal onClose={setModal(null)} />
+      )}
       {/* {globalModalId?.id === 'color' && vehicleName.length > 0 ? (
         <ColorModal name={trackedVehicles[index]} color={color} />
       ) : null} */}
