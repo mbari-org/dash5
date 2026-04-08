@@ -19,15 +19,16 @@ export const formatCompactDuration = (
   // For durations longer than 6 days with no cap, use human-readable units.
   // When maxDays is set, stay in the d/h/m format so the cap controls output shape.
   if (maxDays === undefined && daysTotal > 6) {
-    const { years, months, days } = later
-      .diff(earlier, ['years', 'months', 'days'])
+    const { years, months, days, hours } = later
+      .diff(earlier, ['years', 'months', 'days', 'hours'])
       .toObject()
     const y = Math.trunc(years ?? 0)
     const mo = Math.trunc(months ?? 0)
     const d = Math.trunc(days ?? 0)
+    const h = Math.trunc(hours ?? 0)
     if (y > 0) return mo > 0 ? `${y}y ${mo}mo` : `${y}y`
     if (mo > 0) return d > 0 ? `${mo}mo ${d}d` : `${mo}mo`
-    return `${d}d`
+    return `${d + (h >= 12 ? 1 : 0)}d`
   }
 
   const diff = later.diff(earlier, ['days', 'hours', 'minutes']).toObject()
