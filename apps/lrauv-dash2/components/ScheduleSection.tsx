@@ -506,10 +506,18 @@ export const ScheduleSection: React.FC<ScheduleSectionProps> = ({
           if (mission.event.unixTime == null) return ''
           const dt = DateTime.fromMillis(mission.event.unixTime)
           const elapsed = formatCompactDuration(dt, now)
-          const relativePart = dt <= now ? ` (${elapsed} ago)` : ''
-          return `${isMission ? 'Started' : 'Ran'} ${dt.toFormat(
-            'H:mm'
-          )}${relativePart}`
+          const labelPrefix =
+            mission.status === 'pending'
+              ? isMission
+                ? 'Queued'
+                : 'Scheduled'
+              : mission.status === 'running'
+              ? 'Started'
+              : 'Ran'
+          const showRelativePart =
+            labelPrefix !== 'Queued' && labelPrefix !== 'Scheduled' && dt <= now
+          const relativePart = showRelativePart ? ` (${elapsed} ago)` : ''
+          return `${labelPrefix} ${dt.toFormat('H:mm')}${relativePart}`
         })()}
         description2={
           mission.status === 'running' || mission.status === 'pending'
