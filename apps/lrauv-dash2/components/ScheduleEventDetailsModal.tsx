@@ -237,8 +237,7 @@ export const ScheduleEventDetailsModal: React.FC<
   const segments = splitCommandSegments(event.eventData || event.eventText)
   const cleanLabel =
     (event.label || 'Unknown')
-      .replace(/\d{8}}T\d{4}\s*/g, '')
-      .replace(/\d{8}T\d{2,4}\s*/g, '')
+      .replace(/\d{8}}?T\d{2,4}\s*/g, '')
       .replace(/^["'\s]+/, '')
       .replace(/^load\s+/i, '')
       .replace(/\.(tl|xml|py)$/i, '')

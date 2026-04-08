@@ -507,7 +507,7 @@ export const ScheduleSection: React.FC<ScheduleSectionProps> = ({
       ? 'mission'
       : 'command'
     const rawText = mission?.event.data ?? mission?.event.text ?? ''
-    const schedDateMatch = rawText.match(/sched\s+(\d{8}}T\d{4}|\d{8}T\d{2,4})/)
+    const schedDateMatch = rawText.match(/sched\s+(\d{8}}?T\d{2,4})/)
     const scheduleDate = rawText.match(/sched\s+asap/i)
       ? 'asap'
       : schedDateMatch
@@ -531,9 +531,17 @@ export const ScheduleSection: React.FC<ScheduleSectionProps> = ({
           const dt = DateTime.fromMillis(mission.event.unixTime)
           const relative = dt.toRelative()
           const relativePart = relative ? ` (${relative})` : ''
-          return `${isMission ? 'Started' : 'Ran'} ${dt.toFormat(
-            'H:mm'
-          )}${relativePart}`
+          const verb =
+            cellStatus === 'pending'
+              ? isMission
+                ? 'Scheduled'
+                : 'Queued'
+              : cellStatus === 'running'
+              ? 'Started'
+              : isMission
+              ? 'Started'
+              : 'Ran'
+          return `${verb} ${dt.toFormat('H:mm')}${relativePart}`
         })()}
         description2={
           cellStatus === 'running' || cellStatus === 'pending'
@@ -588,8 +596,8 @@ export const ScheduleSection: React.FC<ScheduleSectionProps> = ({
 
     if (commandType === 'mission' || isMission) {
       const missionPath =
-        event?.data?.match(/[A-Za-z0-9_/]+\.(?:xml|tl)/)?.[0] ??
-        event?.text?.match(/[A-Za-z0-9_/]+\.(?:xml|tl)/)?.[0] ??
+        event?.data?.match(/[A-Za-z0-9_/.-]+\.(?:xml|tl)/i)?.[0] ??
+        event?.text?.match(/[A-Za-z0-9_/.-]+\.(?:xml|tl)/i)?.[0] ??
         ''
       setGlobalModalId({
         id: 'newMission',
