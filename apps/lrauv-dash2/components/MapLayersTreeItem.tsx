@@ -63,6 +63,12 @@ export const TreeItem: React.FC<TreeItemProps> = ({
 }) => {
   const hasChildren = React.Children.count(children) > 0
 
+  // Only mount children after the first expansion — avoids rendering large
+  // lists (e.g., hundreds of stations) while collapsed. Once mounted, they
+  // stay in the DOM so the CSS grid collapse animation can run smoothly.
+  const hasEverExpanded = React.useRef(isExpanded)
+  if (isExpanded) hasEverExpanded.current = true
+
   return (
     <article className="tree-item">
       <div className="flex items-center py-2 pl-2">
@@ -130,13 +136,13 @@ export const TreeItem: React.FC<TreeItemProps> = ({
             >
               <button
                 type="button"
+                onMouseEnter={onMouseEnterStar}
+                onMouseLeave={onMouseLeaveStar}
                 onClick={(e) => {
                   e.preventDefault()
                   e.stopPropagation()
                   onStarClick()
                 }}
-                onMouseEnter={onMouseEnterStar}
-                onMouseLeave={onMouseLeaveStar}
                 className="mr-1 focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-blue-500"
                 aria-label={isStarred ? 'Unstar station' : 'Star station'}
                 aria-pressed={isStarred}
@@ -206,12 +212,14 @@ export const TreeItem: React.FC<TreeItemProps> = ({
         </label>
       </div>
 
-      {hasChildren && (
+      {hasChildren && hasEverExpanded.current && (
         <div
           className={clsx(
             'grid transition-[grid-template-rows] duration-200 ease-in-out motion-reduce:transition-none',
             isExpanded ? 'grid-rows-[1fr]' : 'grid-rows-[0fr]'
           )}
+          aria-hidden={!isExpanded ? 'true' : undefined}
+          {...(!isExpanded ? { inert: '' } : {})}
         >
           <ul className="children-container relative ml-[10px] overflow-hidden pl-[12px]">
             {React.Children.toArray(children).map((child, idx, arr) => {

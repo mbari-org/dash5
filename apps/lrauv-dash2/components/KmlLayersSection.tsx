@@ -41,9 +41,7 @@ export const KmlLayersSection: React.FC<KmlLayersSectionProps> = ({
   return (
     <TreeItem
       label="KML Layers"
-      isExpanded={
-        isFiltering ? filteredKmlLayers.length > 0 : expandedSections.kmlLayers
-      }
+      isExpanded={expandedSections.kmlLayers}
       isChecked={allSelected}
       onToggleExpand={() => toggleExpanded('kmlLayers')}
       onToggleCheck={

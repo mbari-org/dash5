@@ -32,9 +32,7 @@ export const MarkersLayerSection: React.FC<MarkersLayerSectionProps> = ({
   return (
     <TreeItem
       label="Markers"
-      isExpanded={
-        isFiltering ? filteredMarkers.length > 0 : expandedSections.markers
-      }
+      isExpanded={expandedSections.markers}
       isChecked={
         layerMarkers.length > 0 &&
         layerMarkers.every((marker) => marker.visible !== false)

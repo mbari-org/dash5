@@ -97,7 +97,7 @@ const StationMarker: React.FC<StationMarkerProps> = ({
           fillColor="transparent"
           color="white"
           fillOpacity={0}
-          weight={3}
+          weight={1}
           interactive={false}
         />
         <CircleMarker
@@ -106,7 +106,7 @@ const StationMarker: React.FC<StationMarkerProps> = ({
           color={markerColor}
           fillColor="transparent"
           fillOpacity={0}
-          weight={2}
+          weight={1}
         >
           {tooltip}
         </CircleMarker>
@@ -149,7 +149,7 @@ const StationMarker: React.FC<StationMarkerProps> = ({
         fillColor="transparent"
         color="white"
         fillOpacity={0}
-        weight={3}
+        weight={1}
         interactive={false}
       />
       <CircleMarker
@@ -158,7 +158,7 @@ const StationMarker: React.FC<StationMarkerProps> = ({
         fillColor="transparent"
         color={markerColor}
         fillOpacity={0}
-        weight={2}
+        weight={1}
       >
         {tooltip}
       </CircleMarker>

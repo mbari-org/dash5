@@ -29,10 +29,17 @@ const KmlLayers: React.FC = () => {
       return
     }
 
+    const selectedLayerNames = new Set(selectedKmlLayers)
+
+    // Immediately drop any layers that were just unchecked so they stop
+    // rendering without waiting for the async fetch to complete.
+    setKmlData((current) =>
+      current.filter((k) => selectedLayerNames.has(k.name))
+    )
+
     const toFetch = kmlLayerList.filter(
       (k) =>
-        selectedKmlLayers.includes(k.name) &&
-        k.path.toLowerCase().endsWith('.kml')
+        selectedLayerNames.has(k.name) && k.path.toLowerCase().endsWith('.kml')
     )
 
     let cancelled = false

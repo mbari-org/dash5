@@ -1,7 +1,7 @@
 import { OverviewToolbar } from '@mbari/react-ui'
 import { NextPage } from 'next'
 import Layout from '../components/Layout'
-import React, { useCallback, useEffect, useRef, useState } from 'react'
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import dynamic from 'next/dynamic'
 import VehicleDeploymentDropdown from '../components/VehicleDeploymentDropdown'
 import VehicleList from '../components/VehicleList'
@@ -18,7 +18,7 @@ import useGlobalModalId from '../lib/useGlobalModalId'
 import useGoogleElevator from '../lib/useGoogleElevator'
 import { Allotment, LayoutPriority } from 'allotment'
 import { useGoogleMaps } from '../lib/useGoogleMaps'
-import { VPosDetail } from '@mbari/api-client'
+import { VPosDetail, useStations } from '@mbari/api-client'
 import 'allotment/dist/style.css'
 import { StationsListModal } from '../components/StationsListModal'
 import { MapLayersListModal } from '../components/MapLayersListModal'
@@ -128,7 +128,23 @@ const OverViewMap: React.FC<{
   const [viewMode, setViewMode] = useState<'center' | 'bounds' | null>(null)
   const [selectedMarkerId, setSelectedMarkerId] = useState<string | null>(null)
   const [defaultMarkerColor, setDefaultMarkerColor] = useState<string>('red')
-  const { selectedStations } = useSelectedStations()
+  const { selectedStations, highlightedStationName } = useSelectedStations()
+  const { data: allStations } = useStations()
+  const spotlightOnlyCoords = useMemo(() => {
+    if (!highlightedStationName) return null
+    if (selectedStations?.some((s) => s.name === highlightedStationName))
+      return null
+    const found = allStations?.find((s) => s.name === highlightedStationName)
+    if (!found) return null
+    const coords = found.geojson?.geometry?.coordinates
+    if (
+      !coords ||
+      !Number.isFinite(coords[1] as number) ||
+      !Number.isFinite(coords[0] as number)
+    )
+      return null
+    return { lat: coords[1] as number, lon: coords[0] as number }
+  }, [highlightedStationName, selectedStations, allStations])
   const [layersModalPosition, setLayersModalPosition] = useState({
     top: 0,
     left: 0,
@@ -737,9 +753,19 @@ const OverViewMap: React.FC<{
                 lat={lat}
                 lng={lng}
                 color={station.geojson.properties?.color}
+                isHighlighted={highlightedStationName === station.name}
               />
             )
           })}
+          {spotlightOnlyCoords && (
+            <StationMarker
+              key={`spotlight-${highlightedStationName}`}
+              name={highlightedStationName ?? ''}
+              lat={spotlightOnlyCoords.lat}
+              lng={spotlightOnlyCoords.lon}
+              isHighlighted={true}
+            />
+          )}
           <PolygonLayers />
           <TileLayerOverlays />
           <KmlLayers />

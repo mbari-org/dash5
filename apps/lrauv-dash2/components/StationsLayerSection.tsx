@@ -60,9 +60,7 @@ export const StationsLayerSection: React.FC<StationsLayerSectionProps> = ({
   return (
     <TreeItem
       label="Stations"
-      isExpanded={
-        isFiltering ? filteredStations.length > 0 : expandedSections.stations
-      }
+      isExpanded={expandedSections.stations}
       isChecked={
         validStations.length > 0 &&
         selectedStations.filter((s) =>
@@ -120,11 +118,11 @@ export const StationsLayerSection: React.FC<StationsLayerSectionProps> = ({
               toggleStarStation(station.name)
             }}
             onMouseEnterStar={() => {
-              if (starredSet.has(station.name)) {
-                setHighlightedStationName(station.name)
-              }
+              setHighlightedStationName(station.name)
             }}
-            onMouseLeaveStar={() => setHighlightedStationName(null)}
+            onMouseLeaveStar={() => {
+              setHighlightedStationName(null)
+            }}
             onCenterClick={
               hasValidCoords
                 ? () =>

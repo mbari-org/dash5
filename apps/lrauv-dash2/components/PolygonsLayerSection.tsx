@@ -53,9 +53,7 @@ export const PolygonsLayerSection: React.FC<PolygonsLayerSectionProps> = ({
   return (
     <TreeItem
       label="Polygons"
-      isExpanded={
-        isFiltering ? filteredPolygons.length > 0 : expandedSections.polygons
-      }
+      isExpanded={expandedSections.polygons}
       isChecked={allPolygonsSelected}
       onToggleExpand={() => toggleExpanded('polygons')}
       onToggleCheck={

@@ -126,6 +126,9 @@ const TileLayerOverlays: React.FC = () => {
 
           if (t.wms) {
             const layers = String(opts.layers ?? '')
+
+            // A WMS request without a LAYERS param is invalid — skip rendering.
+            if (!layers.trim()) return null
             const format = String(opts.format ?? 'image/png')
             const transparent = toTransparent(opts.transparent)
             const version = String(opts.version ?? '1.1.1')

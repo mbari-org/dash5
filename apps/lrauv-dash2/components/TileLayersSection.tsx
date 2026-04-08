@@ -5,6 +5,8 @@ import { TreeItem } from './MapLayersTreeItem'
 interface TileLayerItem {
   name: string
   urlTemplate?: string
+  wms?: boolean
+  options?: Record<string, unknown>
 }
 
 interface TileLayersSectionProps {
@@ -31,7 +33,10 @@ export const TileLayersSection: React.FC<TileLayersSectionProps> = ({
   if (isFiltering && filteredTileLayers.length === 0) return null
 
   const renderableTileLayers = (tileLayers ?? []).filter(
-    (t) => t.urlTemplate && t.urlTemplate.trim() !== ''
+    (t) =>
+      t.urlTemplate &&
+      t.urlTemplate.trim() !== '' &&
+      (!t.wms || String(t.options?.layers ?? '').trim() !== '')
   )
   const renderableNames = renderableTileLayers.map((t) => t.name)
   const allTilesSelected =
@@ -41,11 +46,7 @@ export const TileLayersSection: React.FC<TileLayersSectionProps> = ({
   return (
     <TreeItem
       label="TILE Layers"
-      isExpanded={
-        isFiltering
-          ? filteredTileLayers.length > 0
-          : expandedSections.tileLayers
-      }
+      isExpanded={expandedSections.tileLayers}
       isChecked={allTilesSelected}
       onToggleExpand={() => toggleExpanded('tileLayers')}
       onToggleCheck={
@@ -64,7 +65,16 @@ export const TileLayersSection: React.FC<TileLayersSectionProps> = ({
       iconColor="#0ea5e9"
     >
       {filteredTileLayers.map((tile) => {
-        const hasValidUrl = tile.urlTemplate && tile.urlTemplate.trim() !== ''
+        const hasValidUrl = !!(
+          tile.urlTemplate &&
+          tile.urlTemplate.trim() !== '' &&
+          (!tile.wms || String(tile.options?.layers ?? '').trim() !== '')
+        )
+        const disabledTitle = !tile.urlTemplate?.trim()
+          ? 'Layer has no URL configured'
+          : tile.wms && !String(tile.options?.layers ?? '').trim()
+          ? 'WMS layer has no layers configured'
+          : undefined
         return (
           <TreeItem
             key={`tile-${tile.name}`}
@@ -82,9 +92,7 @@ export const TileLayersSection: React.FC<TileLayersSectionProps> = ({
                 : undefined
             }
             disabled={!hasValidUrl}
-            disabledTitle={
-              !hasValidUrl ? 'Layer has no URL configured' : undefined
-            }
+            disabledTitle={disabledTitle}
           />
         )
       })}

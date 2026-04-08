@@ -405,6 +405,28 @@ export const useMapLayersModal = ({
     return list
   }, [kmlLayers, showSelectedOnly, q, selectedKmlLayers])
 
+  // When filtering becomes active, auto-expand any section that has results so
+  // users immediately see matches. The caret still works normally — users can
+  // collapse or re-expand sections while filtering is active.
+  useEffect(() => {
+    if (!isFiltering) return
+    setExpandedSections((prev) => ({
+      ...prev,
+      markers: filteredMarkers.length > 0 ? true : prev.markers,
+      stations: filteredStations.length > 0 ? true : prev.stations,
+      polygons: filteredPolygons.length > 0 ? true : prev.polygons,
+      tileLayers: filteredTileLayers.length > 0 ? true : prev.tileLayers,
+      kmlLayers: filteredKmlLayers.length > 0 ? true : prev.kmlLayers,
+    }))
+  }, [
+    isFiltering,
+    filteredMarkers.length,
+    filteredStations.length,
+    filteredPolygons.length,
+    filteredTileLayers.length,
+    filteredKmlLayers.length,
+  ])
+
   return {
     // refs
     modalRef,

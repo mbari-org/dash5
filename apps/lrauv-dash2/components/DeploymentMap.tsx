@@ -3,7 +3,7 @@ import { useRouter } from 'next/router'
 import React, { useCallback, useState, useRef, useEffect, useMemo } from 'react'
 import { useManagedWaypoints } from '@mbari/react-ui'
 import useGoogleElevator from '../lib/useGoogleElevator'
-import { VPosDetail } from '@mbari/api-client'
+import { VPosDetail, useStations } from '@mbari/api-client'
 import { MapLayersListModal } from '../components/MapLayersListModal'
 import { useSelectedStations } from './SelectedStationContext'
 import { useMarkers } from './MarkerContext'
@@ -171,6 +171,25 @@ const DeploymentMap: React.FC<DeploymentMapProps> = ({
   const [showVehicleColors, setShowVehicleColors] = useState(false)
   const [showPlatformsModal, setShowPlatformsModal] = useState(false)
   const { selectedStations, highlightedStationName } = useSelectedStations()
+  const { data: allStations } = useStations()
+
+  // When a starred-but-unselected station is hovered, find its coords so we
+  // can render the spotlight rings even though it has no StationMarker.
+  const spotlightOnlyCoords = useMemo(() => {
+    if (!highlightedStationName) return null
+    if (selectedStations.some((s) => s.name === highlightedStationName))
+      return null
+    const found = allStations?.find((s) => s.name === highlightedStationName)
+    if (!found) return null
+    const coords = found.geojson?.geometry?.coordinates
+    if (
+      !coords ||
+      !Number.isFinite(coords[1] as number) ||
+      !Number.isFinite(coords[0] as number)
+    )
+      return null
+    return { lat: coords[1] as number, lon: coords[0] as number }
+  }, [highlightedStationName, selectedStations, allStations])
   const [colorModalOpen, setColorModalOpen] = useState(false)
   const [waypointFitTrigger, setWaypointFitTrigger] = useState(0)
   const prevFocusedWaypointIndexRef = useRef<number | null | undefined>(
@@ -733,6 +752,15 @@ const DeploymentMap: React.FC<DeploymentMapProps> = ({
               />
             )
           })}
+          {spotlightOnlyCoords && (
+            <StationMarker
+              key={`spotlight-${highlightedStationName}`}
+              name={highlightedStationName ?? ''}
+              lat={spotlightOnlyCoords.lat}
+              lng={spotlightOnlyCoords.lon}
+              isHighlighted={true}
+            />
+          )}
           <PolygonLayers />
           <TileLayerOverlays />
           <KmlLayers />
