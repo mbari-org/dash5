@@ -67,6 +67,96 @@ describe('missionNameFromEventData', () => {
   test('returns empty string for empty string input', () => {
     expect(missionNameFromEventData('')).toBe('')
   })
+
+  test('extracts mission name from load command without extension', () => {
+    expect(missionNameFromEventData('load Maintenance/calibration;run')).toBe(
+      'calibration'
+    )
+  })
+
+  test('extracts mission name from path with dashes and dots in filename', () => {
+    expect(
+      missionNameFromEventData('load Science/mbari-echo-5.25.tl;run')
+    ).toBe('mbari-echo-5.25')
+  })
+
+  test('extracts mission name from directory with dashes', () => {
+    expect(missionNameFromEventData('load Long-Range/default.tl;run')).toBe(
+      'default'
+    )
+  })
+})
+
+describe('normalizeMissionName', () => {
+  test('normalizes started-mission path names for matching', () => {
+    expect(normalizeMissionName('Maintenance/calibration')).toBe('calibration')
+  })
+
+  test('normalizes extension and case', () => {
+    expect(normalizeMissionName('Science/Default.TL')).toBe('default')
+  })
+
+  test('returns empty string for missing values', () => {
+    expect(normalizeMissionName(undefined)).toBe('')
+  })
+})
+
+describe('normalizeMissionPath', () => {
+  test('normalizes path and removes extension', () => {
+    expect(normalizeMissionPath('Science/Default.TL')).toBe('science/default')
+  })
+
+  test('returns empty string for missing values', () => {
+    expect(normalizeMissionPath(undefined)).toBe('')
+  })
+})
+
+describe('missionPathFromEventData', () => {
+  test('extracts full mission path from load with extension', () => {
+    expect(missionPathFromEventData('load Science/default.tl;run')).toBe(
+      'science/default'
+    )
+  })
+
+  test('extracts full path for mission with dashes and dots in filename', () => {
+    expect(
+      missionPathFromEventData('load Science/mbari-echo-5.25.tl;run')
+    ).toBe('science/mbari-echo-5.25')
+  })
+
+  test('extracts full mission path from load without extension', () => {
+    expect(missionPathFromEventData('load Maintenance/calibration;run')).toBe(
+      'maintenance/calibration'
+    )
+  })
+
+  test('returns empty string when no mission path is present', () => {
+    expect(missionPathFromEventData('sched stop')).toBe('')
+  })
+})
+
+describe('rawMissionPathFromEventData', () => {
+  test('preserves original case and extension', () => {
+    expect(
+      rawMissionPathFromEventData('load Science/profile_station.tl;run')
+    ).toBe('Science/profile_station.tl')
+  })
+
+  test('preserves mixed-case directory', () => {
+    expect(rawMissionPathFromEventData('load Long-Range/Default.xml;run')).toBe(
+      'Long-Range/Default.xml'
+    )
+  })
+
+  test('returns extensionless path as-is when no extension present', () => {
+    expect(
+      rawMissionPathFromEventData('load Maintenance/calibration;run')
+    ).toBe('Maintenance/calibration')
+  })
+
+  test('returns empty string when no mission path present', () => {
+    expect(rawMissionPathFromEventData('stop')).toBe('')
+  })
 })
 
 describe('normalizeMissionName', () => {

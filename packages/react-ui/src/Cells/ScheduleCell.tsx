@@ -1,5 +1,6 @@
 import React, { useRef } from 'react'
 import clsx from 'clsx'
+import Tippy from '@tippyjs/react'
 import { swallow } from '@mbari/utils'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import {
@@ -8,6 +9,8 @@ import {
   faTimes,
   faPauseCircle,
   faPersonRunning,
+  faStarOfLife,
+  faPaperPlane,
 } from '@fortawesome/free-solid-svg-icons'
 import { faClock } from '@fortawesome/free-regular-svg-icons'
 import { IconProp } from '@fortawesome/fontawesome-svg-core'
@@ -19,6 +22,7 @@ export type ScheduleCellStatus =
   | 'cancelled'
   | 'completed'
   | 'paused'
+  | 'sent'
 export interface ScheduleCellProps {
   className?: string
   style?: React.CSSProperties
@@ -33,6 +37,7 @@ export interface ScheduleCellProps {
   description: string
   description2?: string
   description3?: string
+  badge?: { text: string; tooltip?: string }
   onSelect: () => void
   onMoreClick: (
     id: {
@@ -61,10 +66,11 @@ const icons: { [key: string]: IconProp } = {
   cancelled: faTimes as IconProp,
   completed: faCheck as IconProp,
   paused: faPauseCircle as IconProp,
+  sent: faPaperPlane as IconProp,
 }
 
 export const ScheduleCellBackgrounds = {
-  running: 'bg-white hover:bg-stone-50',
+  running: 'bg-blue-50 hover:bg-stone-50',
   paused: 'bg-white hover:bg-stone-50',
   default: 'bg-white hover:bg-stone-50',
 }
@@ -79,6 +85,7 @@ export const ScheduleCell: React.FC<ScheduleCellProps> = ({
   description,
   description2,
   description3,
+  badge,
   eventId,
   commandType,
   onSelect,
@@ -134,12 +141,23 @@ export const ScheduleCell: React.FC<ScheduleCellProps> = ({
         <ul className={clsx(styles.detailsContainer, 'col-span-4')}>
           <li
             className={clsx(
-              'flex truncate',
+              'flex items-center gap-1 truncate',
               labelColor,
               isOpen ? styles.open : styles.closed
             )}
           >
-            {label}
+            <span className="truncate">{label}</span>
+            {badge && (
+              <Tippy
+                content={badge.tooltip ?? badge.text}
+                placement="top"
+                disabled={!badge.tooltip && !badge.text}
+              >
+                <span className="shrink-0 rounded-full bg-amber-100 px-2 py-0.5 text-xs font-semibold text-amber-700 ring-1 ring-amber-300">
+                  <FontAwesomeIcon icon={faStarOfLife} className="text-xs" />
+                </span>
+              </Tippy>
+            )}
           </li>
           <li
             className={clsx(

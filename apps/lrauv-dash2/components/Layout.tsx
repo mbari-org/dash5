@@ -226,6 +226,9 @@ const Layout: React.FC<{ children?: React.ReactNode }> = ({ children }) => {
         requireAuthentication(
           <EmailNotificationsModal onClose={setModal(null)} />
         )}
+      {globalModalId?.id === 'scheduleEventDetails' && (
+        <ScheduleEventDetailsModal onClose={setModal(null)} />
+      )}
       {/* {globalModalId?.id === 'color' && vehicleName.length > 0 ? (
         <ColorModal name={trackedVehicles[index]} color={color} />
       ) : null} */}
