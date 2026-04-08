@@ -548,9 +548,20 @@ export const ScheduleSection: React.FC<ScheduleSectionProps> = ({
       : schedDateMatch
       ? schedDateMatch[1]
       : undefined
-    const cellStatus = isParam
-      ? 'sent'
-      : toScheduleCellStatus(mission?.status ?? '')
+    const cellStatus: ScheduleCellStatus = (() => {
+      if (isParam) return 'sent'
+      const raw = toScheduleCellStatus(mission?.status ?? '')
+      // Non-mission, non-param commands with no future scheduled start
+      // are already dispatched — API 'pending'/'TBD' just means the vehicle
+      // hasn't confirmed yet. Treat as 'sent' so the modal and row agree.
+      if (
+        raw === 'pending' &&
+        !isMission &&
+        !(scheduleDate && scheduleDate !== 'asap')
+      )
+        return 'sent'
+      return raw
+    })()
 
     return mission ? (
       <ScheduleCell
