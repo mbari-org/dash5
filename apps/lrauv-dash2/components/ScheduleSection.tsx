@@ -158,7 +158,7 @@ export const ScheduleSection: React.FC<ScheduleSectionProps> = ({
 
   // Fetch recent mission-started events to derive real running/ended status.
   // The API returns newest-first: index 0 = currently running mission.
-  // Poll every 60s so running→ended transitions appear without a page refresh.
+  // Poll every 30s so running→ended transitions appear without a page refresh.
   const missionStartedResponse = useMissionStartedEvent(
     { vehicle: vehicleName, limit: 50 },
     { enabled: !!vehicleName, staleTime: 15 * 1000, refetchInterval: 30 * 1000 }
@@ -569,7 +569,6 @@ export const ScheduleSection: React.FC<ScheduleSectionProps> = ({
               })()}`
             : 'Ended: N/A (see Logs)'
         }
-        description3={isParam ? undefined : undefined}
         badge={
           isParam
             ? {

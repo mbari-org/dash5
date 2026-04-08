@@ -237,7 +237,9 @@ export const ScheduleEventDetailsModal: React.FC<
   const vehicleDeployment = [vehicleLabel, deploymentWithoutVehicle]
     .filter(Boolean)
     .join(' ')
-  const headerTitle = `${vehicleDeployment} - Mission Details`
+  const detailsTitle =
+    event.commandType === 'command' ? 'Command Details' : 'Mission Details'
+  const headerTitle = `${vehicleDeployment} - ${detailsTitle}`
   const segments = splitCommandSegments(event.eventData || event.eventText)
   const cleanLabel =
     (event.label || 'Unknown')
@@ -417,19 +419,26 @@ export const ScheduleEventDetailsModal: React.FC<
               </span>
             </div>
             <div className="mt-0.5">
-              {!['completed', 'cancelled'].includes(
+              {['completed', 'cancelled'].includes(
                 event.status?.toLowerCase() ?? ''
               ) ? (
+                <p className="font-medium">
+                  <TimeBlock unixTime={event.endedAt} />
+                </p>
+              ) : event.status?.toLowerCase() === 'sent' ? (
+                <span
+                  className={statusPillClass()}
+                  style={statusPillStyle('cancelled')}
+                >
+                  N/A
+                </span>
+              ) : (
                 <span
                   className={statusPillClass()}
                   style={statusPillStyle('pending')}
                 >
                   TBD
                 </span>
-              ) : (
-                <p className="font-medium">
-                  <TimeBlock unixTime={event.endedAt} />
-                </p>
               )}
             </div>
           </div>

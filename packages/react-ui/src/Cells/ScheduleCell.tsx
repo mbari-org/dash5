@@ -151,7 +151,7 @@ export const ScheduleCell: React.FC<ScheduleCellProps> = ({
               <Tippy
                 content={badge.tooltip ?? badge.text}
                 placement="top"
-                disabled={!badge.tooltip}
+                disabled={!badge.tooltip && !badge.text}
               >
                 <span className="shrink-0 rounded-full bg-amber-100 px-2 py-0.5 text-xs font-semibold text-amber-700 ring-1 ring-amber-300">
                   <FontAwesomeIcon icon={faStarOfLife} className="text-xs" />
