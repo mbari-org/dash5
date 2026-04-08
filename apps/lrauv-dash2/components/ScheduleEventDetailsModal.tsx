@@ -564,6 +564,14 @@ export const ScheduleEventDetailsModal: React.FC<
         <div>
           <p className="text-sm uppercase tracking-wide text-stone-500">
             Summary Parameters
+            {event.isParamUpdate && (
+              <span
+                className="ml-2 text-xs normal-case italic"
+                style={{ color: '#b45309' }}
+              >
+                (config update for associated mission)
+              </span>
+            )}
           </p>
           <p className="mt-1 rounded border border-stone-300 bg-stone-100 p-2 font-mono text-sm text-stone-900">
             {event.secondary || 'No parsed parameters available'}

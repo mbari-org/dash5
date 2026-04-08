@@ -61,6 +61,7 @@ export interface GlobalModalMetaData {
     vehicleName?: string
     scheduleDate?: string
     via?: 'cell' | 'sat' | 'cellsat'
+    isParamUpdate?: boolean
   } | null
 }
 
