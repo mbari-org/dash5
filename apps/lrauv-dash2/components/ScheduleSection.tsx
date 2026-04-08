@@ -566,15 +566,50 @@ export const ScheduleSection: React.FC<ScheduleSectionProps> = ({
         description={(() => {
           if (mission.event.unixTime == null) return ''
           const dt = DateTime.fromMillis(mission.event.unixTime)
+          const isQueued =
+            (cellStatus === 'pending' || cellStatus === 'sent') &&
+            !!scheduleDate &&
+            scheduleDate !== 'asap'
+
+          // For queued items, parse the scheduled start time so we display
+          // WHEN it will run, not when the command was sent.
+          const scheduledDt = (() => {
+            if (!isQueued || !scheduleDate) return null
+            const clean = scheduleDate.replace('}', '')
+            const m =
+              clean.match(/^(\d{4})(\d{2})(\d{2})T(\d{2})(\d{2})$/) ||
+              clean.match(/^(\d{4})(\d{2})(\d{2})T(\d{2})$/)
+            if (!m) return null
+            return DateTime.fromObject(
+              {
+                year: +m[1],
+                month: +m[2],
+                day: +m[3],
+                hour: +m[4],
+                minute: m[5] ? +m[5] : 0,
+              },
+              { zone: 'utc' }
+            )
+          })()
+
+          if (isQueued && scheduledDt?.isValid) {
+            const now = DateTime.now()
+            const isToday = scheduledDt.hasSame(now, 'day')
+            const timeStr = isToday
+              ? scheduledDt.toFormat('H:mm')
+              : scheduledDt.toFormat('MMM d, H:mm')
+            return `Queued for ${timeStr} UTC`
+          }
+
           const relative = dt.toRelative()
           const relativePart = relative ? ` (${relative})` : ''
           const verb = isParam
             ? 'Sent'
             : cellStatus === 'pending'
-            ? isMission
-              ? 'Scheduled'
-              : scheduleDate && scheduleDate !== 'asap'
+            ? scheduleDate && scheduleDate !== 'asap'
               ? 'Queued'
+              : isMission
+              ? 'Scheduled'
               : 'Sent'
             : cellStatus === 'running'
             ? 'Started'
@@ -586,6 +621,10 @@ export const ScheduleSection: React.FC<ScheduleSectionProps> = ({
         description2={
           isParam
             ? undefined
+            : cellStatus === 'pending' &&
+              scheduleDate &&
+              scheduleDate !== 'asap'
+            ? 'Starts: scheduled time above'
             : cellStatus === 'running' || cellStatus === 'pending'
             ? 'Ended: TBD'
             : mission.endedAt
