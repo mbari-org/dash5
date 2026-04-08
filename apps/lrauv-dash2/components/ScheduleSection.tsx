@@ -290,14 +290,20 @@ export const ScheduleSection: React.FC<ScheduleSectionProps> = ({
       const currentMissionPath = normalizeMissionPath(currentMissionEntry.name)
       if (!currentMissionPath) return enriched
 
-      const matchingMissionIndex = enriched.findIndex((item) => {
+      const matchingMissionIndex = enriched.reduce((bestIdx, item, idx) => {
         const fromDataPath = missionPathFromEventData(item.event.data)
         const fromTextPath = missionPathFromEventData(item.event.text)
-        return (
-          missionKeysMatch(fromDataPath, currentMissionPath) ||
-          missionKeysMatch(fromTextPath, currentMissionPath)
+        if (
+          !missionKeysMatch(fromDataPath, currentMissionPath) &&
+          !missionKeysMatch(fromTextPath, currentMissionPath)
         )
-      })
+          return bestIdx
+        if (item.event.unixTime == null) return bestIdx
+        if (bestIdx === -1) return idx
+        const bestTime = enriched[bestIdx].event.unixTime ?? 0
+        const diff = (t: number) => Math.abs(t - currentMissionEntry.startedAt)
+        return diff(item.event.unixTime) < diff(bestTime) ? idx : bestIdx
+      }, -1)
 
       if (matchingMissionIndex >= 0) {
         const matchingItem = enriched[matchingMissionIndex]
@@ -306,6 +312,22 @@ export const ScheduleSection: React.FC<ScheduleSectionProps> = ({
             ...matchingItem,
             status: 'running',
             endedAt: undefined,
+          }
+        }
+        // Demote any OTHER rows for the same mission that are still marked
+        // running — they represent earlier executions of the same mission and
+        // should be completed now that a newer run is active.
+        for (let i = 0; i < enriched.length; i++) {
+          if (i === matchingMissionIndex) continue
+          const item = enriched[i]
+          if (item.status !== 'running') continue
+          const fromDataPath = missionPathFromEventData(item.event.data)
+          const fromTextPath = missionPathFromEventData(item.event.text)
+          if (
+            missionKeysMatch(fromDataPath, currentMissionPath) ||
+            missionKeysMatch(fromTextPath, currentMissionPath)
+          ) {
+            enriched[i] = { ...item, status: 'completed' }
           }
         }
       } else {
