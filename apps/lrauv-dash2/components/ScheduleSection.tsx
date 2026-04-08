@@ -228,14 +228,6 @@ export const ScheduleSection: React.FC<ScheduleSectionProps> = ({
       }))
     }
 
-    // When the vehicle has been recovered, any remaining pending commands
-    // will never execute — treat them as completed so the history is clean.
-    if (isRecovered) {
-      items = items.map((item) =>
-        item.status === 'pending' ? { ...item, status: 'completed' } : item
-      )
-    }
-
     // Enrich each item's status/endedAt from mission-started events.
     // Priority:
     // 1) interval containment (startedAt <= eventTime < endedAt) for exact runs
@@ -405,6 +397,15 @@ export const ScheduleSection: React.FC<ScheduleSectionProps> = ({
           enriched[i] = { ...item, status: 'completed' }
         }
       }
+    }
+
+    // When the vehicle has been recovered, any remaining pending commands
+    // will never execute — treat them as completed so the history is clean.
+    // Must run AFTER enrichment so statuses are resolved from 'TBD' first.
+    if (isRecovered) {
+      return enriched.map((item) =>
+        item.status === 'pending' ? { ...item, status: 'completed' } : item
+      )
     }
 
     return enriched
