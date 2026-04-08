@@ -426,10 +426,7 @@ export const ScheduleEventDetailsModal: React.FC<
                   <TimeBlock unixTime={event.endedAt} />
                 </p>
               ) : event.status?.toLowerCase() === 'sent' ? (
-                <span
-                  className={statusPillClass()}
-                  style={statusPillStyle('cancelled')}
-                >
+                <span className={statusPillClass()} style={statusPillStyle()}>
                   N/A
                 </span>
               ) : (
