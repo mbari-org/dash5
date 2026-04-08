@@ -1,4 +1,4 @@
-import React, { useState, useRef, useMemo } from 'react'
+import React, { useState, useRef, useMemo, useEffect } from 'react'
 import {
   AccessoryButton,
   AccordionCells,
@@ -169,6 +169,16 @@ export const ScheduleSection: React.FC<ScheduleSectionProps> = ({
     vehicles: [vehicleName],
     from: commsEventsFrom,
   })
+
+  // Poll comms events every 30 s (matches mission-started poll rate) so that
+  // Sent → Ack → Timeout transitions appear on schedule rows without a page refresh.
+  const { refetch: refetchComms } = commsEventsResponse
+  useEffect(() => {
+    const id = setInterval(() => {
+      refetchComms()
+    }, 30_000)
+    return () => clearInterval(id)
+  }, [refetchComms])
 
   // eventId → comms status lookup ('queued'|'sent'|'ack'|'timeout')
   const commsLookup = useMemo(() => {
