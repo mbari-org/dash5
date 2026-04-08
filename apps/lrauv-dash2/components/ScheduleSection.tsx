@@ -110,6 +110,15 @@ export const isMissionCommand = (
   return hasLoad && hasRun
 }
 
+// Detects parameter update commands: "set <missionName>.<paramName> <value>"
+export const isParamCommand = (
+  commandData?: string,
+  commandText?: string
+): boolean => {
+  const text = commandData ?? commandText ?? ''
+  return /^\s*set\s+\w+\.\w+/i.test(text)
+}
+
 export const ScheduleSection: React.FC<ScheduleSectionProps> = ({
   currentDeploymentId,
   activeDeployment,
@@ -527,6 +536,8 @@ export const ScheduleSection: React.FC<ScheduleSectionProps> = ({
     const isMission =
       mission?.event?.eventType === 'run' ||
       isMissionCommand(mission?.event?.data, mission?.event?.text)
+    const isParam =
+      !isMission && isParamCommand(mission?.event?.data, mission?.event?.text)
     const cellCommandType: 'mission' | 'command' = isMission
       ? 'mission'
       : 'command'
@@ -557,24 +568,37 @@ export const ScheduleSection: React.FC<ScheduleSectionProps> = ({
           const dt = DateTime.fromMillis(mission.event.unixTime)
           const relative = dt.toRelative()
           const relativePart = relative ? ` (${relative})` : ''
-          const verb =
-            cellStatus === 'pending'
-              ? isMission
-                ? 'Scheduled'
-                : 'Queued'
-              : cellStatus === 'running'
-              ? 'Started'
-              : isMission
-              ? 'Started'
-              : 'Ran'
+          const verb = isParam
+            ? 'Sent'
+            : cellStatus === 'pending'
+            ? isMission
+              ? 'Scheduled'
+              : scheduleDate && scheduleDate !== 'asap'
+              ? 'Queued'
+              : 'Sent'
+            : cellStatus === 'running'
+            ? 'Started'
+            : isMission
+            ? 'Started'
+            : 'Ran'
           return `${verb} ${dt.toFormat('H:mm')}${relativePart}`
         })()}
         description2={
-          cellStatus === 'running' || cellStatus === 'pending'
+          isParam
+            ? undefined
+            : cellStatus === 'running' || cellStatus === 'pending'
             ? 'Ended: TBD'
             : mission.endedAt
             ? `Ended: ~${DateTime.fromMillis(mission.endedAt).toFormat('H:mm')}`
-            : ''
+            : 'Ended: N/A (see Logs)'
+        }
+        badge={
+          isParam
+            ? {
+                text: 'config',
+                tooltip: 'Config update — added to running mission',
+              }
+            : undefined
         }
         onSelect={() => {
           setGlobalModalId({
@@ -595,6 +619,7 @@ export const ScheduleSection: React.FC<ScheduleSectionProps> = ({
                 vehicleName,
                 scheduleDate,
                 via: getVia(mission.event.note) ?? undefined,
+                isParamUpdate: isParam,
               },
             },
           })

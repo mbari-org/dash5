@@ -252,7 +252,7 @@ export const ScheduleEventDetailsModal: React.FC<
 
   const isScheduledStart =
     !!event.scheduleDate && event.scheduleDate.toLowerCase() !== 'asap'
-  const isActiveOrDone = ['running', 'completed', 'cancelled'].includes(
+  const isActiveOrDone = ['running', 'completed', 'cancelled', 'sent'].includes(
     event.status?.toLowerCase() ?? ''
   )
   const startedLabel = isScheduledStart ? 'Queued' : 'Started'
