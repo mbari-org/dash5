@@ -298,12 +298,10 @@ export const ScheduleSection: React.FC<ScheduleSectionProps> = ({
             (existingMatch &&
               (rawMissionPathFromEventData(existingMatch.event.data) ||
                 rawMissionPathFromEventData(existingMatch.event.text))) ||
-            // If no real raw path found, use the name from the mission-started
-            // text. Only append .tl if the name doesn't already have an extension,
-            // to avoid double-extensions and incorrect .xml mission paths.
-            (/\.[^./\\]+$/.test(currentMissionEntry.name)
-              ? currentMissionEntry.name
-              : `${currentMissionEntry.name}.tl`)
+            // If no real raw path is found, preserve the mission-started name
+            // as-is rather than inventing an extension that may not match the
+            // actual mission id used by MissionModal.
+            currentMissionEntry.name
 
           enriched.unshift({
             event: {

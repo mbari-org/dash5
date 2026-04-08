@@ -64,6 +64,7 @@ export const useVehicleInfo = (
       staleTime: supportedOptions?.staleTime ?? 0,
       enabled: supportedOptions?.enabled !== false && !!params.name,
       ...supportedOptions,
+      refetchInterval: refetchInterval ?? false,
     }
   )
 
