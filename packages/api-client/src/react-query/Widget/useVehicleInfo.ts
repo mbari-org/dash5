@@ -12,7 +12,7 @@ import axios from 'axios'
 import { useMemo } from 'react'
 
 export interface UseVehicleInfoOptions extends SupportedQueryOptions {
-  refetchInterval?: number
+  refetchInterval?: number | false
 }
 
 /**
