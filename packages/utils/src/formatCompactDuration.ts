@@ -13,7 +13,8 @@ export const formatCompactDuration = (
   const later = target <= reference ? reference : target
   const daysTotal = later.diff(earlier, 'days').days
 
-  if (maxDays !== undefined && daysTotal > maxDays) return `>${maxDays} days`
+  if (maxDays !== undefined && daysTotal > maxDays)
+    return `>${maxDays} ${maxDays === 1 ? 'day' : 'days'}`
 
   // For durations longer than 6 days with no cap, use human-readable units.
   // When maxDays is set, stay in the d/h/m format so the cap controls output shape.

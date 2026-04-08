@@ -163,6 +163,8 @@ export const ScheduleSection: React.FC<ScheduleSectionProps> = ({
       startedAt: evt.unixTime,
       endedAt: idx > 0 ? events[idx - 1].unixTime : undefined,
       status: idx === 0 ? ('running' as const) : ('completed' as const),
+      eventId: evt.eventId,
+      text: evt.text,
     }))
   }, [missionStartedResponse.data])
 
@@ -266,8 +268,9 @@ export const ScheduleSection: React.FC<ScheduleSectionProps> = ({
           }
         }
       } else {
-        const currentRawEvent = missionStartedResponse.data?.[0]
-        if (currentRawEvent) {
+        // missionTimeline[0] is the same event as missionStartedResponse.data[0]
+        // but carries eventId and text from the timeline, avoiding a redundant dep.
+        if (currentMissionEntry.eventId != null) {
           // Prefer a raw path from an existing enriched row that refers to the
           // same mission name — it preserves the original extension and casing
           // even when exact-path matching above fails.
@@ -308,10 +311,10 @@ export const ScheduleSection: React.FC<ScheduleSectionProps> = ({
               // produces a consistent label and "Use for new mission" receives
               // a valid path. GetMissionStartedEventResponse has no data field.
               data: `load ${rawPath};run`,
-              unixTime: currentRawEvent.unixTime,
-              eventId: currentRawEvent.eventId,
+              unixTime: currentMissionEntry.startedAt,
+              eventId: currentMissionEntry.eventId,
               eventType: 'run',
-              text: currentRawEvent.text,
+              text: currentMissionEntry.text,
             },
             status: 'running',
             endedAt: undefined,
@@ -326,7 +329,6 @@ export const ScheduleSection: React.FC<ScheduleSectionProps> = ({
     deploymentResponse.data,
     allLogsResponse.data,
     missionTimeline,
-    missionStartedResponse.data,
   ])
 
   const scheduledTypes = ['pending', 'running']
