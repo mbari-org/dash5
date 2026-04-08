@@ -38,6 +38,7 @@ export const VehicleInfoCell: React.FC<VehicleInfoCellProps> = ({
   lastPluggedInTime,
   onSelect,
 }) => {
+  const now = DateTime.now()
   // Compute icon based on plugged in state or reachability
   const icon = isPluggedIn ? (
     <PluggedInIcon />
@@ -76,12 +77,12 @@ export const VehicleInfoCell: React.FC<VehicleInfoCellProps> = ({
     isPluggedIn || !lastSatCommsTime
       ? undefined
       : `${
-          lastSatCommsTime.day === DateTime.now().day
+          lastSatCommsTime.day === now.day
             ? 'Today'
             : lastSatCommsTime.toFormat('MMM d')
         } at ${lastSatCommsTime.toFormat('hh:mm:ss')} (${formatCompactDuration(
           lastSatCommsTime,
-          DateTime.now(),
+          now,
           { maxDays: 6 }
         )})`
 
@@ -89,21 +90,21 @@ export const VehicleInfoCell: React.FC<VehicleInfoCellProps> = ({
     isPluggedIn || !lastCellCommsTime
       ? undefined
       : `${
-          lastCellCommsTime.day === DateTime.now().day
+          lastCellCommsTime.day === now.day
             ? 'Today'
             : lastCellCommsTime.toFormat('MMM d')
         } at ${lastCellCommsTime.toFormat('hh:mm:ss')} (${formatCompactDuration(
           lastCellCommsTime,
-          DateTime.now(),
+          now,
           { maxDays: 6 }
         )})`
 
   // Format estimate if available and not plugged in
   const isFutureEstimate = nextCommsTime
-    ? nextCommsTime.toMillis() > DateTime.now().toMillis()
+    ? nextCommsTime.toMillis() > now.toMillis()
     : false
   const estimateDuration = nextCommsTime
-    ? formatCompactDuration(nextCommsTime, DateTime.now(), { maxDays: 6 })
+    ? formatCompactDuration(nextCommsTime, now, { maxDays: 6 })
     : ''
   const estimate =
     isPluggedIn || !nextCommsTime
@@ -117,12 +118,12 @@ export const VehicleInfoCell: React.FC<VehicleInfoCellProps> = ({
     !isPluggedIn || !lastPluggedInTime
       ? undefined
       : `${
-          lastPluggedInTime.day === DateTime.now().day
+          lastPluggedInTime.day === now.day
             ? 'Today'
             : lastPluggedInTime.toFormat('MMM d')
         } at ${lastPluggedInTime.toFormat('hh:mm:ss')} (${formatCompactDuration(
           lastPluggedInTime,
-          DateTime.now(),
+          now,
           { maxDays: 6 }
         )})`
 

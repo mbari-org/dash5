@@ -44,6 +44,8 @@ const VehicleDiagram: React.FC<{
     }
   )
 
+  const now = DateTime.now()
+
   const vehicle =
     vehicleInfo?.not_found || !vehicleInfo
       ? undefined
@@ -53,7 +55,7 @@ const VehicleDiagram: React.FC<{
     ? lastCellCommsDT.toFormat('HH:mm')
     : vehicle?.text_cell
   const formattedCellAgo = lastCellCommsDT
-    ? `${formatCompactDuration(lastCellCommsDT, DateTime.now(), {
+    ? `${formatCompactDuration(lastCellCommsDT, now, {
         maxDays: 6,
       })} ago`
     : vehicle?.text_cellago
@@ -62,7 +64,7 @@ const VehicleDiagram: React.FC<{
     ? lastSatCommsDT.toFormat('HH:mm')
     : vehicle?.text_sat
   const formattedSatAgo = lastSatCommsDT
-    ? `${formatCompactDuration(lastSatCommsDT, DateTime.now(), {
+    ? `${formatCompactDuration(lastSatCommsDT, now, {
         maxDays: 6,
       })} ago`
     : vehicle?.text_commago

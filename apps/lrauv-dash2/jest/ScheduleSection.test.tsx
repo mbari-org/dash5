@@ -147,7 +147,7 @@ test('marks a mission as running when mission-started event matches a command ev
   )
 
   await waitFor(() => {
-    expect(screen.queryByText(/profile.station/i)).not.toBeNull()
+    expect(screen.queryByText(/profile_station/i)).not.toBeNull()
   })
 })
 
