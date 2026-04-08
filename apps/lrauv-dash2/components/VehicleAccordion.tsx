@@ -145,6 +145,7 @@ const VehicleAccordion: React.FC<VehicleAccordionProps> = ({
           currentDeploymentId={currentDeploymentId}
           vehicleName={vehicleName}
           activeDeployment={activeDeployment}
+          deploymentStartTime={from}
         />
       )}
       <AccordionHeader

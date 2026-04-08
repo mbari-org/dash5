@@ -200,6 +200,18 @@ const statusPillStyle = (status?: string): React.CSSProperties => {
         color: '#713f12',
         borderColor: '#fde047',
       }
+    case 'ack':
+      return {
+        backgroundColor: '#dcfce7',
+        color: '#14532d',
+        borderColor: '#4ade80',
+      }
+    case 'timeout':
+      return {
+        backgroundColor: '#fee2e2',
+        color: '#7f1d1d',
+        borderColor: '#f87171',
+      }
     default:
       return {
         backgroundColor: '#f5f5f4',
@@ -258,9 +270,14 @@ export const ScheduleEventDetailsModal: React.FC<
 
   const isScheduledStart =
     !!event.scheduleDate && event.scheduleDate.toLowerCase() !== 'asap'
-  const isActiveOrDone = ['running', 'completed', 'cancelled', 'sent'].includes(
-    event.status?.toLowerCase() ?? ''
-  )
+  const isActiveOrDone = [
+    'running',
+    'completed',
+    'cancelled',
+    'sent',
+    'ack',
+    'timeout',
+  ].includes(event.status?.toLowerCase() ?? '')
   const startedLabel = isScheduledStart ? 'Queued' : 'Started'
 
   return (
@@ -348,6 +365,14 @@ export const ScheduleEventDetailsModal: React.FC<
                     <p className="mt-1 normal-case">
                       <strong>Sent</strong>: one-shot config update — no run
                       interval.
+                    </p>
+                    <p className="mt-1 normal-case">
+                      <strong>Ack</strong>: vehicle confirmed receipt of the
+                      command.
+                    </p>
+                    <p className="mt-1 normal-case">
+                      <strong>Timeout</strong>: no confirmation received within
+                      the expected window.
                     </p>
                     <p className="mt-1 normal-case">
                       <strong>Unknown</strong>: status not available from logs.
@@ -557,6 +582,20 @@ export const ScheduleEventDetailsModal: React.FC<
             </p>
             <p className="font-medium">{formatVia(event.via)}</p>
           </div>
+          {event.commsStatus && (
+            <div>
+              <p className="text-sm uppercase tracking-wide text-stone-500">
+                Comms Status
+              </p>
+              <span
+                className={statusPillClass(event.commsStatus)}
+                style={statusPillStyle(event.commsStatus)}
+              >
+                {event.commsStatus.charAt(0).toUpperCase() +
+                  event.commsStatus.slice(1)}
+              </span>
+            </div>
+          )}
           <div>
             <p className="text-sm uppercase tracking-wide text-stone-500">
               Operator

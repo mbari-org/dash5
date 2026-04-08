@@ -22,6 +22,7 @@ import {
   useInfiniteEvents,
   useMissionStartedEvent,
   getVia,
+  useCommsEvents,
 } from '@mbari/api-client'
 import useGlobalModalId from '../lib/useGlobalModalId'
 import {
@@ -40,6 +41,9 @@ export interface ScheduleSectionProps {
   vehicleName: string
   currentDeploymentId?: number
   activeDeployment?: boolean
+  isRecovered?: boolean
+  /** Deployment start unix-time (ms) — used to scope the comms fetch */
+  deploymentStartTime?: number
 }
 
 export interface CommandStatusItem {
@@ -63,6 +67,8 @@ const VALID_SCHEDULE_CELL_STATUSES: ScheduleCellStatus[] = [
   'completed',
   'paused',
   'sent',
+  'ack',
+  'timeout',
 ]
 
 const toScheduleCellStatus = (status: string): ScheduleCellStatus => {
@@ -123,6 +129,7 @@ export const ScheduleSection: React.FC<ScheduleSectionProps> = ({
   currentDeploymentId,
   activeDeployment,
   vehicleName,
+  deploymentStartTime,
 }) => {
   const { setGlobalModalId } = useGlobalModalId()
   const [scheduleFilter, setScheduleFilter] = useState<string>('')
@@ -152,6 +159,23 @@ export const ScheduleSection: React.FC<ScheduleSectionProps> = ({
   )
 
   const allLogsResponse = useInfiniteEvents(allLogsParams)
+
+  // Fetch comms events (SBD send/receipt/receive + notes) scoped to deployment
+  // start so we can derive ack/timeout status for dispatched commands.
+  const commsEventsFrom = deploymentStartTime ?? 0
+  const commsEventsResponse = useCommsEvents({
+    vehicles: [vehicleName],
+    from: commsEventsFrom,
+  })
+
+  // eventId → comms status lookup ('queued'|'sent'|'ack'|'timeout')
+  const commsLookup = useMemo(() => {
+    const map = new Map<number, string>()
+    commsEventsResponse.data.forEach((e) => {
+      if (e.eventId != null) map.set(e.eventId, e.status)
+    })
+    return map
+  }, [commsEventsResponse.data])
 
   const { isLoading, isFetching, refetch } = deploymentLogsOnly
     ? deploymentResponse
@@ -574,17 +598,27 @@ export const ScheduleSection: React.FC<ScheduleSectionProps> = ({
       ? schedDateMatch[1]
       : undefined
     const cellStatus: ScheduleCellStatus = (() => {
-      if (isParam) return 'sent'
+      if (isParam) {
+        // Params are always dispatched — use comms lookup to upgrade to ack/timeout
+        const commsStatus = commsLookup.get(mission.event.eventId)
+        if (commsStatus === 'ack') return 'ack'
+        if (commsStatus === 'timeout') return 'timeout'
+        return 'sent'
+      }
       const raw = toScheduleCellStatus(mission?.status ?? '')
       // Non-mission, non-param commands with no future scheduled start
       // are already dispatched — API 'pending'/'TBD' just means the vehicle
-      // hasn't confirmed yet. Treat as 'sent' so the modal and row agree.
+      // hasn't confirmed yet. Use comms lookup for the most accurate status.
       if (
         raw === 'pending' &&
         !isMission &&
         !(scheduleDate && scheduleDate !== 'asap')
-      )
+      ) {
+        const commsStatus = commsLookup.get(mission.event.eventId)
+        if (commsStatus === 'ack') return 'ack'
+        if (commsStatus === 'timeout') return 'timeout'
         return 'sent'
+      }
       return raw
     })()
 
@@ -695,6 +729,7 @@ export const ScheduleSection: React.FC<ScheduleSectionProps> = ({
                 scheduleDate,
                 via: getVia(mission.event.note) ?? undefined,
                 isParamUpdate: isParam,
+                commsStatus: commsLookup.get(mission.event.eventId),
               },
             },
           })
