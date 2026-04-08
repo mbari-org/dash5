@@ -426,9 +426,7 @@ export const ScheduleEventDetailsModal: React.FC<
                   <TimeBlock unixTime={event.endedAt} />
                 </p>
               ) : event.status?.toLowerCase() === 'sent' ? (
-                <span className={statusPillClass()} style={statusPillStyle()}>
-                  N/A
-                </span>
+                <p className="font-medium text-stone-400">N/A</p>
               ) : (
                 <span
                   className={statusPillClass()}
