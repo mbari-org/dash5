@@ -10,7 +10,6 @@ interface StationMarkerProps {
   name: string
   lat: number
   lng: number
-  color?: string
   isHighlighted?: boolean
 }
 
@@ -18,15 +17,10 @@ const StationMarker: React.FC<StationMarkerProps> = ({
   name,
   lat,
   lng,
-  color,
   isHighlighted = false,
 }) => {
   const kmMatch = name.match(KM_CIRCLE_PATTERN)
   const radiusMeters = kmMatch ? parseFloat(kmMatch[1]) * 1000 : null
-  // Use the API-provided color, falling back to defaults per station type.
-  // km-circle stations default to magenta; all others default to yellow.
-  const markerColor =
-    color ?? (radiusMeters != null ? CIRCLE_STATION_COLOR : 'yellow')
 
   const tooltip = (
     <Tooltip>
@@ -83,29 +77,20 @@ const StationMarker: React.FC<StationMarkerProps> = ({
         <Circle
           center={[lat, lng]}
           radius={radiusMeters}
-          color={markerColor}
+          color={CIRCLE_STATION_COLOR}
           weight={2}
-          fillColor={markerColor}
+          fillColor={CIRCLE_STATION_COLOR}
           fillOpacity={0.08}
           interactive={false}
           pathOptions={{ interactive: false }}
         />
-        {/* White halo ring so the center dot is visible against same-colored vehicle paths */}
+        {/* Small center dot — the only interactive element; carries the tooltip */}
         <CircleMarker
           center={[lat, lng]}
-          radius={7}
-          fillColor="transparent"
-          color="white"
-          fillOpacity={0}
-          weight={1}
-          interactive={false}
-        />
-        <CircleMarker
-          center={[lat, lng]}
-          radius={5}
-          color={markerColor}
-          fillColor="transparent"
-          fillOpacity={0}
+          radius={4}
+          color={CIRCLE_STATION_COLOR}
+          fillColor={CIRCLE_STATION_COLOR}
+          fillOpacity={0.9}
           weight={1}
         >
           {tooltip}
@@ -142,23 +127,12 @@ const StationMarker: React.FC<StationMarkerProps> = ({
           />
         </>
       )}
-      {/* White halo ring so the marker is visible against same-colored vehicle paths */}
-      <CircleMarker
-        center={[lat, lng]}
-        radius={7}
-        fillColor="transparent"
-        color="white"
-        fillOpacity={0}
-        weight={1}
-        interactive={false}
-      />
       <CircleMarker
         center={[lat, lng]}
         radius={5}
         fillColor="transparent"
-        color={markerColor}
-        fillOpacity={0}
-        weight={1}
+        color="yellow"
+        fillOpacity={1}
       >
         {tooltip}
       </CircleMarker>
