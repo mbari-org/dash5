@@ -38,27 +38,6 @@ import { createLogger } from '@mbari/utils'
 
 const logger = createLogger('Map')
 
-// safeLogger wrapper that suppresses debug logs during critical operations
-const createSafeLogger = (
-  originalLogger: any,
-  disabledLevels: string[] = ['debug']
-) => {
-  // Copy of the original logger
-  const safeLogger = { ...originalLogger }
-
-  // Disable specified log levels by replacing them with no-op functions
-  disabledLevels.forEach((level) => {
-    if (level in safeLogger) {
-      safeLogger[level] = () => {} // No-op function
-    }
-  })
-
-  return safeLogger
-}
-
-// safeLogger instance that will be used during initialization
-const safeLogger = createSafeLogger(logger, ['debug'])
-
 const DEFAULT_CENTER: [number, number] = [36.8022, -121.788]
 
 const regex = /\B(?=(\d{3})+(?!\d))/g
@@ -507,6 +486,22 @@ const Map = React.forwardRef<L.Map, MapProps>(
       []
     )
 
+    // Patch Leaflet's _setupAttribution on the prototype to guard against
+    // GoogleMutant's async Google Maps API callbacks firing after the map has
+    // been removed and this._map set to null. The window error handler we had
+    // previously didn't fire before Next.js's dev overlay; patching the
+    // prototype prevents the throw entirely.
+    useEffect(() => {
+      const layerProto = (L as any).Layer?.prototype
+      if (layerProto?._setupAttribution) {
+        const orig = layerProto._setupAttribution
+        layerProto._setupAttribution = function (this: any) {
+          if (!this._map?._controlCorners) return
+          return orig.call(this)
+        }
+      }
+    }, [])
+
     // Suppress the GoogleMutant "_controlCorners" crash that fires when the
     // map is removed while a pending Google Maps API callback still holds a
     // reference to the layer. The existing map.fire() patch only covers events
@@ -607,7 +602,7 @@ const Map = React.forwardRef<L.Map, MapProps>(
               return
             }
 
-            safeLogger.debug('Map instance created, initializing...')
+            logger.debug('Map instance created, initializing...')
 
             // Guard against GoogleMutant async callbacks firing after the map
             // has been removed. When map.remove() runs, Leaflet nulls
@@ -631,12 +626,12 @@ const Map = React.forwardRef<L.Map, MapProps>(
               } else {
                 ref.current = map
               }
-              safeLogger.debug('Map reference forwarded')
+              logger.debug('Map reference forwarded')
             }
 
             // Call onMapReady
             if (onMapReady) {
-              safeLogger.debug('Calling onMapReady callback')
+              logger.debug('Calling onMapReady callback')
               onMapReady(map)
             }
 
@@ -644,8 +639,7 @@ const Map = React.forwardRef<L.Map, MapProps>(
             setTimeout(() => {
               if (typeof window !== 'undefined') {
                 try {
-                  // Use safeLogger for this chatty operation
-                  safeLogger.debug('Creating mapready event')
+                  logger.debug('Creating mapready event')
 
                   const mapReadyEvent = new CustomEvent('mapready', {
                     detail: map,
