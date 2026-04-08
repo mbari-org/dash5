@@ -340,6 +340,10 @@ export const ScheduleEventDetailsModal: React.FC<
                       <strong>Paused</strong>: schedule execution is paused.
                     </p>
                     <p className="mt-1 normal-case">
+                      <strong>Sent</strong>: one-shot config update — no run
+                      interval.
+                    </p>
+                    <p className="mt-1 normal-case">
                       <strong>Unknown</strong>: status not available from logs.
                     </p>
                   </div>
