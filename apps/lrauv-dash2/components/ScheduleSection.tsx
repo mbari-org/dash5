@@ -573,7 +573,9 @@ export const ScheduleSection: React.FC<ScheduleSectionProps> = ({
             : cellStatus === 'pending'
             ? isMission
               ? 'Scheduled'
-              : 'Queued'
+              : scheduleDate && scheduleDate !== 'asap'
+              ? 'Queued'
+              : 'Sent'
             : cellStatus === 'running'
             ? 'Started'
             : isMission
