@@ -430,22 +430,31 @@ export const ScheduleSection: React.FC<ScheduleSectionProps> = ({
 
   const scheduledTypes = ['pending', 'running']
   const staticHeaderCellOffset = activeDeployment ? 1 : 0
-  const hasPastSchedule =
-    missions?.some(
-      (v) => !scheduledTypes.includes(toScheduleCellStatus(v.status))
-    ) ?? false
-  const staticFilterCellOffset = hasPastSchedule ? 1 : 0
 
   const handleScheduleSearch = (e: React.ChangeEvent<HTMLInputElement>) => {
     setScheduleSearch(e.target.value)
   }
 
-  const scheduledCells = missions?.filter((v) =>
-    scheduledTypes.includes(toScheduleCellStatus(v.status))
-  )
+  // Determines whether an item belongs in the "active/scheduled" zone above
+  // the separator (true) or in the history section below (false).
+  // Non-mission commands are ALWAYS dispatched — they go to history unless they
+  // have a specific future schedule date (e.g. `gfscan sched 20260401T1200`).
+  const isAboveSeparator = (v: CommandStatusItem): boolean => {
+    const raw = toScheduleCellStatus(v.status)
+    if (!scheduledTypes.includes(raw)) return false
+    if (raw !== 'pending') return true // running stays above
+    if (isMissionCommand(v.event?.data, v.event?.text)) return true
+    // Non-mission with no future scheduled start → already dispatched → history
+    const rawText = v.event?.data ?? v.event?.text ?? ''
+    const schedMatch = rawText.match(/sched\s+(\S+)/i)
+    const sched = schedMatch?.[1]
+    return !!sched && sched.toLowerCase() !== 'asap'
+  }
+
+  const scheduledCells = missions?.filter(isAboveSeparator)
 
   const historicCells = missions
-    ?.filter((v) => !scheduledTypes.includes(toScheduleCellStatus(v.status)))
+    ?.filter((v) => !isAboveSeparator(v))
     .filter(
       (v) =>
         !scheduleFilter ||
@@ -460,6 +469,9 @@ export const ScheduleSection: React.FC<ScheduleSectionProps> = ({
           .toLowerCase()
           .includes(scheduleSearch.toLowerCase())
     )
+
+  const hasPastSchedule = (historicCells?.length ?? 0) > 0
+  const staticFilterCellOffset = hasPastSchedule ? 1 : 0
 
   const results = [scheduledCells, historicCells].flat()
   const hasSeparator =
