@@ -132,46 +132,22 @@ test('should render the component', async () => {
 
 test('marks a mission as running when mission-started event matches a command event', async () => {
   server.use(
-    rest.get('/deployments/commandStatus', (_req, res, ctx) =>
-      res(ctx.status(200), ctx.json({ result: runningMissionCommandStatus }))
-    ),
-    rest.get('/events/mission-started', (_req, res, ctx) =>
-      res(ctx.status(200), ctx.json({ result: missionStartedRunning }))
-    )
-  )
-
-  render(
-    <MockProviders queryClient={new QueryClient()}>
-      <ScheduleSection {...props} currentDeploymentId={1} />
-    </MockProviders>
-  )
-
-  await waitFor(() => {
-    expect(screen.queryByText(/profile_station/i)).not.toBeNull()
-  })
-})
-
-test('injects a synthetic running row when no command event matches current mission', async () => {
-  server.use(
-    rest.get('/deployments/commandStatus', (_req, res, ctx) =>
+    // missions are sourced from /events (deploymentLogsOnly defaults to false)
+    rest.get('/events', (_req, res, ctx) =>
       res(
         ctx.status(200),
         ctx.json({
-          result: {
-            eventTypes: 'command',
-            commandStatuses: [
-              {
-                event: {
-                  data: 'sched resume',
-                  unixTime: Date.now() - 200 * 1000,
-                  eventId: 99,
-                  eventType: 'command',
-                  text: null,
-                },
-                status: 'completed',
-              },
-            ],
-          },
+          result: [
+            {
+              data: 'load Science/profile_station.tl;set profile_station.MissionTimeout 12 h;run',
+              unixTime: Date.now() - 60 * 1000,
+              eventId: 101,
+              eventType: 'run',
+              text: null,
+              note: null,
+              user: null,
+            },
+          ],
         })
       )
     ),
@@ -186,7 +162,45 @@ test('injects a synthetic running row when no command event matches current miss
     </MockProviders>
   )
 
-  // Running row shows "Ended: TBD" for its description2.
+  // The profile_station event is enriched as running — description2 = "Ended: TBD"
+  await waitFor(() => {
+    expect(screen.getByText(/Ended:\s*TBD/i)).toBeInTheDocument()
+  })
+})
+
+test('injects a synthetic running row when no command event matches current mission', async () => {
+  server.use(
+    // /events contains a non-matching command — no event maps to the running mission
+    rest.get('/events', (_req, res, ctx) =>
+      res(
+        ctx.status(200),
+        ctx.json({
+          result: [
+            {
+              data: 'sched resume',
+              unixTime: Date.now() - 200 * 1000,
+              eventId: 99,
+              eventType: 'command',
+              text: null,
+              note: null,
+              user: null,
+            },
+          ],
+        })
+      )
+    ),
+    rest.get('/events/mission-started', (_req, res, ctx) =>
+      res(ctx.status(200), ctx.json({ result: missionStartedRunning }))
+    )
+  )
+
+  render(
+    <MockProviders queryClient={new QueryClient()}>
+      <ScheduleSection {...props} currentDeploymentId={1} />
+    </MockProviders>
+  )
+
+  // A synthetic running row is injected for profile_station — shows "Ended: TBD"
   await waitFor(() => {
     expect(screen.getByText(/Ended:\s*TBD/i)).toBeInTheDocument()
   })
