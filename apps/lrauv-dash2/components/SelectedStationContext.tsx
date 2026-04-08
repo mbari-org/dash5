@@ -10,7 +10,7 @@ import { createLogger } from '@mbari/utils'
 const logger = createLogger('SelectedStationsContext')
 
 // Define or import the Station type
-interface Station {
+export interface Station {
   name: string
   lat: number
   lon: number
@@ -18,6 +18,10 @@ interface Station {
     geometry: {
       type: string
       coordinates: [number, number]
+    }
+    properties?: {
+      color?: string
+      weight?: number
     }
   }
 }
@@ -30,10 +34,6 @@ export interface SelectedStationsContextProps {
   toggleStarStation: (name: string) => void
   highlightedStationName: string | null
   setHighlightedStationName: React.Dispatch<React.SetStateAction<string | null>>
-  flyToRequest: { lat: number; lon: number } | null
-  setFlyToRequest: React.Dispatch<
-    React.SetStateAction<{ lat: number; lon: number } | null>
-  >
   debug: {
     providerId: string
     instanceCount: number
@@ -87,11 +87,6 @@ export const SelectedStationsProvider: React.FC<{
   const [highlightedStationName, setHighlightedStationName] = useState<
     string | null
   >(null)
-
-  const [flyToRequest, setFlyToRequest] = useState<{
-    lat: number
-    lon: number
-  } | null>(null)
 
   useEffect(() => {
     if (typeof window !== 'undefined') {
@@ -265,7 +260,6 @@ export const SelectedStationsProvider: React.FC<{
       // logger.debug('New count:', updated.length)
       return updated
     })
-    console.groupEnd()
   }
 
   return (
@@ -278,8 +272,6 @@ export const SelectedStationsProvider: React.FC<{
         toggleStarStation,
         highlightedStationName,
         setHighlightedStationName,
-        flyToRequest,
-        setFlyToRequest,
         debug: {
           providerId,
           instanceCount: instanceCounter,

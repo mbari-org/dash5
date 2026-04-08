@@ -476,8 +476,8 @@ const Map = React.forwardRef<L.Map, MapProps>(
       if (layersButtonRef.current) {
         const rect = layersButtonRef.current.getBoundingClientRect()
         const position = {
-          top: rect.bottom,
-          left: rect.left,
+          top: rect.top,
+          left: rect.right + 8,
         }
 
         // Pass position to callbacks
