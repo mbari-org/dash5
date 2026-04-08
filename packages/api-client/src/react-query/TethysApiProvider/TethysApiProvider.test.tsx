@@ -48,6 +48,36 @@ const server = setupServer(
   })
 )
 
+const LoadingAwareContent: React.FC = () => {
+  const { authenticated, loading } = useTethysApiContext()
+  return (
+    <div>
+      <div aria-label="loading-state">{loading ? 'loading' : 'idle'}</div>
+      <div aria-label="auth-state">
+        {authenticated ? 'authenticated' : 'unauthenticated'}
+      </div>
+    </div>
+  )
+}
+
+const MockLoadingComponent: React.FC<{
+  client: QueryClient
+  testToken?: string
+  setSessionToken?: (token: string) => void
+}> = ({ client, testToken, setSessionToken: externalSetToken }) => {
+  const [sessionToken, setSessionToken] = useState(testToken ?? '')
+  return (
+    <QueryClientProvider client={client}>
+      <TethysApiProvider
+        sessionToken={sessionToken}
+        setSessionToken={externalSetToken ?? setSessionToken}
+      >
+        <LoadingAwareContent />
+      </TethysApiProvider>
+    </QueryClientProvider>
+  )
+}
+
 const AuthContent: React.FC = () => {
   const { authenticated, token, login, logout, error, siteConfig } =
     useTethysApiContext()
@@ -237,5 +267,226 @@ describe('TethysApiProvider', () => {
     expect(
       screen.queryByLabelText(/auth-content-logout-button/i)
     ).not.toBeInTheDocument()
+  })
+
+  describe('browser refresh - /user/token returns no token field', () => {
+    // This is the real-world behaviour of the okeanids server: the endpoint
+    // returns 200 with user profile data but omits the token field.  The
+    // provider must still restore the authenticated state by merging the
+    // existing session token (already in the cookie) with the profile data.
+
+    it('should restore authenticated state when the refresh response has no token', async () => {
+      server.use(
+        rest.get('/user/token', (_req, res, ctx) =>
+          res(
+            ctx.status(200),
+            ctx.json({
+              result: {
+                email: 'jim@sumocreations.com',
+                firstName: 'Jim',
+                lastName: 'Jeffers',
+                roles: ['operator'],
+                // token field intentionally absent
+              },
+            })
+          )
+        )
+      )
+
+      const client = makeClient()
+      render(
+        <MockLoadingComponent client={client} testToken="fake-session-token" />
+      )
+
+      await waitFor(() => {
+        expect(screen.getByLabelText('auth-state')).toHaveTextContent(
+          'authenticated'
+        )
+        expect(screen.getByLabelText('loading-state')).toHaveTextContent('idle')
+      })
+    })
+
+    it('should not call setSessionToken with an empty string when the refresh response has no token', async () => {
+      // Regression: before the fix, onSuccess called setSessionToken(data?.token ?? '')
+      // which resolved to setSessionToken('') and wiped the cookie.
+      server.use(
+        rest.get('/user/token', (_req, res, ctx) =>
+          res(
+            ctx.status(200),
+            ctx.json({
+              result: {
+                email: 'jim@sumocreations.com',
+                firstName: 'Jim',
+                lastName: 'Jeffers',
+                roles: ['operator'],
+              },
+            })
+          )
+        )
+      )
+
+      const mockSetToken = jest.fn()
+      const client = makeClient()
+      render(
+        <MockLoadingComponent
+          client={client}
+          testToken="fake-session-token"
+          setSessionToken={mockSetToken}
+        />
+      )
+
+      await waitFor(() =>
+        expect(screen.getByLabelText('loading-state')).toHaveTextContent('idle')
+      )
+
+      expect(mockSetToken).not.toHaveBeenCalledWith('')
+    })
+  })
+
+  describe('browser refresh session recovery (pendingAuthValidation)', () => {
+    it('should show loading state immediately when a session token exists in the cookie', () => {
+      const client = makeClient()
+      render(
+        <MockLoadingComponent client={client} testToken="fake-session-token" />
+      )
+      // pendingAuthValidation should be true on the very first render —
+      // sessionToken present but currentUser not yet set from the async refresh
+      expect(screen.getByLabelText('loading-state')).toHaveTextContent(
+        'loading'
+      )
+    })
+
+    it('should recover to authenticated after a successful token refresh on browser refresh', async () => {
+      const client = makeClient()
+      render(
+        <MockLoadingComponent client={client} testToken="fake-session-token" />
+      )
+
+      // Assert both conditions in the same waitFor so they must be true
+      // in the same render — avoids a race between onSuccess calling
+      // setSessionToken (which can briefly re-trigger a pending render)
+      // and the useEffect that sets currentUser.
+      await waitFor(() => {
+        expect(screen.getByLabelText('auth-state')).toHaveTextContent(
+          'authenticated'
+        )
+        expect(screen.getByLabelText('loading-state')).toHaveTextContent('idle')
+      })
+    })
+
+    it('should never expose an unauthenticated+idle state while validating a session token', async () => {
+      // This is the core regression test for the render-cycle gap.
+      // Before the pendingAuthValidation fix, there was one render where
+      // refreshedSession.isLoading flipped to false before useEffect set
+      // currentUser — leaving loading=false AND authenticated=false, which
+      // caused createRoleLabel to return "Unavailable" permanently.
+      const client = makeClient()
+      let sawUnauthenticatedWhileIdle = false
+
+      const TrackingContent: React.FC = () => {
+        const { authenticated, loading } = useTethysApiContext()
+        if (!loading && !authenticated) {
+          sawUnauthenticatedWhileIdle = true
+        }
+        return (
+          <div aria-label="auth-state">
+            {authenticated ? 'authenticated' : 'unauthenticated'}
+          </div>
+        )
+      }
+
+      render(
+        <QueryClientProvider client={client}>
+          <TethysApiProvider
+            sessionToken="fake-session-token"
+            setSessionToken={() => {}}
+          >
+            <TrackingContent />
+          </TethysApiProvider>
+        </QueryClientProvider>
+      )
+
+      await waitFor(() =>
+        expect(screen.getByLabelText('auth-state')).toHaveTextContent(
+          'authenticated'
+        )
+      )
+
+      expect(sawUnauthenticatedWhileIdle).toBe(false)
+    })
+
+    it('should show the login prompt when the session token expires during an active session', async () => {
+      // Simulate an active session followed by a token expiry (401). The user
+      // should see the login button, not a broken "authenticated" state with
+      // an expired token and "uu" initials.
+      const client = makeClient()
+
+      // Start fully authenticated via the normal token refresh path.
+      render(<MockComponent client={client} testToken="fake-session-token" />)
+      await waitFor(() =>
+        expect(
+          screen.getByLabelText('auth-content-logout-button')
+        ).toBeInTheDocument()
+      )
+
+      // Now simulate the token expiring — next refresh returns 401.
+      server.use(
+        rest.get('/user/token', (_req, res, ctx) => res(ctx.status(401)))
+      )
+
+      // Invalidate the query so it re-fires immediately (simulates staleTime expiry).
+      client.invalidateQueries(['token'])
+
+      await waitFor(() =>
+        expect(
+          screen.getByLabelText('auth-content-login-button')
+        ).toBeInTheDocument()
+      )
+      expect(
+        screen.queryByLabelText('auth-content-logout-button')
+      ).not.toBeInTheDocument()
+    })
+
+    it('should clear loading state after token refresh fails without getting stuck', async () => {
+      server.use(
+        rest.get('/user/token', (_req, res, ctx) => res(ctx.status(500)))
+      )
+      const client = makeClient()
+      render(
+        <MockLoadingComponent client={client} testToken="fake-session-token" />
+      )
+
+      await waitFor(() =>
+        expect(screen.getByLabelText('loading-state')).toHaveTextContent('idle')
+      )
+      expect(screen.getByLabelText('auth-state')).toHaveTextContent(
+        'unauthenticated'
+      )
+    })
+
+    it('should preserve the session cookie when token refresh fails', async () => {
+      // Regression test for onSettled → onSuccess fix.
+      // Before the fix, onSettled called setSessionToken('') on any error,
+      // wiping the cookie and causing permanent logout.
+      server.use(
+        rest.get('/user/token', (_req, res, ctx) => res(ctx.status(500)))
+      )
+      const mockSetToken = jest.fn()
+      const client = makeClient()
+      render(
+        <MockLoadingComponent
+          client={client}
+          testToken="fake-session-token"
+          setSessionToken={mockSetToken}
+        />
+      )
+
+      await waitFor(() =>
+        expect(screen.getByLabelText('loading-state')).toHaveTextContent('idle')
+      )
+
+      // setSessionToken must never be called with '' — that would clear the cookie
+      expect(mockSetToken).not.toHaveBeenCalledWith('')
+    })
   })
 })

@@ -9,4 +9,7 @@ module.exports = {
   transform: {
     '^.+\\.(js|jsx|ts|tsx)$': ['babel-jest', { presets: ['next/babel'] }],
   },
+  transformIgnorePatterns: [
+    '/node_modules/(?!(react-dnd|react-dnd-html5-backend|@react-dnd|dnd-core)/)',
+  ],
 }

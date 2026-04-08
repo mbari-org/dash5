@@ -29,3 +29,10 @@ global.google = {
 
 // Setup document for tests
 global.document.body.innerHTML = '<div id="__next"></div>'
+
+// jsdom does not implement ResizeObserver — mock it so virtualised components render.
+global.ResizeObserver = class ResizeObserver {
+  observe() {}
+  unobserve() {}
+  disconnect() {}
+}
