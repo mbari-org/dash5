@@ -1,695 +1,60 @@
-import React, { useCallback, useState, useRef, useEffect, useMemo } from 'react'
-import clsx from 'clsx'
-import Tippy from '@tippyjs/react'
-import {
-  useStations,
-  usePolygons,
-  useTileLayers,
-  useKmlLayers,
-} from '@mbari/api-client'
+import React from 'react'
 import { Modal } from '@mbari/react-ui'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
-import { IconProp } from '@fortawesome/fontawesome-svg-core'
-import {
-  faCaretRight,
-  faMapMarkerAlt,
-  faCircle,
-  faStar,
-  faArrowsToCircle,
-  faDrawPolygon,
-  faLayerGroup,
-  faFileCode,
-  faXmark,
-} from '@fortawesome/free-solid-svg-icons'
-import { useSelectedStations } from './SelectedStationContext'
-import { useMapCamera } from './MapCameraContext'
-import { useSelectedPolygons } from './SelectedPolygonsContext'
-import { useSelectedTileLayers } from './SelectedTileLayersContext'
-import { useSelectedKmlLayers } from './SelectedKmlLayersContext'
-import { useMarkers } from './MarkerContext'
-
-type SectionName =
-  | 'stations'
-  | 'markers'
-  | 'polygons'
-  | 'tileLayers'
-  | 'kmlLayers'
-  | `station-${string}`
-
-// TreeItem component for the tree structure
-interface TreeItemProps {
-  label: string
-  isExpanded?: boolean
-  isChecked?: boolean
-  onToggleExpand?: () => void
-  onToggleCheck?: () => void
-  icon?: IconProp
-  iconColor?: string
-  children?: React.ReactNode
-  disabled?: boolean
-  disabledTitle?: string
-  isStarred?: boolean
-  onStarClick?: () => void
-  onMouseEnterStar?: () => void
-  onMouseLeaveStar?: () => void
-  onCenterClick?: () => void
-  centerLabel?: string
-}
-
-const TreeItem: React.FC<TreeItemProps> = ({
-  label,
-  isExpanded = true,
-  isChecked = false,
-  onToggleExpand,
-  onToggleCheck,
-  icon,
-  iconColor,
-  children,
-  disabled = false,
-  disabledTitle,
-  isStarred,
-  onStarClick,
-  onMouseEnterStar,
-  onMouseLeaveStar,
-  onCenterClick,
-  centerLabel = 'Center map on this item',
-}) => {
-  const hasChildren = React.Children.count(children) > 0
-
-  const CustomCircleIcon = () => (
-    <div
-      className="mr-2 inline-block"
-      style={{
-        width: '16px',
-        height: '16px',
-        borderRadius: '50%',
-        backgroundColor: '#e3f2fd',
-        border: '4px solid #FFD700', // Yellow border
-        boxShadow: '0 1px 3px rgba(0,0,0,0.3)',
-      }}
-    />
-  )
-
-  return (
-    <article className="tree-item">
-      <div className="flex items-center py-2 pl-2">
-        {hasChildren ? (
-          <button
-            onClick={onToggleExpand}
-            className="mr-1 flex items-center text-gray-700 hover:text-blue-600 focus:outline-none"
-            aria-label={isExpanded ? 'Collapse' : 'Expand'}
-          >
-            <FontAwesomeIcon
-              icon={faCaretRight}
-              size="sm"
-              className={clsx(
-                'transition-transform duration-200 ease-in-out motion-reduce:transition-none',
-                isExpanded ? 'rotate-90' : 'rotate-0'
-              )}
-            />
-          </button>
-        ) : (
-          <div className="tree-connector-wrapper ml-4 flex items-center">
-            <span className="tree-connector -ml-9 mr-2 inline-block h-0.5 w-7 rounded bg-stone-400" />
-          </div>
-        )}
-
-        <label
-          className={clsx(
-            'flex w-full items-center',
-            disabled || !onToggleCheck
-              ? 'cursor-not-allowed opacity-60'
-              : 'cursor-pointer'
-          )}
-          title={disabled ? disabledTitle ?? 'Not available' : undefined}
-        >
-          <input
-            type="checkbox"
-            checked={isChecked}
-            onChange={onToggleCheck}
-            readOnly={!onToggleCheck}
-            disabled={disabled || !onToggleCheck}
-            className="mapLayersCheckbox mr-2 h-5 w-5 accent-blue-600"
-            style={{
-              cursor: disabled || !onToggleCheck ? 'not-allowed' : 'pointer',
-            }}
-          />
-          {icon ? (
-            icon === faCircle && iconColor === 'white' ? (
-              <CustomCircleIcon />
-            ) : (
-              <FontAwesomeIcon
-                icon={icon}
-                className="mr-2"
-                style={{
-                  color: iconColor || undefined,
-                }}
-              />
-            )
-          ) : null}
-          {onStarClick !== undefined && (!disabled || isStarred) && (
-            <Tippy
-              content={
-                isStarred
-                  ? 'Hover to spotlight on map'
-                  : 'Click to enable spotlight'
-              }
-              placement="top-start"
-              appendTo="parent"
-            >
-              <button
-                type="button"
-                onClick={(e) => {
-                  e.preventDefault()
-                  e.stopPropagation()
-                  onStarClick()
-                }}
-                onMouseEnter={onMouseEnterStar}
-                onMouseLeave={onMouseLeaveStar}
-                className="mr-1 focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-blue-500"
-                aria-label={isStarred ? 'Unstar station' : 'Star station'}
-                aria-pressed={isStarred}
-                style={{
-                  width: '22px',
-                  height: '22px',
-                  flexShrink: 0,
-                  borderRadius: '50%',
-                  background: '#fff',
-                  border: 0,
-                  padding: 0,
-                  boxShadow: '0 1px 3px rgba(0,0,0,0.35)',
-                  display: 'inline-flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  cursor: 'pointer',
-                }}
-              >
-                <FontAwesomeIcon
-                  icon={faStar}
-                  style={{
-                    color: isStarred ? '#FFD700' : '#9ca3af',
-                    fontSize: '14px',
-                  }}
-                />
-              </button>
-            </Tippy>
-          )}
-          <span className="text-sm font-medium">{label}</span>
-          {onCenterClick !== undefined && (
-            <Tippy
-              content={centerLabel}
-              placement="top-start"
-              appendTo="parent"
-            >
-              <button
-                type="button"
-                onClick={(e) => {
-                  e.preventDefault()
-                  e.stopPropagation()
-                  onCenterClick()
-                }}
-                className="ml-2 focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-blue-500"
-                aria-label={centerLabel}
-                style={{
-                  width: '20px',
-                  height: '20px',
-                  flexShrink: 0,
-                  borderRadius: '3px',
-                  background: '#fff',
-                  border: 0,
-                  padding: 0,
-                  boxShadow: '0 1px 3px rgba(0,0,0,0.35)',
-                  display: 'inline-flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  cursor: 'pointer',
-                }}
-              >
-                <FontAwesomeIcon
-                  icon={faArrowsToCircle}
-                  style={{ color: '#6b7280', fontSize: '14.5px' }}
-                />
-              </button>
-            </Tippy>
-          )}
-        </label>
-      </div>
-
-      {hasChildren && (
-        <div
-          className={clsx(
-            'grid transition-[grid-template-rows] duration-200 ease-in-out motion-reduce:transition-none',
-            isExpanded ? 'grid-rows-[1fr]' : 'grid-rows-[0fr]'
-          )}
-        >
-          <ul className="children-container relative ml-[10px] overflow-hidden pl-[12px]">
-            {React.Children.toArray(children).map((child, idx, arr) => {
-              const isLast = idx === arr.length - 1
-              const childKey = React.isValidElement<{ label?: string }>(child)
-                ? child.key ?? child.props.label ?? String(idx)
-                : String(idx)
-              return (
-                <li
-                  key={childKey}
-                  className="tree-row relative flex items-start"
-                >
-                  {/* vertical tree line — stops at midpoint of last child */}
-                  <span
-                    aria-hidden
-                    className="absolute -left-3 top-0 w-0.5 bg-stone-400"
-                    style={{ bottom: isLast ? '50%' : 0 }}
-                  />
-                  {child}
-                </li>
-              )
-            })}
-          </ul>
-        </div>
-      )}
-    </article>
-  )
-}
+import { faXmark } from '@fortawesome/free-solid-svg-icons'
+import { useMapLayersModal } from './useMapLayersModal'
+import { MarkersLayerSection } from './MarkersLayerSection'
+import { StationsLayerSection } from './StationsLayerSection'
+import { PolygonsLayerSection } from './PolygonsLayerSection'
+import { TileLayersSection } from './TileLayersSection'
+import { KmlLayersSection } from './KmlLayersSection'
 
 export const MapLayersListModal: React.FC<{
   onClose: () => void
   anchorPosition?: { top: number; left: number }
 }> = ({ onClose, anchorPosition }) => {
-  // Move all hooks to the top level
-  const { data: stations } = useStations()
   const {
+    modalRef,
+    dialogRef,
+    modalPosition,
+    isFadingOut,
+    expandedSections,
+    handleClose,
+    toggleExpanded,
+    searchQuery,
+    setSearchQuery,
+    showSelectedOnly,
+    setShowSelectedOnly,
+    isFiltering,
+    stations,
+    filteredStations,
+    validStations,
     selectedStations,
     setSelectedStations,
-    starredStations,
+    starredSet,
     toggleStarStation,
     setHighlightedStationName,
-  } = useSelectedStations()
-  const { setFlyToRequest } = useMapCamera()
-  const {
-    markers,
-    toggleMarkerVisibility,
-    selectAllMarkers,
-    deselectAllMarkers,
-  } = useMarkers()
-  const { selectedPolygons, setSelectedPolygons } = useSelectedPolygons()
-  const { selectedTileLayers, setSelectedTileLayers } = useSelectedTileLayers()
-  const { selectedKmlLayers, setSelectedKmlLayers } = useSelectedKmlLayers()
-  const { data: polygons } = usePolygons()
-  const { data: tileLayers } = useTileLayers()
-  const { data: kmlLayers } = useKmlLayers()
-  // Track expansion state of tree nodes
-  const EXPANDED_STORAGE_KEY = 'mapLayersExpandedSections'
-
-  // Memoize polygon bounding boxes — avoids re-walking all GeoJSON coordinates
-  // on every render (can be expensive for large datasets like US Shipping Lanes).
-  // Note: uses a naive global min/max, which is correct for regional (Pacific/CA)
-  // data but will produce incorrect bounds for features that cross the antimeridian
-  // (±180° longitude). Acceptable tradeoff for the current product scope.
-  const polygonBoundsMap = useMemo(() => {
-    const map = new Map<
-      string,
-      { minLat: number; maxLat: number; minLon: number; maxLon: number } | null
-    >()
-    ;(polygons ?? []).forEach((polygon) => {
-      try {
-        let minLat = Infinity,
-          maxLat = -Infinity,
-          minLon = Infinity,
-          maxLon = -Infinity
-        const collectCoord = (coord: unknown) => {
-          if (
-            Array.isArray(coord) &&
-            coord.length >= 2 &&
-            typeof coord[0] === 'number' &&
-            typeof coord[1] === 'number'
-          ) {
-            minLon = Math.min(minLon, coord[0])
-            maxLon = Math.max(maxLon, coord[0])
-            minLat = Math.min(minLat, coord[1])
-            maxLat = Math.max(maxLat, coord[1])
-          } else if (Array.isArray(coord)) {
-            coord.forEach(collectCoord)
-          }
-        }
-        ;(polygon.geojson?.features ?? []).forEach((f) =>
-          collectCoord(f.geometry?.coordinates)
-        )
-        map.set(
-          polygon.name,
-          isFinite(minLat) &&
-            isFinite(maxLat) &&
-            isFinite(minLon) &&
-            isFinite(maxLon)
-            ? { minLat, maxLat, minLon, maxLon }
-            : null
-        )
-      } catch {
-        map.set(polygon.name, null)
-      }
-    })
-    return map
-  }, [polygons])
-
-  const [expandedSections, setExpandedSections] = useState<
-    Record<SectionName, boolean>
-  >(() => {
-    try {
-      const stored =
-        typeof window !== 'undefined'
-          ? localStorage.getItem(EXPANDED_STORAGE_KEY)
-          : null
-      if (stored) {
-        const parsed = JSON.parse(stored)
-        if (typeof parsed === 'object' && parsed !== null) {
-          return {
-            stations: parsed.stations ?? false,
-            markers: parsed.markers ?? false,
-            polygons: parsed.polygons ?? false,
-            tileLayers: parsed.tileLayers ?? false,
-            kmlLayers: parsed.kmlLayers ?? false,
-          }
-        }
-      }
-    } catch {
-      // fall through to defaults
-    }
-    return {
-      stations: false,
-      markers: false,
-      polygons: false,
-      tileLayers: false,
-      kmlLayers: false,
-    }
-  })
-  const [modalPosition, setModalPosition] = useState<
-    { top: number; left: number } | undefined
-  >(anchorPosition)
-  const [isFadingOut, setIsFadingOut] = useState(false)
-  const modalRef = useRef<HTMLDivElement>(null)
-  // Separate ref for the dialog content element — used for getBoundingClientRect
-  // measurements. modalRef wraps the fixed-position overlay and would report 0x0;
-  // dialogRef points to the actual sized panel inside so position clamping works.
-  const dialogRef = useRef<HTMLDivElement>(null)
-  const closeTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
-  // Ref mirror so event-handler closures always read the latest fading state.
-  const isFadingOutRef = useRef(false)
-  // Set to true by the closing mousedown so the paired click from the SAME
-  // gesture is still consumed (preventing map click-actions on close), then
-  // cleared. Subsequent gestures during the fade pass through freely.
-  const justClosedRef = useRef(false)
-  // Tracked so effect cleanup can remove it if the component unmounts while
-  // the mouse is still held down (before mouseup fires).
-  const clearJustClosedRef = useRef<(() => void) | null>(null)
-
-  const handleClose = useCallback(() => {
-    if (isFadingOutRef.current) return
-    isFadingOutRef.current = true
-    setIsFadingOut(true)
-    setHighlightedStationName(null)
-    closeTimerRef.current = setTimeout(() => {
-      onClose()
-    }, 250)
-  }, [onClose, setHighlightedStationName])
-
-  // Cleanup timer on unmount
-  useEffect(() => {
-    return () => {
-      if (closeTimerRef.current) clearTimeout(closeTimerRef.current)
-    }
-  }, [])
-
-  // Click-outside to dismiss
-  useEffect(() => {
-    const handleOutsideCapture = (e: MouseEvent) => {
-      // The mousedown from the closing gesture set justClosedRef. Consume this
-      // paired click to prevent map click-actions, then clear the flag so all
-      // subsequent clicks during the fade pass through to the map.
-      if (justClosedRef.current) {
-        justClosedRef.current = false
-        e.preventDefault()
-        e.stopPropagation()
-        return
-      }
-      // Already fading from a prior gesture — let events through so the map
-      // is fully interactive during the 250 ms fade window.
-      if (isFadingOutRef.current) return
-      if (modalRef.current && !modalRef.current.contains(e.target as Node)) {
-        e.preventDefault()
-        e.stopPropagation()
-        handleClose()
-      }
-    }
-
-    const handleOutsideMouseDown = (e: MouseEvent) => {
-      // Already fading — let all subsequent gestures reach the map.
-      if (isFadingOutRef.current) return
-      if (modalRef.current && !modalRef.current.contains(e.target as Node)) {
-        // Don't stop propagation here so Leaflet can begin a pan/drag on the
-        // same gesture. Flag the paired click so IT gets consumed instead.
-        // Remove the mouseup listener on gesture end, but defer the actual
-        // flag clear to the next macrotask so the paired click event (which
-        // fires after mouseup) can still observe justClosedRef as true and
-        // be consumed by handleOutsideCapture below.
-        justClosedRef.current = true
-        const clearJustClosed = () => {
-          clearJustClosedRef.current = null
-          setTimeout(() => {
-            justClosedRef.current = false
-          }, 0)
-        }
-        clearJustClosedRef.current = clearJustClosed
-        document.addEventListener('mouseup', clearJustClosed, {
-          capture: true,
-          once: true,
-        })
-        handleClose()
-      }
-    }
-
-    document.addEventListener('mousedown', handleOutsideMouseDown, {
-      capture: true,
-    })
-    document.addEventListener('click', handleOutsideCapture, { capture: true })
-    return () => {
-      document.removeEventListener('mousedown', handleOutsideMouseDown, {
-        capture: true,
-      })
-      document.removeEventListener('click', handleOutsideCapture, {
-        capture: true,
-      })
-      // Remove the pending mouseup listener if the component unmounts while
-      // the mouse is still held down (before mouseup fires).
-      if (clearJustClosedRef.current) {
-        document.removeEventListener('mouseup', clearJustClosedRef.current, {
-          capture: true,
-        })
-        clearJustClosedRef.current = null
-      }
-    }
-  }, [handleClose])
-
-  useEffect(() => {
-    if (!anchorPosition || !dialogRef.current) return
-
-    const modalRect = dialogRef.current.getBoundingClientRect()
-    const viewportHeight = window.innerHeight
-    const viewportWidth = window.innerWidth
-
-    let { top, left } = anchorPosition
-
-    // Adjust vertical position if needed
-    if (top + modalRect.height > viewportHeight) {
-      top = Math.max(10, viewportHeight - modalRect.height - 10) // Keep 10px padding
-    }
-
-    // Adjust horizontal position if needed
-    if (left + modalRect.width > viewportWidth) {
-      left = Math.max(10, viewportWidth - modalRect.width - 10)
-    }
-
-    setModalPosition({ top, left })
-  }, [anchorPosition])
-
-  const toggleExpanded = useCallback((section: SectionName) => {
-    setExpandedSections((prev) => {
-      const next = { ...prev, [section]: !prev[section] }
-      try {
-        if (typeof window !== 'undefined') {
-          localStorage.setItem(EXPANDED_STORAGE_KEY, JSON.stringify(next))
-        }
-      } catch {
-        // storage unavailable — continue without persisting
-      }
-      return next
-    })
-  }, [])
-
-  // Pre-computed list of stations with valid coordinates — used by select-all
-  // logic and the header checkbox so stations with invalid coords are excluded.
-  const validStations = useMemo(
-    () =>
-      (stations ?? []).filter((station) => {
-        const coords = station.geojson?.geometry?.coordinates
-        return (
-          Number.isFinite(coords?.[1] as number) &&
-          Number.isFinite(coords?.[0] as number)
-        )
-      }),
-    [stations]
-  )
-
-  // Existing handlers for stations
-  const handleSelectAllStations = useCallback(() => {
-    setSelectedStations(
-      validStations.map((station) => ({
-        name: station.name,
-        geojson: station.geojson,
-        lat: station.geojson.geometry.coordinates[1],
-        lon: station.geojson.geometry.coordinates[0],
-      }))
-    )
-  }, [validStations, setSelectedStations])
-
-  // Deselect all stations
-  const handleDeselectAllStations = useCallback(() => {
-    setSelectedStations([])
-  }, [setSelectedStations])
-
-  // Toggle select all stations
-  const handleToggleSelectAllStations = useCallback(() => {
-    const selectedValidCount = selectedStations.filter((s) =>
-      validStations.some((v) => v.name === s.name)
-    ).length
-    if (selectedValidCount === validStations.length) {
-      handleDeselectAllStations()
-    } else {
-      handleSelectAllStations()
-    }
-  }, [
-    selectedStations,
-    validStations,
-    handleSelectAllStations,
-    handleDeselectAllStations,
-  ])
-  // Filter markers to only show those saved to layer
-  const layerMarkers = useMemo(
-    () => markers.filter((marker) => marker.savedToLayer),
-    [markers]
-  )
-  // Handle Toggle Select All Markers
-  const handleToggleSelectAllMarkers = useCallback(() => {
-    // Check if all markers are currently visible
-    const allVisible = layerMarkers.every((marker) => marker.visible !== false)
-
-    // Toggle visibility for all markers one by one
-    layerMarkers.forEach((marker) => {
-      // Only toggle if needed to achieve the desired state
-      const needsToggle = (marker.visible !== false) === allVisible
-      if (needsToggle) {
-        toggleMarkerVisibility(marker.id.toString())
-      }
-    })
-
-    // Also update selection state to keep it in sync
-    if (allVisible) {
-      deselectAllMarkers()
-    } else {
-      selectAllMarkers()
-    }
-  }, [
+    setFlyToRequest,
+    handleToggleSelectAllStations,
+    isStationSelected,
     layerMarkers,
+    filteredMarkers,
     toggleMarkerVisibility,
-    selectAllMarkers,
-    deselectAllMarkers,
-  ])
-
-  // Check if a station is selected
-  const isStationSelected = (stationName: string): boolean => {
-    return selectedStations.some((s) => s.name === stationName)
-  }
-
-  // Memoized starred Set and sorted station list to avoid repeated .includes()
-  // calls inside the sort comparator on every render.
-  const starredSet = useMemo(
-    () => new Set(starredStations ?? []),
-    [starredStations]
-  )
-  const sortedStations = useMemo(() => {
-    const list = stations ?? []
-    // Decorate with original index so unstarred stations always preserve
-    // API order regardless of JS engine sort stability guarantees.
-    return list
-      .map((station, index) => ({ station, index }))
-      .sort((a, b) => {
-        const aStarred = starredSet.has(a.station.name)
-        const bStarred = starredSet.has(b.station.name)
-        if (aStarred && bStarred)
-          return a.station.name.localeCompare(b.station.name)
-        if (aStarred) return -1
-        if (bStarred) return 1
-        // Both unstarred: preserve original API order
-        return a.index - b.index
-      })
-      .map(({ station }) => station)
-  }, [stations, starredSet])
-
-  // Search & filter state
-  const [searchQuery, setSearchQuery] = useState('')
-  const [showSelectedOnly, setShowSelectedOnly] = useState(false)
-  const isFiltering = searchQuery.trim() !== '' || showSelectedOnly
-  const q = searchQuery.trim().toLowerCase()
-
-  const filteredStations = useMemo(() => {
-    let list = sortedStations
-    if (showSelectedOnly)
-      list = list.filter((s) =>
-        selectedStations.some((sel) => sel.name === s.name)
-      )
-    if (q) list = list.filter((s) => s.name.toLowerCase().includes(q))
-    return list
-  }, [sortedStations, showSelectedOnly, q, selectedStations])
-
-  const filteredMarkers = useMemo(() => {
-    let list = layerMarkers
-    if (showSelectedOnly) list = list.filter((m) => m.visible !== false)
-    if (q)
-      list = list.filter((m) =>
-        (m.label || `Marker ${m.id}`).toLowerCase().includes(q)
-      )
-    return list
-  }, [layerMarkers, showSelectedOnly, q])
-
-  const filteredPolygons = useMemo(() => {
-    let list = polygons ?? []
-    if (showSelectedOnly)
-      list = list.filter((p) => selectedPolygons.includes(p.name))
-    if (q) list = list.filter((p) => p.name.toLowerCase().includes(q))
-    return list
-  }, [polygons, showSelectedOnly, q, selectedPolygons])
-
-  const filteredTileLayers = useMemo(() => {
-    let list = tileLayers ?? []
-    if (showSelectedOnly)
-      list = list.filter(
-        (t) =>
-          t.urlTemplate &&
-          t.urlTemplate.trim() !== '' &&
-          selectedTileLayers.includes(t.name)
-      )
-    if (q) list = list.filter((t) => t.name.toLowerCase().includes(q))
-    return list
-  }, [tileLayers, showSelectedOnly, q, selectedTileLayers])
-
-  const filteredKmlLayers = useMemo(() => {
-    let list = kmlLayers ?? []
-    if (showSelectedOnly)
-      list = list.filter(
-        (k) =>
-          !k.path.toLowerCase().endsWith('.kmz') &&
-          selectedKmlLayers.includes(k.name)
-      )
-    if (q) list = list.filter((k) => k.name.toLowerCase().includes(q))
-    return list
-  }, [kmlLayers, showSelectedOnly, q, selectedKmlLayers])
+    handleToggleSelectAllMarkers,
+    polygons,
+    filteredPolygons,
+    selectedPolygons,
+    setSelectedPolygons,
+    polygonBoundsMap,
+    tileLayers,
+    filteredTileLayers,
+    selectedTileLayers,
+    setSelectedTileLayers,
+    kmlLayers,
+    filteredKmlLayers,
+    selectedKmlLayers,
+    setSelectedKmlLayers,
+  } = useMapLayersModal({ onClose, anchorPosition })
 
   return (
     <>
@@ -731,8 +96,7 @@ export const MapLayersListModal: React.FC<{
           }}
           className="m-0 p-0"
         >
-          {/* Invisible inner anchor for getBoundingClientRect — the outer
-              wrapper div is position:fixed and may report 0x0 */}
+          {/* Invisible inner anchor for getBoundingClientRect */}
           <div
             ref={dialogRef}
             style={{ position: 'absolute', inset: 0, pointerEvents: 'none' }}
@@ -784,382 +148,58 @@ export const MapLayersListModal: React.FC<{
               maxHeight: 'calc(70vh - 160px)',
             }}
           >
-            {/* Main tree structure */}
             <div className="tree-view">
-              {/* Markers Section */}
-              {(!isFiltering || filteredMarkers.length > 0) && (
-                <TreeItem
-                  label="Markers"
-                  isExpanded={
-                    isFiltering
-                      ? filteredMarkers.length > 0
-                      : expandedSections.markers
-                  }
-                  isChecked={
-                    layerMarkers.length > 0 &&
-                    layerMarkers.every((marker) => marker.visible !== false)
-                  }
-                  onToggleExpand={() => toggleExpanded('markers')}
-                  onToggleCheck={
-                    layerMarkers.length > 0
-                      ? handleToggleSelectAllMarkers
-                      : undefined
-                  }
-                  icon={faMapMarkerAlt}
-                  iconColor="red"
-                  disabled={layerMarkers.length === 0}
-                >
-                  {filteredMarkers.map((marker) => (
-                    <TreeItem
-                      key={`marker-${marker.id}`}
-                      label={marker.label || `Marker ${marker.id}`}
-                      isChecked={marker.visible !== false}
-                      onToggleCheck={() =>
-                        toggleMarkerVisibility(marker.id.toString())
-                      }
-                      icon={faMapMarkerAlt}
-                      iconColor="red"
-                    />
-                  ))}
-                  {layerMarkers.length === 0 && (
-                    <div className="py-2 pl-10 text-sm italic text-gray-500">
-                      No markers saved to layers
-                    </div>
-                  )}
-                </TreeItem>
-              )}
-
-              {/* Stations Section */}
-              {(!isFiltering || filteredStations.length > 0) && (
-                <TreeItem
-                  label="Stations"
-                  isExpanded={
-                    isFiltering
-                      ? filteredStations.length > 0
-                      : expandedSections.stations
-                  }
-                  isChecked={
-                    validStations.length > 0 &&
-                    selectedStations.filter((s) =>
-                      validStations.some((v) => v.name === s.name)
-                    ).length === validStations.length
-                  }
-                  onToggleExpand={() => toggleExpanded('stations')}
-                  onToggleCheck={
-                    validStations.length > 0
-                      ? handleToggleSelectAllStations
-                      : undefined
-                  }
-                  icon={faCircle}
-                  iconColor="white"
-                  disabled={validStations.length === 0}
-                >
-                  {/* Starred stations first (alphabetical), then unstarred in original API order */}
-                  {filteredStations.map((station) => {
-                    const coords = station.geojson?.geometry?.coordinates
-                    const stationLon = coords?.[0]
-                    const stationLat = coords?.[1]
-                    const hasValidCoords =
-                      Number.isFinite(stationLat as number) &&
-                      Number.isFinite(stationLon as number)
-
-                    return (
-                      <TreeItem
-                        key={`station-${station.name}`}
-                        label={station.name}
-                        disabled={!hasValidCoords}
-                        disabledTitle="No valid coordinates"
-                        isChecked={isStationSelected(station.name)}
-                        onToggleCheck={() => {
-                          if (isStationSelected(station.name)) {
-                            setSelectedStations(
-                              selectedStations.filter(
-                                (s) => s.name !== station.name
-                              )
-                            )
-                          } else if (hasValidCoords) {
-                            setSelectedStations([
-                              ...selectedStations,
-                              {
-                                name: station.name,
-                                geojson: station.geojson,
-                                lat: stationLat as number,
-                                lon: stationLon as number,
-                              },
-                            ])
-                          }
-                        }}
-                        isStarred={starredSet.has(station.name)}
-                        onStarClick={() => {
-                          const isCurrentlyStarred = starredSet.has(
-                            station.name
-                          )
-                          if (isCurrentlyStarred) {
-                            // Un-starring: clear any active spotlight
-                            setHighlightedStationName(null)
-                          } else {
-                            // Starring while hovering: immediately show spotlight
-                            // so the user doesn't need to mouse-out and back
-                            setHighlightedStationName(station.name)
-                          }
-                          toggleStarStation(station.name)
-                        }}
-                        onMouseEnterStar={() => {
-                          if (starredSet.has(station.name)) {
-                            setHighlightedStationName(station.name)
-                          }
-                        }}
-                        onMouseLeaveStar={() => setHighlightedStationName(null)}
-                        onCenterClick={
-                          hasValidCoords
-                            ? () =>
-                                setFlyToRequest({
-                                  lat: stationLat as number,
-                                  lon: stationLon as number,
-                                })
-                            : undefined
-                        }
-                        centerLabel="Center map on this station"
-                      />
-                    )
-                  })}
-                  {stations !== undefined && stations.length === 0 ? (
-                    <div className="py-2 pl-10 text-sm italic text-gray-500">
-                      No stations available
-                    </div>
-                  ) : null}
-                </TreeItem>
-              )}
-
-              {/* Polygons Section */}
-              {(!isFiltering || filteredPolygons.length > 0) &&
-                (() => {
-                  const polygonNames = (polygons ?? []).map((p) => p.name)
-                  const allPolygonsSelected =
-                    polygonNames.length > 0 &&
-                    polygonNames.every((n) => selectedPolygons.includes(n))
-                  return (
-                    <TreeItem
-                      label="Polygons"
-                      isExpanded={
-                        isFiltering
-                          ? filteredPolygons.length > 0
-                          : expandedSections.polygons
-                      }
-                      isChecked={allPolygonsSelected}
-                      onToggleExpand={() => toggleExpanded('polygons')}
-                      onToggleCheck={
-                        polygonNames.length > 0
-                          ? () => {
-                              if (allPolygonsSelected) {
-                                setSelectedPolygons([])
-                              } else {
-                                setSelectedPolygons(polygonNames)
-                              }
-                            }
-                          : undefined
-                      }
-                      disabled={(polygons?.length ?? 0) === 0}
-                      icon={faDrawPolygon}
-                      iconColor="#6366f1"
-                    >
-                      {filteredPolygons.map((polygon) => {
-                        const polygonBounds =
-                          polygonBoundsMap.get(polygon.name) ?? null
-
-                        return (
-                          <TreeItem
-                            key={`polygon-${polygon.name}`}
-                            label={polygon.name}
-                            isChecked={selectedPolygons.includes(polygon.name)}
-                            onToggleCheck={() => {
-                              setSelectedPolygons((prev) =>
-                                prev.includes(polygon.name)
-                                  ? prev.filter((n) => n !== polygon.name)
-                                  : [...prev, polygon.name]
-                              )
-                            }}
-                            onCenterClick={
-                              polygonBounds
-                                ? () =>
-                                    setFlyToRequest({
-                                      lat:
-                                        (polygonBounds!.minLat +
-                                          polygonBounds!.maxLat) /
-                                        2,
-                                      lon:
-                                        (polygonBounds!.minLon +
-                                          polygonBounds!.maxLon) /
-                                        2,
-                                      bounds: [
-                                        [
-                                          polygonBounds!.minLat,
-                                          polygonBounds!.minLon,
-                                        ],
-                                        [
-                                          polygonBounds!.maxLat,
-                                          polygonBounds!.maxLon,
-                                        ],
-                                      ],
-                                    })
-                                : undefined
-                            }
-                            centerLabel="Center map on this polygon"
-                          />
-                        )
-                      })}
-                      {polygons !== undefined && polygons.length === 0 ? (
-                        <div className="py-2 pl-10 text-sm italic text-gray-500">
-                          No polygons available
-                        </div>
-                      ) : null}
-                    </TreeItem>
-                  )
-                })()}
-
-              {/* TILE Layers Section */}
-              {(!isFiltering || filteredTileLayers.length > 0) &&
-                (() => {
-                  const renderableTileLayers = (tileLayers ?? []).filter(
-                    (t) => t.urlTemplate && t.urlTemplate.trim() !== ''
-                  )
-                  const renderableNames = renderableTileLayers.map(
-                    (t) => t.name
-                  )
-                  const allTilesSelected =
-                    renderableNames.length > 0 &&
-                    renderableNames.every((n) => selectedTileLayers.includes(n))
-                  return (
-                    <TreeItem
-                      label="TILE Layers"
-                      isExpanded={
-                        isFiltering
-                          ? filteredTileLayers.length > 0
-                          : expandedSections.tileLayers
-                      }
-                      isChecked={allTilesSelected}
-                      onToggleExpand={() => toggleExpanded('tileLayers')}
-                      onToggleCheck={
-                        renderableNames.length > 0
-                          ? () => {
-                              if (allTilesSelected) {
-                                setSelectedTileLayers([])
-                              } else {
-                                setSelectedTileLayers(renderableNames)
-                              }
-                            }
-                          : undefined
-                      }
-                      disabled={(tileLayers?.length ?? 0) === 0}
-                      icon={faLayerGroup}
-                      iconColor="#0ea5e9"
-                    >
-                      {filteredTileLayers.map((tile) => {
-                        const hasValidUrl =
-                          tile.urlTemplate && tile.urlTemplate.trim() !== ''
-                        return (
-                          <TreeItem
-                            key={`tile-${tile.name}`}
-                            label={tile.name}
-                            isChecked={selectedTileLayers.includes(tile.name)}
-                            onToggleCheck={
-                              hasValidUrl
-                                ? () => {
-                                    setSelectedTileLayers((prev) =>
-                                      prev.includes(tile.name)
-                                        ? prev.filter((n) => n !== tile.name)
-                                        : [...prev, tile.name]
-                                    )
-                                  }
-                                : undefined
-                            }
-                            disabled={!hasValidUrl}
-                            disabledTitle={
-                              !hasValidUrl
-                                ? 'Layer has no URL configured'
-                                : undefined
-                            }
-                          />
-                        )
-                      })}
-                      {tileLayers !== undefined && tileLayers.length === 0 ? (
-                        <div className="py-2 pl-10 text-sm italic text-gray-500">
-                          No tile layers available
-                        </div>
-                      ) : null}
-                    </TreeItem>
-                  )
-                })()}
-
-              {/* KML Layers Section */}
-              {(!isFiltering || filteredKmlLayers.length > 0) &&
-                (() => {
-                  const selectableKmlLayers = (kmlLayers ?? []).filter(
-                    (k) => !k.path.toLowerCase().endsWith('.kmz')
-                  )
-                  const selectableNames = selectableKmlLayers.map((k) => k.name)
-                  const allSelected =
-                    selectableNames.length > 0 &&
-                    selectableNames.every((n) => selectedKmlLayers.includes(n))
-                  return (
-                    <TreeItem
-                      label="KML Layers"
-                      isExpanded={
-                        isFiltering
-                          ? filteredKmlLayers.length > 0
-                          : expandedSections.kmlLayers
-                      }
-                      isChecked={allSelected}
-                      onToggleExpand={() => toggleExpanded('kmlLayers')}
-                      onToggleCheck={
-                        selectableNames.length > 0
-                          ? () => {
-                              if (allSelected) {
-                                setSelectedKmlLayers([])
-                              } else {
-                                setSelectedKmlLayers(selectableNames)
-                              }
-                            }
-                          : undefined
-                      }
-                      disabled={selectableNames.length === 0}
-                      icon={faFileCode}
-                      iconColor="#16a34a"
-                    >
-                      {filteredKmlLayers.map((kml) => {
-                        const isKmz = kml.path.toLowerCase().endsWith('.kmz')
-                        return (
-                          <TreeItem
-                            key={`kml-${kml.name}`}
-                            label={kml.name}
-                            isChecked={
-                              !isKmz && selectedKmlLayers.includes(kml.name)
-                            }
-                            disabled={isKmz}
-                            disabledTitle=".kmz files are not yet supported"
-                            onToggleCheck={
-                              isKmz
-                                ? undefined
-                                : () => {
-                                    setSelectedKmlLayers((prev) =>
-                                      prev.includes(kml.name)
-                                        ? prev.filter((n) => n !== kml.name)
-                                        : [...prev, kml.name]
-                                    )
-                                  }
-                            }
-                          />
-                        )
-                      })}
-                      {kmlLayers !== undefined && kmlLayers.length === 0 ? (
-                        <div className="py-2 pl-10 text-sm italic text-gray-500">
-                          No KML layers available
-                        </div>
-                      ) : null}
-                    </TreeItem>
-                  )
-                })()}
-              {/* No results message when filtering */}
+              <MarkersLayerSection
+                isFiltering={isFiltering}
+                filteredMarkers={filteredMarkers}
+                layerMarkers={layerMarkers}
+                expandedSections={expandedSections}
+                toggleExpanded={toggleExpanded}
+                handleToggleSelectAllMarkers={handleToggleSelectAllMarkers}
+                toggleMarkerVisibility={toggleMarkerVisibility}
+              />
+              <StationsLayerSection
+                isFiltering={isFiltering}
+                filteredStations={filteredStations}
+                stations={stations}
+                validStations={validStations}
+                selectedStations={selectedStations}
+                expandedSections={expandedSections}
+                starredSet={starredSet}
+                isStationSelected={isStationSelected}
+                toggleExpanded={toggleExpanded}
+                handleToggleSelectAllStations={handleToggleSelectAllStations}
+                setSelectedStations={setSelectedStations}
+              />
+              <PolygonsLayerSection
+                isFiltering={isFiltering}
+                filteredPolygons={filteredPolygons}
+                polygons={polygons}
+                selectedPolygons={selectedPolygons}
+                expandedSections={expandedSections}
+                polygonBoundsMap={polygonBoundsMap}
+                toggleExpanded={toggleExpanded}
+                setSelectedPolygons={setSelectedPolygons}
+                setFlyToRequest={setFlyToRequest}
+              />
+              <TileLayersSection
+                isFiltering={isFiltering}
+                filteredTileLayers={filteredTileLayers}
+                tileLayers={tileLayers}
+                selectedTileLayers={selectedTileLayers}
+                expandedSections={expandedSections}
+                toggleExpanded={toggleExpanded}
+                setSelectedTileLayers={setSelectedTileLayers}
+              />
+              <KmlLayersSection
+                isFiltering={isFiltering}
+                filteredKmlLayers={filteredKmlLayers}
+                kmlLayers={kmlLayers}
+                selectedKmlLayers={selectedKmlLayers}
+                expandedSections={expandedSections}
+                toggleExpanded={toggleExpanded}
+                setSelectedKmlLayers={setSelectedKmlLayers}
+              />
               {isFiltering &&
                 filteredMarkers.length === 0 &&
                 filteredStations.length === 0 &&
@@ -1172,7 +212,7 @@ export const MapLayersListModal: React.FC<{
                 )}
             </div>
           </div>
-          {/* Footer placed inside the modal content */}
+          {/* Footer */}
           <div
             className="border-t border-gray-200 bg-white"
             style={{
@@ -1191,9 +231,7 @@ export const MapLayersListModal: React.FC<{
               <button
                 onClick={handleClose}
                 className="rounded bg-blue-500 px-4 py-2 text-white hover:bg-blue-800"
-                style={{
-                  marginRight: '20px',
-                }}
+                style={{ marginRight: '20px' }}
               >
                 Close
               </button>

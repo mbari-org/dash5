@@ -10,7 +10,7 @@ import { createLogger } from '@mbari/utils'
 const logger = createLogger('SelectedStationsContext')
 
 // Define or import the Station type
-interface Station {
+export interface Station {
   name: string
   lat: number
   lon: number
