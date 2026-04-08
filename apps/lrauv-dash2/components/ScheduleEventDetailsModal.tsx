@@ -582,20 +582,6 @@ export const ScheduleEventDetailsModal: React.FC<
             </p>
             <p className="font-medium">{formatVia(event.via)}</p>
           </div>
-          {event.commsStatus && (
-            <div>
-              <p className="text-sm uppercase tracking-wide text-stone-500">
-                Comms Status
-              </p>
-              <span
-                className={statusPillClass(event.commsStatus)}
-                style={statusPillStyle(event.commsStatus)}
-              >
-                {event.commsStatus.charAt(0).toUpperCase() +
-                  event.commsStatus.slice(1)}
-              </span>
-            </div>
-          )}
           <div>
             <p className="text-sm uppercase tracking-wide text-stone-500">
               Operator
