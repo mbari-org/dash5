@@ -195,7 +195,6 @@ export const ScheduleSection: React.FC<ScheduleSectionProps> = ({
     // 2) nearest-by-time within a small window as conservative fallback
     const MATCH_WINDOW_MS = 10 * 60 * 1000
     const enriched = items.map((item) => {
-      if (item.status !== 'TBD') return item
       const missionPath =
         missionPathFromEventData(item.event.data) ||
         missionPathFromEventData(item.event.text)
@@ -215,7 +214,8 @@ export const ScheduleSection: React.FC<ScheduleSectionProps> = ({
       if (inInterval) {
         return {
           ...item,
-          status: inInterval.status,
+          // Only override status when it is not yet resolved by the API.
+          status: item.status === 'TBD' ? inInterval.status : item.status,
           endedAt: inInterval.endedAt,
         }
       }
@@ -232,7 +232,11 @@ export const ScheduleSection: React.FC<ScheduleSectionProps> = ({
       if (Math.abs(best.startedAt - item.event.unixTime) > MATCH_WINDOW_MS)
         return item
 
-      return { ...item, status: best.status, endedAt: best.endedAt }
+      return {
+        ...item,
+        status: item.status === 'TBD' ? best.status : item.status,
+        endedAt: best.endedAt,
+      }
     })
 
     // Ensure the currently running mission is represented as running.
