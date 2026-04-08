@@ -12,6 +12,7 @@ import {
   LoadMoreButton,
 } from '@mbari/react-ui'
 import { DateTime } from 'luxon'
+import { formatElapsedTime } from '@mbari/utils'
 import { faPlus } from '@fortawesome/free-solid-svg-icons'
 import clsx from 'clsx'
 import { Select } from '@mbari/react-ui/dist/Fields/Select'
@@ -526,8 +527,10 @@ export const ScheduleSection: React.FC<ScheduleSectionProps> = ({
         <div className="grid grid-cols-3 gap-2 px-4 py-2">
           <span className="flex flex-col">
             <span className="text-xs font-bold">Schedule History</span>
-            <span className="text-xs text-stone-400">
-              (end times approximate — see Logs for accuracy)
+            <span className="text-xs text-stone-500">
+              NOTE: Ended times are approximate
+              <br />
+              Accuracy varies — see Logs for exact times
             </span>
           </span>
           <Select
@@ -671,8 +674,14 @@ export const ScheduleSection: React.FC<ScheduleSectionProps> = ({
             return `Sent and Queued for ${timeStr} UTC`
           }
 
-          const relative = dt.toRelative()
-          const relativePart = relative ? ` (${relative})` : ''
+          const now = DateTime.now()
+          const elapsedMs = now.toMillis() - dt.toMillis()
+          const relativePart =
+            elapsedMs >= 0 ? ` (${formatElapsedTime(elapsedMs)} ago)` : ''
+          const isToday = dt.hasSame(now, 'day')
+          const timeStr = isToday
+            ? dt.toFormat('H:mm')
+            : dt.toFormat('MMM d, H:mm')
           const verb = isParam
             ? 'Sent'
             : cellStatus === 'pending'
@@ -686,7 +695,7 @@ export const ScheduleSection: React.FC<ScheduleSectionProps> = ({
             : isMission
             ? 'Started'
             : 'Ran'
-          return `${verb} ${dt.toFormat('H:mm')}${relativePart}`
+          return `${verb} ${timeStr}${relativePart}`
         })()}
         description2={
           isParam
@@ -698,7 +707,13 @@ export const ScheduleSection: React.FC<ScheduleSectionProps> = ({
             : cellStatus === 'running' || cellStatus === 'pending'
             ? 'Ended: TBD'
             : mission.endedAt
-            ? `Ended: ~${DateTime.fromMillis(mission.endedAt).toFormat('H:mm')}`
+            ? `Ended: ~${(() => {
+                const endDt = DateTime.fromMillis(mission.endedAt)
+                const isEndToday = endDt.hasSame(DateTime.now(), 'day')
+                return isEndToday
+                  ? endDt.toFormat('H:mm')
+                  : endDt.toFormat('MMM d, H:mm')
+              })()}`
             : 'Ended: N/A (see Logs)'
         }
         badge={
