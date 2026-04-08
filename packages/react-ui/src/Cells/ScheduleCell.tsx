@@ -11,6 +11,8 @@ import {
   faPersonRunning,
   faStarOfLife,
   faPaperPlane,
+  faCheckCircle,
+  faExclamationTriangle,
 } from '@fortawesome/free-solid-svg-icons'
 import { faClock } from '@fortawesome/free-regular-svg-icons'
 import { IconProp } from '@fortawesome/fontawesome-svg-core'
@@ -23,6 +25,8 @@ export type ScheduleCellStatus =
   | 'completed'
   | 'paused'
   | 'sent'
+  | 'ack'
+  | 'timeout'
 export interface ScheduleCellProps {
   className?: string
   style?: React.CSSProperties
@@ -67,6 +71,8 @@ const icons: { [key: string]: IconProp } = {
   completed: faCheck as IconProp,
   paused: faPauseCircle as IconProp,
   sent: faPaperPlane as IconProp,
+  ack: faCheckCircle as IconProp,
+  timeout: faExclamationTriangle as IconProp,
 }
 
 export const ScheduleCellBackgrounds = {
