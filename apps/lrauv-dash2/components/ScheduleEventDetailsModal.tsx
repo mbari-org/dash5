@@ -388,7 +388,9 @@ export const ScheduleEventDetailsModal: React.FC<
               >
                 {event.status?.toLowerCase() === 'tbd'
                   ? 'Pending'
-                  : event.status || 'unknown'}
+                  : event.status
+                  ? event.status.charAt(0).toUpperCase() + event.status.slice(1)
+                  : 'Unknown'}
               </span>
             </div>
           </div>
