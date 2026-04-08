@@ -77,7 +77,7 @@ export const VehicleInfoCell: React.FC<VehicleInfoCellProps> = ({
     isPluggedIn || !lastSatCommsTime
       ? undefined
       : `${
-          lastSatCommsTime.day === now.day
+          lastSatCommsTime.hasSame(now, 'day')
             ? 'Today'
             : lastSatCommsTime.toFormat('MMM d')
         } at ${lastSatCommsTime.toFormat('hh:mm:ss')} (${formatCompactDuration(
@@ -90,7 +90,7 @@ export const VehicleInfoCell: React.FC<VehicleInfoCellProps> = ({
     isPluggedIn || !lastCellCommsTime
       ? undefined
       : `${
-          lastCellCommsTime.day === now.day
+          lastCellCommsTime.hasSame(now, 'day')
             ? 'Today'
             : lastCellCommsTime.toFormat('MMM d')
         } at ${lastCellCommsTime.toFormat('hh:mm:ss')} (${formatCompactDuration(
@@ -118,7 +118,7 @@ export const VehicleInfoCell: React.FC<VehicleInfoCellProps> = ({
     !isPluggedIn || !lastPluggedInTime
       ? undefined
       : `${
-          lastPluggedInTime.day === now.day
+          lastPluggedInTime.hasSame(now, 'day')
             ? 'Today'
             : lastPluggedInTime.toFormat('MMM d')
         } at ${lastPluggedInTime.toFormat('hh:mm:ss')} (${formatCompactDuration(
