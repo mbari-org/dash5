@@ -157,7 +157,9 @@ export const ScheduleSection: React.FC<ScheduleSectionProps> = ({
   // events[0] = running  →  endedAt: undefined
   // events[i] = ended    →  endedAt: events[i-1].unixTime
   const missionTimeline = useMemo(() => {
-    const events = missionStartedResponse.data ?? []
+    const events = [...(missionStartedResponse.data ?? [])].sort(
+      (a, b) => b.unixTime - a.unixTime
+    )
     return events.map((evt, idx) => ({
       name: missionNameFromStartedText(evt.text ?? ''),
       startedAt: evt.unixTime,
