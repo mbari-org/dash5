@@ -22,6 +22,7 @@ import {
   useInfiniteEvents,
   useMissionStartedEvent,
 } from '@mbari/api-client'
+import { formatElapsedTime } from '@mbari/utils'
 import useGlobalModalId from '../lib/useGlobalModalId'
 import {
   missionNameFromStartedText,
@@ -466,19 +467,9 @@ export const ScheduleSection: React.FC<ScheduleSectionProps> = ({
         description={(() => {
           if (mission.event.unixTime == null) return ''
           const dt = DateTime.fromMillis(mission.event.unixTime)
-          const totalMinutes = Math.round(
-            DateTime.now().diff(dt, 'minutes').minutes
-          )
-          let relativePart = ''
-          if (totalMinutes >= 0) {
-            if (totalMinutes < 60) {
-              relativePart = ` (${totalMinutes} min. ago)`
-            } else {
-              const h = Math.floor(totalMinutes / 60)
-              const m = totalMinutes % 60
-              relativePart = m > 0 ? ` (${h}h ${m}m ago)` : ` (${h}h ago)`
-            }
-          }
+          const elapsedMs = DateTime.now().toMillis() - dt.toMillis()
+          const relativePart =
+            elapsedMs >= 0 ? ` (${formatElapsedTime(elapsedMs)} ago)` : ''
           return `${isMission ? 'Started' : 'Ran'} ${dt.toFormat(
             'H:mm'
           )}${relativePart}`
