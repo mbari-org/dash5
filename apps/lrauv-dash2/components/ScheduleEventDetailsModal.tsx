@@ -194,6 +194,12 @@ const statusPillStyle = (status?: string): React.CSSProperties => {
         color: '#92400e',
         borderColor: '#fcd34d',
       }
+    case 'sent':
+      return {
+        backgroundColor: '#fef9c3',
+        color: '#713f12',
+        borderColor: '#fde047',
+      }
     default:
       return {
         backgroundColor: '#f5f5f4',
