@@ -27,6 +27,7 @@ import useGlobalModalId from '../lib/useGlobalModalId'
 import {
   missionNameFromStartedText,
   missionPathFromEventData,
+  rawMissionPathFromEventData,
   normalizeMissionName,
   normalizeMissionPath,
 } from '../lib/missionUtils'
@@ -596,8 +597,8 @@ export const ScheduleSection: React.FC<ScheduleSectionProps> = ({
 
     if (commandType === 'mission' || isMission) {
       const missionPath =
-        event?.data?.match(/[A-Za-z0-9_/.-]+\.(?:xml|tl)/i)?.[0] ??
-        event?.text?.match(/[A-Za-z0-9_/.-]+\.(?:xml|tl)/i)?.[0] ??
+        rawMissionPathFromEventData(event?.data) ||
+        rawMissionPathFromEventData(event?.text) ||
         ''
       setGlobalModalId({
         id: 'newMission',

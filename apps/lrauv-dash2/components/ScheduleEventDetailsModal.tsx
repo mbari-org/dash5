@@ -446,21 +446,38 @@ export const ScheduleEventDetailsModal: React.FC<
                 <span className="inline-flex items-center gap-1">
                   Started
                   <span className="relative inline-flex">
-                    <span
+                    <button
+                      type="button"
+                      aria-label="Started confirmation info"
+                      aria-describedby={
+                        showScheduledStartTooltip
+                          ? 'scheduled-start-confirmed-tooltip'
+                          : undefined
+                      }
                       style={{
                         color: '#10b981',
                         fontSize: '0.85rem',
                         fontWeight: 700,
                         lineHeight: 1,
                         cursor: 'default',
+                        background: 'transparent',
+                        border: 0,
+                        padding: 0,
                       }}
                       onMouseEnter={() => setShowScheduledStartTooltip(true)}
                       onMouseLeave={() => setShowScheduledStartTooltip(false)}
+                      onFocus={() => setShowScheduledStartTooltip(true)}
+                      onBlur={() => setShowScheduledStartTooltip(false)}
+                      onClick={() =>
+                        setShowScheduledStartTooltip((prev) => !prev)
+                      }
                     >
                       ✓
-                    </span>
+                    </button>
                     {showScheduledStartTooltip && (
                       <span
+                        id="scheduled-start-confirmed-tooltip"
+                        role="tooltip"
                         className="pointer-events-none absolute left-full top-1/2 ml-2 -translate-y-1/2 whitespace-nowrap rounded border px-3 py-1.5 text-xs font-normal normal-case shadow"
                         style={{
                           borderColor: '#6ee7b7',
