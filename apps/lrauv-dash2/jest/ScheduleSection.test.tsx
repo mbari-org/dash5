@@ -186,9 +186,9 @@ test('injects a synthetic running row when no command event matches current miss
     </MockProviders>
   )
 
-  // Component should render without throwing even when injection occurs.
+  // Running row shows "Ended: TBD" for its description2.
   await waitFor(() => {
-    expect(document.body).toBeTruthy()
+    expect(screen.getByText(/Ended:\s*TBD/i)).toBeInTheDocument()
   })
 })
 
@@ -196,6 +196,24 @@ test('classifies older mission as completed when a newer mission-started event e
   server.use(
     rest.get('/deployments/commandStatus', (_req, res, ctx) =>
       res(ctx.status(200), ctx.json({ result: runningMissionCommandStatus }))
+    ),
+    rest.get('/events', (_req, res, ctx) =>
+      res(
+        ctx.status(200),
+        ctx.json({
+          result: [
+            {
+              data: 'load Science/profile_station.tl;run',
+              unixTime: Date.now() - 60 * 1000,
+              eventId: 101,
+              eventType: 'run',
+              text: null,
+              note: null,
+              user: null,
+            },
+          ],
+        })
+      )
     ),
     rest.get('/events/mission-started', (_req, res, ctx) =>
       res(ctx.status(200), ctx.json({ result: missionStartedWithHistory }))
@@ -208,8 +226,10 @@ test('classifies older mission as completed when a newer mission-started event e
     </MockProviders>
   )
 
+  // Running mission shows "Ended: TBD"; completed mission shows an approximate end time.
   await waitFor(() => {
-    expect(document.body).toBeTruthy()
+    expect(screen.getByText(/Ended:\s*TBD/i)).toBeInTheDocument()
+    expect(screen.getByText(/Ended:.*~/i)).toBeInTheDocument()
   })
 })
 

@@ -264,18 +264,29 @@ export const ScheduleSection: React.FC<ScheduleSectionProps> = ({
       } else {
         const currentRawEvent = missionStartedResponse.data?.[0]
         if (currentRawEvent) {
-          // Prefer a raw path from an existing enriched row that matches the
-          // current mission — it preserves the original extension and casing.
+          // Prefer a raw path from an existing enriched row that refers to the
+          // same mission name — it preserves the original extension and casing
+          // even when exact-path matching above fails.
           // Fall back to the name from the mission-started text without a
           // hard-coded extension so MissionModal can still attempt a match.
-          const existingMatch = enriched.find((item) => {
-            const fromDataPath = missionPathFromEventData(item.event.data)
-            const fromTextPath = missionPathFromEventData(item.event.text)
-            return (
-              missionKeysMatch(fromDataPath, currentMissionPath) ||
-              missionKeysMatch(fromTextPath, currentMissionPath)
-            )
-          })
+          const currentMissionName = normalizeMissionName(
+            currentMissionEntry.name
+          )
+          const existingMatch =
+            currentMissionName &&
+            enriched.find((item) => {
+              const candidateMissionName =
+                normalizeMissionName(
+                  rawMissionPathFromEventData(item.event.data)
+                ) ||
+                normalizeMissionName(
+                  rawMissionPathFromEventData(item.event.text)
+                ) ||
+                normalizeMissionName(
+                  missionNameFromStartedText(item.event.text ?? '')
+                )
+              return candidateMissionName === currentMissionName
+            })
           const rawPath =
             (existingMatch &&
               (rawMissionPathFromEventData(existingMatch.event.data) ||

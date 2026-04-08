@@ -47,7 +47,8 @@ describe('formatCompactDuration', () => {
 
     it('shows full duration when maxDays is undefined and duration exceeds 6 days', () => {
       const ref = DateTime.fromISO('2024-01-01T00:00:00')
-      const target = ref.plus({ days: 7 })
+      const target = ref.plus({ days: 7, hours: 23 })
+      // 7d 23h — the long-duration branch uses integer days from diff, not fractional total
       expect(formatCompactDuration(target, ref)).toBe('7d')
     })
   })

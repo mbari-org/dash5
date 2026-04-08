@@ -25,7 +25,7 @@ export const formatCompactDuration = (
     const d = Math.trunc(days ?? 0)
     if (y > 0) return mo > 0 ? `${y}y ${mo}mo` : `${y}y`
     if (mo > 0) return d > 0 ? `${mo}mo ${d}d` : `${mo}mo`
-    return `${Math.trunc(daysTotal)}d`
+    return `${d}d`
   }
 
   const diff = later.diff(earlier, ['days', 'hours', 'minutes']).toObject()
