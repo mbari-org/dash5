@@ -148,7 +148,7 @@ export const ScheduleSection: React.FC<ScheduleSectionProps> = ({
 
   // Fetch recent mission-started events to derive real running/ended status.
   // The API returns newest-first: index 0 = currently running mission.
-  // Poll every 60s so running→ended transitions appear without a page refresh.
+  // Poll every 30s so running→ended transitions appear without a page refresh.
   const missionStartedResponse = useMissionStartedEvent(
     { vehicle: vehicleName, limit: 50 },
     { enabled: !!vehicleName, staleTime: 15 * 1000, refetchInterval: 30 * 1000 }
@@ -352,20 +352,24 @@ export const ScheduleSection: React.FC<ScheduleSectionProps> = ({
   const scheduledTypes = ['pending', 'running']
   const staticHeaderCellOffset = activeDeployment ? 1 : 0
   const hasPastSchedule =
-    missions?.some((v) => !scheduledTypes.includes(v.status)) ?? false
+    missions?.some(
+      (v) => !scheduledTypes.includes(toScheduleCellStatus(v.status))
+    ) ?? false
   const staticFilterCellOffset = hasPastSchedule ? 1 : 0
-  const indexOfPastSchedule = staticHeaderCellOffset
 
   const handleScheduleSearch = (e: React.ChangeEvent<HTMLInputElement>) => {
     setScheduleSearch(e.target.value)
   }
 
   const scheduledCells = missions?.filter((v) =>
-    scheduledTypes.includes(v.status)
+    scheduledTypes.includes(toScheduleCellStatus(v.status))
   )
 
+  const indexOfPastSchedule =
+    staticHeaderCellOffset + (scheduledCells?.length ?? 0)
+
   const historicCells = missions
-    ?.filter((v) => !scheduledTypes.includes(v.status))
+    ?.filter((v) => !scheduledTypes.includes(toScheduleCellStatus(v.status)))
     .filter(
       (v) =>
         !scheduleFilter ||
@@ -525,7 +529,7 @@ export const ScheduleSection: React.FC<ScheduleSectionProps> = ({
         description={(() => {
           if (mission.event.unixTime == null) return ''
           const dt = DateTime.fromMillis(mission.event.unixTime)
-          const relative = dt.toRelative({ style: 'short' })
+          const relative = dt.toRelative()
           const relativePart = relative ? ` (${relative})` : ''
           return `${isMission ? 'Started' : 'Ran'} ${dt.toFormat(
             'H:mm'
@@ -545,7 +549,7 @@ export const ScheduleSection: React.FC<ScheduleSectionProps> = ({
               scheduleEvent: {
                 eventId: mission.event.eventId,
                 commandType: cellCommandType,
-                status: mission.status,
+                status: cellStatus,
                 label: missionName ?? 'Unknown',
                 secondary: missionParams ?? undefined,
                 user: mission.event.user ?? undefined,
