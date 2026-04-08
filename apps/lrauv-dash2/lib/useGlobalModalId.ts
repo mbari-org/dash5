@@ -21,6 +21,7 @@ export type ModalId =
   | 'vehicleCharts'
   | 'vehicleComms'
   | 'battery'
+  | 'scheduleEventDetails'
   | 'color'
   | 'emailNotifications'
   | null
@@ -45,6 +46,23 @@ export interface GlobalModalMetaData {
   eventNote?: string | null
   eventIsoTime?: string | null
   eventVehicleName?: string | null
+  scheduleEvent?: {
+    eventId: number
+    commandType: 'mission' | 'command'
+    status: string
+    label: string
+    secondary?: string
+    user?: string
+    note?: string
+    eventData?: string
+    eventText?: string
+    startedAt?: number
+    endedAt?: number
+    vehicleName?: string
+    scheduleDate?: string
+    via?: 'cell' | 'sat' | 'cellsat'
+    isParamUpdate?: boolean
+  } | null
 }
 
 export interface GlobalModalState {

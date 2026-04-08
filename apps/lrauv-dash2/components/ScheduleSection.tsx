@@ -21,16 +21,16 @@ import {
   useDeploymentCommandStatus,
   useInfiniteEvents,
   useMissionStartedEvent,
+  getVia,
 } from '@mbari/api-client'
-import { formatElapsedTime } from '@mbari/utils'
 import useGlobalModalId from '../lib/useGlobalModalId'
 import {
   missionNameFromStartedText,
   missionPathFromEventData,
-  rawMissionPathFromEventData,
   normalizeMissionName,
   normalizeMissionPath,
 } from '../lib/missionUtils'
+import { formatElapsedTime } from '@mbari/utils'
 import { toast } from 'react-hot-toast'
 
 export interface ScheduleSectionProps {
@@ -64,10 +64,13 @@ const VALID_SCHEDULE_CELL_STATUSES: ScheduleCellStatus[] = [
   'paused',
 ]
 
-const toScheduleCellStatus = (status: string): ScheduleCellStatus =>
-  VALID_SCHEDULE_CELL_STATUSES.includes(status as ScheduleCellStatus)
-    ? (status as ScheduleCellStatus)
-    : 'completed'
+const toScheduleCellStatus = (status: string): ScheduleCellStatus => {
+  const s = status.trim().toLowerCase()
+  if (s === 'tbd') return 'pending'
+  return VALID_SCHEDULE_CELL_STATUSES.includes(s as ScheduleCellStatus)
+    ? (s as ScheduleCellStatus)
+    : 'pending'
+}
 
 const missionKeysMatch = (leftPath: string, rightPath: string) => {
   if (!leftPath || !rightPath) return false
@@ -104,6 +107,15 @@ export const isMissionCommand = (
   const hasLoad = /\bload\s+[A-Za-z0-9_/.-]+(?:\.(?:xml|tl))?\b/i.test(text)
   const hasRun = /\brun\b/i.test(text)
   return hasLoad && hasRun
+}
+
+// Detects parameter update commands: "set <missionName>.<paramName> <value>"
+export const isParamCommand = (
+  commandData?: string,
+  commandText?: string
+): boolean => {
+  const text = commandData ?? commandText ?? ''
+  return /^\s*set\s+\w+\.\w+/i.test(text)
 }
 
 export const ScheduleSection: React.FC<ScheduleSectionProps> = ({
@@ -149,7 +161,7 @@ export const ScheduleSection: React.FC<ScheduleSectionProps> = ({
   // Poll every 60s so running→ended transitions appear without a page refresh.
   const missionStartedResponse = useMissionStartedEvent(
     { vehicle: vehicleName, limit: 50 },
-    { enabled: !!vehicleName, staleTime: 30 * 1000, refetchInterval: 60 * 1000 }
+    { enabled: !!vehicleName, staleTime: 15 * 1000, refetchInterval: 30 * 1000 }
   )
 
   // Build a timeline: each entry knows its own start time and when it ended
@@ -193,13 +205,49 @@ export const ScheduleSection: React.FC<ScheduleSectionProps> = ({
     // Priority:
     // 1) interval containment (startedAt <= eventTime < endedAt) for exact runs
     // 2) nearest-by-time within a small window as conservative fallback
+    //
+    // For pre-queued missions (sched TIMESTAMP "..."), use the scheduled start
+    // time as the reference point instead of the command send time, since the
+    // vehicle won't start until that time and the match window would otherwise
+    // be too far off.
     const MATCH_WINDOW_MS = 10 * 60 * 1000
+
+    const parseScheduledUnixTime = (
+      data?: string,
+      text?: string
+    ): number | undefined => {
+      const raw = data ?? text ?? ''
+      // Format: 20260401}T0600 or 20260331T18 or 20260331T1800 (UTC)
+      const m =
+        raw.match(/sched\s+(\d{4})(\d{2})(\d{2})}T(\d{2})(\d{2})/) ||
+        raw.match(/sched\s+(\d{4})(\d{2})(\d{2})T(\d{2})(\d{2})?/)
+      if (!m) return undefined
+      const dt = DateTime.fromObject(
+        {
+          year: parseInt(m[1]),
+          month: parseInt(m[2]),
+          day: parseInt(m[3]),
+          hour: parseInt(m[4]),
+          minute: m[5] ? parseInt(m[5]) : 0,
+        },
+        { zone: 'utc' }
+      )
+      return dt.isValid ? dt.toMillis() : undefined
+    }
+
     const enriched = items.map((item) => {
       if (item.status !== 'TBD') return item
       const missionPath =
         missionPathFromEventData(item.event.data) ||
         missionPathFromEventData(item.event.text)
       if (!missionPath || item.event.unixTime == null) return item
+
+      // Use scheduled time as reference if available, else fall back to send time
+      const scheduledTime = parseScheduledUnixTime(
+        item.event.data,
+        item.event.text
+      )
+      const referenceTime = scheduledTime ?? item.event.unixTime
 
       const candidates = missionTimeline.filter((t) =>
         missionKeysMatch(normalizeMissionPath(t.name), missionPath)
@@ -208,9 +256,8 @@ export const ScheduleSection: React.FC<ScheduleSectionProps> = ({
 
       const inInterval = candidates.find(
         (candidate) =>
-          item.event.unixTime! >= candidate.startedAt &&
-          (candidate.endedAt == null ||
-            item.event.unixTime! < candidate.endedAt)
+          referenceTime >= candidate.startedAt &&
+          (candidate.endedAt == null || referenceTime < candidate.endedAt)
       )
       if (inInterval) {
         return {
@@ -222,14 +269,14 @@ export const ScheduleSection: React.FC<ScheduleSectionProps> = ({
 
       // Fallback: pick nearest timeline entry by start time.
       const best = candidates.reduce((prev, curr) =>
-        Math.abs(curr.startedAt - item.event.unixTime!) <
-        Math.abs(prev.startedAt - item.event.unixTime!)
+        Math.abs(curr.startedAt - referenceTime) <
+        Math.abs(prev.startedAt - referenceTime)
           ? curr
           : prev
       )
 
       // Only enrich if within the match window to avoid false positives.
-      if (Math.abs(best.startedAt - item.event.unixTime) > MATCH_WINDOW_MS)
+      if (Math.abs(best.startedAt - referenceTime) > MATCH_WINDOW_MS)
         return item
 
       return { ...item, status: best.status, endedAt: best.endedAt }
@@ -269,7 +316,7 @@ export const ScheduleSection: React.FC<ScheduleSectionProps> = ({
               // Construct a command-format data string so parseMissionCommand
               // produces a consistent label and "Use for new mission" receives
               // a valid path. GetMissionStartedEventResponse has no data field.
-              data: `load ${currentMissionEntry.name}.tl;run`,
+              data: `load ${currentMissionEntry.name};run`,
               unixTime: currentRawEvent.unixTime,
               eventId: currentRawEvent.eventId,
               eventType: 'run',
@@ -278,6 +325,27 @@ export const ScheduleSection: React.FC<ScheduleSectionProps> = ({
             status: 'running',
             endedAt: undefined,
           })
+        }
+      }
+    }
+
+    // Promote any still-TBD rows that predate the currently running mission.
+    // A row whose scheduled/send time is before the running mission started
+    // was either already run (but not matched by name) or displaced — calling
+    // it 'pending' indefinitely is misleading. Future-scheduled rows are safe:
+    // their referenceTime (scheduled run time) will be after startedAt.
+    const currentRunningStartedAt = missionTimeline[0]?.startedAt
+    if (currentRunningStartedAt) {
+      for (let i = 0; i < enriched.length; i++) {
+        const item = enriched[i]
+        if (item.status !== 'TBD') continue
+        const scheduledTime = parseScheduledUnixTime(
+          item.event.data,
+          item.event.text
+        )
+        const referenceTime = scheduledTime ?? item.event.unixTime ?? 0
+        if (referenceTime < currentRunningStartedAt) {
+          enriched[i] = { ...item, status: 'completed' }
         }
       }
     }
@@ -296,6 +364,7 @@ export const ScheduleSection: React.FC<ScheduleSectionProps> = ({
   const hasPastSchedule =
     missions?.some((v) => !scheduledTypes.includes(v.status)) ?? false
   const staticFilterCellOffset = hasPastSchedule ? 1 : 0
+  const indexOfPastSchedule = staticHeaderCellOffset
 
   const handleScheduleSearch = (e: React.ChangeEvent<HTMLInputElement>) => {
     setScheduleSearch(e.target.value)
@@ -304,11 +373,6 @@ export const ScheduleSection: React.FC<ScheduleSectionProps> = ({
   const scheduledCells = missions?.filter((v) =>
     scheduledTypes.includes(v.status)
   )
-
-  // Place the "Schedule History" heading at the boundary between scheduled
-  // (pending/running) items and historical items, not at the top.
-  const indexOfPastSchedule =
-    staticHeaderCellOffset + (scheduledCells?.length ?? 0)
 
   const historicCells = missions
     ?.filter((v) => !scheduledTypes.includes(v.status))
@@ -382,7 +446,7 @@ export const ScheduleSection: React.FC<ScheduleSectionProps> = ({
           className={clsx(
             'flex px-4 py-2 text-sm',
             scheduleStatus === 'running'
-              ? ScheduleCellBackgrounds.running
+              ? 'bg-violet-100'
               : ScheduleCellBackgrounds.paused
           )}
         >
@@ -405,8 +469,10 @@ export const ScheduleSection: React.FC<ScheduleSectionProps> = ({
         <div className="grid grid-cols-3 gap-2 px-4 py-2">
           <span className="flex flex-col">
             <span className="text-xs font-bold">Schedule History</span>
-            <span className="text-xs text-stone-400">
-              (end times approximate — see Logs for accuracy)
+            <span className="text-xs text-stone-500">
+              NOTE: Ended times are approximate
+              <br />
+              Accuracy varies — see Logs for exact times
             </span>
           </span>
           <Select
@@ -438,52 +504,104 @@ export const ScheduleSection: React.FC<ScheduleSectionProps> = ({
         />
       )
     }
-    // Scheduled cells appear before the heading — subtract only the deployment
-    // header offset.  Historical cells appear after the heading — also subtract
-    // the heading row itself (staticFilterCellOffset).
-    const indexOffset =
-      index < indexOfPastSchedule
-        ? -staticHeaderCellOffset
-        : -(staticHeaderCellOffset + staticFilterCellOffset)
+    // Filter bar is always at staticHeaderCellOffset, so all mission cells
+    // need the full combined offset subtracted.
+    const indexOffset = -(staticHeaderCellOffset + staticFilterCellOffset)
     const mission = results[index + indexOffset]
     const { name: missionName, parameters: missionParams } =
       parseMissionCommand(mission?.event.data ?? '')
     const isMission =
       mission?.event?.eventType === 'run' ||
       isMissionCommand(mission?.event?.data, mission?.event?.text)
+    const isParam =
+      !isMission && isParamCommand(mission?.event?.data, mission?.event?.text)
     const cellCommandType: 'mission' | 'command' = isMission
       ? 'mission'
       : 'command'
+    const rawText = mission?.event.data ?? mission?.event.text ?? ''
+    const schedDateMatch = rawText.match(/sched\s+(\d{8}}T\d{4}|\d{8}T\d{2,4})/)
+    const scheduleDate = rawText.match(/sched\s+asap/i)
+      ? 'asap'
+      : schedDateMatch
+      ? schedDateMatch[1]
+      : undefined
+    const cellStatus = isParam
+      ? 'sent'
+      : toScheduleCellStatus(mission?.status ?? '')
 
     return mission ? (
       <ScheduleCell
         label={missionName ?? 'Unknown'}
         secondary={missionParams ?? 'No parameters'}
-        status={toScheduleCellStatus(mission.status)}
+        status={cellStatus}
         name={mission.event.user ?? 'Unknown'}
         scheduleStatus={
-          (['pending', 'running'].includes(mission.status) && scheduleStatus) ||
+          (['pending', 'running'].includes(cellStatus) && scheduleStatus) ||
           undefined
         }
         className="border-b border-stone-200"
         description={(() => {
           if (mission.event.unixTime == null) return ''
           const dt = DateTime.fromMillis(mission.event.unixTime)
-          const elapsedMs = DateTime.now().toMillis() - dt.toMillis()
+          const now = DateTime.now()
+          const elapsedMs = now.toMillis() - dt.toMillis()
           const relativePart =
             elapsedMs >= 0 ? ` (${formatElapsedTime(elapsedMs)} ago)` : ''
-          return `${isMission ? 'Started' : 'Ran'} ${dt.toFormat(
-            'H:mm'
-          )}${relativePart}`
+          const isToday = dt.hasSame(now, 'day')
+          const timeStr = isToday
+            ? dt.toFormat('H:mm')
+            : dt.toFormat('MMM d, H:mm')
+          const verb = isParam ? 'Sent' : isMission ? 'Started' : 'Ran'
+          return `${verb} ${timeStr}${relativePart}`
         })()}
         description2={
-          mission.status === 'running' || mission.status === 'pending'
+          isParam
+            ? undefined
+            : cellStatus === 'running' || cellStatus === 'pending'
             ? 'Ended: TBD'
             : mission.endedAt
-            ? `Ended: ~${DateTime.fromMillis(mission.endedAt).toFormat('H:mm')}`
-            : ''
+            ? `Ended: ~${(() => {
+                const endDt = DateTime.fromMillis(mission.endedAt)
+                const isToday = endDt.hasSame(DateTime.now(), 'day')
+                return isToday
+                  ? endDt.toFormat('H:mm')
+                  : endDt.toFormat('MMM d, H:mm')
+              })()}`
+            : 'Ended: N/A (see Logs)'
         }
-        onSelect={() => undefined}
+        description3={isParam ? undefined : undefined}
+        badge={
+          isParam
+            ? {
+                text: 'config',
+                tooltip: 'Config update — added to running mission',
+              }
+            : undefined
+        }
+        onSelect={() => {
+          setGlobalModalId({
+            id: 'scheduleEventDetails',
+            meta: {
+              scheduleEvent: {
+                eventId: mission.event.eventId,
+                commandType: cellCommandType,
+                status: isParam ? 'sent' : mission.status,
+                label: missionName ?? 'Unknown',
+                secondary: missionParams ?? undefined,
+                user: mission.event.user ?? undefined,
+                note: mission.event.note ?? undefined,
+                eventData: mission.event.data ?? undefined,
+                eventText: mission.event.text ?? undefined,
+                startedAt: mission.event.unixTime,
+                endedAt: mission.endedAt,
+                vehicleName,
+                scheduleDate,
+                via: getVia(mission.event.note) ?? undefined,
+                isParamUpdate: isParam,
+              },
+            },
+          })
+        }}
         onMoreClick={openMoreMenu}
         eventId={mission.event.eventId}
         commandType={cellCommandType}
@@ -506,11 +624,9 @@ export const ScheduleSection: React.FC<ScheduleSectionProps> = ({
     const isMission = isMissionCommand(event?.data, event?.text)
 
     if (commandType === 'mission' || isMission) {
-      // Use the raw (unnormalized) path so MissionModal can auto-select the
-      // correct entry from the mission list (which expects original case + extension).
       const missionPath =
-        rawMissionPathFromEventData(event?.data) ||
-        rawMissionPathFromEventData(event?.text) ||
+        event?.data?.match(/[A-Za-z0-9_/]+\.(?:xml|tl)/)?.[0] ??
+        event?.text?.match(/[A-Za-z0-9_/]+\.(?:xml|tl)/)?.[0] ??
         ''
       setGlobalModalId({
         id: 'newMission',
