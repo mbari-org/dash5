@@ -215,6 +215,13 @@ export const ScheduleEventDetailsModal: React.FC<
     useState(false)
   const event = globalModalId?.meta?.scheduleEvent
 
+  // Reset tooltip state whenever the selected event changes
+  useEffect(() => {
+    setShowStatusTooltip(false)
+    setShowEndedTooltip(false)
+    setShowScheduledStartTooltip(false)
+  }, [event?.eventId])
+
   if (!event) return null
 
   const deploymentId =

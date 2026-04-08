@@ -162,7 +162,7 @@ export const ScheduleSection: React.FC<ScheduleSectionProps> = ({
   const missionTimeline = useMemo(() => {
     const events = missionStartedResponse.data ?? []
     return events.map((evt, idx) => ({
-      name: missionNameFromStartedText(evt.text),
+      name: missionNameFromStartedText(evt.text ?? ''),
       startedAt: evt.unixTime,
       endedAt: idx > 0 ? events[idx - 1].unixTime : undefined,
       status: idx === 0 ? ('running' as const) : ('completed' as const),
