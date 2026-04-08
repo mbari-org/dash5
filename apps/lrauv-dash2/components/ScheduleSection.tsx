@@ -131,6 +131,7 @@ export const ScheduleSection: React.FC<ScheduleSectionProps> = ({
   activeDeployment,
   vehicleName,
   deploymentStartTime,
+  isRecovered,
 }) => {
   const { setGlobalModalId } = useGlobalModalId()
   const [scheduleFilter, setScheduleFilter] = useState<string>('')
@@ -225,6 +226,14 @@ export const ScheduleSection: React.FC<ScheduleSectionProps> = ({
         },
         status: 'TBD',
       }))
+    }
+
+    // When the vehicle has been recovered, any remaining pending commands
+    // will never execute — treat them as completed so the history is clean.
+    if (isRecovered) {
+      items = items.map((item) =>
+        item.status === 'pending' ? { ...item, status: 'completed' } : item
+      )
     }
 
     // Enrich each item's status/endedAt from mission-started events.
@@ -405,6 +414,7 @@ export const ScheduleSection: React.FC<ScheduleSectionProps> = ({
     allLogsResponse.data,
     missionTimeline,
     missionStartedResponse.data,
+    isRecovered,
   ])
 
   const scheduledTypes = ['pending', 'running']
