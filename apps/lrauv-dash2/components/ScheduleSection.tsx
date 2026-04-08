@@ -62,6 +62,7 @@ const VALID_SCHEDULE_CELL_STATUSES: ScheduleCellStatus[] = [
   'cancelled',
   'completed',
   'paused',
+  'sent',
 ]
 
 const toScheduleCellStatus = (status: string): ScheduleCellStatus => {
@@ -547,7 +548,9 @@ export const ScheduleSection: React.FC<ScheduleSectionProps> = ({
       : schedDateMatch
       ? schedDateMatch[1]
       : undefined
-    const cellStatus = toScheduleCellStatus(mission?.status ?? '')
+    const cellStatus = isParam
+      ? 'sent'
+      : toScheduleCellStatus(mission?.status ?? '')
 
     return mission ? (
       <ScheduleCell
