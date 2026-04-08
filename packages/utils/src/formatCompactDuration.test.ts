@@ -51,6 +51,13 @@ describe('formatCompactDuration', () => {
       // 7d 23h — the long-duration branch uses integer days from diff, not fractional total
       expect(formatCompactDuration(target, ref)).toBe('7d')
     })
+
+    it('uses d/h/m format when maxDays is set and duration is over 6 days but under cap', () => {
+      const ref = DateTime.fromISO('2024-01-01T00:00:00')
+      const target = ref.plus({ days: 10 })
+      // maxDays: 30 — should NOT fall into years/months/days branch
+      expect(formatCompactDuration(target, ref, { maxDays: 30 })).toBe('10d 0h')
+    })
   })
 
   describe('long durations (no cap)', () => {

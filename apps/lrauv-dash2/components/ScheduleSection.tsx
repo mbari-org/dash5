@@ -501,8 +501,8 @@ export const ScheduleSection: React.FC<ScheduleSectionProps> = ({
         description={(() => {
           if (mission.event.unixTime == null) return ''
           const dt = DateTime.fromMillis(mission.event.unixTime)
-          const elapsed = formatCompactDuration(dt)
-          const relativePart = dt <= DateTime.now() ? ` (${elapsed} ago)` : ''
+          const elapsed = formatCompactDuration(dt, now)
+          const relativePart = dt <= now ? ` (${elapsed} ago)` : ''
           return `${isMission ? 'Started' : 'Ran'} ${dt.toFormat(
             'H:mm'
           )}${relativePart}`
@@ -609,6 +609,8 @@ export const ScheduleSection: React.FC<ScheduleSectionProps> = ({
   const handleRefresh = () => {
     refetch()
   }
+
+  const now = DateTime.now()
 
   return (
     <>
