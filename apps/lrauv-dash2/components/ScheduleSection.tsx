@@ -387,7 +387,9 @@ export const ScheduleSection: React.FC<ScheduleSectionProps> = ({
           )}
         >
           <span className="my-auto mr-2 text-xs font-bold">
-            Schedule is running
+            {scheduleStatus === 'paused'
+              ? 'Schedule is paused'
+              : 'Schedule is running'}
           </span>
           <AccessoryButton
             label={scheduleStatus === 'running' ? 'Stop All' : 'Resume All'}

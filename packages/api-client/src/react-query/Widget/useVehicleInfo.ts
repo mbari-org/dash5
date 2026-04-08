@@ -63,9 +63,9 @@ export const useVehicleInfo = (
       })
     },
     {
+      ...supportedOptions,
       staleTime: supportedOptions?.staleTime ?? 0,
       enabled: supportedOptions?.enabled !== false && !!params.name,
-      ...supportedOptions,
     }
   )
 
