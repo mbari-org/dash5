@@ -443,7 +443,9 @@ export const ScheduleEventDetailsModal: React.FC<
                     </p>
                     <p className="mt-1 normal-case">
                       <strong>Timestamp</strong>: Estimated end time derived
-                      from event timeline.
+                      from event timeline. For missions superseded by a newer
+                      run, this reflects when the vehicle started the next
+                      mission.
                     </p>
                     <p className="mt-1 normal-case">
                       <strong>N/A</strong>: End time is unknown or unavailable

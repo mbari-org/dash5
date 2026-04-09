@@ -385,7 +385,12 @@ export const ScheduleSection: React.FC<ScheduleSectionProps> = ({
             missionKeysMatch(fromDataPath, currentMissionPath) ||
             missionKeysMatch(fromTextPath, currentMissionPath)
           ) {
-            enriched[i] = { ...item, status: 'completed' }
+            // End time is inferred as when the newer run of this mission began.
+            enriched[i] = {
+              ...item,
+              status: 'completed',
+              endedAt: currentMissionEntry.startedAt,
+            }
           }
         }
       } else {
