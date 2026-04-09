@@ -663,6 +663,9 @@ export const ScheduleSection: React.FC<ScheduleSectionProps> = ({
         label={missionName ?? 'Unknown'}
         secondary={missionParams ?? 'No parameters'}
         status={cellStatus}
+        statusTooltip={
+          cellStatus === 'ack' ? `Received by ${vehicleName}` : undefined
+        }
         name={mission.event.user ?? 'Unknown'}
         scheduleStatus={
           (['pending', 'running'].includes(cellStatus) && scheduleStatus) ||
