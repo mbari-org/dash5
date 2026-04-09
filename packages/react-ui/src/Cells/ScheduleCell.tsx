@@ -13,7 +13,10 @@ import {
   faPaperPlane,
   faExclamationTriangle,
 } from '@fortawesome/free-solid-svg-icons'
-import { faClock } from '@fortawesome/free-regular-svg-icons'
+import {
+  faClock,
+  faPaperPlane as faPaperPlaneRegular,
+} from '@fortawesome/free-regular-svg-icons'
 import { IconProp } from '@fortawesome/fontawesome-svg-core'
 import { IconButton } from '../Navigation'
 import { CommandType } from '../types'
@@ -69,7 +72,7 @@ const icons: { [key: string]: IconProp } = {
   cancelled: faTimes as IconProp,
   completed: faCheck as IconProp,
   paused: faPauseCircle as IconProp,
-  sent: faPaperPlane as IconProp,
+  sent: faPaperPlaneRegular as IconProp,
   ack: faPaperPlane as IconProp,
   timeout: faExclamationTriangle as IconProp,
 }
