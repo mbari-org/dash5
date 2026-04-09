@@ -626,7 +626,7 @@ export const ScheduleSection: React.FC<ScheduleSectionProps> = ({
         <div className="flex items-center gap-2 px-4 py-1.5">
           <div className="h-px flex-1 bg-stone-200" />
           <span className="text-[10px] font-semibold uppercase tracking-widest text-stone-400">
-            Completed &amp; Earlier
+            Previous Vehicle Directives
           </span>
           <div className="h-px flex-1 bg-stone-200" />
         </div>
