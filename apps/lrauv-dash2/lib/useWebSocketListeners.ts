@@ -1,6 +1,6 @@
-import { useEffect, useState } from 'react'
+import { useEffect } from 'react'
 import { useTethysApiContext } from '@mbari/api-client'
-import { useQueryClient } from 'react-query'
+import { useQuery, useQueryClient } from 'react-query'
 
 type SubscriptionEventType =
   | 'VehicleConnected'
@@ -24,6 +24,12 @@ export interface TethysSubscriptionEvent {
   email?: string
 }
 
+export const getTethysSubscriptionQueryKey = (
+  eventName: string | undefined,
+  vehicleName: string | undefined,
+  accountEmail: string | undefined | null
+): unknown[] => [eventName, vehicleName, accountEmail].filter(Boolean)
+
 export const useTethysSubscription = () => {
   const { token, profile } = useTethysApiContext()
   const queryClient = useQueryClient()
@@ -39,6 +45,7 @@ export const useTethysSubscription = () => {
     if (!url) {
       return
     }
+    const accountEmail = profile?.email
     const websocket = new WebSocket(url)
     websocket.onopen = () => {
       console.log('connected')
@@ -53,23 +60,52 @@ export const useTethysSubscription = () => {
         console.log('Unsupported event type: ', data.eventName)
         return
       }
-      const queryKey = [data.eventName, data.vehicleName, data.email].filter(
-        (i) => i
+      const queryKey = getTethysSubscriptionQueryKey(
+        data.eventName,
+        data.vehicleName,
+        accountEmail
       )
-      queryClient.invalidateQueries({ queryKey })
       queryClient.setQueryData(queryKey, data)
     }
 
     return () => {
       websocket.close()
     }
-  }, [queryClient, url])
+  }, [queryClient, url, profile?.email])
 }
 
+/**
+ * Websocket payloads cached under the same keys as `useTethysSubscription`. Uses `useQuery`
+ * so components re-render when the socket handler calls `setQueryData` (unlike `getQueryData` alone).
+ */
 export const useTethysSubscriptionEvent = (
   eventType: SubscriptionEventType,
   scope: string
-) => {
+): TethysSubscriptionEvent | undefined => {
+  const { profile } = useTethysApiContext()
   const queryClient = useQueryClient()
-  return queryClient.getQueryData([eventType, scope]) as TethysSubscriptionEvent
+  const subscribed = Boolean(eventType && scope)
+  const queryKey = subscribed
+    ? getTethysSubscriptionQueryKey(eventType as string, scope, profile?.email)
+    : (['_tethys_subscription', 'disabled'] as const)
+
+  const { data } = useQuery<TethysSubscriptionEvent | undefined>(
+    queryKey,
+    () => undefined,
+    {
+      // This hook is a reactive cache reader for websocket writes; never fetch.
+      enabled: false,
+      initialData: () =>
+        queryClient.getQueryData(queryKey) as
+          | TethysSubscriptionEvent
+          | undefined,
+      staleTime: Infinity,
+      cacheTime: Infinity,
+      refetchOnWindowFocus: false,
+      refetchOnReconnect: false,
+      retry: false,
+    }
+  )
+
+  return data
 }

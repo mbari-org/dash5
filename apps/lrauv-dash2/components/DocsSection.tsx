@@ -32,7 +32,7 @@ const DocsSection: React.FC<DocsSectionProps> = ({
   const queryClient = useQueryClient()
   const { setGlobalModalId } = useGlobalModalId()
   const [selectedType, setSelectedType] =
-    useState<DocumentFilterType>('All Documents')
+    useState<DocumentFilterType>('This Vehicle')
   const [selectedDeployment, setSelectedDeployment] = useState<null | string>(
     null
   )

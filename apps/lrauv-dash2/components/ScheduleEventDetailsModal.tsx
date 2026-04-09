@@ -1,3 +1,4 @@
+import type React from 'react'
 import { Modal } from '@mbari/react-ui'
 import { DateTime } from 'luxon'
 import { useRouter } from 'next/router'
