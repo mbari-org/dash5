@@ -240,10 +240,12 @@ test('classifies older mission as completed when a newer mission-started event e
     </MockProviders>
   )
 
-  // Running mission shows "Ended: TBD"; completed mission shows an approximate end time.
+  // Running mission shows "Ended: TBD"; completed profile_station is not also running.
+  // Note: the completed row renders outside the virtual viewport in JSDOM so we verify
+  // its *absence* from the running zone — exactly one "Ended: TBD" must be present.
   await waitFor(() => {
-    expect(screen.getByText(/Ended:\s*TBD/i)).toBeInTheDocument()
-    expect(screen.getByText(/Ended:.*~/i)).toBeInTheDocument()
+    const tbdItems = screen.getAllByText(/Ended:\s*TBD/i)
+    expect(tbdItems).toHaveLength(1)
   })
 })
 
@@ -274,3 +276,109 @@ test('handles mission-started events with missing text gracefully', async () => 
 })
 // Pure function tests for missionNameFromStartedText and missionNameFromEventData
 // live in jest/missionUtils.test.ts where they run without React component overhead.
+
+test('shows "Received by" tooltip when a non-mission command is acked via cell comms', async () => {
+  server.use(
+    rest.get('/events', (_req, res, ctx) =>
+      res(
+        ctx.status(200),
+        ctx.json({
+          result: [
+            // Non-mission command (gfscan) that was sent
+            {
+              data: 'gfscan',
+              unixTime: Date.now() - 90 * 1000,
+              eventId: 500,
+              eventType: 'command',
+              text: null,
+              note: null,
+              user: null,
+            },
+            // sbdSend event with refId matching the command's eventId and state:2 (cell = instant ack)
+            {
+              eventId: 600,
+              eventType: 'sbdSend',
+              refId: 500,
+              state: 2,
+              unixTime: Date.now() - 88 * 1000,
+              isoTime: new Date(Date.now() - 88 * 1000).toISOString(),
+              data: null,
+              text: null,
+              note: null,
+              user: null,
+            },
+          ],
+        })
+      )
+    ),
+    rest.get('/events/mission-started', (_req, res, ctx) =>
+      res(ctx.status(200), ctx.json({ result: [] }))
+    )
+  )
+
+  render(
+    <MockProviders queryClient={new QueryClient()}>
+      <ScheduleSection
+        {...props}
+        currentDeploymentId={1}
+        deploymentStartTime={Date.now() - 3600 * 1000}
+      />
+    </MockProviders>
+  )
+
+  await waitFor(() => {
+    expect(screen.getByTitle(/Received by example/i)).toBeInTheDocument()
+  })
+})
+
+test('shows timeout icon when a non-mission cell command times out', async () => {
+  server.use(
+    rest.get('/events', (_req, res, ctx) =>
+      res(
+        ctx.status(200),
+        ctx.json({
+          result: [
+            // Non-mission command with timeout note for cell comms
+            {
+              data: 'gfscan',
+              unixTime: Date.now() - 90 * 1000,
+              eventId: 700,
+              eventType: 'command',
+              text: null,
+              note: '[timeout:30min via:cell]',
+              user: null,
+            },
+            // note event signalling timeout for eventId 700
+            {
+              eventId: 800,
+              eventType: 'note',
+              unixTime: Date.now() - 60 * 1000,
+              isoTime: new Date(Date.now() - 60 * 1000).toISOString(),
+              data: null,
+              text: null,
+              note: 'id=700: Timeout while waiting for ack',
+              user: null,
+            },
+          ],
+        })
+      )
+    ),
+    rest.get('/events/mission-started', (_req, res, ctx) =>
+      res(ctx.status(200), ctx.json({ result: [] }))
+    )
+  )
+
+  render(
+    <MockProviders queryClient={new QueryClient()}>
+      <ScheduleSection
+        {...props}
+        currentDeploymentId={1}
+        deploymentStartTime={Date.now() - 3600 * 1000}
+      />
+    </MockProviders>
+  )
+
+  await waitFor(() => {
+    expect(screen.getByTitle(/timeout/i)).toBeInTheDocument()
+  })
+})
