@@ -44,6 +44,8 @@ export interface ScheduleCellProps {
   description2?: string
   description3?: string
   badge?: { text: string; tooltip?: string }
+  /** Override the native tooltip shown on the status icon */
+  statusTooltip?: string
   onSelect: () => void
   onMoreClick: (
     id: {
@@ -99,6 +101,7 @@ export const ScheduleCell: React.FC<ScheduleCellProps> = ({
   onSelect,
   onMoreClick,
   scheduleStatus,
+  statusTooltip,
 }) => {
   const moreButtonRef = useRef<HTMLDivElement | null>(null)
 
@@ -142,7 +145,7 @@ export const ScheduleCell: React.FC<ScheduleCellProps> = ({
         <div className={styles.icon}>
           <FontAwesomeIcon
             icon={icons[status]}
-            title={status}
+            title={statusTooltip ?? status}
             className={clsx(iconColor, 'text-xl')}
           />
         </div>
