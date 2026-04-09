@@ -64,6 +64,10 @@ export interface GlobalModalMetaData {
     isParamUpdate?: boolean
     /** Raw comms status from the Comms Queue — 'queued'|'sent'|'ack'|'timeout' */
     commsStatus?: string
+    /** True for automatic Default mission rows (not operator-commanded) */
+    isDefaultMission?: boolean
+    /** Vehicle GPS position at Default mission start (from missionStarted telemetry) */
+    fix?: { latitude: number; longitude: number }
   } | null
 }
 
