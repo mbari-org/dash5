@@ -249,7 +249,13 @@ export const ScheduleSection: React.FC<ScheduleSectionProps> = ({
     // time as the reference point instead of the command send time, since the
     // vehicle won't start until that time and the match window would otherwise
     // be too far off.
+    // Satellite-delayed commands arrive at the vehicle 10–30 minutes after
+    // being sent. This means a `sched asap` command is SENT while the old
+    // mission is still running (send time falls inside the old interval), but
+    // the vehicle doesn't receive and execute it until after the old mission
+    // ends. We need a wider window to catch these transition commands.
     const MATCH_WINDOW_MS = 10 * 60 * 1000
+    const SATELLITE_DELAY_WINDOW_MS = 30 * 60 * 1000
 
     const parseScheduledUnixTime = (
       data?: string,
@@ -299,6 +305,31 @@ export const ScheduleSection: React.FC<ScheduleSectionProps> = ({
           (candidate.endedAt == null || referenceTime < candidate.endedAt)
       )
       if (inInterval) {
+        // Secondary check: if the interval match is a completed run, the
+        // command may actually be a satellite-delayed transition command —
+        // sent while the old mission was running, but received and executed
+        // by the vehicle only after the old mission ended (triggering a new
+        // run). If a newer run of the same mission starts within the
+        // satellite delay window (~30 min) after the command was sent,
+        // redirect the match to that new run instead.
+        if (inInterval.status === 'completed') {
+          const newerRun = candidates
+            .filter(
+              (c) =>
+                c.startedAt > inInterval.startedAt &&
+                c.startedAt - referenceTime >= 0 &&
+                c.startedAt - referenceTime <= SATELLITE_DELAY_WINDOW_MS
+            )
+            .sort((a, b) => a.startedAt - b.startedAt)[0]
+          if (newerRun) {
+            return {
+              ...item,
+              status: newerRun.status,
+              endedAt: newerRun.endedAt,
+              startedAt: newerRun.startedAt,
+            }
+          }
+        }
         return {
           ...item,
           status: inInterval.status,
