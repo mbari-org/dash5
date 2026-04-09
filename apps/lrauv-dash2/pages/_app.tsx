@@ -1,5 +1,6 @@
 import '@mbari/react-ui/dist/mbari-ui.css'
 import 'react-quill/dist/quill.snow.css'
+import 'tippy.js/dist/tippy.css'
 import { config } from '@fortawesome/fontawesome-svg-core'
 import '@fortawesome/fontawesome-svg-core/styles.css'
 import 'leaflet/dist/leaflet.css'

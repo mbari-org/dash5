@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useEditor } from '@tiptap/react'
+import type { Mark } from '@tiptap/pm/model'
 import {
   faBold,
   faItalic,
@@ -81,7 +82,7 @@ export default function DocEditorToolbar({
     const { state } = editor
     const { storedMarks } = state
     if (storedMarks) {
-      return storedMarks.some((mark) => mark.type.name === markName)
+      return storedMarks.some((mark: Mark) => mark.type.name === markName)
     }
     return false
   }

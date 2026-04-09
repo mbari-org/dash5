@@ -1,4 +1,10 @@
-import { Node, mergeAttributes } from '@tiptap/core'
+import {
+  Node,
+  mergeAttributes,
+  type CommandProps,
+  type NodeViewRendererProps,
+} from '@tiptap/core'
+import type { Node as ProseMirrorNode } from '@tiptap/pm/model'
 
 declare module '@tiptap/core' {
   interface Commands<ReturnType> {
@@ -20,13 +26,14 @@ export const CheckboxNode = Node.create({
     return {
       'data-doc-input-id': {
         default: null,
-        parseHTML: (element) =>
-          (element as HTMLElement).getAttribute('data-doc-input-id'),
+        parseHTML: (element: HTMLElement) =>
+          element.getAttribute('data-doc-input-id'),
       },
       checked: {
         default: false,
-        parseHTML: (element) => element.hasAttribute('checked'),
-        renderHTML: (attributes) => (attributes.checked ? { checked: '' } : {}),
+        parseHTML: (element: HTMLElement) => element.hasAttribute('checked'),
+        renderHTML: (attributes: { checked?: boolean }) =>
+          attributes.checked ? { checked: '' } : {},
       },
     }
   },
@@ -44,7 +51,7 @@ export const CheckboxNode = Node.create({
   },
 
   addNodeView() {
-    return ({ node, getPos, editor }) => {
+    return ({ node, getPos, editor }: NodeViewRendererProps) => {
       const dom = document.createElement('input')
       dom.type = 'checkbox'
       dom.checked = !!node.attrs.checked
@@ -71,7 +78,7 @@ export const CheckboxNode = Node.create({
           const target = (event.target as HTMLElement) ?? null
           return !!target && (target === dom || dom.contains(target))
         },
-        update: (updatedNode) => {
+        update: (updatedNode: ProseMirrorNode) => {
           if (updatedNode.type.name !== this.name) return false
           dom.checked = !!updatedNode.attrs.checked
           dom.disabled = !editor.isEditable
@@ -92,7 +99,7 @@ export const CheckboxNode = Node.create({
     return {
       insertCheckbox:
         (checked = false) =>
-        ({ chain }) => {
+        ({ chain }: CommandProps) => {
           return chain()
             .insertContent({
               type: this.name,
