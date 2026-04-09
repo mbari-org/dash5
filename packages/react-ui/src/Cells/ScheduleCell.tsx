@@ -10,7 +10,6 @@ import {
   faPersonRunning,
   faStarOfLife,
   faPaperPlane,
-  faCheckCircle,
   faExclamationTriangle,
 } from '@fortawesome/free-solid-svg-icons'
 import { faClock } from '@fortawesome/free-regular-svg-icons'
@@ -69,7 +68,7 @@ const icons: { [key: string]: IconProp } = {
   completed: faCheck as IconProp,
   paused: faPauseCircle as IconProp,
   sent: faPaperPlane as IconProp,
-  ack: faCheckCircle as IconProp,
+  ack: faPaperPlane as IconProp,
   timeout: faExclamationTriangle as IconProp,
 }
 
