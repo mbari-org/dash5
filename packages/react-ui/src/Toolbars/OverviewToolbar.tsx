@@ -9,6 +9,7 @@ import {
 import { IconDefinition, IconProp } from '@fortawesome/fontawesome-svg-core'
 import { capitalize, swallow } from '@mbari/utils'
 import { Dropdown, IconButton, RoleReassignButton } from '../Navigation'
+import { ResourceLink, ResourcesDropdown } from '../Dropdowns/ResourcesDropdown'
 import { DateTime } from 'luxon'
 
 export interface DeploymentInfo {
@@ -36,6 +37,13 @@ export interface OverviewToolbarProps {
   authenticated?: boolean
   loadingPicAndOnCall?: boolean
   onSelectDeployment?: (deployment: DeploymentInfo) => void
+  resourceLinks?: ResourceLink[]
+  trainingLinks?: ResourceLink[]
+  adminLinks?: ResourceLink[]
+  isAdmin?: boolean
+  picLinks?: ResourceLink[]
+  resourcesSectionLabel?: string
+  trainingSectionLabel?: string
 }
 
 const styles = {
@@ -72,6 +80,13 @@ export const OverviewToolbar: React.FC<OverviewToolbarProps> = ({
   onIcon2hover,
   authenticated,
   loadingPicAndOnCall,
+  resourceLinks,
+  trainingLinks,
+  adminLinks,
+  isAdmin,
+  picLinks,
+  resourcesSectionLabel,
+  trainingSectionLabel,
 }) => {
   const [hovering, setHovering] = useState<HoverOption>(null)
   const [showDeployments, setShowDeployments] = useState(false)
@@ -171,6 +186,19 @@ export const OverviewToolbar: React.FC<OverviewToolbarProps> = ({
               authenticated={authenticated}
               loading={loadingPicAndOnCall}
               onRoleReassign={onRoleReassign}
+            />
+          </li>
+        )}
+        {authenticated && (
+          <li className="relative pr-2">
+            <ResourcesDropdown
+              picLinks={picLinks}
+              resourceLinks={resourceLinks}
+              resourcesSectionLabel={resourcesSectionLabel}
+              trainingLinks={trainingLinks}
+              trainingSectionLabel={trainingSectionLabel}
+              adminLinks={adminLinks}
+              isAdmin={isAdmin}
             />
           </li>
         )}

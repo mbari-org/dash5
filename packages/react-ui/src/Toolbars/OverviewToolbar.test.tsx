@@ -229,3 +229,59 @@ test('should not render the second support icon if no icon is present', async ()
 
   expect(screen.queryByTestId(/icon2/i)).not.toBeInTheDocument()
 })
+
+test('should render the resources button', async () => {
+  render(<OverviewToolbar {...props} />)
+  expect(screen.getByRole('button', { name: /Resources/i })).toBeInTheDocument()
+})
+
+test('should not render the resources button when unauthenticated', async () => {
+  render(<OverviewToolbar {...props} authenticated={false} />)
+  expect(
+    screen.queryByRole('button', { name: /Resources/i })
+  ).not.toBeInTheDocument()
+})
+
+test('should show resource links in the resources panel when open', async () => {
+  render(
+    <OverviewToolbar
+      {...props}
+      resourceLinks={[
+        {
+          label: 'LRAUV Watchbill Signup',
+          url: 'https://example.com/watchbill',
+        },
+      ]}
+    />
+  )
+  fireEvent.click(screen.getByRole('button', { name: /Resources/i }))
+  expect(screen.getByText('LRAUV Watchbill Signup')).toBeInTheDocument()
+})
+
+test('should not show admin section when isAdmin is false', async () => {
+  render(
+    <OverviewToolbar
+      {...props}
+      isAdmin={false}
+      adminLinks={[
+        { label: 'Frontend Settings', url: 'https://example.com/admin' },
+      ]}
+    />
+  )
+  fireEvent.click(screen.getByRole('button', { name: /Resources/i }))
+  expect(screen.queryByText(/Admin Settings/i)).not.toBeInTheDocument()
+})
+
+test('should show admin section when isAdmin is true', async () => {
+  render(
+    <OverviewToolbar
+      {...props}
+      isAdmin={true}
+      adminLinks={[
+        { label: 'Frontend Settings', url: 'https://example.com/admin' },
+      ]}
+    />
+  )
+  fireEvent.click(screen.getByRole('button', { name: /Resources/i }))
+  expect(screen.getByText(/Admin Settings/i)).toBeInTheDocument()
+})

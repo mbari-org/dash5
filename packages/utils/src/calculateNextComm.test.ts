@@ -42,7 +42,7 @@ describe('calculateNextComm', () => {
     const now = ref // so delta is +30m
     const res = calculateRelativeNextComm(ref, null, need, now)
     expect(res.nextCommTimeMs).toBe(expectedNext)
-    const expectedTime = DateTime.fromMillis(expectedNext).toFormat('HH:mm')
+    const expectedTime = DateTime.fromMillis(expectedNext).toFormat('hh:mm')
     expect(res.text).toBe(`${expectedTime} - in 30m`)
   })
 })
