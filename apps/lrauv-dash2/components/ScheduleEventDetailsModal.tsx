@@ -456,20 +456,33 @@ export const ScheduleEventDetailsModal: React.FC<
               </span>
             </div>
             <div className="mt-0.5">
-              {!['completed', 'cancelled'].includes(
-                event.status?.toLowerCase() ?? ''
-              ) ? (
-                <span
-                  className={statusPillClass()}
-                  style={statusPillStyle('pending')}
-                >
-                  TBD
-                </span>
-              ) : (
-                <p className="font-medium">
-                  <TimeBlock unixTime={event.endedAt} />
-                </p>
-              )}
+              {(() => {
+                const s = event.status?.toLowerCase() ?? ''
+                // Param updates and ack'd/timed-out non-mission commands are
+                // instantaneous — no meaningful end time, so skip TBD entirely.
+                const isInstantaneous =
+                  event.isParamUpdate ||
+                  (event.commandType === 'command' &&
+                    ['ack', 'timeout', 'sent'].includes(s))
+                if (
+                  !isInstantaneous &&
+                  !['completed', 'cancelled'].includes(s)
+                ) {
+                  return (
+                    <span
+                      className={statusPillClass()}
+                      style={statusPillStyle('pending')}
+                    >
+                      TBD
+                    </span>
+                  )
+                }
+                return (
+                  <p className="font-medium">
+                    <TimeBlock unixTime={event.endedAt} />
+                  </p>
+                )
+              })()}
             </div>
           </div>
           <div>
