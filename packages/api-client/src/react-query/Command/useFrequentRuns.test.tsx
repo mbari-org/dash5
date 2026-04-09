@@ -8,6 +8,18 @@ import { setupServer } from 'msw/node'
 import { MockProviders } from '../queryTestHelpers'
 
 const server = setupServer(
+  rest.get('/commands/script', (_req, res, ctx) => {
+    return res(
+      ctx.status(200),
+      ctx.json({
+        result: {
+          id: 'mock',
+          scriptArgs: [],
+          latLonNamePairs: [],
+        },
+      })
+    )
+  }),
   rest.get('/commands/frequent/runs', (_req, res, ctx) => {
     return res(
       ctx.status(200),
@@ -62,11 +74,13 @@ afterEach(() => server.resetHandlers())
 afterAll(() => server.close())
 
 const MockCommands: React.FC = () => {
-  const query = useFrequentRuns({ vehicle: 'sim' })
+  const query = useFrequentRuns({ vehicles: ['sim'], gitRef: 'master' })
 
   return query.isLoading ? null : (
     <div>
-      <span data-testid="command">{query.data?.[1]?.mission ?? 'Loading'}</span>
+      <span data-testid="command">
+        {query.data?.[1]?.missionPath ?? 'Loading'}
+      </span>
       {/* <span data-testid="description">
         {query.data?.[0]?.description ?? 'Loading'}
       </span> */}

@@ -24,13 +24,13 @@ export const useParameterOverrides = (params: {
   selectedMissionData?: GetScriptResponse
   selectedMission?: string
   selectedMissionCategory?: string
-  recentRuns: Mission[]
+  runsWithOverrides: Mission[]
 }) => {
   const {
     selectedMissionData,
     selectedMission,
     selectedMissionCategory,
-    recentRuns,
+    runsWithOverrides,
   } = params
 
   const { data: unitsData } = useUnits()
@@ -114,11 +114,12 @@ export const useParameterOverrides = (params: {
 
   const parametersWithOverrides: ParameterProps[] = useMemo(() => {
     if (
-      selectedMissionCategory === 'Recent Runs' &&
+      (selectedMissionCategory === 'Recent Runs' ||
+        selectedMissionCategory === 'Frequent Runs') &&
       selectedMission &&
       parameters.length
     ) {
-      const selectedRun = recentRuns.find(
+      const selectedRun = runsWithOverrides.find(
         (r) => r.id === selectedMission
       ) as any
 
@@ -153,7 +154,7 @@ export const useParameterOverrides = (params: {
   }, [
     selectedMissionCategory,
     selectedMission,
-    recentRuns,
+    runsWithOverrides,
     parameters,
     unitsData,
   ])
@@ -177,11 +178,12 @@ export const useParameterOverrides = (params: {
   // Apply parameter overrides to communications parameters
   const commsParamsWithOverrides: ParameterProps[] = useMemo(() => {
     if (
-      selectedMissionCategory === 'Recent Runs' &&
+      (selectedMissionCategory === 'Recent Runs' ||
+        selectedMissionCategory === 'Frequent Runs') &&
       selectedMission &&
       commsParams.length
     ) {
-      const selectedRun = recentRuns.find(
+      const selectedRun = runsWithOverrides.find(
         (r) => r.id === selectedMission
       ) as any
 
@@ -216,7 +218,7 @@ export const useParameterOverrides = (params: {
   }, [
     selectedMissionCategory,
     selectedMission,
-    recentRuns,
+    runsWithOverrides,
     commsParams,
     unitsData,
   ])
@@ -224,11 +226,12 @@ export const useParameterOverrides = (params: {
   // Apply parameter overrides to safety parameters
   const safetyParamsWithOverrides: ParameterProps[] = useMemo(() => {
     if (
-      selectedMissionCategory === 'Recent Runs' &&
+      (selectedMissionCategory === 'Recent Runs' ||
+        selectedMissionCategory === 'Frequent Runs') &&
       selectedMission &&
       safetyParams.length
     ) {
-      const selectedRun = recentRuns.find(
+      const selectedRun = runsWithOverrides.find(
         (r) => r.id === selectedMission
       ) as any
 
@@ -263,7 +266,7 @@ export const useParameterOverrides = (params: {
   }, [
     selectedMissionCategory,
     selectedMission,
-    recentRuns,
+    runsWithOverrides,
     safetyParams,
     unitsData,
   ])
