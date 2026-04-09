@@ -91,4 +91,22 @@ async function loadLeafletAndExposeGlobal(): Promise<void> {
 async function loadGoogleMutantOnly(): Promise<void> {
   await loadLeafletAndExposeGlobal()
   await import('leaflet.gridlayer.googlemutant/dist/Leaflet.GoogleMutant.js')
+
+  // GoogleMutant defines its own _setupAttribution on NewClass.prototype that
+  // accesses this._map._controlCorners. When the map is removed while a pending
+  // Google Maps API callback (controls_ready) is still queued, this._map is null
+  // and the access throws. Patch the prototype right after loading the module so
+  // every instance inherits the guard automatically.
+  const L = (window as any).L
+  const NewClass = L?.GridLayer?.GoogleMutant
+  if (NewClass?.prototype?._setupAttribution) {
+    const orig = NewClass.prototype._setupAttribution
+    NewClass.prototype._setupAttribution = function (
+      this: any,
+      ...args: any[]
+    ) {
+      if (!this._map?._controlCorners) return
+      return orig.apply(this, args)
+    }
+  }
 }

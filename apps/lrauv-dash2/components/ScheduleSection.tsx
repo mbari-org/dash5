@@ -915,7 +915,7 @@ export const ScheduleSection: React.FC<ScheduleSectionProps> = ({
           isParam
             ? {
                 text: 'config',
-                tooltip: 'Config update — added to running mission',
+                tooltip: 'Config update — sent to vehicle',
               }
             : undefined
         }

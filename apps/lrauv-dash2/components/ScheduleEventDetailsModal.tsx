@@ -249,7 +249,7 @@ export const ScheduleEventDetailsModal: React.FC<
     const startMs = event.startedAt
     const endMs = event.endedAt
     const nowMs = Date.now()
-    const elapsedMs = (endMs ?? nowMs) - (startMs ?? nowMs)
+    const isRunning = event.status?.toLowerCase() === 'running'
     const durationStr = startMs
       ? (() => {
           const d = DateTime.fromMillis(endMs ?? nowMs).diff(
@@ -264,13 +264,10 @@ export const ScheduleEventDetailsModal: React.FC<
           return `${s}s`
         })()
       : '—'
-    const isRunning = event.status?.toLowerCase() === 'running'
     const lat = event.fix?.latitude
     const lon = event.fix?.longitude
-    const formatCoord = (val: number, pos: string, neg: string) => {
-      const dir = val >= 0 ? pos : neg
-      return `${Math.abs(val).toFixed(5)}° ${dir}`
-    }
+    const fmtCoord = (val: number, pos: string, neg: string) =>
+      `${Math.abs(val).toFixed(5)}° ${val >= 0 ? pos : neg}`
 
     return (
       <Modal
@@ -281,8 +278,8 @@ export const ScheduleEventDetailsModal: React.FC<
         onClose={onClose}
         title={`${capitalize(
           event.vehicleName ?? 'Vehicle'
-        )} — Default Mission`}
-        className="w-[90vw] max-w-xl"
+        )} — Mission Details`}
+        className="w-[90vw] max-w-5xl"
         headerClassName="!items-center"
         headerStyle={{ backgroundColor: '#FEF3C7' }}
         dragButtonClassName="!ml-0 !my-0 !rounded-none !bg-transparent !bg-opacity-0 hover:!bg-transparent hover:!bg-opacity-0 !items-center"
@@ -294,94 +291,113 @@ export const ScheduleEventDetailsModal: React.FC<
           minHeight: '3rem',
           margin: 0,
           padding: 0,
+          lineHeight: 1.2,
         }}
+        closeButtonClassName="!text-amber-700 hover:!bg-transparent"
+        closeButtonStyle={{ color: '#92400e' }}
+        style={{ maxHeight: '80vh' }}
       >
-        <div className="space-y-5 p-6">
-          <div className="rounded-md border border-amber-200 bg-amber-50 p-3 text-sm text-amber-800">
-            <strong>Automatic fallback mode.</strong> Not operator-commanded.
-            The vehicle holds on the surface and communicates approximately
-            every 5 minutes while awaiting the next mission directive.
-          </div>
+        <div className="space-y-4 text-base text-stone-900">
+          <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
+            <div className="min-w-0">
+              <p className="text-sm uppercase tracking-wide text-stone-500">
+                Name
+              </p>
+              <p className="font-medium">Default Mission</p>
+            </div>
 
-          <div className="grid grid-cols-2 gap-x-8 gap-y-4">
             <div>
-              <p className="text-xs font-semibold uppercase tracking-wide text-stone-500">
+              <p className="text-sm uppercase tracking-wide text-stone-500">
                 Status
               </p>
-              <span
-                className="mt-1 inline-block rounded-full px-3 py-0.5 text-sm font-semibold"
-                style={
-                  isRunning
-                    ? { backgroundColor: '#dbeafe', color: '#1e3a5f' }
-                    : { backgroundColor: '#f3f4f6', color: '#374151' }
-                }
-              >
-                {isRunning ? 'Running' : 'Completed'}
-              </span>
+              <div className="mt-0.5">
+                <span
+                  className="inline-block rounded-full px-3 py-0.5 text-sm font-semibold"
+                  style={
+                    isRunning
+                      ? { backgroundColor: '#dbeafe', color: '#1e3a5f' }
+                      : { backgroundColor: '#f3f4f6', color: '#374151' }
+                  }
+                >
+                  {isRunning ? 'Running' : 'Completed'}
+                </span>
+              </div>
             </div>
 
             <div>
-              <p className="text-xs font-semibold uppercase tracking-wide text-stone-500">
-                Duration
-              </p>
-              <p className="mt-1 font-medium">{durationStr}</p>
-            </div>
-
-            <div>
-              <p className="text-xs font-semibold uppercase tracking-wide text-stone-500">
+              <p className="text-sm uppercase tracking-wide text-stone-500">
                 Started
               </p>
-              <p className="mt-1 font-medium">
+              <p className="font-medium">
                 <TimeBlock unixTime={startMs} />
               </p>
             </div>
 
             <div>
-              <p className="text-xs font-semibold uppercase tracking-wide text-stone-500">
+              <p className="text-sm uppercase tracking-wide text-stone-500">
                 Ended
               </p>
-              <p className="mt-1 font-medium">
+              <div className="mt-0.5">
                 {isRunning ? (
-                  <span className="rounded-full bg-blue-100 px-2 py-0.5 text-xs font-semibold text-blue-800">
+                  <span
+                    className="inline-block rounded-full px-3 py-0.5 text-sm font-semibold"
+                    style={{ backgroundColor: '#e0f2fe', color: '#0c4a6e' }}
+                  >
                     TBD
                   </span>
                 ) : (
-                  <TimeBlock unixTime={endMs} />
+                  <p className="font-medium">
+                    <TimeBlock unixTime={endMs} />
+                  </p>
                 )}
-              </p>
+              </div>
             </div>
 
-            {lat != null && lon != null && (
-              <div className="col-span-2">
-                <p className="text-xs font-semibold uppercase tracking-wide text-stone-500">
-                  GPS Position at Start
-                </p>
-                <p className="mt-1 font-medium font-mono text-sm">
-                  {formatCoord(lat, 'N', 'S')}, {formatCoord(lon, 'E', 'W')}
-                </p>
-              </div>
-            )}
+            <div>
+              <p className="text-sm uppercase tracking-wide text-stone-500">
+                Duration
+              </p>
+              <p className="font-medium">{durationStr}</p>
+            </div>
 
             <div>
-              <p className="text-xs font-semibold uppercase tracking-wide text-stone-500">
+              <p className="text-sm uppercase tracking-wide text-stone-500">
+                Type
+              </p>
+              <p className="font-medium">mission (automatic)</p>
+            </div>
+
+            <div>
+              <p className="text-sm uppercase tracking-wide text-stone-500">
                 Vehicle
               </p>
-              <p className="mt-1 font-medium">
+              <p className="font-medium">
                 {capitalize(event.vehicleName ?? 'Unknown')}
               </p>
             </div>
 
-            <div>
-              <p className="text-xs font-semibold uppercase tracking-wide text-stone-500">
-                Type
-              </p>
-              <p className="mt-1 font-medium">Mission (automatic)</p>
-            </div>
+            {lat != null && lon != null && (
+              <div>
+                <p className="text-sm uppercase tracking-wide text-stone-500">
+                  GPS at Start
+                </p>
+                <p className="font-medium font-mono text-sm">
+                  {fmtCoord(lat, 'N', 'S')}, {fmtCoord(lon, 'E', 'W')}
+                </p>
+              </div>
+            )}
+          </div>
+
+          <div className="rounded-md border border-amber-200 bg-amber-50 p-3 text-sm text-amber-800">
+            <strong>Automatic fallback — not operator-commanded.</strong> The
+            vehicle holds on the surface and communicates approximately every 5
+            minutes while awaiting the next mission directive.
           </div>
         </div>
       </Modal>
     )
   }
+
   ;(router.query?.deployment?.[1] as string | undefined) || ''
   const deploymentLabel = deployment?.name || deploymentId || 'Deployment n/a'
   const vehicleLabel = event.vehicleName
