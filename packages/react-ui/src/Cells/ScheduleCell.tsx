@@ -10,16 +10,14 @@ import {
   faPauseCircle,
   faPersonRunning,
   faStarOfLife,
-  faPaperPlane,
   faExclamationTriangle,
 } from '@fortawesome/free-solid-svg-icons'
-import {
-  faClock,
-  faPaperPlane as faPaperPlaneRegular,
-} from '@fortawesome/free-regular-svg-icons'
+import { faClock } from '@fortawesome/free-regular-svg-icons'
 import { IconProp } from '@fortawesome/fontawesome-svg-core'
 import { IconButton } from '../Navigation'
 import { CommandType } from '../types'
+import { ConnectedIcon } from '../Icons/ConnectedIcon'
+import { AcknowledgeIcon } from '../Icons/AcknowledgeIcon'
 export type ScheduleCellStatus =
   | 'pending'
   | 'running'
@@ -74,8 +72,6 @@ const icons: { [key: string]: IconProp } = {
   cancelled: faTimes as IconProp,
   completed: faCheck as IconProp,
   paused: faPauseCircle as IconProp,
-  sent: faPaperPlaneRegular as IconProp,
-  ack: faPaperPlane as IconProp,
   timeout: faExclamationTriangle as IconProp,
 }
 
@@ -143,11 +139,35 @@ export const ScheduleCell: React.FC<ScheduleCellProps> = ({
         onClick={swallow(onSelect)}
       >
         <div className={styles.icon}>
-          <FontAwesomeIcon
-            icon={icons[status]}
-            title={statusTooltip ?? status}
-            className={clsx(iconColor, 'text-xl')}
-          />
+          {status === 'sent' ? (
+            <span title={statusTooltip ?? status}>
+              <ConnectedIcon
+                className={clsx(
+                  'fill-transparent',
+                  scheduleStatus === 'running'
+                    ? 'stroke-black'
+                    : 'stroke-stone-500 opacity-60'
+                )}
+              />
+            </span>
+          ) : status === 'ack' ? (
+            <span title={statusTooltip ?? status}>
+              <AcknowledgeIcon
+                className={clsx(
+                  'fill-transparent',
+                  scheduleStatus === 'running'
+                    ? 'stroke-black'
+                    : 'stroke-stone-500 opacity-60'
+                )}
+              />
+            </span>
+          ) : (
+            <FontAwesomeIcon
+              icon={icons[status]}
+              title={statusTooltip ?? status}
+              className={clsx(iconColor, 'text-xl')}
+            />
+          )}
         </div>
         <ul className={clsx(styles.detailsContainer, 'col-span-4')}>
           <li
