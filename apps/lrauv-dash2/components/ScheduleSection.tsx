@@ -344,6 +344,10 @@ export const ScheduleSection: React.FC<ScheduleSectionProps> = ({
         )
           return bestIdx
         if (item.event.unixTime == null) return bestIdx
+        // Don't repromote a row already confirmed-completed by interval
+        // matching — it belongs to a prior run of this same mission, and
+        // promoting it would incorrectly show the old row as running.
+        if (item.status === 'completed') return bestIdx
         if (bestIdx === -1) return idx
         const bestTime = enriched[bestIdx].event.unixTime ?? 0
         const diff = (t: number) => Math.abs(t - currentMissionEntry.startedAt)
