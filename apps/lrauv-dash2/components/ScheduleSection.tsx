@@ -349,9 +349,12 @@ export const ScheduleSection: React.FC<ScheduleSectionProps> = ({
         // promoting it would incorrectly show the old row as running.
         if (item.status === 'completed') return bestIdx
         if (bestIdx === -1) return idx
-        const bestTime = enriched[bestIdx].event.unixTime ?? 0
-        const diff = (t: number) => Math.abs(t - currentMissionEntry.startedAt)
-        return diff(item.event.unixTime) < diff(bestTime) ? idx : bestIdx
+        // Prefer the most recently SENT command: when the same mission is
+        // commanded multiple times, the newest ack'd command is the active
+        // one. Picking "closest to telemetry startedAt" was backwards —
+        // it selected the oldest row when only one timeline entry exists.
+        const bestSentTime = enriched[bestIdx].event.unixTime ?? 0
+        return (item.event.unixTime ?? 0) > bestSentTime ? idx : bestIdx
       }, -1)
 
       if (matchingMissionIndex >= 0) {
