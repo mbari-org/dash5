@@ -77,3 +77,16 @@ test('should check the All checkbox when all options are selected', async () => 
   const allCheckbox = screen.getAllByRole('checkbox')[0]
   expect(allCheckbox).toBeChecked()
 })
+
+test('should render Include Data Events when handler is provided', async () => {
+  const props = getProps({
+    onIncludeDataEventsChange: jest.fn(),
+    includeDataEvents: false,
+  })
+  render(<LogFiltersDropdown {...props} />)
+
+  expect(screen.getByText('Include Data Events')).toBeInTheDocument()
+  expect(
+    screen.getByRole('checkbox', { name: /include data events/i })
+  ).not.toBeChecked()
+})
