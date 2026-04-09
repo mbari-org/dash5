@@ -568,6 +568,7 @@ export const ScheduleSection: React.FC<ScheduleSectionProps> = ({
           .toLowerCase()
           .includes(scheduleSearch.toLowerCase())
     )
+    .sort((a, b) => (b.event.unixTime ?? 0) - (a.event.unixTime ?? 0))
 
   const hasPastSchedule = (historicCells?.length ?? 0) > 0
   const staticFilterCellOffset = hasPastSchedule ? 1 : 0
