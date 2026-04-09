@@ -25,7 +25,7 @@ import { MapLayersListModal } from '../components/MapLayersListModal'
 import { useSelectedStations } from '../components/SelectedStationContext'
 import { useMarkers } from '../components/MarkerContext'
 import toast from 'react-hot-toast'
-import { createLogger } from '@mbari/utils'
+import { createLogger, useResizeObserver } from '@mbari/utils'
 import { PlatformsListModal } from '../components/PlatformsListModal'
 import { useRefreshPositions } from '../lib/useRefreshPositions'
 import VehicleColorsModal from '../components/VehicleColorsModal'
@@ -114,6 +114,16 @@ const OverViewMap: React.FC<{
 }> = ({ trackedVehicles }) => {
   // Add mapRef to store the Leaflet map instance
   const mapRef = useRef<L.Map | null>(null)
+  const mapContainerRef = useRef<HTMLDivElement | null>(null)
+
+  // Call invalidateSize whenever the container resizes (fixes partial-map rendering
+  // after refresh). useResizeObserver is polyfilled and throttled (100 ms by default).
+  const { size } = useResizeObserver({ element: mapContainerRef })
+  useEffect(() => {
+    if (typeof mapRef.current?.invalidateSize === 'function') {
+      mapRef.current.invalidateSize()
+    }
+  }, [size])
   const router = useRouter()
   const { handleDepthRequest, elevationAvailable } = useGoogleElevator()
   const [center, setCenter] = useState<undefined | [number, number]>()
@@ -632,23 +642,14 @@ const OverViewMap: React.FC<{
       {showPlatformsModal ? (
         <PlatformsListModal onClose={handleClosePlatforms} />
       ) : null}
-      <div className="relative h-full w-full">
+      <div className="relative h-full w-full" ref={mapContainerRef}>
         <Map
           key={`overview-map-${router.asPath}`}
-          ref={mapRef}
           className="h-full w-full"
           onMapReady={(map) => {
             logger.debug('🌍 Map ready callback triggered in OverViewMap')
             mapRef.current = map
-            ;[200, 800].forEach((delay) => {
-              setTimeout(() => {
-                try {
-                  map.invalidateSize()
-                } catch (e) {
-                  logger.warn('Could not invalidate map size:', e)
-                }
-              }, delay)
-            })
+            map.invalidateSize()
           }}
           trackedVehicles={trackedVehicles?.map((vehicle) => ({
             ...vehicle,
