@@ -59,6 +59,12 @@ export interface CommandStatusItem {
   }
   status: string
   endedAt?: number
+  /** Unix time (ms) when the vehicle actually started executing — from missionStarted telemetry */
+  startedAt?: number
+  /** True for synthetic rows representing an automatic Default mission (not operator-commanded) */
+  isDefaultMission?: boolean
+  /** Vehicle GPS position at the moment this mission started (from missionStarted telemetry) */
+  fix?: { latitude: number; longitude: number }
 }
 
 const VALID_SCHEDULE_CELL_STATUSES: ScheduleCellStatus[] = [
@@ -79,6 +85,10 @@ const toScheduleCellStatus = (status: string): ScheduleCellStatus => {
     ? (s as ScheduleCellStatus)
     : 'pending'
 }
+
+/** Returns true when the missionStarted text refers to the vehicle's automatic Default mission. */
+const isDefaultMissionName = (name?: string) =>
+  name?.trim().toLowerCase() === 'default'
 
 const missionKeysMatch = (leftPath: string, rightPath: string) => {
   if (!leftPath || !rightPath) return false
@@ -247,7 +257,13 @@ export const ScheduleSection: React.FC<ScheduleSectionProps> = ({
     // time as the reference point instead of the command send time, since the
     // vehicle won't start until that time and the match window would otherwise
     // be too far off.
+    // Satellite-delayed commands arrive at the vehicle 10–30 minutes after
+    // being sent. This means a `sched asap` command is SENT while the old
+    // mission is still running (send time falls inside the old interval), but
+    // the vehicle doesn't receive and execute it until after the old mission
+    // ends. We need a wider window to catch these transition commands.
     const MATCH_WINDOW_MS = 10 * 60 * 1000
+    const SATELLITE_DELAY_WINDOW_MS = 30 * 60 * 1000
 
     const parseScheduledUnixTime = (
       data?: string,
@@ -297,10 +313,36 @@ export const ScheduleSection: React.FC<ScheduleSectionProps> = ({
           (candidate.endedAt == null || referenceTime < candidate.endedAt)
       )
       if (inInterval) {
+        // Secondary check: if the interval match is a completed run, the
+        // command may actually be a satellite-delayed transition command —
+        // sent while the old mission was running, but received and executed
+        // by the vehicle only after the old mission ended (triggering a new
+        // run). If a newer run of the same mission starts within the
+        // satellite delay window (~30 min) after the command was sent,
+        // redirect the match to that new run instead.
+        if (inInterval.status === 'completed') {
+          const newerRun = candidates
+            .filter(
+              (c) =>
+                c.startedAt > inInterval.startedAt &&
+                c.startedAt - referenceTime >= 0 &&
+                c.startedAt - referenceTime <= SATELLITE_DELAY_WINDOW_MS
+            )
+            .sort((a, b) => a.startedAt - b.startedAt)[0]
+          if (newerRun) {
+            return {
+              ...item,
+              status: newerRun.status,
+              endedAt: newerRun.endedAt,
+              startedAt: newerRun.startedAt,
+            }
+          }
+        }
         return {
           ...item,
           status: inInterval.status,
           endedAt: inInterval.endedAt,
+          startedAt: inInterval.startedAt,
         }
       }
 
@@ -316,7 +358,12 @@ export const ScheduleSection: React.FC<ScheduleSectionProps> = ({
       if (Math.abs(best.startedAt - referenceTime) > MATCH_WINDOW_MS)
         return item
 
-      return { ...item, status: best.status, endedAt: best.endedAt }
+      return {
+        ...item,
+        status: best.status,
+        endedAt: best.endedAt,
+        startedAt: best.startedAt,
+      }
     })
 
     // Ensure the currently running mission is represented as running.
@@ -336,10 +383,17 @@ export const ScheduleSection: React.FC<ScheduleSectionProps> = ({
         )
           return bestIdx
         if (item.event.unixTime == null) return bestIdx
+        // Don't repromote a row already confirmed-completed by interval
+        // matching — it belongs to a prior run of this same mission, and
+        // promoting it would incorrectly show the old row as running.
+        if (item.status === 'completed') return bestIdx
         if (bestIdx === -1) return idx
-        const bestTime = enriched[bestIdx].event.unixTime ?? 0
-        const diff = (t: number) => Math.abs(t - currentMissionEntry.startedAt)
-        return diff(item.event.unixTime) < diff(bestTime) ? idx : bestIdx
+        // Prefer the most recently SENT command: when the same mission is
+        // commanded multiple times, the newest ack'd command is the active
+        // one. Picking "closest to telemetry startedAt" was backwards —
+        // it selected the oldest row when only one timeline entry exists.
+        const bestSentTime = enriched[bestIdx].event.unixTime ?? 0
+        return (item.event.unixTime ?? 0) > bestSentTime ? idx : bestIdx
       }, -1)
 
       if (matchingMissionIndex >= 0) {
@@ -349,6 +403,12 @@ export const ScheduleSection: React.FC<ScheduleSectionProps> = ({
             ...matchingItem,
             status: 'running',
             endedAt: undefined,
+            startedAt: currentMissionEntry.startedAt,
+          }
+        } else if (!matchingItem.startedAt) {
+          enriched[matchingMissionIndex] = {
+            ...matchingItem,
+            startedAt: currentMissionEntry.startedAt,
           }
         }
         // Demote any OTHER rows for the same mission that are still marked
@@ -364,26 +424,35 @@ export const ScheduleSection: React.FC<ScheduleSectionProps> = ({
             missionKeysMatch(fromDataPath, currentMissionPath) ||
             missionKeysMatch(fromTextPath, currentMissionPath)
           ) {
-            enriched[i] = { ...item, status: 'completed' }
+            // End time is inferred as when the newer run of this mission began.
+            enriched[i] = {
+              ...item,
+              status: 'completed',
+              endedAt: currentMissionEntry.startedAt,
+            }
           }
         }
       } else {
-        const currentRawEvent = missionStartedResponse.data?.[0]
-        if (currentRawEvent) {
-          enriched.unshift({
-            event: {
-              // Construct a command-format data string so parseMissionCommand
-              // produces a consistent label and "Use for new mission" receives
-              // a valid path. GetMissionStartedEventResponse has no data field.
-              data: `load ${currentMissionEntry.name};run`,
-              unixTime: currentRawEvent.unixTime,
-              eventId: currentRawEvent.eventId,
-              eventType: 'run',
-              text: currentRawEvent.text,
-            },
-            status: 'running',
-            endedAt: undefined,
-          })
+        // Don't inject a synthetic row for Default — Default mission rows are
+        // injected separately below via the missionTimeline Default pass.
+        if (!isDefaultMissionName(currentMissionEntry.name)) {
+          const currentRawEvent = missionStartedResponse.data?.[0]
+          if (currentRawEvent) {
+            enriched.unshift({
+              event: {
+                // Construct a command-format data string so parseMissionCommand
+                // produces a consistent label and "Use for new mission" receives
+                // a valid path. GetMissionStartedEventResponse has no data field.
+                data: `load ${currentMissionEntry.name};run`,
+                unixTime: currentRawEvent.unixTime,
+                eventId: currentRawEvent.eventId,
+                eventType: 'run',
+                text: currentRawEvent.text,
+              },
+              status: 'running',
+              endedAt: undefined,
+            })
+          }
         }
       }
     }
@@ -416,6 +485,36 @@ export const ScheduleSection: React.FC<ScheduleSectionProps> = ({
       return enriched.map((item) =>
         item.status === 'pending' ? { ...item, status: 'completed' } : item
       )
+    }
+
+    // Inject Default mission rows from missionTimeline.
+    // Brief transitions (< 60s) are suppressed — they are inter-mission noise.
+    // Extended runs (≥ 60s) and any still-running Default are shown as rows so
+    // operators can see when and why the vehicle fell back to automatic mode.
+    const DEFAULT_MIN_DURATION_MS = 60 * 1000
+    const defaultEntries = missionTimeline.filter((entry) => {
+      if (!isDefaultMissionName(entry.name)) return false
+      if (entry.endedAt == null) return true // still running — always show
+      return entry.endedAt - entry.startedAt >= DEFAULT_MIN_DURATION_MS
+    })
+    for (const defaultEntry of defaultEntries) {
+      const rawEvent = missionStartedResponse.data?.find(
+        (evt) => Math.abs(evt.unixTime - defaultEntry.startedAt) < 1000
+      )
+      enriched.push({
+        event: {
+          data: '__default_mission__',
+          unixTime: defaultEntry.startedAt,
+          eventId: rawEvent?.eventId ?? -1,
+          eventType: 'run',
+          text: rawEvent?.text ?? 'Started mission Default',
+        },
+        status: defaultEntry.status,
+        startedAt: defaultEntry.startedAt,
+        endedAt: defaultEntry.endedAt,
+        isDefaultMission: true,
+        fix: rawEvent?.fix,
+      })
     }
 
     return enriched
@@ -469,6 +568,7 @@ export const ScheduleSection: React.FC<ScheduleSectionProps> = ({
           .toLowerCase()
           .includes(scheduleSearch.toLowerCase())
     )
+    .sort((a, b) => (b.event.unixTime ?? 0) - (a.event.unixTime ?? 0))
 
   const hasPastSchedule = (historicCells?.length ?? 0) > 0
   const staticFilterCellOffset = hasPastSchedule ? 1 : 0
@@ -600,7 +700,7 @@ export const ScheduleSection: React.FC<ScheduleSectionProps> = ({
         <div className="flex items-center gap-2 px-4 py-1.5">
           <div className="h-px flex-1 bg-stone-200" />
           <span className="text-[10px] font-semibold uppercase tracking-widest text-stone-400">
-            Completed &amp; Earlier
+            Previous Vehicle Directives
           </span>
           <div className="h-px flex-1 bg-stone-200" />
         </div>
@@ -616,6 +716,59 @@ export const ScheduleSection: React.FC<ScheduleSectionProps> = ({
         : 0)
     )
     const mission = results[index + indexOffset]
+
+    // Default mission rows have their own rendering path — they are not
+    // operator-commanded so none of the normal label/param/comms logic applies.
+    if (mission?.isDefaultMission) {
+      const defStatus = toScheduleCellStatus(mission.status)
+      const startMs = mission.startedAt ?? mission.event.unixTime ?? Date.now()
+      const nowMs = Date.now()
+      const elapsedMs = (mission.endedAt ?? nowMs) - startMs
+      const durationStr = formatElapsedTime(elapsedMs)
+      const startDt = DateTime.fromMillis(startMs)
+      const isToday = startDt.hasSame(DateTime.now(), 'day')
+      const timeStr = isToday
+        ? startDt.toFormat('H:mm')
+        : startDt.toFormat('MMM d, H:mm')
+      const description =
+        defStatus === 'running'
+          ? `Since ${timeStr} (${durationStr})`
+          : `${timeStr} — ${durationStr}`
+      return (
+        <ScheduleCell
+          key={mission.event.eventId}
+          className="border-b border-stone-200"
+          label="Default Mission"
+          secondary="Automatic fallback"
+          status={defStatus}
+          scheduleStatus={defStatus === 'running' ? 'running' : undefined}
+          name="Vehicle (automatic)"
+          description={description}
+          eventId={mission.event.eventId}
+          commandType="mission"
+          onSelect={() => {
+            setGlobalModalId({
+              id: 'scheduleEventDetails',
+              meta: {
+                scheduleEvent: {
+                  eventId: mission.event.eventId,
+                  commandType: 'mission',
+                  status: defStatus,
+                  label: 'Default Mission',
+                  startedAt: startMs,
+                  endedAt: mission.endedAt,
+                  vehicleName,
+                  isDefaultMission: true,
+                  fix: mission.fix,
+                },
+              },
+            })
+          }}
+          onMoreClick={openMoreMenu}
+        />
+      )
+    }
+
     const { name: missionName, parameters: missionParams } =
       parseMissionCommand(mission?.event.data ?? '')
     const isMission =
@@ -674,7 +827,13 @@ export const ScheduleSection: React.FC<ScheduleSectionProps> = ({
         className="border-b border-stone-200"
         description={(() => {
           if (mission.event.unixTime == null) return ''
-          const dt = DateTime.fromMillis(mission.event.unixTime)
+          // For running missions, prefer the vehicle's actual startedAt time over
+          // the command-sent time so the user can tell which run is active at a glance.
+          const baseMs =
+            cellStatus === 'running' && mission.startedAt != null
+              ? mission.startedAt
+              : mission.event.unixTime
+          const dt = DateTime.fromMillis(baseMs)
           const isQueued =
             (cellStatus === 'pending' || cellStatus === 'sent') &&
             !!scheduleDate &&
@@ -756,7 +915,7 @@ export const ScheduleSection: React.FC<ScheduleSectionProps> = ({
           isParam
             ? {
                 text: 'config',
-                tooltip: 'Config update — added to running mission',
+                tooltip: 'Config update — sent to vehicle',
               }
             : undefined
         }
@@ -774,7 +933,10 @@ export const ScheduleSection: React.FC<ScheduleSectionProps> = ({
                 note: mission.event.note ?? undefined,
                 eventData: mission.event.data ?? undefined,
                 eventText: mission.event.text ?? undefined,
-                startedAt: mission.event.unixTime,
+                startedAt:
+                  cellStatus === 'running' && mission.startedAt != null
+                    ? mission.startedAt
+                    : mission.event.unixTime,
                 endedAt: mission.endedAt,
                 vehicleName,
                 scheduleDate,

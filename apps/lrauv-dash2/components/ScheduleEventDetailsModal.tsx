@@ -242,8 +242,163 @@ export const ScheduleEventDetailsModal: React.FC<
 
   if (!event) return null
 
-  const deploymentId =
-    (router.query?.deployment?.[1] as string | undefined) || ''
+  // Default mission — automatic fallback, not operator-commanded.
+  // Render a focused modal showing timing, GPS position at start, and
+  // vehicle behaviour description. None of the operator-command fields apply.
+  if (event.isDefaultMission) {
+    const startMs = event.startedAt
+    const endMs = event.endedAt
+    const nowMs = Date.now()
+    const isRunning = event.status?.toLowerCase() === 'running'
+    const durationStr = startMs
+      ? (() => {
+          const d = DateTime.fromMillis(endMs ?? nowMs).diff(
+            DateTime.fromMillis(startMs),
+            ['hours', 'minutes', 'seconds']
+          )
+          const h = Math.floor(d.hours)
+          const m = Math.floor(d.minutes)
+          const s = Math.floor(d.seconds)
+          if (h > 0) return `${h}h ${m}m`
+          if (m > 0) return `${m}m ${s}s`
+          return `${s}s`
+        })()
+      : '—'
+    const lat = event.fix?.latitude
+    const lon = event.fix?.longitude
+    const fmtCoord = (val: number, pos: string, neg: string) =>
+      `${Math.abs(val).toFixed(5)}° ${val >= 0 ? pos : neg}`
+
+    return (
+      <Modal
+        open
+        draggable
+        grayHeader
+        allowPointerEventsOnChildren
+        onClose={onClose}
+        title={`${capitalize(
+          event.vehicleName ?? 'Vehicle'
+        )} — Mission Details`}
+        className="w-[90vw] max-w-5xl"
+        headerClassName="!items-center"
+        headerStyle={{ backgroundColor: '#FEF3C7' }}
+        dragButtonClassName="!ml-0 !my-0 !rounded-none !bg-transparent !bg-opacity-0 hover:!bg-transparent hover:!bg-opacity-0 !items-center"
+        titleClassName="!text-amber-900 !mt-0 !pt-0 !px-0 !w-full !text-center"
+        titleStyle={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          minHeight: '3rem',
+          margin: 0,
+          padding: 0,
+          lineHeight: 1.2,
+        }}
+        closeButtonClassName="!text-amber-700 hover:!bg-transparent"
+        closeButtonStyle={{ color: '#92400e' }}
+        style={{ maxHeight: '80vh' }}
+      >
+        <div className="space-y-4 text-base text-stone-900">
+          <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
+            <div className="min-w-0">
+              <p className="text-sm uppercase tracking-wide text-stone-500">
+                Name
+              </p>
+              <p className="font-medium">Default Mission</p>
+            </div>
+
+            <div>
+              <p className="text-sm uppercase tracking-wide text-stone-500">
+                Status
+              </p>
+              <div className="mt-0.5">
+                <span
+                  className="inline-block rounded-full px-3 py-0.5 text-sm font-semibold"
+                  style={
+                    isRunning
+                      ? { backgroundColor: '#dbeafe', color: '#1e3a5f' }
+                      : { backgroundColor: '#f3f4f6', color: '#374151' }
+                  }
+                >
+                  {isRunning ? 'Running' : 'Completed'}
+                </span>
+              </div>
+            </div>
+
+            <div>
+              <p className="text-sm uppercase tracking-wide text-stone-500">
+                Started
+              </p>
+              <p className="font-medium">
+                <TimeBlock unixTime={startMs} />
+              </p>
+            </div>
+
+            <div>
+              <p className="text-sm uppercase tracking-wide text-stone-500">
+                Ended
+              </p>
+              <div className="mt-0.5">
+                {isRunning ? (
+                  <span
+                    className="inline-block rounded-full px-3 py-0.5 text-sm font-semibold"
+                    style={{ backgroundColor: '#e0f2fe', color: '#0c4a6e' }}
+                  >
+                    TBD
+                  </span>
+                ) : (
+                  <p className="font-medium">
+                    <TimeBlock unixTime={endMs} />
+                  </p>
+                )}
+              </div>
+            </div>
+
+            <div>
+              <p className="text-sm uppercase tracking-wide text-stone-500">
+                Duration
+              </p>
+              <p className="font-medium">{durationStr}</p>
+            </div>
+
+            <div>
+              <p className="text-sm uppercase tracking-wide text-stone-500">
+                Type
+              </p>
+              <p className="font-medium">mission (automatic)</p>
+            </div>
+
+            <div>
+              <p className="text-sm uppercase tracking-wide text-stone-500">
+                Vehicle
+              </p>
+              <p className="font-medium">
+                {capitalize(event.vehicleName ?? 'Unknown')}
+              </p>
+            </div>
+
+            {lat != null && lon != null && (
+              <div>
+                <p className="text-sm uppercase tracking-wide text-stone-500">
+                  GPS at Start
+                </p>
+                <p className="font-medium font-mono text-sm">
+                  {fmtCoord(lat, 'N', 'S')}, {fmtCoord(lon, 'E', 'W')}
+                </p>
+              </div>
+            )}
+          </div>
+
+          <div className="rounded-md border border-amber-200 bg-amber-50 p-3 text-sm text-amber-800">
+            <strong>Automatic fallback — not operator-commanded.</strong> The
+            vehicle holds on the surface and communicates approximately every 5
+            minutes while awaiting the next mission directive.
+          </div>
+        </div>
+      </Modal>
+    )
+  }
+
+  ;(router.query?.deployment?.[1] as string | undefined) || ''
   const deploymentLabel = deployment?.name || deploymentId || 'Deployment n/a'
   const vehicleLabel = event.vehicleName
     ? capitalize(event.vehicleName)
@@ -443,7 +598,9 @@ export const ScheduleEventDetailsModal: React.FC<
                     </p>
                     <p className="mt-1 normal-case">
                       <strong>Timestamp</strong>: Estimated end time derived
-                      from event timeline.
+                      from event timeline. For missions superseded by a newer
+                      run, this reflects when the vehicle started the next
+                      mission.
                     </p>
                     <p className="mt-1 normal-case">
                       <strong>N/A</strong>: End time is unknown or unavailable
@@ -454,20 +611,33 @@ export const ScheduleEventDetailsModal: React.FC<
               </span>
             </div>
             <div className="mt-0.5">
-              {!['completed', 'cancelled'].includes(
-                event.status?.toLowerCase() ?? ''
-              ) ? (
-                <span
-                  className={statusPillClass()}
-                  style={statusPillStyle('pending')}
-                >
-                  TBD
-                </span>
-              ) : (
-                <p className="font-medium">
-                  <TimeBlock unixTime={event.endedAt} />
-                </p>
-              )}
+              {(() => {
+                const s = event.status?.toLowerCase() ?? ''
+                // Param updates and ack'd/timed-out non-mission commands are
+                // instantaneous — no meaningful end time, so skip TBD entirely.
+                const isInstantaneous =
+                  event.isParamUpdate ||
+                  (event.commandType === 'command' &&
+                    ['ack', 'timeout', 'sent'].includes(s))
+                if (
+                  !isInstantaneous &&
+                  !['completed', 'cancelled'].includes(s)
+                ) {
+                  return (
+                    <span
+                      className={statusPillClass()}
+                      style={statusPillStyle('pending')}
+                    >
+                      TBD
+                    </span>
+                  )
+                }
+                return (
+                  <p className="font-medium">
+                    <TimeBlock unixTime={event.endedAt} />
+                  </p>
+                )
+              })()}
             </div>
           </div>
           <div>
