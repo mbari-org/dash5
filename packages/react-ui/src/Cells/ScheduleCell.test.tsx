@@ -32,18 +32,18 @@ test('should render the appropriate icon', async () => {
   expect(screen.getByTitle(/running/i)).toBeInTheDocument()
 })
 
-test('should have white background when running', async () => {
+test('should have blue background when running', async () => {
   render(
     <ScheduleCell {...props} status={'running'} scheduleStatus="running" />
   )
 
-  expect(screen.getByLabelText(/cell container/i)).toHaveClass('bg-white')
+  expect(screen.getByLabelText(/cell container/i)).toHaveClass('bg-blue-50')
 })
 
-test('should have white background when pending but the schedule is running', async () => {
+test('should have blue background when pending but the schedule is running', async () => {
   render(<ScheduleCell {...props} scheduleStatus="running" />)
 
-  expect(screen.getByLabelText(/cell container/i)).toHaveClass('bg-white')
+  expect(screen.getByLabelText(/cell container/i)).toHaveClass('bg-blue-50')
 })
 
 test('should have white background when paused', async () => {
@@ -67,17 +67,23 @@ test('should have white background when scheduled', async () => {
 test('should have teal label when completed', async () => {
   render(<ScheduleCell {...props} status={'completed'} />)
 
-  expect(screen.getByText(props.label)).toHaveClass('text-teal-600')
+  expect(screen.getByText(props.label).closest('li')).toHaveClass(
+    'text-teal-600'
+  )
 })
 
 test('should have teal label when paused', async () => {
   render(<ScheduleCell {...props} status={'paused'} scheduleStatus="paused" />)
 
-  expect(screen.getByText(props.label)).toHaveClass('text-teal-600')
+  expect(screen.getByText(props.label).closest('li')).toHaveClass(
+    'text-teal-600'
+  )
 })
 
 test('should have teal label when pending and the schedule is paused', async () => {
   render(<ScheduleCell {...props} scheduleStatus="paused" />)
 
-  expect(screen.getByText(props.label)).toHaveClass('text-teal-600')
+  expect(screen.getByText(props.label).closest('li')).toHaveClass(
+    'text-teal-600'
+  )
 })

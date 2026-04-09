@@ -177,6 +177,14 @@ export const OverviewToolbar: React.FC<OverviewToolbarProps> = ({
             />
           </li>
         ) : null}
+        {recovered && (
+          <li
+            className="ml-3 rounded-full bg-green-100 px-3 py-1 text-xs font-semibold text-green-800"
+            title={recoveredAt ? `Recovered ${recoveredAt}` : 'Recovered'}
+          >
+            Recovered
+          </li>
+        )}
       </ul>
       <ul className={styles.rightWrapper}>
         {onRoleReassign && (

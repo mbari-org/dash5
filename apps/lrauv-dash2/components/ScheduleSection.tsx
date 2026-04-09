@@ -483,7 +483,9 @@ export const ScheduleSection: React.FC<ScheduleSectionProps> = ({
     // Must run AFTER enrichment so statuses are resolved from 'TBD' first.
     if (isRecovered) {
       return enriched.map((item) =>
-        item.status === 'pending' ? { ...item, status: 'completed' } : item
+        item.status === 'pending' || item.status === 'TBD'
+          ? { ...item, status: 'completed' }
+          : item
       )
     }
 
