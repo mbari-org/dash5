@@ -65,7 +65,6 @@ export const useTethysSubscription = () => {
         data.vehicleName,
         accountEmail
       )
-      queryClient.invalidateQueries({ queryKey })
       queryClient.setQueryData(queryKey, data)
     }
 
@@ -76,8 +75,8 @@ export const useTethysSubscription = () => {
 }
 
 /**
- * Subscribes to websocket-backed cache updates (same key as `useTethysSubscription`).
- * Plain `getQueryData` does not re-render when `setQueryData` runs.
+ * Websocket payloads cached under the same keys as `useTethysSubscription`. Uses `useQuery`
+ * so components re-render when the socket handler calls `setQueryData` (unlike `getQueryData` alone).
  */
 export const useTethysSubscriptionEvent = (
   eventType: SubscriptionEventType,
@@ -92,14 +91,14 @@ export const useTethysSubscriptionEvent = (
 
   const { data } = useQuery<TethysSubscriptionEvent | undefined>(
     queryKey,
-    () =>
-      Promise.resolve(
+    () => undefined,
+    {
+      // This hook is a reactive cache reader for websocket writes; never fetch.
+      enabled: false,
+      initialData: () =>
         queryClient.getQueryData(queryKey) as
           | TethysSubscriptionEvent
-          | undefined
-      ),
-    {
-      enabled: subscribed,
+          | undefined,
       staleTime: Infinity,
       cacheTime: Infinity,
       refetchOnWindowFocus: false,
