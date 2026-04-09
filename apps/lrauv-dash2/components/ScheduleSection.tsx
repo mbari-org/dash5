@@ -661,9 +661,9 @@ export const ScheduleSection: React.FC<ScheduleSectionProps> = ({
           <span className="flex flex-col">
             <span className="text-xs font-bold">Schedule History</span>
             <span className="text-xs text-stone-500">
-              NOTE: Ended times are approximate
+              End times are approximate
               <br />
-              Accuracy varies — see Logs for exact times
+              See Logs for exact times
             </span>
           </span>
           <Select
