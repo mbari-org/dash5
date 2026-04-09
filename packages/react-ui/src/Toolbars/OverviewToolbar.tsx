@@ -36,6 +36,8 @@ export interface OverviewToolbarProps {
   authenticated?: boolean
   loadingPicAndOnCall?: boolean
   onSelectDeployment?: (deployment: DeploymentInfo) => void
+  recovered?: boolean
+  recoveredAt?: string
 }
 
 const styles = {
@@ -72,6 +74,8 @@ export const OverviewToolbar: React.FC<OverviewToolbarProps> = ({
   onIcon2hover,
   authenticated,
   loadingPicAndOnCall,
+  recovered,
+  recoveredAt,
 }) => {
   const [hovering, setHovering] = useState<HoverOption>(null)
   const [showDeployments, setShowDeployments] = useState(false)
@@ -160,6 +164,14 @@ export const OverviewToolbar: React.FC<OverviewToolbarProps> = ({
             />
           </li>
         ) : null}
+        {recovered && (
+          <li
+            className="ml-3 rounded-full bg-green-100 px-3 py-1 text-xs font-semibold text-green-800"
+            title={recoveredAt ? `Recovered ${recoveredAt}` : 'Recovered'}
+          >
+            Recovered
+          </li>
+        )}
       </ul>
       <ul className={styles.rightWrapper}>
         {onRoleReassign && (
