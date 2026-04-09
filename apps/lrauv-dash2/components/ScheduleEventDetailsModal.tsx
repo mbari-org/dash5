@@ -367,8 +367,8 @@ export const ScheduleEventDetailsModal: React.FC<
                       interval.
                     </p>
                     <p className="mt-1 normal-case">
-                      <strong>Ack</strong>: vehicle confirmed receipt of the
-                      command.
+                      <strong>Received</strong>: vehicle acknowledged receipt of
+                      the command or mission.
                     </p>
                     <p className="mt-1 normal-case">
                       <strong>Timeout</strong>: no confirmation received within
@@ -388,6 +388,8 @@ export const ScheduleEventDetailsModal: React.FC<
               >
                 {event.status?.toLowerCase() === 'tbd'
                   ? 'Pending'
+                  : event.status?.toLowerCase() === 'ack'
+                  ? 'Received'
                   : event.status
                   ? event.status.charAt(0).toUpperCase() + event.status.slice(1)
                   : 'Unknown'}
