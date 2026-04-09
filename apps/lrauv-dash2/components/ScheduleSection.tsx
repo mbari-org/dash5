@@ -59,6 +59,8 @@ export interface CommandStatusItem {
   }
   status: string
   endedAt?: number
+  /** Unix time (ms) when the vehicle actually started executing — from missionStarted telemetry */
+  startedAt?: number
 }
 
 const VALID_SCHEDULE_CELL_STATUSES: ScheduleCellStatus[] = [
@@ -301,6 +303,7 @@ export const ScheduleSection: React.FC<ScheduleSectionProps> = ({
           ...item,
           status: inInterval.status,
           endedAt: inInterval.endedAt,
+          startedAt: inInterval.startedAt,
         }
       }
 
@@ -316,7 +319,12 @@ export const ScheduleSection: React.FC<ScheduleSectionProps> = ({
       if (Math.abs(best.startedAt - referenceTime) > MATCH_WINDOW_MS)
         return item
 
-      return { ...item, status: best.status, endedAt: best.endedAt }
+      return {
+        ...item,
+        status: best.status,
+        endedAt: best.endedAt,
+        startedAt: best.startedAt,
+      }
     })
 
     // Ensure the currently running mission is represented as running.
@@ -349,6 +357,12 @@ export const ScheduleSection: React.FC<ScheduleSectionProps> = ({
             ...matchingItem,
             status: 'running',
             endedAt: undefined,
+            startedAt: currentMissionEntry.startedAt,
+          }
+        } else if (!matchingItem.startedAt) {
+          enriched[matchingMissionIndex] = {
+            ...matchingItem,
+            startedAt: currentMissionEntry.startedAt,
           }
         }
         // Demote any OTHER rows for the same mission that are still marked
@@ -674,7 +688,13 @@ export const ScheduleSection: React.FC<ScheduleSectionProps> = ({
         className="border-b border-stone-200"
         description={(() => {
           if (mission.event.unixTime == null) return ''
-          const dt = DateTime.fromMillis(mission.event.unixTime)
+          // For running missions, prefer the vehicle's actual startedAt time over
+          // the command-sent time so the user can tell which run is active at a glance.
+          const baseMs =
+            cellStatus === 'running' && mission.startedAt != null
+              ? mission.startedAt
+              : mission.event.unixTime
+          const dt = DateTime.fromMillis(baseMs)
           const isQueued =
             (cellStatus === 'pending' || cellStatus === 'sent') &&
             !!scheduleDate &&
@@ -774,7 +794,10 @@ export const ScheduleSection: React.FC<ScheduleSectionProps> = ({
                 note: mission.event.note ?? undefined,
                 eventData: mission.event.data ?? undefined,
                 eventText: mission.event.text ?? undefined,
-                startedAt: mission.event.unixTime,
+                startedAt:
+                  cellStatus === 'running' && mission.startedAt != null
+                    ? mission.startedAt
+                    : mission.event.unixTime,
                 endedAt: mission.endedAt,
                 vehicleName,
                 scheduleDate,
