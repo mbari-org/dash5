@@ -104,6 +104,7 @@ export const IconButton: React.FC<IconButtonProps> = ({
         inactive && style.inactive,
       ])}
       onClick={handleClick}
+      type="button"
       style={styleFromProps}
       onMouseEnter={handleMouseOver}
       onMouseLeave={handleMouseOut}
