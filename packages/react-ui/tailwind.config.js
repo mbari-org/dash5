@@ -14,6 +14,8 @@ module.exports = {
         secondary: {
           100: '#F0F9FF',
           300: '#E0F2FE',
+          400: '#BAE6FD',
+          500: '#7DD3FC',
         },
         zIndex: {
           100: '100',
