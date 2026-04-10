@@ -19,6 +19,10 @@ export interface IconButtonProps {
   noPadding?: boolean
   testId?: string
   ariaLabel: string
+  /** Expose open/closed state to assistive technology for toggle buttons. */
+  ariaExpanded?: boolean
+  /** id of the element this button controls (for aria-controls). */
+  ariaControls?: string
   /**
    * The tailwind text size class to apply to the button.
    */
@@ -54,6 +58,8 @@ export const IconButton: React.FC<IconButtonProps> = ({
   inactive,
   noPadding,
   ariaLabel,
+  ariaExpanded,
+  ariaControls,
   testId,
   size = 'text-lg',
 }) => {
@@ -102,6 +108,8 @@ export const IconButton: React.FC<IconButtonProps> = ({
       onMouseEnter={handleMouseOver}
       onMouseLeave={handleMouseOut}
       aria-label={ariaLabel}
+      aria-expanded={ariaExpanded}
+      aria-controls={ariaControls}
       data-testid={testId}
     >
       <FontAwesomeIcon icon={icon as IconProp} className={iconClassName} />
