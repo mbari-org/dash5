@@ -19,8 +19,8 @@ import {
   OverviewToolbar,
   VehicleCommsCell,
   VehicleInfoCell,
-  ResourceLink,
 } from '@mbari/react-ui'
+import type { ResourceLink } from '@mbari/react-ui'
 import {
   faFileExcel,
   faFileWord,
