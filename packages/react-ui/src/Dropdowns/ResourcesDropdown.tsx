@@ -1,4 +1,4 @@
-import React, { useRef, useState } from 'react'
+import React, { useCallback, useRef, useState } from 'react'
 import clsx from 'clsx'
 import { faCog } from '@fortawesome/free-solid-svg-icons'
 import { faFolder, faFolderOpen } from '@fortawesome/free-regular-svg-icons'
@@ -109,7 +109,8 @@ export const ResourcesDropdown: React.FC<ResourcesDropdownProps> = ({
 }) => {
   const [open, setOpen] = useState(false)
   const ref = useRef<HTMLDivElement | null>(null)
-  useOnClickOutside(ref, () => setOpen(false))
+  const closeDropdown = useCallback(() => setOpen(false), [])
+  useOnClickOutside(ref, closeDropdown)
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === 'Escape') setOpen(false)
