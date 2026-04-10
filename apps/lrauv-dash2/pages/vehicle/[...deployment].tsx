@@ -500,8 +500,8 @@ const Vehicle: NextPage = () => {
                       adminLinks={adminLinks}
                       isAdmin={isAdmin}
                       picLinks={picLinks}
-                      resourcesSectionLabel="LRAUV Resources"
-                      trainingSectionLabel="LRAUV Operator Training"
+                      resourcesSectionLabel="Resources"
+                      trainingSectionLabel="Operator Training"
                       supportIcon1={
                         cellPingReachable ? (
                           <ConnectedIcon />
