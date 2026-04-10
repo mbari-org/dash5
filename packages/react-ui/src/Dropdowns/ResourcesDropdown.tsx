@@ -50,7 +50,7 @@ const styles = {
   panel:
     'top-100 absolute right-0 z-[1001] min-w-[240px] rounded-md bg-white font-display drop-shadow-lg border border-solid border-stone-300 pt-3',
   sectionToggle:
-    'flex w-full items-start justify-between px-4 py-2 text-xs font-bold uppercase tracking-widest bg-secondary-300 text-stone-800 hover:bg-secondary-400 focus:outline-none focus:ring-1 focus:ring-inset focus:ring-secondary-500',
+    'flex w-full items-start justify-between px-4 py-2 text-xs font-bold uppercase tracking-widest text-stone-800 focus:outline-none focus:ring-1 focus:ring-inset focus:ring-secondary-500',
   divider: 'border-t border-stone-200',
   link: 'flex w-full items-center gap-2 px-4 py-3 text-left text-sm hover:bg-stone-100 focus:bg-stone-100 focus:outline-none',
   linkDisabled:
@@ -120,6 +120,7 @@ const CollapsibleSection: React.FC<{
   testIdPrefix,
   links,
 }) => {
+  const [hovered, setHovered] = useState(false)
   const contentId = `${sectionId}-content`
   return (
     <section aria-label={label} className={clsx(divider && styles.divider)}>
@@ -129,6 +130,9 @@ const CollapsibleSection: React.FC<{
         aria-expanded={expanded}
         aria-controls={contentId}
         className={styles.sectionToggle}
+        style={{ backgroundColor: hovered ? '#BAE6FD' : '#E0F2FE' }}
+        onMouseEnter={() => setHovered(true)}
+        onMouseLeave={() => setHovered(false)}
         data-testid={`${testIdPrefix}-header`}
       >
         <span className="flex flex-1 items-start gap-1">
