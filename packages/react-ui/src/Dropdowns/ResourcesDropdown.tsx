@@ -1,6 +1,10 @@
 import React, { useCallback, useId, useRef, useState } from 'react'
 import clsx from 'clsx'
-import { faCog } from '@fortawesome/free-solid-svg-icons'
+import {
+  faCog,
+  faChevronDown,
+  faChevronUp,
+} from '@fortawesome/free-solid-svg-icons'
 import { faFolder, faFolderOpen } from '@fortawesome/free-regular-svg-icons'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { IconDefinition } from '@fortawesome/fontawesome-svg-core'
@@ -26,6 +30,8 @@ interface DisabledResourceLink extends BaseResourceLink {
 
 export type ResourceLink = EnabledResourceLink | DisabledResourceLink
 
+export type SectionKey = 'pic' | 'resources' | 'training' | 'admin'
+
 export interface ResourcesDropdownProps {
   className?: string
   style?: React.CSSProperties
@@ -36,13 +42,15 @@ export interface ResourcesDropdownProps {
   trainingSectionLabel?: string
   adminLinks?: ResourceLink[]
   isAdmin?: boolean
+  /** Which sections start expanded. Defaults to ['pic']. */
+  defaultExpandedSections?: SectionKey[]
 }
 
 const styles = {
   panel:
     'top-100 absolute right-0 z-[1001] min-w-[240px] rounded-md bg-white font-display drop-shadow-lg border border-solid border-stone-300 pt-3',
-  sectionHeader:
-    'px-4 py-2 text-xs font-bold uppercase tracking-widest bg-secondary-300 text-stone-800',
+  sectionToggle:
+    'flex w-full items-start justify-between px-4 py-2 text-xs font-bold uppercase tracking-widest bg-secondary-300 text-stone-800 hover:bg-secondary-400 focus:outline-none focus:ring-1 focus:ring-inset focus:ring-secondary-500',
   divider: 'border-t border-stone-200',
   link: 'flex w-full items-center gap-2 px-4 py-3 text-left text-sm hover:bg-stone-100 focus:bg-stone-100 focus:outline-none',
   linkDisabled:
@@ -57,7 +65,7 @@ const LinkList: React.FC<{
   <ul>
     {links.map((link, i) =>
       link.disabled ? (
-        // Render plain non-interactive text for disabled items (no role to avoid misleading AT)
+        // Plain non-interactive span for disabled items — no role to avoid misleading AT
         <li key={`${link.label}-${i}`}>
           <span
             aria-disabled="true"
@@ -93,6 +101,55 @@ const LinkList: React.FC<{
   </ul>
 )
 
+const CollapsibleSection: React.FC<{
+  label: string
+  sectionId: string
+  expanded: boolean
+  onToggle: () => void
+  divider?: boolean
+  headerIcon?: React.ReactNode
+  testIdPrefix: string
+  links: ResourceLink[]
+}> = ({
+  label,
+  sectionId,
+  expanded,
+  onToggle,
+  divider,
+  headerIcon,
+  testIdPrefix,
+  links,
+}) => {
+  const contentId = `${sectionId}-content`
+  return (
+    <section aria-label={label} className={clsx(divider && styles.divider)}>
+      <button
+        type="button"
+        onClick={onToggle}
+        aria-expanded={expanded}
+        aria-controls={contentId}
+        className={styles.sectionToggle}
+        data-testid={`${testIdPrefix}-header`}
+      >
+        <span className="flex flex-1 items-start gap-1">
+          {headerIcon}
+          {label}
+        </span>
+        <FontAwesomeIcon
+          icon={expanded ? faChevronUp : faChevronDown}
+          className="mt-0.5 flex-shrink-0 text-[10px] opacity-60"
+          aria-hidden
+        />
+      </button>
+      {expanded && (
+        <div id={contentId}>
+          <LinkList links={links} testIdPrefix={testIdPrefix} />
+        </div>
+      )}
+    </section>
+  )
+}
+
 export const ResourcesDropdown: React.FC<ResourcesDropdownProps> = ({
   className,
   style,
@@ -103,16 +160,32 @@ export const ResourcesDropdown: React.FC<ResourcesDropdownProps> = ({
   trainingSectionLabel = 'Training',
   adminLinks = [],
   isAdmin = false,
+  defaultExpandedSections = ['pic'],
 }) => {
   const [open, setOpen] = useState(false)
+  const [expandedSections, setExpandedSections] = useState<Set<SectionKey>>(
+    () => new Set(defaultExpandedSections)
+  )
   const ref = useRef<HTMLDivElement | null>(null)
   // Stable callback prevents useOnClickOutside from re-registering listeners
   const closeDropdown = useCallback(() => setOpen(false), [])
   useOnClickOutside(ref, closeDropdown)
 
-  // Unique id per instance so aria-controls works correctly when the component
-  // is mounted more than once on the same page
+  // Unique id per instance so aria-controls works correctly when rendered
+  // more than once on the same page
   const panelId = useId()
+
+  const toggleSection = useCallback((key: SectionKey) => {
+    setExpandedSections((prev) => {
+      const next = new Set(prev)
+      if (next.has(key)) {
+        next.delete(key)
+      } else {
+        next.add(key)
+      }
+      return next
+    })
+  }, [])
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === 'Escape') setOpen(false)
@@ -155,46 +228,54 @@ export const ResourcesDropdown: React.FC<ResourcesDropdownProps> = ({
             </p>
           )}
           {hasPic && (
-            <section aria-label="LRAUV PIC Signup">
-              <p className={styles.sectionHeader}>LRAUV PIC Signup</p>
-              <LinkList links={picLinks} testIdPrefix="pic-link" />
-            </section>
+            <CollapsibleSection
+              label="LRAUV PIC Signup"
+              sectionId={`${panelId}-pic`}
+              expanded={expandedSections.has('pic')}
+              onToggle={() => toggleSection('pic')}
+              testIdPrefix="pic-link"
+              links={picLinks}
+            />
           )}
           {hasResources && (
-            <section
-              aria-label={resourcesSectionLabel}
-              className={clsx(hasPic && styles.divider)}
-            >
-              <p className={styles.sectionHeader}>{resourcesSectionLabel}</p>
-              <LinkList links={resourceLinks} testIdPrefix="resource-link" />
-            </section>
+            <CollapsibleSection
+              label={resourcesSectionLabel}
+              sectionId={`${panelId}-resources`}
+              expanded={expandedSections.has('resources')}
+              onToggle={() => toggleSection('resources')}
+              divider={hasPic}
+              testIdPrefix="resource-link"
+              links={resourceLinks}
+            />
           )}
           {hasTraining && (
-            <section
-              aria-label={trainingSectionLabel}
-              className={clsx((hasPic || hasResources) && styles.divider)}
-            >
-              <p className={styles.sectionHeader}>{trainingSectionLabel}</p>
-              <LinkList links={trainingLinks} testIdPrefix="training-link" />
-            </section>
+            <CollapsibleSection
+              label={trainingSectionLabel}
+              sectionId={`${panelId}-training`}
+              expanded={expandedSections.has('training')}
+              onToggle={() => toggleSection('training')}
+              divider={hasPic || hasResources}
+              testIdPrefix="training-link"
+              links={trainingLinks}
+            />
           )}
           {hasAdminSection && (
-            <section
-              aria-label="Admin Settings"
-              className={clsx(
-                (hasPic || hasResources || hasTraining) && styles.divider
-              )}
-            >
-              <p className={styles.sectionHeader}>
+            <CollapsibleSection
+              label="Admin Settings"
+              sectionId={`${panelId}-admin`}
+              expanded={expandedSections.has('admin')}
+              onToggle={() => toggleSection('admin')}
+              divider={hasPic || hasResources || hasTraining}
+              headerIcon={
                 <FontAwesomeIcon
                   icon={faCog}
-                  className="mr-1 text-xs"
+                  className="mr-1 text-[10px]"
                   aria-hidden
                 />
-                Admin Settings
-              </p>
-              <LinkList links={adminLinks} testIdPrefix="admin-link" />
-            </section>
+              }
+              testIdPrefix="admin-link"
+              links={adminLinks}
+            />
           )}
         </div>
       )}
