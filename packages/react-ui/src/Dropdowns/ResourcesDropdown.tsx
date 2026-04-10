@@ -12,6 +12,7 @@ export interface ResourceLink {
   url: string
   tooltip?: string
   icon?: IconDefinition
+  disabled?: boolean
 }
 
 export interface ResourcesDropdownProps {
@@ -33,6 +34,8 @@ const styles = {
     'px-4 py-2 text-xs font-bold uppercase tracking-widest bg-secondary-300 text-stone-800',
   divider: 'border-t border-stone-200',
   link: 'flex w-full items-center gap-2 px-4 py-3 text-left text-sm hover:bg-stone-100 focus:bg-stone-100 focus:outline-none',
+  linkDisabled:
+    'flex w-full items-center gap-2 px-4 py-3 text-left text-sm cursor-not-allowed opacity-40',
   linkLabel: 'flex-1',
 }
 
@@ -41,23 +44,38 @@ const LinkList: React.FC<{
   testIdPrefix: string
 }> = ({ links, testIdPrefix }) => (
   <ul>
-    {links.map((link, i) => (
-      <li key={i}>
-        <a
-          href={link.url}
-          target="_blank"
-          rel="noopener noreferrer"
-          className={styles.link}
-          title={link.tooltip}
-          data-testid={`${testIdPrefix}-${i}`}
-        >
-          <span className="w-5 text-center text-stone-400">
-            {link.icon && <FontAwesomeIcon icon={link.icon} aria-hidden />}
+    {links.map((link, i) =>
+      link.disabled ? (
+        <li key={i}>
+          <span
+            className={styles.linkDisabled}
+            title="Coming soon"
+            data-testid={`${testIdPrefix}-${i}`}
+          >
+            <span className="w-5 text-center text-stone-400">
+              {link.icon && <FontAwesomeIcon icon={link.icon} aria-hidden />}
+            </span>
+            <span className={styles.linkLabel}>{link.label}</span>
           </span>
-          <span className={styles.linkLabel}>{link.label}</span>
-        </a>
-      </li>
-    ))}
+        </li>
+      ) : (
+        <li key={i}>
+          <a
+            href={link.url}
+            target="_blank"
+            rel="noopener noreferrer"
+            className={styles.link}
+            title={link.tooltip}
+            data-testid={`${testIdPrefix}-${i}`}
+          >
+            <span className="w-5 text-center text-stone-400">
+              {link.icon && <FontAwesomeIcon icon={link.icon} aria-hidden />}
+            </span>
+            <span className={styles.linkLabel}>{link.label}</span>
+          </a>
+        </li>
+      )
+    )}
   </ul>
 )
 
