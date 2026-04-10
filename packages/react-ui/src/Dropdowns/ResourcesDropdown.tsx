@@ -1,4 +1,4 @@
-import React, { useCallback, useRef, useState } from 'react'
+import React, { useCallback, useId, useRef, useState } from 'react'
 import clsx from 'clsx'
 import { faCog } from '@fortawesome/free-solid-svg-icons'
 import { faFolder, faFolderOpen } from '@fortawesome/free-regular-svg-icons'
@@ -7,7 +7,7 @@ import { IconDefinition } from '@fortawesome/fontawesome-svg-core'
 import { useOnClickOutside } from '@mbari/utils'
 import { IconButton } from '../Navigation'
 
-// #1 (Copilot): url is optional when disabled — union type avoids dummy URLs
+// url is optional when disabled — union type avoids callers providing dummy URLs
 interface BaseResourceLink {
   label: string
   tooltip?: string
@@ -57,13 +57,11 @@ const LinkList: React.FC<{
   <ul>
     {links.map((link, i) =>
       link.disabled ? (
-        // #2 (Copilot): aria-disabled + tabIndex={-1} + preventDefault for a11y
-        // #3 (Copilot): stable key on label (url is never for disabled links)
-        <li key={link.label}>
-          <a
+        // Render a <span> rather than an href-less <a> — no navigation intent
+        <li key={`${link.label}-${i}`}>
+          <span
+            role="link"
             aria-disabled="true"
-            tabIndex={-1}
-            onClick={(e) => e.preventDefault()}
             className={styles.linkDisabled}
             title={link.tooltip ?? 'Coming soon'}
             data-testid={`${testIdPrefix}-${i}`}
@@ -72,11 +70,11 @@ const LinkList: React.FC<{
               {link.icon && <FontAwesomeIcon icon={link.icon} aria-hidden />}
             </span>
             <span className={styles.linkLabel}>{link.label}</span>
-          </a>
+          </span>
         </li>
       ) : (
-        // #3 (Copilot): stable key on url instead of array index
-        <li key={link.url}>
+        // Composite key guards against duplicate URLs in the same section
+        <li key={`${link.url}-${i}`}>
           <a
             href={link.url}
             target="_blank"
@@ -109,8 +107,13 @@ export const ResourcesDropdown: React.FC<ResourcesDropdownProps> = ({
 }) => {
   const [open, setOpen] = useState(false)
   const ref = useRef<HTMLDivElement | null>(null)
+  // Stable callback prevents useOnClickOutside from re-registering listeners
   const closeDropdown = useCallback(() => setOpen(false), [])
   useOnClickOutside(ref, closeDropdown)
+
+  // Unique id per instance so aria-controls works correctly when the component
+  // is mounted more than once on the same page
+  const panelId = useId()
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === 'Escape') setOpen(false)
@@ -134,7 +137,7 @@ export const ResourcesDropdown: React.FC<ResourcesDropdownProps> = ({
           icon={open ? faFolderOpen : faFolder}
           ariaLabel="LRAUV Resources"
           ariaExpanded={open}
-          ariaControls="resources-dropdown-panel"
+          ariaControls={panelId}
           tooltip="LRAUV Resources"
           toolTipDirection="above"
           onClick={() => setOpen((o) => !o)}
@@ -142,7 +145,7 @@ export const ResourcesDropdown: React.FC<ResourcesDropdownProps> = ({
       </div>
       {open && (
         <div
-          id="resources-dropdown-panel"
+          id={panelId}
           className={styles.panel}
           aria-label="Quick-access resources"
           data-testid="resources-panel"
@@ -168,7 +171,6 @@ export const ResourcesDropdown: React.FC<ResourcesDropdownProps> = ({
             </section>
           )}
           {hasTraining && (
-            // #1 (Copilot): use trainingSectionLabel for aria-label to match visible text
             <section
               aria-label={trainingSectionLabel}
               className={clsx((hasPic || hasResources) && styles.divider)}
