@@ -207,6 +207,7 @@ const Vehicle: NextPage = () => {
     {
       label: 'Frontend Configuration',
       url: '/admin/settings',
+      disabled: true,
     },
   ]
 
