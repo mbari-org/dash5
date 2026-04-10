@@ -7,13 +7,24 @@ import { IconDefinition } from '@fortawesome/fontawesome-svg-core'
 import { useOnClickOutside } from '@mbari/utils'
 import { IconButton } from '../Navigation'
 
-export interface ResourceLink {
+// #1 (Copilot): url is optional when disabled — union type avoids dummy URLs
+interface BaseResourceLink {
   label: string
-  url: string
   tooltip?: string
   icon?: IconDefinition
-  disabled?: boolean
 }
+
+interface EnabledResourceLink extends BaseResourceLink {
+  url: string
+  disabled?: false
+}
+
+interface DisabledResourceLink extends BaseResourceLink {
+  disabled: true
+  url?: never
+}
+
+export type ResourceLink = EnabledResourceLink | DisabledResourceLink
 
 export interface ResourcesDropdownProps {
   className?: string
@@ -46,20 +57,26 @@ const LinkList: React.FC<{
   <ul>
     {links.map((link, i) =>
       link.disabled ? (
-        <li key={i}>
-          <span
+        // #2 (Copilot): aria-disabled + tabIndex={-1} + preventDefault for a11y
+        // #3 (Copilot): stable key on label (url is never for disabled links)
+        <li key={link.label}>
+          <a
+            aria-disabled="true"
+            tabIndex={-1}
+            onClick={(e) => e.preventDefault()}
             className={styles.linkDisabled}
-            title="Coming soon"
+            title={link.tooltip ?? 'Coming soon'}
             data-testid={`${testIdPrefix}-${i}`}
           >
             <span className="w-5 text-center text-stone-400">
               {link.icon && <FontAwesomeIcon icon={link.icon} aria-hidden />}
             </span>
             <span className={styles.linkLabel}>{link.label}</span>
-          </span>
+          </a>
         </li>
       ) : (
-        <li key={i}>
+        // #3 (Copilot): stable key on url instead of array index
+        <li key={link.url}>
           <a
             href={link.url}
             target="_blank"
@@ -115,6 +132,8 @@ export const ResourcesDropdown: React.FC<ResourcesDropdownProps> = ({
         <IconButton
           icon={open ? faFolderOpen : faFolder}
           ariaLabel="LRAUV Resources"
+          ariaExpanded={open}
+          ariaControls="resources-dropdown-panel"
           tooltip="LRAUV Resources"
           toolTipDirection="above"
           onClick={() => setOpen((o) => !o)}
@@ -122,6 +141,7 @@ export const ResourcesDropdown: React.FC<ResourcesDropdownProps> = ({
       </div>
       {open && (
         <div
+          id="resources-dropdown-panel"
           className={styles.panel}
           aria-label="Quick-access resources"
           data-testid="resources-panel"
@@ -147,8 +167,9 @@ export const ResourcesDropdown: React.FC<ResourcesDropdownProps> = ({
             </section>
           )}
           {hasTraining && (
+            // #1 (Copilot): use trainingSectionLabel for aria-label to match visible text
             <section
-              aria-label="PIC Training"
+              aria-label={trainingSectionLabel}
               className={clsx((hasPic || hasResources) && styles.divider)}
             >
               <p className={styles.sectionHeader}>{trainingSectionLabel}</p>
