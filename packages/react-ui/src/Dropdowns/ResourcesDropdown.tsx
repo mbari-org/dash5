@@ -209,7 +209,7 @@ export const ResourcesDropdown: React.FC<ResourcesDropdownProps> = ({
           icon={open ? faFolderOpen : faFolder}
           ariaLabel="LRAUV Resources"
           ariaExpanded={open}
-          ariaControls={panelId}
+          ariaControls={open ? panelId : undefined}
           tooltip="LRAUV Resources"
           toolTipDirection="above"
           onClick={() => setOpen((o) => !o)}
