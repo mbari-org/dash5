@@ -2,6 +2,7 @@ import { render, screen, fireEvent, within } from '@testing-library/react'
 import '@testing-library/jest-dom'
 import { ResourcesDropdown, ResourcesDropdownProps } from './ResourcesDropdown'
 
+const picLinks = [{ label: 'Watchbill', url: 'https://example.com/watchbill' }]
 const resourceLinks = [
   { label: 'LRAUV Watchbill Signup', url: 'https://example.com/watchbill' },
 ]
@@ -12,13 +13,24 @@ const adminLinks = [
   { label: 'Frontend Settings', url: 'https://example.com/admin' },
 ]
 
+// All sections expanded — used by most existing tests so they can see links
+const allExpanded: ResourcesDropdownProps['defaultExpandedSections'] = [
+  'pic',
+  'resources',
+  'training',
+  'admin',
+]
+
 const props: ResourcesDropdownProps = {
+  picLinks,
   resourceLinks,
   trainingLinks,
   adminLinks,
+  defaultExpandedSections: allExpanded,
 }
 
-const triggerButton = () => screen.getByRole('button', { name: /Resources/i })
+const triggerButton = () =>
+  screen.getByRole('button', { name: /LRAUV Resources/i })
 
 test('should render the resources trigger button', () => {
   render(<ResourcesDropdown {...props} />)
@@ -53,7 +65,7 @@ test('should toggle the panel closed when trigger is clicked again', () => {
   expect(screen.queryByTestId('resources-panel')).not.toBeInTheDocument()
 })
 
-test('should render resource links when panel is open', () => {
+test('should render resource links when panel and section are open', () => {
   render(<ResourcesDropdown {...props} />)
   fireEvent.click(triggerButton())
   expect(screen.getByText('LRAUV Watchbill Signup')).toBeInTheDocument()
@@ -63,7 +75,7 @@ test('should render resource links when panel is open', () => {
   )
 })
 
-test('should render training links when panel is open', () => {
+test('should render training links when panel and section are open', () => {
   render(<ResourcesDropdown {...props} />)
   fireEvent.click(triggerButton())
   expect(screen.getByText('PIC Training (Formative)')).toBeInTheDocument()
@@ -122,4 +134,66 @@ test('should render section headers when panel is open', () => {
   const panel = screen.getByTestId('resources-panel')
   expect(within(panel).getByText('Resources')).toBeInTheDocument()
   expect(within(panel).getByText('Training')).toBeInTheDocument()
+})
+
+// --- Collapsible section behaviour ---
+
+test('PIC section is expanded by default, other sections collapsed', () => {
+  render(
+    <ResourcesDropdown
+      picLinks={picLinks}
+      resourceLinks={resourceLinks}
+      trainingLinks={trainingLinks}
+    />
+  )
+  fireEvent.click(triggerButton())
+  // PIC link visible (expanded by default)
+  expect(screen.getByText('Watchbill')).toBeInTheDocument()
+  // Resources link hidden (collapsed by default)
+  expect(screen.queryByText('LRAUV Watchbill Signup')).not.toBeInTheDocument()
+  // Training link hidden (collapsed by default)
+  expect(screen.queryByText('PIC Training (Formative)')).not.toBeInTheDocument()
+})
+
+test('clicking a collapsed section header expands it', () => {
+  render(
+    <ResourcesDropdown
+      resourceLinks={resourceLinks}
+      defaultExpandedSections={[]}
+    />
+  )
+  fireEvent.click(triggerButton())
+  expect(screen.queryByText('LRAUV Watchbill Signup')).not.toBeInTheDocument()
+
+  fireEvent.click(screen.getByTestId('resource-link-header'))
+  expect(screen.getByText('LRAUV Watchbill Signup')).toBeInTheDocument()
+})
+
+test('clicking an expanded section header collapses it', () => {
+  render(
+    <ResourcesDropdown
+      resourceLinks={resourceLinks}
+      defaultExpandedSections={['resources']}
+    />
+  )
+  fireEvent.click(triggerButton())
+  expect(screen.getByText('LRAUV Watchbill Signup')).toBeInTheDocument()
+
+  fireEvent.click(screen.getByTestId('resource-link-header'))
+  expect(screen.queryByText('LRAUV Watchbill Signup')).not.toBeInTheDocument()
+})
+
+test('section header buttons have correct aria-expanded attribute', () => {
+  render(
+    <ResourcesDropdown
+      resourceLinks={resourceLinks}
+      defaultExpandedSections={['resources']}
+    />
+  )
+  fireEvent.click(triggerButton())
+  const header = screen.getByTestId('resource-link-header')
+  expect(header).toHaveAttribute('aria-expanded', 'true')
+
+  fireEvent.click(header)
+  expect(header).toHaveAttribute('aria-expanded', 'false')
 })
