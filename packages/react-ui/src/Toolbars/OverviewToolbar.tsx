@@ -14,6 +14,7 @@ import {
   RecoveredPill,
   RoleReassignButton,
 } from '../Navigation'
+import { ResourceLink, ResourcesDropdown } from '../Dropdowns/ResourcesDropdown'
 import { DateTime } from 'luxon'
 
 export interface DeploymentInfo {
@@ -43,6 +44,13 @@ export interface OverviewToolbarProps {
   onSelectDeployment?: (deployment: DeploymentInfo) => void
   recovered?: boolean
   recoveredAt?: string
+  resourceLinks?: ResourceLink[]
+  trainingLinks?: ResourceLink[]
+  adminLinks?: ResourceLink[]
+  isAdmin?: boolean
+  picLinks?: ResourceLink[]
+  resourcesSectionLabel?: string
+  trainingSectionLabel?: string
 }
 
 const styles = {
@@ -81,6 +89,13 @@ export const OverviewToolbar: React.FC<OverviewToolbarProps> = ({
   loadingPicAndOnCall,
   recovered,
   recoveredAt,
+  resourceLinks,
+  trainingLinks,
+  adminLinks,
+  isAdmin,
+  picLinks,
+  resourcesSectionLabel,
+  trainingSectionLabel,
 }) => {
   const [hovering, setHovering] = useState<HoverOption>(null)
   const [showDeployments, setShowDeployments] = useState(false)
@@ -177,14 +192,6 @@ export const OverviewToolbar: React.FC<OverviewToolbarProps> = ({
             />
           </li>
         ) : null}
-        {recovered && (
-          <li
-            className="ml-3 rounded-full bg-green-100 px-3 py-1 text-xs font-semibold text-green-800"
-            title={recoveredAt ? `Recovered ${recoveredAt}` : 'Recovered'}
-          >
-            Recovered
-          </li>
-        )}
       </ul>
       <ul className={styles.rightWrapper}>
         {onRoleReassign && (
@@ -196,6 +203,19 @@ export const OverviewToolbar: React.FC<OverviewToolbarProps> = ({
               authenticated={authenticated}
               loading={loadingPicAndOnCall}
               onRoleReassign={onRoleReassign}
+            />
+          </li>
+        )}
+        {authenticated && (
+          <li className="relative pr-2">
+            <ResourcesDropdown
+              picLinks={picLinks}
+              resourceLinks={resourceLinks}
+              resourcesSectionLabel={resourcesSectionLabel}
+              trainingLinks={trainingLinks}
+              trainingSectionLabel={trainingSectionLabel}
+              adminLinks={adminLinks}
+              isAdmin={isAdmin}
             />
           </li>
         )}
