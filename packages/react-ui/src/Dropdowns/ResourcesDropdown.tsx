@@ -57,10 +57,9 @@ const LinkList: React.FC<{
   <ul>
     {links.map((link, i) =>
       link.disabled ? (
-        // Render a <span> rather than an href-less <a> — no navigation intent
+        // Render plain non-interactive text for disabled items (no role to avoid misleading AT)
         <li key={`${link.label}-${i}`}>
           <span
-            role="link"
             aria-disabled="true"
             className={styles.linkDisabled}
             title={link.tooltip ?? 'Coming soon'}
