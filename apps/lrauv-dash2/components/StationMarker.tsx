@@ -11,6 +11,7 @@ interface StationMarkerProps {
   lat: number
   lng: number
   isHighlighted?: boolean
+  color?: string
 }
 
 const StationMarker: React.FC<StationMarkerProps> = ({
@@ -18,9 +19,12 @@ const StationMarker: React.FC<StationMarkerProps> = ({
   lat,
   lng,
   isHighlighted = false,
+  color,
 }) => {
   const kmMatch = name.match(KM_CIRCLE_PATTERN)
   const radiusMeters = kmMatch ? parseFloat(kmMatch[1]) * 1000 : null
+  const markerColor = color ?? 'yellow'
+  const circleColor = color ?? CIRCLE_STATION_COLOR
 
   const tooltip = (
     <Tooltip>
@@ -77,9 +81,9 @@ const StationMarker: React.FC<StationMarkerProps> = ({
         <Circle
           center={[lat, lng]}
           radius={radiusMeters}
-          color={CIRCLE_STATION_COLOR}
+          color={circleColor}
           weight={2}
-          fillColor={CIRCLE_STATION_COLOR}
+          fillColor={circleColor}
           fillOpacity={0.08}
           interactive={false}
           pathOptions={{ interactive: false }}
@@ -88,8 +92,8 @@ const StationMarker: React.FC<StationMarkerProps> = ({
         <CircleMarker
           center={[lat, lng]}
           radius={4}
-          color={CIRCLE_STATION_COLOR}
-          fillColor={CIRCLE_STATION_COLOR}
+          color={circleColor}
+          fillColor={circleColor}
           fillOpacity={0.9}
           weight={1}
         >
@@ -131,7 +135,7 @@ const StationMarker: React.FC<StationMarkerProps> = ({
         center={[lat, lng]}
         radius={5}
         fillColor="transparent"
-        color="yellow"
+        color={markerColor}
         fillOpacity={1}
       >
         {tooltip}

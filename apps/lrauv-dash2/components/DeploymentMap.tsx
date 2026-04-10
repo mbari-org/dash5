@@ -47,6 +47,18 @@ const WaypointMapMarker = dynamic(() => import('./WaypointMapMarker'), {
 const StationMarker = dynamic(() => import('../components/StationMarker'), {
   ssr: false,
 })
+
+const PolygonLayers = dynamic(() => import('./PolygonLayers'), {
+  ssr: false,
+})
+
+const TileLayerOverlays = dynamic(() => import('./TileLayerOverlays'), {
+  ssr: false,
+})
+
+const KmlLayers = dynamic(() => import('./KmlLayers'), {
+  ssr: false,
+})
 const MapClickHandler = dynamic(() => import('./MapClickHandler'), {
   ssr: false,
 })
@@ -723,6 +735,9 @@ const DeploymentMap: React.FC<DeploymentMapProps> = ({
               />
             )
           })}
+          <PolygonLayers />
+          <TileLayerOverlays />
+          <KmlLayers />
           <PlatformPaths />
           <MapFlyTo />
           <VehiclePath
