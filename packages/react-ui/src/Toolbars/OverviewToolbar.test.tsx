@@ -254,7 +254,8 @@ test('should show resource links in the resources panel when open', async () => 
       ]}
     />
   )
-  fireEvent.click(screen.getByRole('button', { name: /Resources/i }))
+  fireEvent.click(screen.getByRole('button', { name: /LRAUV Resources/i }))
+  fireEvent.click(screen.getByTestId('resource-link-header'))
   expect(screen.getByText('LRAUV Watchbill Signup')).toBeInTheDocument()
 })
 
