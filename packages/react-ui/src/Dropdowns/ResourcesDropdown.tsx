@@ -80,7 +80,7 @@ const LinkList: React.FC<{
           </span>
         </li>
       ) : (
-        // Composite key guards against duplicate URLs in the same section
+        // Composite key ensures a unique React key within the section even if URLs repeat
         <li key={`${link.url}-${i}`}>
           <a
             href={link.url}
