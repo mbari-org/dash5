@@ -48,7 +48,7 @@ export interface ResourcesDropdownProps {
 
 const styles = {
   panel:
-    'top-100 absolute right-0 z-[1001] min-w-[240px] rounded-md bg-white font-display drop-shadow-lg border border-solid border-stone-300 pt-3',
+    'absolute right-0 top-full mt-1 z-[1001] min-w-[240px] rounded-md bg-white font-display drop-shadow-lg border border-solid border-stone-300 pt-3',
   sectionToggle:
     'flex w-full items-start justify-between px-4 py-2 text-xs font-bold uppercase tracking-widest text-stone-800 focus:outline-none focus:ring-1 focus:ring-inset focus:ring-secondary-500',
   divider: 'border-t border-stone-200',
