@@ -6,7 +6,7 @@ export const getNextCommsTimeFromUnixMs = (
   if (!unixTimeMs || Number.isNaN(unixTimeMs)) return '99:99'
   const dt = DateTime.fromMillis(unixTimeMs)
   if (!dt.isValid) return '99:99'
-  return dt.toFormat('hh:mm')
+  return dt.toFormat('HH:mm')
 }
 
 export const getRelativeDurationInMinutesText = (
