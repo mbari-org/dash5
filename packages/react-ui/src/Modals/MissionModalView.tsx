@@ -162,6 +162,7 @@ const MissionModalBody: React.FC<MissionModalViewProps> = ({
     safetyParams,
     commsParams,
     defaultOverrides,
+    selectionKey: selectedId,
   })
 
   // Reset overrides when the mission category changes
