@@ -25,6 +25,7 @@ import {
   faFileExcel,
   faFileWord,
   faFilePdf,
+  faCalendar,
 } from '@fortawesome/free-regular-svg-icons'
 import { faLink } from '@fortawesome/free-solid-svg-icons'
 import {
@@ -136,6 +137,12 @@ const resourceLinks: ResourceLink[] = [
     url: 'https://docs.mbari.org/internal/tethysdash-ops-doc/',
     icon: faLink,
     tooltip: 'Guide to operating TethysDash.',
+  },
+  {
+    label: 'MBARI Ops Calendar',
+    url: 'https://mww2.shore.mbari.org/events/calendar.cgi',
+    icon: faCalendar,
+    tooltip: 'MBARI operational schedule — ships, wavegliders, and more.',
   },
 ]
 const trainingLinks: ResourceLink[] = [
