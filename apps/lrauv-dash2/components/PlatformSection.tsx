@@ -1,13 +1,10 @@
 import React, { useMemo } from 'react'
 import clsx from 'clsx'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
-import {
-  faArrowsToCircle,
-  faCaretRight,
-} from '@fortawesome/free-solid-svg-icons'
-import Tippy from '@tippyjs/react'
+import { faCaretRight } from '@fortawesome/free-solid-svg-icons'
 import Image from 'next/image'
 import { GetPlatformsResponse } from '@mbari/api-client'
+import { CenterMapButton } from './MapLayersTreeItem'
 
 export interface PlatformSectionProps {
   name: string
@@ -143,41 +140,10 @@ export const PlatformSection: React.FC<PlatformSectionProps> = ({
                       </span>
                     </span>
                     {onCenterClick !== undefined && (
-                      <Tippy
-                        content={`Center map on ${item.name}`}
-                        placement="top-start"
-                        appendTo="parent"
-                      >
-                        <button
-                          type="button"
-                          onClick={(e) => {
-                            e.preventDefault()
-                            e.stopPropagation()
-                            onCenterClick(item._id)
-                          }}
-                          className="ml-2 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2"
-                          aria-label={`Center map on ${item.name}`}
-                          style={{
-                            width: '20px',
-                            height: '20px',
-                            flexShrink: 0,
-                            borderRadius: '3px',
-                            background: '#fff',
-                            border: 0,
-                            padding: 0,
-                            boxShadow: '0 1px 3px rgba(0,0,0,0.35)',
-                            display: 'inline-flex',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                            cursor: 'pointer',
-                          }}
-                        >
-                          <FontAwesomeIcon
-                            icon={faArrowsToCircle}
-                            style={{ color: '#6b7280', fontSize: '14.5px' }}
-                          />
-                        </button>
-                      </Tippy>
+                      <CenterMapButton
+                        label={`Center map on ${item.name}`}
+                        onClick={() => onCenterClick(item._id)}
+                      />
                     )}
                   </label>
                 </li>

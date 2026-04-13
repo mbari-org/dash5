@@ -10,6 +10,48 @@ import {
   faCircle,
 } from '@fortawesome/free-solid-svg-icons'
 
+export interface CenterMapButtonProps {
+  label: string
+  onClick: () => void
+}
+
+export const CenterMapButton: React.FC<CenterMapButtonProps> = ({
+  label,
+  onClick,
+}) => (
+  <Tippy content={label} placement="top-start" appendTo="parent">
+    <button
+      type="button"
+      onClick={(e) => {
+        e.preventDefault()
+        e.stopPropagation()
+        onClick()
+      }}
+      className="ml-2 focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-blue-500"
+      aria-label={label}
+      style={{
+        width: '20px',
+        height: '20px',
+        flexShrink: 0,
+        borderRadius: '3px',
+        background: '#fff',
+        border: 0,
+        padding: 0,
+        boxShadow: '0 1px 3px rgba(0,0,0,0.35)',
+        display: 'inline-flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        cursor: 'pointer',
+      }}
+    >
+      <FontAwesomeIcon
+        icon={faArrowsToCircle}
+        style={{ color: '#6b7280', fontSize: '14.5px' }}
+      />
+    </button>
+  </Tippy>
+)
+
 export interface TreeItemProps {
   label: string
   isExpanded?: boolean
@@ -173,41 +215,7 @@ export const TreeItem: React.FC<TreeItemProps> = ({
           )}
           <span className="text-sm font-medium">{label}</span>
           {onCenterClick !== undefined && (
-            <Tippy
-              content={centerLabel}
-              placement="top-start"
-              appendTo="parent"
-            >
-              <button
-                type="button"
-                onClick={(e) => {
-                  e.preventDefault()
-                  e.stopPropagation()
-                  onCenterClick()
-                }}
-                className="ml-2 focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-blue-500"
-                aria-label={centerLabel}
-                style={{
-                  width: '20px',
-                  height: '20px',
-                  flexShrink: 0,
-                  borderRadius: '3px',
-                  background: '#fff',
-                  border: 0,
-                  padding: 0,
-                  boxShadow: '0 1px 3px rgba(0,0,0,0.35)',
-                  display: 'inline-flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  cursor: 'pointer',
-                }}
-              >
-                <FontAwesomeIcon
-                  icon={faArrowsToCircle}
-                  style={{ color: '#6b7280', fontSize: '14.5px' }}
-                />
-              </button>
-            </Tippy>
+            <CenterMapButton label={centerLabel} onClick={onCenterClick} />
           )}
         </label>
       </div>
