@@ -117,7 +117,9 @@ const LogsSection: React.FC<LogsSectionProps> = ({
     [vehicleName, eventTypes, from, to]
   )
 
-  const deploymentResponse = useInfiniteEvents(deploymentParams)
+  const deploymentResponse = useInfiniteEvents(deploymentParams, {
+    enabled: hasSelection,
+  })
 
   const allLogsParams = useMemo(
     () => ({
@@ -129,7 +131,9 @@ const LogsSection: React.FC<LogsSectionProps> = ({
     [vehicleName, eventTypes]
   )
 
-  const allLogsResponse = useInfiniteEvents(allLogsParams)
+  const allLogsResponse = useInfiniteEvents(allLogsParams, {
+    enabled: hasSelection,
+  })
 
   const {
     data,
