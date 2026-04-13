@@ -121,7 +121,8 @@ const useManagedParameters = ({
     setOverrideMap({})
   }, [selectionKey])
 
-  // Initialize overrides once
+  // Re-sync overrides when defaultOverrides changes (e.g. frequent runs finishing
+  // override parsing), unless the user has already started editing.
   useEffect(() => {
     if (!defaultOverrides?.length) {
       if (!hasUserModifiedRef.current) setOverrideMap({})
