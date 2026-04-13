@@ -68,7 +68,11 @@ export const PlatformPath: React.FC<PlatformPathProps> = ({
     const positions = positionData?.positions
     if (!positions || positions.length === 0) return []
 
-    const sorted = [...positions].sort((a, b) => b.timeMs - a.timeMs)
+    const sorted = [...positions]
+      .filter(
+        (p) => p.lat != null && p.lon != null && !isNaN(p.lat) && !isNaN(p.lon)
+      )
+      .sort((a, b) => b.timeMs - a.timeMs)
     const seen = new Set<number>()
     const deduped: typeof sorted = []
     for (const p of sorted) {
