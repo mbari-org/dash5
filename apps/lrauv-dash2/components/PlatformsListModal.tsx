@@ -46,6 +46,7 @@ export const PlatformsListModal: React.FC<PlatformsListModalProps> = ({
   const handleCenterOnPlatform = useCallback(
     async (platformId: string) => {
       const odss2dashApi = siteConfig?.appConfig?.odss2dashApi
+      if (!odss2dashApi) return
       try {
         const now = new Date()
         const weekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000)
@@ -56,7 +57,7 @@ export const PlatformsListModal: React.FC<PlatformsListModalProps> = ({
             startDate: weekAgo.toISOString(),
             endDate: now.toISOString(),
           },
-          { instance: axiosInstance, baseURL: odss2dashApi ?? '' }
+          { instance: axiosInstance, baseURL: odss2dashApi }
         )
         const latest = data?.positions?.[0]
         if (
