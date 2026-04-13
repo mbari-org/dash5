@@ -6,14 +6,14 @@ import {
   useTethysApiContext,
 } from '@mbari/api-client'
 import { createLogger } from '@mbari/utils'
-
-const logger = createLogger('PlatformsListModal')
 import { Modal } from '@mbari/react-ui'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { faCaretRight, faCheckCircle } from '@fortawesome/free-solid-svg-icons'
 import { usePlatformSelectionWorkflow } from '../lib/usePlatformSelectionWorkflow'
 import { PlatformSection } from './PlatformSection'
 import { useMapCamera } from './MapCameraContext'
+
+const logger = createLogger('PlatformsListModal')
 
 export interface PlatformsListModalProps {
   onClose: () => void
