@@ -128,7 +128,7 @@ test('should display the sat comms color as provided color', async () => {
 
 test('should display the cell comms color as provided color', async () => {
   render(<FullWidthVehicleDiagram {...props} colorCell={'st6'} />)
-  expect(screen.queryByTestId(/cell/i)).toHaveClass('st6')
+  expect(screen.getByTestId('cell')).toHaveClass('st6')
 })
 
 test('should display sat comms text when provided', async () => {
@@ -198,6 +198,26 @@ test('should display GPS text when provided', async () => {
 test('should display time since last GPS text when provided', async () => {
   render(<FullWidthVehicleDiagram {...props} textGpsAgo="11m ago" />)
   expect(screen.queryByText(/11m ago/i)).toBeInTheDocument()
+})
+
+test('should display Argos battery fill st27 and alert when low', async () => {
+  render(<FullWidthVehicleDiagram {...props} colorArgo="st27" />)
+  expect(screen.getByTestId('argos-battery frame')).toHaveClass('st32')
+  expect(screen.getByTestId('argos-battery fill')).toHaveClass('st27')
+  expect(screen.getByLabelText('Argos battery low')).toBeInTheDocument()
+  expect(screen.getByRole('alert')).toBeInTheDocument()
+})
+
+test('should use st25 fill when Argos is good', async () => {
+  render(<FullWidthVehicleDiagram {...props} colorArgo="st25" />)
+  expect(screen.getByTestId('argos-battery fill')).toHaveClass('st25')
+  expect(screen.getByLabelText('Argos battery OK')).toBeInTheDocument()
+})
+
+test('should hide Argos fill when no color from server (st18)', async () => {
+  render(<FullWidthVehicleDiagram {...props} />)
+  expect(screen.getByTestId('argos-battery frame')).toHaveClass('st32')
+  expect(screen.getByTestId('argos-battery fill')).toHaveClass('st18')
 })
 
 test('should display ground fault text box background color as provided color', async () => {

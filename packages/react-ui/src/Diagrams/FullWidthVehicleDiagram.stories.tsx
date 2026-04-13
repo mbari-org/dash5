@@ -90,6 +90,7 @@ Deployed.args = {
   textGps: '12:47',
   colorGps: 'st4',
   textGpsAgo: '50m ago',
+  colorArgo: 'st27',
   colorGf: 'st4',
   textGf: '-0.14',
   textGfTime: '40m ago',
