@@ -4,6 +4,7 @@ import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { faCaretRight } from '@fortawesome/free-solid-svg-icons'
 import Image from 'next/image'
 import { GetPlatformsResponse } from '@mbari/api-client'
+import { CenterMapButton } from './MapLayersTreeItem'
 
 export interface PlatformSectionProps {
   name: string
@@ -15,6 +16,7 @@ export interface PlatformSectionProps {
   filterText?: string
   onlySelected?: boolean
   headerRight?: React.ReactNode
+  onCenterClick?: (platformId: string) => void
 }
 
 export const PlatformSection: React.FC<PlatformSectionProps> = ({
@@ -27,6 +29,7 @@ export const PlatformSection: React.FC<PlatformSectionProps> = ({
   filterText,
   onlySelected,
   headerRight,
+  onCenterClick,
 }) => {
   const odssApi = 'https://odss.mbari.org/odss'
 
@@ -136,6 +139,12 @@ export const PlatformSection: React.FC<PlatformSectionProps> = ({
                         ({item.abbreviation})
                       </span>
                     </span>
+                    {onCenterClick !== undefined && (
+                      <CenterMapButton
+                        label={`Center map on ${item.name}`}
+                        onClick={() => onCenterClick(item._id)}
+                      />
+                    )}
                   </label>
                 </li>
               ))

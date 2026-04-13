@@ -1,10 +1,19 @@
 import React, { useState, useCallback, useMemo, useEffect } from 'react'
-import { usePlatforms, GetPlatformsResponse } from '@mbari/api-client'
+import {
+  usePlatforms,
+  GetPlatformsResponse,
+  getPlatformPositions,
+  useTethysApiContext,
+} from '@mbari/api-client'
+import { createLogger } from '@mbari/utils'
 import { Modal } from '@mbari/react-ui'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { faCaretRight, faCheckCircle } from '@fortawesome/free-solid-svg-icons'
 import { usePlatformSelectionWorkflow } from '../lib/usePlatformSelectionWorkflow'
 import { PlatformSection } from './PlatformSection'
+import { useMapCamera } from './MapCameraContext'
+
+const logger = createLogger('PlatformsListModal')
 
 export interface PlatformsListModalProps {
   onClose: () => void
@@ -30,6 +39,40 @@ export const PlatformsListModal: React.FC<PlatformsListModalProps> = ({
     isLoading: platformsLoading,
     refetch: refetchPlatforms,
   } = usePlatforms({ refresh: true })
+
+  const { axiosInstance, siteConfig } = useTethysApiContext()
+  const { setFlyToRequest } = useMapCamera()
+
+  const handleCenterOnPlatform = useCallback(
+    async (platformId: string) => {
+      const odss2dashApi = siteConfig?.appConfig?.odss2dashApi
+      if (!odss2dashApi) return
+      try {
+        const now = new Date()
+        const weekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000)
+        const data = await getPlatformPositions(
+          {
+            platformId,
+            lastNumberOfFixes: 1,
+            startDate: weekAgo.toISOString(),
+            endDate: now.toISOString(),
+          },
+          { instance: axiosInstance, baseURL: odss2dashApi }
+        )
+        const latest = data?.positions?.[0]
+        if (
+          latest &&
+          Number.isFinite(latest.lat) &&
+          Number.isFinite(latest.lon)
+        ) {
+          setFlyToRequest({ lat: latest.lat, lon: latest.lon })
+        }
+      } catch (err) {
+        logger.warn(`Failed to fetch position for platform ${platformId}:`, err)
+      }
+    },
+    [axiosInstance, siteConfig, setFlyToRequest]
+  )
 
   const [filterText, setFilterText] = useState('')
   const [onlySelected, setOnlySelected] = useState(false)
@@ -242,6 +285,7 @@ export const PlatformsListModal: React.FC<PlatformsListModalProps> = ({
                       onToggleExpand={() => toggleGroupExpanded(groupName)}
                       filterText={filterText}
                       onlySelected={onlySelected}
+                      onCenterClick={handleCenterOnPlatform}
                     />
                   ))
                 )}
