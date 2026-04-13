@@ -5,6 +5,9 @@ import {
   getPlatformPositions,
   useTethysApiContext,
 } from '@mbari/api-client'
+import { createLogger } from '@mbari/utils'
+
+const logger = createLogger('PlatformsListModal')
 import { Modal } from '@mbari/react-ui'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { faCaretRight, faCheckCircle } from '@fortawesome/free-solid-svg-icons'
@@ -58,15 +61,13 @@ export const PlatformsListModal: React.FC<PlatformsListModalProps> = ({
         const latest = data?.positions?.[0]
         if (
           latest &&
-          latest.lat != null &&
-          latest.lon != null &&
-          !isNaN(latest.lat) &&
-          !isNaN(latest.lon)
+          Number.isFinite(latest.lat) &&
+          Number.isFinite(latest.lon)
         ) {
           setFlyToRequest({ lat: latest.lat, lon: latest.lon })
         }
-      } catch {
-        // silently ignore — platform may have no recent positions
+      } catch (err) {
+        logger.warn(`Failed to fetch position for platform ${platformId}:`, err)
       }
     },
     [axiosInstance, siteConfig, setFlyToRequest]
