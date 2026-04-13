@@ -1,3 +1,4 @@
+import { useMemo } from 'react'
 import { useQuery } from 'react-query'
 import {
   extractOverridesWithScriptMetadata,
@@ -17,16 +18,20 @@ export interface UseFrequentRunsParams {
   limit?: number
 }
 
-const sortedVehicleKey = (vehicles: string[]) =>
-  [...vehicles].sort((a, b) => a.localeCompare(b)).join(',')
-
 export const useFrequentRuns = (
   params: UseFrequentRunsParams,
   options?: SupportedQueryOptions
 ) => {
   const { axiosInstance, token } = useTethysApiContext()
   const { vehicles, gitRef, limit } = params
-  const vehicleKey = sortedVehicleKey(vehicles)
+  // Sort and dedupe so the query key and the fetch are both deterministic
+  // regardless of the order callers pass vehicles.
+  const normalizedVehicles = useMemo(
+    () => [...new Set([...vehicles].sort((a, b) => a.localeCompare(b)))],
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [vehicles.join(',')]
+  )
+  const vehicleKey = normalizedVehicles.join(',')
 
   const query = useQuery(
     [
@@ -64,7 +69,7 @@ export const useFrequentRuns = (
       }
 
       const batches = await Promise.all(
-        vehicles.map(async (vehicle) => {
+        normalizedVehicles.map(async (vehicle) => {
           const writtenCommands = await getFrequentRuns(
             { vehicle, limit },
             { instance: axiosInstance }
