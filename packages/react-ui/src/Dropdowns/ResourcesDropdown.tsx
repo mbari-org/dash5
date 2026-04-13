@@ -128,7 +128,7 @@ const CollapsibleSection: React.FC<{
         type="button"
         onClick={onToggle}
         aria-expanded={expanded}
-        aria-controls={expanded ? contentId : undefined}
+        aria-controls={contentId}
         className={styles.sectionToggle}
         style={{ backgroundColor: hovered ? '#CFDEE2' : '#E4EDF0' }}
         onMouseEnter={() => setHovered(true)}
@@ -145,11 +145,9 @@ const CollapsibleSection: React.FC<{
           aria-hidden
         />
       </button>
-      {expanded && (
-        <div id={contentId}>
-          <LinkList links={links} testIdPrefix={testIdPrefix} />
-        </div>
-      )}
+      <div id={contentId} hidden={!expanded}>
+        <LinkList links={links} testIdPrefix={testIdPrefix} />
+      </div>
     </section>
   )
 }
