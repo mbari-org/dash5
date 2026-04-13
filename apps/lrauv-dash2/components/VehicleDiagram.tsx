@@ -120,6 +120,7 @@ const VehicleDiagram: React.FC<{
         colorAmps={vehicle?.color_amps}
         colorDvl={vehicle?.color_dvl}
         textGpsAgo={vehicle?.text_gpsago}
+        colorArgo={vehicle?.color_argo}
         textCellAgo={formattedCellAgo}
         textNoteTime={vehicle?.text_notetime}
         textArrow={vehicle?.text_arrow}
