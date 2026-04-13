@@ -1,6 +1,5 @@
-import React, { useMemo } from 'react'
+import React from 'react'
 import dynamic from 'next/dynamic'
-import { DateTime } from 'luxon'
 import { useSelectedPlatforms } from './SelectedPlatformContext'
 import { usePlatformList } from '../lib/usePlatformList'
 
@@ -15,7 +14,6 @@ const PlatformPath = dynamic(
 // Use a 7-day window for ship-type platforms so that vessels with slow or
 // intermittent tracking (e.g. SPOT satellite trackers) still appear on the map.
 const SHIP_WINDOW_DAYS = 7
-const DEFAULT_WINDOW_DAYS = 1
 
 /**
  * Component that renders PlatformPath components for all selected platforms.
@@ -26,8 +24,6 @@ export const PlatformPaths: React.FC = () => {
   const { selectedPlatformIds } = useSelectedPlatforms()
   const { platformMap } = usePlatformList()
 
-  const now = useMemo(() => DateTime.utc(), [])
-
   return (
     <>
       {selectedPlatformIds.map((platformId) => {
@@ -35,9 +31,6 @@ export const PlatformPaths: React.FC = () => {
         if (!platform) return null
 
         const isShip = platform.typeName === 'ship'
-        const windowDays = isShip ? SHIP_WINDOW_DAYS : DEFAULT_WINDOW_DAYS
-        const startDate = now.minus({ days: windowDays }).toISO() ?? undefined
-        const endDate = now.toISO() ?? undefined
 
         return (
           <PlatformPath
@@ -46,8 +39,7 @@ export const PlatformPaths: React.FC = () => {
             platformName={platform.name}
             platformAbbrev={platform.abbreviation}
             color={platform.color}
-            startDate={startDate}
-            endDate={endDate}
+            windowDays={isShip ? SHIP_WINDOW_DAYS : undefined}
           />
         )
       })}
