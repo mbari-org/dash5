@@ -264,10 +264,12 @@ const ConnectedVehicleCellComponent: React.FC<{
         0
     ).toRelative() ?? ''
 
-  const timeSpanSinceRecovery =
-    DateTime.fromMillis(
-      lastDeployment?.recoverEvent?.unixTime ?? 0
-    ).toRelative() ?? ''
+  const timeSpanSinceRecovery = lastDeployment?.recoverEvent?.unixTime
+    ? `${formatCompactDuration(
+        DateTime.fromMillis(lastDeployment.recoverEvent.unixTime),
+        nowDT
+      )} ago`
+    : ''
 
   const { setGlobalModalId } = useGlobalModalId()
   const onColorChange = (_: string, _v: string) => {
