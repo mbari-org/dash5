@@ -18,5 +18,5 @@ export const parseMissionPathFromCommand = (
     )?.[1]
     ?.trim()
   if (afterKeyword) return afterKeyword
-  return normalized.match(/[A-Za-z0-9_./%\-]+\.(?:xml|tl)/i)?.[0]
+  return normalized.match(missionPathPattern)?.[0]?.trim()
 }
