@@ -13,6 +13,7 @@ export interface PlatformPathProps {
   color?: string
   startDate?: string
   endDate?: string
+  windowDays?: number
   limitPositions?: number
   refreshIntervalMs?: number
 }
@@ -24,6 +25,7 @@ export const PlatformPath: React.FC<PlatformPathProps> = ({
   color = 'cyan',
   startDate,
   endDate,
+  windowDays = 1,
   limitPositions = 20,
   refreshIntervalMs = 5 * 60_000,
 }) => {
@@ -33,7 +35,8 @@ export const PlatformPath: React.FC<PlatformPathProps> = ({
 
   // dash4-style TrackDB query window:
   // - Always provide BOTH startDate and endDate
-  // - Default to a rolling "last 24h" window that refreshes periodically
+  // - Explicit startDate+endDate (e.g. a fixed historical range) take precedence
+  // - Otherwise use a rolling window of windowDays that refreshes via useTick
   const queryWindow = useMemo(() => {
     const hasExplicitWindow = Boolean(startDate && endDate)
     if (hasExplicitWindow) {
@@ -41,12 +44,12 @@ export const PlatformPath: React.FC<PlatformPathProps> = ({
     }
 
     const end = nowMs
-    const start = end - 24 * 60 * 60 * 1000
+    const start = end - windowDays * 24 * 60 * 60 * 1000
     return {
       startDate: new Date(start).toISOString(),
       endDate: new Date(end).toISOString(),
     }
-  }, [startDate, endDate, nowMs])
+  }, [startDate, endDate, windowDays, nowMs])
 
   const {
     data: positionData,
@@ -68,7 +71,11 @@ export const PlatformPath: React.FC<PlatformPathProps> = ({
     const positions = positionData?.positions
     if (!positions || positions.length === 0) return []
 
-    const sorted = [...positions].sort((a, b) => b.timeMs - a.timeMs)
+    const sorted = [...positions]
+      .filter(
+        (p) => p.lat != null && p.lon != null && !isNaN(p.lat) && !isNaN(p.lon)
+      )
+      .sort((a, b) => b.timeMs - a.timeMs)
     const seen = new Set<number>()
     const deduped: typeof sorted = []
     for (const p of sorted) {

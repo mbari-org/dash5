@@ -2,6 +2,7 @@ import { useEvents } from '../Event/useEvents'
 import { SupportedQueryOptions } from '../types'
 import { extractOverridesWithScriptMetadata } from '../../axios/Util/extractOverridesWithScriptMetadata'
 import { generateMissionKey } from '../../axios/Util/generateMissionKey'
+import { parseMissionPathFromCommand } from '../../axios/Util/parseMissionPathFromCommand'
 import { useQuery } from 'react-query'
 import { useTethysApiContext } from '../TethysApiProvider'
 import { getScript } from '../../axios'
@@ -32,11 +33,6 @@ export const useRecentRuns = (
     async () => {
       if (!query.data) return undefined
 
-      // Regex: /[a-zA-Z0-9_/]+(\.xml|\.tl)/
-      //   • [a-zA-Z0-9_/]+  → one or more letters, digits, "_", or "/" (captures a simple path or filename)
-      //   • (\.xml|\.tl)    → that sequence must end with ".xml" **or** ".tl" (the dot is escaped to mean a literal dot)
-      // Summary → Pulls out the first path-like token in event.data that ends in one of those extensions
-
       // Limit concurrent getScript requests
       const limit = createLimiter(1)
 
@@ -48,8 +44,7 @@ export const useRecentRuns = (
 
       const results = await Promise.all(
         query.data.map(async (event) => {
-          const mission =
-            event.data?.match(/[A-Za-z0-9_/]+\.(?:xml|tl)/)?.[0] ?? ''
+          const mission = parseMissionPathFromCommand(event.data ?? '') ?? ''
 
           const fetchScript = mission
             ? async () => {

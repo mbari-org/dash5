@@ -7,6 +7,7 @@ import {
   humanize,
   createRoleLabel,
   calculateRelativeNextComm,
+  formatCompactDuration,
 } from '@mbari/utils'
 
 import {
@@ -227,7 +228,7 @@ const Vehicle: NextPage = () => {
         role: 'PIC',
         currentUser: currentUserName,
         authenticated,
-        loading: loadingPicAndOnCall,
+        loading: loadingPicAndOnCall || authLoading,
       })
     : ''
   const onCallLabel = onCalls?.length
@@ -236,7 +237,7 @@ const Vehicle: NextPage = () => {
         role: 'On-Call',
         currentUser: currentUserName,
         authenticated,
-        loading: loadingPicAndOnCall,
+        loading: loadingPicAndOnCall || authLoading,
       })
     : ''
 
@@ -322,9 +323,19 @@ const Vehicle: NextPage = () => {
     lastSatCommsTime,
     lastCellCommsTime,
     nowMs,
-    recoverEvent: lastDeployment?.recoverEvent,
-    startEventUnix: lastDeployment?.startEvent?.unixTime,
+    recoverEvent: deployment?.recoverEvent ?? lastDeployment?.recoverEvent,
+    startEventUnix:
+      deployment?.startEvent?.unixTime ?? lastDeployment?.startEvent?.unixTime,
   })
+
+  const recoverEvent = deployment?.recoverEvent ?? lastDeployment?.recoverEvent
+  const isRecovered = Boolean(recoverEvent)
+  const recoveredAt = recoverEvent?.unixTime
+    ? `${formatCompactDuration(
+        DateTime.fromMillis(recoverEvent.unixTime),
+        DateTime.fromMillis(nowMs)
+      )} ago`
+    : undefined
 
   const handleRoleReassign = () => setGlobalModalId({ id: 'reassign' })
   const handleNewDeployment = () => setGlobalModalId({ id: 'newDeployment' })
@@ -472,6 +483,7 @@ const Vehicle: NextPage = () => {
           onCallLabel={onCallLabel}
           activeDeployment={deployment.active}
           currentDeploymentId={deployment.deploymentId as number}
+          isRecovered={isRecovered}
         />
       )}
     </section>
@@ -501,6 +513,8 @@ const Vehicle: NextPage = () => {
                             }
                       }
                       onRoleReassign={handleRoleReassign}
+                      recovered={isRecovered}
+                      recoveredAt={recoveredAt}
                       loadingPicAndOnCall={loadingPicAndOnCall || authLoading}
                       resourceLinks={resourceLinks}
                       trainingLinks={trainingLinks}
@@ -549,10 +563,8 @@ const Vehicle: NextPage = () => {
                           isReachable={isLikelySurfaced}
                           nextCommsTime={nextCommsTime}
                           lastPluggedInTime={
-                            lastDeployment?.recoverEvent?.unixTime
-                              ? DateTime.fromMillis(
-                                  lastDeployment.recoverEvent.unixTime
-                                )
+                            recoverEvent?.unixTime
+                              ? DateTime.fromMillis(recoverEvent.unixTime)
                               : null
                           }
                           lastSatCommsTime={lastSatCommsDT}

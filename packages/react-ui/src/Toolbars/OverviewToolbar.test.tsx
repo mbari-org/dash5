@@ -235,6 +235,22 @@ test('should render the resources button', async () => {
   expect(screen.getByRole('button', { name: /Resources/i })).toBeInTheDocument()
 })
 
+test('should not render the recovered pill when recovered is false', async () => {
+  render(<OverviewToolbar {...props} recovered={false} />)
+  expect(screen.queryByText(/Recovered/i)).not.toBeInTheDocument()
+})
+
+test('should render the recovered pill when recovered is true', async () => {
+  render(<OverviewToolbar {...props} recovered={true} />)
+  expect(screen.getByText('Recovered')).toBeInTheDocument()
+})
+
+test('should render the recovered pill with elapsed time when recoveredAt is provided', async () => {
+  render(
+    <OverviewToolbar {...props} recovered={true} recoveredAt="6h 23m ago" />
+  )
+  expect(screen.getByText('Recovered 6h 23m ago')).toBeInTheDocument()
+})
 test('should not render the resources button when unauthenticated', async () => {
   render(<OverviewToolbar {...props} authenticated={false} />)
   expect(

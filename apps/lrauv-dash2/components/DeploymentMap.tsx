@@ -747,7 +747,7 @@ const DeploymentMap: React.FC<DeploymentMapProps> = ({
                 name={station.name}
                 lat={lat}
                 lng={lng}
-                color={(station.geojson as any)?.properties?.color}
+                color={station.geojson.properties?.color}
                 isHighlighted={highlightedStationName === station.name}
               />
             )

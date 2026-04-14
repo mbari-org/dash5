@@ -41,7 +41,12 @@ export const deriveEventTypes = (
     return includeDataEvents ? ['dataProcessed'] : undefined
   }
   if (hasAllNonDataFiltersSelected(selectedFilterIds)) {
-    return undefined
+    if (includeDataEvents) return undefined
+    // All non-data filters selected but data excluded — return an explicit list so
+    // the API does not also fetch dataProcessed (which undefined would cause).
+    return selectedFilterIds
+      .flatMap((id) => eventFilters[id as LogFilterId]?.eventTypes ?? [])
+      .filter((k, i, a) => a.indexOf(k) === i) as EventType[]
   }
   const base = selectedFilterIds
     .flatMap((id) => eventFilters[id].eventTypes)

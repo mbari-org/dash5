@@ -10,6 +10,11 @@ const PlatformPath = dynamic(
   }
 )
 
+// Ships (AIS / SPOT trackers) report far less frequently than AUVs/gliders.
+// Use a 7-day window for ship-type platforms so that vessels with slow or
+// intermittent tracking (e.g. SPOT satellite trackers) still appear on the map.
+const SHIP_WINDOW_DAYS = 7
+
 /**
  * Component that renders PlatformPath components for all selected platforms.
  * This extracts the common pattern of mapping over selectedPlatformIds and
@@ -25,6 +30,8 @@ export const PlatformPaths: React.FC = () => {
         const platform = platformMap[platformId]
         if (!platform) return null
 
+        const isShip = platform.typeName === 'ship'
+
         return (
           <PlatformPath
             key={platformId}
@@ -32,6 +39,7 @@ export const PlatformPaths: React.FC = () => {
             platformName={platform.name}
             platformAbbrev={platform.abbreviation}
             color={platform.color}
+            windowDays={isShip ? SHIP_WINDOW_DAYS : undefined}
           />
         )
       })}

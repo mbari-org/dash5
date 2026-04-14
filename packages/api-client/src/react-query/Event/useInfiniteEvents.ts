@@ -1,10 +1,14 @@
 import { useInfiniteQuery } from 'react-query'
 import { getEvents, GetEventsParams } from '../../axios'
 import { useTethysApiContext } from '../TethysApiProvider'
+import { SupportedQueryOptions } from '../types'
 
 const DEFAULT_LIMIT = 500
 
-export const useInfiniteEvents = (params: GetEventsParams) => {
+export const useInfiniteEvents = (
+  params: GetEventsParams,
+  options?: SupportedQueryOptions
+) => {
   const { axiosInstance } = useTethysApiContext()
   const limit = params.limit ?? DEFAULT_LIMIT
 
@@ -33,6 +37,7 @@ export const useInfiniteEvents = (params: GetEventsParams) => {
         return oldest - 1
       },
       staleTime: 5 * 60 * 1000,
+      ...options,
     }
   )
 }
