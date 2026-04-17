@@ -50,6 +50,7 @@ import { SelectedPlatformsProvider } from '../../components/SelectedPlatformCont
 import { useNeedCommsTime } from '../../lib/useNeedCommsTime'
 import { useTick } from '../../lib/useTick'
 import { useVehicleStatus } from '../../lib/useVehicleStatus'
+import LrauvResourcesDropdown from '../../components/LrauvResourcesDropdown'
 import { vehiclePhysicalStatusIcon } from '../../lib/vehiclePhysicalStatusIcon'
 
 // Every flex parent of the map needs `min-h-0`
@@ -139,6 +140,8 @@ const Vehicle: NextPage = () => {
   const currentUserName = profile
     ? `${profile.firstName} ${profile.lastName}`
     : ''
+
+  const isAdmin = profile?.roles?.includes('admin') ?? false
 
   const pics = data?.[0]?.pics.map((p) => p.user)
   const onCalls = data?.[0]?.onCalls.map((o) => o.user)
@@ -424,6 +427,9 @@ const Vehicle: NextPage = () => {
                       }
                       onRoleReassign={handleRoleReassign}
                       loadingPicAndOnCall={loadingPicAndOnCall || authLoading}
+                      resourcesSlot={
+                        <LrauvResourcesDropdown isAdmin={isAdmin} />
+                      }
                       supportIcon1={
                         cellPingReachable ? (
                           <ConnectedIcon />
