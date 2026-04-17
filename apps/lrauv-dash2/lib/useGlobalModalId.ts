@@ -21,6 +21,7 @@ export type ModalId =
   | 'vehicleCharts'
   | 'vehicleComms'
   | 'battery'
+  | 'scheduleEventDetails'
   | 'color'
   | 'emailNotifications'
   | null
@@ -45,6 +46,29 @@ export interface GlobalModalMetaData {
   eventNote?: string | null
   eventIsoTime?: string | null
   eventVehicleName?: string | null
+  scheduleEvent?: {
+    eventId: number
+    commandType: 'mission' | 'command'
+    status: string
+    label: string
+    secondary?: string
+    user?: string
+    note?: string
+    eventData?: string
+    eventText?: string
+    startedAt?: number
+    endedAt?: number
+    vehicleName?: string
+    scheduleDate?: string
+    via?: 'cell' | 'sat' | 'cellsat'
+    isParamUpdate?: boolean
+    /** Raw comms status from the Comms Queue — 'queued'|'sent'|'ack'|'timeout' */
+    commsStatus?: string
+    /** True for automatic Default mission rows (not operator-commanded) */
+    isDefaultMission?: boolean
+    /** Vehicle GPS position at Default mission start (from missionStarted telemetry) */
+    fix?: { latitude: number; longitude: number }
+  } | null
 }
 
 export interface GlobalModalState {

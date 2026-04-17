@@ -152,7 +152,7 @@ const Vehicle: NextPage = () => {
         role: 'PIC',
         currentUser: currentUserName,
         authenticated,
-        loading: loadingPicAndOnCall,
+        loading: loadingPicAndOnCall || authLoading,
       })
     : ''
   const onCallLabel = onCalls?.length
@@ -161,7 +161,7 @@ const Vehicle: NextPage = () => {
         role: 'On-Call',
         currentUser: currentUserName,
         authenticated,
-        loading: loadingPicAndOnCall,
+        loading: loadingPicAndOnCall || authLoading,
       })
     : ''
 
@@ -251,6 +251,11 @@ const Vehicle: NextPage = () => {
     startEventUnix: lastDeployment?.startEvent?.unixTime,
   })
 
+  const isRecovered = Boolean(lastDeployment?.recoverEvent)
+  const recoveredAt = lastDeployment?.recoverEvent?.unixTime
+    ? DateTime.fromMillis(lastDeployment.recoverEvent.unixTime).toRelative() ??
+      undefined
+    : undefined
   const handleRoleReassign = () => setGlobalModalId({ id: 'reassign' })
   const handleNewDeployment = () => setGlobalModalId({ id: 'newDeployment' })
   const handleEditDeployment = () => setGlobalModalId({ id: 'editDeployment' })
@@ -397,6 +402,7 @@ const Vehicle: NextPage = () => {
           onCallLabel={onCallLabel}
           activeDeployment={deployment.active}
           currentDeploymentId={deployment.deploymentId as number}
+          isRecovered={isRecovered}
         />
       )}
     </section>
@@ -427,6 +433,8 @@ const Vehicle: NextPage = () => {
                       }
                       onRoleReassign={handleRoleReassign}
                       loadingPicAndOnCall={loadingPicAndOnCall || authLoading}
+                      recovered={isRecovered}
+                      recoveredAt={recoveredAt}
                       resourcesSlot={
                         <LrauvResourcesDropdown isAdmin={isAdmin} />
                       }
