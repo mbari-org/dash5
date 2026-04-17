@@ -254,7 +254,7 @@ const ConnectedVehicleCellComponent: React.FC<{
   const endDate = DateTime.fromMillis(lastDeployment?.endEvent?.unixTime ?? 0)
 
   const ended = lastDeployment?.endEvent?.eventId && true
-  const recovered = lastDeployment?.recoverEvent?.eventId && true
+  const recovered = Boolean(lastDeployment?.recoverEvent?.eventId)
   const active = lastDeployment?.active
 
   const timeSpanSinceDeployment =
