@@ -4,6 +4,7 @@ import {
   useMissionList,
   useRecentRuns,
   useScript,
+  useSiteConfig,
 } from '@mbari/api-client'
 
 import { Mission } from '@mbari/react-ui'
@@ -29,14 +30,12 @@ export const useMissionData = (params: {
   const { vehicleName, selectedMission, showAllVehicleMissions } = params
 
   const { data: missionData } = useMissionList()
-  // this gets the original mission template data (ie it would be the original sci2_flat_and_level mission, not a recent run of sci2_flat_and_level where the pilot has applied overrides)
-  const { data: selectedMissionData } = useScript(
-    {
-      path: selectedMission as string,
-      gitRef: missionData?.gitRef ?? 'master',
-    },
-    { enabled: !!selectedMission }
-  )
+  const { data: siteInfo } = useSiteConfig()
+
+  const frequentVehicles = useMemo(() => {
+    if (showAllVehicleMissions) return siteInfo?.vehicleNames ?? []
+    return vehicleName ? [vehicleName] : []
+  }, [showAllVehicleMissions, siteInfo?.vehicleNames, vehicleName])
 
   const recentRunsParams = useMemo(
     () => ({
@@ -51,12 +50,19 @@ export const useMissionData = (params: {
     useRecentRuns(recentRunsParams, {
       staleTime: 60 * 1000,
     })
-  const { data: frequentRunsData, isLoading: isFrequentRunsLoading } =
+
+  const gitRef = missionData?.gitRef ?? 'master'
+
+  const { data: normalizedFrequentRuns, isLoading: isFrequentRunsLoading } =
     useFrequentRuns(
       {
-        vehicle: vehicleName,
+        vehicles: frequentVehicles,
+        gitRef,
       },
-      { enabled: !!vehicleName }
+      {
+        enabled: frequentVehicles.length > 0,
+        staleTime: 60 * 1000,
+      }
     )
 
   const recentRuns: Mission[] = useMemo(() => {
@@ -76,6 +82,7 @@ export const useMissionData = (params: {
             const { category, name } = parseMissionPath(mission)
             return {
               id: mission,
+              missionPath: mission,
               category,
               name,
               description: data,
@@ -100,18 +107,49 @@ export const useMissionData = (params: {
     )
   }, [recentRunsData])
 
-  const frequentRuns: Mission[] =
-    frequentRunsData
-      ?.map((d) => {
-        const relatedMission = missionData?.list?.find(
-          ({ path }) => path === d?.mission
-        )
-        return (relatedMission && {
-          ...convertMissionDataToListItem(vehicleName)(relatedMission),
-          frequentRun: true,
-        }) as Mission
-      })
-      .filter((i) => i) ?? []
+  const frequentRuns: Mission[] = useMemo(() => {
+    if (!normalizedFrequentRuns?.length || !missionData?.list) return []
+
+    const needsVehiclePrefix =
+      showAllVehicleMissions || frequentVehicles.length > 1
+
+    const results: Mission[] = []
+
+    for (const run of normalizedFrequentRuns) {
+      const relatedMission = missionData.list.find(
+        ({ path }) => path === run.missionPath
+      )
+      if (!relatedMission) continue
+
+      const { waypointOverrides, parameterOverrides } = run
+      const missionPath = relatedMission.path
+      const hasOverrides =
+        waypointOverrides.length > 0 || parameterOverrides.length > 0
+      const baseId = hasOverrides ? run.selectionId : missionPath
+
+      const id = needsVehiclePrefix ? `${run.vehicle}|${baseId}` : baseId
+
+      results.push({
+        ...convertMissionDataToListItem(run.vehicle)(relatedMission),
+        id,
+        missionPath,
+        frequentRun: true,
+        waypointOverrides,
+        parameterOverrides,
+        parameterCount: parameterOverrides.length,
+        waypointCount: waypointOverrides.length,
+      } as Mission)
+    }
+
+    return results.filter(
+      (mission, index, s) => s.findIndex((m) => m.id === mission.id) === index
+    )
+  }, [
+    normalizedFrequentRuns,
+    missionData?.list,
+    showAllVehicleMissions,
+    frequentVehicles,
+  ])
 
   const missionCategories = [
     {
@@ -140,12 +178,33 @@ export const useMissionData = (params: {
     }),
   ]
 
-  const allMissions: Mission[] = [
-    ...recentRuns,
-    ...frequentRuns,
-    ...(missionData?.list?.map(convertMissionDataToListItem(vehicleName)) ??
-      []),
-  ]
+  const allMissions: Mission[] = useMemo(() => {
+    return [
+      ...recentRuns,
+      ...frequentRuns,
+      ...(missionData?.list?.map(convertMissionDataToListItem(vehicleName)) ??
+        []),
+    ]
+  }, [recentRuns, frequentRuns, missionData?.list, vehicleName])
+
+  const selectedScriptPath = useMemo(() => {
+    if (!selectedMission) return undefined
+
+    const selectedFromRuns = allMissions.find((m) => m.id === selectedMission)
+    if (selectedFromRuns?.missionPath) return selectedFromRuns.missionPath
+
+    // If the selection is a template mission, `id === path`.
+    return missionData?.list?.find(({ path }) => path === selectedMission)?.path
+  }, [allMissions, missionData?.list, selectedMission])
+
+  // this gets the original mission template data (ie it would be the original sci2_flat_and_level mission, not a recent run of sci2_flat_and_level where the pilot has applied overrides)
+  const { data: selectedMissionData } = useScript(
+    {
+      path: selectedScriptPath as string,
+      gitRef: missionData?.gitRef ?? 'master',
+    },
+    { enabled: !!selectedScriptPath }
+  )
 
   return {
     selectedMissionData,

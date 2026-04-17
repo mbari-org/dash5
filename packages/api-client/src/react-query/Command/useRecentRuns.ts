@@ -1,6 +1,6 @@
 import { useEvents } from '../Event/useEvents'
 import { SupportedQueryOptions } from '../types'
-import { extractOverrides } from '../../axios/Util/extractOverrides'
+import { extractOverridesWithScriptMetadata } from '../../axios/Util/extractOverridesWithScriptMetadata'
 import { generateMissionKey } from '../../axios/Util/generateMissionKey'
 import { useQuery } from 'react-query'
 import { useTethysApiContext } from '../TethysApiProvider'
@@ -51,46 +51,32 @@ export const useRecentRuns = (
           const mission =
             event.data?.match(/[A-Za-z0-9_/]+\.(?:xml|tl)/)?.[0] ?? ''
 
-          let { waypointOverrides, parameterOverrides } = extractOverrides(
-            event.data ?? ''
-          )
-
-          // If there are non-standard lat/lon keywords, fetch script metadata to determine if they are waypoints (ie a param named CenterLat might be a waypoint or a param; only the script metadata can tell us)
-          const hasNonstandardLatLonKeywords = parameterOverrides.some(
-            ({ name }) => /(Lat(?:itude)?|Lon(?:gitude)?)/i.test(name)
-          )
-
-          if (hasNonstandardLatLonKeywords && mission) {
-            try {
-              let request = scriptRequestByMission.get(mission)
-              if (!request) {
-                request = limit(() =>
-                  getScript(
-                    { path: mission, gitRef: 'master' },
-                    {
-                      instance: axiosInstance,
-                      headers: { Authorization: `Bearer ${token}` },
-                    }
-                  )
-                ) as ReturnType<typeof getScript>
-                scriptRequestByMission.set(mission, request)
+          const fetchScript = mission
+            ? async () => {
+                let request = scriptRequestByMission.get(mission)
+                if (!request) {
+                  request = limit(() =>
+                    getScript(
+                      { path: mission, gitRef: 'master' },
+                      {
+                        instance: axiosInstance,
+                        headers: { Authorization: `Bearer ${token}` },
+                      }
+                    )
+                  ) as ReturnType<typeof getScript>
+                  scriptRequestByMission.set(mission, request)
+                }
+                return request
               }
-              const { latLonNamePairs } = await request
-              if (latLonNamePairs?.length) {
-                const newOverrides = extractOverrides(
-                  event.data ?? '',
-                  latLonNamePairs
-                )
-                waypointOverrides = newOverrides.waypointOverrides
-                parameterOverrides = newOverrides.parameterOverrides
-              }
-            } catch {
-              console.log(
-                'Could not fetchscript metadata for recent mission: ',
-                mission
-              )
-            }
-          }
+            : undefined
+
+          const { waypointOverrides, parameterOverrides } =
+            await extractOverridesWithScriptMetadata(
+              event.data ?? '',
+              mission || undefined,
+              fetchScript,
+              { logContext: mission }
+            )
 
           const missionKey = generateMissionKey({
             missionName: mission,

@@ -1,4 +1,5 @@
 export * from './ProfileDropdown'
+export * from './ResourcesDropdown'
 export * from './VehicleDropdown'
 export * from './VehicleDropdownOption'
 export * from './LogFiltersDropdown'

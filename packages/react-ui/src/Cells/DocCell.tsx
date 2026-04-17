@@ -67,7 +67,7 @@ export const DocCell: React.FC<DocCellProps> = ({
         </ul>
         <div className="col-span-6 pt-2 text-sm">
           <button
-            className="w-full truncate text-left font-light capitalize text-primary-600"
+            className="w-full truncate text-left font-light text-primary-600"
             title={label}
             onClick={swallow(onSelect)}
           >
@@ -76,7 +76,7 @@ export const DocCell: React.FC<DocCellProps> = ({
           {secondary && (
             <span
               data-testid="doc-cell-secondary"
-              className="text-xs capitalize text-gray-400"
+              className="text-xs lowercase text-gray-400"
             >
               {secondary}
             </span>

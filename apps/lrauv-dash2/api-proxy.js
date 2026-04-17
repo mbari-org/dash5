@@ -17,7 +17,7 @@ app.use(
     target: 'https://okeanids.mbari.org/',
     changeOrigin: true,
     selfHandleResponse: true,
-    logger: console,
+
     secure: false,
     headers: {
       'Content-Type': 'application/json',
@@ -31,11 +31,8 @@ app.use(
         proxyReq.write(bodyData)
       }
     },
-    onProxyRes: responseInterceptor(async (responseBuffer, proxyRes, req) => {
-      console.log('Processing request:', req.path)
-      const response = responseBuffer.toString('utf8')
-      console.log('Intercepted response:', proxyRes.statusCode, response)
-      return response
+    onProxyRes: responseInterceptor(async (responseBuffer) => {
+      return responseBuffer.toString('utf8')
     }),
   })
 )

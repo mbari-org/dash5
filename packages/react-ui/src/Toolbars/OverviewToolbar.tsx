@@ -38,6 +38,7 @@ export interface OverviewToolbarProps {
   onSelectDeployment?: (deployment: DeploymentInfo) => void
   recovered?: boolean
   recoveredAt?: string
+  resourcesSlot?: React.ReactNode
 }
 
 const styles = {
@@ -76,6 +77,7 @@ export const OverviewToolbar: React.FC<OverviewToolbarProps> = ({
   loadingPicAndOnCall,
   recovered,
   recoveredAt,
+  resourcesSlot,
 }) => {
   const [hovering, setHovering] = useState<HoverOption>(null)
   const [showDeployments, setShowDeployments] = useState(false)
@@ -185,6 +187,9 @@ export const OverviewToolbar: React.FC<OverviewToolbarProps> = ({
               onRoleReassign={onRoleReassign}
             />
           </li>
+        )}
+        {authenticated && resourcesSlot && (
+          <li className="relative pr-2">{resourcesSlot}</li>
         )}
         {onIcon1hover && supportIcon1 ? (
           <li className="relative p-4">

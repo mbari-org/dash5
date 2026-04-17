@@ -1,4 +1,4 @@
-import { useState, useMemo, useEffect } from 'react'
+import { useState, useMemo, useEffect, useRef } from 'react'
 import {
   ParameterProps,
   ParameterTableProps,
@@ -36,16 +36,24 @@ const useManagedParameters = ({
   safetyParams,
   commsParams,
   defaultOverrides,
+  selectionKey,
 }: {
   parameters: ParameterProps[]
   safetyParams: ParameterProps[]
   commsParams: ParameterProps[]
   defaultOverrides?: ParameterProps[]
+  selectionKey?: string | null
 }) => {
   // Local state: only the user overrides. Base parameter arrays remain props.
   const [overrideMap, setOverrideMap] = useState<
     Record<string, { value: string; unit?: string }>
   >(() => buildOverrideMap(defaultOverrides))
+
+  // Track whether the user has changed any parameter values.
+  // If they haven't, we can safely re-sync `overrideMap` when `defaultOverrides`
+  // updates asynchronously (e.g. frequent runs finishing override parsing).
+  const hasUserModifiedRef = useRef(false)
+  const isFirstSelectionKeyEffect = useRef(true)
 
   // Re-derive parameter lists whenever overrides or base lists change.
   const updatedParameters = useMemo(
@@ -67,10 +75,13 @@ const useManagedParameters = ({
     overrideValue: string,
     overrideUnit?: string
   ) =>
-    setOverrideMap((m) => ({
-      ...m,
-      [key]: { value: overrideValue, unit: overrideUnit },
-    }))
+    setOverrideMap((m) => {
+      hasUserModifiedRef.current = true
+      return {
+        ...m,
+        [key]: { value: overrideValue, unit: overrideUnit },
+      }
+    })
 
   const handleParamUpdate: ParameterTableProps['onParamUpdate'] = (
     key,
@@ -100,15 +111,34 @@ const useManagedParameters = ({
     safetyCommsParams.filter((p) => p.overrideValue).length +
     overriddenMissionParams.length
 
+  // Switching mission selection clears local overrides so we don't keep another run's edits.
+  useEffect(() => {
+    if (isFirstSelectionKeyEffect.current) {
+      isFirstSelectionKeyEffect.current = false
+      return
+    }
+    hasUserModifiedRef.current = false
+    setOverrideMap({})
+  }, [selectionKey])
+
   // Initialize overrides once
   useEffect(() => {
-    if (defaultOverrides?.length && Object.keys(overrideMap).length === 0) {
+    if (!defaultOverrides?.length) {
+      if (!hasUserModifiedRef.current) setOverrideMap({})
+      return
+    }
+
+    // Re-sync only if user hasn't started editing.
+    if (!hasUserModifiedRef.current) {
       setOverrideMap(buildOverrideMap(defaultOverrides))
     }
-  }, [defaultOverrides, overrideMap])
+  }, [defaultOverrides])
 
   // Reset the initial overrides
-  const resetOverrides = () => setOverrideMap({})
+  const resetOverrides = () => {
+    hasUserModifiedRef.current = false
+    setOverrideMap({})
+  }
 
   return {
     handleCommsUpdate,
