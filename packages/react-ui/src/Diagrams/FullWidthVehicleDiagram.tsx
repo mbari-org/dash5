@@ -9,6 +9,7 @@ import { GroundFault } from './VehicleAssets/GroundFault'
 import { Batteries, BatteryProps } from './VehicleAssets/Batteries'
 import { Comms } from './VehicleAssets/Comms'
 import { Gps } from './VehicleAssets/Gps'
+import { ArgosBatteryIndicator } from './VehicleAssets/ArgosBatteryIndicator'
 import { VehicleInfo } from './VehicleAssets/VehicleInfo'
 import { Cart } from './VehicleAssets/Cart'
 import { ErrorLabel } from './VehicleAssets/ErrorLabel'
@@ -69,6 +70,7 @@ export const FullWidthVehicleDiagram: React.FC<
   colorBat6 = 'st3',
   colorBat7 = 'st3',
   colorBat8 = 'st3',
+  colorArgo = 'st18',
   colorLeak = 'st18',
   textLeak,
   textLeakAgo,
@@ -186,6 +188,8 @@ export const FullWidthVehicleDiagram: React.FC<
             colorVolts={colorVolts}
             colorAmps={colorAmps}
           />
+
+          <ArgosBatteryIndicator colorArgo={colorArgo} />
 
           <Comms
             textSat={textSat}

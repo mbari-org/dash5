@@ -151,6 +151,11 @@
     fill: #B4372D;
   }
 
+	.st32 {
+    fill: #aaaaaa;
+    stroke: #000000;
+  }
+
 	.stleak2 {
     fill: #7DA6D8;
   }
