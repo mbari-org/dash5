@@ -519,6 +519,11 @@ export const ScheduleSection: React.FC<ScheduleSectionProps> = ({
       })
     }
 
+    if (isRecovered) {
+      return enriched.map((item) =>
+        item.status === 'pending' ? { ...item, status: 'completed' } : item
+      )
+    }
     return enriched
   }, [
     deploymentLogsOnly,

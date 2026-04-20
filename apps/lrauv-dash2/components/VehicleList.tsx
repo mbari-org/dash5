@@ -255,7 +255,7 @@ const ConnectedVehicleCellComponent: React.FC<{
   const endDate = DateTime.fromMillis(lastDeployment?.endEvent?.unixTime ?? 0)
 
   const ended = lastDeployment?.endEvent?.eventId && true
-  const recovered = lastDeployment?.recoverEvent?.eventId && true
+  const recovered = Boolean(lastDeployment?.recoverEvent?.eventId)
   const active = lastDeployment?.active
 
   const timeSpanSinceDeployment =
@@ -280,8 +280,12 @@ const ConnectedVehicleCellComponent: React.FC<{
       <VehicleHeader
         name={capitalize(name)}
         deployment={active ? lastDeployment?.name ?? 'loading' : 'Not Deployed'}
-        color={contextColor} // Use context color here
-        timeSpanSinceDeployment={active ? timeSpanSinceDeployment : undefined}
+        color={contextColor}
+        timeSpanSinceDeployment={
+          active && !recovered ? timeSpanSinceDeployment : undefined
+        }
+        recovered={recovered}
+        recoveredAt={recovered ? timeSpanSinceRecovery : undefined}
         onToggle={handleToggle}
         open={isOpen}
       />

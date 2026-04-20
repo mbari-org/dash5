@@ -8,7 +8,12 @@ import {
 } from '@fortawesome/free-solid-svg-icons'
 import { IconDefinition, IconProp } from '@fortawesome/fontawesome-svg-core'
 import { capitalize, swallow } from '@mbari/utils'
-import { Dropdown, IconButton, RoleReassignButton } from '../Navigation'
+import {
+  Dropdown,
+  IconButton,
+  RecoveredPill,
+  RoleReassignButton,
+} from '../Navigation'
 import { DateTime } from 'luxon'
 
 export interface DeploymentInfo {
@@ -155,6 +160,14 @@ export const OverviewToolbar: React.FC<OverviewToolbarProps> = ({
             />
           )}
         </li>
+        {recovered && (
+          <li className="ml-3 flex items-center">
+            <RecoveredPill
+              recoveredAt={recoveredAt}
+              className="rounded-full bg-green-100 px-3 py-1 text-sm font-semibold text-green-800"
+            />
+          </li>
+        )}
         {onEditDeployment ? (
           <li data-testid="deploymentDetails" className="ml-2">
             <IconButton

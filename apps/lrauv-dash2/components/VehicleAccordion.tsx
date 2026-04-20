@@ -20,7 +20,7 @@ export type VehicleAccordionSection =
 
 export interface VehicleAccordionProps {
   vehicleName: string
-  from: number // milliseconds since epoch
+  from: number
   to?: number
   picLabel?: string
   onCallLabel?: string
