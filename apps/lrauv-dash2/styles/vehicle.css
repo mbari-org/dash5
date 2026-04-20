@@ -143,17 +143,17 @@
     fill: #333333; 
   }
 
-	.st32 {
-    fill: #aaaaaa;
-    stroke: #000000;
-  }
-
 	.st30 {
     font-size: 8px;
   }
 
 	.st31 {
     fill: #B4372D;
+  }
+
+	.st32 {
+    fill: #aaaaaa;
+    stroke: #000000;
   }
 
 	.stleak2 {

@@ -179,6 +179,12 @@ test('should display Argos battery fill when color_argo set', async () => {
   expect(screen.getByLabelText('Argos battery low')).toBeInTheDocument()
 })
 
+test('should display Argos battery OK label when st25', async () => {
+  render(<Vehicle {...props} colorArgo="st25" />)
+  expect(screen.getByTestId('argos-battery fill')).toHaveClass('st25')
+  expect(screen.getByLabelText('Argos battery OK')).toBeInTheDocument()
+})
+
 test('should hide Argos fill when no color from server (st18)', async () => {
   render(<Vehicle {...props} />)
   expect(screen.getByTestId('argos-battery fill')).toHaveClass('st18')

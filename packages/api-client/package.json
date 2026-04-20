@@ -2,7 +2,7 @@
   "name": "@mbari/api-client",
   "version": "1.0.0",
   "source": "src/index.ts",
-  "types": "./dist/index.d.ts",
+  "types": "./src/index.ts",
   "files": [
     "dist"
   ],

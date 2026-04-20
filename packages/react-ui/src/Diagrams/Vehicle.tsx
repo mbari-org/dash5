@@ -265,7 +265,7 @@ export const Vehicle: React.FC<VehicleProps> = ({
           colorAmps={colorAmps}
         />
 
-        <ArgosBatteryIndicator colorArgo={colorArgo} isDocked={isDocked} />
+        <ArgosBatteryIndicator colorArgo={colorArgo} />
 
         <MissionLabel
           textMission={textMission}

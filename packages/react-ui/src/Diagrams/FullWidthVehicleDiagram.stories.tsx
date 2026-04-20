@@ -139,6 +139,7 @@ Scheduled.args = {
   ...args,
   textVehicle: 'GALENE',
   colorMissionDefault: 'st25',
+  colorArgo: 'st25',
   textArrow: '226',
   textThrustTime: '1.4km/hr',
   textReckonDistance: '1.5km in 1.0h',

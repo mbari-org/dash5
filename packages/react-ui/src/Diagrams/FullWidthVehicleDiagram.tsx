@@ -189,7 +189,7 @@ export const FullWidthVehicleDiagram: React.FC<
             colorAmps={colorAmps}
           />
 
-          <ArgosBatteryIndicator colorArgo={colorArgo} isDocked={isDocked} />
+          <ArgosBatteryIndicator colorArgo={colorArgo} />
 
           <Comms
             textSat={textSat}
