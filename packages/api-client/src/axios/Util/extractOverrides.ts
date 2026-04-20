@@ -80,7 +80,7 @@ export const extractOverrides = (
   const regex = /(?:set\s+)?([\w]+)[.:]([\w.]+)\s+([^;"']+)/g
   const commands: Override[] = []
 
-  for (const [, , name, value] of missionData.matchAll(regex)) {
+  for (const [, , name, value] of Array.from(missionData.matchAll(regex))) {
     const tokens = value.trim().split(/\s+/)
     const cleaned = tokens[0]
     const unit = tokens[1] ?? undefined
