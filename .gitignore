@@ -48,3 +48,4 @@ coverage
 
 # turborepo cache
 .turbo
+run-email-test.sh

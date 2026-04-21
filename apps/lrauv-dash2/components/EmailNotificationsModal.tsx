@@ -265,26 +265,30 @@ const EmailNotificationsModal: React.FC<EmailNotificationsModalProps> = ({
   }
 
   const handleSendTest = () => {
-    if (!email) return
+    if (!email) {
+      console.warn('[SendTestEmail] Aborted: email is empty')
+      return
+    }
+    const params = { email, plainText: plainText ? 'y' : ('n' as 'y' | 'n') }
+    console.log('[SendTestEmail] Firing request:', params)
     setSendTestStatus('idle')
     setSendTestMessage('')
-    sendTest(
-      { email, plainText: plainText ? 'y' : 'n' },
-      {
-        onSuccess: (data) => {
-          const msg = data?.email_sent
-            ? `Test email sent to ${data.email_sent}`
-            : 'Test email sent'
-          setSendTestStatus('success')
-          setSendTestMessage(msg)
-        },
-        onError: (err) => {
-          const msg = (err as { message?: string })?.message ?? 'Unknown error'
-          setSendTestStatus('error')
-          setSendTestMessage(msg)
-        },
-      }
-    )
+    sendTest(params, {
+      onSuccess: (data) => {
+        console.log('[SendTestEmail] TethysDash response:', data)
+        const msg = data?.email_sent
+          ? `Test email sent to ${data.email_sent}`
+          : 'Test email sent'
+        setSendTestStatus('success')
+        setSendTestMessage(msg)
+      },
+      onError: (err) => {
+        console.error('[SendTestEmail] Error:', err)
+        const msg = (err as { message?: string })?.message ?? 'Unknown error'
+        setSendTestStatus('error')
+        setSendTestMessage(msg)
+      },
+    })
   }
 
   const handleDeleteAll = async () => {
