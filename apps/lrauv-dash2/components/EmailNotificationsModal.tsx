@@ -8,6 +8,7 @@ import {
   useSiteConfig,
   EventKind,
 } from '@mbari/api-client'
+import { useQueryClient } from 'react-query'
 import VehiclePickerModal from './VehiclePickerModal'
 import FilteredNotificationEditModal from './FilteredNotificationEditModal'
 import { FilterRowUi, FilteringType } from '../types'
@@ -20,9 +21,10 @@ const EmailNotificationsModal: React.FC<EmailNotificationsModalProps> = ({
   onClose,
 }) => {
   const { profile, axiosInstance, token } = useTethysApiContext()
+  const queryClient = useQueryClient()
   const email = profile?.email ?? ''
 
-  const { data: siteInfo } = useSiteConfig()
+  const { data: siteInfo, isLoading: isSiteConfigLoading } = useSiteConfig()
   const vehicleNames = useMemo(
     () =>
       [...(siteInfo?.vehicleNames ?? [])].sort((a, b) => a.localeCompare(b)),
@@ -33,7 +35,7 @@ const EmailNotificationsModal: React.FC<EmailNotificationsModalProps> = ({
     [siteInfo?.eventKinds]
   )
 
-  const { data: settings } = useEmailSettings(
+  const { data: settings, isLoading: isSettingsLoading } = useEmailSettings(
     { email },
     { enabled: email.length > 0 }
   )
@@ -61,15 +63,20 @@ const EmailNotificationsModal: React.FC<EmailNotificationsModalProps> = ({
 
   const initialVehiclesEnabled: Record<string, boolean> = useMemo(() => {
     const enabled: Record<string, boolean> = {}
+    // When no settings have been saved yet, default all vehicles to selected
+    if (!settings?.details) {
+      vehicleNames.forEach((v) => (enabled[v] = true))
+      return enabled
+    }
     vehicleNames.forEach((v) => (enabled[v] = false))
-    const list = settings?.details?.vehiclesEnabled as string[] | undefined
+    const list = settings.details.vehiclesEnabled as string[] | undefined
     if (Array.isArray(list)) {
       list.forEach((name) => {
         if (name in enabled) enabled[name] = true
       })
       return enabled
     }
-    const lines = settings?.details?.notifLines as
+    const lines = settings.details.notifLines as
       | { vehiclesChecked?: string[] }[]
       | undefined
     if (Array.isArray(lines) && lines.length > 0) {
@@ -154,6 +161,10 @@ const EmailNotificationsModal: React.FC<EmailNotificationsModalProps> = ({
   const { mutate: sendTest, isLoading: isTesting } = useSendTestEmail()
 
   const [isDeleting, setIsDeleting] = useState(false)
+  const [sendTestStatus, setSendTestStatus] = useState<
+    'idle' | 'success' | 'error'
+  >('idle')
+  const [sendTestMessage, setSendTestMessage] = useState<string>('')
 
   const toggleUnfilteredVehicle = (name: string) => {
     setVehiclesEnabled((prev) => ({ ...prev, [name]: !prev[name] }))
@@ -245,13 +256,35 @@ const EmailNotificationsModal: React.FC<EmailNotificationsModalProps> = ({
         plainText: plainText ? 'y' : 'n',
         details,
       },
-      { onSuccess: () => onClose?.() }
+      {
+        onSuccess: () => onClose?.(),
+        onError: () =>
+          alert('Failed to save notification settings. Please try again.'),
+      }
     )
   }
 
   const handleSendTest = () => {
     if (!email) return
-    sendTest({ email, plainText: plainText ? 'y' : 'n' })
+    setSendTestStatus('idle')
+    setSendTestMessage('')
+    sendTest(
+      { email, plainText: plainText ? 'y' : 'n' },
+      {
+        onSuccess: (data) => {
+          const msg = data?.email_sent
+            ? `Test email sent to ${data.email_sent}`
+            : 'Test email sent'
+          setSendTestStatus('success')
+          setSendTestMessage(msg)
+        },
+        onError: (err) => {
+          const msg = (err as { message?: string })?.message ?? 'Unknown error'
+          setSendTestStatus('error')
+          setSendTestMessage(msg)
+        },
+      }
+    )
   }
 
   const handleDeleteAll = async () => {
@@ -264,7 +297,10 @@ const EmailNotificationsModal: React.FC<EmailNotificationsModalProps> = ({
         params: { email },
         headers: { Authorization: `Bearer ${token}` },
       })
+      queryClient.removeQueries(['email', 'settings', email])
       onClose?.()
+    } catch {
+      alert('Failed to delete notification settings. Please try again.')
     } finally {
       setIsDeleting(false)
     }
@@ -281,6 +317,9 @@ const EmailNotificationsModal: React.FC<EmailNotificationsModalProps> = ({
     [vehicleNames, vehiclesEnabled]
   )
 
+  const isDataLoading = isSiteConfigLoading || isSettingsLoading
+  const isBusy = isSaving || isTesting || isDeleting || !email || isDataLoading
+
   return (
     <Modal
       title={<span className="text-2xl font-bold">Email notifications</span>}
@@ -289,7 +328,7 @@ const EmailNotificationsModal: React.FC<EmailNotificationsModalProps> = ({
       style={{ minWidth: 800 }}
       onConfirm={handleSave}
       confirmButtonText="Save"
-      disableConfirm={isSaving || isTesting || isDeleting || !email}
+      disableConfirm={isBusy}
       onCancel={onClose}
       cancelButtonText="Close"
       extraButtons={[
@@ -297,7 +336,7 @@ const EmailNotificationsModal: React.FC<EmailNotificationsModalProps> = ({
           buttonText: 'Delete all',
           appearance: 'secondary',
           onClick: handleDeleteAll,
-          disabled: isSaving || isTesting || isDeleting || !email,
+          disabled: isBusy,
         },
       ]}
       blurBackground
@@ -320,13 +359,25 @@ const EmailNotificationsModal: React.FC<EmailNotificationsModalProps> = ({
               {plainText ? 'On' : 'Off'}
             </button>
           </div>
-          <Button
-            appearance="secondary"
-            onClick={handleSendTest}
-            disabled={isSaving || isTesting || isDeleting || !email}
-          >
-            Send test email
-          </Button>
+          <div className="flex items-center gap-2">
+            {sendTestStatus === 'success' && (
+              <span className="text-sm text-green-600">
+                {sendTestMessage || `Test email sent to ${email}`}
+              </span>
+            )}
+            {sendTestStatus === 'error' && (
+              <span className="text-sm text-red-600">
+                Failed: {sendTestMessage || 'Unknown error'}
+              </span>
+            )}
+            <Button
+              appearance="secondary"
+              onClick={handleSendTest}
+              disabled={isBusy}
+            >
+              {isTesting ? 'Sending…' : 'Send test email'}
+            </Button>
+          </div>
         </section>
 
         <section className="-mx-4 border-t p-4">
@@ -335,8 +386,11 @@ const EmailNotificationsModal: React.FC<EmailNotificationsModalProps> = ({
             <Button
               appearance="secondary"
               onClick={() => setOpenPicker('unfiltered')}
+              disabled={isDataLoading}
             >
-              {selectedUnfiltered.length === 0
+              {isDataLoading
+                ? 'Loading…'
+                : selectedUnfiltered.length === 0
                 ? 'Add vehicles'
                 : 'Edit vehicles'}
             </Button>

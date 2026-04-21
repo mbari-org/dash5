@@ -8,7 +8,7 @@ export interface SendTestEmailForNotificationsParams {
 }
 
 export interface SendTestEmailForNotificationsResponse {
-  result: string
+  email_sent: string
 }
 
 export const sendTestEmailForNotifications = async (
@@ -22,6 +22,5 @@ export const sendTestEmailForNotifications = async (
   }
 
   const response = await instance.post(url, null, { ...config, params })
-  return (response.data?.result ??
-    response.data) as SendTestEmailForNotificationsResponse
+  return response.data as SendTestEmailForNotificationsResponse
 }
