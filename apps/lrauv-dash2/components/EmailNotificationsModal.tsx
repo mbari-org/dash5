@@ -289,6 +289,7 @@ const EmailNotificationsModal: React.FC<EmailNotificationsModalProps> = ({
       grayHeader
       headerClassName="!bg-secondary-300 !items-center"
       titleClassName="!pt-0 !mt-0"
+      closeButtonClassName="!text-stone-700"
       style={{ minWidth: 800 }}
       onConfirm={handleSave}
       confirmButtonText="Save"
