@@ -1,5 +1,6 @@
 import React from 'react'
 import { render, screen, waitFor } from '@testing-library/react'
+import userEvent from '@testing-library/user-event'
 import '@testing-library/jest-dom'
 import {
   ScheduleSection,
@@ -381,4 +382,97 @@ test('shows timeout icon when a non-mission cell command times out', async () =>
   await waitFor(() => {
     expect(screen.getByTitle(/timeout/i)).toBeInTheDocument()
   })
+})
+
+test('Cancel this Directive calls DELETE /commands/queue when confirmed', async () => {
+  let deleteCalled = false
+  server.use(
+    rest.get('/events', (_req, res, ctx) =>
+      res(
+        ctx.status(200),
+        ctx.json({
+          result: [
+            {
+              data: 'load Science/profiles.xml',
+              unixTime: Date.now() - 60 * 1000,
+              eventId: 99001,
+              eventType: 'command',
+              text: null,
+              note: null,
+              user: 'test-user',
+            },
+          ],
+        })
+      )
+    ),
+    rest.get('/events/mission-started', (_req, res, ctx) =>
+      res(ctx.status(200), ctx.json({ result: [] }))
+    ),
+    rest.delete('/commands/queue', (_req, res, ctx) => {
+      deleteCalled = true
+      return res(ctx.status(200), ctx.json({ result: 'ok' }))
+    })
+  )
+  jest.spyOn(window, 'confirm').mockReturnValueOnce(true)
+
+  render(
+    <MockProviders queryClient={new QueryClient()}>
+      <ScheduleSection {...props} currentDeploymentId={1} />
+    </MockProviders>
+  )
+
+  const moreButton = await screen.findByRole('button', {
+    name: /more options/i,
+  })
+  await userEvent.click(moreButton)
+  await userEvent.click(await screen.findByText('Cancel this Directive'))
+
+  await waitFor(() => expect(deleteCalled).toBe(true))
+})
+
+test('Cancel this Directive does not call DELETE when confirm is dismissed', async () => {
+  let deleteCalled = false
+  server.use(
+    rest.get('/events', (_req, res, ctx) =>
+      res(
+        ctx.status(200),
+        ctx.json({
+          result: [
+            {
+              data: 'load Science/profiles.xml',
+              unixTime: Date.now() - 60 * 1000,
+              eventId: 99001,
+              eventType: 'command',
+              text: null,
+              note: null,
+              user: 'test-user',
+            },
+          ],
+        })
+      )
+    ),
+    rest.get('/events/mission-started', (_req, res, ctx) =>
+      res(ctx.status(200), ctx.json({ result: [] }))
+    ),
+    rest.delete('/commands/queue', (_req, res, ctx) => {
+      deleteCalled = true
+      return res(ctx.status(200), ctx.json({ result: 'ok' }))
+    })
+  )
+  jest.spyOn(window, 'confirm').mockReturnValueOnce(false)
+
+  render(
+    <MockProviders queryClient={new QueryClient()}>
+      <ScheduleSection {...props} currentDeploymentId={1} />
+    </MockProviders>
+  )
+
+  const moreButton = await screen.findByRole('button', {
+    name: /more options/i,
+  })
+  await userEvent.click(moreButton)
+  await userEvent.click(await screen.findByText('Cancel this Directive'))
+
+  await new Promise((r) => setTimeout(r, 100))
+  expect(deleteCalled).toBe(false)
 })

@@ -1064,7 +1064,7 @@ export const ScheduleSection: React.FC<ScheduleSectionProps> = ({
     }
   }
 
-  const deleteCommandQueue = useDeleteCommandQueue()
+  const deleteCommandQueueMutation = useDeleteCommandQueue()
 
   const handleDelete = async ({
     eventId,
@@ -1081,7 +1081,7 @@ export const ScheduleSection: React.FC<ScheduleSectionProps> = ({
       return
     }
     try {
-      await deleteCommandQueue.mutateAsync({
+      await deleteCommandQueueMutation.mutateAsync({
         vehicle: vehicleName,
         refEventId: eventId,
       })
