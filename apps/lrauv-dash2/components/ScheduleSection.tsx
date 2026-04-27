@@ -653,6 +653,7 @@ export const ScheduleSection: React.FC<ScheduleSectionProps> = ({
     commandType: 'mission' | 'command'
     status: ScheduleCellStatus
     rect: DOMRect
+    isDefaultMission?: boolean
   } | null>(null)
   const closeMoreMenu = () => setCurrentMoreMenu(null)
   const openMoreMenu: ScheduleCellProps['onMoreClick'] = (
@@ -820,7 +821,14 @@ export const ScheduleSection: React.FC<ScheduleSectionProps> = ({
               },
             })
           }}
-          onMoreClick={openMoreMenu}
+          onMoreClick={(target, rect) =>
+            openMoreMenu(
+              { ...target, isDefaultMission: true } as Parameters<
+                typeof openMoreMenu
+              >[0],
+              rect
+            )
+          }
         />
       )
     }
@@ -1180,16 +1188,20 @@ export const ScheduleSection: React.FC<ScheduleSectionProps> = ({
                   closeMoreMenu()
                 },
               },
-              {
-                label: 'Cancel this Directive',
-                onSelect: () => {
-                  handleDelete({
-                    eventId: currentMoreMenu?.eventId as number,
-                    commandType: currentMoreMenu?.commandType as string,
-                  })
-                  closeMoreMenu()
-                },
-              },
+              ...(!currentMoreMenu.isDefaultMission
+                ? [
+                    {
+                      label: 'Cancel this Directive',
+                      onSelect: () => {
+                        handleDelete({
+                          eventId: currentMoreMenu?.eventId as number,
+                          commandType: currentMoreMenu?.commandType as string,
+                        })
+                        closeMoreMenu()
+                      },
+                    },
+                  ]
+                : []),
               {
                 label: 'Download SBDs',
                 onSelect: () => {
@@ -1223,8 +1235,10 @@ export const ScheduleSection: React.FC<ScheduleSectionProps> = ({
                     closeMoreMenu()
                   },
                 },
-              ].filter(() =>
-                ['running', 'pending'].includes(currentMoreMenu.status)
+              ].filter(
+                () =>
+                  ['running', 'pending'].includes(currentMoreMenu.status) &&
+                  !currentMoreMenu.isDefaultMission
               ),
             ]}
           />
