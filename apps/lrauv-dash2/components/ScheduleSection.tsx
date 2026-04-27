@@ -224,7 +224,7 @@ export const ScheduleSection: React.FC<ScheduleSectionProps> = ({
       from: 0,
       limit: 500,
     },
-    { enabled: !!vehicleName }
+    { enabled: !!vehicleName, staleTime: 30 * 1000, refetchInterval: 30 * 1000 }
   )
 
   // Build a Set of eventIds that were explicitly cancelled by an operator.
@@ -398,7 +398,12 @@ export const ScheduleSection: React.FC<ScheduleSectionProps> = ({
     const currentMissionEntry = missionTimeline[0]
     if (currentMissionEntry) {
       const currentMissionPath = normalizeMissionPath(currentMissionEntry.name)
-      if (!currentMissionPath) return enriched
+      if (!currentMissionPath)
+        return enriched.map((item) =>
+          cancelledEventIds.has(item.event.eventId)
+            ? { ...item, status: 'cancelled' as const }
+            : item
+        )
 
       const matchingMissionIndex = enriched.reduce((bestIdx, item, idx) => {
         const fromDataPath = missionPathFromEventData(item.event.data)
