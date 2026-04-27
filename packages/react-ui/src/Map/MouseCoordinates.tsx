@@ -23,7 +23,7 @@ const formatCoordinate = (latitude: number) => {
 }
 
 export interface MouseCoordinatesProps {
-  onRequestDepth?: (lat: number, lng: number) => Promise<number>
+  onRequestDepth?: (lat: number, lng: number) => Promise<number | null>
 }
 
 const MouseCoordinates: React.FC<MouseCoordinatesProps> = ({
@@ -31,7 +31,7 @@ const MouseCoordinates: React.FC<MouseCoordinatesProps> = ({
 }) => {
   const [mousePoint, setMousePoint] = useState(null as null | L.LatLng)
   const [depth, setDepth] = useState(
-    null as null | { depth: number; coordinate: string }
+    null as null | { depth: number | null; coordinate: string }
   )
 
   const formattedCoordinates =
