@@ -20,6 +20,7 @@ import {
   EventType,
   GetEventsResponse,
   useDeploymentCommandStatus,
+  useEvents,
   useInfiniteEvents,
   useMissionStartedEvent,
   getVia,
@@ -210,6 +211,31 @@ export const ScheduleSection: React.FC<ScheduleSectionProps> = ({
     { vehicle: vehicleName, limit: 50 },
     { enabled: !!vehicleName, staleTime: 15 * 1000, refetchInterval: 30 * 1000 }
   )
+
+  // Fetch note events that record operator cancellations so we can stamp
+  // schedule items as 'cancelled' instead of incorrectly showing 'completed'.
+  // The TethysDash backend writes a note with text matching:
+  //   "Cancelled request {eventId} for '{vehicle}': ..."
+  const cancellationNotesResponse = useEvents(
+    {
+      vehicles: [vehicleName],
+      eventTypes: ['note'] as EventType[],
+      noteMatches: 'Cancelled request',
+      from: 0,
+      limit: 500,
+    },
+    { enabled: !!vehicleName }
+  )
+
+  // Build a Set of eventIds that were explicitly cancelled by an operator.
+  const cancelledEventIds = useMemo(() => {
+    const ids = new Set<number>()
+    cancellationNotesResponse.data?.forEach((note) => {
+      const match = note.note?.match(/Cancelled request (\d+)/)
+      if (match) ids.add(parseInt(match[1], 10))
+    })
+    return ids
+  }, [cancellationNotesResponse.data])
 
   // Build a timeline: each entry knows its own start time and when it ended
   // (= the start time of the mission that replaced it, or undefined if running).
@@ -482,11 +508,17 @@ export const ScheduleSection: React.FC<ScheduleSectionProps> = ({
     // will never execute — treat them as completed so the history is clean.
     // Must run AFTER enrichment so statuses are resolved from 'TBD' first.
     if (isRecovered) {
-      return enriched.map((item) =>
-        item.status === 'pending' || item.status === 'TBD'
-          ? { ...item, status: 'completed' }
-          : item
-      )
+      return enriched
+        .map((item) =>
+          item.status === 'pending' || item.status === 'TBD'
+            ? { ...item, status: 'completed' }
+            : item
+        )
+        .map((item) =>
+          cancelledEventIds.has(item.event.eventId)
+            ? { ...item, status: 'cancelled' as const }
+            : item
+        )
     }
 
     // Inject Default mission rows from missionTimeline.
@@ -520,11 +552,21 @@ export const ScheduleSection: React.FC<ScheduleSectionProps> = ({
     }
 
     if (isRecovered) {
-      return enriched.map((item) =>
-        item.status === 'pending' ? { ...item, status: 'completed' } : item
-      )
+      return enriched
+        .map((item) =>
+          item.status === 'pending' ? { ...item, status: 'completed' } : item
+        )
+        .map((item) =>
+          cancelledEventIds.has(item.event.eventId)
+            ? { ...item, status: 'cancelled' as const }
+            : item
+        )
     }
-    return enriched
+    return enriched.map((item) =>
+      cancelledEventIds.has(item.event.eventId)
+        ? { ...item, status: 'cancelled' as const }
+        : item
+    )
   }, [
     deploymentLogsOnly,
     deploymentResponse.data,
@@ -532,6 +574,7 @@ export const ScheduleSection: React.FC<ScheduleSectionProps> = ({
     missionTimeline,
     missionStartedResponse.data,
     isRecovered,
+    cancelledEventIds,
   ])
 
   const scheduledTypes = ['pending', 'running']
