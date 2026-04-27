@@ -1155,7 +1155,7 @@ export const ScheduleSection: React.FC<ScheduleSectionProps> = ({
                 },
               },
               {
-                label: 'Delete from Queue',
+                label: 'Cancel this Directive',
                 onSelect: () => {
                   handleDelete({
                     eventId: currentMoreMenu?.eventId as number,
