@@ -25,6 +25,7 @@ import {
   useMissionStartedEvent,
   getVia,
   useCommsEvents,
+  useDeleteCommandQueue,
 } from '@mbari/api-client'
 import useGlobalModalId from '../lib/useGlobalModalId'
 import {
@@ -1055,8 +1056,33 @@ export const ScheduleSection: React.FC<ScheduleSectionProps> = ({
     }
   }
 
-  const handleDelete = (_: { eventId: number; commandType: string }) => {
-    toast.error('This feature is currently not supported.')
+  const deleteCommandQueue = useDeleteCommandQueue()
+
+  const handleDelete = async ({
+    eventId,
+    commandType,
+  }: {
+    eventId: number
+    commandType: string
+  }) => {
+    if (
+      !confirm(
+        `Cancel this ${commandType} directive (event ID ${eventId})? This will remove it from the shore-side queue.`
+      )
+    ) {
+      return
+    }
+    try {
+      await deleteCommandQueue.mutateAsync({
+        vehicle: vehicleName,
+        refEventId: eventId,
+      })
+      toast.success(`Cancelled directive ${eventId}.`)
+    } catch (e) {
+      toast.error(
+        `Failed to cancel directive ${eventId}. It may have already been sent to the vehicle.`
+      )
+    }
   }
 
   const handleDownload = ({
