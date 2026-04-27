@@ -9,38 +9,63 @@ import useTrackedVehicles from '../lib/useTrackedVehicles'
 import { SharedPathContextProvider } from '../components/SharedPathContextProvider'
 import { SelectedPlatformsProvider } from '../components/SelectedPlatformContext'
 import { SelectedStationsProvider } from '../components/SelectedStationContext'
+import { MapCameraProvider } from '../components/MapCameraContext'
+import { SelectedPolygonsProvider } from '../components/SelectedPolygonsContext'
+import { SelectedTileLayersProvider } from '../components/SelectedTileLayersContext'
+import { SelectedKmlLayersProvider } from '../components/SelectedKmlLayersContext'
 import { useRouter } from 'next/router'
 import useGlobalModalId from '../lib/useGlobalModalId'
 import useGoogleElevator from '../lib/useGoogleElevator'
 import { Allotment, LayoutPriority } from 'allotment'
 import { useGoogleMaps } from '../lib/useGoogleMaps'
-import { VPosDetail } from '@mbari/api-client'
+import { VPosDetail, useStations } from '@mbari/api-client'
 import 'allotment/dist/style.css'
 import { StationsListModal } from '../components/StationsListModal'
 import { MapLayersListModal } from '../components/MapLayersListModal'
 import { useSelectedStations } from '../components/SelectedStationContext'
 import { useMarkers } from '../components/MarkerContext'
-import { useDepthRequest } from '@mbari/utils/useDepthRequest'
 import toast from 'react-hot-toast'
-import type { MapProps } from '@mbari/react-ui/dist/Map/Map'
-import { createLogger } from '@mbari/utils'
+import { createLogger, useResizeObserver } from '@mbari/utils'
 import { PlatformsListModal } from '../components/PlatformsListModal'
+import { useRefreshPositions } from '../lib/useRefreshPositions'
+import VehicleColorsModal from '../components/VehicleColorsModal'
+import { MapRefreshButton } from '../components/MapRefreshButton'
 
 // This is a tricky workaround to prevent leaflet from crashing next.js
 // SSR. If we don't do this, the leaflet map will be loaded server side
 // and throw a window error.
-const Map = dynamic<CustomMapProps>(
-  () => import('@mbari/react-ui/dist/Map/Map'),
-  {
-    ssr: false,
-  }
-)
+// Map types are not imported from @mbari/react-ui to avoid module resolution issues.
+const Map = dynamic(() => import('@mbari/react-ui/dist/Map/Map'), {
+  ssr: false,
+})
 
+const MapDepthDisplay = dynamic(
+  () =>
+    import('@mbari/react-ui/dist/Map/Map').then((m) => ({
+      default: m.MapDepthDisplay,
+    })),
+  { ssr: false }
+)
 const VehiclePath = dynamic(() => import('../components/VehiclePath'), {
   ssr: false,
 })
 
 const StationMarker = dynamic(() => import('../components/StationMarker'), {
+  ssr: false,
+})
+
+const MapFlyTo = dynamic(() => import('../components/MapFlyTo'), { ssr: false })
+
+const PolygonLayers = dynamic(() => import('../components/PolygonLayers'), {
+  ssr: false,
+})
+
+const TileLayerOverlays = dynamic(
+  () => import('../components/TileLayerOverlays'),
+  { ssr: false }
+)
+
+const KmlLayers = dynamic(() => import('../components/KmlLayers'), {
   ssr: false,
 })
 
@@ -73,14 +98,6 @@ const styles = {
     'flex w-full flex-shrink-0 flex-col bg-white border-t-2 border-secondary-300/60',
 }
 
-// Interface CustomMarkerProps
-type CustomMapProps = MapProps &
-  React.RefAttributes<L.Map> & {
-    isAddingMarkers?: boolean
-    onToggleMarkerMode?: () => void
-    trackedVehicles?: { name: string; id?: string }[] // Match the actual type being used
-  }
-
 // Interface MarkerData
 interface MarkerData {
   id: number
@@ -97,6 +114,17 @@ const OverViewMap: React.FC<{
 }> = ({ trackedVehicles }) => {
   // Add mapRef to store the Leaflet map instance
   const mapRef = useRef<L.Map | null>(null)
+  const mapContainerRef = useRef<HTMLDivElement | null>(null)
+
+  // Call invalidateSize whenever the container resizes (fixes partial-map rendering
+  // after refresh). useResizeObserver is polyfilled and throttled (100 ms by default).
+  const { size } = useResizeObserver({ element: mapContainerRef })
+  useEffect(() => {
+    if (typeof mapRef.current?.invalidateSize === 'function') {
+      mapRef.current.invalidateSize()
+    }
+  }, [size])
+  const router = useRouter()
   const { handleDepthRequest, elevationAvailable } = useGoogleElevator()
   const [center, setCenter] = useState<undefined | [number, number]>()
   const [centerZoom, setCenterZoom] = useState<number | undefined>(undefined)
@@ -110,20 +138,30 @@ const OverViewMap: React.FC<{
   const [viewMode, setViewMode] = useState<'center' | 'bounds' | null>(null)
   const [selectedMarkerId, setSelectedMarkerId] = useState<string | null>(null)
   const [defaultMarkerColor, setDefaultMarkerColor] = useState<string>('red')
-  const { selectedStations } = useSelectedStations()
-  const { handleDepthRequestWithFeedback } = useDepthRequest(
-    handleDepthRequest,
-    {
-      warningToastId: 'depth-unavailable',
-      errorToastId: 'depth-result',
-      loadingToastId: 'depth-loading',
-      warningToastClass: 'blue-toast',
-      toastDuration: 5000,
-    }
-  )
+  const { selectedStations, highlightedStationName } = useSelectedStations()
+  const { data: allStations } = useStations()
+  const spotlightOnlyCoords = useMemo(() => {
+    if (!highlightedStationName) return null
+    if (selectedStations?.some((s) => s.name === highlightedStationName))
+      return null
+    const found = allStations?.find((s) => s.name === highlightedStationName)
+    if (!found) return null
+    const coords = found.geojson?.geometry?.coordinates
+    if (
+      !coords ||
+      !Number.isFinite(coords[1] as number) ||
+      !Number.isFinite(coords[0] as number)
+    )
+      return null
+    return { lat: coords[1] as number, lon: coords[0] as number }
+  }, [highlightedStationName, selectedStations, allStations])
   const [layersModalPosition, setLayersModalPosition] = useState({
     top: 0,
     left: 0,
+  })
+  const [colorModalPosition, setColorModalPosition] = useState({
+    top: 100,
+    left: 100,
   })
 
   // Marker state
@@ -146,6 +184,16 @@ const OverViewMap: React.FC<{
   const uniqueTrackedVehicles = Array.from(new Set(trackedVehicles))
   // Store all vehicle positions for bounds calculation
   const vehiclePositions = useRef<Array<[number, number]>>([])
+
+  const vehicleNames = trackedVehicles.map((v) => v.name)
+  const {
+    refreshAll,
+    loading: refreshLoading,
+    lastRefreshed,
+    markInitialLoadDone,
+  } = useRefreshPositions(vehicleNames, {
+    autoRefreshMinutes: 10,
+  })
 
   // Effect to handle vehicle positions
   useEffect(() => {
@@ -218,9 +266,6 @@ const OverViewMap: React.FC<{
     (gps: VPosDetail) => {
       if ((latestGPS?.isoTime ?? 0) > gps.isoTime || !latestGPS) {
         setLatestGPS(gps)
-        const coords: [number, number] = [gps.latitude, gps.longitude]
-        setCenter(coords)
-        setViewMode('center')
       }
       // Store position for bounds calculation
       vehiclePositions.current.push([gps.latitude, gps.longitude])
@@ -531,10 +576,14 @@ const OverViewMap: React.FC<{
     setShowPlatformsModal(false)
   }, [])
 
-  // handleVehicleColorRequest- Show vehicle colors
-  const handleVehicleColorRequest = useCallback((vehicleName?: string) => {
-    setShowVehicleColors(true)
-  }, [])
+  // handleVehicleColorRequest - Show vehicle colors at anchor (from Map button)
+  const handleVehicleColorRequest = useCallback(
+    (anchor?: { top: number; left: number }) => {
+      setColorModalPosition(anchor ?? { top: 100, left: 100 })
+      setShowVehicleColors(true)
+    },
+    []
+  )
 
   // handleCloseVehicleColors - vehicle colors modal is closed
   const handleCloseVehicleColors = useCallback((vehicleName?: string) => {
@@ -593,132 +642,151 @@ const OverViewMap: React.FC<{
       {showPlatformsModal ? (
         <PlatformsListModal onClose={handleClosePlatforms} />
       ) : null}
-      <Map
-        ref={mapRef}
-        className="h-full w-full"
-        onMapReady={(map) => {
-          logger.debug('🌍 Map ready callback triggered in OverViewMap')
-          // Store the Leaflet instance
-          mapRef.current = map
-
-          // Force redraw - after map is ready
-          setTimeout(() => {
-            try {
-              map.invalidateSize()
-            } catch (e) {
-              logger.warn('Could not invalidate map size:', e)
-            }
-          }, 200)
-        }}
-        trackedVehicles={trackedVehicles?.map((vehicle) => ({
-          ...vehicle,
-          id: vehicle.id || vehicle.name, // Ensure id is always present
-        }))}
-        onRequestDepth={async (lat, lng) => {
-          try {
-            // Try to remove any leading zeros
-            const formattedLat = parseFloat(String(lat).replace(/^0+/, ''))
-            // Then use in depth request
-            const result = await handleDepthRequestWithFeedback(
-              formattedLat,
-              lng
-            )
-            return result.depth !== null ? result.depth : 0
-          } catch (error) {
-            logger.warn('❌ Error in depth request:', error)
-            toast.error('Depth data unavailable', { id: 'depth-error' })
-            return 0
-          }
-        }}
-        center={center}
-        centerZoom={centerZoom}
-        fitBounds={bounds}
-        viewMode={viewMode}
-        onRequestCoordinate={handleCoordinateRequest}
-        onRequestPlatforms={handlePlatformsRequest}
-        onRequestFitBounds={handleFitBoundsRequest}
-        onRequestStations={handleLayersRequest}
-        onRequestVehicleColors={handleVehicleColorRequest}
-        onRequestMarkers={handleMarkersRequest}
-        isAddingMarkers={isAddingMarkers}
-        onToggleMarkerMode={handleToggleMarkerMode}
-        renderMapClickHandler={() => (
-          <MapClickHandler
-            isAddingMarkers={isAddingMarkers}
-            isEditingMarker={false}
-            onAddMarker={handleAddMarker}
-          />
-        )}
-        renderCustomMarkerSet={() => (
-          <CustomMarkerSet
-            isAddingMarkers={isAddingMarkers}
-            setIsAddingMarkers={(value) => setIsAddingMarkers(value)}
-          />
-        )}
-        renderDraggableMarkers={() =>
-          markers.map(
-            (marker) =>
-              // Only render the marker if visible or visibility !== false
-              marker.visible !== false && (
-                <DraggableMarker
-                  key={`marker-${marker.id}`}
-                  id={marker.id.toString()}
-                  position={[marker.lat, marker.lng]}
-                  index={marker.index}
-                  label={marker.label}
-                  draggable={true}
-                  isSelected={selectedMarkerId === marker.id.toString()}
-                  isNew={marker.isNew}
-                  savedToLayer={marker.savedToLayer}
-                  iconColor={marker.iconColor || defaultMarkerColor}
-                  onClick={() => handleMarkerClick(marker.id.toString())}
-                  onDragEnd={(newPos) =>
-                    handleMarkerPositionChange(marker.id.toString(), newPos)
-                  }
-                  onEditStateChange={(isEditing) => {
-                    setActiveEditMarkerId(
-                      isEditing ? marker.id.toString() : null
-                    )
-                  }}
-                  onEdit={() => handleEditMarker(marker.id.toString())}
-                  onDelete={() => handleDeleteMarker(marker.id.toString())}
-                  onColorChange={(color) =>
-                    handleMarkerColorChange(marker.id.toString(), color)
-                  }
-                  onSaveToLayer={handleSaveMarkerToLayer}
-                  onRemoveFromLayer={(id) => handleSaveMarkerToLayer(id, false)}
-                />
-              )
-          )
-        }
-      >
-        {uniqueTrackedVehicles?.map((name, index) => (
-          <VehiclePath
-            name={name.name}
-            key={`path-${name}-${index}`}
-            onGPSFix={handleGPSFix}
-            grouped
-          />
-        ))}
-        <PlatformPaths />
-        {selectedStations?.map((station) => {
-          const lng = station.geojson?.geometry?.coordinates[0]
-          const lat = station.geojson?.geometry?.coordinates[1]
-
-          if (!lng || !lat) {
-            return null
-          }
-
-          return (
-            <StationMarker
-              key={station.name}
-              name={station.name}
-              lat={lat}
-              lng={lng}
+      <div className="relative h-full w-full" ref={mapContainerRef}>
+        <Map
+          key={`overview-map-${router.asPath}`}
+          className="h-full w-full"
+          onMapReady={(map) => {
+            logger.debug('🌍 Map ready callback triggered in OverViewMap')
+            mapRef.current = map
+            map.invalidateSize()
+          }}
+          trackedVehicles={trackedVehicles?.map((vehicle) => ({
+            ...vehicle,
+            id: vehicle.id || vehicle.name, // Ensure id is always present
+          }))}
+          center={center}
+          centerZoom={centerZoom}
+          fitBounds={bounds}
+          viewMode={viewMode}
+          onRequestCoordinate={handleCoordinateRequest}
+          onRequestPlatforms={handlePlatformsRequest}
+          onRequestFitBounds={handleFitBoundsRequest}
+          onRequestStations={handleLayersRequest}
+          onRequestVehicleColors={handleVehicleColorRequest}
+          onRequestMarkers={handleMarkersRequest}
+          isAddingMarkers={isAddingMarkers}
+          onToggleMarkerMode={handleToggleMarkerMode}
+          renderMapClickHandler={() => (
+            <MapClickHandler
+              isAddingMarkers={isAddingMarkers}
+              isEditingMarker={false}
+              onAddMarker={handleAddMarker}
             />
-          )
-        })}
-      </Map>
+          )}
+          renderCustomMarkerSet={() => (
+            <CustomMarkerSet
+              isAddingMarkers={isAddingMarkers}
+              setIsAddingMarkers={(value) => setIsAddingMarkers(value)}
+            />
+          )}
+          renderDraggableMarkers={() =>
+            markers.map(
+              (marker) =>
+                // Only render the marker if visible or visibility !== false
+                marker.visible !== false && (
+                  <DraggableMarker
+                    key={`marker-${marker.id}`}
+                    id={marker.id.toString()}
+                    position={[marker.lat, marker.lng]}
+                    index={marker.index}
+                    label={marker.label}
+                    draggable={true}
+                    isSelected={selectedMarkerId === marker.id.toString()}
+                    isNew={marker.isNew}
+                    savedToLayer={marker.savedToLayer}
+                    iconColor={marker.iconColor || defaultMarkerColor}
+                    onClick={() => handleMarkerClick(marker.id.toString())}
+                    onDragEnd={(newPos) =>
+                      handleMarkerPositionChange(marker.id.toString(), newPos)
+                    }
+                    onEditStateChange={(isEditing) => {
+                      setActiveEditMarkerId(
+                        isEditing ? marker.id.toString() : null
+                      )
+                    }}
+                    onEdit={() => handleEditMarker(marker.id.toString())}
+                    onDelete={() => handleDeleteMarker(marker.id.toString())}
+                    onColorChange={(color) =>
+                      handleMarkerColorChange(marker.id.toString(), color)
+                    }
+                    onSaveToLayer={handleSaveMarkerToLayer}
+                    onRemoveFromLayer={(id) =>
+                      handleSaveMarkerToLayer(id, false)
+                    }
+                  />
+                )
+            )
+          }
+        >
+          <MapDepthDisplay
+            depthRequest={handleDepthRequest}
+            options={{
+              warningToastId: 'depth-unavailable',
+              errorToastId: 'depth-result',
+              loadingToastId: 'depth-loading',
+              warningToastClass: 'blue-toast',
+              toastDuration: 5000,
+            }}
+          />
+          {uniqueTrackedVehicles?.map((name, index) => (
+            <VehiclePath
+              name={name.name}
+              key={`path-${name}-${index}`}
+              onGPSFix={handleGPSFix}
+              onPositionDataLoaded={markInitialLoadDone}
+              grouped
+            />
+          ))}
+          <PlatformPaths />
+          {selectedStations?.map((station) => {
+            const lng = station.geojson?.geometry?.coordinates[0]
+            const lat = station.geojson?.geometry?.coordinates[1]
+
+            if (!lng || !lat) {
+              return null
+            }
+
+            return (
+              <StationMarker
+                key={station.name}
+                name={station.name}
+                lat={lat}
+                lng={lng}
+                color={station.geojson.properties?.color}
+                isHighlighted={highlightedStationName === station.name}
+              />
+            )
+          })}
+          {spotlightOnlyCoords && (
+            <StationMarker
+              key={`spotlight-${highlightedStationName}`}
+              name={highlightedStationName ?? ''}
+              lat={spotlightOnlyCoords.lat}
+              lng={spotlightOnlyCoords.lon}
+              isHighlighted={true}
+            />
+          )}
+          <PolygonLayers />
+          <TileLayerOverlays />
+          <KmlLayers />
+          <MapFlyTo />
+        </Map>
+        <MapRefreshButton
+          onClick={refreshAll}
+          loading={refreshLoading}
+          lastRefreshed={lastRefreshed}
+        />
+      </div>
+      {showVehicleColors ? (
+        <VehicleColorsModal
+          isOpen={showVehicleColors}
+          onClose={handleCloseVehicleColors}
+          anchorPosition={colorModalPosition}
+          trackedVehicles={trackedVehicles?.map((v) => v.name) ?? []}
+          forceShowAll={true}
+        />
+      ) : null}
     </>
   )
 }
@@ -785,80 +853,95 @@ const OverviewPage: NextPage = () => {
     <SharedPathContextProvider>
       <SelectedPlatformsProvider>
         <SelectedStationsProvider>
-          <div className={styles.content}>
-            <Layout>
-              {trackedVehicles?.length ? (
-                <>
-                  <OverviewToolbar deployment={{ name: 'Overview', id: '0' }} />
+          <MapCameraProvider>
+            <SelectedPolygonsProvider>
+              <SelectedTileLayersProvider>
+                <SelectedKmlLayersProvider>
+                  <div className={styles.content}>
+                    <Layout>
+                      {trackedVehicles?.length ? (
+                        <>
+                          <OverviewToolbar
+                            deployment={{ name: 'Overview', id: '0' }}
+                          />
 
-                  <div
-                    className={styles.content}
-                    data-testid="vehicle-dashboard"
-                  >
-                    {/* Single map instance: render one layout to avoid duplicate controls */}
-                    {isDesktop ? (
-                      <div className="h-full w-full">
-                        <Allotment
-                          separator
-                          snap
-                          defaultSizes={[75, 25]}
-                          proportionalLayout
-                        >
-                          <Allotment.Pane>{primarySection}</Allotment.Pane>
-                          <Allotment.Pane priority={LayoutPriority.High}>
-                            {secondarySection}
-                          </Allotment.Pane>
-                        </Allotment>
-                      </div>
-                    ) : (
-                      <div className="flex h-full w-full flex-col">
-                        <div className="flex shrink-0 items-center gap-2 border-b border-slate-200 bg-white px-4 py-2">
-                          <button
-                            type="button"
-                            onClick={() => setMobileView('map')}
-                            className={
-                              mobileView === 'map'
-                                ? 'rounded bg-secondary-300/60 px-3 py-1 text-sm font-bold text-black'
-                                : 'rounded px-3 py-1 text-sm font-bold text-slate-600'
-                            }
+                          <div
+                            className={styles.content}
+                            data-testid="vehicle-dashboard"
                           >
-                            Map
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() => setMobileView('list')}
-                            className={
-                              mobileView === 'list'
-                                ? 'rounded bg-secondary-300/60 px-3 py-1 text-sm font-bold text-black'
-                                : 'rounded px-3 py-1 text-sm font-bold text-slate-600'
-                            }
-                          >
-                            Vehicles
-                          </button>
-                        </div>
+                            {/* Single map instance: render one layout to avoid duplicate controls */}
+                            {isDesktop ? (
+                              <div className="h-full w-full">
+                                <Allotment
+                                  separator
+                                  snap
+                                  defaultSizes={[75, 25]}
+                                  proportionalLayout
+                                >
+                                  <Allotment.Pane>
+                                    {primarySection}
+                                  </Allotment.Pane>
+                                  <Allotment.Pane
+                                    priority={LayoutPriority.High}
+                                  >
+                                    {secondarySection}
+                                  </Allotment.Pane>
+                                </Allotment>
+                              </div>
+                            ) : (
+                              <div className="flex h-full w-full flex-col">
+                                <div className="flex shrink-0 items-center gap-2 border-b border-slate-200 bg-white px-4 py-2">
+                                  <button
+                                    type="button"
+                                    onClick={() => setMobileView('map')}
+                                    className={
+                                      mobileView === 'map'
+                                        ? 'rounded bg-secondary-300/60 px-3 py-1 text-sm font-bold text-black'
+                                        : 'rounded px-3 py-1 text-sm font-bold text-slate-600'
+                                    }
+                                  >
+                                    Map
+                                  </button>
+                                  <button
+                                    type="button"
+                                    onClick={() => setMobileView('list')}
+                                    className={
+                                      mobileView === 'list'
+                                        ? 'rounded bg-secondary-300/60 px-3 py-1 text-sm font-bold text-black'
+                                        : 'rounded px-3 py-1 text-sm font-bold text-slate-600'
+                                    }
+                                  >
+                                    Vehicles
+                                  </button>
+                                </div>
 
-                        <div className="min-h-0 flex-1 overflow-hidden">
-                          {mobileView === 'map'
-                            ? primarySection
-                            : secondarySection}
-                        </div>
-                      </div>
-                    )}
+                                <div className="min-h-0 flex-1 overflow-hidden">
+                                  {mobileView === 'map'
+                                    ? primarySection
+                                    : secondarySection}
+                                </div>
+                              </div>
+                            )}
+                          </div>
+                        </>
+                      ) : (
+                        <>
+                          <p className="p-6 text-xl" aria-label="get started">
+                            To get started you must add at least one vehicle to
+                            track.
+                          </p>
+                          <VehicleDeploymentDropdown
+                            className="mx-6 max-h-96 w-96"
+                            scrollable
+                          />
+                        </>
+                      )}
+                    </Layout>
                   </div>
-                </>
-              ) : (
-                <>
-                  <p className="p-6 text-xl" aria-label="get started">
-                    To get started you must add at least one vehicle to track.
-                  </p>
-                  <VehicleDeploymentDropdown
-                    className="mx-6 max-h-96 w-96"
-                    scrollable
-                  />
-                </>
-              )}
-            </Layout>
-          </div>
+                </SelectedKmlLayersProvider>
+              </SelectedTileLayersProvider>
+            </SelectedPolygonsProvider>
+          </MapCameraProvider>
         </SelectedStationsProvider>
       </SelectedPlatformsProvider>
     </SharedPathContextProvider>

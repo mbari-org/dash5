@@ -8,15 +8,15 @@ import {
   useMapEvents,
 } from 'react-leaflet'
 import ReactLeafletGoogleLayer from 'react-leaflet-google-layer'
+const GoogleLayerAny =
+  ReactLeafletGoogleLayer as unknown as React.ComponentType<any>
 import Control from 'react-leaflet-custom-control'
 import L from 'leaflet'
 import 'leaflet/dist/leaflet.css'
 import 'leaflet-measure/dist/leaflet-measure.css'
 import '@mbari/react-ui/dist/mbari-ui.css'
-import '@mbari/react-ui/src/css/base.css'
 import Tippy from '@tippyjs/react'
 import 'tippy.js/dist/tippy.css'
-import MouseCoordinates, { MouseCoordinatesProps } from './MouseCoordinates'
 import { useMapBaseLayer, BaseLayerOption } from './useMapBaseLayer'
 import 'leaflet-mouse-position'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
@@ -33,8 +33,8 @@ import { Measurement } from './Measurement'
 import MovingDot from './MovingDot'
 import { AreaComponent, PathComponent, MeasurementProps } from './Measurement'
 import { CenterView } from './MapViews'
-import { createLogger, loadGoogleMapsOnce } from '@mbari/utils'
-import VehicleColorsModal from '@mbari/lrauv-dash2/components/VehicleColorsModal'
+import type { MapProps } from './Map.types'
+import { createLogger } from '@mbari/utils'
 
 const logger = createLogger('Map')
 
@@ -83,56 +83,7 @@ interface StoredMarker {
   savedToLayer?: boolean
 }
 
-export interface MapProps extends React.HTMLAttributes<HTMLDivElement> {
-  className?: string
-  style?: React.CSSProperties
-  center?: [number, number]
-  centerZoom?: number
-  zoom?: number
-  minZoom?: number
-  maxZoom?: number
-  maxNativeZoom?: number
-  fitBounds?: [[number, number], [number, number]]
-  viewMode?: 'center' | 'bounds' | null
-  scrollWheelZoom?: boolean
-  isAddingMarkers?: boolean
-  onToggleMarkerMode?: () => void
-  onRequestMarkers?: (position?: { top: number; left: number }) => void
-  onRequestDepth?: MouseCoordinatesProps['onRequestDepth']
-  onRequestCoordinate?: () => void
-  onRequestFitBounds?: () => void
-  onRequestPlatforms?: () => void
-  onRequestStations?: (position?: { top: number; left: number }) => void
-  onRequestVehicleColors?: (vehicleName?: string) => void
-  whenCreated?: (map: L.Map) => void
-  onMapReady?: (map: L.Map) => void
-  trackedVehicles?: Array<{ id: string; name: string }>
-  dmsCoord?: string
-  mapCoord?: string
-  children?: React.ReactNode
-  renderMapClickHandler?: (props: {
-    isAddingMarkers: boolean
-    isEditingMarker: boolean
-    onAddMarker: (lat: number, lng: number) => number
-  }) => React.ReactNode
-  renderCustomMarkerSet?: (props: {
-    isAddingMarkers: boolean
-    setIsAddingMarkers: React.Dispatch<React.SetStateAction<boolean>>
-  }) => React.ReactNode
-  renderDraggableMarkers?: (props: {
-    markers: Array<{
-      id: number
-      lat: number
-      lng: number
-      index: number
-      label: string
-    }>
-    handleMarkerDragEnd: (
-      id: number,
-      position: { lat: number; lng: number }
-    ) => void
-  }) => React.ReactNode
-}
+export type { MapProps } from './Map.types'
 
 export type MeasureMode = 'open' | 'measuring' | 'closed' | 'cancelled'
 
@@ -146,7 +97,7 @@ const Map = React.forwardRef<L.Map, MapProps>(
       zoom = 17,
       minZoom = 4,
       maxZoom = 17,
-      maxNativeZoom = 13,
+      maxNativeZoom = 19,
       fitBounds,
       viewMode,
       trackedVehicles = [],
@@ -154,7 +105,6 @@ const Map = React.forwardRef<L.Map, MapProps>(
       isAddingMarkers = false,
       onToggleMarkerMode,
       onRequestMarkers,
-      onRequestDepth,
       onRequestCoordinate,
       onRequestFitBounds,
       onRequestPlatforms,
@@ -177,9 +127,6 @@ const Map = React.forwardRef<L.Map, MapProps>(
     const layersButtonRef = useRef<HTMLButtonElement>(null)
     const [mapReady, setMapReady] = useState(false)
 
-    const [googleMapsStatus, setGoogleMapsStatus] = useState<
-      'pending' | 'loading' | 'loaded' | 'error'
-    >('pending')
     const [isMeasuring, setIsMeasuring] = useState(false)
     const [isAddingMarkersLocal, setIsAddingMarkersLocal] =
       useState(isAddingMarkers)
@@ -190,9 +137,7 @@ const Map = React.forwardRef<L.Map, MapProps>(
       },
       [setBaseLayer]
     )
-    const [showVehicleColorsModal, setShowVehicleColorsModal] = useState(false)
     const vehicleColorsButtonRef = useRef<HTMLButtonElement>(null)
-    const [modalPosition, setModalPosition] = useState({ top: 0, left: 0 })
 
     const validatedCenter: [number, number] =
       Array.isArray(center) &&
@@ -200,87 +145,6 @@ const Map = React.forwardRef<L.Map, MapProps>(
       Number.isFinite(center[1])
         ? center
         : DEFAULT_CENTER
-
-    // Google Maps initialization
-    useEffect(() => {
-      // Only initialize Google Maps after map is ready
-      const handleMapReady = async (event: CustomEvent) => {
-        // Extract the map instance from the event
-        const map = event.detail as L.Map
-        if (!map) {
-          logger.error('Map instance not found in mapready event')
-          setGoogleMapsStatus('error')
-          return
-        }
-
-        // Use safeLogger for non-critical logs
-        safeLogger.debug('Map ready event received, initializing Google Maps')
-        setGoogleMapsStatus('loading')
-
-        try {
-          safeLogger.debug('Loading leaflet.gridlayer.googlemutant...')
-
-          // Load Google Maps API first (this ensures custom elements are registered once)
-          await loadGoogleMapsOnce()
-
-          // Load the Leaflet plugin
-          let GoogleMutant
-          try {
-            GoogleMutant = await import('leaflet.gridlayer.googlemutant')
-          } catch (err) {
-            safeLogger.debug('Trying alternative import path...')
-            try {
-              GoogleMutant = await import('leaflet.gridlayer.googlemutant')
-            } catch (err2) {
-              logger.error('Failed to import from node_modules path:', err2)
-              throw err
-            }
-          }
-
-          if (!window.google) {
-            logger.error('Google Maps API still not available after loading')
-            setGoogleMapsStatus('error')
-            return
-          }
-
-          // Check if Google Maps is already loaded
-          safeLogger.debug('Creating Google Maps layer...')
-          const googleLayer = L.gridLayer.googleMutant({
-            type: 'hybrid',
-            maxZoom: maxZoom,
-            maxNativeZoom: maxNativeZoom,
-          })
-
-          safeLogger.debug('Adding Google Maps layer to map...')
-          googleLayer.addTo(map)
-
-          // Store the layer for future reference
-          // @ts-ignore - Adding custom property
-          map._googleLayer = googleLayer
-
-          setGoogleMapsStatus('loaded')
-          safeLogger.debug('✅ Google Maps layer added successfully!')
-        } catch (error) {
-          setGoogleMapsStatus('error')
-          logger.error('Failed to initialize Google Maps layer:', error)
-        }
-      }
-
-      // Listen for mapReady event
-      if (typeof window !== 'undefined') {
-        window.addEventListener(
-          'mapready',
-          handleMapReady as unknown as EventListener
-        )
-
-        return () => {
-          window.removeEventListener(
-            'mapready',
-            handleMapReady as unknown as EventListener
-          )
-        }
-      }
-    }, [maxZoom, maxNativeZoom])
 
     // Create measurements
     const [measurements, setMeasurements] = useState<
@@ -612,8 +476,8 @@ const Map = React.forwardRef<L.Map, MapProps>(
       if (layersButtonRef.current) {
         const rect = layersButtonRef.current.getBoundingClientRect()
         const position = {
-          top: rect.bottom,
-          left: rect.left,
+          top: rect.top,
+          left: rect.right + 8,
         }
 
         // Pass position to callbacks
@@ -627,14 +491,12 @@ const Map = React.forwardRef<L.Map, MapProps>(
 
     // Handle mouse over event for the Vehicle Colors button
     const handleVehicleColorsClick = () => {
+      let anchor: { top: number; left: number } | undefined
       if (vehicleColorsButtonRef.current) {
         const rect = vehicleColorsButtonRef.current.getBoundingClientRect()
-        setModalPosition({
-          top: rect.bottom + 40,
-          left: rect.left,
-        })
+        anchor = { top: rect.bottom + 40, left: rect.left }
       }
-      setShowVehicleColorsModal(!showVehicleColorsModal)
+      onRequestVehicleColors?.(anchor)
     }
 
     // Remove Measurement
@@ -730,6 +592,18 @@ const Map = React.forwardRef<L.Map, MapProps>(
 
             safeLogger.debug('Map instance created, initializing...')
 
+            // Guard against GoogleMutant async callbacks firing after the map
+            // has been removed. When map.remove() runs, Leaflet nulls
+            // _controlCorners, but GoogleMutant still has pending Google API
+            // callbacks that call _setupAttribution → crash. Patching fire()
+            // on this specific instance to be a no-op once the map is gone is
+            // the least-invasive fix without modifying the library.
+            const origFire = (map as any).fire.bind(map)
+            ;(map as any).fire = (...args: Parameters<typeof map.fire>) => {
+              if (!(map as any)._controlCorners) return map
+              return origFire(...args)
+            }
+
             // Store reference to actual Leaflet map
             mapRef.current = map
 
@@ -799,12 +673,12 @@ const Map = React.forwardRef<L.Map, MapProps>(
           })}
         <ScaleControl position="topright" />
         <LayersControl position="topright">
-          {mapReady && (
+          {mapReady && typeof window !== 'undefined' && window.google?.maps && (
             <LayersControl.BaseLayer
               name="Google Hybrid"
               checked={baseLayer === 'Google Hybrid'}
             >
-              <ReactLeafletGoogleLayer
+              <GoogleLayerAny
                 useGoogMapsLoader={false}
                 type="hybrid"
                 eventHandlers={{
@@ -837,6 +711,7 @@ const Map = React.forwardRef<L.Map, MapProps>(
               <TileLayer
                 attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
                 url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+                maxNativeZoom={maxNativeZoom}
                 eventHandlers={{
                   add: addBaseLayerHandler('OpenStreetmaps'),
                 }}
@@ -851,6 +726,7 @@ const Map = React.forwardRef<L.Map, MapProps>(
               <TileLayer
                 attribution='&copy; <a href="http://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors, &copy; <a href="https://carto.com/attributions">CARTO</a>'
                 url="https://cartodb-basemaps-{s}.global.ssl.fastly.net/dark_nolabels/{z}/{x}/{y}.png"
+                maxNativeZoom={maxNativeZoom}
                 eventHandlers={{
                   add: addBaseLayerHandler('Dark Layer (CARTO)'),
                 }}
@@ -858,9 +734,6 @@ const Map = React.forwardRef<L.Map, MapProps>(
             </LayersControl.BaseLayer>
           )}
         </LayersControl>
-        <Control prepend position="topright">
-          <MouseCoordinates onRequestDepth={onRequestDepth} />
-        </Control>
         {children}
         {/* Single consolidated topleft control: TrackDB/Layers + Center/FitBounds/Markers */}
         <Control position="topleft">
@@ -1234,29 +1107,7 @@ const Map = React.forwardRef<L.Map, MapProps>(
             </Tippy>
           ) : null}
         </Control>
-        {showVehicleColorsModal && (
-          <VehicleColorsModal
-            isOpen={showVehicleColorsModal}
-            onClose={() => setShowVehicleColorsModal(false)}
-            anchorPosition={modalPosition}
-            trackedVehicles={(trackedVehicles || []).map(
-              // If trackedVehicles is array of objects with name property:
-              (vehicle) =>
-                typeof vehicle === 'string' ? vehicle : vehicle.name
-            )}
-          />
-        )}
         <MeasureEvents />
-        {/* {showVehicleColorsModal && (
-          <VehicleColorsModal
-            isOpen={showVehicleColorsModal}
-            onClose={() => setShowVehicleColorsModal(false)}
-            anchorPosition={modalPosition}
-            trackedVehicles={(trackedVehicles || []).map(
-              (vehicle) => vehicle.name
-            )}
-          />
-        )} */}
       </MapContainer>
     )
   }
@@ -1265,3 +1116,5 @@ const Map = React.forwardRef<L.Map, MapProps>(
 Map.displayName = 'Map.Map'
 
 export default Map
+export { default as MapDepthDisplay } from './MapDepthDisplay'
+export type { MapDepthDisplayProps, DepthRequestFn } from './MapDepthDisplay'

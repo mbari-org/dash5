@@ -12,6 +12,7 @@ import { MissionLabel } from './VehicleAssets/MissionLabel'
 import { Comms } from './VehicleAssets/Comms'
 import { ScheduleLabel } from './VehicleAssets/ScheduleLabel'
 import { Gps } from './VehicleAssets/Gps'
+import { ArgosBatteryIndicator } from './VehicleAssets/ArgosBatteryIndicator'
 import { Log } from './VehicleAssets/Log'
 import { VehicleInfo } from './VehicleAssets/VehicleInfo'
 import { NextCommLabel } from './VehicleAssets/NextCommLabel'
@@ -41,6 +42,7 @@ export interface VehicleProps {
   textGps?: string
   colorGps?: string
   textGpsAgo?: string
+  colorArgo?: string
   textSat?: string
   textCommAgo?: string
   colorSatComm?: string
@@ -119,6 +121,7 @@ export const Vehicle: React.FC<VehicleProps> = ({
   textGps,
   colorGps = 'st3',
   textGpsAgo,
+  colorArgo = 'st18',
   textSat,
   textCommAgo,
   colorSatComm = 'st3',
@@ -261,6 +264,8 @@ export const Vehicle: React.FC<VehicleProps> = ({
           colorVolts={colorVolts}
           colorAmps={colorAmps}
         />
+
+        <ArgosBatteryIndicator colorArgo={colorArgo} />
 
         <MissionLabel
           textMission={textMission}

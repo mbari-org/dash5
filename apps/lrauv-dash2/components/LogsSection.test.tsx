@@ -1,6 +1,6 @@
 import '@testing-library/jest-dom'
 import React from 'react'
-import { render, screen, waitFor } from '@testing-library/react'
+import { fireEvent, render, screen, waitFor } from '@testing-library/react'
 import LogsSection from './LogsSection'
 import { QueryClient } from 'react-query'
 import { rest } from 'msw'
@@ -106,5 +106,111 @@ describe('LogsSection', () => {
       screen.getByText(/Received 840 bytes/i)
     })
     expect(screen.getByText(/Received 840 bytes/i)).toBeInTheDocument()
+  })
+
+  test('should hide data events by default', async () => {
+    render(
+      <MockProviders queryClient={new QueryClient()}>
+        <LogsSection
+          vehicleName="triton"
+          from={1657733848418}
+          deploymentLogsOnly={false}
+          setDeploymentLogsOnly={() => {}}
+        />
+      </MockProviders>
+    )
+
+    await waitFor(() => {
+      expect(screen.getByText(/Deployment/i)).toBeInTheDocument()
+    })
+
+    // The mock includes one `dataProcessed` event which maps to the "Data" label.
+    expect(screen.queryByText(/^Data$/)).not.toBeInTheDocument()
+  })
+
+  test('should include data events when checkbox is checked', async () => {
+    render(
+      <MockProviders queryClient={new QueryClient()}>
+        <LogsSection
+          vehicleName="triton"
+          from={1657733848418}
+          deploymentLogsOnly={false}
+          setDeploymentLogsOnly={() => {}}
+        />
+      </MockProviders>
+    )
+
+    await waitFor(() => {
+      expect(
+        screen.getByRole('button', { name: /filter/i })
+      ).toBeInTheDocument()
+    })
+    fireEvent.click(screen.getByRole('button', { name: /filter/i }))
+
+    const checkbox = await waitFor(() =>
+      screen.getByRole('checkbox', {
+        name: /include data events/i,
+      })
+    )
+
+    fireEvent.click(checkbox)
+
+    await waitFor(() => {
+      expect(screen.getByText(/^Data$/)).toBeInTheDocument()
+    })
+  })
+
+  test('shows help when no event types are selected', async () => {
+    render(
+      <MockProviders queryClient={new QueryClient()}>
+        <LogsSection
+          vehicleName="triton"
+          from={1657733848418}
+          deploymentLogsOnly={false}
+          setDeploymentLogsOnly={() => {}}
+        />
+      </MockProviders>
+    )
+
+    await waitFor(() => {
+      expect(
+        screen.getByRole('button', { name: /filter/i })
+      ).toBeInTheDocument()
+    })
+    fireEvent.click(screen.getByRole('button', { name: /filter/i }))
+    fireEvent.click(screen.getByLabelText('select-all'))
+
+    const banner = await waitFor(() => screen.getByRole('status'))
+    expect(banner).toHaveTextContent(
+      /Open Filter and choose at least one type to see logs/i
+    )
+  })
+
+  test('shows no matching events banner when log search matches nothing', async () => {
+    render(
+      <MockProviders queryClient={new QueryClient()}>
+        <LogsSection
+          vehicleName="triton"
+          from={1657733848418}
+          deploymentLogsOnly={false}
+          setDeploymentLogsOnly={() => {}}
+        />
+      </MockProviders>
+    )
+
+    await waitFor(() => {
+      expect(screen.getByText(/Deployment/i)).toBeInTheDocument()
+    })
+
+    fireEvent.click(screen.getByRole('button', { name: /filter/i }))
+    fireEvent.change(screen.getByLabelText('search'), {
+      target: { value: '__no_log_match_xyz__' },
+    })
+
+    const noMatchBanner = await waitFor(() => screen.getByRole('status'), {
+      timeout: 3000,
+    })
+    expect(noMatchBanner).toHaveTextContent(/No matching events/i)
+    expect(noMatchBanner).toHaveTextContent(/Try adjusting Filter or search/i)
   })
 })

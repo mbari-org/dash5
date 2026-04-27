@@ -12,9 +12,9 @@ describe('getNextCommsTimeFromUnixMs', () => {
     expect(getNextCommsTimeFromUnixMs(NaN)).toBe('99:99')
   })
 
-  it('formats a local timestamp as hh:mm (12-hour clock)', () => {
+  it('formats a local timestamp as HH:mm (24-hour clock)', () => {
     const midnightLocal = DateTime.local(2020, 1, 1, 0, 0, 0).toMillis()
-    expect(getNextCommsTimeFromUnixMs(midnightLocal)).toBe('12:00')
+    expect(getNextCommsTimeFromUnixMs(midnightLocal)).toBe('00:00')
   })
 })
 

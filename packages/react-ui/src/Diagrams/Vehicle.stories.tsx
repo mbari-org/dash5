@@ -32,6 +32,7 @@ export const Deployed = Template.bind({})
 Deployed.args = {
   ...args,
   colorMissionDefault: 'st25',
+  colorArgo: 'st27',
   textArrow: '15',
   textThrustTime: '2.8km/hr',
   textReckonDistance: '3.3km in 1.0h',
@@ -118,6 +119,7 @@ Scheduled.args = {
   ...args,
   textVehicle: 'GALENE',
   colorMissionDefault: 'st25',
+  colorArgo: 'st25',
   textArrow: '282',
   textThrustTime: '1.4km/hr',
   textReckonDistance: '1.5km in 1.0h',

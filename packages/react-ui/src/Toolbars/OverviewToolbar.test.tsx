@@ -229,3 +229,34 @@ test('should not render the second support icon if no icon is present', async ()
 
   expect(screen.queryByTestId(/icon2/i)).not.toBeInTheDocument()
 })
+
+test('should render the resources slot when authenticated', async () => {
+  render(
+    <OverviewToolbar
+      {...props}
+      resourcesSlot={<div data-testid="resources-slot">Resources</div>}
+    />
+  )
+  expect(screen.getByTestId('resources-slot')).toBeInTheDocument()
+})
+
+test('should not render the resources slot when unauthenticated', async () => {
+  render(
+    <OverviewToolbar
+      {...props}
+      authenticated={false}
+      resourcesSlot={<div data-testid="resources-slot">Resources</div>}
+    />
+  )
+  expect(screen.queryByTestId('resources-slot')).not.toBeInTheDocument()
+})
+
+test('should render the Recovered pill when recovered is true', async () => {
+  render(<OverviewToolbar {...props} recovered={true} recoveredAt="3h ago" />)
+  expect(screen.getByText(/recovered 3h ago/i)).toBeInTheDocument()
+})
+
+test('should not render the Recovered pill when recovered is false', async () => {
+  render(<OverviewToolbar {...props} recovered={false} />)
+  expect(screen.queryByText(/recovered/i)).not.toBeInTheDocument()
+})

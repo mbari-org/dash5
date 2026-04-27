@@ -23,9 +23,9 @@ export const createRoleLabel = ({
   authenticated,
   loading,
 }: CreateRoleLabelParams) => {
+  if (loading) return '...'
   if (!authenticated && role === 'PIC') return 'Unavailable'
   if (!authenticated && role === 'On-Call') return ''
-  if (loading) return '...'
 
   const operatorCount = operators.length
   if (!operatorCount) return `No ${role}`

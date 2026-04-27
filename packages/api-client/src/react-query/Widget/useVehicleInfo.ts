@@ -11,9 +11,7 @@ import { useSiteConfig } from '../Info/useSiteConfig'
 import axios from 'axios'
 import { useMemo } from 'react'
 
-export interface UseVehicleInfoOptions extends SupportedQueryOptions {
-  refetchInterval?: number
-}
+export interface UseVehicleInfoOptions extends SupportedQueryOptions {}
 
 /**
  * This endpoint does not come from the tethys API, instead it is a placeholder for the formal API and
@@ -66,6 +64,7 @@ export const useVehicleInfo = (
       staleTime: supportedOptions?.staleTime ?? 0,
       enabled: supportedOptions?.enabled !== false && !!params.name,
       ...supportedOptions,
+      refetchInterval: refetchInterval ?? false,
     }
   )
 

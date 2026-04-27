@@ -4,4 +4,5 @@ export interface SupportedQueryOptions {
   baseUrl?: string
   refetchOnWindowFocus?: boolean
   refetchOnReconnect?: boolean
+  refetchInterval?: number | false
 }

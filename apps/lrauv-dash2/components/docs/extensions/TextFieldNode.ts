@@ -1,4 +1,10 @@
-import { Node, mergeAttributes } from '@tiptap/core'
+import {
+  Node,
+  mergeAttributes,
+  type CommandProps,
+  type NodeViewRendererProps,
+} from '@tiptap/core'
+import type { Node as ProseMirrorNode } from '@tiptap/pm/model'
 
 declare module '@tiptap/core' {
   interface Commands<ReturnType> {
@@ -20,16 +26,16 @@ export const TextFieldNode = Node.create({
     return {
       'data-doc-input-id': {
         default: null,
-        parseHTML: (element) =>
-          (element as HTMLElement).getAttribute('data-doc-input-id'),
+        parseHTML: (element: HTMLElement) =>
+          element.getAttribute('data-doc-input-id'),
       },
       value: {
         default: '',
       },
       size: {
         default: 30,
-        parseHTML: (element) => {
-          const attr = (element as HTMLElement).getAttribute('size')
+        parseHTML: (element: HTMLElement) => {
+          const attr = element.getAttribute('size')
           const parsed = attr ? parseInt(attr, 10) : 30
           return isNaN(parsed) ? 30 : parsed
         },
@@ -41,7 +47,7 @@ export const TextFieldNode = Node.create({
     return [
       {
         tag: 'input[type="text"]',
-        getAttrs: (element) => {
+        getAttrs: (element: HTMLElement) => {
           const el = element as HTMLInputElement
           return {
             'data-doc-input-id': el.getAttribute('data-doc-input-id') || null,
@@ -58,7 +64,7 @@ export const TextFieldNode = Node.create({
   },
 
   addNodeView() {
-    return ({ node, getPos, editor }) => {
+    return ({ node, getPos, editor }: NodeViewRendererProps) => {
       const dom = document.createElement('input')
       dom.type = 'text'
       dom.value = (node.attrs.value as string) || ''
@@ -96,7 +102,7 @@ export const TextFieldNode = Node.create({
           // Ensure the input handles its own key events (e.g., Backspace)
           return !!target && (target === dom || dom.contains(target))
         },
-        update: (updatedNode) => {
+        update: (updatedNode: ProseMirrorNode) => {
           if (updatedNode.type.name !== this.name) return false
           dom.value = (updatedNode.attrs.value as string) || ''
           dom.setAttribute('size', String(updatedNode.attrs.size || size))
@@ -125,7 +131,7 @@ export const TextFieldNode = Node.create({
     return {
       insertTextField:
         (value = '', size = 30) =>
-        ({ chain }) => {
+        ({ chain }: CommandProps) => {
           return chain()
             .insertContent({
               type: this.name,

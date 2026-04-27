@@ -53,6 +53,7 @@ export const useInsertTempMission = ({
     const { category, name } = parseMissionPath(missionPath)
     const temporaryMission: Mission = {
       id: missionPath,
+      missionPath,
       category,
       name,
       description: eventData,

@@ -14,6 +14,8 @@ export interface LogFiltersDropdownProps {
   onSearchChange: (value: string) => void
   onDismiss?: () => void
   placeholder?: string
+  includeDataEvents?: boolean
+  onIncludeDataEventsChange?: (next: boolean) => void
 }
 
 const styles = {
@@ -37,15 +39,18 @@ export const LogFiltersDropdown: React.FC<LogFiltersDropdownProps> = ({
   onSearchChange,
   onDismiss = () => undefined,
   placeholder = 'Search',
+  includeDataEvents = false,
+  onIncludeDataEventsChange,
 }) => {
   const ref = useRef<HTMLElement | null>(null)
   useOnClickOutside(ref, onDismiss)
 
-  const allIds = options.map((o) => o.id)
-  const allChecked = selectedIds.length === allIds.length && allIds.length > 0
+  const baseIds = options.map((o) => o.id)
+  const allChecked =
+    baseIds.length > 0 && baseIds.every((id) => selectedIds.includes(id))
 
   const handleAllClick = (checked: boolean) => {
-    const next = checked ? allIds : []
+    const next = checked ? baseIds : []
     onChange(next)
   }
 
@@ -78,6 +83,33 @@ export const LogFiltersDropdown: React.FC<LogFiltersDropdownProps> = ({
         <li>
           <hr />
         </li>
+
+        {onIncludeDataEventsChange ? (
+          <>
+            <li>
+              <label
+                className={clsx(
+                  styles.rowBtn,
+                  styles.cellPadding,
+                  'cursor-pointer'
+                )}
+                htmlFor="logfilters-include-data-events"
+              >
+                <input
+                  id="logfilters-include-data-events"
+                  type="checkbox"
+                  checked={includeDataEvents}
+                  onChange={(e) => onIncludeDataEventsChange(e.target.checked)}
+                  className={styles.checkbox}
+                />
+                <span className="w-full">Include Data Events</span>
+              </label>
+            </li>
+            <li>
+              <hr />
+            </li>
+          </>
+        ) : null}
 
         {/* All checkbox */}
         <li>

@@ -14,3 +14,11 @@ export * from './Icons'
 export * from './PopUps'
 export * from './Tables'
 export * from './Map/useMapBaseLayer'
+export type { CommandType, Coordinates } from './types'
+export type { MapProps } from './Map/Map.types'
+export type {
+  MapDepthDisplayProps,
+  DepthRequestFn,
+} from './Map/MapDepthDisplay'
+export { RefreshButton } from './Map/RefreshButton'
+export type { RefreshButtonProps } from './Map/RefreshButton'

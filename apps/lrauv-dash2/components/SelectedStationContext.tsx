@@ -10,7 +10,7 @@ import { createLogger } from '@mbari/utils'
 const logger = createLogger('SelectedStationsContext')
 
 // Define or import the Station type
-interface Station {
+export interface Station {
   name: string
   lat: number
   lon: number
@@ -19,6 +19,10 @@ interface Station {
       type: string
       coordinates: [number, number]
     }
+    properties?: {
+      color?: string
+      weight?: number
+    }
   }
 }
 
@@ -26,6 +30,10 @@ export interface SelectedStationsContextProps {
   selectedStations: Station[]
   setSelectedStations: React.Dispatch<React.SetStateAction<Station[]>>
   toggleStation: (station: Station) => void
+  starredStations: string[]
+  toggleStarStation: (name: string) => void
+  highlightedStationName: string | null
+  setHighlightedStationName: React.Dispatch<React.SetStateAction<string | null>>
   debug: {
     providerId: string
     instanceCount: number
@@ -40,6 +48,7 @@ const SelectedStationsContext = createContext<
 let instanceCounter = 0
 // Key for localStorage
 const STORAGE_KEY = 'selectedStations'
+const STARRED_STORAGE_KEY = 'starredStations'
 
 export const SelectedStationsProvider: React.FC<{
   children: React.ReactNode
@@ -58,6 +67,78 @@ export const SelectedStationsProvider: React.FC<{
     }
     return []
   })
+
+  const [starredStations, setStarredStations] = useState<string[]>(() => {
+    if (typeof window !== 'undefined') {
+      try {
+        const stored = localStorage.getItem(STARRED_STORAGE_KEY)
+        if (!stored) {
+          return []
+        }
+        const parsed = JSON.parse(stored)
+        return Array.isArray(parsed) ? parsed : []
+      } catch {
+        return []
+      }
+    }
+    return []
+  })
+
+  const [highlightedStationName, setHighlightedStationName] = useState<
+    string | null
+  >(null)
+
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      localStorage.setItem(STARRED_STORAGE_KEY, JSON.stringify(starredStations))
+    }
+  }, [starredStations])
+
+  // Sync starredStations across tabs and on tab re-focus (mirrors the
+  // selectedStations cross-tab sync logic already present in this provider).
+  useEffect(() => {
+    if (typeof window === 'undefined') return
+
+    const parseStarred = (raw: string | null): string[] => {
+      try {
+        if (!raw) return []
+        const parsed = JSON.parse(raw)
+        return Array.isArray(parsed) ? parsed : []
+      } catch {
+        return []
+      }
+    }
+
+    const handleStorageChange = (e: StorageEvent) => {
+      if (e.key !== STARRED_STORAGE_KEY) return
+      const next = parseStarred(e.newValue)
+      setStarredStations((current) =>
+        JSON.stringify(current) === JSON.stringify(next) ? current : next
+      )
+    }
+
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'visible') {
+        const next = parseStarred(localStorage.getItem(STARRED_STORAGE_KEY))
+        setStarredStations((current) =>
+          JSON.stringify(current) === JSON.stringify(next) ? current : next
+        )
+      }
+    }
+
+    window.addEventListener('storage', handleStorageChange)
+    document.addEventListener('visibilitychange', handleVisibilityChange)
+    return () => {
+      window.removeEventListener('storage', handleStorageChange)
+      document.removeEventListener('visibilitychange', handleVisibilityChange)
+    }
+  }, [])
+
+  const toggleStarStation = (name: string) => {
+    setStarredStations((prev) =>
+      prev.includes(name) ? prev.filter((n) => n !== name) : [...prev, name]
+    )
+  }
 
   const providerId = useRef(
     `provider-${Date.now()}-${++instanceCounter}`
@@ -179,7 +260,6 @@ export const SelectedStationsProvider: React.FC<{
       // logger.debug('New count:', updated.length)
       return updated
     })
-    // console.groupEnd()
   }
 
   return (
@@ -188,6 +268,10 @@ export const SelectedStationsProvider: React.FC<{
         selectedStations,
         setSelectedStations,
         toggleStation,
+        starredStations,
+        toggleStarStation,
+        highlightedStationName,
+        setHighlightedStationName,
         debug: {
           providerId,
           instanceCount: instanceCounter,

@@ -1,8 +1,9 @@
 import dynamic from 'next/dynamic'
+import { useRouter } from 'next/router'
 import React, { useCallback, useState, useRef, useEffect, useMemo } from 'react'
 import { useManagedWaypoints } from '@mbari/react-ui'
 import useGoogleElevator from '../lib/useGoogleElevator'
-import { VPosDetail } from '@mbari/api-client'
+import { VPosDetail, useStations } from '@mbari/api-client'
 import { MapLayersListModal } from '../components/MapLayersListModal'
 import { useSelectedStations } from './SelectedStationContext'
 import { useMarkers } from './MarkerContext'
@@ -10,8 +11,9 @@ import { PlatformsListModal } from './PlatformsListModal'
 import toast from 'react-hot-toast'
 import { createLogger } from '@mbari/utils'
 import VehicleColorsModal from './VehicleColorsModal'
+import { MapRefreshButton } from './MapRefreshButton'
 import useTrackedVehicles from '../lib/useTrackedVehicles'
-import { useDepthRequest } from '@mbari/utils/useDepthRequest'
+import { useRefreshPositions } from '../lib/useRefreshPositions'
 
 // This is a tricky workaround to prevent leaflet from crashing next.js
 // SSR. If we don't do this, the leaflet map will be loaded server side
@@ -19,6 +21,14 @@ import { useDepthRequest } from '@mbari/utils/useDepthRequest'
 const Map = dynamic(() => import('@mbari/react-ui/dist/Map/Map'), {
   ssr: false,
 })
+
+const MapDepthDisplay = dynamic(
+  () =>
+    import('@mbari/react-ui/dist/Map/Map').then((m) => ({
+      default: m.MapDepthDisplay,
+    })),
+  { ssr: false }
+)
 const DraggableMarker = dynamic(() => import('./DraggableMarker'), {
   ssr: false,
 })
@@ -31,6 +41,9 @@ const VehiclePath = dynamic(() => import('./VehiclePath'), {
 const WaypointPreviewPath = dynamic(() => import('./WaypointPreviewPath'), {
   ssr: false,
 })
+const WaypointMapMarker = dynamic(() => import('./WaypointMapMarker'), {
+  ssr: false,
+})
 const StationMarker = dynamic(() => import('../components/StationMarker'), {
   ssr: false,
 })
@@ -38,6 +51,18 @@ const MapClickHandler = dynamic(() => import('./MapClickHandler'), {
   ssr: false,
 })
 const CustomMarkerSet = dynamic(() => import('./CustomMarkerSet'), {
+  ssr: false,
+})
+const MapFlyTo = dynamic(() => import('./MapFlyTo'), {
+  ssr: false,
+})
+const PolygonLayers = dynamic(() => import('./PolygonLayers'), {
+  ssr: false,
+})
+const TileLayerOverlays = dynamic(() => import('./TileLayerOverlays'), {
+  ssr: false,
+})
+const KmlLayers = dynamic(() => import('./KmlLayers'), {
   ssr: false,
 })
 const PlatformPaths = dynamic(
@@ -64,42 +89,74 @@ const DeploymentMap: React.FC<DeploymentMapProps> = ({
   startTime,
   endTime,
 }) => {
+  const router = useRouter()
   const mapRef = useRef<any>(null)
   const {
     updatedWaypoints,
     handleWaypointsUpdate,
+    clearWaypoint,
     editable,
     focusedWaypointIndex,
   } = useManagedWaypoints()
   const handleDragEnd = useCallback(
-    (index: number, { lat, lng }: { lat: number; lng: number }) =>
-      handleWaypointsUpdate(
+    (index: number, { lat, lng }: { lat: number; lng: number }) => {
+      const roundedLat = Number(lat.toFixed(5))
+      const roundedLng = Number(lng.toFixed(5))
+      return handleWaypointsUpdate(
         updatedWaypoints.map((m, i) =>
-          i === index ? { ...m, lat: lat.toString(), lon: lng.toString() } : m
+          i === index
+            ? {
+                ...m,
+                lat: roundedLat.toString(),
+                lon: roundedLng.toString(),
+                stationName: 'Custom',
+              }
+            : m
         )
-      ),
+      )
+    },
     [updatedWaypoints, handleWaypointsUpdate]
   )
-  const { handleDepthRequest, elevationAvailable } = useGoogleElevator()
-  // Depth request hook
-  const { handleDepthRequestWithFeedback } = useDepthRequest(
-    handleDepthRequest,
-    {
-      warningToastId: 'depth-unavailable',
-      errorToastId: 'depth-result',
-      loadingToastId: 'depth-loading',
-      warningToastClass: 'blue-toast',
-      toastDuration: 5000,
-    }
-  )
 
-  // Filter out waypoints with NaN lat/lon
-  const plottedWaypoints = updatedWaypoints.filter(
-    (wp) => ![wp.lat?.toLowerCase(), wp.lon?.toLowerCase()].includes('nan')
+  const { handleDepthRequest } = useGoogleElevator()
+
+  // Keep original indices so drag/delete updates target the correct waypoint
+  // even when some waypoints are filtered out from map rendering.
+  const plottedWaypoints = useMemo(
+    () =>
+      updatedWaypoints
+        .map((waypoint, originalIndex) => ({ waypoint, originalIndex }))
+        .filter(
+          ({ waypoint }) =>
+            !!waypoint.lat?.trim() &&
+            !!waypoint.lon?.trim() &&
+            ![
+              waypoint.lat?.trim().toLowerCase(),
+              waypoint.lon?.trim().toLowerCase(),
+            ].includes('nan')
+        ),
+    [updatedWaypoints]
   )
 
   const { trackedVehicles } = useTrackedVehicles()
   const [showAll, setShowAll] = useState(true)
+
+  const vehiclesToRefresh = vehicleName
+    ? [vehicleName]
+    : trackedVehicles.map((v) => (typeof v === 'string' ? v : v))
+  const {
+    refreshAll,
+    lastRefreshed,
+    loading: refreshLoading,
+    markInitialLoadDone,
+  } = useRefreshPositions(vehiclesToRefresh, {
+    autoRefreshMinutes: 10,
+    // Use vehicle's time range so toast counts match the map
+    preferredParams:
+      vehicleName && startTime != null
+        ? { [vehicleName]: { from: startTime, to: endTime ?? undefined } }
+        : undefined,
+  })
   const [isTimelineScrubbing, setIsTimelineScrubbing] = useState(false)
   const [center, setCenter] = useState<undefined | [number, number]>()
   const [centerZoom, setCenterZoom] = useState<number | undefined>(undefined)
@@ -113,8 +170,31 @@ const DeploymentMap: React.FC<DeploymentMapProps> = ({
   const [showLayersModal, setShowLayersModal] = useState(false)
   const [showVehicleColors, setShowVehicleColors] = useState(false)
   const [showPlatformsModal, setShowPlatformsModal] = useState(false)
-  const { selectedStations } = useSelectedStations()
+  const { selectedStations, highlightedStationName } = useSelectedStations()
+  const { data: allStations } = useStations()
+
+  // When a starred-but-unselected station is hovered, find its coords so we
+  // can render the spotlight rings even though it has no StationMarker.
+  const spotlightOnlyCoords = useMemo(() => {
+    if (!highlightedStationName) return null
+    if (selectedStations.some((s) => s.name === highlightedStationName))
+      return null
+    const found = allStations?.find((s) => s.name === highlightedStationName)
+    if (!found) return null
+    const coords = found.geojson?.geometry?.coordinates
+    if (
+      !coords ||
+      !Number.isFinite(coords[1] as number) ||
+      !Number.isFinite(coords[0] as number)
+    )
+      return null
+    return { lat: coords[1] as number, lon: coords[0] as number }
+  }, [highlightedStationName, selectedStations, allStations])
   const [colorModalOpen, setColorModalOpen] = useState(false)
+  const [waypointFitTrigger, setWaypointFitTrigger] = useState(0)
+  const prevFocusedWaypointIndexRef = useRef<number | null | undefined>(
+    undefined
+  )
   const [colorModalPosition, setColorModalPosition] = useState<{
     top: number
     left: number
@@ -148,6 +228,16 @@ const DeploymentMap: React.FC<DeploymentMapProps> = ({
       latestVehicle.current = vehicleName
     }
   }, [vehicleName, setLatestGPS])
+
+  // Bump fitTrigger when leaving waypoint focus mode so WaypointPreviewPath
+  // re-fits bounds even when the route coordinates didn't change.
+  useEffect(() => {
+    const prev = prevFocusedWaypointIndexRef.current
+    if (typeof prev === 'number' && focusedWaypointIndex == null) {
+      setWaypointFitTrigger((n) => n + 1)
+    }
+    prevFocusedWaypointIndexRef.current = focusedWaypointIndex
+  }, [focusedWaypointIndex])
 
   useEffect(() => {
     if (mapRef?.current && !showVehicleColors) {
@@ -477,20 +567,17 @@ const DeploymentMap: React.FC<DeploymentMapProps> = ({
     setShowLayersModal(false)
   }, [])
 
-  const handleVehicleColorRequest = useCallback(() => {
-    // Add debugging to verify values
-    logger.debug('Opening color modal with:', {
-      vehicleName,
-      trackedVehicles,
-      modalTrackedVehicles: vehicleName ? [vehicleName] : [],
-    })
-
-    setColorModalPosition({
-      top: 100,
-      left: 100,
-    })
-    setColorModalOpen(true)
-  }, [vehicleName, trackedVehicles])
+  const handleVehicleColorRequest = useCallback(
+    (anchor?: { top: number; left: number }) => {
+      if (anchor) {
+        setColorModalPosition(anchor)
+      } else {
+        setColorModalPosition({ top: 100, left: 100 })
+      }
+      setColorModalOpen(true)
+    },
+    []
+  )
 
   const handleCloseVehicleColors = useCallback((vehicleName?: string) => {
     setShowVehicleColors(false)
@@ -550,119 +637,135 @@ const DeploymentMap: React.FC<DeploymentMapProps> = ({
       {showPlatformsModal ? (
         <PlatformsListModal onClose={handleClosePlatforms} />
       ) : null}
-      <Map
-        ref={mapRef}
-        className="h-full min-h-0 w-full"
-        maxZoom={17}
-        onMapReady={(map) => {
-          logger.debug('Map is ready!')
-          mapRef.current = map
-        }}
-        onRequestDepth={async (lat, lng) => {
-          const result = await handleDepthRequestWithFeedback(lat, lng)
-          return result.depth ?? 0
-        }}
-        center={center}
-        centerZoom={centerZoom}
-        fitBounds={bounds}
-        viewMode={viewMode}
-        onRequestCoordinate={handleCoordinateRequest}
-        onRequestPlatforms={handlePlatformsRequest}
-        onRequestFitBounds={handleFitBoundsRequest}
-        onRequestStations={handleLayersRequest}
-        onRequestVehicleColors={handleVehicleColorRequest}
-        isAddingMarkers={isAddingMarkers}
-        onToggleMarkerMode={handleToggleMarkerMode}
-        onRequestMarkers={handleMarkersRequest}
-        renderMapClickHandler={() => (
-          <MapClickHandler
-            isAddingMarkers={isAddingMarkers}
-            isEditingMarker={false}
-            onAddMarker={handleAddMarker}
+      <div className="relative h-full min-h-0 w-full">
+        <Map
+          key={`deployment-map-${router.asPath}-${vehicleName ?? 'unknown'}`}
+          ref={mapRef}
+          className="h-full min-h-0 w-full"
+          maxZoom={17}
+          onMapReady={(map) => {
+            logger.debug('Map is ready!')
+            mapRef.current = map
+            ;[200, 800].forEach((delay) => {
+              setTimeout(() => {
+                try {
+                  map.invalidateSize()
+                } catch (e) {
+                  logger.warn('Could not invalidate map size:', e)
+                }
+              }, delay)
+            })
+          }}
+          center={center}
+          centerZoom={centerZoom}
+          fitBounds={bounds}
+          viewMode={viewMode}
+          onRequestCoordinate={handleCoordinateRequest}
+          onRequestPlatforms={handlePlatformsRequest}
+          onRequestFitBounds={handleFitBoundsRequest}
+          onRequestStations={handleLayersRequest}
+          onRequestVehicleColors={handleVehicleColorRequest}
+          isAddingMarkers={isAddingMarkers}
+          onToggleMarkerMode={handleToggleMarkerMode}
+          onRequestMarkers={handleMarkersRequest}
+          renderMapClickHandler={() => (
+            <MapClickHandler
+              isAddingMarkers={isAddingMarkers}
+              isEditingMarker={false}
+              onAddMarker={handleAddMarker}
+            />
+          )}
+          renderCustomMarkerSet={() => (
+            <CustomMarkerSet
+              isAddingMarkers={isAddingMarkers}
+              setIsAddingMarkers={(value) => setIsAddingMarkers(value)}
+            />
+          )}
+          renderDraggableMarkers={() =>
+            markers?.map(
+              (marker) =>
+                // Only render the marker if visible or if visibility !== false
+                marker.visible !== false && (
+                  <DraggableMarker
+                    key={`marker-${marker.id}`}
+                    id={marker.id.toString()}
+                    position={[marker.lat, marker.lng]}
+                    index={marker.index}
+                    label={marker.label}
+                    draggable={true}
+                    isSelected={selectedMarkerId === marker.id.toString()}
+                    isNew={marker.isNew}
+                    savedToLayer={marker.savedToLayer}
+                    iconColor={marker.iconColor || defaultMarkerColor}
+                    onClick={() => handleMarkerClick(marker.id.toString())}
+                    onDragEnd={(newPos) =>
+                      handleMarkerPositionChange(marker.id.toString(), newPos)
+                    }
+                    onEditStateChange={(isEditing) => {
+                      setActiveEditMarkerId(
+                        isEditing ? marker.id.toString() : null
+                      )
+                    }}
+                    onEdit={() => handleEditMarker(marker.id.toString())}
+                    onDelete={() => handleDeleteMarker(marker.id.toString())}
+                    onColorChange={(color) =>
+                      handleMarkerColorChange(marker.id.toString(), color)
+                    }
+                    onSaveToLayer={handleSaveMarkerToLayer}
+                    onRemoveFromLayer={(id) =>
+                      handleSaveMarkerToLayer(id, false)
+                    }
+                  />
+                )
+            )
+          }
+        >
+          <MapDepthDisplay
+            depthRequest={handleDepthRequest}
+            options={{
+              warningToastId: 'depth-unavailable',
+              errorToastId: 'depth-result',
+              loadingToastId: 'depth-loading',
+              warningToastClass: 'blue-toast',
+              toastDuration: 5000,
+            }}
           />
-        )}
-        renderCustomMarkerSet={() => (
-          <CustomMarkerSet
-            isAddingMarkers={isAddingMarkers}
-            setIsAddingMarkers={(value) => setIsAddingMarkers(value)}
-          />
-        )}
-        renderDraggableMarkers={() =>
-          markers?.map(
-            (marker) =>
-              // Only render the marker if visible or if visibility !== false
-              marker.visible !== false && (
-                <DraggableMarker
-                  key={`marker-${marker.id}`}
-                  id={marker.id.toString()}
-                  position={[marker.lat, marker.lng]}
-                  index={marker.index}
-                  label={marker.label}
-                  draggable={true}
-                  isSelected={selectedMarkerId === marker.id.toString()}
-                  isNew={marker.isNew}
-                  savedToLayer={marker.savedToLayer}
-                  iconColor={marker.iconColor || defaultMarkerColor}
-                  onClick={() => handleMarkerClick(marker.id.toString())}
-                  onDragEnd={(newPos) =>
-                    handleMarkerPositionChange(marker.id.toString(), newPos)
-                  }
-                  onEditStateChange={(isEditing) => {
-                    setActiveEditMarkerId(
-                      isEditing ? marker.id.toString() : null
-                    )
-                  }}
-                  onEdit={() => handleEditMarker(marker.id.toString())}
-                  onDelete={() => handleDeleteMarker(marker.id.toString())}
-                  onColorChange={(color) =>
-                    handleMarkerColorChange(marker.id.toString(), color)
-                  }
-                  onSaveToLayer={handleSaveMarkerToLayer}
-                  onRemoveFromLayer={(id) => handleSaveMarkerToLayer(id, false)}
-                />
-              )
-          )
-        }
-      >
-        {selectedStations.map((station) => {
-          const lng = station.geojson.geometry.coordinates[0]
-          const lat = station.geojson.geometry.coordinates[1]
+          {selectedStations.map((station) => {
+            const lng = station.geojson.geometry.coordinates[0]
+            const lat = station.geojson.geometry.coordinates[1]
 
-          if (!lng || !lat) return null
-          return (
+            if (
+              lng == null ||
+              lat == null ||
+              !Number.isFinite(lng) ||
+              !Number.isFinite(lat)
+            )
+              return null
+            return (
+              <StationMarker
+                key={station.name}
+                name={station.name}
+                lat={lat}
+                lng={lng}
+                color={station.geojson.properties?.color}
+                isHighlighted={highlightedStationName === station.name}
+              />
+            )
+          })}
+          {spotlightOnlyCoords && (
             <StationMarker
-              key={station.name}
-              name={station.name}
-              lat={lat}
-              lng={lng}
+              key={`spotlight-${highlightedStationName}`}
+              name={highlightedStationName ?? ''}
+              lat={spotlightOnlyCoords.lat}
+              lng={spotlightOnlyCoords.lon}
+              isHighlighted={true}
             />
-          )
-        })}
-        <PlatformPaths />
-        {plottedWaypoints?.length ? (
-          <>
-            {/* TODO: {plottedWaypoints.map((m, i) => {
-              const index = Number(m.latName.match(/\d+/)?.[0] ?? i)
-              return (
-                <DraggableMarker
-                  lat={Number(m.lat)}
-                  lng={Number(m.lon)}
-                  key={`${m.latName}-${m.lonName}-${m.lat}-${m.lon}`}
-                  index={index - 1}
-                  draggable={editable && !focusedWaypointIndex}
-                  onDragEnd={handleDragEnd}
-                />
-              )
-            })} */}
-            {!!focusedWaypointIndex && <ClickableMapPoint />}
-            <WaypointPreviewPath
-              waypoints={plottedWaypoints.map((wp) => ({
-                lat: Number(wp.lat),
-                lon: Number(wp.lon),
-              }))}
-            />
-          </>
-        ) : (
+          )}
+          <PolygonLayers />
+          <TileLayerOverlays />
+          <KmlLayers />
+          <PlatformPaths />
+          <MapFlyTo />
           <VehiclePath
             name={vehicleName as string}
             key={`path${vehicleName}`}
@@ -671,19 +774,61 @@ const DeploymentMap: React.FC<DeploymentMapProps> = ({
             indicatorTime={indicatorTime}
             onScrub={handleMapScrub}
             onGPSFix={handleGPSFix}
+            onPositionDataLoaded={markInitialLoadDone}
             // Disable map auto-fit centering when scrubbing the timeline
             disableAutoFit={isTimelineScrubbing}
           />
-        )}
-        <VehicleColorsModal
-          isOpen={colorModalOpen}
-          onClose={() => setColorModalOpen(false)}
-          anchorPosition={colorModalPosition}
-          trackedVehicles={vehicleName ? [vehicleName] : []}
-          activeVehicle={vehicleName || undefined}
-          forceShowAll={true}
+          {plottedWaypoints?.length ? (
+            <>
+              {plottedWaypoints.map(({ waypoint, originalIndex }) => {
+                const waypointNumber = Number(
+                  waypoint.latName?.match(/\d+/)?.[0] ?? originalIndex + 1
+                )
+                return (
+                  <WaypointMapMarker
+                    key={`waypoint-${originalIndex}-${waypoint.latName}-${waypoint.lonName}-${waypoint.lat}-${waypoint.lon}`}
+                    position={[Number(waypoint.lat), Number(waypoint.lon)]}
+                    number={waypointNumber}
+                    draggable={editable && focusedWaypointIndex == null}
+                    onDragEnd={(newPos) =>
+                      handleDragEnd(originalIndex, {
+                        lat: newPos[0],
+                        lng: newPos[1],
+                      })
+                    }
+                    onDelete={
+                      editable ? () => clearWaypoint(originalIndex) : undefined
+                    }
+                  />
+                )
+              })}
+              {typeof focusedWaypointIndex === 'number' && (
+                <ClickableMapPoint />
+              )}
+              <WaypointPreviewPath
+                waypoints={plottedWaypoints.map(({ waypoint }) => ({
+                  lat: Number(waypoint.lat),
+                  lon: Number(waypoint.lon),
+                }))}
+                fitTrigger={waypointFitTrigger}
+              />
+            </>
+          ) : null}
+        </Map>
+        <MapRefreshButton
+          onClick={refreshAll}
+          loading={refreshLoading}
+          lastRefreshed={lastRefreshed}
         />
-      </Map>
+      </div>
+      <VehicleColorsModal
+        isOpen={colorModalOpen}
+        onClose={() => setColorModalOpen(false)}
+        anchorPosition={colorModalPosition}
+        trackedVehicles={vehicleName ? [vehicleName] : []}
+        activeVehicle={vehicleName || undefined}
+        forceShowAll={true}
+      />
     </div>
   )
 }

@@ -8,7 +8,12 @@ import {
 } from '@fortawesome/free-solid-svg-icons'
 import { IconDefinition, IconProp } from '@fortawesome/fontawesome-svg-core'
 import { capitalize, swallow } from '@mbari/utils'
-import { Dropdown, IconButton, RoleReassignButton } from '../Navigation'
+import {
+  Dropdown,
+  IconButton,
+  RecoveredPill,
+  RoleReassignButton,
+} from '../Navigation'
 import { DateTime } from 'luxon'
 
 export interface DeploymentInfo {
@@ -36,6 +41,9 @@ export interface OverviewToolbarProps {
   authenticated?: boolean
   loadingPicAndOnCall?: boolean
   onSelectDeployment?: (deployment: DeploymentInfo) => void
+  recovered?: boolean
+  recoveredAt?: string
+  resourcesSlot?: React.ReactNode
 }
 
 const styles = {
@@ -72,6 +80,9 @@ export const OverviewToolbar: React.FC<OverviewToolbarProps> = ({
   onIcon2hover,
   authenticated,
   loadingPicAndOnCall,
+  recovered,
+  recoveredAt,
+  resourcesSlot,
 }) => {
   const [hovering, setHovering] = useState<HoverOption>(null)
   const [showDeployments, setShowDeployments] = useState(false)
@@ -149,6 +160,14 @@ export const OverviewToolbar: React.FC<OverviewToolbarProps> = ({
             />
           )}
         </li>
+        {recovered && (
+          <li className="ml-3 flex items-center">
+            <RecoveredPill
+              recoveredAt={recoveredAt}
+              className="rounded-full bg-green-100 px-3 py-1 text-sm font-semibold text-green-800"
+            />
+          </li>
+        )}
         {onEditDeployment ? (
           <li data-testid="deploymentDetails" className="ml-2">
             <IconButton
@@ -160,6 +179,14 @@ export const OverviewToolbar: React.FC<OverviewToolbarProps> = ({
             />
           </li>
         ) : null}
+        {recovered && (
+          <li
+            className="ml-3 rounded-full bg-green-100 px-3 py-1 text-xs font-semibold text-green-800"
+            title={recoveredAt ? `Recovered ${recoveredAt}` : 'Recovered'}
+          >
+            Recovered
+          </li>
+        )}
       </ul>
       <ul className={styles.rightWrapper}>
         {onRoleReassign && (
@@ -173,6 +200,9 @@ export const OverviewToolbar: React.FC<OverviewToolbarProps> = ({
               onRoleReassign={onRoleReassign}
             />
           </li>
+        )}
+        {authenticated && resourcesSlot && (
+          <li className="relative pr-2">{resourcesSlot}</li>
         )}
         {onIcon1hover && supportIcon1 ? (
           <li className="relative p-4">

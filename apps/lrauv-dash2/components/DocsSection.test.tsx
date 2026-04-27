@@ -61,7 +61,7 @@ describe('DocsSection', () => {
     expect(() =>
       render(
         <MockProviders queryClient={new QueryClient()}>
-          <DocsSection />
+          <DocsSection vehicleName="pontus" />
         </MockProviders>
       )
     ).not.toThrow()
@@ -70,7 +70,7 @@ describe('DocsSection', () => {
   test('should render the name of one of the documents', async () => {
     render(
       <MockProviders queryClient={new QueryClient()}>
-        <DocsSection />
+        <DocsSection vehicleName="pontus" />
       </MockProviders>
     )
     await waitFor(() => {
@@ -82,7 +82,7 @@ describe('DocsSection', () => {
   test('should not render the add note button if not authenticated', async () => {
     render(
       <MockProviders queryClient={new QueryClient()}>
-        <DocsSection />
+        <DocsSection vehicleName="pontus" />
       </MockProviders>
     )
     expect(screen.queryByText(/add document/i)).not.toBeInTheDocument()
@@ -91,7 +91,7 @@ describe('DocsSection', () => {
   test('should render the add document button if authenticated', async () => {
     render(
       <MockProviders queryClient={new QueryClient()}>
-        <DocsSection authenticated />
+        <DocsSection vehicleName="pontus" authenticated />
       </MockProviders>
     )
     expect(screen.getByText(/add document/i)).toBeInTheDocument()

@@ -79,6 +79,7 @@ export interface GetVehicleInfoResponse {
   color_missiondefault: string
   text_volts: string
   color_volts: string
+  color_argo?: string
   not_found: boolean
 }
 

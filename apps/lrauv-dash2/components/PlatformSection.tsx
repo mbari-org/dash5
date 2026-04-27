@@ -124,6 +124,10 @@ export const PlatformSection: React.FC<PlatformSectionProps> = ({
                         height={16}
                         className="mr-2 h-4 w-auto"
                         alt={`${item.name} - ${item.typeName} icon`}
+                        onError={(e) => {
+                          ;(e.currentTarget as HTMLImageElement).style.display =
+                            'none'
+                        }}
                       />
                     )}
                     <span className="text-sm font-medium">

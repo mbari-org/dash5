@@ -1,30 +1,31 @@
-import { useTethysApiContext } from '@mbari/api-client'
 import { useState, useEffect } from 'react'
-import { Loader } from '@googlemaps/js-api-loader'
 
+/**
+ * Simple "is Google Maps available" hook. Does not load or inject Google;
+ * the provider/initializer is the only loader.
+ */
 export const useGoogleMaps = () => {
-  const { siteConfig } = useTethysApiContext()
-  const googleMapsApiKey = siteConfig?.appConfig.googleApiKey
+  const [mapsLoaded, setMapsLoaded] = useState(
+    typeof window !== 'undefined' && !!window.google?.maps
+  )
 
-  const [mapsLoaded, setMapsLoaded] = useState(false)
   useEffect(() => {
-    if (typeof google !== 'undefined' && !mapsLoaded) {
+    if (typeof window === 'undefined') return
+
+    if (window.google?.maps) {
       setMapsLoaded(true)
+      return
     }
-    if (!googleMapsApiKey || mapsLoaded || typeof google !== 'undefined') return
-    new Loader({
-      apiKey: googleMapsApiKey,
-      version: 'weekly',
-      libraries: ['elevation'],
-    })
-      .importLibrary('elevation')
-      .then(() => {
+
+    const id = setInterval(() => {
+      if (window.google?.maps) {
+        clearInterval(id)
         setMapsLoaded(true)
-      })
-      .catch((e) => {
-        console.warn('Error loading Google Maps API', e)
-      })
-  }, [googleMapsApiKey, mapsLoaded, setMapsLoaded])
+      }
+    }, 200)
+
+    return () => clearInterval(id)
+  }, [])
 
   return { mapsLoaded }
 }

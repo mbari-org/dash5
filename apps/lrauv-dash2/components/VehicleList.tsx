@@ -20,17 +20,17 @@ import {
   calculateRelativeNextComm,
   decodeHtmlEntities,
 } from '@mbari/utils'
-import React, { useEffect } from 'react'
+import React, { useEffect, useMemo } from 'react'
 import useTrackedVehicles from '../lib/useTrackedVehicles'
 import axios from 'axios'
 import { DateTime } from 'luxon'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { faCheck, faSync } from '@fortawesome/free-solid-svg-icons'
 import useGlobalModalId from '../lib/useGlobalModalId'
-import { useTethysSubscriptionEvent } from '../lib/useWebSocketListeners'
 import { useLastCommsTime } from '../lib/useLastCommsTime'
 import { useNeedCommsTime } from '../lib/useNeedCommsTime'
 import { useTick } from '../lib/useTick'
+import { useVehicleStatus } from '../lib/useVehicleStatus'
 
 const parsePos = (pos: string | number) => parseFloat(`${pos}`).toFixed(3)
 const calcPosition = (lat?: number | string, long?: number | string) =>
@@ -61,10 +61,12 @@ const ConnectedVehicleCellComponent: React.FC<{
     },
     { staleTime: 5 * 60 * 1000 }
   )
+
+  const defaultFrom = useMemo(() => Date.now() - 24 * 60 * 60 * 1000, [])
   const { data: vehiclePosition, isLoading: positionLoading } = useVehiclePos(
     {
       vehicle: name,
-      from: lastDeployment?.lastEvent ?? 0,
+      from: lastDeployment?.lastEvent ?? defaultFrom,
     },
     {
       enabled: !!lastDeployment?.lastEvent,
@@ -95,8 +97,6 @@ const ConnectedVehicleCellComponent: React.FC<{
       enabled: !!name && !!lastDeployment?.lastEvent,
     }
   )
-  const pingEvent = useTethysSubscriptionEvent('VehiclePingResult', name)
-
   const mission = missionStartedEvent?.[0]?.text.replace(/started mission/i, '')
   const isLoading = positionLoading || vehicleInfoLoading
 
@@ -134,6 +134,14 @@ const ConnectedVehicleCellComponent: React.FC<{
     }
   )
   const nowMs = useTick(60_000)
+  const { isLikelySurfaced } = useVehicleStatus({
+    vehicleName: name,
+    lastSatCommsTime,
+    lastCellCommsTime,
+    nowMs,
+    recoverEvent: lastDeployment?.recoverEvent,
+    startEventUnix: lastDeployment?.startEvent?.unixTime,
+  })
   const nowDT = DateTime.fromMillis(nowMs)
 
   const lastCellCommsDT = lastCellCommsTime
@@ -147,14 +155,14 @@ const ConnectedVehicleCellComponent: React.FC<{
     ? lastCellCommsDT.toFormat('HH:mm')
     : vehicle?.text_cell
   const formattedCellAgo = lastCellCommsDT
-    ? `${formatCompactDuration(lastCellCommsDT, nowDT)} ago`
+    ? `${formatCompactDuration(lastCellCommsDT, nowDT, { maxDays: 6 })} ago`
     : vehicle?.text_cellago
 
   const formattedSatTime = lastSatCommsDT
     ? lastSatCommsDT.toFormat('HH:mm')
     : vehicle?.text_sat
   const formattedSatAgo = lastSatCommsDT
-    ? `${formatCompactDuration(lastSatCommsDT, nowDT)} ago`
+    ? `${formatCompactDuration(lastSatCommsDT, nowDT, { maxDays: 6 })} ago`
     : vehicle?.text_commago
 
   const { text: nextCommsText } = calculateRelativeNextComm(
@@ -201,6 +209,7 @@ const ConnectedVehicleCellComponent: React.FC<{
         colorAmps: vehicle.color_amps,
         colorDvl: vehicle.color_dvl,
         textGpsAgo: vehicle.text_gpsago,
+        colorArgo: vehicle.color_argo,
         textCellAgo: formattedCellAgo,
         textNoteTime: vehicle.text_notetime,
         textArrow: vehicle.text_arrow,
@@ -246,7 +255,7 @@ const ConnectedVehicleCellComponent: React.FC<{
   const endDate = DateTime.fromMillis(lastDeployment?.endEvent?.unixTime ?? 0)
 
   const ended = lastDeployment?.endEvent?.eventId && true
-  const recovered = lastDeployment?.recoverEvent?.eventId && true
+  const recovered = Boolean(lastDeployment?.recoverEvent?.eventId)
   const active = lastDeployment?.active
 
   const timeSpanSinceDeployment =
@@ -271,8 +280,12 @@ const ConnectedVehicleCellComponent: React.FC<{
       <VehicleHeader
         name={capitalize(name)}
         deployment={active ? lastDeployment?.name ?? 'loading' : 'Not Deployed'}
-        color={contextColor} // Use context color here
-        timeSpanSinceDeployment={active ? timeSpanSinceDeployment : undefined}
+        color={contextColor}
+        timeSpanSinceDeployment={
+          active && !recovered ? timeSpanSinceDeployment : undefined
+        }
+        recovered={recovered}
+        recoveredAt={recovered ? timeSpanSinceRecovery : undefined}
         onToggle={handleToggle}
         open={isOpen}
       />
@@ -312,7 +325,7 @@ const ConnectedVehicleCellComponent: React.FC<{
           lastSatellite={
             vehicle?.text_gpsago?.length
               ? `${vehicle.text_gpsago}${
-                  pingEvent?.reachable ? ', likely on surface' : ''
+                  isLikelySurfaced ? ', likely on surface' : ''
                 }`
               : undefined
           }

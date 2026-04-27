@@ -1,24 +1,32 @@
 import React, { useRef } from 'react'
 import clsx from 'clsx'
+import Tippy from '@tippyjs/react'
 import { swallow } from '@mbari/utils'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import {
-  faClock,
   faEllipsisV,
   faCheck,
   faTimes,
   faPauseCircle,
-  faSync,
+  faPersonRunning,
+  faStarOfLife,
+  faExclamationTriangle,
 } from '@fortawesome/free-solid-svg-icons'
+import { faClock } from '@fortawesome/free-regular-svg-icons'
 import { IconProp } from '@fortawesome/fontawesome-svg-core'
 import { IconButton } from '../Navigation'
 import { CommandType } from '../types'
+import { ConnectedIcon } from '../Icons/ConnectedIcon'
+import { AcknowledgeIcon } from '../Icons/AcknowledgeIcon'
 export type ScheduleCellStatus =
   | 'pending'
   | 'running'
   | 'cancelled'
   | 'completed'
   | 'paused'
+  | 'sent'
+  | 'ack'
+  | 'timeout'
 export interface ScheduleCellProps {
   className?: string
   style?: React.CSSProperties
@@ -33,6 +41,9 @@ export interface ScheduleCellProps {
   description: string
   description2?: string
   description3?: string
+  badge?: { text: string; tooltip?: string }
+  /** Override the native tooltip shown on the status icon */
+  statusTooltip?: string
   onSelect: () => void
   onMoreClick: (
     id: {
@@ -51,21 +62,22 @@ const styles = {
   text: 'text-stone-500 opacity-90',
   textLight: 'text-stone-500 opacity-60',
   descriptionContainer: 'flex flex-col pr-10 pl-4',
-  open: 'font-semibold',
+  open: '',
   closed: 'opacity-60',
 }
 
 const icons: { [key: string]: IconProp } = {
   pending: faClock as IconProp,
-  running: faSync as IconProp,
+  running: faPersonRunning as IconProp,
   cancelled: faTimes as IconProp,
   completed: faCheck as IconProp,
   paused: faPauseCircle as IconProp,
+  timeout: faExclamationTriangle as IconProp,
 }
 
 export const ScheduleCellBackgrounds = {
-  running: 'bg-violet-50 hover:bg-violet-100',
-  paused: 'bg-orange-50 hover:bg-orange-100',
+  running: 'bg-blue-50 hover:bg-stone-50',
+  paused: 'bg-white hover:bg-stone-50',
   default: 'bg-white hover:bg-stone-50',
 }
 
@@ -79,11 +91,13 @@ export const ScheduleCell: React.FC<ScheduleCellProps> = ({
   description,
   description2,
   description3,
+  badge,
   eventId,
   commandType,
   onSelect,
   onMoreClick,
   scheduleStatus,
+  statusTooltip,
 }) => {
   const moreButtonRef = useRef<HTMLDivElement | null>(null)
 
@@ -104,9 +118,8 @@ export const ScheduleCell: React.FC<ScheduleCellProps> = ({
   })()
 
   const labelColor = (() => {
-    if (scheduleStatus === 'paused') return 'text-orange-400'
-    if (status === 'completed') return 'text-teal-600'
-    return 'text-primary-600'
+    if (status === 'running') return 'text-primary-600'
+    return 'text-teal-600'
   })()
 
   const handleMoreClick = () => {
@@ -126,21 +139,56 @@ export const ScheduleCell: React.FC<ScheduleCellProps> = ({
         onClick={swallow(onSelect)}
       >
         <div className={styles.icon}>
-          <FontAwesomeIcon
-            icon={icons[status]}
-            title={status}
-            className={clsx(iconColor, 'text-xl')}
-          />
+          {status === 'sent' ? (
+            <span title={statusTooltip ?? status}>
+              <ConnectedIcon
+                className={clsx(
+                  'fill-transparent',
+                  scheduleStatus === 'running'
+                    ? 'stroke-black'
+                    : 'stroke-stone-500 opacity-60'
+                )}
+              />
+            </span>
+          ) : status === 'ack' ? (
+            <span title={statusTooltip ?? status}>
+              <AcknowledgeIcon
+                className={clsx(
+                  'fill-transparent',
+                  scheduleStatus === 'running'
+                    ? 'stroke-black'
+                    : 'stroke-stone-500 opacity-60'
+                )}
+              />
+            </span>
+          ) : (
+            <FontAwesomeIcon
+              icon={icons[status]}
+              title={statusTooltip ?? status}
+              className={clsx(iconColor, 'text-xl')}
+            />
+          )}
         </div>
         <ul className={clsx(styles.detailsContainer, 'col-span-4')}>
           <li
             className={clsx(
-              'flex truncate',
+              'flex items-center gap-1 truncate',
               labelColor,
               isOpen ? styles.open : styles.closed
             )}
           >
-            {label}
+            <span className="truncate">{label}</span>
+            {badge && (
+              <Tippy
+                content={badge.tooltip ?? badge.text}
+                placement="top"
+                disabled={!badge.tooltip && !badge.text}
+              >
+                <span className="shrink-0 rounded-full bg-amber-100 px-2 py-0.5 text-xs font-semibold text-amber-700 ring-1 ring-amber-300">
+                  <FontAwesomeIcon icon={faStarOfLife} className="text-xs" />
+                </span>
+              </Tippy>
+            )}
           </li>
           <li
             className={clsx(
