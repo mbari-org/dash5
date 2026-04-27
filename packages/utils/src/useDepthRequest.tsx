@@ -1,6 +1,6 @@
 import { useState, useCallback } from 'react'
 import toast from 'react-hot-toast'
-import { createLogger } from './index' // Adjust import path as needed
+import { createLogger } from './logger'
 
 const logger = createLogger('useDepthRequest')
 
