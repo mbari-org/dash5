@@ -121,3 +121,49 @@ test('pending items remain pending in deployment-logs view when isRecovered is f
     expect(screen.queryByTitle('completed')).not.toBeInTheDocument()
   })
 })
+
+test('items with a server-side cancellation note render as cancelled', async () => {
+  // Override /events to return a cancellation note for event 99001 when
+  // the noteMatches param is set, mimicking TethysDash backend behaviour.
+  server.use(
+    rest.get('/events', (req, res, ctx) => {
+      const noteMatches = req.url.searchParams.get('noteMatches')
+      if (noteMatches?.includes('Cancelled request')) {
+        return res(
+          ctx.status(200),
+          ctx.json({
+            result: [
+              {
+                eventId: 89999,
+                eventType: 'note',
+                unixTime: 1656368200000,
+                note: "Cancelled request 99001 for 'example': 'load Science/profiles.xml'",
+                user: 'test-user',
+              },
+            ],
+          })
+        )
+      }
+      return res(ctx.status(200), ctx.json({ result: [] }))
+    })
+  )
+
+  render(
+    <MockProviders queryClient={new QueryClient()}>
+      <ScheduleSection {...props} />
+    </MockProviders>
+  )
+
+  // Switch to deployment-logs-only mode so the item comes from commandStatuses
+  await userEvent.click(
+    await screen.findByRole('button', { name: /displaying all logs/i })
+  )
+
+  // The cancellation override must stamp the item as 'cancelled' regardless
+  // of what the timeline inferred (pending → cancelled via note eventId match).
+  await waitFor(() => {
+    expect(screen.getByTitle('cancelled')).toBeInTheDocument()
+    expect(screen.queryByTitle('pending')).not.toBeInTheDocument()
+    expect(screen.queryByTitle('completed')).not.toBeInTheDocument()
+  })
+})
