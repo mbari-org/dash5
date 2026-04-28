@@ -258,12 +258,16 @@ const ConnectedVehicleCellComponent: React.FC<{
   const recovered = Boolean(lastDeployment?.recoverEvent?.eventId)
   const active = lastDeployment?.active
 
-  const timeSpanSinceDeployment =
-    DateTime.fromMillis(
-      missionStartedEvent?.[0]?.unixTime ??
-        lastDeployment?.startEvent?.unixTime ??
-        0
-    ).toRelative() ?? ''
+  const deploymentStartDateTime = DateTime.fromMillis(
+    lastDeployment?.startEvent?.unixTime ?? 0
+  )
+  const isFutureDeployment = deploymentStartDateTime > DateTime.now()
+  const timeSpanSinceDeployment = deploymentStartDateTime.toRelative() ?? ''
+
+  const missionTestingTimeSpan = missionStartedEvent?.[0]?.unixTime
+    ? DateTime.fromMillis(missionStartedEvent[0].unixTime).toRelative() ??
+      undefined
+    : undefined
 
   const timeSpanSinceRecovery =
     DateTime.fromMillis(
@@ -284,6 +288,10 @@ const ConnectedVehicleCellComponent: React.FC<{
         timeSpanSinceDeployment={
           active && !recovered ? timeSpanSinceDeployment : undefined
         }
+        missionTestingTimeSpan={
+          active && isFutureDeployment ? missionTestingTimeSpan : undefined
+        }
+        isFutureDeployment={isFutureDeployment}
         recovered={recovered}
         recoveredAt={recovered ? timeSpanSinceRecovery : undefined}
         onToggle={handleToggle}

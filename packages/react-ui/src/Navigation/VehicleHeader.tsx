@@ -13,6 +13,8 @@ export interface VehicleHeaderProps {
   onToggle: () => void
   open?: boolean
   timeSpanSinceDeployment?: string
+  missionTestingTimeSpan?: string
+  isFutureDeployment?: boolean
   recovered?: boolean
   recoveredAt?: string
 }
@@ -35,9 +37,21 @@ export const VehicleHeader: React.FC<VehicleHeaderProps> = ({
   onToggle,
   open,
   timeSpanSinceDeployment,
+  missionTestingTimeSpan,
+  isFutureDeployment,
   recovered,
   recoveredAt,
 }) => {
+  const deploymentStatusLabel = (() => {
+    if (!timeSpanSinceDeployment) return null
+    if (isFutureDeployment) {
+      const testingPart = missionTestingTimeSpan
+        ? `Testing began ${missionTestingTimeSpan} · `
+        : ''
+      return `Pre-Launch | ${testingPart}Launches ${timeSpanSinceDeployment}`
+    }
+    return `Deployed ${timeSpanSinceDeployment}`
+  })()
   return (
     <div className={clsx('', className)} style={style}>
       <button
@@ -60,10 +74,8 @@ export const VehicleHeader: React.FC<VehicleHeaderProps> = ({
             recoveredAt={recoveredAt}
             className="ml-2 flex-shrink-0 rounded-full bg-green-100 px-2 py-0.5 text-xs font-semibold text-green-800"
           />
-        ) : timeSpanSinceDeployment ? (
-          <span className={styles.secondary}>
-            began {timeSpanSinceDeployment}
-          </span>
+        ) : deploymentStatusLabel ? (
+          <span className={styles.secondary}>{deploymentStatusLabel}</span>
         ) : null}
 
         <FontAwesomeIcon

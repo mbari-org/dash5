@@ -148,7 +148,9 @@ export const OverviewToolbar: React.FC<OverviewToolbarProps> = ({
                 <ul>
                   {deployment?.unixTime && (
                     <li>
-                      Started{' '}
+                      {DateTime.fromMillis(deployment.unixTime) > DateTime.now()
+                        ? 'Starts'
+                        : 'Started'}{' '}
                       {DateTime.fromMillis(deployment.unixTime).toRelative()}
                     </li>
                   )}
