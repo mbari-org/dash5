@@ -42,6 +42,8 @@ export const VehicleHeader: React.FC<VehicleHeaderProps> = ({
   recovered,
   recoveredAt,
 }) => {
+  // Label wording is intentional per project decision — do not change to "Pre-Launch | ...".
+  // "Pre-deployment filed X ago - Launches Y" is the agreed operator-facing terminology.
   const deploymentStatusLabel = (() => {
     if (!timeSpanSinceDeployment) return null
     if (isFutureDeployment) {
