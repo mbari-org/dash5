@@ -258,11 +258,16 @@ const ConnectedVehicleCellComponent: React.FC<{
   const recovered = Boolean(lastDeployment?.recoverEvent?.eventId)
   const active = lastDeployment?.active
 
-  const deploymentStartDateTime = DateTime.fromMillis(
-    lastDeployment?.startEvent?.unixTime ?? 0
-  )
-  const isFutureDeployment = deploymentStartDateTime > DateTime.now()
-  const timeSpanSinceDeployment = deploymentStartDateTime.toRelative() ?? ''
+  const deploymentStartUnixTime =
+    lastDeployment?.startEvent?.unixTime ?? missionStartedEvent?.[0]?.unixTime
+  const deploymentStartDateTime = deploymentStartUnixTime
+    ? DateTime.fromMillis(deploymentStartUnixTime)
+    : undefined
+  const isFutureDeployment = deploymentStartDateTime
+    ? deploymentStartDateTime > DateTime.now()
+    : false
+  const timeSpanSinceDeployment =
+    deploymentStartDateTime?.toRelative() ?? undefined
 
   const missionTestingTimeSpan = missionStartedEvent?.[0]?.unixTime
     ? DateTime.fromMillis(missionStartedEvent[0].unixTime).toRelative() ??
