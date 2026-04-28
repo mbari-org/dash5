@@ -45,10 +45,10 @@ export const VehicleHeader: React.FC<VehicleHeaderProps> = ({
   const deploymentStatusLabel = (() => {
     if (!timeSpanSinceDeployment) return null
     if (isFutureDeployment) {
-      const missionPart = missionTimeSpan
-        ? `Pre-deployment filed ${missionTimeSpan} - `
+      const testingPart = missionTimeSpan
+        ? `Testing began ${missionTimeSpan} · `
         : ''
-      return `${missionPart}Launches ${timeSpanSinceDeployment}`
+      return `Pre-Launch | ${testingPart}Launches ${timeSpanSinceDeployment}`
     }
     return `Deployed ${timeSpanSinceDeployment}`
   })()

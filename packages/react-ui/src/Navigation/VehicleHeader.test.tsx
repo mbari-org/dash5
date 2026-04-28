@@ -50,13 +50,13 @@ test('should render the Recovered pill without timestamp when recoveredAt is not
   expect(screen.queryByText(/began/i)).not.toBeInTheDocument()
 })
 
-test('should render "Deployed X ago" label for a past deployment', async () => {
+test('should render "Deployed X ago" label for a past deployment', () => {
   render(<VehicleHeader {...props} />)
   expect(screen.getByText(/Deployed/i)).toBeInTheDocument()
   expect(screen.getByText(/3 days ago/i)).toBeInTheDocument()
 })
 
-test('should render pre-launch label without testing timespan', async () => {
+test('should render pre-launch label without testing timespan', () => {
   const futureTimeSpan =
     DateTime.now().plus({ days: 2 }).toRelative() ?? undefined
   render(
@@ -66,11 +66,12 @@ test('should render pre-launch label without testing timespan', async () => {
       timeSpanSinceDeployment={futureTimeSpan}
     />
   )
+  expect(screen.getByText(/Pre-Launch/i)).toBeInTheDocument()
   expect(screen.getByText(/Launches/i)).toBeInTheDocument()
-  expect(screen.queryByText(/Mission began/i)).not.toBeInTheDocument()
+  expect(screen.queryByText(/Testing began/i)).not.toBeInTheDocument()
 })
 
-test('should render pre-launch label with testing timespan', async () => {
+test('should render pre-launch label with testing timespan', () => {
   const futureTimeSpan =
     DateTime.now().plus({ days: 2 }).toRelative() ?? undefined
   const testingTimeSpan =
@@ -83,6 +84,7 @@ test('should render pre-launch label with testing timespan', async () => {
       missionTimeSpan={testingTimeSpan}
     />
   )
-  expect(screen.getByText(/Pre-deployment filed/i)).toBeInTheDocument()
+  expect(screen.getByText(/Pre-Launch/i)).toBeInTheDocument()
+  expect(screen.getByText(/Testing began/i)).toBeInTheDocument()
   expect(screen.getByText(/Launches/i)).toBeInTheDocument()
 })
