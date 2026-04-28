@@ -1,5 +1,6 @@
 export * from './TethysApiProvider'
 export * from './Command/useCreateCommand'
+export * from './Command/useDeleteCommandQueue'
 export * from './Command/useCommands'
 export * from './Command/useFrequentCommands'
 export * from './Command/useRecentCommands'
