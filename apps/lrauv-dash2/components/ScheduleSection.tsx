@@ -657,8 +657,13 @@ export const ScheduleSection: React.FC<ScheduleSectionProps> = ({
     isDefaultMission?: boolean
   } | null>(null)
   const closeMoreMenu = () => setCurrentMoreMenu(null)
-  const openMoreMenu: ScheduleCellProps['onMoreClick'] = (
-    target,
+  const openMoreMenu = (
+    target: {
+      eventId?: number
+      commandType: 'mission' | 'command'
+      status: ScheduleCellStatus
+      isDefaultMission?: boolean
+    },
     rect?: DOMRect
   ) => {
     if (rect) {
@@ -823,12 +828,7 @@ export const ScheduleSection: React.FC<ScheduleSectionProps> = ({
             })
           }}
           onMoreClick={(target, rect) =>
-            openMoreMenu(
-              { ...target, isDefaultMission: true } as Parameters<
-                typeof openMoreMenu
-              >[0],
-              rect
-            )
+            openMoreMenu({ ...target, isDefaultMission: true }, rect)
           }
         />
       )
@@ -1073,7 +1073,7 @@ export const ScheduleSection: React.FC<ScheduleSectionProps> = ({
     commandType,
   }: {
     eventId: number
-    commandType: string
+    commandType: 'mission' | 'command'
   }) => {
     if (
       !confirm(
