@@ -46,7 +46,7 @@ export const VehicleHeader: React.FC<VehicleHeaderProps> = ({
     if (!timeSpanSinceDeployment) return null
     if (isFutureDeployment) {
       const missionPart = missionTimeSpan
-        ? `Mission began ${missionTimeSpan} - `
+        ? `Pre-deployment filed ${missionTimeSpan} - `
         : ''
       return `${missionPart}Launches ${timeSpanSinceDeployment}`
     }

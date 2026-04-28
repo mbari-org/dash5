@@ -83,6 +83,6 @@ test('should render pre-launch label with testing timespan', async () => {
       missionTimeSpan={testingTimeSpan}
     />
   )
-  expect(screen.getByText(/Mission began/i)).toBeInTheDocument()
+  expect(screen.getByText(/Pre-deployment filed/i)).toBeInTheDocument()
   expect(screen.getByText(/Launches/i)).toBeInTheDocument()
 })
