@@ -118,7 +118,10 @@ const server = setupServer(
 )
 
 beforeAll(() => server.listen())
-afterEach(() => server.resetHandlers())
+afterEach(() => {
+  server.resetHandlers()
+  jest.restoreAllMocks()
+})
 afterAll(() => server.close())
 
 test('should render the component', async () => {
@@ -386,6 +389,7 @@ test('shows timeout icon when a non-mission cell command times out', async () =>
 
 test('Cancel this Directive calls DELETE /commands/queue when confirmed', async () => {
   let deleteCalled = false
+  let noteCalled = false
   server.use(
     rest.get('/events', (_req, res, ctx) =>
       res(
@@ -411,6 +415,10 @@ test('Cancel this Directive calls DELETE /commands/queue when confirmed', async 
     rest.delete('/commands/queue', (_req, res, ctx) => {
       deleteCalled = true
       return res(ctx.status(200), ctx.json({ result: 'ok' }))
+    }),
+    rest.post('/events/note', (_req, res, ctx) => {
+      noteCalled = true
+      return res(ctx.status(200), ctx.json({ result: {} }))
     })
   )
   jest.spyOn(window, 'confirm').mockReturnValueOnce(true)
@@ -427,7 +435,10 @@ test('Cancel this Directive calls DELETE /commands/queue when confirmed', async 
   await userEvent.click(moreButton)
   await userEvent.click(await screen.findByText('Cancel this Directive'))
 
-  await waitFor(() => expect(deleteCalled).toBe(true))
+  await waitFor(() => {
+    expect(deleteCalled).toBe(true)
+    expect(noteCalled).toBe(true)
+  })
 })
 
 test('Cancel this Directive does not call DELETE when confirm is dismissed', async () => {
@@ -457,7 +468,10 @@ test('Cancel this Directive does not call DELETE when confirm is dismissed', asy
     rest.delete('/commands/queue', (_req, res, ctx) => {
       deleteCalled = true
       return res(ctx.status(200), ctx.json({ result: 'ok' }))
-    })
+    }),
+    rest.post('/events/note', (_req, res, ctx) =>
+      res(ctx.status(200), ctx.json({ result: {} }))
+    )
   )
   jest.spyOn(window, 'confirm').mockReturnValueOnce(false)
 
@@ -473,6 +487,9 @@ test('Cancel this Directive does not call DELETE when confirm is dismissed', asy
   await userEvent.click(moreButton)
   await userEvent.click(await screen.findByText('Cancel this Directive'))
 
-  await new Promise((r) => setTimeout(r, 100))
+  // Menu closes; confirm was dismissed so DELETE must never fire
+  await waitFor(() =>
+    expect(screen.queryByText('Cancel this Directive')).not.toBeInTheDocument()
+  )
   expect(deleteCalled).toBe(false)
 })

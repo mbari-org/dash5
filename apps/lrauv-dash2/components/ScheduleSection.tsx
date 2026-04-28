@@ -1087,16 +1087,25 @@ export const ScheduleSection: React.FC<ScheduleSectionProps> = ({
         vehicle: vehicleName,
         refEventId: eventId,
       })
-      const commandText =
-        results.find((r) => r?.event.eventId === eventId)?.event?.data ?? ''
+    } catch (e) {
+      toast.error(
+        `Failed to cancel directive ${eventId}. It may have already been sent to the vehicle.`
+      )
+      return
+    }
+
+    toast.success(`Cancelled directive ${eventId}.`)
+
+    const commandText =
+      results.find((r) => r?.event.eventId === eventId)?.event?.data ?? ''
+    try {
       await createNoteMutation.mutateAsync({
         vehicle: vehicleName,
         note: `Cancelled request ${eventId} for '${vehicleName}': '${commandText}'`,
       })
-      toast.success(`Cancelled directive ${eventId}.`)
     } catch (e) {
       toast.error(
-        `Failed to cancel directive ${eventId}. It may have already been sent to the vehicle.`
+        `Directive ${eventId} was cancelled, but the cancellation note could not be recorded.`
       )
     }
   }

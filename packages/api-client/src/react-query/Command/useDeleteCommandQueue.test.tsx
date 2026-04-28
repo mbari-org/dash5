@@ -25,7 +25,7 @@ afterEach(() => server.resetHandlers())
 afterAll(() => server.close())
 
 const MockDeleteAction: React.FC = () => {
-  const { mutate, isLoading, isSuccess } = useDeleteCommandQueue()
+  const { mutate, isLoading, isSuccess, isError } = useDeleteCommandQueue()
   const handleClick = () => {
     mutate({ vehicle: 'sim', refEventId: 12345 })
   }
@@ -33,6 +33,7 @@ const MockDeleteAction: React.FC = () => {
     <div>
       <button onClick={handleClick}>Cancel Directive</button>
       {isSuccess && <span data-testid="result">cancelled</span>}
+      {isError && <span data-testid="error">error</span>}
     </div>
   )
 }
@@ -61,8 +62,7 @@ describe('useDeleteCommandQueue', () => {
       </MockProviders>
     )
     fireEvent.click(screen.getByText('Cancel Directive'))
-    await waitFor(() =>
-      expect(screen.queryByTestId('result')).not.toBeInTheDocument()
-    )
+    await waitFor(() => screen.getByTestId('error'))
+    expect(screen.queryByTestId('result')).not.toBeInTheDocument()
   })
 })
