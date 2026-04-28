@@ -26,6 +26,7 @@ import {
   getVia,
   useCommsEvents,
   useDeleteCommandQueue,
+  useCreateNote,
 } from '@mbari/api-client'
 import useGlobalModalId from '../lib/useGlobalModalId'
 import {
@@ -1065,6 +1066,7 @@ export const ScheduleSection: React.FC<ScheduleSectionProps> = ({
   }
 
   const deleteCommandQueueMutation = useDeleteCommandQueue()
+  const createNoteMutation = useCreateNote()
 
   const handleDelete = async ({
     eventId,
@@ -1084,6 +1086,12 @@ export const ScheduleSection: React.FC<ScheduleSectionProps> = ({
       await deleteCommandQueueMutation.mutateAsync({
         vehicle: vehicleName,
         refEventId: eventId,
+      })
+      const commandText =
+        results.find((r) => r?.event.eventId === eventId)?.event?.data ?? ''
+      await createNoteMutation.mutateAsync({
+        vehicle: vehicleName,
+        note: `Cancelled request ${eventId} for '${vehicleName}': '${commandText}'`,
       })
       toast.success(`Cancelled directive ${eventId}.`)
     } catch (e) {
