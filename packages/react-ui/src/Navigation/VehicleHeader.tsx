@@ -13,7 +13,7 @@ export interface VehicleHeaderProps {
   onToggle: () => void
   open?: boolean
   timeSpanSinceDeployment?: string
-  missionTestingTimeSpan?: string
+  missionTimeSpan?: string
   isFutureDeployment?: boolean
   recovered?: boolean
   recoveredAt?: string
@@ -37,7 +37,7 @@ export const VehicleHeader: React.FC<VehicleHeaderProps> = ({
   onToggle,
   open,
   timeSpanSinceDeployment,
-  missionTestingTimeSpan,
+  missionTimeSpan,
   isFutureDeployment,
   recovered,
   recoveredAt,
@@ -45,10 +45,10 @@ export const VehicleHeader: React.FC<VehicleHeaderProps> = ({
   const deploymentStatusLabel = (() => {
     if (!timeSpanSinceDeployment) return null
     if (isFutureDeployment) {
-      const testingPart = missionTestingTimeSpan
-        ? `Testing began ${missionTestingTimeSpan} · `
+      const missionPart = missionTimeSpan
+        ? `Mission began ${missionTimeSpan} - `
         : ''
-      return `Pre-Launch | ${testingPart}Launches ${timeSpanSinceDeployment}`
+      return `${missionPart}Launches ${timeSpanSinceDeployment}`
     }
     return `Deployed ${timeSpanSinceDeployment}`
   })()

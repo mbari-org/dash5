@@ -269,7 +269,7 @@ const ConnectedVehicleCellComponent: React.FC<{
   const timeSpanSinceDeployment =
     deploymentStartDateTime?.toRelative() ?? undefined
 
-  const missionTestingTimeSpan = missionStartedEvent?.[0]?.unixTime
+  const missionTimeSpan = missionStartedEvent?.[0]?.unixTime
     ? DateTime.fromMillis(missionStartedEvent[0].unixTime).toRelative() ??
       undefined
     : undefined
@@ -293,8 +293,8 @@ const ConnectedVehicleCellComponent: React.FC<{
         timeSpanSinceDeployment={
           active && !recovered ? timeSpanSinceDeployment : undefined
         }
-        missionTestingTimeSpan={
-          active && isFutureDeployment ? missionTestingTimeSpan : undefined
+        missionTimeSpan={
+          active && isFutureDeployment ? missionTimeSpan : undefined
         }
         isFutureDeployment={isFutureDeployment}
         recovered={recovered}

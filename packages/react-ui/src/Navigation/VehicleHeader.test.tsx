@@ -66,9 +66,8 @@ test('should render pre-launch label without testing timespan', async () => {
       timeSpanSinceDeployment={futureTimeSpan}
     />
   )
-  expect(screen.getByText(/Pre-Launch/i)).toBeInTheDocument()
   expect(screen.getByText(/Launches/i)).toBeInTheDocument()
-  expect(screen.queryByText(/Testing began/i)).not.toBeInTheDocument()
+  expect(screen.queryByText(/Mission began/i)).not.toBeInTheDocument()
 })
 
 test('should render pre-launch label with testing timespan', async () => {
@@ -81,10 +80,9 @@ test('should render pre-launch label with testing timespan', async () => {
       {...props}
       isFutureDeployment={true}
       timeSpanSinceDeployment={futureTimeSpan}
-      missionTestingTimeSpan={testingTimeSpan}
+      missionTimeSpan={testingTimeSpan}
     />
   )
-  expect(screen.getByText(/Pre-Launch/i)).toBeInTheDocument()
-  expect(screen.getByText(/Testing began/i)).toBeInTheDocument()
+  expect(screen.getByText(/Mission began/i)).toBeInTheDocument()
   expect(screen.getByText(/Launches/i)).toBeInTheDocument()
 })
