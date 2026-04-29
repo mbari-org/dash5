@@ -1012,8 +1012,7 @@ export const ScheduleSection: React.FC<ScheduleSectionProps> = ({
             : isConfigSet
             ? {
                 text: 'config',
-                tooltip:
-                  'Vehicle config update — modifies a vehicle subsystem setting',
+                tooltip: 'Vehicle config update — sent to vehicle',
                 icon: faWrench,
                 variant: 'blue' as const,
               }
