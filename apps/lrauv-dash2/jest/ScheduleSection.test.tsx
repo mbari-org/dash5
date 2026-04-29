@@ -469,6 +469,8 @@ test('Schedule History header and search input stay visible when search matches 
     )
   )
 
+  const user = userEvent.setup()
+
   render(
     <MockProviders queryClient={new QueryClient()}>
       <ScheduleSection {...props} currentDeploymentId={1} />
@@ -481,7 +483,7 @@ test('Schedule History header and search input stay visible when search matches 
   })
 
   // Type a term that matches nothing — previously this removed the header row.
-  await userEvent.type(screen.getByPlaceholderText('Search'), 'xyzzy-no-match')
+  await user.type(screen.getByPlaceholderText('Search'), 'xyzzy-no-match')
 
   // The header row (including the search input) must survive a zero-match search.
   await waitFor(() => {
