@@ -15,7 +15,12 @@ const server = setupServer(
   rest.get('/info', (_req, res, ctx) => {
     return res(ctx.status(200), ctx.json({}))
   }),
-  rest.delete('/commands/queue', (_req, res, ctx) => {
+  rest.delete('/commands/queue', (req, res, ctx) => {
+    const vehicle = req.url.searchParams.get('vehicle')
+    const refEventId = req.url.searchParams.get('refEventId')
+    if (vehicle !== 'sim' || refEventId !== '12345') {
+      return res(ctx.status(400), ctx.json({ error: 'unexpected params' }))
+    }
     return res(ctx.status(200), ctx.json(mockResponse))
   })
 )

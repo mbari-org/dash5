@@ -397,10 +397,10 @@ test('Cancel this Directive calls DELETE /commands/queue when confirmed', async 
         ctx.json({
           result: [
             {
-              data: 'load Science/profiles.xml',
+              data: 'load Science/profiles.xml run',
               unixTime: Date.now() - 60 * 1000,
               eventId: 99001,
-              eventType: 'command',
+              eventType: 'run',
               text: null,
               note: null,
               user: 'test-user',
@@ -429,11 +429,12 @@ test('Cancel this Directive calls DELETE /commands/queue when confirmed', async 
     </MockProviders>
   )
 
+  const user = userEvent.setup()
   const moreButton = await screen.findByRole('button', {
     name: /more options/i,
   })
-  await userEvent.click(moreButton)
-  await userEvent.click(await screen.findByText('Cancel this Directive'))
+  await user.click(moreButton)
+  await user.click(await screen.findByText('Cancel this Directive'))
 
   await waitFor(() => {
     expect(deleteCalled).toBe(true)
@@ -450,10 +451,10 @@ test('Cancel this Directive does not call DELETE when confirm is dismissed', asy
         ctx.json({
           result: [
             {
-              data: 'load Science/profiles.xml',
+              data: 'load Science/profiles.xml run',
               unixTime: Date.now() - 60 * 1000,
               eventId: 99001,
-              eventType: 'command',
+              eventType: 'run',
               text: null,
               note: null,
               user: 'test-user',
@@ -481,11 +482,12 @@ test('Cancel this Directive does not call DELETE when confirm is dismissed', asy
     </MockProviders>
   )
 
+  const user = userEvent.setup()
   const moreButton = await screen.findByRole('button', {
     name: /more options/i,
   })
-  await userEvent.click(moreButton)
-  await userEvent.click(await screen.findByText('Cancel this Directive'))
+  await user.click(moreButton)
+  await user.click(await screen.findByText('Cancel this Directive'))
 
   // Menu closes; confirm was dismissed so DELETE must never fire
   await waitFor(() =>

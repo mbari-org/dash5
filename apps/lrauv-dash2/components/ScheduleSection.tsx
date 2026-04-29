@@ -658,10 +658,7 @@ export const ScheduleSection: React.FC<ScheduleSectionProps> = ({
   } | null>(null)
   const closeMoreMenu = () => setCurrentMoreMenu(null)
   const openMoreMenu = (
-    target: {
-      eventId?: number
-      commandType: 'mission' | 'command'
-      status: ScheduleCellStatus
+    target: Parameters<ScheduleCellProps['onMoreClick']>[0] & {
       isDefaultMission?: boolean
     },
     rect?: DOMRect
@@ -1097,7 +1094,9 @@ export const ScheduleSection: React.FC<ScheduleSectionProps> = ({
     toast.success(`Cancelled directive ${eventId}.`)
 
     const commandText =
-      results.find((r) => r?.event.eventId === eventId)?.event?.data ?? ''
+      results.find((r) => r?.event.eventId === eventId)?.event?.data ??
+      results.find((r) => r?.event.eventId === eventId)?.event?.text ??
+      ''
     try {
       await createNoteMutation.mutateAsync({
         vehicle: vehicleName,
@@ -1205,7 +1204,8 @@ export const ScheduleSection: React.FC<ScheduleSectionProps> = ({
                   closeMoreMenu()
                 },
               },
-              ...(!currentMoreMenu.isDefaultMission
+              ...(!currentMoreMenu.isDefaultMission &&
+              currentMoreMenu.status === 'pending'
                 ? [
                     {
                       label: 'Cancel this Directive',
