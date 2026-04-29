@@ -442,6 +442,54 @@ test('Cancel this Directive calls DELETE /commands/queue when confirmed', async 
   })
 })
 
+test('Schedule History header and search input stay visible when search matches nothing', async () => {
+  // Set up a completed historic mission: profile_station is older than the
+  // currently-running keepstation, so the mission timeline marks it completed.
+  server.use(
+    rest.get('/events', (_req, res, ctx) =>
+      res(
+        ctx.status(200),
+        ctx.json({
+          result: [
+            {
+              data: 'load Science/profile_station.tl;run',
+              unixTime: Date.now() - 120 * 1000,
+              eventId: 101,
+              eventType: 'run',
+              text: null,
+              note: null,
+              user: 'test-user',
+            },
+          ],
+        })
+      )
+    ),
+    rest.get('/events/mission-started', (_req, res, ctx) =>
+      res(ctx.status(200), ctx.json({ result: missionStartedWithHistory }))
+    )
+  )
+
+  render(
+    <MockProviders queryClient={new QueryClient()}>
+      <ScheduleSection {...props} currentDeploymentId={1} />
+    </MockProviders>
+  )
+
+  // Wait for the Schedule History header to appear (completed item present).
+  await waitFor(() => {
+    expect(screen.getByText(/schedule history/i)).toBeInTheDocument()
+  })
+
+  // Type a term that matches nothing — previously this removed the header row.
+  await userEvent.type(screen.getByPlaceholderText('Search'), 'xyzzy-no-match')
+
+  // The header row (including the search input) must survive a zero-match search.
+  await waitFor(() => {
+    expect(screen.getByText(/schedule history/i)).toBeInTheDocument()
+    expect(screen.getByPlaceholderText('Search')).toBeInTheDocument()
+  })
+})
+
 test('Cancel this Directive does not call DELETE when confirm is dismissed', async () => {
   let deleteCalled = false
   server.use(
