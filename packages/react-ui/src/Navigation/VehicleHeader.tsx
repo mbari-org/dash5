@@ -13,6 +13,8 @@ export interface VehicleHeaderProps {
   onToggle: () => void
   open?: boolean
   timeSpanSinceDeployment?: string
+  missionTimeSpan?: string
+  isFutureDeployment?: boolean
   recovered?: boolean
   recoveredAt?: string
 }
@@ -35,9 +37,23 @@ export const VehicleHeader: React.FC<VehicleHeaderProps> = ({
   onToggle,
   open,
   timeSpanSinceDeployment,
+  missionTimeSpan,
+  isFutureDeployment,
   recovered,
   recoveredAt,
 }) => {
+  // Label wording is intentional per project decision — do not change to "Pre-Launch | ...".
+  // "Pre-deployment filed X ago - Launches Y" is the agreed operator-facing terminology.
+  const deploymentStatusLabel = (() => {
+    if (!timeSpanSinceDeployment) return null
+    if (isFutureDeployment) {
+      const missionPart = missionTimeSpan
+        ? `Pre-deployment filed ${missionTimeSpan} - `
+        : ''
+      return `${missionPart}Launches ${timeSpanSinceDeployment}`
+    }
+    return `Deployed ${timeSpanSinceDeployment}`
+  })()
   return (
     <div className={clsx('', className)} style={style}>
       <button
@@ -60,10 +76,8 @@ export const VehicleHeader: React.FC<VehicleHeaderProps> = ({
             recoveredAt={recoveredAt}
             className="ml-2 flex-shrink-0 rounded-full bg-green-100 px-2 py-0.5 text-xs font-semibold text-green-800"
           />
-        ) : timeSpanSinceDeployment ? (
-          <span className={styles.secondary}>
-            began {timeSpanSinceDeployment}
-          </span>
+        ) : deploymentStatusLabel ? (
+          <span className={styles.secondary}>{deploymentStatusLabel}</span>
         ) : null}
 
         <FontAwesomeIcon
