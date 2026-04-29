@@ -1093,6 +1093,11 @@ export const ScheduleSection: React.FC<ScheduleSectionProps> = ({
       return
     }
 
+    // Refresh schedule immediately after the DELETE succeeds, regardless of note outcome.
+    queryClient.invalidateQueries(['event', 'events'])
+    queryClient.invalidateQueries(['events'])
+    queryClient.invalidateQueries(['event', 'missionStarted'])
+
     toast.success(`Cancelled directive ${eventId}.`)
 
     const matchedResult = results.find((r) => r?.event.eventId === eventId)
