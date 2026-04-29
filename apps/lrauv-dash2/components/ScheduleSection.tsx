@@ -28,6 +28,7 @@ import {
   useDeleteCommandQueue,
   useCreateNote,
 } from '@mbari/api-client'
+import { useQueryClient } from 'react-query'
 import useGlobalModalId from '../lib/useGlobalModalId'
 import {
   missionNameFromStartedText,
@@ -1062,6 +1063,7 @@ export const ScheduleSection: React.FC<ScheduleSectionProps> = ({
     }
   }
 
+  const queryClient = useQueryClient()
   const deleteCommandQueueMutation = useDeleteCommandQueue()
   const createNoteMutation = useCreateNote()
 
@@ -1106,6 +1108,7 @@ export const ScheduleSection: React.FC<ScheduleSectionProps> = ({
         vehicle: vehicleName,
         note: `Cancelled request ${eventId} for '${vehicleName}': '${commandText}'`,
       })
+      queryClient.invalidateQueries(['event', 'events'])
     } catch (e) {
       toast.error(
         `Directive ${eventId} was cancelled, but the cancellation note could not be recorded.`
