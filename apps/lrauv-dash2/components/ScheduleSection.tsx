@@ -1109,6 +1109,8 @@ export const ScheduleSection: React.FC<ScheduleSectionProps> = ({
         note: `Cancelled request ${eventId} for '${vehicleName}': '${commandText}'`,
       })
       queryClient.invalidateQueries(['event', 'events'])
+      queryClient.invalidateQueries(['events'])
+      queryClient.invalidateQueries(['event', 'missionStarted'])
     } catch (e) {
       toast.error(
         `Directive ${eventId} was cancelled, but the cancellation note could not be recorded.`
