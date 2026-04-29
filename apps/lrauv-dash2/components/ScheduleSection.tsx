@@ -610,9 +610,10 @@ export const ScheduleSection: React.FC<ScheduleSectionProps> = ({
 
   const scheduledCells = missions?.filter(isAboveSeparator)
 
-  const historicCells = missions
-    ?.filter((v) => !isAboveSeparator(v))
-    .filter(
+  const allHistoricCells = missions?.filter((v) => !isAboveSeparator(v))
+
+  const historicCells = allHistoricCells
+    ?.filter(
       (v) =>
         !scheduleFilter ||
         scheduleFilter === 'all' ||
@@ -628,7 +629,11 @@ export const ScheduleSection: React.FC<ScheduleSectionProps> = ({
     )
     .sort((a, b) => (b.event.unixTime ?? 0) - (a.event.unixTime ?? 0))
 
-  const hasPastSchedule = (historicCells?.length ?? 0) > 0
+  // Base hasPastSchedule on unfiltered history so the Schedule History header
+  // row (which contains the search input) is never hidden by an active search
+  // or filter — otherwise a no-match search removes the input itself, trapping
+  // the user with no way to clear or retry.
+  const hasPastSchedule = (allHistoricCells?.length ?? 0) > 0
   const staticFilterCellOffset = hasPastSchedule ? 1 : 0
 
   const results = [scheduledCells, historicCells].flat()
