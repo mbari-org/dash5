@@ -25,7 +25,10 @@ import {
   useMissionStartedEvent,
   getVia,
   useCommsEvents,
+  useDeleteCommandQueue,
+  useCreateNote,
 } from '@mbari/api-client'
+import { useQueryClient } from 'react-query'
 import useGlobalModalId from '../lib/useGlobalModalId'
 import {
   missionNameFromStartedText,
@@ -652,10 +655,13 @@ export const ScheduleSection: React.FC<ScheduleSectionProps> = ({
     commandType: 'mission' | 'command'
     status: ScheduleCellStatus
     rect: DOMRect
+    isDefaultMission?: boolean
   } | null>(null)
   const closeMoreMenu = () => setCurrentMoreMenu(null)
-  const openMoreMenu: ScheduleCellProps['onMoreClick'] = (
-    target,
+  const openMoreMenu = (
+    target: Parameters<ScheduleCellProps['onMoreClick']>[0] & {
+      isDefaultMission?: boolean
+    },
     rect?: DOMRect
   ) => {
     if (rect) {
@@ -819,7 +825,9 @@ export const ScheduleSection: React.FC<ScheduleSectionProps> = ({
               },
             })
           }}
-          onMoreClick={openMoreMenu}
+          onMoreClick={(target, rect) =>
+            openMoreMenu({ ...target, isDefaultMission: true }, rect)
+          }
         />
       )
     }
@@ -1055,8 +1063,57 @@ export const ScheduleSection: React.FC<ScheduleSectionProps> = ({
     }
   }
 
-  const handleDelete = (_: { eventId: number; commandType: string }) => {
-    toast.error('This feature is currently not supported.')
+  const queryClient = useQueryClient()
+  const deleteCommandQueueMutation = useDeleteCommandQueue()
+  const createNoteMutation = useCreateNote()
+
+  const handleDelete = async ({
+    eventId,
+    commandType,
+  }: {
+    eventId: number
+    commandType: 'mission' | 'command'
+  }) => {
+    if (
+      !confirm(
+        `Cancel this ${commandType} directive (event ID ${eventId})? This will remove it from the shore-side queue.`
+      )
+    ) {
+      return
+    }
+    try {
+      await deleteCommandQueueMutation.mutateAsync({
+        vehicle: vehicleName,
+        refEventId: eventId,
+      })
+    } catch (e) {
+      toast.error(
+        `Failed to cancel directive ${eventId}. It may have already been sent to the vehicle.`
+      )
+      return
+    }
+
+    toast.success(`Cancelled directive ${eventId}.`)
+
+    const matchedResult = results.find((r) => r?.event.eventId === eventId)
+    const rawCommandText =
+      matchedResult?.event?.data ?? matchedResult?.event?.text ?? ''
+    const normalizedCommandText = rawCommandText.replace(/\s+/g, ' ').trim()
+    const commandText =
+      normalizedCommandText.length > 200
+        ? `${normalizedCommandText.slice(0, 200)}…`
+        : normalizedCommandText
+    try {
+      await createNoteMutation.mutateAsync({
+        vehicle: vehicleName,
+        note: `Cancelled request ${eventId} for '${vehicleName}': '${commandText}'`,
+      })
+      queryClient.invalidateQueries(['event', 'events'])
+    } catch (e) {
+      toast.error(
+        `Directive ${eventId} was cancelled, but the cancellation note could not be recorded.`
+      )
+    }
   }
 
   const handleDownload = ({
@@ -1149,27 +1206,32 @@ export const ScheduleSection: React.FC<ScheduleSectionProps> = ({
                 onSelect: () => {
                   handleDuplicate({
                     eventId: currentMoreMenu?.eventId as number,
-                    commandType: currentMoreMenu?.commandType as string,
+                    commandType: currentMoreMenu?.commandType,
                   })
                   closeMoreMenu()
                 },
               },
-              {
-                label: 'Cancel this Directive',
-                onSelect: () => {
-                  handleDelete({
-                    eventId: currentMoreMenu?.eventId as number,
-                    commandType: currentMoreMenu?.commandType as string,
-                  })
-                  closeMoreMenu()
-                },
-              },
+              ...(!currentMoreMenu.isDefaultMission &&
+              currentMoreMenu.status === 'pending'
+                ? [
+                    {
+                      label: 'Cancel this Directive',
+                      onSelect: () => {
+                        handleDelete({
+                          eventId: currentMoreMenu?.eventId as number,
+                          commandType: currentMoreMenu?.commandType,
+                        })
+                        closeMoreMenu()
+                      },
+                    },
+                  ]
+                : []),
               {
                 label: 'Download SBDs',
                 onSelect: () => {
                   handleDownload({
                     eventId: currentMoreMenu?.eventId as number,
-                    commandType: currentMoreMenu?.commandType as string,
+                    commandType: currentMoreMenu?.commandType,
                   })
                   closeMoreMenu()
                 },
@@ -1180,7 +1242,7 @@ export const ScheduleSection: React.FC<ScheduleSectionProps> = ({
                   onSelect: () => {
                     handleMoveInQueue({
                       eventId: currentMoreMenu?.eventId as number,
-                      commandType: currentMoreMenu?.commandType as string,
+                      commandType: currentMoreMenu?.commandType,
                       direction: 'up',
                     })
                     closeMoreMenu()
@@ -1191,14 +1253,16 @@ export const ScheduleSection: React.FC<ScheduleSectionProps> = ({
                   onSelect: () => {
                     handleMoveInQueue({
                       eventId: currentMoreMenu?.eventId as number,
-                      commandType: currentMoreMenu?.commandType as string,
+                      commandType: currentMoreMenu?.commandType,
                       direction: 'down',
                     })
                     closeMoreMenu()
                   },
                 },
-              ].filter(() =>
-                ['running', 'pending'].includes(currentMoreMenu.status)
+              ].filter(
+                () =>
+                  ['running', 'pending'].includes(currentMoreMenu.status) &&
+                  !currentMoreMenu.isDefaultMission
               ),
             ]}
           />
