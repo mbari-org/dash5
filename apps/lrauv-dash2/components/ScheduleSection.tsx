@@ -1093,10 +1093,14 @@ export const ScheduleSection: React.FC<ScheduleSectionProps> = ({
 
     toast.success(`Cancelled directive ${eventId}.`)
 
+    const matchedResult = results.find((r) => r?.event.eventId === eventId)
+    const rawCommandText =
+      matchedResult?.event?.data ?? matchedResult?.event?.text ?? ''
+    const normalizedCommandText = rawCommandText.replace(/\s+/g, ' ').trim()
     const commandText =
-      results.find((r) => r?.event.eventId === eventId)?.event?.data ??
-      results.find((r) => r?.event.eventId === eventId)?.event?.text ??
-      ''
+      normalizedCommandText.length > 200
+        ? `${normalizedCommandText.slice(0, 200)}…`
+        : normalizedCommandText
     try {
       await createNoteMutation.mutateAsync({
         vehicle: vehicleName,

@@ -6,9 +6,7 @@ export interface DeleteCommandQueueParams {
   refEventId: number
 }
 
-export interface DeleteCommandQueueResponse {
-  result: string
-}
+export type DeleteCommandQueueResponse = string
 
 export const deleteCommandQueue = async (
   params: DeleteCommandQueueParams,
@@ -24,5 +22,5 @@ export const deleteCommandQueue = async (
     ...config,
     params,
   })
-  return response.data as DeleteCommandQueueResponse
+  return response.data.result as DeleteCommandQueueResponse
 }

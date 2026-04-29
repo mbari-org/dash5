@@ -27,7 +27,7 @@ afterAll(() => server.close())
 describe('deleteCommandQueue', () => {
   it('should return the mocked value when successful', async () => {
     const response = await deleteCommandQueue(params)
-    expect(response).toEqual(mockResponse)
+    expect(response).toEqual('ok')
   })
 
   it('should throw when unsuccessful', async () => {
