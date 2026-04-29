@@ -1200,7 +1200,7 @@ export const ScheduleSection: React.FC<ScheduleSectionProps> = ({
                 onSelect: () => {
                   handleDuplicate({
                     eventId: currentMoreMenu?.eventId as number,
-                    commandType: currentMoreMenu?.commandType as string,
+                    commandType: currentMoreMenu?.commandType,
                   })
                   closeMoreMenu()
                 },
@@ -1212,7 +1212,7 @@ export const ScheduleSection: React.FC<ScheduleSectionProps> = ({
                       onSelect: () => {
                         handleDelete({
                           eventId: currentMoreMenu?.eventId as number,
-                          commandType: currentMoreMenu?.commandType as string,
+                          commandType: currentMoreMenu?.commandType,
                         })
                         closeMoreMenu()
                       },
@@ -1224,7 +1224,7 @@ export const ScheduleSection: React.FC<ScheduleSectionProps> = ({
                 onSelect: () => {
                   handleDownload({
                     eventId: currentMoreMenu?.eventId as number,
-                    commandType: currentMoreMenu?.commandType as string,
+                    commandType: currentMoreMenu?.commandType,
                   })
                   closeMoreMenu()
                 },
@@ -1235,7 +1235,7 @@ export const ScheduleSection: React.FC<ScheduleSectionProps> = ({
                   onSelect: () => {
                     handleMoveInQueue({
                       eventId: currentMoreMenu?.eventId as number,
-                      commandType: currentMoreMenu?.commandType as string,
+                      commandType: currentMoreMenu?.commandType,
                       direction: 'up',
                     })
                     closeMoreMenu()
@@ -1246,7 +1246,7 @@ export const ScheduleSection: React.FC<ScheduleSectionProps> = ({
                   onSelect: () => {
                     handleMoveInQueue({
                       eventId: currentMoreMenu?.eventId as number,
-                      commandType: currentMoreMenu?.commandType as string,
+                      commandType: currentMoreMenu?.commandType,
                       direction: 'down',
                     })
                     closeMoreMenu()
