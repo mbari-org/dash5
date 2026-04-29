@@ -13,7 +13,7 @@ import {
 } from '@mbari/react-ui'
 import { DateTime } from 'luxon'
 import { formatElapsedTime } from '@mbari/utils'
-import { faPlus, faGear } from '@fortawesome/free-solid-svg-icons'
+import { faPlus, faWrench } from '@fortawesome/free-solid-svg-icons'
 import clsx from 'clsx'
 import { Select } from '@mbari/react-ui/dist/Fields/Select'
 import {
@@ -1014,8 +1014,8 @@ export const ScheduleSection: React.FC<ScheduleSectionProps> = ({
                 text: 'config',
                 tooltip:
                   'Vehicle config update — modifies a vehicle subsystem setting',
-                icon: faGear,
-                variant: 'slate' as const,
+                icon: faWrench,
+                variant: 'blue' as const,
               }
             : undefined
         }

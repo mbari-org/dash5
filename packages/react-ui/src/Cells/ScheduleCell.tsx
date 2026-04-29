@@ -11,7 +11,7 @@ import {
   faPersonRunning,
   faStarOfLife,
   faExclamationTriangle,
-  faGear,
+  faWrench,
 } from '@fortawesome/free-solid-svg-icons'
 import { faClock } from '@fortawesome/free-regular-svg-icons'
 import { IconProp } from '@fortawesome/fontawesome-svg-core'
@@ -47,8 +47,8 @@ export interface ScheduleCellProps {
     tooltip?: string
     /** FontAwesome icon to render inside the badge (default: faStarOfLife) */
     icon?: IconProp
-    /** Color scheme: 'amber' for mission param updates, 'slate' for vehicle config updates */
-    variant?: 'amber' | 'slate'
+    /** Color scheme: 'amber' for mission param updates, 'blue' for vehicle config updates */
+    variant?: 'amber' | 'blue'
   }
   /** Override the native tooltip shown on the status icon */
   statusTooltip?: string
@@ -195,8 +195,8 @@ export const ScheduleCell: React.FC<ScheduleCellProps> = ({
                 <span
                   className={clsx(
                     'shrink-0 rounded-full px-2 py-0.5 text-xs font-semibold ring-1',
-                    badge.variant === 'slate'
-                      ? 'bg-slate-100 text-slate-700 ring-slate-300'
+                    badge.variant === 'blue'
+                      ? 'bg-blue-100 text-blue-800 ring-blue-300'
                       : 'bg-amber-100 text-amber-700 ring-amber-300'
                   )}
                 >

@@ -631,9 +631,9 @@ test('configSet command row shows Sent status and config badge tooltip', async (
     expect(screen.getByText(/^Sent /i)).toBeInTheDocument()
   })
 
-  // The slate-variant badge renders the faGear icon (data-icon="gear")
+  // The blue-variant badge renders the faWrench icon (data-icon="wrench")
   await waitFor(() => {
-    const gearIcon = document.querySelector('svg[data-icon="gear"]')
-    expect(gearIcon).toBeInTheDocument()
+    const wrenchIcon = document.querySelector('svg[data-icon="wrench"]')
+    expect(wrenchIcon).toBeInTheDocument()
   })
 })
