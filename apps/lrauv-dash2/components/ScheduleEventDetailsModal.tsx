@@ -576,8 +576,8 @@ export const ScheduleEventDetailsModal: React.FC<
                       config update — dispatched with no run interval.
                     </p>
                     <p className="mt-1 normal-case">
-                      <strong>Received</strong>: vehicle acknowledged receipt of
-                      the command or mission.
+                      <strong>Received</strong>: delivery confirmed via comms
+                      network — vehicle will execute upon receipt.
                     </p>
                     <p className="mt-1 normal-case">
                       <strong>Timeout</strong>: no confirmation received within
