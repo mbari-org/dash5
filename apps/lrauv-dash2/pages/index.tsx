@@ -111,7 +111,8 @@ interface MarkerData {
 // OverviewMap component
 const OverViewMap: React.FC<{
   trackedVehicles: { name: string; id?: string }[]
-}> = ({ trackedVehicles }) => {
+  invalidateSizeRef?: React.MutableRefObject<(() => void) | null>
+}> = ({ trackedVehicles, invalidateSizeRef }) => {
   // Add mapRef to store the Leaflet map instance
   const mapRef = useRef<L.Map | null>(null)
   const mapContainerRef = useRef<HTMLDivElement | null>(null)
@@ -124,6 +125,15 @@ const OverViewMap: React.FC<{
       mapRef.current.invalidateSize()
     }
   }, [size])
+
+  // Fallback: after mount, call invalidateSize at 1 s to catch any Allotment
+  // layout pass that settled after the map was created.
+  useEffect(() => {
+    const id = setTimeout(() => {
+      mapRef.current?.invalidateSize()
+    }, 1000)
+    return () => clearTimeout(id)
+  }, [])
   const router = useRouter()
   const { handleDepthRequest, elevationAvailable } = useGoogleElevator()
   const [center, setCenter] = useState<undefined | [number, number]>()
@@ -649,7 +659,39 @@ const OverViewMap: React.FC<{
           onMapReady={(map) => {
             logger.debug('🌍 Map ready callback triggered in OverViewMap')
             mapRef.current = map
-            map.invalidateSize()
+
+            const invalidateIfCurrent = () => {
+              if (mapRef.current === map) {
+                map.invalidateSize()
+              }
+            }
+
+            // Expose a stable invalidate handle for external callers (e.g. Allotment onChange)
+            if (invalidateSizeRef) {
+              invalidateSizeRef.current = invalidateIfCurrent
+            }
+
+            let firstRafId: number | null = null
+            let secondRafId: number | null = null
+            let timeoutId: ReturnType<typeof setTimeout> | null = null
+
+            const cancelScheduled = () => {
+              if (firstRafId !== null) cancelAnimationFrame(firstRafId)
+              if (secondRafId !== null) cancelAnimationFrame(secondRafId)
+              if (timeoutId !== null) clearTimeout(timeoutId)
+            }
+
+            invalidateIfCurrent()
+            // Allotment computes pane sizes asynchronously after mount. Call
+            // invalidateSize again on the next two animation frames and after a
+            // short timeout so Leaflet always measures the final container
+            // dimensions, regardless of when the split-pane layout settles.
+            firstRafId = requestAnimationFrame(() => {
+              invalidateIfCurrent()
+              secondRafId = requestAnimationFrame(() => invalidateIfCurrent())
+            })
+            timeoutId = setTimeout(() => invalidateIfCurrent(), 300)
+            map.once('unload', cancelScheduled)
           }}
           trackedVehicles={trackedVehicles?.map((vehicle) => ({
             ...vehicle,
@@ -815,6 +857,10 @@ const OverviewPage: NextPage = () => {
   const { setGlobalModalId } = useGlobalModalId()
   const [mobileView, setMobileView] = useState<MobileView>('map')
   const isDesktop = useIsDesktop()
+  // Shared ref populated by OverViewMap once the Leaflet map is ready.
+  // Allotment's onChange fires it so the map re-measures after every
+  // layout pass, including the initial one where pane sizes are first set.
+  const mapInvalidateSizeRef = useRef<(() => void) | null>(null)
 
   useEffect(() => {
     if (!mounted.current) {
@@ -835,6 +881,7 @@ const OverviewPage: NextPage = () => {
             trackedVehicles={trackedVehicles.map((vehicle) => ({
               name: vehicle,
             }))}
+            invalidateSizeRef={mapInvalidateSizeRef}
           />
         )}
       </div>
@@ -877,6 +924,9 @@ const OverviewPage: NextPage = () => {
                                   snap
                                   defaultSizes={[75, 25]}
                                   proportionalLayout
+                                  onChange={() =>
+                                    mapInvalidateSizeRef.current?.()
+                                  }
                                 >
                                   <Allotment.Pane>
                                     {primarySection}
