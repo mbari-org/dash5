@@ -13,7 +13,7 @@ import {
 } from '@mbari/react-ui'
 import { DateTime } from 'luxon'
 import { formatElapsedTime } from '@mbari/utils'
-import { faPlus } from '@fortawesome/free-solid-svg-icons'
+import { faPlus, faWrench } from '@fortawesome/free-solid-svg-icons'
 import clsx from 'clsx'
 import { Select } from '@mbari/react-ui/dist/Fields/Select'
 import {
@@ -132,12 +132,27 @@ export const isMissionCommand = (
 }
 
 // Detects parameter update commands: "set <missionName>.<paramName> <value>"
+// These are ephemeral, mission-scoped tweaks to a currently-running mission.
 export const isParamCommand = (
   commandData?: string,
   commandText?: string
 ): boolean => {
   const text = commandData ?? commandText ?? ''
   return /^\s*set\s+\w+\.\w+/i.test(text)
+}
+
+// Detects vehicle configuration commands: "configSet <pathOrSubsystem...> <value> [persist]"
+// Unlike mission param updates (set <x>.<y>), these modify the vehicle's persistent
+// config store and are independent of any running mission — a vehicle-level change.
+// Treat any configSet invocation with arguments as a config update, except "configSet list"
+// (which is a read-only query, not a write).
+export const isConfigSetCommand = (
+  commandData?: string,
+  commandText?: string
+): boolean => {
+  const text = commandData ?? commandText ?? ''
+  if (/^\s*configSet\s+list\s*$/i.test(text)) return false
+  return /^\s*configSet\s+\S+/i.test(text)
 }
 
 export const ScheduleSection: React.FC<ScheduleSectionProps> = ({
@@ -844,6 +859,10 @@ export const ScheduleSection: React.FC<ScheduleSectionProps> = ({
       isMissionCommand(mission?.event?.data, mission?.event?.text)
     const isParam =
       !isMission && isParamCommand(mission?.event?.data, mission?.event?.text)
+    const isConfigSet =
+      !isMission &&
+      !isParam &&
+      isConfigSetCommand(mission?.event?.data, mission?.event?.text)
     const cellCommandType: 'mission' | 'command' = isMission
       ? 'mission'
       : 'command'
@@ -855,8 +874,8 @@ export const ScheduleSection: React.FC<ScheduleSectionProps> = ({
       ? schedDateMatch[1]
       : undefined
     const cellStatus: ScheduleCellStatus = (() => {
-      if (isParam) {
-        // Params are always dispatched — use comms lookup to upgrade to ack/timeout
+      if (isParam || isConfigSet) {
+        // Dispatched one-shots — use comms lookup to upgrade to ack/timeout.
         const commsStatus = commsLookup.get(mission.event.eventId)
         if (commsStatus === 'ack') return 'ack'
         if (commsStatus === 'timeout') return 'timeout'
@@ -945,23 +964,24 @@ export const ScheduleSection: React.FC<ScheduleSectionProps> = ({
           const timeStr = isToday
             ? dt.toFormat('H:mm')
             : dt.toFormat('MMM d, H:mm')
-          const verb = isParam
-            ? 'Sent'
-            : cellStatus === 'pending'
-            ? scheduleDate && scheduleDate !== 'asap'
-              ? 'Queued'
+          const verb =
+            isParam || isConfigSet
+              ? 'Sent'
+              : cellStatus === 'pending'
+              ? scheduleDate && scheduleDate !== 'asap'
+                ? 'Queued'
+                : isMission
+                ? 'Scheduled'
+                : 'Sent'
+              : cellStatus === 'running'
+              ? 'Started'
               : isMission
-              ? 'Scheduled'
-              : 'Sent'
-            : cellStatus === 'running'
-            ? 'Started'
-            : isMission
-            ? 'Started'
-            : 'Ran'
+              ? 'Started'
+              : 'Ran'
           return `${verb} ${timeStr}${relativePart}`
         })()}
         description2={
-          isParam
+          isParam || isConfigSet
             ? undefined
             : cellStatus === 'pending' &&
               scheduleDate &&
@@ -982,8 +1002,15 @@ export const ScheduleSection: React.FC<ScheduleSectionProps> = ({
         badge={
           isParam
             ? {
+                text: 'param',
+                tooltip: 'Mission parameter update — sent to vehicle',
+              }
+            : isConfigSet
+            ? {
                 text: 'config',
-                tooltip: 'Config update — sent to vehicle',
+                tooltip: 'Vehicle config update — sent to vehicle',
+                icon: faWrench,
+                variant: 'blue' as const,
               }
             : undefined
         }
@@ -1010,6 +1037,7 @@ export const ScheduleSection: React.FC<ScheduleSectionProps> = ({
                 scheduleDate,
                 via: getVia(mission.event.note) ?? undefined,
                 isParamUpdate: isParam,
+                isConfigSetUpdate: isConfigSet,
                 commsStatus: commsLookup.get(mission.event.eventId),
               },
             },

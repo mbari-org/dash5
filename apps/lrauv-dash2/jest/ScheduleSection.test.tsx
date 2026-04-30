@@ -5,6 +5,8 @@ import '@testing-library/jest-dom'
 import {
   ScheduleSection,
   ScheduleSectionProps,
+  isParamCommand,
+  isConfigSetCommand,
 } from '../components/ScheduleSection'
 import { QueryClient } from 'react-query'
 import { rest } from 'msw'
@@ -544,4 +546,104 @@ test('Cancel this Directive does not call DELETE when confirm is dismissed', asy
     expect(screen.queryByText('Cancel this Directive')).not.toBeInTheDocument()
   )
   expect(deleteCalled).toBe(false)
+})
+
+// ── isParamCommand unit tests ────────────────────────────────────────────────
+
+test('isParamCommand returns true for "set <mission>.<param> <value>"', () => {
+  expect(isParamCommand('set profile_station.YoYoMaxDepth 40 meter')).toBe(true)
+  expect(isParamCommand('set sci2.Lat1 36.87 degree')).toBe(true)
+  expect(isParamCommand('  set keepstation.Radius 200 meter')).toBe(true)
+})
+
+test('isParamCommand returns false for non-param commands', () => {
+  expect(
+    isParamCommand(
+      'configSet VerticalControl.massDefault -16 millimeter persist'
+    )
+  ).toBe(false)
+  expect(isParamCommand('load Science/profile_station.tl;run')).toBe(false)
+  expect(isParamCommand('sched resume')).toBe(false)
+  expect(isParamCommand('gfscan')).toBe(false)
+})
+
+// ── isConfigSetCommand unit tests ────────────────────────────────────────────
+
+test('isConfigSetCommand returns true for "configSet <subsystem>.<param>"', () => {
+  expect(
+    isConfigSetCommand(
+      'configSet VerticalControl.massDefault -16 millimeter persist'
+    )
+  ).toBe(true)
+  expect(
+    isConfigSetCommand('configSet CTD_Seabird.loadAtStartup 1 bool persist')
+  ).toBe(true)
+  expect(
+    isConfigSetCommand(
+      '  configSet RDI_Pathfinder.loadAtStartup 1 bool persist'
+    )
+  ).toBe(true)
+})
+
+test('isConfigSetCommand returns true for non-dotted configSet commands', () => {
+  expect(
+    isConfigSetCommand(
+      'configSet Express linearApproximation acoustic_receive_time ampere_hour persist'
+    )
+  ).toBe(true)
+})
+
+test('isConfigSetCommand returns false for non-configSet commands and configSet list', () => {
+  expect(isConfigSetCommand('set profile_station.YoYoMaxDepth 40 meter')).toBe(
+    false
+  )
+  expect(isConfigSetCommand('load Science/profile_station.tl;run')).toBe(false)
+  expect(isConfigSetCommand('sched resume')).toBe(false)
+  expect(isConfigSetCommand('configSet list')).toBe(false)
+  expect(isConfigSetCommand('  configSet list  ')).toBe(false)
+})
+
+// ── configSet integration test ───────────────────────────────────────────────
+
+test('configSet command row shows Sent status and config badge tooltip', async () => {
+  server.use(
+    rest.get('/events', (_req, res, ctx) =>
+      res(
+        ctx.status(200),
+        ctx.json({
+          result: [
+            {
+              data: 'configSet VerticalControl.massDefault -16 millimeter persist',
+              unixTime: Date.now() - 60 * 1000,
+              eventId: 300,
+              eventType: 'command',
+              text: null,
+              note: null,
+              user: 'test-engineer',
+            },
+          ],
+        })
+      )
+    ),
+    rest.get('/events/mission-started', (_req, res, ctx) =>
+      res(ctx.status(200), ctx.json({ result: [] }))
+    )
+  )
+
+  render(
+    <MockProviders queryClient={new QueryClient()}>
+      <ScheduleSection {...props} currentDeploymentId={1} />
+    </MockProviders>
+  )
+
+  // configSet is an instantaneous one-shot — its verb must be 'Sent', not 'Ran'
+  await waitFor(() => {
+    expect(screen.getByText(/^Sent /i)).toBeInTheDocument()
+  })
+
+  // The blue-variant badge renders the faWrench icon (data-icon="wrench")
+  await waitFor(() => {
+    const wrenchIcon = document.querySelector('svg[data-icon="wrench"]')
+    expect(wrenchIcon).toBeInTheDocument()
+  })
 })
