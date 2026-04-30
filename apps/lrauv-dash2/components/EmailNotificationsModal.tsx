@@ -8,10 +8,13 @@ import {
   useSiteConfig,
   EventKind,
 } from '@mbari/api-client'
+import { createLogger } from '@mbari/utils'
 import { useQueryClient } from 'react-query'
 import VehiclePickerModal from './VehiclePickerModal'
 import FilteredNotificationEditModal from './FilteredNotificationEditModal'
 import { FilterRowUi, FilteringType } from '../types'
+
+const logger = createLogger('EmailNotificationsModal')
 
 export interface EmailNotificationsModalProps {
   onClose?: () => void
@@ -266,29 +269,30 @@ const EmailNotificationsModal: React.FC<EmailNotificationsModalProps> = ({
 
   const handleSendTest = () => {
     if (!email) {
-      console.warn('[SendTestEmail] Aborted: email is empty')
+      logger.warn('handleSendTest aborted: email is empty')
       return
     }
-    const params = { email, plainText: plainText ? 'y' : ('n' as 'y' | 'n') }
-    console.log('[SendTestEmail] Firing request:', params)
     setSendTestStatus('idle')
     setSendTestMessage('')
-    sendTest(params, {
-      onSuccess: (data) => {
-        console.log('[SendTestEmail] TethysDash response:', data)
-        const msg = data?.email_sent
-          ? `Test email sent to ${data.email_sent}`
-          : 'Test email sent'
-        setSendTestStatus('success')
-        setSendTestMessage(msg)
-      },
-      onError: (err) => {
-        console.error('[SendTestEmail] Error:', err)
-        const msg = (err as { message?: string })?.message ?? 'Unknown error'
-        setSendTestStatus('error')
-        setSendTestMessage(msg)
-      },
-    })
+    sendTest(
+      { email, plainText: plainText ? 'y' : ('n' as 'y' | 'n') },
+      {
+        onSuccess: (data) => {
+          logger.log('sendTestEmail response received')
+          const msg = data?.email_sent
+            ? `Test email sent to ${data.email_sent}`
+            : 'Test email sent'
+          setSendTestStatus('success')
+          setSendTestMessage(msg)
+        },
+        onError: (err) => {
+          logger.error('sendTestEmail failed', err)
+          const msg = (err as { message?: string })?.message ?? 'Unknown error'
+          setSendTestStatus('error')
+          setSendTestMessage(msg)
+        },
+      }
+    )
   }
 
   const handleDeleteAll = async () => {

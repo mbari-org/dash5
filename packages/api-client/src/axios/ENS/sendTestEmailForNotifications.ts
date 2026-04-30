@@ -22,5 +22,6 @@ export const sendTestEmailForNotifications = async (
   }
 
   const response = await instance.post(url, null, { ...config, params })
-  return response.data as SendTestEmailForNotificationsResponse
+  return (response.data?.result ??
+    response.data) as SendTestEmailForNotificationsResponse
 }
