@@ -6,6 +6,7 @@ import {
   LayersControl,
   ScaleControl,
   useMapEvents,
+  useMap,
 } from 'react-leaflet'
 import ReactLeafletGoogleLayer from 'react-leaflet-google-layer'
 const GoogleLayerAny =
@@ -86,6 +87,34 @@ interface StoredMarker {
 export type { MapProps } from './Map.types'
 
 export type MeasureMode = 'open' | 'measuring' | 'closed' | 'cancelled'
+
+/**
+ * MapReadyBridge — a react-leaflet v4 child component that uses useMap() to
+ * obtain the Leaflet map instance and fires `onReady` exactly once per map
+ * instance. This replaces the defunct `whenCreated` prop which was removed in
+ * react-leaflet v4 and is silently ignored (passed through to ...options on
+ * the Leaflet constructor which discards it).
+ */
+const MapReadyBridge: React.FC<{
+  onReady?: (map: L.Map) => void
+  forwardedRef?: React.Ref<L.Map>
+}> = ({ onReady, forwardedRef }) => {
+  const map = useMap()
+  const initializedMapRef = useRef<L.Map | null>(null)
+
+  useEffect(() => {
+    if (map && map !== initializedMapRef.current) {
+      initializedMapRef.current = map
+      if (forwardedRef) {
+        if (typeof forwardedRef === 'function') forwardedRef(map)
+        else (forwardedRef as React.MutableRefObject<L.Map>).current = map
+      }
+      if (onReady) onReady(map)
+    }
+  })
+
+  return null
+}
 
 const Map = React.forwardRef<L.Map, MapProps>(
   (
@@ -583,70 +612,11 @@ const Map = React.forwardRef<L.Map, MapProps>(
         // @ts-ignore
         maxNativeZoom={maxNativeZoom}
         ref={mapRef}
-        whenCreated={(map: L.Map) => {
-          try {
-            if (!map) {
-              logger.warn('Map instance is null in whenCreated')
-              return
-            }
-
-            safeLogger.debug('Map instance created, initializing...')
-
-            // Guard against GoogleMutant async callbacks firing after the map
-            // has been removed. When map.remove() runs, Leaflet nulls
-            // _controlCorners, but GoogleMutant still has pending Google API
-            // callbacks that call _setupAttribution → crash. Patching fire()
-            // on this specific instance to be a no-op once the map is gone is
-            // the least-invasive fix without modifying the library.
-            const origFire = (map as any).fire.bind(map)
-            ;(map as any).fire = (...args: Parameters<typeof map.fire>) => {
-              if (!(map as any)._controlCorners) return map
-              return origFire(...args)
-            }
-
-            // Store reference to actual Leaflet map
-            mapRef.current = map
-
-            // Forward the reference
-            if (ref) {
-              if (typeof ref === 'function') {
-                ref(map)
-              } else {
-                ref.current = map
-              }
-              safeLogger.debug('Map reference forwarded')
-            }
-
-            // Call onMapReady
-            if (onMapReady) {
-              safeLogger.debug('Calling onMapReady callback')
-              onMapReady(map)
-            }
-
-            // Dispatch with minimal delay
-            setTimeout(() => {
-              if (typeof window !== 'undefined') {
-                try {
-                  // Use safeLogger for this chatty operation
-                  safeLogger.debug('Creating mapready event')
-
-                  const mapReadyEvent = new CustomEvent('mapready', {
-                    detail: map,
-                  })
-                  window.dispatchEvent(mapReadyEvent)
-
-                  // This log is important enough to keep!
-                  logger.info('mapready event dispatched')
-                } catch (e) {
-                  logger.error('Error dispatching mapready event:', e)
-                }
-              }
-            }, 100)
-          } catch (err) {
-            logger.error('Error in map initialization:', err)
-          }
-        }}
       >
+        {/* Bridge to obtain the Leaflet map instance via useMap() — the
+            whenCreated prop was removed in react-leaflet v4 and is silently
+            ignored, so onMapReady and ref forwarding must go through here. */}
+        <MapReadyBridge onReady={onMapReady} forwardedRef={ref} />
         {!isMeasuring && (
           <CenterView
             coords={validatedCenter}
