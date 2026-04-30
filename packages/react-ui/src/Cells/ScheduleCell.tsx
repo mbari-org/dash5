@@ -41,7 +41,14 @@ export interface ScheduleCellProps {
   description: string
   description2?: string
   description3?: string
-  badge?: { text: string; tooltip?: string }
+  badge?: {
+    text: string
+    tooltip?: string
+    /** FontAwesome icon to render inside the badge (default: faStarOfLife) */
+    icon?: IconProp
+    /** Color scheme: 'amber' for mission param updates, 'blue' for vehicle config updates */
+    variant?: 'amber' | 'blue'
+  }
   /** Override the native tooltip shown on the status icon */
   statusTooltip?: string
   onSelect: () => void
@@ -184,8 +191,18 @@ export const ScheduleCell: React.FC<ScheduleCellProps> = ({
                 placement="top"
                 disabled={!badge.tooltip && !badge.text}
               >
-                <span className="shrink-0 rounded-full bg-amber-100 px-2 py-0.5 text-xs font-semibold text-amber-700 ring-1 ring-amber-300">
-                  <FontAwesomeIcon icon={faStarOfLife} className="text-xs" />
+                <span
+                  className={clsx(
+                    'shrink-0 rounded-full px-2 py-0.5 text-xs font-semibold ring-1',
+                    badge.variant === 'blue'
+                      ? 'bg-blue-100 text-blue-800 ring-blue-300'
+                      : 'bg-amber-100 text-amber-700 ring-amber-300'
+                  )}
+                >
+                  <FontAwesomeIcon
+                    icon={badge.icon ?? faStarOfLife}
+                    className="text-xs"
+                  />
                 </span>
               </Tippy>
             )}

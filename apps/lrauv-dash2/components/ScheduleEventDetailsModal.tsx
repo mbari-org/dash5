@@ -572,12 +572,12 @@ export const ScheduleEventDetailsModal: React.FC<
                       <strong>Paused</strong>: schedule execution is paused.
                     </p>
                     <p className="mt-1 normal-case">
-                      <strong>Sent</strong>: one-shot config update — no run
-                      interval.
+                      <strong>Sent</strong>: mission parameter update or vehicle
+                      config update — dispatched with no run interval.
                     </p>
                     <p className="mt-1 normal-case">
-                      <strong>Received</strong>: vehicle acknowledged receipt of
-                      the command or mission.
+                      <strong>Received</strong>: delivery confirmed via comms
+                      network — vehicle will execute upon receipt.
                     </p>
                     <p className="mt-1 normal-case">
                       <strong>Timeout</strong>: no confirmation received within
@@ -671,6 +671,7 @@ export const ScheduleEventDetailsModal: React.FC<
                 // instantaneous — no meaningful end time, so skip TBD entirely.
                 const isInstantaneous =
                   event.isParamUpdate ||
+                  event.isConfigSetUpdate ||
                   (event.commandType === 'command' &&
                     ['ack', 'timeout', 'sent'].includes(s))
                 if (
@@ -832,7 +833,15 @@ export const ScheduleEventDetailsModal: React.FC<
                 className="ml-2 text-xs normal-case italic"
                 style={{ color: '#b45309' }}
               >
-                (config update for associated mission)
+                (parameter update for associated mission)
+              </span>
+            )}
+            {event.isConfigSetUpdate && (
+              <span
+                className="ml-2 text-xs normal-case italic"
+                style={{ color: '#1e40af' }}
+              >
+                (vehicle config update)
               </span>
             )}
           </p>

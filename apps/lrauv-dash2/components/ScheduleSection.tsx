@@ -13,18 +13,22 @@ import {
 } from '@mbari/react-ui'
 import { DateTime } from 'luxon'
 import { formatElapsedTime } from '@mbari/utils'
-import { faPlus } from '@fortawesome/free-solid-svg-icons'
+import { faPlus, faWrench } from '@fortawesome/free-solid-svg-icons'
 import clsx from 'clsx'
 import { Select } from '@mbari/react-ui/dist/Fields/Select'
 import {
   EventType,
   GetEventsResponse,
   useDeploymentCommandStatus,
+  useEvents,
   useInfiniteEvents,
   useMissionStartedEvent,
   getVia,
   useCommsEvents,
+  useDeleteCommandQueue,
+  useCreateNote,
 } from '@mbari/api-client'
+import { useQueryClient } from 'react-query'
 import useGlobalModalId from '../lib/useGlobalModalId'
 import {
   missionNameFromStartedText,
@@ -128,12 +132,27 @@ export const isMissionCommand = (
 }
 
 // Detects parameter update commands: "set <missionName>.<paramName> <value>"
+// These are ephemeral, mission-scoped tweaks to a currently-running mission.
 export const isParamCommand = (
   commandData?: string,
   commandText?: string
 ): boolean => {
   const text = commandData ?? commandText ?? ''
   return /^\s*set\s+\w+\.\w+/i.test(text)
+}
+
+// Detects vehicle configuration commands: "configSet <pathOrSubsystem...> <value> [persist]"
+// Unlike mission param updates (set <x>.<y>), these modify the vehicle's persistent
+// config store and are independent of any running mission — a vehicle-level change.
+// Treat any configSet invocation with arguments as a config update, except "configSet list"
+// (which is a read-only query, not a write).
+export const isConfigSetCommand = (
+  commandData?: string,
+  commandText?: string
+): boolean => {
+  const text = commandData ?? commandText ?? ''
+  if (/^\s*configSet\s+list\s*$/i.test(text)) return false
+  return /^\s*configSet\s+\S+/i.test(text)
 }
 
 export const ScheduleSection: React.FC<ScheduleSectionProps> = ({
@@ -210,6 +229,31 @@ export const ScheduleSection: React.FC<ScheduleSectionProps> = ({
     { vehicle: vehicleName, limit: 50 },
     { enabled: !!vehicleName, staleTime: 15 * 1000, refetchInterval: 30 * 1000 }
   )
+
+  // Fetch note events that record operator cancellations so we can stamp
+  // schedule items as 'cancelled' instead of incorrectly showing 'completed'.
+  // The TethysDash backend writes a note with text matching:
+  //   "Cancelled request {eventId} for '{vehicle}': ..."
+  const cancellationNotesResponse = useEvents(
+    {
+      vehicles: [vehicleName],
+      eventTypes: ['note'] as EventType[],
+      noteMatches: 'Cancelled request',
+      from: 0,
+      limit: 500,
+    },
+    { enabled: !!vehicleName, staleTime: 30 * 1000, refetchInterval: 30 * 1000 }
+  )
+
+  // Build a Set of eventIds that were explicitly cancelled by an operator.
+  const cancelledEventIds = useMemo(() => {
+    const ids = new Set<number>()
+    cancellationNotesResponse.data?.forEach((note) => {
+      const match = note.note?.match(/Cancelled request (\d+)/)
+      if (match) ids.add(parseInt(match[1], 10))
+    })
+    return ids
+  }, [cancellationNotesResponse.data])
 
   // Build a timeline: each entry knows its own start time and when it ended
   // (= the start time of the mission that replaced it, or undefined if running).
@@ -372,7 +416,12 @@ export const ScheduleSection: React.FC<ScheduleSectionProps> = ({
     const currentMissionEntry = missionTimeline[0]
     if (currentMissionEntry) {
       const currentMissionPath = normalizeMissionPath(currentMissionEntry.name)
-      if (!currentMissionPath) return enriched
+      if (!currentMissionPath)
+        return enriched.map((item) =>
+          cancelledEventIds.has(item.event.eventId)
+            ? { ...item, status: 'cancelled' as const }
+            : item
+        )
 
       const matchingMissionIndex = enriched.reduce((bestIdx, item, idx) => {
         const fromDataPath = missionPathFromEventData(item.event.data)
@@ -482,11 +531,17 @@ export const ScheduleSection: React.FC<ScheduleSectionProps> = ({
     // will never execute — treat them as completed so the history is clean.
     // Must run AFTER enrichment so statuses are resolved from 'TBD' first.
     if (isRecovered) {
-      return enriched.map((item) =>
-        item.status === 'pending' || item.status === 'TBD'
-          ? { ...item, status: 'completed' }
-          : item
-      )
+      return enriched
+        .map((item) =>
+          item.status === 'pending' || item.status === 'TBD'
+            ? { ...item, status: 'completed' }
+            : item
+        )
+        .map((item) =>
+          cancelledEventIds.has(item.event.eventId)
+            ? { ...item, status: 'cancelled' as const }
+            : item
+        )
     }
 
     // Inject Default mission rows from missionTimeline.
@@ -520,11 +575,21 @@ export const ScheduleSection: React.FC<ScheduleSectionProps> = ({
     }
 
     if (isRecovered) {
-      return enriched.map((item) =>
-        item.status === 'pending' ? { ...item, status: 'completed' } : item
-      )
+      return enriched
+        .map((item) =>
+          item.status === 'pending' ? { ...item, status: 'completed' } : item
+        )
+        .map((item) =>
+          cancelledEventIds.has(item.event.eventId)
+            ? { ...item, status: 'cancelled' as const }
+            : item
+        )
     }
-    return enriched
+    return enriched.map((item) =>
+      cancelledEventIds.has(item.event.eventId)
+        ? { ...item, status: 'cancelled' as const }
+        : item
+    )
   }, [
     deploymentLogsOnly,
     deploymentResponse.data,
@@ -532,6 +597,7 @@ export const ScheduleSection: React.FC<ScheduleSectionProps> = ({
     missionTimeline,
     missionStartedResponse.data,
     isRecovered,
+    cancelledEventIds,
   ])
 
   const scheduledTypes = ['pending', 'running']
@@ -559,9 +625,10 @@ export const ScheduleSection: React.FC<ScheduleSectionProps> = ({
 
   const scheduledCells = missions?.filter(isAboveSeparator)
 
-  const historicCells = missions
-    ?.filter((v) => !isAboveSeparator(v))
-    .filter(
+  const allHistoricCells = missions?.filter((v) => !isAboveSeparator(v))
+
+  const historicCells = allHistoricCells
+    ?.filter(
       (v) =>
         !scheduleFilter ||
         scheduleFilter === 'all' ||
@@ -577,7 +644,11 @@ export const ScheduleSection: React.FC<ScheduleSectionProps> = ({
     )
     .sort((a, b) => (b.event.unixTime ?? 0) - (a.event.unixTime ?? 0))
 
-  const hasPastSchedule = (historicCells?.length ?? 0) > 0
+  // Base hasPastSchedule on unfiltered history so the Schedule History header
+  // row (which contains the search input) is never hidden by an active search
+  // or filter — otherwise a no-match search removes the input itself, trapping
+  // the user with no way to clear or retry.
+  const hasPastSchedule = (allHistoricCells?.length ?? 0) > 0
   const staticFilterCellOffset = hasPastSchedule ? 1 : 0
 
   const results = [scheduledCells, historicCells].flat()
@@ -604,10 +675,13 @@ export const ScheduleSection: React.FC<ScheduleSectionProps> = ({
     commandType: 'mission' | 'command'
     status: ScheduleCellStatus
     rect: DOMRect
+    isDefaultMission?: boolean
   } | null>(null)
   const closeMoreMenu = () => setCurrentMoreMenu(null)
-  const openMoreMenu: ScheduleCellProps['onMoreClick'] = (
-    target,
+  const openMoreMenu = (
+    target: Parameters<ScheduleCellProps['onMoreClick']>[0] & {
+      isDefaultMission?: boolean
+    },
     rect?: DOMRect
   ) => {
     if (rect) {
@@ -771,7 +845,9 @@ export const ScheduleSection: React.FC<ScheduleSectionProps> = ({
               },
             })
           }}
-          onMoreClick={openMoreMenu}
+          onMoreClick={(target, rect) =>
+            openMoreMenu({ ...target, isDefaultMission: true }, rect)
+          }
         />
       )
     }
@@ -783,6 +859,10 @@ export const ScheduleSection: React.FC<ScheduleSectionProps> = ({
       isMissionCommand(mission?.event?.data, mission?.event?.text)
     const isParam =
       !isMission && isParamCommand(mission?.event?.data, mission?.event?.text)
+    const isConfigSet =
+      !isMission &&
+      !isParam &&
+      isConfigSetCommand(mission?.event?.data, mission?.event?.text)
     const cellCommandType: 'mission' | 'command' = isMission
       ? 'mission'
       : 'command'
@@ -794,8 +874,8 @@ export const ScheduleSection: React.FC<ScheduleSectionProps> = ({
       ? schedDateMatch[1]
       : undefined
     const cellStatus: ScheduleCellStatus = (() => {
-      if (isParam) {
-        // Params are always dispatched — use comms lookup to upgrade to ack/timeout
+      if (isParam || isConfigSet) {
+        // Dispatched one-shots — use comms lookup to upgrade to ack/timeout.
         const commsStatus = commsLookup.get(mission.event.eventId)
         if (commsStatus === 'ack') return 'ack'
         if (commsStatus === 'timeout') return 'timeout'
@@ -884,23 +964,24 @@ export const ScheduleSection: React.FC<ScheduleSectionProps> = ({
           const timeStr = isToday
             ? dt.toFormat('H:mm')
             : dt.toFormat('MMM d, H:mm')
-          const verb = isParam
-            ? 'Sent'
-            : cellStatus === 'pending'
-            ? scheduleDate && scheduleDate !== 'asap'
-              ? 'Queued'
+          const verb =
+            isParam || isConfigSet
+              ? 'Sent'
+              : cellStatus === 'pending'
+              ? scheduleDate && scheduleDate !== 'asap'
+                ? 'Queued'
+                : isMission
+                ? 'Scheduled'
+                : 'Sent'
+              : cellStatus === 'running'
+              ? 'Started'
               : isMission
-              ? 'Scheduled'
-              : 'Sent'
-            : cellStatus === 'running'
-            ? 'Started'
-            : isMission
-            ? 'Started'
-            : 'Ran'
+              ? 'Started'
+              : 'Ran'
           return `${verb} ${timeStr}${relativePart}`
         })()}
         description2={
-          isParam
+          isParam || isConfigSet
             ? undefined
             : cellStatus === 'pending' &&
               scheduleDate &&
@@ -921,8 +1002,15 @@ export const ScheduleSection: React.FC<ScheduleSectionProps> = ({
         badge={
           isParam
             ? {
+                text: 'param',
+                tooltip: 'Mission parameter update — sent to vehicle',
+              }
+            : isConfigSet
+            ? {
                 text: 'config',
-                tooltip: 'Config update — sent to vehicle',
+                tooltip: 'Vehicle config update — sent to vehicle',
+                icon: faWrench,
+                variant: 'blue' as const,
               }
             : undefined
         }
@@ -949,6 +1037,7 @@ export const ScheduleSection: React.FC<ScheduleSectionProps> = ({
                 scheduleDate,
                 via: getVia(mission.event.note) ?? undefined,
                 isParamUpdate: isParam,
+                isConfigSetUpdate: isConfigSet,
                 commsStatus: commsLookup.get(mission.event.eventId),
               },
             },
@@ -1007,8 +1096,62 @@ export const ScheduleSection: React.FC<ScheduleSectionProps> = ({
     }
   }
 
-  const handleDelete = (_: { eventId: number; commandType: string }) => {
-    toast.error('This feature is currently not supported.')
+  const queryClient = useQueryClient()
+  const deleteCommandQueueMutation = useDeleteCommandQueue()
+  const createNoteMutation = useCreateNote()
+
+  const handleDelete = async ({
+    eventId,
+    commandType,
+  }: {
+    eventId: number
+    commandType: 'mission' | 'command'
+  }) => {
+    if (
+      !confirm(
+        `Cancel this ${commandType} directive (event ID ${eventId})? This will remove it from the shore-side queue.`
+      )
+    ) {
+      return
+    }
+    try {
+      await deleteCommandQueueMutation.mutateAsync({
+        vehicle: vehicleName,
+        refEventId: eventId,
+      })
+    } catch (e) {
+      toast.error(
+        `Failed to cancel directive ${eventId}. It may have already been sent to the vehicle.`
+      )
+      return
+    }
+
+    // Refresh schedule immediately after the DELETE succeeds, regardless of note outcome.
+    queryClient.invalidateQueries(['event', 'events'])
+    queryClient.invalidateQueries(['events'])
+    queryClient.invalidateQueries(['event', 'missionStarted'])
+
+    toast.success(`Cancelled directive ${eventId}.`)
+
+    const matchedResult = results.find((r) => r?.event.eventId === eventId)
+    const rawCommandText =
+      matchedResult?.event?.data ?? matchedResult?.event?.text ?? ''
+    const normalizedCommandText = rawCommandText.replace(/\s+/g, ' ').trim()
+    const commandText =
+      normalizedCommandText.length > 200
+        ? `${normalizedCommandText.slice(0, 200)}…`
+        : normalizedCommandText
+    try {
+      await createNoteMutation.mutateAsync({
+        vehicle: vehicleName,
+        note: `Cancelled request ${eventId} for '${vehicleName}': '${commandText}'`,
+      })
+      queryClient.invalidateQueries(['event', 'events'])
+    } catch (e) {
+      toast.error(
+        `Directive ${eventId} was cancelled, but the cancellation note could not be recorded.`
+      )
+    }
   }
 
   const handleDownload = ({
@@ -1101,27 +1244,32 @@ export const ScheduleSection: React.FC<ScheduleSectionProps> = ({
                 onSelect: () => {
                   handleDuplicate({
                     eventId: currentMoreMenu?.eventId as number,
-                    commandType: currentMoreMenu?.commandType as string,
+                    commandType: currentMoreMenu?.commandType,
                   })
                   closeMoreMenu()
                 },
               },
-              {
-                label: 'Delete from Queue',
-                onSelect: () => {
-                  handleDelete({
-                    eventId: currentMoreMenu?.eventId as number,
-                    commandType: currentMoreMenu?.commandType as string,
-                  })
-                  closeMoreMenu()
-                },
-              },
+              ...(!currentMoreMenu.isDefaultMission &&
+              currentMoreMenu.status === 'pending'
+                ? [
+                    {
+                      label: 'Cancel this Directive',
+                      onSelect: () => {
+                        handleDelete({
+                          eventId: currentMoreMenu?.eventId as number,
+                          commandType: currentMoreMenu?.commandType,
+                        })
+                        closeMoreMenu()
+                      },
+                    },
+                  ]
+                : []),
               {
                 label: 'Download SBDs',
                 onSelect: () => {
                   handleDownload({
                     eventId: currentMoreMenu?.eventId as number,
-                    commandType: currentMoreMenu?.commandType as string,
+                    commandType: currentMoreMenu?.commandType,
                   })
                   closeMoreMenu()
                 },
@@ -1132,7 +1280,7 @@ export const ScheduleSection: React.FC<ScheduleSectionProps> = ({
                   onSelect: () => {
                     handleMoveInQueue({
                       eventId: currentMoreMenu?.eventId as number,
-                      commandType: currentMoreMenu?.commandType as string,
+                      commandType: currentMoreMenu?.commandType,
                       direction: 'up',
                     })
                     closeMoreMenu()
@@ -1143,14 +1291,16 @@ export const ScheduleSection: React.FC<ScheduleSectionProps> = ({
                   onSelect: () => {
                     handleMoveInQueue({
                       eventId: currentMoreMenu?.eventId as number,
-                      commandType: currentMoreMenu?.commandType as string,
+                      commandType: currentMoreMenu?.commandType,
                       direction: 'down',
                     })
                     closeMoreMenu()
                   },
                 },
-              ].filter(() =>
-                ['running', 'pending'].includes(currentMoreMenu.status)
+              ].filter(
+                () =>
+                  ['running', 'pending'].includes(currentMoreMenu.status) &&
+                  !currentMoreMenu.isDefaultMission
               ),
             ]}
           />

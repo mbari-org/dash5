@@ -111,10 +111,16 @@ interface MarkerData {
 // OverviewMap component
 const OverViewMap: React.FC<{
   trackedVehicles: { name: string; id?: string }[]
-}> = ({ trackedVehicles }) => {
+  invalidateSizeRef?: React.MutableRefObject<(() => void) | null>
+}> = ({ trackedVehicles, invalidateSizeRef }) => {
   // Add mapRef to store the Leaflet map instance
   const mapRef = useRef<L.Map | null>(null)
   const mapContainerRef = useRef<HTMLDivElement | null>(null)
+
+  // Track the current Leaflet map instance so the container-width poller below
+  // restarts whenever onMapReady fires with a new map (e.g. after the Map key
+  // changes on navigation while OverViewMap stays mounted).
+  const [currentMap, setCurrentMap] = useState<L.Map | null>(null)
 
   // Call invalidateSize whenever the container resizes (fixes partial-map rendering
   // after refresh). useResizeObserver is polyfilled and throttled (100 ms by default).
@@ -124,6 +130,46 @@ const OverViewMap: React.FC<{
       mapRef.current.invalidateSize()
     }
   }, [size])
+
+  // Poll the container's offsetWidth every 100 ms for 2 s after the map is
+  // created. Whenever the width changes (Allotment settling its layout,
+  // especially during client-side navigation where the chunk is cached and the
+  // map mounts before Allotment has measured its container) call invalidateSize.
+  // This is the standard Leaflet pattern for dynamically-sized host containers.
+  useEffect(() => {
+    if (!currentMap) return
+    const map = currentMap
+    let lastWidth = mapContainerRef.current?.offsetWidth ?? 0
+    let ticks = 0
+    let pollId: ReturnType<typeof setInterval>
+
+    const stopPoll = () => clearInterval(pollId)
+
+    pollId = setInterval(() => {
+      if (mapRef.current !== map || !mapContainerRef.current) {
+        clearInterval(pollId)
+        return
+      }
+      const w = mapContainerRef.current.offsetWidth
+      if (w > 0 && w !== lastWidth) {
+        lastWidth = w
+        map.invalidateSize()
+      }
+      if (++ticks >= 20) {
+        clearInterval(pollId)
+      }
+    }, 100)
+
+    map.once('unload', stopPoll)
+
+    return () => {
+      clearInterval(pollId)
+      map.off('unload', stopPoll)
+      if (mapRef.current === map) {
+        mapRef.current = null
+      }
+    }
+  }, [currentMap])
   const router = useRouter()
   const { handleDepthRequest, elevationAvailable } = useGoogleElevator()
   const [center, setCenter] = useState<undefined | [number, number]>()
@@ -649,7 +695,40 @@ const OverViewMap: React.FC<{
           onMapReady={(map) => {
             logger.debug('🌍 Map ready callback triggered in OverViewMap')
             mapRef.current = map
-            map.invalidateSize()
+            setCurrentMap(map)
+
+            const containerW = mapContainerRef.current?.offsetWidth ?? 0
+            const containerH = mapContainerRef.current?.offsetHeight ?? 0
+            logger.debug(`onMapReady — container: ${containerW}×${containerH}`)
+
+            const invalidateIfCurrent = () => {
+              if (mapRef.current === map) {
+                map.invalidateSize()
+              }
+            }
+
+            // Expose a stable invalidate handle for external callers (e.g. Allotment onChange)
+            if (invalidateSizeRef) {
+              invalidateSizeRef.current = invalidateIfCurrent
+            }
+
+            let firstRafId: number | null = null
+            let secondRafId: number | null = null
+            let timeoutId: ReturnType<typeof setTimeout> | null = null
+
+            const cancelScheduled = () => {
+              if (firstRafId !== null) cancelAnimationFrame(firstRafId)
+              if (secondRafId !== null) cancelAnimationFrame(secondRafId)
+              if (timeoutId !== null) clearTimeout(timeoutId)
+            }
+
+            invalidateIfCurrent()
+            firstRafId = requestAnimationFrame(() => {
+              invalidateIfCurrent()
+              secondRafId = requestAnimationFrame(() => invalidateIfCurrent())
+            })
+            timeoutId = setTimeout(() => invalidateIfCurrent(), 300)
+            map.once('unload', cancelScheduled)
           }}
           trackedVehicles={trackedVehicles?.map((vehicle) => ({
             ...vehicle,
@@ -815,6 +894,10 @@ const OverviewPage: NextPage = () => {
   const { setGlobalModalId } = useGlobalModalId()
   const [mobileView, setMobileView] = useState<MobileView>('map')
   const isDesktop = useIsDesktop()
+  // Shared ref populated by OverViewMap once the Leaflet map is ready.
+  // Allotment's onChange fires it so the map re-measures after every
+  // layout pass, including the initial one where pane sizes are first set.
+  const mapInvalidateSizeRef = useRef<(() => void) | null>(null)
 
   useEffect(() => {
     if (!mounted.current) {
@@ -835,6 +918,7 @@ const OverviewPage: NextPage = () => {
             trackedVehicles={trackedVehicles.map((vehicle) => ({
               name: vehicle,
             }))}
+            invalidateSizeRef={mapInvalidateSizeRef}
           />
         )}
       </div>
@@ -877,6 +961,9 @@ const OverviewPage: NextPage = () => {
                                   snap
                                   defaultSizes={[75, 25]}
                                   proportionalLayout
+                                  onChange={() => {
+                                    mapInvalidateSizeRef.current?.()
+                                  }}
                                 >
                                   <Allotment.Pane>
                                     {primarySection}

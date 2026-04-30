@@ -329,6 +329,10 @@ const EmailNotificationsModal: React.FC<EmailNotificationsModalProps> = ({
       title={<span className="text-2xl font-bold">Email notifications</span>}
       onClose={onClose}
       open
+      grayHeader
+      headerClassName="!bg-secondary-300 !items-center"
+      titleClassName="!pt-0 !mt-0"
+      closeButtonClassName="!text-stone-700"
       style={{ minWidth: 800 }}
       onConfirm={handleSave}
       confirmButtonText="Save"
@@ -401,7 +405,7 @@ const EmailNotificationsModal: React.FC<EmailNotificationsModalProps> = ({
           </div>
           <div className="overflow-auto rounded border bg-white">
             <table className="w-full text-left text-sm">
-              <thead className="bg-stone-50">
+              <thead className="bg-secondary-300">
                 <tr className="border-b">
                   <th className="p-2">Vehicles selected</th>
                 </tr>
@@ -430,7 +434,7 @@ const EmailNotificationsModal: React.FC<EmailNotificationsModalProps> = ({
 
           <div className="overflow-auto rounded border bg-white">
             <table className="w-full text-left text-sm">
-              <thead className="bg-stone-50">
+              <thead className="bg-secondary-300">
                 <tr className="border-b">
                   <th className="p-2" style={{ width: 160 }}>
                     Event

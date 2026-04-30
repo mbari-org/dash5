@@ -1,9 +1,12 @@
 import React from 'react'
 import { render, screen, waitFor } from '@testing-library/react'
+import userEvent from '@testing-library/user-event'
 import '@testing-library/jest-dom'
 import {
   ScheduleSection,
   ScheduleSectionProps,
+  isParamCommand,
+  isConfigSetCommand,
 } from '../components/ScheduleSection'
 import { QueryClient } from 'react-query'
 import { rest } from 'msw'
@@ -117,7 +120,10 @@ const server = setupServer(
 )
 
 beforeAll(() => server.listen())
-afterEach(() => server.resetHandlers())
+afterEach(() => {
+  server.resetHandlers()
+  jest.restoreAllMocks()
+})
 afterAll(() => server.close())
 
 test('should render the component', async () => {
@@ -380,5 +386,264 @@ test('shows timeout icon when a non-mission cell command times out', async () =>
 
   await waitFor(() => {
     expect(screen.getByTitle(/timeout/i)).toBeInTheDocument()
+  })
+})
+
+test('Cancel this Directive calls DELETE /commands/queue when confirmed', async () => {
+  let deleteCalled = false
+  let noteCalled = false
+  server.use(
+    rest.get('/events', (_req, res, ctx) =>
+      res(
+        ctx.status(200),
+        ctx.json({
+          result: [
+            {
+              data: 'load Science/profiles.xml run',
+              unixTime: Date.now() - 60 * 1000,
+              eventId: 99001,
+              eventType: 'run',
+              text: null,
+              note: null,
+              user: 'test-user',
+            },
+          ],
+        })
+      )
+    ),
+    rest.get('/events/mission-started', (_req, res, ctx) =>
+      res(ctx.status(200), ctx.json({ result: [] }))
+    ),
+    rest.delete('/commands/queue', (_req, res, ctx) => {
+      deleteCalled = true
+      return res(ctx.status(200), ctx.json({ result: 'ok' }))
+    }),
+    rest.post('/events/note', (_req, res, ctx) => {
+      noteCalled = true
+      return res(ctx.status(200), ctx.json({ result: {} }))
+    })
+  )
+  jest.spyOn(window, 'confirm').mockReturnValueOnce(true)
+
+  render(
+    <MockProviders queryClient={new QueryClient()}>
+      <ScheduleSection {...props} currentDeploymentId={1} />
+    </MockProviders>
+  )
+
+  const user = userEvent.setup()
+  const moreButton = await screen.findByRole('button', {
+    name: /more options/i,
+  })
+  await user.click(moreButton)
+  await user.click(await screen.findByText('Cancel this Directive'))
+
+  await waitFor(() => {
+    expect(deleteCalled).toBe(true)
+    expect(noteCalled).toBe(true)
+  })
+})
+
+test('Schedule History header and search input stay visible when search matches nothing', async () => {
+  // Set up a completed historic mission: profile_station is older than the
+  // currently-running keepstation, so the mission timeline marks it completed.
+  server.use(
+    rest.get('/events', (_req, res, ctx) =>
+      res(
+        ctx.status(200),
+        ctx.json({
+          result: [
+            {
+              data: 'load Science/profile_station.tl;run',
+              unixTime: Date.now() - 120 * 1000,
+              eventId: 101,
+              eventType: 'run',
+              text: null,
+              note: null,
+              user: 'test-user',
+            },
+          ],
+        })
+      )
+    ),
+    rest.get('/events/mission-started', (_req, res, ctx) =>
+      res(ctx.status(200), ctx.json({ result: missionStartedWithHistory }))
+    )
+  )
+
+  const user = userEvent.setup()
+
+  render(
+    <MockProviders queryClient={new QueryClient()}>
+      <ScheduleSection {...props} currentDeploymentId={1} />
+    </MockProviders>
+  )
+
+  // Wait for the Schedule History header to appear (completed item present).
+  await waitFor(() => {
+    expect(screen.getByText(/schedule history/i)).toBeInTheDocument()
+  })
+
+  // Type a term that matches nothing — previously this removed the header row.
+  await user.type(screen.getByPlaceholderText('Search'), 'xyzzy-no-match')
+
+  // The header row (including the search input) must survive a zero-match search.
+  await waitFor(() => {
+    expect(screen.getByText(/schedule history/i)).toBeInTheDocument()
+    expect(screen.getByPlaceholderText('Search')).toBeInTheDocument()
+  })
+})
+
+test('Cancel this Directive does not call DELETE when confirm is dismissed', async () => {
+  let deleteCalled = false
+  server.use(
+    rest.get('/events', (_req, res, ctx) =>
+      res(
+        ctx.status(200),
+        ctx.json({
+          result: [
+            {
+              data: 'load Science/profiles.xml run',
+              unixTime: Date.now() - 60 * 1000,
+              eventId: 99001,
+              eventType: 'run',
+              text: null,
+              note: null,
+              user: 'test-user',
+            },
+          ],
+        })
+      )
+    ),
+    rest.get('/events/mission-started', (_req, res, ctx) =>
+      res(ctx.status(200), ctx.json({ result: [] }))
+    ),
+    rest.delete('/commands/queue', (_req, res, ctx) => {
+      deleteCalled = true
+      return res(ctx.status(200), ctx.json({ result: 'ok' }))
+    }),
+    rest.post('/events/note', (_req, res, ctx) =>
+      res(ctx.status(200), ctx.json({ result: {} }))
+    )
+  )
+  jest.spyOn(window, 'confirm').mockReturnValueOnce(false)
+
+  render(
+    <MockProviders queryClient={new QueryClient()}>
+      <ScheduleSection {...props} currentDeploymentId={1} />
+    </MockProviders>
+  )
+
+  const user = userEvent.setup()
+  const moreButton = await screen.findByRole('button', {
+    name: /more options/i,
+  })
+  await user.click(moreButton)
+  await user.click(await screen.findByText('Cancel this Directive'))
+
+  // Menu closes; confirm was dismissed so DELETE must never fire
+  await waitFor(() =>
+    expect(screen.queryByText('Cancel this Directive')).not.toBeInTheDocument()
+  )
+  expect(deleteCalled).toBe(false)
+})
+
+// ── isParamCommand unit tests ────────────────────────────────────────────────
+
+test('isParamCommand returns true for "set <mission>.<param> <value>"', () => {
+  expect(isParamCommand('set profile_station.YoYoMaxDepth 40 meter')).toBe(true)
+  expect(isParamCommand('set sci2.Lat1 36.87 degree')).toBe(true)
+  expect(isParamCommand('  set keepstation.Radius 200 meter')).toBe(true)
+})
+
+test('isParamCommand returns false for non-param commands', () => {
+  expect(
+    isParamCommand(
+      'configSet VerticalControl.massDefault -16 millimeter persist'
+    )
+  ).toBe(false)
+  expect(isParamCommand('load Science/profile_station.tl;run')).toBe(false)
+  expect(isParamCommand('sched resume')).toBe(false)
+  expect(isParamCommand('gfscan')).toBe(false)
+})
+
+// ── isConfigSetCommand unit tests ────────────────────────────────────────────
+
+test('isConfigSetCommand returns true for "configSet <subsystem>.<param>"', () => {
+  expect(
+    isConfigSetCommand(
+      'configSet VerticalControl.massDefault -16 millimeter persist'
+    )
+  ).toBe(true)
+  expect(
+    isConfigSetCommand('configSet CTD_Seabird.loadAtStartup 1 bool persist')
+  ).toBe(true)
+  expect(
+    isConfigSetCommand(
+      '  configSet RDI_Pathfinder.loadAtStartup 1 bool persist'
+    )
+  ).toBe(true)
+})
+
+test('isConfigSetCommand returns true for non-dotted configSet commands', () => {
+  expect(
+    isConfigSetCommand(
+      'configSet Express linearApproximation acoustic_receive_time ampere_hour persist'
+    )
+  ).toBe(true)
+})
+
+test('isConfigSetCommand returns false for non-configSet commands and configSet list', () => {
+  expect(isConfigSetCommand('set profile_station.YoYoMaxDepth 40 meter')).toBe(
+    false
+  )
+  expect(isConfigSetCommand('load Science/profile_station.tl;run')).toBe(false)
+  expect(isConfigSetCommand('sched resume')).toBe(false)
+  expect(isConfigSetCommand('configSet list')).toBe(false)
+  expect(isConfigSetCommand('  configSet list  ')).toBe(false)
+})
+
+// ── configSet integration test ───────────────────────────────────────────────
+
+test('configSet command row shows Sent status and config badge tooltip', async () => {
+  server.use(
+    rest.get('/events', (_req, res, ctx) =>
+      res(
+        ctx.status(200),
+        ctx.json({
+          result: [
+            {
+              data: 'configSet VerticalControl.massDefault -16 millimeter persist',
+              unixTime: Date.now() - 60 * 1000,
+              eventId: 300,
+              eventType: 'command',
+              text: null,
+              note: null,
+              user: 'test-engineer',
+            },
+          ],
+        })
+      )
+    ),
+    rest.get('/events/mission-started', (_req, res, ctx) =>
+      res(ctx.status(200), ctx.json({ result: [] }))
+    )
+  )
+
+  render(
+    <MockProviders queryClient={new QueryClient()}>
+      <ScheduleSection {...props} currentDeploymentId={1} />
+    </MockProviders>
+  )
+
+  // configSet is an instantaneous one-shot — its verb must be 'Sent', not 'Ran'
+  await waitFor(() => {
+    expect(screen.getByText(/^Sent /i)).toBeInTheDocument()
+  })
+
+  // The blue-variant badge renders the faWrench icon (data-icon="wrench")
+  await waitFor(() => {
+    const wrenchIcon = document.querySelector('svg[data-icon="wrench"]')
+    expect(wrenchIcon).toBeInTheDocument()
   })
 })

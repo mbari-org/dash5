@@ -62,6 +62,7 @@ export interface GlobalModalMetaData {
     scheduleDate?: string
     via?: 'cell' | 'sat' | 'cellsat'
     isParamUpdate?: boolean
+    isConfigSetUpdate?: boolean
     /** Raw comms status from the Comms Queue — 'queued'|'sent'|'ack'|'timeout' */
     commsStatus?: string
     /** True for automatic Default mission rows (not operator-commanded) */

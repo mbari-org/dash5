@@ -146,12 +146,18 @@ export const OverviewToolbar: React.FC<OverviewToolbarProps> = ({
               className={styles.dropdown}
               header={
                 <ul>
-                  {deployment?.unixTime && (
-                    <li>
-                      Started{' '}
-                      {DateTime.fromMillis(deployment.unixTime).toRelative()}
-                    </li>
-                  )}
+                  {deployment?.unixTime &&
+                    (() => {
+                      const deploymentDt = DateTime.fromMillis(
+                        deployment.unixTime
+                      )
+                      return (
+                        <li>
+                          {deploymentDt > DateTime.now() ? 'Starts' : 'Started'}{' '}
+                          {deploymentDt.toRelative()}
+                        </li>
+                      )
+                    })()}
                   {deployment?.name && (
                     <li className="font-medium">{deployment.name}</li>
                   )}
