@@ -44,10 +44,7 @@ export const useResizeObserver = <T>({
           return prev
         })
       }, wait),
-    // Intentionally omit `size` — using functional setState avoids a stale
-    // closure that would cause the ResizeObserver to keep an outdated callback.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    [setSize, wait]
+    [wait]
   )
 
   useEffect(() => {
@@ -62,8 +59,9 @@ export const useResizeObserver = <T>({
     }
 
     return () => {
+      callback.cancel()
       if (elementRef.current) {
-        observerRef.current?.unobserve(element)
+        observerRef.current?.disconnect()
       }
     }
   }, [elementRef, wait, observerRef, callback])

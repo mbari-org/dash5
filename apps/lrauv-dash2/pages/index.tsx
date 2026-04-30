@@ -649,16 +649,34 @@ const OverViewMap: React.FC<{
           onMapReady={(map) => {
             logger.debug('🌍 Map ready callback triggered in OverViewMap')
             mapRef.current = map
-            map.invalidateSize()
+
+            const invalidateIfCurrent = () => {
+              if (mapRef.current === map) {
+                map.invalidateSize()
+              }
+            }
+
+            let firstRafId: number | null = null
+            let secondRafId: number | null = null
+            let timeoutId: ReturnType<typeof setTimeout> | null = null
+
+            const cancelScheduled = () => {
+              if (firstRafId !== null) cancelAnimationFrame(firstRafId)
+              if (secondRafId !== null) cancelAnimationFrame(secondRafId)
+              if (timeoutId !== null) clearTimeout(timeoutId)
+            }
+
+            invalidateIfCurrent()
             // Allotment computes pane sizes asynchronously after mount. Call
             // invalidateSize again on the next two animation frames and after a
             // short timeout so Leaflet always measures the final container
             // dimensions, regardless of when the split-pane layout settles.
-            requestAnimationFrame(() => {
-              map.invalidateSize()
-              requestAnimationFrame(() => map.invalidateSize())
+            firstRafId = requestAnimationFrame(() => {
+              invalidateIfCurrent()
+              secondRafId = requestAnimationFrame(() => invalidateIfCurrent())
             })
-            setTimeout(() => map.invalidateSize(), 300)
+            timeoutId = setTimeout(() => invalidateIfCurrent(), 300)
+            map.once('unload', cancelScheduled)
           }}
           trackedVehicles={trackedVehicles?.map((vehicle) => ({
             ...vehicle,
