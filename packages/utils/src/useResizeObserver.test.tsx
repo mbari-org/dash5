@@ -1,22 +1,28 @@
 /**
  * @jest-environment jsdom
+ *
+ * jest.mock() factories are hoisted above all imports and let-bindings.
+ * Any variable referenced from inside a factory must be prefixed with
+ * "mock" — Jest allows only those names to cross the hoist boundary safely.
  */
 
 // ---------------------------------------------------------------------------
-// Module mocks — jest.mock is hoisted above imports, so these run first.
+// Hoist-safe mock state  (must be prefixed with "mock" per Jest rules)
 // ---------------------------------------------------------------------------
-
-// Captures the latest observer callback and instance methods so tests can
-// drive them directly without relying on DOM events.
 // ---------------------------------------------------------------------------
-// Imports must come after jest.mock declarations
+// Imports must follow jest.mock declarations
 // ---------------------------------------------------------------------------
 import { act, renderHook } from '@testing-library/react'
 import { useResizeObserver } from './useResizeObserver'
 
-let latestDisconnect: jest.Mock
-let latestCancel: jest.Mock
-let triggerResize: (width: number, height: number) => void
+let mockDisconnect = jest.fn()
+let mockCancel = jest.fn()
+// Populated by the ResizeObserver mock constructor; undefined until first render
+let mockTriggerResize: ((width: number, height: number) => void) | undefined
+
+// ---------------------------------------------------------------------------
+// Module mocks
+// ---------------------------------------------------------------------------
 
 jest.mock('resize-observer-polyfill', () =>
   jest
@@ -24,9 +30,11 @@ jest.mock('resize-observer-polyfill', () =>
     .mockImplementation(
       (cb: (entries: Partial<ResizeObserverEntry>[]) => void) => {
         let observedEl: Element | null = null
-        latestDisconnect = jest.fn()
+        // Fresh disconnect spy per observer instance; captured via module-scope
+        // mock-prefixed variable so tests can reference the latest instance.
+        mockDisconnect = jest.fn()
 
-        triggerResize = (width: number, height: number) => {
+        mockTriggerResize = (width: number, height: number) => {
           cb([
             {
               contentBoxSize: [{ inlineSize: width, blockSize: height }],
@@ -41,7 +49,7 @@ jest.mock('resize-observer-polyfill', () =>
             observedEl = el
           }),
           unobserve: jest.fn(),
-          disconnect: (...args: unknown[]) => latestDisconnect(...args),
+          disconnect: (...args: unknown[]) => mockDisconnect(...args),
         }
       }
     )
@@ -51,9 +59,9 @@ jest.mock('resize-observer-polyfill', () =>
 jest.mock('lodash', () => ({
   ...jest.requireActual('lodash'),
   throttle: (fn: (...args: unknown[]) => unknown) => {
-    latestCancel = jest.fn()
+    mockCancel = jest.fn()
     const passThrough: any = (...args: unknown[]) => fn(...args)
-    passThrough.cancel = (...args: unknown[]) => latestCancel(...args)
+    passThrough.cancel = (...args: unknown[]) => mockCancel(...args)
     passThrough.flush = jest.fn()
     return passThrough
   },
@@ -71,6 +79,14 @@ function renderWithDiv(wait?: number) {
   )
 }
 
+function fireResize(width: number, height: number) {
+  act(() => {
+    if (!mockTriggerResize)
+      throw new Error('ResizeObserver not yet instantiated')
+    mockTriggerResize(width, height)
+  })
+}
+
 // ---------------------------------------------------------------------------
 // Tests
 // ---------------------------------------------------------------------------
@@ -83,44 +99,44 @@ describe('useResizeObserver', () => {
 
   it('updates size when the observer fires', () => {
     const { result } = renderWithDiv()
-    act(() => triggerResize(800, 600))
+    fireResize(800, 600)
     expect(result.current.size).toEqual({ width: 800, height: 600 })
   })
 
-  it('does not update size when dimensions are unchanged (no spurious re-renders)', () => {
+  it('does not trigger re-renders when dimensions are unchanged', () => {
     const { result } = renderWithDiv()
-    act(() => triggerResize(800, 600))
+    fireResize(800, 600)
     const sizeBefore = result.current.size
-    act(() => triggerResize(800, 600))
-    // Functional setState returns the same object reference when nothing changed
+    fireResize(800, 600)
+    // Functional setState must return the same reference when nothing changed
     expect(result.current.size).toBe(sizeBefore)
   })
 
   it('continues to report correct size after multiple resize events', () => {
     const { result } = renderWithDiv()
-    act(() => triggerResize(400, 300))
+    fireResize(400, 300)
     expect(result.current.size).toEqual({ width: 400, height: 300 })
-    act(() => triggerResize(1024, 768))
+    fireResize(1024, 768)
     expect(result.current.size).toEqual({ width: 1024, height: 768 })
   })
 
   it('disconnects unconditionally on unmount (ref may be null by then)', () => {
     const { unmount } = renderWithDiv()
-    const spy = latestDisconnect
+    const spy = mockDisconnect
     unmount()
     expect(spy).toHaveBeenCalled()
   })
 
   it('cancels any pending throttled invocation on unmount', () => {
     const { unmount } = renderWithDiv()
-    const spy = latestCancel
+    const spy = mockCancel
     unmount()
     expect(spy).toHaveBeenCalled()
   })
 
   it('disconnects the previous observer before creating a new one when wait changes', () => {
     const { rerender } = renderWithDiv(100)
-    const firstDisconnect = latestDisconnect
+    const firstDisconnect = mockDisconnect
     rerender({ w: 200 })
     expect(firstDisconnect).toHaveBeenCalled()
   })
