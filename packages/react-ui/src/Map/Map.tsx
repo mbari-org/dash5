@@ -1,3 +1,7 @@
+// NOTE: This file is consumed via its compiled output in dist/Map/Map.js.
+// The app imports from '@mbari/react-ui/dist/Map/Map' (dynamic import, SSR-safe),
+// so changes here will NOT take effect until you rebuild the package:
+//   yarn workspace @mbari/react-ui build
 import React, { useCallback, useEffect, useMemo, useState, useRef } from 'react'
 import {
   TileLayer,
