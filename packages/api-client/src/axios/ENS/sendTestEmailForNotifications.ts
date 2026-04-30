@@ -8,7 +8,7 @@ export interface SendTestEmailForNotificationsParams {
 }
 
 export interface SendTestEmailForNotificationsResponse {
-  result: string
+  email_sent: string
 }
 
 export const sendTestEmailForNotifications = async (

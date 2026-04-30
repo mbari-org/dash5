@@ -19,8 +19,8 @@ export function useElevator() {
     null
   )
 
-  // Call this immediately on mount to start initializing the service
-  useState(() => {
+  // Initialize elevation service on mount
+  useEffect(() => {
     getElevationService()
       .then(() => {
         setElevationAvailable(true)
@@ -30,7 +30,7 @@ export function useElevator() {
         setElevationAvailable(false)
         logger.warn('⚠️ Elevation service unavailable')
       })
-  })
+  }, [])
 
   const handleDepthRequest = useCallback(
     async (lat: number, lng: number): Promise<DepthResult> => {
