@@ -141,15 +141,18 @@ export const isParamCommand = (
   return /^\s*set\s+\w+\.\w+/i.test(text)
 }
 
-// Detects vehicle configuration commands: "configSet <subsystem>.<param> <value> [persist]"
+// Detects vehicle configuration commands: "configSet <pathOrSubsystem...> <value> [persist]"
 // Unlike mission param updates (set <x>.<y>), these modify the vehicle's persistent
 // config store and are independent of any running mission — a vehicle-level change.
+// Treat any configSet invocation with arguments as a config update, except "configSet list"
+// (which is a read-only query, not a write).
 export const isConfigSetCommand = (
   commandData?: string,
   commandText?: string
 ): boolean => {
   const text = commandData ?? commandText ?? ''
-  return /^\s*configSet\s+\w+\.\w+/i.test(text)
+  if (/^\s*configSet\s+list\s*$/i.test(text)) return false
+  return /^\s*configSet\s+\S+/i.test(text)
 }
 
 export const ScheduleSection: React.FC<ScheduleSectionProps> = ({
@@ -871,15 +874,8 @@ export const ScheduleSection: React.FC<ScheduleSectionProps> = ({
       ? schedDateMatch[1]
       : undefined
     const cellStatus: ScheduleCellStatus = (() => {
-      if (isParam) {
-        // Params and vehicle configSets are always dispatched — use comms lookup
-        // to upgrade to ack/timeout
-        const commsStatus = commsLookup.get(mission.event.eventId)
-        if (commsStatus === 'ack') return 'ack'
-        if (commsStatus === 'timeout') return 'timeout'
-        return 'sent'
-      }
-      if (isConfigSet) {
+      if (isParam || isConfigSet) {
+        // Dispatched one-shots — use comms lookup to upgrade to ack/timeout.
         const commsStatus = commsLookup.get(mission.event.eventId)
         if (commsStatus === 'ack') return 'ack'
         if (commsStatus === 'timeout') return 'timeout'

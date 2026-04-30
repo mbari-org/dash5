@@ -585,12 +585,22 @@ test('isConfigSetCommand returns true for "configSet <subsystem>.<param>"', () =
   ).toBe(true)
 })
 
-test('isConfigSetCommand returns false for non-configSet commands', () => {
+test('isConfigSetCommand returns true for non-dotted configSet commands', () => {
+  expect(
+    isConfigSetCommand(
+      'configSet Express linearApproximation acoustic_receive_time ampere_hour persist'
+    )
+  ).toBe(true)
+})
+
+test('isConfigSetCommand returns false for non-configSet commands and configSet list', () => {
   expect(isConfigSetCommand('set profile_station.YoYoMaxDepth 40 meter')).toBe(
     false
   )
   expect(isConfigSetCommand('load Science/profile_station.tl;run')).toBe(false)
   expect(isConfigSetCommand('sched resume')).toBe(false)
+  expect(isConfigSetCommand('configSet list')).toBe(false)
+  expect(isConfigSetCommand('  configSet list  ')).toBe(false)
 })
 
 // ── configSet integration test ───────────────────────────────────────────────

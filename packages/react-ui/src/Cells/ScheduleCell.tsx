@@ -11,7 +11,6 @@ import {
   faPersonRunning,
   faStarOfLife,
   faExclamationTriangle,
-  faWrench,
 } from '@fortawesome/free-solid-svg-icons'
 import { faClock } from '@fortawesome/free-regular-svg-icons'
 import { IconProp } from '@fortawesome/fontawesome-svg-core'
