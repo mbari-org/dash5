@@ -839,7 +839,7 @@ export const ScheduleEventDetailsModal: React.FC<
             {event.isConfigSetUpdate && (
               <span
                 className="ml-2 text-xs normal-case italic"
-                style={{ color: '#475569' }}
+                style={{ color: '#1e40af' }}
               >
                 (vehicle config update)
               </span>
