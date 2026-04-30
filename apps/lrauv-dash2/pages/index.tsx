@@ -121,11 +121,26 @@ const OverViewMap: React.FC<{
   // container-width poller below.
   const [mapCreated, setMapCreated] = useState(false)
 
+  useEffect(() => {
+    console.log(
+      '[MapDebug] OverViewMap mounted — container offsetWidth:',
+      mapContainerRef.current?.offsetWidth ?? 'ref not yet set'
+    )
+    return () => console.log('[MapDebug] OverViewMap unmounted')
+  }, [])
+
   // Call invalidateSize whenever the container resizes (fixes partial-map rendering
   // after refresh). useResizeObserver is polyfilled and throttled (100 ms by default).
   const { size } = useResizeObserver({ element: mapContainerRef })
   useEffect(() => {
+    console.log(
+      '[MapDebug] ResizeObserver fired — size:',
+      size,
+      '| mapRef set:',
+      !!mapRef.current
+    )
     if (typeof mapRef.current?.invalidateSize === 'function') {
+      console.log('[MapDebug] ResizeObserver → calling invalidateSize')
       mapRef.current.invalidateSize()
     }
   }, [size])
@@ -140,6 +155,7 @@ const OverViewMap: React.FC<{
     const map = mapRef.current
     if (!map) return
     let lastWidth = mapContainerRef.current?.offsetWidth ?? 0
+    console.log('[MapDebug] Poller started — initial offsetWidth:', lastWidth)
     let ticks = 0
     const poll = setInterval(() => {
       if (mapRef.current !== map) {
@@ -147,11 +163,26 @@ const OverViewMap: React.FC<{
         return
       }
       const w = mapContainerRef.current?.offsetWidth ?? 0
+      console.log(
+        `[MapDebug] Poller tick ${
+          ticks + 1
+        }/20 — offsetWidth: ${w}, lastWidth: ${lastWidth}`
+      )
       if (w > 0 && w !== lastWidth) {
         lastWidth = w
+        console.log(
+          '[MapDebug] Poller width changed → calling invalidateSize, new width:',
+          w
+        )
         map.invalidateSize()
       }
-      if (++ticks >= 20) clearInterval(poll)
+      if (++ticks >= 20) {
+        console.log(
+          '[MapDebug] Poller done after 20 ticks — final offsetWidth:',
+          w
+        )
+        clearInterval(poll)
+      }
     }, 100)
     return () => clearInterval(poll)
   }, [mapCreated])
@@ -682,9 +713,25 @@ const OverViewMap: React.FC<{
             mapRef.current = map
             setMapCreated(true)
 
+            const containerW = mapContainerRef.current?.offsetWidth ?? 0
+            const containerH = mapContainerRef.current?.offsetHeight ?? 0
+            console.log(
+              `[MapDebug] onMapReady — container: ${containerW}×${containerH} | Leaflet _size:`,
+              (map as any)._size
+            )
+
             const invalidateIfCurrent = () => {
               if (mapRef.current === map) {
+                const w = mapContainerRef.current?.offsetWidth ?? 0
+                const h = mapContainerRef.current?.offsetHeight ?? 0
+                console.log(
+                  `[MapDebug] invalidateIfCurrent called — container: ${w}×${h}`
+                )
                 map.invalidateSize()
+                console.log(
+                  '[MapDebug] invalidateIfCurrent done — Leaflet _size:',
+                  (map as any)._size
+                )
               }
             }
 
@@ -704,10 +751,6 @@ const OverViewMap: React.FC<{
             }
 
             invalidateIfCurrent()
-            // Allotment computes pane sizes asynchronously after mount. Call
-            // invalidateSize again on the next two animation frames and after a
-            // short timeout so Leaflet always measures the final container
-            // dimensions, regardless of when the split-pane layout settles.
             firstRafId = requestAnimationFrame(() => {
               invalidateIfCurrent()
               secondRafId = requestAnimationFrame(() => invalidateIfCurrent())
@@ -946,9 +989,15 @@ const OverviewPage: NextPage = () => {
                                   snap
                                   defaultSizes={[75, 25]}
                                   proportionalLayout
-                                  onChange={() =>
+                                  onChange={(sizes) => {
+                                    console.log(
+                                      '[MapDebug] Allotment onChange — sizes:',
+                                      sizes,
+                                      '| invalidateSizeRef set:',
+                                      !!mapInvalidateSizeRef.current
+                                    )
                                     mapInvalidateSizeRef.current?.()
-                                  }
+                                  }}
                                 >
                                   <Allotment.Pane>
                                     {primarySection}
