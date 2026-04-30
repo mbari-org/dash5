@@ -117,6 +117,11 @@ const OverViewMap: React.FC<{
   const mapRef = useRef<L.Map | null>(null)
   const mapContainerRef = useRef<HTMLDivElement | null>(null)
 
+  // Track the current Leaflet map instance so the container-width poller below
+  // restarts whenever onMapReady fires with a new map (e.g. after the Map key
+  // changes on navigation while OverViewMap stays mounted).
+  const [currentMap, setCurrentMap] = useState<L.Map | null>(null)
+
   // Call invalidateSize whenever the container resizes (fixes partial-map rendering
   // after refresh). useResizeObserver is polyfilled and throttled (100 ms by default).
   const { size } = useResizeObserver({ element: mapContainerRef })
@@ -126,14 +131,45 @@ const OverViewMap: React.FC<{
     }
   }, [size])
 
-  // Fallback: after mount, call invalidateSize at 1 s to catch any Allotment
-  // layout pass that settled after the map was created.
+  // Poll the container's offsetWidth every 100 ms for 2 s after the map is
+  // created. Whenever the width changes (Allotment settling its layout,
+  // especially during client-side navigation where the chunk is cached and the
+  // map mounts before Allotment has measured its container) call invalidateSize.
+  // This is the standard Leaflet pattern for dynamically-sized host containers.
   useEffect(() => {
-    const id = setTimeout(() => {
-      mapRef.current?.invalidateSize()
-    }, 1000)
-    return () => clearTimeout(id)
-  }, [])
+    if (!currentMap) return
+    const map = currentMap
+    let lastWidth = mapContainerRef.current?.offsetWidth ?? 0
+    let ticks = 0
+    let pollId: ReturnType<typeof setInterval>
+
+    const stopPoll = () => clearInterval(pollId)
+
+    pollId = setInterval(() => {
+      if (mapRef.current !== map || !mapContainerRef.current) {
+        clearInterval(pollId)
+        return
+      }
+      const w = mapContainerRef.current.offsetWidth
+      if (w > 0 && w !== lastWidth) {
+        lastWidth = w
+        map.invalidateSize()
+      }
+      if (++ticks >= 20) {
+        clearInterval(pollId)
+      }
+    }, 100)
+
+    map.once('unload', stopPoll)
+
+    return () => {
+      clearInterval(pollId)
+      map.off('unload', stopPoll)
+      if (mapRef.current === map) {
+        mapRef.current = null
+      }
+    }
+  }, [currentMap])
   const router = useRouter()
   const { handleDepthRequest, elevationAvailable } = useGoogleElevator()
   const [center, setCenter] = useState<undefined | [number, number]>()
@@ -659,6 +695,11 @@ const OverViewMap: React.FC<{
           onMapReady={(map) => {
             logger.debug('🌍 Map ready callback triggered in OverViewMap')
             mapRef.current = map
+            setCurrentMap(map)
+
+            const containerW = mapContainerRef.current?.offsetWidth ?? 0
+            const containerH = mapContainerRef.current?.offsetHeight ?? 0
+            logger.debug(`onMapReady — container: ${containerW}×${containerH}`)
 
             const invalidateIfCurrent = () => {
               if (mapRef.current === map) {
@@ -682,10 +723,6 @@ const OverViewMap: React.FC<{
             }
 
             invalidateIfCurrent()
-            // Allotment computes pane sizes asynchronously after mount. Call
-            // invalidateSize again on the next two animation frames and after a
-            // short timeout so Leaflet always measures the final container
-            // dimensions, regardless of when the split-pane layout settles.
             firstRafId = requestAnimationFrame(() => {
               invalidateIfCurrent()
               secondRafId = requestAnimationFrame(() => invalidateIfCurrent())
@@ -924,9 +961,9 @@ const OverviewPage: NextPage = () => {
                                   snap
                                   defaultSizes={[75, 25]}
                                   proportionalLayout
-                                  onChange={() =>
+                                  onChange={() => {
                                     mapInvalidateSizeRef.current?.()
-                                  }
+                                  }}
                                 >
                                   <Allotment.Pane>
                                     {primarySection}
