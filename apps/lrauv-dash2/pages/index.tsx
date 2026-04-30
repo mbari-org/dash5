@@ -650,6 +650,15 @@ const OverViewMap: React.FC<{
             logger.debug('🌍 Map ready callback triggered in OverViewMap')
             mapRef.current = map
             map.invalidateSize()
+            // Allotment computes pane sizes asynchronously after mount. Call
+            // invalidateSize again on the next two animation frames and after a
+            // short timeout so Leaflet always measures the final container
+            // dimensions, regardless of when the split-pane layout settles.
+            requestAnimationFrame(() => {
+              map.invalidateSize()
+              requestAnimationFrame(() => map.invalidateSize())
+            })
+            setTimeout(() => map.invalidateSize(), 300)
           }}
           trackedVehicles={trackedVehicles?.map((vehicle) => ({
             ...vehicle,

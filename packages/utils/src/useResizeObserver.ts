@@ -37,14 +37,17 @@ export const useResizeObserver = <T>({
             width = entry.contentRect.width
           }
         }
-        if (size.width !== width || size.height !== height) {
-          setSize({
-            height,
-            width,
-          })
-        }
+        setSize((prev) => {
+          if (prev.width !== width || prev.height !== height) {
+            return { height, width }
+          }
+          return prev
+        })
       }, wait),
-    [setSize, wait, size]
+    // Intentionally omit `size` — using functional setState avoids a stale
+    // closure that would cause the ResizeObserver to keep an outdated callback.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [setSize, wait]
   )
 
   useEffect(() => {
@@ -63,7 +66,7 @@ export const useResizeObserver = <T>({
         observerRef.current?.unobserve(element)
       }
     }
-  }, [elementRef, wait, observerRef])
+  }, [elementRef, wait, observerRef, callback])
 
   return { size }
 }
