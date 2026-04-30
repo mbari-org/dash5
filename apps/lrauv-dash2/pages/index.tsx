@@ -117,6 +117,10 @@ const OverViewMap: React.FC<{
   const mapRef = useRef<L.Map | null>(null)
   const mapContainerRef = useRef<HTMLDivElement | null>(null)
 
+  // Track when the Leaflet map instance has been created so we can start the
+  // container-width poller below.
+  const [mapCreated, setMapCreated] = useState(false)
+
   // Call invalidateSize whenever the container resizes (fixes partial-map rendering
   // after refresh). useResizeObserver is polyfilled and throttled (100 ms by default).
   const { size } = useResizeObserver({ element: mapContainerRef })
@@ -126,14 +130,31 @@ const OverViewMap: React.FC<{
     }
   }, [size])
 
-  // Fallback: after mount, call invalidateSize at 1 s to catch any Allotment
-  // layout pass that settled after the map was created.
+  // Poll the container's offsetWidth every 100 ms for 2 s after the map is
+  // created. Whenever the width changes (Allotment settling its layout,
+  // especially during client-side navigation where the chunk is cached and the
+  // map mounts before Allotment has measured its container) call invalidateSize.
+  // This is the standard Leaflet pattern for dynamically-sized host containers.
   useEffect(() => {
-    const id = setTimeout(() => {
-      mapRef.current?.invalidateSize()
-    }, 1000)
-    return () => clearTimeout(id)
-  }, [])
+    if (!mapCreated) return
+    const map = mapRef.current
+    if (!map) return
+    let lastWidth = mapContainerRef.current?.offsetWidth ?? 0
+    let ticks = 0
+    const poll = setInterval(() => {
+      if (mapRef.current !== map) {
+        clearInterval(poll)
+        return
+      }
+      const w = mapContainerRef.current?.offsetWidth ?? 0
+      if (w > 0 && w !== lastWidth) {
+        lastWidth = w
+        map.invalidateSize()
+      }
+      if (++ticks >= 20) clearInterval(poll)
+    }, 100)
+    return () => clearInterval(poll)
+  }, [mapCreated])
   const router = useRouter()
   const { handleDepthRequest, elevationAvailable } = useGoogleElevator()
   const [center, setCenter] = useState<undefined | [number, number]>()
@@ -659,6 +680,7 @@ const OverViewMap: React.FC<{
           onMapReady={(map) => {
             logger.debug('🌍 Map ready callback triggered in OverViewMap')
             mapRef.current = map
+            setMapCreated(true)
 
             const invalidateIfCurrent = () => {
               if (mapRef.current === map) {
