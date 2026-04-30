@@ -165,7 +165,9 @@ const OverViewMap: React.FC<{
     return () => {
       clearInterval(pollId)
       map.off('unload', stopPoll)
-      mapRef.current = null
+      if (mapRef.current === map) {
+        mapRef.current = null
+      }
     }
   }, [currentMap])
   const router = useRouter()
