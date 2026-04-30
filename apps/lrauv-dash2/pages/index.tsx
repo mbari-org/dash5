@@ -141,21 +141,32 @@ const OverViewMap: React.FC<{
     const map = currentMap
     let lastWidth = mapContainerRef.current?.offsetWidth ?? 0
     let ticks = 0
-    const poll = setInterval(() => {
-      if (mapRef.current !== map) {
-        clearInterval(poll)
+    let pollId: ReturnType<typeof setInterval>
+
+    const stopPoll = () => clearInterval(pollId)
+
+    pollId = setInterval(() => {
+      if (mapRef.current !== map || !mapContainerRef.current) {
+        clearInterval(pollId)
         return
       }
-      const w = mapContainerRef.current?.offsetWidth ?? 0
+      const w = mapContainerRef.current.offsetWidth
       if (w > 0 && w !== lastWidth) {
         lastWidth = w
         map.invalidateSize()
       }
       if (++ticks >= 20) {
-        clearInterval(poll)
+        clearInterval(pollId)
       }
     }, 100)
-    return () => clearInterval(poll)
+
+    map.once('unload', stopPoll)
+
+    return () => {
+      clearInterval(pollId)
+      map.off('unload', stopPoll)
+      mapRef.current = null
+    }
   }, [currentMap])
   const router = useRouter()
   const { handleDepthRequest, elevationAvailable } = useGoogleElevator()

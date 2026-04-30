@@ -80,17 +80,34 @@ const MapReadyBridge: React.FC<{
 }> = ({ onReady, forwardedRef }) => {
   const map = useMap()
   const initializedMapRef = useRef<L.Map | null>(null)
+  const onReadyRef = useRef(onReady)
+  const forwardedRefHolder = useRef(forwardedRef)
+
+  // Keep latest callbacks in refs so the effect below doesn't need them as
+  // deps — onMapReady is typically an inline function and would otherwise
+  // cause the effect to re-fire (and re-call onReady) on every parent render.
+  onReadyRef.current = onReady
+  forwardedRefHolder.current = forwardedRef
 
   useEffect(() => {
     if (map && map !== initializedMapRef.current) {
       initializedMapRef.current = map
-      if (forwardedRef) {
-        if (typeof forwardedRef === 'function') forwardedRef(map)
-        else (forwardedRef as React.MutableRefObject<L.Map>).current = map
+      const fRef = forwardedRefHolder.current
+      if (fRef) {
+        if (typeof fRef === 'function') fRef(map)
+        else (fRef as React.MutableRefObject<L.Map>).current = map
       }
-      if (onReady) onReady(map)
+      onReadyRef.current?.(map)
     }
-  }, [map, onReady, forwardedRef])
+    return () => {
+      initializedMapRef.current = null
+      const fRef = forwardedRefHolder.current
+      if (fRef) {
+        if (typeof fRef === 'function') fRef(null)
+        else (fRef as React.MutableRefObject<L.Map | null>).current = null
+      }
+    }
+  }, [map])
 
   return null
 }
