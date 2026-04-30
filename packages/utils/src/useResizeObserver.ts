@@ -48,21 +48,22 @@ export const useResizeObserver = <T>({
   )
 
   useEffect(() => {
-    const element: Element = elementRef.current as any
-    if (elementRef.current) {
-      observerRef.current?.unobserve(element)
-    }
+    // Disconnect the previous observer before replacing it so no stale
+    // observer continues to fire after a callback/element/wait change.
+    observerRef.current?.disconnect()
+
     const ResizeObserverOrPolyfill = ResizeObserver
     observerRef.current = new ResizeObserverOrPolyfill(callback)
     if (elementRef.current) {
-      observerRef.current?.observe(element)
+      observerRef.current.observe(elementRef.current as unknown as Element)
     }
 
     return () => {
+      // Cancel any pending throttle invocation and disconnect unconditionally —
+      // React may null refs before cleanup runs, so we cannot rely on
+      // elementRef.current being truthy here.
       callback.cancel()
-      if (elementRef.current) {
-        observerRef.current?.disconnect()
-      }
+      observerRef.current?.disconnect()
     }
   }, [elementRef, wait, observerRef, callback])
 
