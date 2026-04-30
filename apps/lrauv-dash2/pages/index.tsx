@@ -117,9 +117,10 @@ const OverViewMap: React.FC<{
   const mapRef = useRef<L.Map | null>(null)
   const mapContainerRef = useRef<HTMLDivElement | null>(null)
 
-  // Track when the Leaflet map instance has been created so we can start the
-  // container-width poller below.
-  const [mapCreated, setMapCreated] = useState(false)
+  // Track the current Leaflet map instance so the container-width poller below
+  // restarts whenever onMapReady fires with a new map (e.g. after the Map key
+  // changes on navigation while OverViewMap stays mounted).
+  const [currentMap, setCurrentMap] = useState<L.Map | null>(null)
 
   // Call invalidateSize whenever the container resizes (fixes partial-map rendering
   // after refresh). useResizeObserver is polyfilled and throttled (100 ms by default).
@@ -136,9 +137,8 @@ const OverViewMap: React.FC<{
   // map mounts before Allotment has measured its container) call invalidateSize.
   // This is the standard Leaflet pattern for dynamically-sized host containers.
   useEffect(() => {
-    if (!mapCreated) return
-    const map = mapRef.current
-    if (!map) return
+    if (!currentMap) return
+    const map = currentMap
     let lastWidth = mapContainerRef.current?.offsetWidth ?? 0
     let ticks = 0
     const poll = setInterval(() => {
@@ -156,7 +156,7 @@ const OverViewMap: React.FC<{
       }
     }, 100)
     return () => clearInterval(poll)
-  }, [mapCreated])
+  }, [currentMap])
   const router = useRouter()
   const { handleDepthRequest, elevationAvailable } = useGoogleElevator()
   const [center, setCenter] = useState<undefined | [number, number]>()
@@ -682,7 +682,7 @@ const OverViewMap: React.FC<{
           onMapReady={(map) => {
             logger.debug('🌍 Map ready callback triggered in OverViewMap')
             mapRef.current = map
-            setMapCreated(true)
+            setCurrentMap(map)
 
             const containerW = mapContainerRef.current?.offsetWidth ?? 0
             const containerH = mapContainerRef.current?.offsetHeight ?? 0
@@ -948,7 +948,7 @@ const OverviewPage: NextPage = () => {
                                   snap
                                   defaultSizes={[75, 25]}
                                   proportionalLayout
-                                  onChange={(sizes) => {
+                                  onChange={() => {
                                     mapInvalidateSizeRef.current?.()
                                   }}
                                 >

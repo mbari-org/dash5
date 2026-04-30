@@ -39,27 +39,6 @@ import { createLogger } from '@mbari/utils'
 
 const logger = createLogger('Map')
 
-// safeLogger wrapper that suppresses debug logs during critical operations
-const createSafeLogger = (
-  originalLogger: any,
-  disabledLevels: string[] = ['debug']
-) => {
-  // Copy of the original logger
-  const safeLogger = { ...originalLogger }
-
-  // Disable specified log levels by replacing them with no-op functions
-  disabledLevels.forEach((level) => {
-    if (level in safeLogger) {
-      safeLogger[level] = () => {} // No-op function
-    }
-  })
-
-  return safeLogger
-}
-
-// safeLogger instance that will be used during initialization
-const safeLogger = createSafeLogger(logger, ['debug'])
-
 const DEFAULT_CENTER: [number, number] = [36.8022, -121.788]
 
 const regex = /\B(?=(\d{3})+(?!\d))/g
@@ -111,7 +90,7 @@ const MapReadyBridge: React.FC<{
       }
       if (onReady) onReady(map)
     }
-  })
+  }, [map, onReady, forwardedRef])
 
   return null
 }
