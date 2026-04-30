@@ -33,6 +33,7 @@ const TileLegendPopup: React.FC<{ tile: TileLayerItem }> = ({ tile }) => {
   return (
     <div className="max-w-xs rounded bg-white p-2 shadow-lg">
       <p className="mb-1 text-xs font-semibold text-gray-700">{tile.name}</p>
+      {/* eslint-disable-next-line @next/next/no-img-element */}
       <img
         src={url}
         alt={`${tile.name} legend`}

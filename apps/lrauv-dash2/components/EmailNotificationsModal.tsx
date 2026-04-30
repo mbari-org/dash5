@@ -278,7 +278,7 @@ const EmailNotificationsModal: React.FC<EmailNotificationsModalProps> = ({
       { email, plainText: plainText ? 'y' : ('n' as 'y' | 'n') },
       {
         onSuccess: (data) => {
-          logger.log('sendTestEmail response received')
+          logger.debug('sendTestEmail response received')
           const msg = data?.email_sent
             ? `Test email sent to ${data.email_sent}`
             : 'Test email sent'
