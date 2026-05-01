@@ -110,7 +110,7 @@ export const PlatformPath: React.FC<PlatformPathProps> = ({
   const platformIcon = iconUrl
     ? L.divIcon({
         className: '',
-        html: `<img src="${iconUrl}" width="32" height="32" alt="${displayName}" style="display:block;border:none;background:transparent;" onerror="this.style.display='none'" />`,
+        html: `<div style="width:32px;height:32px;overflow:hidden;"><img src="${iconUrl}" alt="${displayName}" style="width:32px;height:32px;object-fit:contain;border:none;background:transparent;" onerror="this.style.display='none'" /></div>`,
         iconSize: [32, 32],
         iconAnchor: [16, 16],
         tooltipAnchor: [16, 0],
