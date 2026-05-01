@@ -8,9 +8,9 @@ import { useTick } from '../lib/useTick'
 const logger = createLogger('PlatformPath')
 
 // How far back to search for position fixes when no explicit window is given.
-// A wide window ensures fixed/infrequently-updated platforms (e.g. CA offshore
-// structures) are still found even if their last fix is months old.
-const DEFAULT_LOOKBACK_DAYS = 365
+// 30 days balances finding infrequently-updated fixed platforms (e.g. CA
+// offshore structures) without putting excessive load on the TrackDB server.
+const DEFAULT_LOOKBACK_DAYS = 30
 
 export interface PlatformPathProps {
   platformId: string
