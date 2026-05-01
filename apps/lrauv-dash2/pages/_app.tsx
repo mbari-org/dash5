@@ -4,7 +4,17 @@ import 'tippy.js/dist/tippy.css'
 import { config } from '@fortawesome/fontawesome-svg-core'
 import '@fortawesome/fontawesome-svg-core/styles.css'
 import 'leaflet/dist/leaflet.css'
+import L from 'leaflet'
 import { AppProps } from 'next/app'
+
+// Fix Leaflet's default marker icon paths broken by webpack/Next.js bundling.
+// The images are copied to /public so they're served at the root.
+delete (L.Icon.Default.prototype as any)._getIconUrl
+L.Icon.Default.mergeOptions({
+  iconUrl: '/marker-icon.png',
+  iconRetinaUrl: '/marker-icon-2x.png',
+  shadowUrl: '/marker-shadow.png',
+})
 import { QueryClientProvider, QueryClient } from 'react-query'
 import { TethysApiProvider } from '@mbari/api-client'
 import { UIProvider } from '@mbari/react-ui'
