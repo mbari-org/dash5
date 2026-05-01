@@ -134,7 +134,7 @@ export const PlatformPath: React.FC<PlatformPathProps> = ({
   const platformColor = color || 'cyan'
 
   if (!route || route.length === 0) {
-    logger.warn(
+    logger.debug(
       `No positions found for platform ${platformId} within the query window — nothing to render`
     )
     return null
