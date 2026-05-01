@@ -9,9 +9,9 @@ export function useGoogleMapsApiKey() {
   const [apiKey, setApiKey] = useState<string | null>(null)
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<Error | null>(null)
-  const [keySource, setKeySource] = useState<'server' | 'local' | 'none'>(
-    'none'
-  )
+  const [keySource, setKeySource] = useState<
+    'server' | 'local' | 'direct' | 'none'
+  >('none')
 
   // Type assertion for the API context
   const tethysApi = useContext(TethysApiContext) as {
@@ -54,7 +54,32 @@ export function useGoogleMapsApiKey() {
           // )
         }
 
-        // SECOND PRIORITY: Fall back to environment variable
+        // SECOND PRIORITY: Direct fetch from TethysDash — needed when the
+        // TethysApi context client is unavailable (e.g. local dev). Errors are
+        // swallowed here; the overlay in Next.js dev mode may still show caught
+        // fetch errors but they do not crash the app.
+        try {
+          const response = await fetch(
+            'https://okeanids.mbari.org/TethysDash/api/info',
+            { method: 'GET', headers: { Accept: 'application/json' } }
+          )
+          if (response.ok) {
+            const data = await response.json()
+            const directApiKey = data?.result?.appConfig?.googleApiKey
+            if (directApiKey) {
+              logger.debug('✅ Retrieved API key from direct TethysDash fetch')
+              setApiKey(directApiKey)
+              setKeySource('direct')
+              setIsLoading(false)
+              return
+            }
+          }
+        } catch {
+          // CORS or network failure — not unexpected, continue to next fallback
+          logger.debug('ℹ️ Direct TethysDash fetch unavailable, trying env var')
+        }
+
+        // THIRD PRIORITY: Fall back to environment variable
         if (process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY) {
           logger.debug(
             '✅ Falling back to Google Maps API key from environment'
