@@ -91,6 +91,37 @@ export const PlatformPath: React.FC<PlatformPathProps> = ({
   const displayName = platformName || positionData?.platformName || platformId
   const displayAbbrev = platformAbbrev || ''
 
+  // Use divIcon with a DOM-constructed img so that:
+  // - onerror suppresses broken-image placeholders when ODSS blocks the request
+  // - iconUrl/displayName are set via DOM properties (no string interpolation /
+  //   XSS risk from inline HTML attributes)
+  // - the icon object is memoized to avoid unnecessary Leaflet icon churn
+  // Must be declared before any early returns to satisfy Rules of Hooks.
+  const platformIcon = useMemo(() => {
+    if (!iconUrl) return null
+
+    const container = document.createElement('div')
+    container.style.cssText = 'width:32px;height:32px;overflow:hidden;'
+
+    const img = document.createElement('img')
+    img.src = iconUrl
+    img.alt = displayName
+    img.style.cssText =
+      'width:32px;height:32px;object-fit:contain;border:none;background:transparent;'
+    img.onerror = () => {
+      img.style.display = 'none'
+    }
+    container.appendChild(img)
+
+    return L.divIcon({
+      className: '',
+      html: container,
+      iconSize: [32, 32],
+      iconAnchor: [16, 16],
+      tooltipAnchor: [16, 0],
+    })
+  }, [iconUrl, displayName])
+
   if (isLoading) {
     return null
   }
@@ -102,32 +133,11 @@ export const PlatformPath: React.FC<PlatformPathProps> = ({
 
   const platformColor = color || 'cyan'
 
-  // Use divIcon with an inline <img> so that onerror can suppress the broken-
-  // image placeholder. L.icon() has no error callback and shows a broken link
-  // icon when the image fails — which happens when odss.mbari.org blocks direct
-  // browser requests (CORS / auth). divIcon renders an img tag whose onerror
-  // hides it gracefully, keeping the map clean.
-  const platformIcon = iconUrl
-    ? L.divIcon({
-        className: '',
-        html: `<div style="width:32px;height:32px;overflow:hidden;"><img src="${iconUrl}" alt="${displayName}" style="width:32px;height:32px;object-fit:contain;border:none;background:transparent;" onerror="this.style.display='none'" /></div>`,
-        iconSize: [32, 32],
-        iconAnchor: [16, 16],
-        tooltipAnchor: [16, 0],
-      })
-    : null
-
   if (!route || route.length === 0) {
-    if (platformIcon) {
-      logger.warn(
-        `No positions found for platform ${platformId} within the query window — rendering icon only`
-      )
-    } else {
-      logger.warn(
-        `No positions found for platform ${platformId} within the query window — nothing to render`
-      )
-      return null
-    }
+    logger.warn(
+      `No positions found for platform ${platformId} within the query window — nothing to render`
+    )
+    return null
   }
 
   return (
