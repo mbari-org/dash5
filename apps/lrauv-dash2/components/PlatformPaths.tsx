@@ -32,6 +32,7 @@ export const PlatformPaths: React.FC = () => {
             platformName={platform.name}
             platformAbbrev={platform.abbreviation}
             color={platform.color}
+            iconUrl={platform.iconUrl ?? undefined}
           />
         )
       })}
