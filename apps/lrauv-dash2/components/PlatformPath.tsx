@@ -102,9 +102,15 @@ export const PlatformPath: React.FC<PlatformPathProps> = ({
 
   const platformColor = color || 'cyan'
 
+  // Use divIcon with an inline <img> so that onerror can suppress the broken-
+  // image placeholder. L.icon() has no error callback and shows a broken link
+  // icon when the image fails — which happens when odss.mbari.org blocks direct
+  // browser requests (CORS / auth). divIcon renders an img tag whose onerror
+  // hides it gracefully, keeping the map clean.
   const platformIcon = iconUrl
-    ? L.icon({
-        iconUrl,
+    ? L.divIcon({
+        className: '',
+        html: `<img src="${iconUrl}" width="32" height="32" alt="${displayName}" style="display:block;border:none;background:transparent;" onerror="this.style.display='none'" />`,
         iconSize: [32, 32],
         iconAnchor: [16, 16],
         tooltipAnchor: [16, 0],
