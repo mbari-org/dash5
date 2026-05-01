@@ -4,17 +4,8 @@ import 'tippy.js/dist/tippy.css'
 import { config } from '@fortawesome/fontawesome-svg-core'
 import '@fortawesome/fontawesome-svg-core/styles.css'
 import 'leaflet/dist/leaflet.css'
-import L from 'leaflet'
 import { AppProps } from 'next/app'
-
-// Fix Leaflet's default marker icon paths broken by webpack/Next.js bundling.
-// The images are copied to /public so they're served at the root.
-delete (L.Icon.Default.prototype as any)._getIconUrl
-L.Icon.Default.mergeOptions({
-  iconUrl: '/marker-icon.png',
-  iconRetinaUrl: '/marker-icon-2x.png',
-  shadowUrl: '/marker-shadow.png',
-})
+import { useEffect } from 'react'
 import { QueryClientProvider, QueryClient } from 'react-query'
 import { TethysApiProvider } from '@mbari/api-client'
 import { UIProvider } from '@mbari/react-ui'
@@ -34,6 +25,20 @@ config.autoAddCss = false
 const queryClient = new QueryClient()
 
 function MyApp({ Component, pageProps }: AppProps) {
+  useEffect(() => {
+    // Fix Leaflet's default marker icon paths broken by webpack/Next.js bundling.
+    // Must run client-side only — Leaflet references `window` at import time.
+    // Images are copied to /public so they're served at the root.
+    import('leaflet').then((L) => {
+      delete (L.default.Icon.Default.prototype as any)._getIconUrl
+      L.default.Icon.Default.mergeOptions({
+        iconUrl: '/marker-icon.png',
+        iconRetinaUrl: '/marker-icon-2x.png',
+        shadowUrl: '/marker-shadow.png',
+      })
+    })
+  }, [])
+
   const { sessionToken, setSessionToken } = useSessionToken(
     'TETHYS_SESSION_TOKEN'
   )
