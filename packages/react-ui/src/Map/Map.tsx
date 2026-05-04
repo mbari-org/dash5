@@ -663,7 +663,8 @@ const Map = React.forwardRef<L.Map, MapProps>(
               <TileLayer
                 url={esriTileUrl()}
                 attribution='&copy; <a href="https://developers.arcgis.com/">ArcGIS</a>'
-                maxNativeZoom={maxNativeZoom}
+                maxNativeZoom={16}
+                maxZoom={maxZoom}
                 eventHandlers={{
                   add: addBaseLayerHandler('ESRI Oceans/Labels'),
                 }}
