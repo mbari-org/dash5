@@ -117,23 +117,33 @@ const MapReadyBridge: React.FC<{
 const ESRI_MAX_NATIVE_ZOOM = 16
 
 /**
- * EsriZoomGuard — zooms the map out to ESRI_MAX_NATIVE_ZOOM when the user
- * switches to the ESRI Oceans/Labels layer while zoomed in beyond what the
- * tile service provides, preventing a blank map.
+ * EsriTileLayer — wraps TileLayer for the ESRI Oceans/Labels base layer.
+ * Uses useMap() so that on the layer's own `add` event we can immediately
+ * zoom the map out to ESRI_MAX_NATIVE_ZOOM if the user was zoomed in
+ * beyond what the tile service provides, preventing a blank map.
  */
-const EsriZoomGuard: React.FC = () => {
+const EsriTileLayer: React.FC<{
+  url: string
+  maxZoom: number
+  onAdd: () => void
+}> = ({ url, maxZoom, onAdd }) => {
   const map = useMap()
-  useMapEvents({
-    baselayerchange(e) {
-      if (
-        e.name === 'ESRI Oceans/Labels' &&
-        map.getZoom() > ESRI_MAX_NATIVE_ZOOM
-      ) {
-        map.setZoom(ESRI_MAX_NATIVE_ZOOM)
-      }
-    },
-  })
-  return null
+  return (
+    <TileLayer
+      url={url}
+      attribution='&copy; <a href="https://developers.arcgis.com/">ArcGIS</a>'
+      maxNativeZoom={ESRI_MAX_NATIVE_ZOOM}
+      maxZoom={maxZoom}
+      eventHandlers={{
+        add: () => {
+          onAdd()
+          if (map.getZoom() > ESRI_MAX_NATIVE_ZOOM) {
+            map.setZoom(ESRI_MAX_NATIVE_ZOOM)
+          }
+        },
+      }}
+    />
+  )
 }
 
 const Map = React.forwardRef<L.Map, MapProps>(
@@ -637,7 +647,6 @@ const Map = React.forwardRef<L.Map, MapProps>(
             whenCreated prop was removed in react-leaflet v4 and is silently
             ignored, so onMapReady and ref forwarding must go through here. */}
         <MapReadyBridge onReady={onMapReady} forwardedRef={ref} />
-        <EsriZoomGuard />
         {!isMeasuring && (
           <CenterView
             coords={validatedCenter}
@@ -683,14 +692,10 @@ const Map = React.forwardRef<L.Map, MapProps>(
               name="ESRI Oceans/Labels"
               checked={baseLayer === 'ESRI Oceans/Labels'}
             >
-              <TileLayer
+              <EsriTileLayer
                 url={esriTileUrl()}
-                attribution='&copy; <a href="https://developers.arcgis.com/">ArcGIS</a>'
-                maxNativeZoom={ESRI_MAX_NATIVE_ZOOM}
                 maxZoom={maxZoom}
-                eventHandlers={{
-                  add: addBaseLayerHandler('ESRI Oceans/Labels'),
-                }}
+                onAdd={addBaseLayerHandler('ESRI Oceans/Labels')}
               />
             </LayersControl.BaseLayer>
           )}
