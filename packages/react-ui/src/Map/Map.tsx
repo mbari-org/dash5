@@ -114,6 +114,8 @@ const MapReadyBridge: React.FC<{
   return null
 }
 
+const ESRI_MAX_NATIVE_ZOOM = 16
+
 const Map = React.forwardRef<L.Map, MapProps>(
   (
     {
