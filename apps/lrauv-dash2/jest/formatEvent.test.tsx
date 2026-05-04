@@ -79,10 +79,11 @@ describe('formatEvent', () => {
       expect(screen.getByText('Second line')).toBeInTheDocument()
     })
 
-    it('applies the MTMSN style class to the wrapper span', () => {
+    it('applies the MTMSN style classes to the wrapper span', () => {
       renderEvent(event)
       const firstLine = screen.getByText('Command acknowledged MTMSN=12345')
-      expect(firstLine.parentElement?.tagName).toBe('SPAN')
+      // styles.mtmsn = 'font-mono text-red-800'
+      expect(firstLine.parentElement).toHaveClass('font-mono', 'text-red-800')
     })
   })
 
