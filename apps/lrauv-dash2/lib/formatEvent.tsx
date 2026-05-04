@@ -105,7 +105,7 @@ const formatEvent = (
           <span className="text-green-800">
             by {user ?? 'unknown'} , id: {event.eventId}, {note}
           </span>
-          {data?.split('/n').map((line, i) => (
+          {data?.split('\n').map((line, i) => (
             <pre key={`${event.eventId}${i}`} className={styles.code}>
               {line}
             </pre>
@@ -169,12 +169,24 @@ const formatEvent = (
         )
       }
       return (
-        <p>
-          <span className="block font-bold">[{name}]</span>{' '}
+        <p className="flex flex-col">
+          <span className="block font-bold">[{name}]</span>
           {event.text?.match('MTMSN=') ? (
-            <span className={styles.mtmsn}>{text}</span>
+            <span className={styles.mtmsn}>
+              {Array.isArray(text) &&
+                text.map((line, i) => (
+                  <span key={`${event.eventId}${i}`} className="block">
+                    {line}
+                  </span>
+                ))}
+            </span>
           ) : (
-            text
+            Array.isArray(text) &&
+            text.map((line, i) => (
+              <span key={`${event.eventId}${i}`} className="block">
+                {line}
+              </span>
+            ))
           )}
         </p>
       )
