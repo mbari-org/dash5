@@ -158,24 +158,24 @@ const Map = React.forwardRef<L.Map, MapProps>(
     const [isAddingMarkersLocal, setIsAddingMarkersLocal] =
       useState(isAddingMarkers)
     const { baseLayer, setBaseLayer } = useMapBaseLayer()
+    const internalMapRef = useRef<L.Map | null>(null)
     const addBaseLayerHandler = useCallback(
       (layer: BaseLayerOption) => () => {
         setBaseLayer(layer)
+        if (layer === 'ESRI Oceans/Labels') {
+          requestAnimationFrame(() => {
+            if (
+              internalMapRef.current &&
+              internalMapRef.current.getZoom() > ESRI_MAX_NATIVE_ZOOM
+            ) {
+              internalMapRef.current.setZoom(ESRI_MAX_NATIVE_ZOOM)
+            }
+          })
+        }
       },
       [setBaseLayer]
     )
     const vehicleColorsButtonRef = useRef<HTMLButtonElement>(null)
-    const internalMapRef = useRef<L.Map | null>(null)
-
-    useEffect(() => {
-      if (
-        baseLayer === 'ESRI Oceans/Labels' &&
-        internalMapRef.current &&
-        internalMapRef.current.getZoom() > ESRI_MAX_NATIVE_ZOOM
-      ) {
-        internalMapRef.current.setZoom(ESRI_MAX_NATIVE_ZOOM)
-      }
-    }, [baseLayer])
 
     const validatedCenter: [number, number] =
       Array.isArray(center) &&
