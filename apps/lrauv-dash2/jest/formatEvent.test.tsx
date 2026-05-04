@@ -45,10 +45,44 @@ describe('formatEvent', () => {
       expect(screen.getByText('CHAN A1 (24V): 0.125959')).toBeInTheDocument()
     })
 
-    it('does not collapse all lines into a single text node', () => {
-      const container = renderEvent(event)
-      const allText = container.textContent ?? ''
-      expect(allText).not.toBe(multiLineText.replace(/\n/g, ''))
+    it('renders each line in its own separate DOM element', () => {
+      renderEvent(event)
+      const lines = [
+        'Ground fault detected',
+        'mA:',
+        'CHAN A0 (Batt): 0.041525',
+        'CHAN A1 (24V): 0.125959',
+      ]
+      lines.forEach((line) => {
+        // Each line must be its own node — not merged with adjacent text
+        expect(screen.getByText(line)).toBeInTheDocument()
+        expect(screen.getByText(line).tagName).toBe('SPAN')
+      })
+    })
+  })
+
+  describe('logImportant with MTMSN= in text', () => {
+    const mtmsnText = 'Command acknowledged MTMSN=12345\nSecond line'
+
+    const event: GetEventsResponse = {
+      ...baseEvent,
+      eventType: 'logImportant',
+      name: 'SBD',
+      text: mtmsnText,
+    } as GetEventsResponse
+
+    it('renders each line separately inside the MTMSN styled wrapper', () => {
+      renderEvent(event)
+      expect(
+        screen.getByText('Command acknowledged MTMSN=12345')
+      ).toBeInTheDocument()
+      expect(screen.getByText('Second line')).toBeInTheDocument()
+    })
+
+    it('applies the MTMSN style class to the wrapper span', () => {
+      renderEvent(event)
+      const firstLine = screen.getByText('Command acknowledged MTMSN=12345')
+      expect(firstLine.parentElement?.tagName).toBe('SPAN')
     })
   })
 
