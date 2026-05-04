@@ -659,7 +659,7 @@ const Map = React.forwardRef<L.Map, MapProps>(
               checked={baseLayer === 'ESRI Oceans/Labels'}
             >
               <TileLayer
-                url="https://ibasemaps-api.arcgis.com/arcgis/rest/services/Ocean/World_Ocean_Base/MapServer/tile/{z}/{y}/{x}?//token=<ACCESS_TOKEN>process.env.REACT_APP_ESRI_API_KEY</ACCESS_TOKEN>"
+                url={`https://ibasemaps-api.arcgis.com/arcgis/rest/services/Ocean/World_Ocean_Base/MapServer/tile/{z}/{y}/{x}?token=${process.env.NEXT_PUBLIC_ESRI_API_KEY}`}
                 attribution='&copy; <a href="https://developers.arcgis.com/">ArcGIS</a>'
                 maxNativeZoom={maxNativeZoom}
                 eventHandlers={{
