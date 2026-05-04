@@ -114,6 +114,28 @@ const MapReadyBridge: React.FC<{
   return null
 }
 
+const ESRI_MAX_NATIVE_ZOOM = 16
+
+/**
+ * EsriZoomGuard — zooms the map out to ESRI_MAX_NATIVE_ZOOM when the user
+ * switches to the ESRI Oceans/Labels layer while zoomed in beyond what the
+ * tile service provides, preventing a blank map.
+ */
+const EsriZoomGuard: React.FC = () => {
+  const map = useMap()
+  useMapEvents({
+    baselayerchange(e) {
+      if (
+        e.name === 'ESRI Oceans/Labels' &&
+        map.getZoom() > ESRI_MAX_NATIVE_ZOOM
+      ) {
+        map.setZoom(ESRI_MAX_NATIVE_ZOOM)
+      }
+    },
+  })
+  return null
+}
+
 const Map = React.forwardRef<L.Map, MapProps>(
   (
     {
@@ -615,6 +637,7 @@ const Map = React.forwardRef<L.Map, MapProps>(
             whenCreated prop was removed in react-leaflet v4 and is silently
             ignored, so onMapReady and ref forwarding must go through here. */}
         <MapReadyBridge onReady={onMapReady} forwardedRef={ref} />
+        <EsriZoomGuard />
         {!isMeasuring && (
           <CenterView
             coords={validatedCenter}
@@ -663,7 +686,7 @@ const Map = React.forwardRef<L.Map, MapProps>(
               <TileLayer
                 url={esriTileUrl()}
                 attribution='&copy; <a href="https://developers.arcgis.com/">ArcGIS</a>'
-                maxNativeZoom={16}
+                maxNativeZoom={ESRI_MAX_NATIVE_ZOOM}
                 maxZoom={maxZoom}
                 eventHandlers={{
                   add: addBaseLayerHandler('ESRI Oceans/Labels'),
