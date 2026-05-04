@@ -161,14 +161,41 @@ const Map = React.forwardRef<L.Map, MapProps>(
     const internalMapRef = useRef<L.Map | null>(null)
     const addBaseLayerHandler = useCallback(
       (layer: BaseLayerOption) => () => {
+        console.log('[Map] Base layer add event fired:', layer)
         setBaseLayer(layer)
         if (layer === 'ESRI Oceans/Labels') {
+          console.log(
+            '[Map] ESRI layer selected — internalMapRef:',
+            internalMapRef.current
+          )
           requestAnimationFrame(() => {
+            const currentZoom = internalMapRef.current?.getZoom()
+            console.log(
+              '[Map] rAF fired — currentZoom:',
+              currentZoom,
+              'ESRI_MAX_NATIVE_ZOOM:',
+              ESRI_MAX_NATIVE_ZOOM
+            )
             if (
               internalMapRef.current &&
-              internalMapRef.current.getZoom() > ESRI_MAX_NATIVE_ZOOM
+              currentZoom !== undefined &&
+              currentZoom > ESRI_MAX_NATIVE_ZOOM
             ) {
+              console.log(
+                '[Map] Zooming out from',
+                currentZoom,
+                'to',
+                ESRI_MAX_NATIVE_ZOOM
+              )
               internalMapRef.current.setZoom(ESRI_MAX_NATIVE_ZOOM)
+            } else {
+              console.log(
+                '[Map] No zoom adjustment needed — zoom is',
+                currentZoom,
+                '(max native:',
+                ESRI_MAX_NATIVE_ZOOM,
+                ')'
+              )
             }
           })
         }
@@ -627,6 +654,7 @@ const Map = React.forwardRef<L.Map, MapProps>(
             ignored, so onMapReady and ref forwarding must go through here. */}
         <MapReadyBridge
           onReady={(map) => {
+            console.log('[Map] Map ready — storing in internalMapRef:', map)
             internalMapRef.current = map
             onMapReady?.(map)
           }}
