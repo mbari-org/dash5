@@ -37,6 +37,8 @@ import { CenterView } from './MapViews'
 import type { MapProps } from './Map.types'
 import { createLogger } from '@mbari/utils'
 
+import { esriTileUrl } from './esriTileUrl'
+
 const logger = createLogger('Map')
 
 const DEFAULT_CENTER: [number, number] = [36.8022, -121.788]
@@ -659,7 +661,7 @@ const Map = React.forwardRef<L.Map, MapProps>(
               checked={baseLayer === 'ESRI Oceans/Labels'}
             >
               <TileLayer
-                url={`https://ibasemaps-api.arcgis.com/arcgis/rest/services/Ocean/World_Ocean_Base/MapServer/tile/{z}/{y}/{x}?token=${process.env.NEXT_PUBLIC_ESRI_API_KEY}`}
+                url={esriTileUrl()}
                 attribution='&copy; <a href="https://developers.arcgis.com/">ArcGIS</a>'
                 maxNativeZoom={maxNativeZoom}
                 eventHandlers={{
