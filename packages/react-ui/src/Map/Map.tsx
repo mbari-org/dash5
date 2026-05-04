@@ -165,6 +165,17 @@ const Map = React.forwardRef<L.Map, MapProps>(
       [setBaseLayer]
     )
     const vehicleColorsButtonRef = useRef<HTMLButtonElement>(null)
+    const internalMapRef = useRef<L.Map | null>(null)
+
+    useEffect(() => {
+      if (
+        baseLayer === 'ESRI Oceans/Labels' &&
+        internalMapRef.current &&
+        internalMapRef.current.getZoom() > ESRI_MAX_NATIVE_ZOOM
+      ) {
+        internalMapRef.current.setZoom(ESRI_MAX_NATIVE_ZOOM)
+      }
+    }, [baseLayer])
 
     const validatedCenter: [number, number] =
       Array.isArray(center) &&
@@ -614,7 +625,13 @@ const Map = React.forwardRef<L.Map, MapProps>(
         {/* Bridge to obtain the Leaflet map instance via useMap() — the
             whenCreated prop was removed in react-leaflet v4 and is silently
             ignored, so onMapReady and ref forwarding must go through here. */}
-        <MapReadyBridge onReady={onMapReady} forwardedRef={ref} />
+        <MapReadyBridge
+          onReady={(map) => {
+            internalMapRef.current = map
+            onMapReady?.(map)
+          }}
+          forwardedRef={ref}
+        />
         {!isMeasuring && (
           <CenterView
             coords={validatedCenter}
