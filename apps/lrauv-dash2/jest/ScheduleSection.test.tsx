@@ -674,6 +674,84 @@ test('isMissionCommand returns false for commands without load+run', () => {
   expect(isMissionCommand(undefined, undefined)).toBe(false)
 })
 
+// ── multi-segment non-mission command label tests (#592) ──────────────────────
+
+test('multi-segment non-mission command renders all segments joined with ·', async () => {
+  server.use(
+    rest.get('/events', (_req, res, ctx) =>
+      res(
+        ctx.status(200),
+        ctx.json({
+          result: [
+            {
+              data: 'schedule clear;schedule resume',
+              unixTime: Date.now() - 60 * 1000,
+              eventId: 500,
+              eventType: 'command',
+              text: null,
+              note: '[[via:cell, timeout:5min]]',
+              user: 'test-operator',
+            },
+          ],
+        })
+      )
+    ),
+    rest.get('/events/mission-started', (_req, res, ctx) =>
+      res(ctx.status(200), ctx.json({ result: [] }))
+    )
+  )
+
+  render(
+    <MockProviders queryClient={new QueryClient()}>
+      <ScheduleSection {...props} currentDeploymentId={1} />
+    </MockProviders>
+  )
+
+  await waitFor(() => {
+    expect(
+      screen.getByText('schedule clear · schedule resume')
+    ).toBeInTheDocument()
+  })
+  expect(screen.queryByText('No parameters')).not.toBeInTheDocument()
+})
+
+test('single-segment non-mission command renders label without separator', async () => {
+  server.use(
+    rest.get('/events', (_req, res, ctx) =>
+      res(
+        ctx.status(200),
+        ctx.json({
+          result: [
+            {
+              data: 'restart logs',
+              unixTime: Date.now() - 60 * 1000,
+              eventId: 501,
+              eventType: 'command',
+              text: null,
+              note: null,
+              user: 'test-operator',
+            },
+          ],
+        })
+      )
+    ),
+    rest.get('/events/mission-started', (_req, res, ctx) =>
+      res(ctx.status(200), ctx.json({ result: [] }))
+    )
+  )
+
+  render(
+    <MockProviders queryClient={new QueryClient()}>
+      <ScheduleSection {...props} currentDeploymentId={1} />
+    </MockProviders>
+  )
+
+  await waitFor(() => {
+    expect(screen.getByText('restart logs')).toBeInTheDocument()
+  })
+  expect(screen.queryByText(/·/)).not.toBeInTheDocument()
+})
+
 // ── secondary label gating integration tests (#585) ──────────────────────────
 
 test('bare command row does not show "No parameters" secondary text', async () => {
@@ -762,7 +840,6 @@ test('mission command upgrades from pending to ack when cell comms ACK is receiv
         ctx.status(200),
         ctx.json({
           result: [
-            // Mission run event — API always returns TBD/pending
             {
               data: 'load Transport/transit.tl;set transit.Depth 50 m;run',
               unixTime: Date.now() - 90 * 1000,
@@ -772,7 +849,6 @@ test('mission command upgrades from pending to ack when cell comms ACK is receiv
               note: '[[via:cell, timeout:5min]]',
               user: 'test-operator',
             },
-            // sbdSend with refId matching mission eventId and state:2 (cell = instant ACK)
             {
               eventId: 451,
               eventType: 'sbdSend',
@@ -804,8 +880,6 @@ test('mission command upgrades from pending to ack when cell comms ACK is receiv
     </MockProviders>
   )
 
-  // Row should show ACK icon (AcknowledgeIcon) with "Received by" tooltip,
-  // not the clock/pending icon.
   await waitFor(() => {
     expect(screen.getByTitle(/Received by example/i)).toBeInTheDocument()
   })
@@ -818,7 +892,6 @@ test('mission command stays pending when no comms entry exists (outside fetch wi
         ctx.status(200),
         ctx.json({
           result: [
-            // Mission run event with no matching sbdSend in the response
             {
               data: 'load Transport/transit.tl;run',
               unixTime: Date.now() - 90 * 1000,
@@ -847,8 +920,6 @@ test('mission command stays pending when no comms entry exists (outside fetch wi
     </MockProviders>
   )
 
-  // Without a comms entry, mission should remain 'pending' (clock icon),
-  // not fall through to 'sent'.
   await waitFor(() => {
     expect(screen.getByTitle(/pending/i)).toBeInTheDocument()
   })

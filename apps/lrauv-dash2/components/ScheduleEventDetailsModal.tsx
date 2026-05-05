@@ -112,9 +112,10 @@ const formatScheduleDate = (scheduleDate?: string): string => {
   if (!scheduleDate) return 'N/A'
   if (scheduleDate.toLowerCase() === 'asap') return 'ASAP'
 
-  // Format: 20260401T0600 or 20260331T18 (UTC)
+  // Format: 20260401T0600 or 20260331T18 (UTC). Also accept the legacy
+  // }T format from older makeCommand builds until historical events age out.
   const shortMatch = scheduleDate.match(
-    /^(\d{4})(\d{2})(\d{2})T(\d{2})(\d{2})?$/
+    /^(\d{4})(\d{2})(\d{2})}?T(\d{2})(\d{2})?$/
   )
   if (shortMatch) {
     const utc = DateTime.fromObject(

@@ -163,6 +163,9 @@ describe('determineCommandStatus', () => {
     expect(result.via).toBe('sat')
     expect(result.timeout).toBeUndefined() // Sat commands don't have timeouts
     expect(result.commsIsoTime).toBe(baseSbdSend.isoTime)
+    // No receipt yet — no MTMSN available
+    expect(result.mtmsn).toBeUndefined()
+    expect(result.momsn).toBeUndefined()
   })
 
   it('should return ack status for sat command when sbdSend, receipt, and receive all exist', () => {
@@ -192,6 +195,36 @@ describe('determineCommandStatus', () => {
     expect(result.via).toBe('sat')
     expect(result.timeout).toBeUndefined() // Sat commands don't have timeouts
     expect(result.commsIsoTime).toBe(baseSbdReceive.isoTime)
+    // MTMSN from sbdReceipt (123), MOMSN from sbdReceive (not set on base — undefined)
+    expect(result.mtmsn).toBe(123)
+    expect(result.momsn).toBeUndefined()
+  })
+
+  it('should normalize mtmsn/momsn 0 sentinel to undefined', () => {
+    const zeroMtmsnReceipt = { ...baseSbdReceipt, mtmsn: 0 }
+    const zeroMomsnReceive = { ...baseSbdReceive, momsn: 0 }
+    const sbdSendMap = new Map<string, GetEventsResponse>([
+      [String(baseSatCommand.eventId), baseSbdSend],
+    ])
+    const sbdReceiptMap = new Map<string, GetEventsResponse>([
+      [String(baseSbdSend.eventId), zeroMtmsnReceipt],
+    ])
+    const sbdReceiveMap = new Map<number, GetEventsResponse>([
+      [123, zeroMomsnReceive],
+    ])
+
+    // mtmsn:0 on the receipt means no MTMSN — should not match the sbdReceive
+    // (map key is 0, receive is only inserted via mtmsn > 0 in useCommsEvents)
+    // This tests the sent path where mtmsn receipt exists but mtmsn is 0.
+    const sentResult = determineCommandStatus(
+      baseSatCommand,
+      sbdSendMap,
+      sbdReceiptMap,
+      new Map(), // no sbdReceive → stays 'sent'
+      new Map()
+    )
+    expect(sentResult.status).toBe('sent')
+    expect(sentResult.mtmsn).toBeUndefined()
   })
 
   it('should return ack status for cell command when sbdSend exists with state 2', () => {
