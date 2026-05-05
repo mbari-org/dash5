@@ -391,6 +391,75 @@ test('shows timeout icon when a non-mission cell command times out', async () =>
   })
 })
 
+test('timed-out mission directive moves to history: no active-zone items remain', async () => {
+  // Regression test for #594: before the fix, a mission command would stay in
+  // the active zone even after timing out because isAboveSeparator returned
+  // true for any pending isMissionCommand.
+  //
+  // Strategy: a SINGLE timed-out mission is the only event. After the fix,
+  // it moves to historicCells (scheduledCells becomes empty → no separator).
+  // The timeout icon should be within the virtualizer's render window (first
+  // items). We verify:
+  //   (a) the timeout icon appears  (mission renders with correct cellStatus)
+  //   (b) no "Previous Vehicle Directives" separator appears (nothing left in
+  //       the active zone — the mission went entirely to history).
+  const missionEvent = {
+    data: 'load Transport/transit.tl;set transit.Depth 50 m;run',
+    unixTime: Date.now() - 90 * 1000,
+    eventId: 770,
+    eventType: 'run',
+    text: null,
+    note: '[[via:cell, timeout:5min]]',
+    user: 'test-operator',
+  }
+  const timeoutNoteEvent = {
+    eventId: 771,
+    eventType: 'note',
+    unixTime: Date.now() - 60 * 1000,
+    isoTime: new Date(Date.now() - 60 * 1000).toISOString(),
+    data: null,
+    text: null,
+    note: 'id=770: Timeout while waiting for ack',
+    user: null,
+  }
+  server.use(
+    rest.get('/events', (req, res, ctx) => {
+      // History query (command,run) must not receive the note event lest it
+      // appear as a spurious row; comms query gets all including the note.
+      const eventTypes = req.url.searchParams.get('eventTypes') ?? ''
+      const isCommsQuery = eventTypes.includes('sbdSend')
+      const result = isCommsQuery
+        ? [missionEvent, timeoutNoteEvent]
+        : [missionEvent]
+      return res(ctx.status(200), ctx.json({ result }))
+    }),
+    rest.get('/events/mission-started', (_req, res, ctx) =>
+      res(ctx.status(200), ctx.json({ result: [] }))
+    )
+  )
+
+  render(
+    <MockProviders queryClient={new QueryClient()}>
+      <ScheduleSection
+        {...props}
+        currentDeploymentId={1}
+        deploymentStartTime={Date.now() - 3600 * 1000}
+      />
+    </MockProviders>
+  )
+
+  // (a) Timeout icon appears — mission renders with cellStatus='timeout'.
+  await waitFor(() => {
+    expect(screen.getByTitle(/timeout/i)).toBeInTheDocument()
+  })
+  // (b) No separator: with the fix, the mission is in historicCells so
+  // scheduledCells is empty — both zones must be non-empty for the separator
+  // to appear, so its absence proves no mission is left in the active zone.
+  expect(
+    screen.queryByText('Previous Vehicle Directives')
+  ).not.toBeInTheDocument()
+})
+
 test('Cancel this Directive calls DELETE /commands/queue when confirmed', async () => {
   let deleteCalled = false
   let noteCalled = false

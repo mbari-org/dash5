@@ -634,9 +634,26 @@ export const ScheduleSection: React.FC<ScheduleSectionProps> = ({
     const raw = toScheduleCellStatus(v.status)
     if (!scheduledTypes.includes(raw)) return false
     if (raw !== 'pending') return true // running stays above
+
+    const rawText = v.event?.data ?? v.event?.text ?? ''
+
+    // If comms confirmed a timeout, demote to history so the operator sees
+    // it alongside completed/cancelled items and can re-run from there.
+    // Only applies to items without a specific future scheduled start — a
+    // future-scheduled item should never be demoted before its run window.
+    const schedDateMatch = rawText.match(/sched\s+(\d{8}}?T\d{2,4})/)
+    const scheduleDate = rawText.match(/sched\s+asap/i)
+      ? 'asap'
+      : schedDateMatch
+      ? schedDateMatch[1]
+      : undefined
+    const isFutureScheduled = !!(scheduleDate && scheduleDate !== 'asap')
+    if (!isFutureScheduled && v.event?.eventId != null) {
+      if (commsLookup.get(v.event.eventId) === 'timeout') return false
+    }
+
     if (isMissionCommand(v.event?.data, v.event?.text)) return true
     // Non-mission with no future scheduled start → already dispatched → history
-    const rawText = v.event?.data ?? v.event?.text ?? ''
     const schedMatch = rawText.match(/sched\s+(\S+)/i)
     const sched = schedMatch?.[1]
     return !!sched && sched.toLowerCase() !== 'asap'
