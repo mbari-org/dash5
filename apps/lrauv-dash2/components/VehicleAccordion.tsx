@@ -5,7 +5,7 @@ import DocsSection from './DocsSection'
 import HandoffSection from './HandoffSection'
 import LogsSection from './LogsSection'
 import ScienceDataSection from './ScienceDataSection'
-import { useEvents, useMissionStartedEvent } from '@mbari/api-client'
+import { useCommsEvents, useMissionStartedEvent } from '@mbari/api-client'
 import { DateTime } from 'luxon'
 import { ScheduleSection } from './ScheduleSection'
 import useGlobalModalId from '../lib/useGlobalModalId'
@@ -41,12 +41,14 @@ const VehicleAccordion: React.FC<VehicleAccordionProps> = ({
   currentDeploymentId,
   isRecovered,
 }) => {
-  const { data: commsLogs, isLoading: commsLoading } = useEvents({
+  const { data: commsEvents, isLoading: commsLoading } = useCommsEvents({
     vehicles: [vehicleName],
-    eventTypes: ['command', 'run'],
     from,
     to,
   })
+
+  // Only count commands that have not yet been acknowledged by the vehicle
+  const unackedCount = commsEvents.filter((e) => e.status !== 'ack').length
 
   const { data: missionStartedEvent } = useMissionStartedEvent(
     {
@@ -155,7 +157,7 @@ const VehicleAccordion: React.FC<VehicleAccordionProps> = ({
         label="Comms Queue"
         secondaryLabel={
           activeDeployment && !commsLoading
-            ? `${commsLogs?.length ?? 0} item(s) in queue`
+            ? `${unackedCount} item(s) in queue`
             : ''
         }
         onToggle={handleToggleForSection('comms')}
