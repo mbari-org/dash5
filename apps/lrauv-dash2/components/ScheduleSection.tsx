@@ -906,7 +906,7 @@ export const ScheduleSection: React.FC<ScheduleSectionProps> = ({
       : 'command'
     const rawText = mission?.event.data ?? mission?.event.text ?? ''
     // Also accept the legacy }T format for historical events in the database.
-    const schedDateMatch = rawText.match(/sched\s+(\d{8}}?T\d{2,4})/)
+    const schedDateMatch = rawText.match(/sched\s+(\d{8}}?T\d{2,4})/i)
     const scheduleDate = rawText.match(/sched\s+asap/i)
       ? 'asap'
       : schedDateMatch
@@ -951,8 +951,9 @@ export const ScheduleSection: React.FC<ScheduleSectionProps> = ({
     // consumed only up to the first space inside a quoted payload like
     // sched "restart logs" → "restart (stops) → leaves logs".
     const commandPayload = rawText
-      .replace(/^sched\s+(?:\d{8}}?T\d{2,4}|asap)?\s*/i, '')
-      .replace(/^"(.*)"$/, '$1')
+      .replace(/^sched\s+(?:\d{8}}?T\d{2,4}|asap)\s*/i, '')
+      .replace(/^sched\s+(?=")/i, '')
+      .replace(/^"([\s\S]*)"$/, '$1')
       .trim()
     const commandLabel = isMission
       ? missionName ?? 'Unknown'
