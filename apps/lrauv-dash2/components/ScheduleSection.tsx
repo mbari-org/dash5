@@ -106,7 +106,19 @@ const missionKeysMatch = (leftPath: string, rightPath: string) => {
 
 export const parseMissionCommand = (name: string) => {
   const keywords = new Set(['run', 'sched', 'asap'])
-  const info = name
+  // Strip sched <timestamp_or_asap> prefix so scheduled missions parse cleanly
+  // (e.g. "sched 20250616T0415 load ...;run" → "load ...;run").
+  // Also extract the payload from surrounding quotes when present — the
+  // chunked cell-comms form wraps each chunk in quotes:
+  //   sched 20250616T0415 "load ...;set ...;run" 41tnk 1 6
+  // The quoted content is extracted so the chunk ID suffix is discarded.
+  let cleaned = name
+    .replace(/^sched\s+(?:\d{8}}?T\d{2,4}|asap)?\s*/i, '')
+    .trim()
+  const quoted = cleaned.match(/^"([\s\S]*)"/)
+  if (quoted) cleaned = quoted[1].trim()
+
+  const info = cleaned
     .split(' ')
     .filter((s) => !keywords.has(s))
     .join(' ')

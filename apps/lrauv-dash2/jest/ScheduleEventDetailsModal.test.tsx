@@ -128,6 +128,32 @@ test('shows Summary Parameters with raw payload for isParamUpdate commands', () 
   expect(screen.getAllByText(rawCmd).length).toBeGreaterThan(0)
 })
 
+test('hides Summary Parameters for legacy bare-run mission (commandType mission, isLoadRunMission false)', () => {
+  // Command-status payloads can carry bare "run Science/mbts_sci2.tl" events
+  // (no load prefix) — these are classified as commandType:'mission' but
+  // isLoadRunMission is false because there is no load+run pair. The modal
+  // must NOT show the Summary Parameters block for these legacy rows.
+  ;(useGlobalModalId as jest.Mock).mockReturnValue(
+    makeModalId({
+      ...baseEvent,
+      commandType: 'mission' as const,
+      isLoadRunMission: false,
+      isParamUpdate: false,
+      isConfigSetUpdate: false,
+      secondary: undefined,
+      label: 'Science/mbts_sci2.tl',
+      eventData: 'run Science/mbts_sci2.tl',
+    })
+  )
+
+  render(<ScheduleEventDetailsModal onClose={() => {}} />)
+
+  expect(screen.queryByText(/Summary Parameters/i)).not.toBeInTheDocument()
+  expect(
+    screen.queryByText('No parsed parameters available')
+  ).not.toBeInTheDocument()
+})
+
 test('shows Summary Parameters with raw payload for isConfigSetUpdate commands', () => {
   const rawCmd = 'configSet CTD_Seabird.loadAtStartup 1 bool persist'
   ;(useGlobalModalId as jest.Mock).mockReturnValue(
