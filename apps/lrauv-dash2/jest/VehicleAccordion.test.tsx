@@ -25,10 +25,17 @@ const props = {
 }
 
 // Helper: build a minimal command event + matching sbdSend for a given comms state.
-// 'queued'  → command with no sbdSend
-// 'sent'    → command + sbdSend (sat, no sbdReceive)
+// 'queued'  → command with no sbdSend (cell, not yet dispatched)
+// 'sent'    → command + sbdSend state:1 (sat dispatched, no sbdReceive yet)
 // 'ack'     → command + sbdSend state:2 (cell instant-ack)
-// 'timeout' → command + timeout note
+// 'timeout' → command + timeout note (cell, vehicle never fetched)
+const noteForStatus: Record<'queued' | 'sent' | 'ack' | 'timeout', string> = {
+  queued: '[[via:cell, timeout:5min]]',
+  sent: '[[via:sat, timeout:30min]]',
+  ack: '[[via:cell, timeout:5min]]',
+  timeout: '[[via:cell, timeout:5min]]',
+}
+
 const makeEvents = (
   scenarios: Array<{
     eventId: number
@@ -43,7 +50,7 @@ const makeEvents = (
       data: 'restart logs',
       unixTime: Date.now() - 60 * 1000,
       text: null,
-      note: '[[via:cell, timeout:5min]]',
+      note: noteForStatus[commsStatus],
       user: 'test-operator',
     })
     if (commsStatus === 'ack') {
