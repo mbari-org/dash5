@@ -1,11 +1,11 @@
 import { AccordionHeader } from '@mbari/react-ui'
-import { useState } from 'react'
+import { useState, useMemo } from 'react'
 import CommsSection from './CommsSection'
 import DocsSection from './DocsSection'
 import HandoffSection from './HandoffSection'
 import LogsSection from './LogsSection'
 import ScienceDataSection from './ScienceDataSection'
-import { useEvents, useMissionStartedEvent } from '@mbari/api-client'
+import { useCommsEvents, useMissionStartedEvent } from '@mbari/api-client'
 import { DateTime } from 'luxon'
 import { ScheduleSection } from './ScheduleSection'
 import useGlobalModalId from '../lib/useGlobalModalId'
@@ -41,12 +41,22 @@ const VehicleAccordion: React.FC<VehicleAccordionProps> = ({
   currentDeploymentId,
   isRecovered,
 }) => {
-  const { data: commsLogs, isLoading: commsLoading } = useEvents({
+  // Only fetch comms events for active deployments — the queue count label
+  // is hidden for historical deployments so there's no need to load the data
+  const { data: commsEvents, isLoading: commsLoading } = useCommsEvents({
     vehicles: [vehicleName],
-    eventTypes: ['command', 'run'],
     from,
     to,
+    enabled: !!activeDeployment,
   })
+
+  // Memoized count of commands not yet acknowledged by the vehicle.
+  // Based on the initially auto-fetched pages (≥10 commands); sufficient
+  // for an active deployment header indicator.
+  const unackedCount = useMemo(
+    () => commsEvents.filter((e) => e.status !== 'ack').length,
+    [commsEvents]
+  )
 
   const { data: missionStartedEvent } = useMissionStartedEvent(
     {
@@ -155,7 +165,7 @@ const VehicleAccordion: React.FC<VehicleAccordionProps> = ({
         label="Comms Queue"
         secondaryLabel={
           activeDeployment && !commsLoading
-            ? `${commsLogs?.length ?? 0} item(s) in queue`
+            ? `${unackedCount} item(s) in queue`
             : ''
         }
         onToggle={handleToggleForSection('comms')}
