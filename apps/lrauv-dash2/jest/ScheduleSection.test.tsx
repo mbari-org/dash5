@@ -836,37 +836,46 @@ test('mission command row shows "No parameters" secondary text when no params se
 // ── Mission comms-lookup upgrade regression tests (#584) ─────────────────────
 
 test('mission command upgrades from pending to ack when cell comms ACK is received', async () => {
+  // The mission run event returned by the schedule history query.
+  const missionRunEvent = {
+    data: 'load Transport/transit.tl;set transit.Depth 50 m;run',
+    unixTime: Date.now() - 90 * 1000,
+    eventId: 450,
+    eventType: 'run',
+    text: null,
+    note: '[[via:cell, timeout:5min]]',
+    user: 'test-operator',
+  }
+  // The sbdSend comms event returned only by the useCommsEvents query.
+  const sbdSendEvent = {
+    eventId: 451,
+    eventType: 'sbdSend',
+    refId: 450,
+    state: 2,
+    unixTime: Date.now() - 88 * 1000,
+    isoTime: new Date(Date.now() - 88 * 1000).toISOString(),
+    data: null,
+    text: null,
+    note: null,
+    user: null,
+  }
+
   server.use(
-    rest.get('/events', (_req, res, ctx) =>
-      res(
+    rest.get('/events', (req, res, ctx) => {
+      // The history query requests only command,run; the comms query also
+      // includes sbdSend,sbdReceipt,sbdReceive,note. Branch accordingly so
+      // sbdSend is only visible to the comms lookup, matching production.
+      const eventTypes = req.url.searchParams.get('eventTypes') ?? ''
+      const isCommsQuery = eventTypes.includes('sbdSend')
+      return res(
         ctx.status(200),
         ctx.json({
-          result: [
-            {
-              data: 'load Transport/transit.tl;set transit.Depth 50 m;run',
-              unixTime: Date.now() - 90 * 1000,
-              eventId: 450,
-              eventType: 'run',
-              text: null,
-              note: '[[via:cell, timeout:5min]]',
-              user: 'test-operator',
-            },
-            {
-              eventId: 451,
-              eventType: 'sbdSend',
-              refId: 450,
-              state: 2,
-              unixTime: Date.now() - 88 * 1000,
-              isoTime: new Date(Date.now() - 88 * 1000).toISOString(),
-              data: null,
-              text: null,
-              note: null,
-              user: null,
-            },
-          ],
+          result: isCommsQuery
+            ? [missionRunEvent, sbdSendEvent]
+            : [missionRunEvent],
         })
       )
-    ),
+    }),
     rest.get('/events/mission-started', (_req, res, ctx) =>
       res(ctx.status(200), ctx.json({ result: [] }))
     )
