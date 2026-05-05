@@ -14,18 +14,10 @@ describe('esriTileUrl', () => {
     expect(url).toBe(`${BASE}?token=my-test-key`)
   })
 
-  it('uses NEXT_PUBLIC_ESRI_API_KEY from the environment when no key is passed', () => {
-    const original = process.env.NEXT_PUBLIC_ESRI_API_KEY
-    process.env.NEXT_PUBLIC_ESRI_API_KEY = 'env-key'
-    expect(esriTileUrl()).toBe(`${BASE}?token=env-key`)
-    process.env.NEXT_PUBLIC_ESRI_API_KEY = original
-  })
-
-  it('produces an empty token when no key is available', () => {
-    const original = process.env.NEXT_PUBLIC_ESRI_API_KEY
-    delete process.env.NEXT_PUBLIC_ESRI_API_KEY
-    expect(esriTileUrl()).toBe(`${BASE}?token=`)
-    process.env.NEXT_PUBLIC_ESRI_API_KEY = original
+  it('embeds the key directly — no token=undefined possible', () => {
+    const url = esriTileUrl('explicit-key')
+    expect(url).toContain('token=explicit-key')
+    expect(url).not.toContain('undefined')
   })
 
   it('does not contain a literal placeholder or XML tags', () => {

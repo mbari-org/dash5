@@ -1,5 +1,3 @@
-const path = require('path')
-
 // This is a workaround for Next.js 15 to handle TypeScript files in workspace packages
 const nextConfig = {
   output: 'export',

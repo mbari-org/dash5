@@ -163,44 +163,7 @@ const Map = React.forwardRef<L.Map, MapProps>(
     const internalMapRef = useRef<L.Map | null>(null)
     const addBaseLayerHandler = useCallback(
       (layer: BaseLayerOption) => () => {
-        console.log('[Map] Base layer add event fired:', layer)
         setBaseLayer(layer)
-        if (layer === 'ESRI Oceans/Labels') {
-          console.log(
-            '[Map] ESRI layer selected — internalMapRef:',
-            internalMapRef.current
-          )
-          requestAnimationFrame(() => {
-            const currentZoom = internalMapRef.current?.getZoom()
-            console.log(
-              '[Map] rAF fired — currentZoom:',
-              currentZoom,
-              'ESRI_MAX_NATIVE_ZOOM:',
-              ESRI_MAX_NATIVE_ZOOM
-            )
-            if (
-              internalMapRef.current &&
-              currentZoom !== undefined &&
-              currentZoom > ESRI_MAX_NATIVE_ZOOM
-            ) {
-              console.log(
-                '[Map] Zooming out from',
-                currentZoom,
-                'to',
-                ESRI_MAX_NATIVE_ZOOM
-              )
-              internalMapRef.current.setZoom(ESRI_MAX_NATIVE_ZOOM)
-            } else {
-              console.log(
-                '[Map] No zoom adjustment needed — zoom is',
-                currentZoom,
-                '(max native:',
-                ESRI_MAX_NATIVE_ZOOM,
-                ')'
-              )
-            }
-          })
-        }
       },
       [setBaseLayer]
     )
@@ -656,28 +619,19 @@ const Map = React.forwardRef<L.Map, MapProps>(
             ignored, so onMapReady and ref forwarding must go through here. */}
         <MapReadyBridge
           onReady={(map) => {
-            console.log('[Map] Map ready — attaching baselayerchange listener')
             internalMapRef.current = map
-            map.on('baselayerchange', (e: any) => {
-              console.log(
-                '[Map] baselayerchange fired:',
-                e.name,
-                'current zoom:',
-                map.getZoom()
-              )
+            const onBaseLayerChange = (e: any) => {
               if (
                 e.name === 'ESRI Oceans/Labels' &&
                 map.getZoom() > ESRI_MAX_NATIVE_ZOOM
               ) {
-                console.log(
-                  '[Map] Zooming out from',
-                  map.getZoom(),
-                  'to',
-                  ESRI_MAX_NATIVE_ZOOM
-                )
                 map.setZoom(ESRI_MAX_NATIVE_ZOOM)
               }
-            })
+            }
+            map.on('baselayerchange', onBaseLayerChange)
+            map.once('unload', () =>
+              map.off('baselayerchange', onBaseLayerChange)
+            )
             onMapReady?.(map)
           }}
           forwardedRef={ref}
@@ -722,13 +676,13 @@ const Map = React.forwardRef<L.Map, MapProps>(
               />
             </LayersControl.BaseLayer>
           )}
-          {mapReady && (
+          {mapReady && !!process.env.NEXT_PUBLIC_ESRI_API_KEY && (
             <LayersControl.BaseLayer
               name="ESRI Oceans/Labels"
               checked={baseLayer === 'ESRI Oceans/Labels'}
             >
               <TileLayer
-                url={esriTileUrl()}
+                url={esriTileUrl(process.env.NEXT_PUBLIC_ESRI_API_KEY)}
                 attribution='&copy; <a href="https://developers.arcgis.com/">ArcGIS</a>'
                 maxNativeZoom={ESRI_MAX_NATIVE_ZOOM}
                 maxZoom={maxZoom}
