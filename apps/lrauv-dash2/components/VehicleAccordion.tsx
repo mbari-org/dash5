@@ -50,11 +50,14 @@ const VehicleAccordion: React.FC<VehicleAccordionProps> = ({
     enabled: !!activeDeployment,
   })
 
-  // Memoized count of commands not yet acknowledged by the vehicle.
-  // Based on the initially auto-fetched pages (≥10 commands); sufficient
-  // for an active deployment header indicator.
+  // Count commands genuinely waiting for vehicle receipt: 'queued' (not yet
+  // dispatched via SBD) and 'sent' (dispatched but no vehicle fetch confirmed).
+  // 'timeout' is excluded — a timeout means delivery definitively failed and
+  // the command is no longer pending, so it must not inflate the queue badge.
   const unackedCount = useMemo(
-    () => commsEvents.filter((e) => e.status !== 'ack').length,
+    () =>
+      commsEvents.filter((e) => e.status === 'queued' || e.status === 'sent')
+        .length,
     [commsEvents]
   )
 
