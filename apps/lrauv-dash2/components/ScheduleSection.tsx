@@ -908,6 +908,10 @@ export const ScheduleSection: React.FC<ScheduleSectionProps> = ({
         if (commsStatus === 'ack') return 'ack'
         if (commsStatus === 'timeout') return 'timeout'
         if (commsStatus === 'sent') return 'sent'
+        // Non-mission commands are always dispatched immediately. If comms
+        // events are outside the fetch window (or not yet received), default
+        // to 'sent' so history rows don't show 'pending' indefinitely.
+        if (!isMission) return 'sent'
       }
       return raw
     })()
