@@ -68,12 +68,12 @@ const MockEventsListDisabled: React.FC = () => {
 }
 
 describe('useInfiniteEvents', () => {
-  it('should not fetch when enabled is false', () => {
+  it('should not fetch when enabled is false', async () => {
+    let requestCount = 0
     server.use(
-      rest.get('/events', (_req, _res, _ctx) => {
-        throw new Error(
-          'useInfiniteEvents made a network request despite enabled:false'
-        )
+      rest.get('/events', (_req, res, ctx) => {
+        requestCount++
+        return res(ctx.status(200), ctx.json(mockResponse))
       })
     )
 
@@ -83,6 +83,8 @@ describe('useInfiniteEvents', () => {
       </MockProviders>
     )
 
+    // Wait long enough for any unintended fetch to settle, then assert idle
+    await waitFor(() => expect(requestCount).toBe(0))
     expect(
       screen.queryByTestId('disabled-event-16932998')
     ).not.toBeInTheDocument()

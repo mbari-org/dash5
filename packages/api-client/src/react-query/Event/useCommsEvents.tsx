@@ -98,14 +98,16 @@ export const useCommsEvents = ({
 
   // If initial fetch does not have enough commands/missions, fetch more (this avoids sending back an empty array of updated commands and ui flickering during the initial load)
   const fetchingInitialCommands =
-    commands.length < minCommandEvents && hasNextPage
+    enabled && commands.length < minCommandEvents && hasNextPage
 
   useEffect(() => {
+    if (!enabled) return
     if (fetchingInitialCommands && !isLoading && !isFetchingNextPage) {
       fetchNextPage()
       return
     }
   }, [
+    enabled,
     fetchingInitialCommands,
     isLoading,
     isFetchingNextPage,
@@ -115,6 +117,7 @@ export const useCommsEvents = ({
 
   // If we're manually fetching more commands, keep fetching until we have more commands (this makes sure that additional commands are fetched not just sbd/note events)
   useEffect(() => {
+    if (!enabled) return
     if (isFetchingMore) {
       if (
         !isLoading &&
@@ -135,6 +138,7 @@ export const useCommsEvents = ({
       }
     }
   }, [
+    enabled,
     commands.length,
     fetchNextPage,
     hasNextPage,
