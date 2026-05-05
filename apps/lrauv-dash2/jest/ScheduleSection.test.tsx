@@ -731,7 +731,7 @@ test('configSet command row shows Sent status and config badge tooltip', async (
   })
 })
 
-// ── isMissionCommand unit tests ───────────────────────────────────────────────
+// ── isMissionCommand unit tests (#585) ───────────────────────────────────────
 
 test('isMissionCommand returns true for load+run commands', () => {
   expect(
@@ -877,8 +877,6 @@ test('bare command row does not show "No parameters" secondary text', async () =
 })
 
 test('mission command row shows "No parameters" secondary text when no params set', async () => {
-  // Use space-separated load/run (no semicolons) so parseMissionCommand returns
-  // parameters: undefined, which triggers the 'No parameters' fallback.
   server.use(
     rest.get('/events', (_req, res, ctx) =>
       res(
@@ -886,7 +884,7 @@ test('mission command row shows "No parameters" secondary text when no params se
         ctx.json({
           result: [
             {
-              data: 'load Transport/transit.tl run',
+              data: 'load Transport/transit.tl;run',
               unixTime: Date.now() - 60 * 1000,
               eventId: 401,
               eventType: 'run',
@@ -913,6 +911,100 @@ test('mission command row shows "No parameters" secondary text when no params se
     expect(screen.getByText('load Transport/transit.tl')).toBeInTheDocument()
   })
   expect(screen.getByText('No parameters')).toBeInTheDocument()
+})
+
+// ── parseMissionCommand unit tests (#585) ─────────────────────────────────────
+
+test('parseMissionCommand strips trailing run from semicolon-delimited commands', () => {
+  expect(parseMissionCommand('load Transport/transit.tl;run')).toEqual({
+    name: 'load Transport/transit.tl',
+    parameters: undefined,
+  })
+})
+
+test('parseMissionCommand preserves set params between load and run', () => {
+  expect(
+    parseMissionCommand('load Transport/transit.tl;set transit.Depth 50 m;run')
+  ).toEqual({
+    name: 'load Transport/transit.tl',
+    parameters: 'set transit.Depth 50 m',
+  })
+})
+
+test('parseMissionCommand strips bare sched/asap tokens', () => {
+  expect(
+    parseMissionCommand('sched asap load Science/profile_station.tl;run')
+  ).toEqual({
+    name: 'load Science/profile_station.tl',
+    parameters: undefined,
+  })
+})
+
+test('parseMissionCommand strips sched timestamp prefix', () => {
+  expect(
+    parseMissionCommand(
+      'sched 20250616T0415 load Science/profile_station.tl;run'
+    )
+  ).toEqual({
+    name: 'load Science/profile_station.tl',
+    parameters: undefined,
+  })
+})
+
+test('parseMissionCommand extracts payload from quoted chunked cell-comms form', () => {
+  // Chunked cell delivery wraps the payload in quotes and appends a chunk ID
+  // suffix (e.g. "41tnk 1 6"). The parser should extract the quoted content
+  // and discard the suffix, yielding clean name/parameters.
+  expect(
+    parseMissionCommand(
+      'sched 20250616T0415 "load Science/sci2_circle_hotspot.tl;set sci2_circle_hotspot.MissionTimeout 24 h;run" 41tnk 1 6'
+    )
+  ).toEqual({
+    name: 'load Science/sci2_circle_hotspot.tl',
+    parameters: 'set sci2_circle_hotspot.MissionTimeout 24 h',
+  })
+})
+
+// ── Legacy run <file> — no parameter summary row (#585) ───────────────────────
+
+test('legacy run <file> mission row does not show "No parameters" subtitle', async () => {
+  // Legacy format: eventType 'run' but command data is bare 'run <file>'.
+  // isMission is true (eventType=run), but isLoadRunMission is false (no load),
+  // so the secondary text should be suppressed entirely.
+  server.use(
+    rest.get('/events', (_req, res, ctx) =>
+      res(
+        ctx.status(200),
+        ctx.json({
+          result: [
+            {
+              data: 'run Science/mbts_sci2.tl',
+              unixTime: Date.now() - 60 * 1000,
+              eventId: 410,
+              eventType: 'run',
+              text: null,
+              note: null,
+              user: 'test-operator',
+            },
+          ],
+        })
+      )
+    ),
+    rest.get('/events/mission-started', (_req, res, ctx) =>
+      res(ctx.status(200), ctx.json({ result: [] }))
+    )
+  )
+
+  render(
+    <MockProviders queryClient={new QueryClient()}>
+      <ScheduleSection {...props} currentDeploymentId={1} />
+    </MockProviders>
+  )
+
+  await waitFor(() => {
+    expect(screen.getByText('Science/mbts_sci2.tl')).toBeInTheDocument()
+  })
+  expect(screen.queryByText('No parameters')).not.toBeInTheDocument()
 })
 
 // ── Mission comms-lookup upgrade regression tests (#584) ─────────────────────
@@ -978,6 +1070,8 @@ test('mission command upgrades from pending to ack when cell comms ACK is receiv
     </MockProviders>
   )
 
+  // Row should show ACK icon (AcknowledgeIcon) with "Received by" tooltip,
+  // not the clock/pending icon.
   await waitFor(() => {
     expect(screen.getByTitle(/Received by example/i)).toBeInTheDocument()
   })
@@ -990,6 +1084,7 @@ test('mission command stays pending when no comms entry exists (outside fetch wi
         ctx.status(200),
         ctx.json({
           result: [
+            // Mission run event with no matching sbdSend in the response
             {
               data: 'load Transport/transit.tl;run',
               unixTime: Date.now() - 90 * 1000,
@@ -1018,86 +1113,15 @@ test('mission command stays pending when no comms entry exists (outside fetch wi
     </MockProviders>
   )
 
+  // Without a comms entry, mission should remain 'pending' (clock icon),
+  // not fall through to 'sent'.
   await waitFor(() => {
     expect(screen.getByTitle(/pending/i)).toBeInTheDocument()
   })
   expect(screen.queryByTitle(/Received by/i)).not.toBeInTheDocument()
 })
 
-// ── parseMissionCommand unit tests (#585) ─────────────────────────────────────
-
-test('parseMissionCommand strips trailing run from semicolon-delimited commands', () => {
-  // load;run with no set params should return parameters: undefined so the
-  // row falls back to "No parameters" rather than showing "run" as a param.
-  expect(parseMissionCommand('load Transport/transit.tl;run')).toEqual({
-    name: 'load Transport/transit.tl',
-    parameters: undefined,
-  })
-})
-
-test('parseMissionCommand preserves set params between load and run', () => {
-  expect(
-    parseMissionCommand('load Transport/transit.tl;set transit.Depth 50 m;run')
-  ).toEqual({
-    name: 'load Transport/transit.tl',
-    parameters: 'set transit.Depth 50 m',
-  })
-})
-
-test('parseMissionCommand strips bare sched/asap tokens', () => {
-  expect(
-    parseMissionCommand('sched asap load Science/profile_station.tl;run')
-  ).toEqual({
-    name: 'load Science/profile_station.tl',
-    parameters: undefined,
-  })
-})
-
-// ── Legacy run <file> — no parameter summary row (#585) ───────────────────────
-
-test('legacy run <file> mission row does not show "No parameters" subtitle', async () => {
-  // Legacy format: eventType 'run' but command data is bare 'run <file>'.
-  // isMission is true (eventType=run), but isLoadRunMission is false (no load),
-  // so the secondary text should be suppressed entirely.
-  server.use(
-    rest.get('/events', (_req, res, ctx) =>
-      res(
-        ctx.status(200),
-        ctx.json({
-          result: [
-            {
-              data: 'run Science/mbts_sci2.tl',
-              unixTime: Date.now() - 60 * 1000,
-              eventId: 410,
-              eventType: 'run',
-              text: null,
-              note: null,
-              user: 'test-operator',
-            },
-          ],
-        })
-      )
-    ),
-    rest.get('/events/mission-started', (_req, res, ctx) =>
-      res(ctx.status(200), ctx.json({ result: [] }))
-    )
-  )
-
-  render(
-    <MockProviders queryClient={new QueryClient()}>
-      <ScheduleSection {...props} currentDeploymentId={1} />
-    </MockProviders>
-  )
-
-  await waitFor(() => {
-    expect(screen.getByText(/mbts_sci2/)).toBeInTheDocument()
-  })
-  expect(screen.queryByText('No parameters')).not.toBeInTheDocument()
-})
-
-// ── Future-scheduled mission comms-gate regression test (#584) ────────────────
-
-test('future-scheduled mission stays pending even when comms indicates sent', async () => {
+test('future-scheduled mission stays pending even when comms indicates ack', async () => {
   // A mission scheduled for a far-future time should not be upgraded via the
   // comms lookup because the scheduleDate gate prevents it: only ASAP/unscheduled
   // missions should be upgraded based on comms data.
@@ -1165,7 +1189,7 @@ test('future-scheduled mission stays pending even when comms indicates sent', as
   expect(screen.queryByTitle(/Received by/i)).not.toBeInTheDocument()
 })
 
-// ── Sched timestamp format regression tests (#587) ───────────────────────────
+// ── Sched timestamp format regression tests (#587) ────────────────────────────
 
 test('parses corrected sched YYYYMMDDT timestamp without }', async () => {
   // Use a far-future date so isQueued stays true regardless of test runtime.
@@ -1200,10 +1224,11 @@ test('parses corrected sched YYYYMMDDT timestamp without }', async () => {
     </MockProviders>
   )
 
-  // The row should display a scheduled start time derived from the timestamp,
-  // not fall back to 'N/A' (which would mean parsing failed).
+  // The row should display "Sent and Queued for … UTC" — the fixed prefix and
+  // UTC suffix are locale-independent and confirm that timestamp parsing
+  // succeeded (a parse failure falls back to 'N/A' with no "Queued" prefix).
   await waitFor(() => {
-    expect(screen.getByText(/Dec 31/)).toBeInTheDocument()
+    expect(screen.getByText(/Sent and Queued for .+ UTC/)).toBeInTheDocument()
   })
 })
 
@@ -1240,20 +1265,16 @@ test('parses legacy sched YYYYMMDD}T timestamp for backwards compatibility', asy
     </MockProviders>
   )
 
-  // The row should still display a scheduled start time despite the legacy }T.
+  // The row should still display "Sent and Queued for … UTC" despite the
+  // legacy }T — same locale-independent assertion used for the clean timestamp.
   await waitFor(() => {
-    expect(screen.getByText(/Dec 31/)).toBeInTheDocument()
+    expect(screen.getByText(/Sent and Queued for .+ UTC/)).toBeInTheDocument()
   })
 })
 
 // ── sched-prefixed quoted-payload label regression test (#592) ────────────────
 
 test('sched-prefixed quoted command strips sched wrapper and shows full label', async () => {
-  // Regression: sched "restart logs" was previously parsed with /^sched\s+\S+\s*/
-  // which consumed 'sched "restart' (stopping at the space inside the quotes)
-  // and left 'logs"' as the visible label.
-  // The fix uses an explicit alternation /^sched\s+(?:\d{8}}?T\d{2,4}|asap)?\s*/i
-  // so bare `sched "..."` correctly strips only `sched ` before quote-unwrapping.
   server.use(
     rest.get('/events', (_req, res, ctx) =>
       res(
@@ -1287,6 +1308,5 @@ test('sched-prefixed quoted command strips sched wrapper and shows full label', 
   await waitFor(() => {
     expect(screen.getByText('restart logs')).toBeInTheDocument()
   })
-  // Must not contain the corrupted fragment from the old \S+ regex
   expect(screen.queryByText(/logs"/)).not.toBeInTheDocument()
 })
