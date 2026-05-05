@@ -117,7 +117,12 @@ export const useCommsEvents = ({
 
   // If we're manually fetching more commands, keep fetching until we have more commands (this makes sure that additional commands are fetched not just sbd/note events)
   useEffect(() => {
-    if (!enabled) return
+    // If the query is disabled, stop any in-progress pagination so state
+    // does not get stuck and no fetches fire when the hook is re-enabled
+    if (!enabled) {
+      if (isFetchingMore) setIsFetchingMore(false)
+      return
+    }
     if (isFetchingMore) {
       if (
         !isLoading &&

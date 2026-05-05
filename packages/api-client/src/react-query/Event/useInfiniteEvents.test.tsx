@@ -1,6 +1,6 @@
 import '@testing-library/jest-dom'
 import React from 'react'
-import { render, screen, waitFor } from '@testing-library/react'
+import { act, render, screen, waitFor } from '@testing-library/react'
 import { QueryClient } from 'react-query'
 import { rest } from 'msw'
 import { setupServer } from 'msw/node'
@@ -83,9 +83,12 @@ describe('useInfiniteEvents', () => {
       </MockProviders>
     )
 
-    // Wait until the component has fully rendered (query lifecycle complete),
-    // then assert that no network request was made
+    // Wait for the component to render, then flush any pending async effects
+    // (microtasks, timers, react-query observers) before asserting no fetch fired
     await screen.findByTestId('disabled-container')
+    await act(async () => {
+      await new Promise((resolve) => setTimeout(resolve, 0))
+    })
     expect(requestCount).toBe(0)
     expect(
       screen.queryByTestId('disabled-event-16932998')
