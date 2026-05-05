@@ -917,8 +917,14 @@ export const ScheduleSection: React.FC<ScheduleSectionProps> = ({
     // Strip any leading "sched <timestamp>" wrapper and surrounding quotes
     // so queued commands (e.g. sched 20260505T1844 "cmd1;cmd2") show only
     // the actual command text.
+    // Strip:  sched <timestamp>   e.g. sched 20260505T1844 "..."
+    //         sched asap          e.g. sched asap "..."
+    //         sched               e.g. sched "restart logs"  (bare ASAP with quotes)
+    // Using an explicit alternation avoids the previous \S+ approach, which
+    // consumed only up to the first space inside a quoted payload like
+    // sched "restart logs" → "restart (stops) → leaves logs".
     const commandPayload = rawText
-      .replace(/^sched\s+\S+\s*/, '')
+      .replace(/^sched\s+(?:\d{8}}?T\d{2,4}|asap)?\s*/i, '')
       .replace(/^"(.*)"$/, '$1')
       .trim()
     const commandLabel = isMission

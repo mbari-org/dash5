@@ -726,3 +726,46 @@ test('single-segment non-mission command renders label without separator', async
   })
   expect(screen.queryByText(/·/)).not.toBeInTheDocument()
 })
+
+test('sched-prefixed quoted command strips sched wrapper and shows full label', async () => {
+  // Regression: sched "restart logs" was previously parsed as:
+  //   /^sched\s+\S+\s*/ consumed "sched "restart" (stops at space inside quotes)
+  //   leaving 'logs"' as the label.
+  // The fix uses an explicit alternation so bare `sched "..."` correctly
+  // strips just `sched ` and then the quote-strip yields the full command.
+  server.use(
+    rest.get('/events', (_req, res, ctx) =>
+      res(
+        ctx.status(200),
+        ctx.json({
+          result: [
+            {
+              data: 'sched "restart logs"',
+              unixTime: Date.now() - 60 * 1000,
+              eventId: 502,
+              eventType: 'command',
+              text: null,
+              note: '[[via:cellsat, timeout:5min]]',
+              user: 'test-operator',
+            },
+          ],
+        })
+      )
+    ),
+    rest.get('/events/mission-started', (_req, res, ctx) =>
+      res(ctx.status(200), ctx.json({ result: [] }))
+    )
+  )
+
+  render(
+    <MockProviders queryClient={new QueryClient()}>
+      <ScheduleSection {...props} currentDeploymentId={1} />
+    </MockProviders>
+  )
+
+  await waitFor(() => {
+    expect(screen.getByText('restart logs')).toBeInTheDocument()
+  })
+  // Must not contain the corrupted fragment from the old \S+ regex
+  expect(screen.queryByText(/logs"/)).not.toBeInTheDocument()
+})
