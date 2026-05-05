@@ -1,5 +1,5 @@
 import { AccordionHeader } from '@mbari/react-ui'
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import CommsSection from './CommsSection'
 import DocsSection from './DocsSection'
 import HandoffSection from './HandoffSection'
@@ -41,11 +41,24 @@ const VehicleAccordion: React.FC<VehicleAccordionProps> = ({
   currentDeploymentId,
   isRecovered,
 }) => {
-  const { data: commsEvents, isLoading: commsLoading } = useCommsEvents({
+  const {
+    data: commsEvents,
+    isLoading: commsLoading,
+    isFetching: commsFetching,
+    fetchNextPage,
+    hasNextPage,
+  } = useCommsEvents({
     vehicles: [vehicleName],
     from,
     to,
   })
+
+  // Fetch all pages so the un-acked count is never an undercount
+  useEffect(() => {
+    if (hasNextPage && !commsFetching) {
+      fetchNextPage()
+    }
+  }, [hasNextPage, commsFetching, fetchNextPage])
 
   // Only count commands that have not yet been acknowledged by the vehicle
   const unackedCount = commsEvents.filter((e) => e.status !== 'ack').length
