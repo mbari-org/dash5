@@ -795,6 +795,8 @@ test('bare command row does not show "No parameters" secondary text', async () =
 })
 
 test('mission command row shows "No parameters" secondary text when no params set', async () => {
+  // Use space-separated load/run (no semicolons) so parseMissionCommand returns
+  // parameters: undefined, which triggers the 'No parameters' fallback.
   server.use(
     rest.get('/events', (_req, res, ctx) =>
       res(
@@ -802,7 +804,7 @@ test('mission command row shows "No parameters" secondary text when no params se
         ctx.json({
           result: [
             {
-              data: 'load Transport/transit.tl;run',
+              data: 'load Transport/transit.tl run',
               unixTime: Date.now() - 60 * 1000,
               eventId: 401,
               eventType: 'run',
@@ -924,4 +926,85 @@ test('mission command stays pending when no comms entry exists (outside fetch wi
     expect(screen.getByTitle(/pending/i)).toBeInTheDocument()
   })
   expect(screen.queryByTitle(/Received by/i)).not.toBeInTheDocument()
+})
+
+// ── Sched timestamp format regression tests (#587) ───────────────────────────
+
+test('parses corrected sched YYYYMMDDT timestamp without }', async () => {
+  // Use a far-future date so isQueued stays true regardless of test runtime.
+  const futureStamp = '20991231T2359'
+  server.use(
+    rest.get('/events', (_req, res, ctx) =>
+      res(
+        ctx.status(200),
+        ctx.json({
+          result: [
+            {
+              data: `sched ${futureStamp} "load Science/profile_station.tl;run"`,
+              unixTime: Date.now() - 5 * 1000,
+              eventId: 701,
+              eventType: 'run',
+              text: null,
+              note: null,
+              user: 'test-engineer',
+            },
+          ],
+        })
+      )
+    ),
+    rest.get('/events/mission-started', (_req, res, ctx) =>
+      res(ctx.status(200), ctx.json({ result: [] }))
+    )
+  )
+
+  render(
+    <MockProviders queryClient={new QueryClient()}>
+      <ScheduleSection {...props} currentDeploymentId={1} />
+    </MockProviders>
+  )
+
+  // The row should display a scheduled start time derived from the timestamp,
+  // not fall back to 'N/A' (which would mean parsing failed).
+  await waitFor(() => {
+    expect(screen.getByText(/Dec 31/)).toBeInTheDocument()
+  })
+})
+
+test('parses legacy sched YYYYMMDD}T timestamp for backwards compatibility', async () => {
+  // Simulate an event stored before the makeCommand } fix was deployed.
+  const legacyStamp = '20991231}T2359'
+  server.use(
+    rest.get('/events', (_req, res, ctx) =>
+      res(
+        ctx.status(200),
+        ctx.json({
+          result: [
+            {
+              data: `sched ${legacyStamp} "load Science/profile_station.tl;run"`,
+              unixTime: Date.now() - 5 * 1000,
+              eventId: 702,
+              eventType: 'run',
+              text: null,
+              note: null,
+              user: 'test-engineer',
+            },
+          ],
+        })
+      )
+    ),
+    rest.get('/events/mission-started', (_req, res, ctx) =>
+      res(ctx.status(200), ctx.json({ result: [] }))
+    )
+  )
+
+  render(
+    <MockProviders queryClient={new QueryClient()}>
+      <ScheduleSection {...props} currentDeploymentId={1} />
+    </MockProviders>
+  )
+
+  // The row should still display a scheduled start time despite the legacy }T.
+  await waitFor(() => {
+    expect(screen.getByText(/Dec 31/)).toBeInTheDocument()
+  })
 })

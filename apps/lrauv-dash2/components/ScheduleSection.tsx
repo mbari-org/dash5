@@ -961,9 +961,11 @@ export const ScheduleSection: React.FC<ScheduleSectionProps> = ({
           // WHEN it will run, not when the command was sent.
           const scheduledDt = (() => {
             if (!isQueued || !scheduleDate) return null
+            // Strip legacy } (from older makeCommand builds) before parsing.
+            const clean = scheduleDate.replace('}', '')
             const m =
-              scheduleDate.match(/^(\d{4})(\d{2})(\d{2})T(\d{2})(\d{2})$/) ||
-              scheduleDate.match(/^(\d{4})(\d{2})(\d{2})T(\d{2})$/)
+              clean.match(/^(\d{4})(\d{2})(\d{2})T(\d{2})(\d{2})$/) ||
+              clean.match(/^(\d{4})(\d{2})(\d{2})T(\d{2})$/)
             if (!m) return null
             return DateTime.fromObject(
               {
