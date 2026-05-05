@@ -731,6 +731,123 @@ test('configSet command row shows Sent status and config badge tooltip', async (
   })
 })
 
+// ── multi-segment non-mission command label tests (#592) ──────────────────────
+
+test('multi-segment non-mission command renders all segments joined with ·', async () => {
+  server.use(
+    rest.get('/events', (_req, res, ctx) =>
+      res(
+        ctx.status(200),
+        ctx.json({
+          result: [
+            {
+              data: 'schedule clear;schedule resume',
+              unixTime: Date.now() - 60 * 1000,
+              eventId: 500,
+              eventType: 'command',
+              text: null,
+              note: '[[via:cell, timeout:5min]]',
+              user: 'test-operator',
+            },
+          ],
+        })
+      )
+    ),
+    rest.get('/events/mission-started', (_req, res, ctx) =>
+      res(ctx.status(200), ctx.json({ result: [] }))
+    )
+  )
+
+  render(
+    <MockProviders queryClient={new QueryClient()}>
+      <ScheduleSection {...props} currentDeploymentId={1} />
+    </MockProviders>
+  )
+
+  await waitFor(() => {
+    expect(
+      screen.getByText('schedule clear · schedule resume')
+    ).toBeInTheDocument()
+  })
+  expect(screen.queryByText('No parameters')).not.toBeInTheDocument()
+})
+
+test('single-segment non-mission command renders label without separator', async () => {
+  server.use(
+    rest.get('/events', (_req, res, ctx) =>
+      res(
+        ctx.status(200),
+        ctx.json({
+          result: [
+            {
+              data: 'restart logs',
+              unixTime: Date.now() - 60 * 1000,
+              eventId: 501,
+              eventType: 'command',
+              text: null,
+              note: null,
+              user: 'test-operator',
+            },
+          ],
+        })
+      )
+    ),
+    rest.get('/events/mission-started', (_req, res, ctx) =>
+      res(ctx.status(200), ctx.json({ result: [] }))
+    )
+  )
+
+  render(
+    <MockProviders queryClient={new QueryClient()}>
+      <ScheduleSection {...props} currentDeploymentId={1} />
+    </MockProviders>
+  )
+
+  let labelEl: HTMLElement
+  await waitFor(() => {
+    labelEl = screen.getByText('restart logs')
+    expect(labelEl).toBeInTheDocument()
+  })
+  expect(labelEl!.closest('ul')?.textContent).not.toContain('·')
+})
+
+test('sched-prefixed quoted command strips sched wrapper and shows full label', async () => {
+  server.use(
+    rest.get('/events', (_req, res, ctx) =>
+      res(
+        ctx.status(200),
+        ctx.json({
+          result: [
+            {
+              data: 'sched "restart logs"',
+              unixTime: Date.now() - 60 * 1000,
+              eventId: 502,
+              eventType: 'command',
+              text: null,
+              note: '[[via:cellsat, timeout:5min]]',
+              user: 'test-operator',
+            },
+          ],
+        })
+      )
+    ),
+    rest.get('/events/mission-started', (_req, res, ctx) =>
+      res(ctx.status(200), ctx.json({ result: [] }))
+    )
+  )
+
+  render(
+    <MockProviders queryClient={new QueryClient()}>
+      <ScheduleSection {...props} currentDeploymentId={1} />
+    </MockProviders>
+  )
+
+  await waitFor(() => {
+    expect(screen.getByText('restart logs')).toBeInTheDocument()
+  })
+  expect(screen.queryByText(/logs"/)).not.toBeInTheDocument()
+})
+
 // ── isMissionCommand unit tests (#585) ───────────────────────────────────────
 
 test('isMissionCommand returns true for load+run commands', () => {

@@ -42,6 +42,8 @@ export const determineCommandStatus = (
         timeout,
         status: 'timeout',
         commsIsoTime: timeoutEvent.isoTime,
+        mtmsn: undefined,
+        momsn: undefined,
       }
     }
   }
@@ -58,11 +60,14 @@ export const determineCommandStatus = (
       timeout,
       status: 'queued',
       commsIsoTime: command.isoTime,
+      mtmsn: undefined,
+      momsn: undefined,
     }
   }
 
   // A state of 2 indicates cell comms, aka direct comms in dash4
-  // Cells comms are considered ACKed if they are sent since that indicates the socket is open
+  // Cell comms are considered ACKed if they are sent since that indicates the socket is open.
+  // Explicitly clear mtmsn/momsn — cell comms do not carry Iridium SBD IDs.
   if (matchingSbdSend && (matchingSbdSend?.state === 2 || via === undefined)) {
     return {
       ...command,
@@ -70,6 +75,8 @@ export const determineCommandStatus = (
       timeout,
       status: 'ack',
       commsIsoTime: matchingSbdSend.isoTime,
+      mtmsn: undefined,
+      momsn: undefined,
     }
   }
 
