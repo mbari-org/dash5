@@ -829,3 +829,86 @@ test('future-scheduled mission stays pending even when comms indicates ack', asy
   })
   expect(screen.queryByTitle(/Received by/i)).not.toBeInTheDocument()
 })
+
+// ── Sched timestamp format regression tests (#587) ────────────────────────────
+
+test('parses corrected sched YYYYMMDDT timestamp without }', async () => {
+  // Use a far-future date so isQueued stays true regardless of test runtime.
+  const futureStamp = '20991231T2359'
+  server.use(
+    rest.get('/events', (_req, res, ctx) =>
+      res(
+        ctx.status(200),
+        ctx.json({
+          result: [
+            {
+              data: `sched ${futureStamp} "load Science/profile_station.tl;run"`,
+              unixTime: Date.now() - 5 * 1000,
+              eventId: 701,
+              eventType: 'run',
+              text: null,
+              note: null,
+              user: 'test-engineer',
+            },
+          ],
+        })
+      )
+    ),
+    rest.get('/events/mission-started', (_req, res, ctx) =>
+      res(ctx.status(200), ctx.json({ result: [] }))
+    )
+  )
+
+  render(
+    <MockProviders queryClient={new QueryClient()}>
+      <ScheduleSection {...props} currentDeploymentId={1} />
+    </MockProviders>
+  )
+
+  // The row should display "Sent and Queued for … UTC" — the fixed prefix and
+  // UTC suffix are locale-independent and confirm that timestamp parsing
+  // succeeded (a parse failure falls back to 'N/A' with no "Queued" prefix).
+  await waitFor(() => {
+    expect(screen.getByText(/Sent and Queued for .+ UTC/)).toBeInTheDocument()
+  })
+})
+
+test('parses legacy sched YYYYMMDD}T timestamp for backwards compatibility', async () => {
+  // Simulate an event stored before the makeCommand } fix was deployed.
+  const legacyStamp = '20991231}T2359'
+  server.use(
+    rest.get('/events', (_req, res, ctx) =>
+      res(
+        ctx.status(200),
+        ctx.json({
+          result: [
+            {
+              data: `sched ${legacyStamp} "load Science/profile_station.tl;run"`,
+              unixTime: Date.now() - 5 * 1000,
+              eventId: 702,
+              eventType: 'run',
+              text: null,
+              note: null,
+              user: 'test-engineer',
+            },
+          ],
+        })
+      )
+    ),
+    rest.get('/events/mission-started', (_req, res, ctx) =>
+      res(ctx.status(200), ctx.json({ result: [] }))
+    )
+  )
+
+  render(
+    <MockProviders queryClient={new QueryClient()}>
+      <ScheduleSection {...props} currentDeploymentId={1} />
+    </MockProviders>
+  )
+
+  // The row should still display "Sent and Queued for … UTC" despite the
+  // legacy }T — same locale-independent assertion used for the clean timestamp.
+  await waitFor(() => {
+    expect(screen.getByText(/Sent and Queued for .+ UTC/)).toBeInTheDocument()
+  })
+})
