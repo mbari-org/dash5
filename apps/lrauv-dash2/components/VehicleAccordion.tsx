@@ -1,5 +1,5 @@
 import { AccordionHeader } from '@mbari/react-ui'
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import CommsSection from './CommsSection'
 import DocsSection from './DocsSection'
 import HandoffSection from './HandoffSection'
@@ -53,15 +53,19 @@ const VehicleAccordion: React.FC<VehicleAccordionProps> = ({
     to,
   })
 
-  // Fetch all pages so the un-acked count is never an undercount
+  // Only fetch all pages for active deployments — historical deployments
+  // hide the label so there's no need to load the full comms history
   useEffect(() => {
-    if (hasNextPage && !commsFetching) {
+    if (activeDeployment && hasNextPage && !commsFetching) {
       fetchNextPage()
     }
-  }, [hasNextPage, commsFetching, fetchNextPage])
+  }, [activeDeployment, hasNextPage, commsFetching, fetchNextPage])
 
-  // Only count commands that have not yet been acknowledged by the vehicle
-  const unackedCount = commsEvents.filter((e) => e.status !== 'ack').length
+  // Memoized count of commands not yet acknowledged by the vehicle
+  const unackedCount = useMemo(
+    () => commsEvents.filter((e) => e.status !== 'ack').length,
+    [commsEvents]
+  )
 
   const { data: missionStartedEvent } = useMissionStartedEvent(
     {
@@ -169,7 +173,7 @@ const VehicleAccordion: React.FC<VehicleAccordionProps> = ({
       <AccordionHeader
         label="Comms Queue"
         secondaryLabel={
-          activeDeployment && !commsLoading
+          activeDeployment && !commsLoading && !commsFetching && !hasNextPage
             ? `${unackedCount} item(s) in queue`
             : ''
         }
