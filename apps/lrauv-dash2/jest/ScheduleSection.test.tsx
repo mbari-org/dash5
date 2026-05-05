@@ -866,12 +866,17 @@ test('mission command upgrades from pending to ack when cell comms ACK is receiv
       // The history query requests only command,run; the comms query also
       // includes sbdSend,sbdReceipt,sbdReceive,note. Branch accordingly so
       // sbdSend is only visible to the comms lookup, matching production.
+      // The cancellation-notes query uses eventTypes=note exclusively — return
+      // [] so that query doesn't accidentally receive run/sbdSend events.
       const eventTypes = req.url.searchParams.get('eventTypes') ?? ''
+      const isNoteQuery = eventTypes === 'note'
       const isCommsQuery = eventTypes.includes('sbdSend')
       return res(
         ctx.status(200),
         ctx.json({
-          result: isCommsQuery
+          result: isNoteQuery
+            ? []
+            : isCommsQuery
             ? [missionRunEvent, sbdSendEvent]
             : [missionRunEvent],
         })
@@ -1040,12 +1045,17 @@ test('future-scheduled mission stays pending even when comms indicates sent', as
 
   server.use(
     rest.get('/events', (req, res, ctx) => {
+      // Return [] for note-only queries (cancellation-notes lookup) so test
+      // data is isolated and doesn't bleed into unrelated component branches.
       const eventTypes = req.url.searchParams.get('eventTypes') ?? ''
+      const isNoteQuery = eventTypes === 'note'
       const isCommsQuery = eventTypes.includes('sbdSend')
       return res(
         ctx.status(200),
         ctx.json({
-          result: isCommsQuery
+          result: isNoteQuery
+            ? []
+            : isCommsQuery
             ? [scheduledMission, sbdSendEvent]
             : [scheduledMission],
         })
