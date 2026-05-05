@@ -448,13 +448,20 @@ test('timed-out mission directive moves to history: no active-zone items remain'
     </MockProviders>
   )
 
+  // Both assertions must hold in the same render to distinguish pre/post-fix:
+  //
   // (a) Timeout icon appears — mission renders with cellStatus='timeout'.
+  //
+  // (b) "Schedule History" header appears — this header is rendered only when
+  //     hasPastSchedule is true (historicCells.length > 0). Without the fix,
+  //     the mission stays in scheduledCells, historicCells is empty, and
+  //     "Schedule History" never renders. With the fix, the mission moves to
+  //     historicCells, hasPastSchedule becomes true, and the header renders.
+  //     This is the state change that actually proves the demotion happened.
   await waitFor(() => {
     expect(screen.getByTitle(/timeout/i)).toBeInTheDocument()
+    expect(screen.getByText('Schedule History')).toBeInTheDocument()
   })
-  // (b) No separator: with the fix, the mission is in historicCells so
-  // scheduledCells is empty — both zones must be non-empty for the separator
-  // to appear, so its absence proves no mission is left in the active zone.
   expect(
     screen.queryByText('Previous Vehicle Directives')
   ).not.toBeInTheDocument()

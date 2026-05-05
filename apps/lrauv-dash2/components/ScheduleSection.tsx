@@ -665,10 +665,11 @@ export const ScheduleSection: React.FC<ScheduleSectionProps> = ({
     }
 
     if (isMissionCommand(v.event?.data, v.event?.text)) return true
-    // Non-mission with no future scheduled start → already dispatched → history
-    const schedMatch = rawText.match(/sched\s+(\S+)/i)
-    const sched = schedMatch?.[1]
-    return !!sched && sched.toLowerCase() !== 'asap'
+    // Non-mission commands: only stay above separator if they have a specific
+    // future scheduled start. Reuse the scheduleDate already computed above so
+    // bare-sched quoted commands like `sched "restart logs"` (no timestamp or
+    // asap token) are correctly treated as ASAP/dispatched and sent to history.
+    return isFutureScheduled
   }
 
   const scheduledCells = missions?.filter(isAboveSeparator)
