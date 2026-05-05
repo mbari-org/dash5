@@ -5,9 +5,9 @@ import '@testing-library/jest-dom'
 import {
   ScheduleSection,
   ScheduleSectionProps,
+  isMissionCommand,
   isParamCommand,
   isConfigSetCommand,
-  isMissionCommand,
   parseMissionCommand,
 } from '../components/ScheduleSection'
 import { QueryClient } from 'react-query'
@@ -389,6 +389,87 @@ test('shows timeout icon when a non-mission cell command times out', async () =>
   await waitFor(() => {
     expect(screen.getByTitle(/timeout/i)).toBeInTheDocument()
   })
+})
+
+test('timed-out mission directive moves to history: no active-zone items remain', async () => {
+  // Regression test for #594: before the fix, a mission command would stay in
+  // the active zone even after timing out because isAboveSeparator returned
+  // true for any pending isMissionCommand.
+  //
+  // Strategy: a SINGLE timed-out mission is the only event. After the fix,
+  // it moves to historicCells (scheduledCells becomes empty → no separator).
+  // The timeout icon should be within the virtualizer's render window (first
+  // items). We verify:
+  //   (a) the timeout icon appears  (mission renders with correct cellStatus)
+  //   (b) no "Previous Vehicle Directives" separator appears (nothing left in
+  //       the active zone — the mission went entirely to history).
+  const missionEvent = {
+    data: 'load Transport/transit.tl;set transit.Depth 50 m;run',
+    unixTime: Date.now() - 90 * 1000,
+    eventId: 770,
+    eventType: 'run',
+    text: null,
+    note: '[[via:cell, timeout:5min]]',
+    user: 'test-operator',
+  }
+  const timeoutNoteEvent = {
+    eventId: 771,
+    eventType: 'note',
+    unixTime: Date.now() - 60 * 1000,
+    isoTime: new Date(Date.now() - 60 * 1000).toISOString(),
+    data: null,
+    text: null,
+    note: 'id=770: Timeout while waiting for ack',
+    user: null,
+  }
+  server.use(
+    rest.get('/events', (req, res, ctx) => {
+      // History query (command,run) must not receive the note event lest it
+      // appear as a spurious row; comms query gets all including the note;
+      // the cancellation-notes query (eventTypes=note) gets [] so it doesn't
+      // interfere with the timeout-note path under test.
+      const eventTypes = req.url.searchParams.get('eventTypes') ?? ''
+      const isNoteQuery = eventTypes === 'note'
+      const isCommsQuery = eventTypes.includes('sbdSend')
+      const result = isNoteQuery
+        ? []
+        : isCommsQuery
+        ? [missionEvent, timeoutNoteEvent]
+        : [missionEvent]
+      return res(ctx.status(200), ctx.json({ result }))
+    }),
+    rest.get('/events/mission-started', (_req, res, ctx) =>
+      res(ctx.status(200), ctx.json({ result: [] }))
+    )
+  )
+
+  render(
+    <MockProviders queryClient={new QueryClient()}>
+      <ScheduleSection
+        {...props}
+        currentDeploymentId={1}
+        deploymentStartTime={Date.now() - 3600 * 1000}
+      />
+    </MockProviders>
+  )
+
+  // Both assertions must hold in the same render to distinguish pre/post-fix:
+  //
+  // (a) Timeout icon appears — mission renders with cellStatus='timeout'.
+  //
+  // (b) "Schedule History" header appears — this header is rendered only when
+  //     hasPastSchedule is true (historicCells.length > 0). Without the fix,
+  //     the mission stays in scheduledCells, historicCells is empty, and
+  //     "Schedule History" never renders. With the fix, the mission moves to
+  //     historicCells, hasPastSchedule becomes true, and the header renders.
+  //     This is the state change that actually proves the demotion happened.
+  await waitFor(() => {
+    expect(screen.getByTitle(/timeout/i)).toBeInTheDocument()
+    expect(screen.getByText('Schedule History')).toBeInTheDocument()
+  })
+  expect(
+    screen.queryByText('Previous Vehicle Directives')
+  ).not.toBeInTheDocument()
 })
 
 test('Cancel this Directive calls DELETE /commands/queue when confirmed', async () => {

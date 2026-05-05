@@ -646,12 +646,35 @@ export const ScheduleSection: React.FC<ScheduleSectionProps> = ({
     const raw = toScheduleCellStatus(v.status)
     if (!scheduledTypes.includes(raw)) return false
     if (raw !== 'pending') return true // running stays above
-    if (isMissionCommand(v.event?.data, v.event?.text)) return true
-    // Non-mission with no future scheduled start → already dispatched → history
+
     const rawText = v.event?.data ?? v.event?.text ?? ''
-    const schedMatch = rawText.match(/sched\s+(\S+)/i)
-    const sched = schedMatch?.[1]
-    return !!sched && sched.toLowerCase() !== 'asap'
+
+    // If comms confirmed a timeout, demote to history so the operator sees
+    // it alongside completed/cancelled items and can re-run from there.
+    // Only skip demotion when the payload carries an explicit scheduled
+    // timestamp (not asap) — such items are deliberately queued and the
+    // operator needs them to remain visible above the separator. Note: we
+    // do not compare the timestamp against Date.now() here; the presence
+    // of any explicit start time is treated as "intentionally scheduled".
+    const schedDateMatch = rawText.match(/sched\s+(\d{8}}?T\d{2,4})/i)
+    const scheduleDate = rawText.match(/sched\s+asap/i)
+      ? 'asap'
+      : schedDateMatch
+      ? schedDateMatch[1]
+      : undefined
+    // hasScheduledTimestamp is true when the payload names a specific start
+    // time (not asap/ASAP). It does NOT verify whether that time is in the
+    // future — it only confirms a concrete start was requested.
+    const hasScheduledTimestamp = !!(scheduleDate && scheduleDate !== 'asap')
+    if (!hasScheduledTimestamp && v.event?.eventId != null) {
+      if (commsLookup.get(v.event.eventId) === 'timeout') return false
+    }
+
+    if (isMissionCommand(v.event?.data, v.event?.text)) return true
+    // Non-mission commands: only stay above separator if they have a specific
+    // scheduled timestamp. Bare-sched quoted commands like `sched "restart logs"`
+    // (no timestamp or asap token) are treated as ASAP/dispatched → history.
+    return hasScheduledTimestamp
   }
 
   const scheduledCells = missions?.filter(isAboveSeparator)
@@ -941,15 +964,15 @@ export const ScheduleSection: React.FC<ScheduleSectionProps> = ({
 
     // For non-mission commands, join all semicolon-separated segments with
     // ' · ' so the full command intent is visible in green on the row.
-    // Strip any leading "sched <timestamp>" wrapper and surrounding quotes
-    // so queued commands (e.g. sched 20260505T1844 "cmd1;cmd2") show only
-    // the actual command text.
-    // Strip:  sched <timestamp>   e.g. sched 20260505T1844 "..."
-    //         sched asap          e.g. sched asap "..."
-    //         sched               e.g. sched "restart logs"  (bare ASAP with quotes)
-    // Using an explicit alternation avoids the previous \S+ approach, which
-    // consumed only up to the first space inside a quoted payload like
-    // sched "restart logs" → "restart (stops) → leaves logs".
+    // Strip scheduling wrappers before splitting so queued commands like
+    //   sched 20260505T1844 "cmd1;cmd2"  →  cmd1 · cmd2
+    //   sched asap "restart logs"        →  restart logs
+    //   sched "restart logs"             →  restart logs
+    // Only strip `sched` when it is acting as a scheduling wrapper (followed
+    // by a timestamp, `asap`, or a quoted payload). Bare `sched <subcommand>`
+    // forms (e.g. `sched pause`, `sched resume`) are scheduler-control
+    // commands where `sched` is the verb — leave those intact so they display
+    // as "sched pause" / "sched resume" rather than just "pause" / "resume".
     const commandPayload = rawText
       .replace(/^sched\s+(?:\d{8}}?T\d{2,4}|asap)\s*/i, '')
       .replace(/^sched\s+(?=")/i, '')
