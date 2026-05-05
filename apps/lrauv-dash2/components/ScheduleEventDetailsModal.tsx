@@ -823,6 +823,28 @@ export const ScheduleEventDetailsModal: React.FC<
             </p>
             <p className="font-medium">{event.eventId}</p>
           </div>
+          {(event.mtmsn != null || event.momsn != null) && (
+            <div>
+              <p className="text-sm uppercase tracking-wide text-stone-500">
+                Iridium Msg IDs
+              </p>
+              <p className="font-medium font-mono text-sm">
+                {event.mtmsn != null && (
+                  <span title="Mobile Terminated Message Sequence Number — Iridium ID of command sent to vehicle">
+                    MTMSN: {event.mtmsn}
+                  </span>
+                )}
+                {event.mtmsn != null && event.momsn != null && (
+                  <span className="mx-2 text-stone-400">·</span>
+                )}
+                {event.momsn != null && (
+                  <span title="Mobile Originated Message Sequence Number — Iridium ID of vehicle's ACK reply">
+                    MOMSN: {event.momsn}
+                  </span>
+                )}
+              </p>
+            </div>
+          )}
         </div>
 
         <div>
