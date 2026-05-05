@@ -651,8 +651,11 @@ export const ScheduleSection: React.FC<ScheduleSectionProps> = ({
 
     // If comms confirmed a timeout, demote to history so the operator sees
     // it alongside completed/cancelled items and can re-run from there.
-    // Only skip demotion when the payload contains a specific scheduled
-    // timestamp — those items haven't had their run window yet.
+    // Only skip demotion when the payload carries an explicit scheduled
+    // timestamp (not asap) — such items are deliberately queued and the
+    // operator needs them to remain visible above the separator. Note: we
+    // do not compare the timestamp against Date.now() here; the presence
+    // of any explicit start time is treated as "intentionally scheduled".
     const schedDateMatch = rawText.match(/sched\s+(\d{8}}?T\d{2,4})/i)
     const scheduleDate = rawText.match(/sched\s+asap/i)
       ? 'asap'
