@@ -908,10 +908,11 @@ export const ScheduleSection: React.FC<ScheduleSectionProps> = ({
         if (commsStatus === 'ack') return 'ack'
         if (commsStatus === 'timeout') return 'timeout'
         if (commsStatus === 'sent') return 'sent'
-        // Non-mission commands are always dispatched immediately. If comms
-        // events are outside the fetch window (or not yet received), default
-        // to 'sent' so history rows don't show 'pending' indefinitely.
-        if (!isMission) return 'sent'
+        // Non-mission commands are always dispatched immediately. If no comms
+        // entry exists (outside the fetch window), default to 'sent'. But if
+        // comms reports 'queued' (sbdSend not yet dispatched), preserve
+        // 'pending' so the row doesn't mislead the operator.
+        if (!isMission && commsStatus !== 'queued') return 'sent'
       }
       return raw
     })()
@@ -1019,6 +1020,14 @@ export const ScheduleSection: React.FC<ScheduleSectionProps> = ({
                 : 'Sent'
               : cellStatus === 'running'
               ? 'Started'
+              : cellStatus === 'ack'
+              ? // Comms ACK means the vehicle received the command via comms
+                // (cell or sat) — not that the mission started executing.
+                'Received'
+              : cellStatus === 'timeout'
+              ? 'Timed out'
+              : cellStatus === 'sent'
+              ? 'Sent'
               : isMission
               ? 'Started'
               : 'Ran'

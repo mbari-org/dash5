@@ -112,11 +112,12 @@ const formatScheduleDate = (scheduleDate?: string): string => {
   if (!scheduleDate) return 'N/A'
   if (scheduleDate.toLowerCase() === 'asap') return 'ASAP'
 
-  // Format: 20260401T0600 or 20260331T18 (UTC). Also accept the legacy
-  // }T format from older makeCommand builds until historical events age out.
-  const shortMatch = scheduleDate.match(
-    /^(\d{4})(\d{2})(\d{2})}?T(\d{2})(\d{2})?$/
-  )
+  // Strip legacy } (from older makeCommand builds) before parsing so events
+  // stored as YYYYMMDD}THHMM continue to display a formatted timestamp.
+  const normalized = scheduleDate.replace('}', '')
+
+  // Format: 20260401T0600 or 20260331T18 (UTC)
+  const shortMatch = normalized.match(/^(\d{4})(\d{2})(\d{2})T(\d{2})(\d{2})?$/)
   if (shortMatch) {
     const utc = DateTime.fromObject(
       {
@@ -810,47 +811,45 @@ export const ScheduleEventDetailsModal: React.FC<
           </div>
           {(event.mtmsn != null || event.momsn != null) && (
             <div>
-              <p className="text-sm uppercase tracking-wide text-stone-500">
-                <span className="inline-flex items-center gap-1">
-                  Iridium Msg IDs
-                  <span className="relative inline-flex align-middle">
-                    <button
-                      type="button"
-                      className="cursor-pointer rounded-full border border-stone-300 px-1 text-[10px] font-semibold text-stone-500 hover:bg-stone-100 focus:bg-stone-100"
-                      aria-label="Iridium message ID info"
-                      aria-describedby={
-                        showIridiumTooltip ? 'iridium-ids-tooltip' : undefined
-                      }
-                      onMouseEnter={() => setShowIridiumTooltip(true)}
-                      onMouseLeave={() => setShowIridiumTooltip(false)}
-                      onFocus={() => setShowIridiumTooltip(true)}
-                      onBlur={() => setShowIridiumTooltip(false)}
-                      onClick={() => setShowIridiumTooltip((prev) => !prev)}
+              <p className="flex items-center gap-1 text-sm uppercase tracking-wide text-stone-500">
+                Iridium Msg IDs
+                <span className="relative inline-flex align-middle">
+                  <button
+                    type="button"
+                    className="cursor-pointer rounded-full border border-stone-300 px-1 text-[10px] font-semibold text-stone-500 hover:bg-stone-100 focus:bg-stone-100"
+                    onMouseEnter={() => setShowIridiumTooltip(true)}
+                    onMouseLeave={() => setShowIridiumTooltip(false)}
+                    onFocus={() => setShowIridiumTooltip(true)}
+                    onBlur={() => setShowIridiumTooltip(false)}
+                    onClick={() => setShowIridiumTooltip((prev) => !prev)}
+                    aria-label="Iridium message ID field help"
+                    aria-describedby={
+                      showIridiumTooltip ? 'iridium-msg-id-tooltip' : undefined
+                    }
+                  >
+                    ?
+                  </button>
+                  {showIridiumTooltip && (
+                    <div
+                      id="iridium-msg-id-tooltip"
+                      role="tooltip"
+                      className="pointer-events-none absolute left-0 top-full z-[9999] mt-1 w-72 -translate-x-1/2 rounded border px-3 py-2 text-xs normal-case leading-relaxed text-stone-700 shadow-lg"
+                      style={{
+                        borderColor: '#bae6fd',
+                        backgroundColor: '#fffbeb',
+                      }}
                     >
-                      ?
-                    </button>
-                    {showIridiumTooltip && (
-                      <span
-                        id="iridium-ids-tooltip"
-                        role="tooltip"
-                        className="pointer-events-none absolute bottom-full left-1/2 mb-1 -translate-x-1/2 rounded border px-3 py-2 text-xs font-normal normal-case leading-relaxed text-stone-700 shadow-lg"
-                        style={{
-                          borderColor: '#bae6fd',
-                          backgroundColor: '#fffbeb',
-                          width: '17rem',
-                          zIndex: 9999,
-                        }}
-                      >
-                        <strong>MTMSN</strong> — Mobile Terminated Message
-                        Sequence Number: Iridium ID of the command sent to the
-                        vehicle.
-                        <br />
-                        <strong>MOMSN</strong> — Mobile Originated Message
-                        Sequence Number: Iridium ID of the vehicle&apos;s ACK
-                        reply.
-                      </span>
-                    )}
-                  </span>
+                      <p className="normal-case">
+                        <strong>MTMSN</strong> (Mobile Terminated): Iridium ID
+                        assigned to the command sent to the vehicle.
+                      </p>
+                      <p className="mt-1 normal-case">
+                        <strong>MOMSN</strong> (Mobile Originated): Iridium ID
+                        of the vehicle&apos;s acknowledgment reply. Present only
+                        after the vehicle confirms receipt.
+                      </p>
+                    </div>
+                  )}
                 </span>
               </p>
               <p className="font-medium font-mono text-sm">
