@@ -218,14 +218,17 @@ export const ScheduleSection: React.FC<ScheduleSectionProps> = ({
     return map
   }, [commsEventsResponse.data])
 
-  // eventId → { mtmsn, momsn } for sat-ACKed commands
+  // eventId → { mtmsn, momsn } for sat commands with Iridium sequence number
+  // data. Includes pre-ACK sat sends (MTMSN only) as well as fully ACKed
+  // commands (both MTMSN and MOMSN). 0 is a sentinel for "not present" in
+  // TethysDash so both values are normalized to undefined when falsy.
   const commsMsgIdLookup = useMemo(() => {
     const map = new Map<number, { mtmsn?: number; momsn?: number }>()
     commsEventsResponse.data.forEach((e) => {
-      if (e.eventId != null && (e.mtmsn != null || e.momsn != null)) {
+      if (e.eventId != null && (e.mtmsn || e.momsn)) {
         map.set(e.eventId, {
-          mtmsn: e.mtmsn ?? undefined,
-          momsn: e.momsn ?? undefined,
+          mtmsn: e.mtmsn || undefined,
+          momsn: e.momsn || undefined,
         })
       }
     })

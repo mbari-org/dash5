@@ -92,8 +92,9 @@ export const determineCommandStatus = (
         timeout,
         status: 'ack',
         commsIsoTime: matchingSbdReceive.isoTime,
-        mtmsn: matchingSbdReceipt.mtmsn ?? undefined,
-        momsn: matchingSbdReceive.momsn ?? undefined,
+        // 0 is a sentinel for "no MTMSN/MOMSN" in TethysDash — normalize to undefined
+        mtmsn: matchingSbdReceipt.mtmsn || undefined,
+        momsn: matchingSbdReceive.momsn || undefined,
       }
     }
   }
@@ -104,6 +105,6 @@ export const determineCommandStatus = (
     timeout,
     status: 'sent',
     commsIsoTime: matchingSbdSend.isoTime,
-    mtmsn: matchingSbdReceipt?.mtmsn ?? undefined,
+    mtmsn: matchingSbdReceipt?.mtmsn || undefined,
   }
 }
