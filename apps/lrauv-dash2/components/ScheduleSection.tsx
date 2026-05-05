@@ -660,8 +660,8 @@ export const ScheduleSection: React.FC<ScheduleSectionProps> = ({
       ? schedDateMatch[1]
       : undefined
     // hasScheduledTimestamp is true when the payload names a specific start
-    // time (not asap). It does NOT guarantee the timestamp is in the future —
-    // use parseScheduledUnixTime for actual time comparisons.
+    // time (not asap/ASAP). It does NOT verify whether that time is in the
+    // future — it only confirms a concrete start was requested.
     const hasScheduledTimestamp = !!(scheduleDate && scheduleDate !== 'asap')
     if (!hasScheduledTimestamp && v.event?.eventId != null) {
       if (commsLookup.get(v.event.eventId) === 'timeout') return false
