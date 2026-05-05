@@ -425,10 +425,15 @@ test('timed-out mission directive moves to history: no active-zone items remain'
   server.use(
     rest.get('/events', (req, res, ctx) => {
       // History query (command,run) must not receive the note event lest it
-      // appear as a spurious row; comms query gets all including the note.
+      // appear as a spurious row; comms query gets all including the note;
+      // the cancellation-notes query (eventTypes=note) gets [] so it doesn't
+      // interfere with the timeout-note path under test.
       const eventTypes = req.url.searchParams.get('eventTypes') ?? ''
+      const isNoteQuery = eventTypes === 'note'
       const isCommsQuery = eventTypes.includes('sbdSend')
-      const result = isCommsQuery
+      const result = isNoteQuery
+        ? []
+        : isCommsQuery
         ? [missionEvent, timeoutNoteEvent]
         : [missionEvent]
       return res(ctx.status(200), ctx.json({ result }))
