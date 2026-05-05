@@ -1009,6 +1009,71 @@ test('legacy run <file> mission row does not show "No parameters" subtitle', asy
   expect(screen.queryByText('No parameters')).not.toBeInTheDocument()
 })
 
+// ── Future-scheduled mission comms-gate regression test (#584) ────────────────
+
+test('future-scheduled mission stays pending even when comms indicates sent', async () => {
+  // A mission scheduled for a far-future time should not be upgraded via the
+  // comms lookup because the scheduleDate gate prevents it: only ASAP/unscheduled
+  // missions should be upgraded based on comms data.
+  const futureStamp = '20991231T2359'
+  const scheduledMission = {
+    data: `sched ${futureStamp} "load Transport/transit.tl;run"`,
+    unixTime: Date.now() - 60 * 1000,
+    eventId: 470,
+    eventType: 'run',
+    text: null,
+    note: '[[via:cell, timeout:5min]]',
+    user: 'test-operator',
+  }
+  const sbdSendEvent = {
+    eventId: 471,
+    eventType: 'sbdSend',
+    refId: 470,
+    state: 2,
+    unixTime: Date.now() - 58 * 1000,
+    isoTime: new Date(Date.now() - 58 * 1000).toISOString(),
+    data: null,
+    text: null,
+    note: null,
+    user: null,
+  }
+
+  server.use(
+    rest.get('/events', (req, res, ctx) => {
+      const eventTypes = req.url.searchParams.get('eventTypes') ?? ''
+      const isCommsQuery = eventTypes.includes('sbdSend')
+      return res(
+        ctx.status(200),
+        ctx.json({
+          result: isCommsQuery
+            ? [scheduledMission, sbdSendEvent]
+            : [scheduledMission],
+        })
+      )
+    }),
+    rest.get('/events/mission-started', (_req, res, ctx) =>
+      res(ctx.status(200), ctx.json({ result: [] }))
+    )
+  )
+
+  render(
+    <MockProviders queryClient={new QueryClient()}>
+      <ScheduleSection
+        {...props}
+        currentDeploymentId={1}
+        deploymentStartTime={Date.now() - 3600 * 1000}
+      />
+    </MockProviders>
+  )
+
+  // Despite the sbdSend comms event, the mission must stay 'pending' because
+  // it has a future scheduled start time (scheduleDate !== 'asap').
+  await waitFor(() => {
+    expect(screen.getByTitle(/pending/i)).toBeInTheDocument()
+  })
+  expect(screen.queryByTitle(/Received by/i)).not.toBeInTheDocument()
+})
+
 // ── Sched timestamp format regression tests (#587) ───────────────────────────
 
 test('parses corrected sched YYYYMMDDT timestamp without }', async () => {
