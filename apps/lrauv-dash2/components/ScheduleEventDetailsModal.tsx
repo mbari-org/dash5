@@ -229,6 +229,7 @@ export const ScheduleEventDetailsModal: React.FC<
   const [showEndedTooltip, setShowEndedTooltip] = useState(false)
   const [showScheduledStartTooltip, setShowScheduledStartTooltip] =
     useState(false)
+  const [showIridiumTooltip, setShowIridiumTooltip] = useState(false)
   const event = globalModalId?.meta?.scheduleEvent
 
   // Reset tooltip state whenever the selected event changes
@@ -236,6 +237,7 @@ export const ScheduleEventDetailsModal: React.FC<
     setShowStatusTooltip(false)
     setShowEndedTooltip(false)
     setShowScheduledStartTooltip(false)
+    setShowIridiumTooltip(false)
   }, [event?.eventId])
 
   if (!event) return null
@@ -809,22 +811,54 @@ export const ScheduleEventDetailsModal: React.FC<
           {(event.mtmsn != null || event.momsn != null) && (
             <div>
               <p className="text-sm uppercase tracking-wide text-stone-500">
-                Iridium Msg IDs
+                <span className="inline-flex items-center gap-1">
+                  Iridium Msg IDs
+                  <span className="relative inline-flex align-middle">
+                    <button
+                      type="button"
+                      className="cursor-pointer rounded-full border border-stone-300 px-1 text-[10px] font-semibold text-stone-500 hover:bg-stone-100 focus:bg-stone-100"
+                      aria-label="Iridium message ID info"
+                      aria-describedby={
+                        showIridiumTooltip ? 'iridium-ids-tooltip' : undefined
+                      }
+                      onMouseEnter={() => setShowIridiumTooltip(true)}
+                      onMouseLeave={() => setShowIridiumTooltip(false)}
+                      onFocus={() => setShowIridiumTooltip(true)}
+                      onBlur={() => setShowIridiumTooltip(false)}
+                      onClick={() => setShowIridiumTooltip((prev) => !prev)}
+                    >
+                      ?
+                    </button>
+                    {showIridiumTooltip && (
+                      <span
+                        id="iridium-ids-tooltip"
+                        role="tooltip"
+                        className="pointer-events-none absolute bottom-full left-1/2 mb-1 -translate-x-1/2 rounded border px-3 py-2 text-xs font-normal normal-case leading-relaxed text-stone-700 shadow-lg"
+                        style={{
+                          borderColor: '#bae6fd',
+                          backgroundColor: '#fffbeb',
+                          width: '17rem',
+                          zIndex: 9999,
+                        }}
+                      >
+                        <strong>MTMSN</strong> — Mobile Terminated Message
+                        Sequence Number: Iridium ID of the command sent to the
+                        vehicle.
+                        <br />
+                        <strong>MOMSN</strong> — Mobile Originated Message
+                        Sequence Number: Iridium ID of the vehicle&apos;s ACK
+                        reply.
+                      </span>
+                    )}
+                  </span>
+                </span>
               </p>
               <p className="font-medium font-mono text-sm">
-                {event.mtmsn != null && (
-                  <span title="Mobile Terminated Message Sequence Number — Iridium ID of command sent to vehicle">
-                    MTMSN: {event.mtmsn}
-                  </span>
-                )}
+                {event.mtmsn != null && <span>MTMSN: {event.mtmsn}</span>}
                 {event.mtmsn != null && event.momsn != null && (
                   <span className="mx-2 text-stone-400">·</span>
                 )}
-                {event.momsn != null && (
-                  <span title="Mobile Originated Message Sequence Number — Iridium ID of vehicle's ACK reply">
-                    MOMSN: {event.momsn}
-                  </span>
-                )}
+                {event.momsn != null && <span>MOMSN: {event.momsn}</span>}
               </p>
             </div>
           )}
