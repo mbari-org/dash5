@@ -67,6 +67,10 @@ export interface GlobalModalMetaData {
     isLoadRunMission?: boolean
     /** Raw comms status from the Comms Queue — 'queued'|'sent'|'ack'|'timeout' */
     commsStatus?: string
+    /** Iridium Mobile Terminated Message Sequence Number (sat comms) */
+    mtmsn?: number
+    /** Iridium Mobile Originated Message Sequence Number — vehicle's ack reply (sat comms) */
+    momsn?: number
     /** True for automatic Default mission rows (not operator-commanded) */
     isDefaultMission?: boolean
     /** Vehicle GPS position at Default mission start (from missionStarted telemetry) */

@@ -233,6 +233,23 @@ export const ScheduleSection: React.FC<ScheduleSectionProps> = ({
     return map
   }, [commsEventsResponse.data])
 
+  // eventId → { mtmsn, momsn } for sat commands with Iridium sequence number
+  // data. Includes pre-ACK sat sends (MTMSN only) as well as fully ACKed
+  // commands (both MTMSN and MOMSN). 0 is a sentinel for "not present" in
+  // TethysDash so both values are normalized to undefined when falsy.
+  const commsMsgIdLookup = useMemo(() => {
+    const map = new Map<number, { mtmsn?: number; momsn?: number }>()
+    commsEventsResponse.data.forEach((e) => {
+      if (e.eventId != null && (e.mtmsn || e.momsn)) {
+        map.set(e.eventId, {
+          mtmsn: e.mtmsn || undefined,
+          momsn: e.momsn || undefined,
+        })
+      }
+    })
+    return map
+  }, [commsEventsResponse.data])
+
   const { isLoading, isFetching, refetch } = deploymentLogsOnly
     ? deploymentResponse
     : allLogsResponse
@@ -329,10 +346,9 @@ export const ScheduleSection: React.FC<ScheduleSectionProps> = ({
       text?: string
     ): number | undefined => {
       const raw = data ?? text ?? ''
-      // Format: 20260401}T0600 or 20260331T18 or 20260331T1800 (UTC)
-      const m =
-        raw.match(/sched\s+(\d{4})(\d{2})(\d{2})}T(\d{2})(\d{2})/) ||
-        raw.match(/sched\s+(\d{4})(\d{2})(\d{2})T(\d{2})(\d{2})?/)
+      // Format: 20260331T18 or 20260331T1800 (UTC). Also accept the legacy
+      // }T format emitted by older makeCommand builds until old events age out.
+      const m = raw.match(/sched\s+(\d{4})(\d{2})(\d{2})}?T(\d{2})(\d{2})?/)
       if (!m) return undefined
       const dt = DateTime.fromObject(
         {
@@ -889,6 +905,7 @@ export const ScheduleSection: React.FC<ScheduleSectionProps> = ({
       ? 'mission'
       : 'command'
     const rawText = mission?.event.data ?? mission?.event.text ?? ''
+    // Also accept the legacy }T format for historical events in the database.
     const schedDateMatch = rawText.match(/sched\s+(\d{8}}?T\d{2,4})/)
     const scheduleDate = rawText.match(/sched\s+asap/i)
       ? 'asap'
@@ -904,18 +921,20 @@ export const ScheduleSection: React.FC<ScheduleSectionProps> = ({
         return 'sent'
       }
       const raw = toScheduleCellStatus(mission?.status ?? '')
-      // Non-mission, non-param commands with no future scheduled start
-      // are already dispatched — API 'pending'/'TBD' just means the vehicle
-      // hasn't confirmed yet. Use comms lookup for the most accurate status.
-      if (
-        raw === 'pending' &&
-        !isMission &&
-        !(scheduleDate && scheduleDate !== 'asap')
-      ) {
+      // For any pending command with no specific future scheduled start,
+      // use the comms lookup to upgrade status based on actual vehicle
+      // receipt. The API always returns TBD/'pending' for mission commands
+      // so comms data is the only reliable signal for missions too.
+      if (raw === 'pending' && !(scheduleDate && scheduleDate !== 'asap')) {
         const commsStatus = commsLookup.get(mission.event.eventId)
         if (commsStatus === 'ack') return 'ack'
         if (commsStatus === 'timeout') return 'timeout'
-        return 'sent'
+        if (commsStatus === 'sent') return 'sent'
+        // Non-mission ASAP/immediate commands are always dispatched to the
+        // comms layer — fall back to 'sent' even when the comms event falls
+        // outside the fetch window. Mission commands stay 'pending' until
+        // a comms entry confirms transmission to avoid misleading operators.
+        if (!isMission) return 'sent'
       }
       return raw
     })()
@@ -954,6 +973,7 @@ export const ScheduleSection: React.FC<ScheduleSectionProps> = ({
           // WHEN it will run, not when the command was sent.
           const scheduledDt = (() => {
             if (!isQueued || !scheduleDate) return null
+            // Strip legacy } (from older makeCommand builds) before parsing.
             const clean = scheduleDate.replace('}', '')
             const m =
               clean.match(/^(\d{4})(\d{2})(\d{2})T(\d{2})(\d{2})$/) ||
@@ -999,6 +1019,14 @@ export const ScheduleSection: React.FC<ScheduleSectionProps> = ({
                 : 'Sent'
               : cellStatus === 'running'
               ? 'Started'
+              : cellStatus === 'ack'
+              ? // Comms ACK means the vehicle received the command via comms
+                // (cell or sat) — not that the mission started executing.
+                'Received'
+              : cellStatus === 'timeout'
+              ? 'Timed out'
+              : cellStatus === 'sent'
+              ? 'Sent'
               : isMission
               ? 'Started'
               : 'Ran'
@@ -1072,6 +1100,7 @@ export const ScheduleSection: React.FC<ScheduleSectionProps> = ({
                 isConfigSetUpdate: isConfigSet,
                 isLoadRunMission,
                 commsStatus: commsLookup.get(mission.event.eventId),
+                ...commsMsgIdLookup.get(mission.event.eventId),
               },
             },
           })

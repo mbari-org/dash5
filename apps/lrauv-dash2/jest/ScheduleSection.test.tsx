@@ -5,9 +5,9 @@ import '@testing-library/jest-dom'
 import {
   ScheduleSection,
   ScheduleSectionProps,
-  isMissionCommand,
   isParamCommand,
   isConfigSetCommand,
+  isMissionCommand,
   parseMissionCommand,
 } from '../components/ScheduleSection'
 import { QueryClient } from 'react-query'
@@ -650,7 +650,7 @@ test('configSet command row shows Sent status and config badge tooltip', async (
   })
 })
 
-// ── isMissionCommand unit tests ───────────────────────────────────────────────
+// ── isMissionCommand unit tests (#585) ───────────────────────────────────────
 
 test('isMissionCommand returns true for load+run commands', () => {
   expect(
@@ -675,7 +675,7 @@ test('isMissionCommand returns false for commands without load+run', () => {
   expect(isMissionCommand(undefined, undefined)).toBe(false)
 })
 
-// ── secondary label gating integration tests ──────────────────────────────────
+// ── secondary label gating integration tests (#585) ──────────────────────────
 
 test('bare command row does not show "No parameters" secondary text', async () => {
   server.use(
@@ -757,8 +757,6 @@ test('mission command row shows "No parameters" secondary text when no params se
 // ── parseMissionCommand unit tests (#585) ─────────────────────────────────────
 
 test('parseMissionCommand strips trailing run from semicolon-delimited commands', () => {
-  // load;run with no set params should return parameters: undefined so the
-  // row falls back to "No parameters" rather than showing "run" as a param.
   expect(parseMissionCommand('load Transport/transit.tl;run')).toEqual({
     name: 'load Transport/transit.tl',
     parameters: undefined,
@@ -845,7 +843,272 @@ test('legacy run <file> mission row does not show "No parameters" subtitle', asy
   )
 
   await waitFor(() => {
-    expect(screen.getByText(/mbts_sci2/)).toBeInTheDocument()
+    expect(screen.getByText('Science/mbts_sci2.tl')).toBeInTheDocument()
   })
   expect(screen.queryByText('No parameters')).not.toBeInTheDocument()
+})
+
+// ── Mission comms-lookup upgrade regression tests (#584) ─────────────────────
+
+test('mission command upgrades from pending to ack when cell comms ACK is received', async () => {
+  // The mission run event returned by the schedule history query.
+  const missionRunEvent = {
+    data: 'load Transport/transit.tl;set transit.Depth 50 m;run',
+    unixTime: Date.now() - 90 * 1000,
+    eventId: 450,
+    eventType: 'run',
+    text: null,
+    note: '[[via:cell, timeout:5min]]',
+    user: 'test-operator',
+  }
+  // The sbdSend comms event returned only by the useCommsEvents query.
+  const sbdSendEvent = {
+    eventId: 451,
+    eventType: 'sbdSend',
+    refId: 450,
+    state: 2,
+    unixTime: Date.now() - 88 * 1000,
+    isoTime: new Date(Date.now() - 88 * 1000).toISOString(),
+    data: null,
+    text: null,
+    note: null,
+    user: null,
+  }
+
+  server.use(
+    rest.get('/events', (req, res, ctx) => {
+      // The history query requests only command,run; the comms query also
+      // includes sbdSend,sbdReceipt,sbdReceive,note. Branch accordingly so
+      // sbdSend is only visible to the comms lookup, matching production.
+      // The cancellation-notes query uses eventTypes=note exclusively — return
+      // [] so that query doesn't accidentally receive run/sbdSend events.
+      const eventTypes = req.url.searchParams.get('eventTypes') ?? ''
+      const isNoteQuery = eventTypes === 'note'
+      const isCommsQuery = eventTypes.includes('sbdSend')
+      return res(
+        ctx.status(200),
+        ctx.json({
+          result: isNoteQuery
+            ? []
+            : isCommsQuery
+            ? [missionRunEvent, sbdSendEvent]
+            : [missionRunEvent],
+        })
+      )
+    }),
+    rest.get('/events/mission-started', (_req, res, ctx) =>
+      res(ctx.status(200), ctx.json({ result: [] }))
+    )
+  )
+
+  render(
+    <MockProviders queryClient={new QueryClient()}>
+      <ScheduleSection
+        {...props}
+        currentDeploymentId={1}
+        deploymentStartTime={Date.now() - 3600 * 1000}
+      />
+    </MockProviders>
+  )
+
+  // Row should show ACK icon (AcknowledgeIcon) with "Received by" tooltip,
+  // not the clock/pending icon.
+  await waitFor(() => {
+    expect(screen.getByTitle(/Received by example/i)).toBeInTheDocument()
+  })
+})
+
+test('mission command stays pending when no comms entry exists (outside fetch window)', async () => {
+  server.use(
+    rest.get('/events', (_req, res, ctx) =>
+      res(
+        ctx.status(200),
+        ctx.json({
+          result: [
+            // Mission run event with no matching sbdSend in the response
+            {
+              data: 'load Transport/transit.tl;run',
+              unixTime: Date.now() - 90 * 1000,
+              eventId: 460,
+              eventType: 'run',
+              text: null,
+              note: '[[via:sat, timeout:60min]]',
+              user: 'test-operator',
+            },
+          ],
+        })
+      )
+    ),
+    rest.get('/events/mission-started', (_req, res, ctx) =>
+      res(ctx.status(200), ctx.json({ result: [] }))
+    )
+  )
+
+  render(
+    <MockProviders queryClient={new QueryClient()}>
+      <ScheduleSection
+        {...props}
+        currentDeploymentId={1}
+        deploymentStartTime={Date.now() - 3600 * 1000}
+      />
+    </MockProviders>
+  )
+
+  // Without a comms entry, mission should remain 'pending' (clock icon),
+  // not fall through to 'sent'.
+  await waitFor(() => {
+    expect(screen.getByTitle(/pending/i)).toBeInTheDocument()
+  })
+  expect(screen.queryByTitle(/Received by/i)).not.toBeInTheDocument()
+})
+
+test('future-scheduled mission stays pending even when comms indicates ack', async () => {
+  // A mission scheduled for a far-future time should not be upgraded via the
+  // comms lookup because the scheduleDate gate prevents it: only ASAP/unscheduled
+  // missions should be upgraded based on comms data.
+  const futureStamp = '20991231T2359'
+  const scheduledMission = {
+    data: `sched ${futureStamp} "load Transport/transit.tl;run"`,
+    unixTime: Date.now() - 60 * 1000,
+    eventId: 470,
+    eventType: 'run',
+    text: null,
+    note: '[[via:cell, timeout:5min]]',
+    user: 'test-operator',
+  }
+  const sbdSendEvent = {
+    eventId: 471,
+    eventType: 'sbdSend',
+    refId: 470,
+    state: 2,
+    unixTime: Date.now() - 58 * 1000,
+    isoTime: new Date(Date.now() - 58 * 1000).toISOString(),
+    data: null,
+    text: null,
+    note: null,
+    user: null,
+  }
+
+  server.use(
+    rest.get('/events', (req, res, ctx) => {
+      // Return [] for note-only queries (cancellation-notes lookup) so test
+      // data is isolated and doesn't bleed into unrelated component branches.
+      const eventTypes = req.url.searchParams.get('eventTypes') ?? ''
+      const isNoteQuery = eventTypes === 'note'
+      const isCommsQuery = eventTypes.includes('sbdSend')
+      return res(
+        ctx.status(200),
+        ctx.json({
+          result: isNoteQuery
+            ? []
+            : isCommsQuery
+            ? [scheduledMission, sbdSendEvent]
+            : [scheduledMission],
+        })
+      )
+    }),
+    rest.get('/events/mission-started', (_req, res, ctx) =>
+      res(ctx.status(200), ctx.json({ result: [] }))
+    )
+  )
+
+  render(
+    <MockProviders queryClient={new QueryClient()}>
+      <ScheduleSection
+        {...props}
+        currentDeploymentId={1}
+        deploymentStartTime={Date.now() - 3600 * 1000}
+      />
+    </MockProviders>
+  )
+
+  // Despite the sbdSend comms event, the mission must stay 'pending' because
+  // it has a future scheduled start time (scheduleDate !== 'asap').
+  await waitFor(() => {
+    expect(screen.getByTitle(/pending/i)).toBeInTheDocument()
+  })
+  expect(screen.queryByTitle(/Received by/i)).not.toBeInTheDocument()
+})
+
+// ── Sched timestamp format regression tests (#587) ────────────────────────────
+
+test('parses corrected sched YYYYMMDDT timestamp without }', async () => {
+  // Use a far-future date so isQueued stays true regardless of test runtime.
+  const futureStamp = '20991231T2359'
+  server.use(
+    rest.get('/events', (_req, res, ctx) =>
+      res(
+        ctx.status(200),
+        ctx.json({
+          result: [
+            {
+              data: `sched ${futureStamp} "load Science/profile_station.tl;run"`,
+              unixTime: Date.now() - 5 * 1000,
+              eventId: 701,
+              eventType: 'run',
+              text: null,
+              note: null,
+              user: 'test-engineer',
+            },
+          ],
+        })
+      )
+    ),
+    rest.get('/events/mission-started', (_req, res, ctx) =>
+      res(ctx.status(200), ctx.json({ result: [] }))
+    )
+  )
+
+  render(
+    <MockProviders queryClient={new QueryClient()}>
+      <ScheduleSection {...props} currentDeploymentId={1} />
+    </MockProviders>
+  )
+
+  // The row should display "Sent and Queued for … UTC" — the fixed prefix and
+  // UTC suffix are locale-independent and confirm that timestamp parsing
+  // succeeded (a parse failure falls back to 'N/A' with no "Queued" prefix).
+  await waitFor(() => {
+    expect(screen.getByText(/Sent and Queued for .+ UTC/)).toBeInTheDocument()
+  })
+})
+
+test('parses legacy sched YYYYMMDD}T timestamp for backwards compatibility', async () => {
+  // Simulate an event stored before the makeCommand } fix was deployed.
+  const legacyStamp = '20991231}T2359'
+  server.use(
+    rest.get('/events', (_req, res, ctx) =>
+      res(
+        ctx.status(200),
+        ctx.json({
+          result: [
+            {
+              data: `sched ${legacyStamp} "load Science/profile_station.tl;run"`,
+              unixTime: Date.now() - 5 * 1000,
+              eventId: 702,
+              eventType: 'run',
+              text: null,
+              note: null,
+              user: 'test-engineer',
+            },
+          ],
+        })
+      )
+    ),
+    rest.get('/events/mission-started', (_req, res, ctx) =>
+      res(ctx.status(200), ctx.json({ result: [] }))
+    )
+  )
+
+  render(
+    <MockProviders queryClient={new QueryClient()}>
+      <ScheduleSection {...props} currentDeploymentId={1} />
+    </MockProviders>
+  )
+
+  // The row should still display "Sent and Queued for … UTC" despite the
+  // legacy }T — same locale-independent assertion used for the clean timestamp.
+  await waitFor(() => {
+    expect(screen.getByText(/Sent and Queued for .+ UTC/)).toBeInTheDocument()
+  })
 })

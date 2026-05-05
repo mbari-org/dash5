@@ -112,28 +112,12 @@ const formatScheduleDate = (scheduleDate?: string): string => {
   if (!scheduleDate) return 'N/A'
   if (scheduleDate.toLowerCase() === 'asap') return 'ASAP'
 
-  // Format: 20260401}T0600 (makeCommand format, UTC)
-  const fullMatch = scheduleDate.match(
-    /^(\d{4})(\d{2})(\d{2})}T(\d{2})(\d{2})$/
-  )
-  if (fullMatch) {
-    const utc = DateTime.fromObject(
-      {
-        year: parseInt(fullMatch[1]),
-        month: parseInt(fullMatch[2]),
-        day: parseInt(fullMatch[3]),
-        hour: parseInt(fullMatch[4]),
-        minute: parseInt(fullMatch[5]),
-      },
-      { zone: 'utc' }
-    ).toLocal()
-    return `${utc.toFormat('MMM d, yyyy HH:mm')} (local)`
-  }
+  // Strip legacy } (from older makeCommand builds) before parsing so events
+  // stored as YYYYMMDD}THHMM continue to display a formatted timestamp.
+  const normalized = scheduleDate.replace('}', '')
 
-  // Format: 20260331T18 or 20260331T1800 (alternate, no }, UTC)
-  const shortMatch = scheduleDate.match(
-    /^(\d{4})(\d{2})(\d{2})T(\d{2})(\d{2})?$/
-  )
+  // Format: 20260401T0600 or 20260331T18 (UTC)
+  const shortMatch = normalized.match(/^(\d{4})(\d{2})(\d{2})T(\d{2})(\d{2})?$/)
   if (shortMatch) {
     const utc = DateTime.fromObject(
       {
@@ -246,6 +230,7 @@ export const ScheduleEventDetailsModal: React.FC<
   const [showEndedTooltip, setShowEndedTooltip] = useState(false)
   const [showScheduledStartTooltip, setShowScheduledStartTooltip] =
     useState(false)
+  const [showIridiumTooltip, setShowIridiumTooltip] = useState(false)
   const event = globalModalId?.meta?.scheduleEvent
 
   // Reset tooltip state whenever the selected event changes
@@ -253,6 +238,7 @@ export const ScheduleEventDetailsModal: React.FC<
     setShowStatusTooltip(false)
     setShowEndedTooltip(false)
     setShowScheduledStartTooltip(false)
+    setShowIridiumTooltip(false)
   }, [event?.eventId])
 
   if (!event) return null
@@ -823,6 +809,58 @@ export const ScheduleEventDetailsModal: React.FC<
             </p>
             <p className="font-medium">{event.eventId}</p>
           </div>
+          {(event.mtmsn != null || event.momsn != null) && (
+            <div>
+              <p className="flex items-center gap-1 text-sm uppercase tracking-wide text-stone-500">
+                Iridium Msg IDs
+                <span className="relative inline-flex align-middle">
+                  <button
+                    type="button"
+                    className="cursor-pointer rounded-full border border-stone-300 px-1 text-[10px] font-semibold text-stone-500 hover:bg-stone-100 focus:bg-stone-100"
+                    onMouseEnter={() => setShowIridiumTooltip(true)}
+                    onMouseLeave={() => setShowIridiumTooltip(false)}
+                    onFocus={() => setShowIridiumTooltip(true)}
+                    onBlur={() => setShowIridiumTooltip(false)}
+                    onClick={() => setShowIridiumTooltip((prev) => !prev)}
+                    aria-label="Iridium message ID field help"
+                    aria-describedby={
+                      showIridiumTooltip ? 'iridium-msg-id-tooltip' : undefined
+                    }
+                  >
+                    ?
+                  </button>
+                  {showIridiumTooltip && (
+                    <div
+                      id="iridium-msg-id-tooltip"
+                      role="tooltip"
+                      className="pointer-events-none absolute left-0 top-full z-[9999] mt-1 w-72 -translate-x-1/2 rounded border px-3 py-2 text-xs normal-case leading-relaxed text-stone-700 shadow-lg"
+                      style={{
+                        borderColor: '#bae6fd',
+                        backgroundColor: '#fffbeb',
+                      }}
+                    >
+                      <p className="normal-case">
+                        <strong>MTMSN</strong> (Mobile Terminated): Iridium ID
+                        assigned to the command sent to the vehicle.
+                      </p>
+                      <p className="mt-1 normal-case">
+                        <strong>MOMSN</strong> (Mobile Originated): Iridium ID
+                        of the vehicle&apos;s acknowledgment reply. Present only
+                        after the vehicle confirms receipt.
+                      </p>
+                    </div>
+                  )}
+                </span>
+              </p>
+              <p className="font-medium font-mono text-sm">
+                {event.mtmsn != null && <span>MTMSN: {event.mtmsn}</span>}
+                {event.mtmsn != null && event.momsn != null && (
+                  <span className="mx-2 text-stone-400">·</span>
+                )}
+                {event.momsn != null && <span>MOMSN: {event.momsn}</span>}
+              </p>
+            </div>
+          )}
         </div>
 
         {(event.isLoadRunMission ||
