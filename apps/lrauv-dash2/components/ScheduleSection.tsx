@@ -218,6 +218,20 @@ export const ScheduleSection: React.FC<ScheduleSectionProps> = ({
     return map
   }, [commsEventsResponse.data])
 
+  // eventId → { mtmsn, momsn } for sat-ACKed commands
+  const commsMsgIdLookup = useMemo(() => {
+    const map = new Map<number, { mtmsn?: number; momsn?: number }>()
+    commsEventsResponse.data.forEach((e) => {
+      if (e.eventId != null && (e.mtmsn != null || e.momsn != null)) {
+        map.set(e.eventId, {
+          mtmsn: e.mtmsn ?? undefined,
+          momsn: e.momsn ?? undefined,
+        })
+      }
+    })
+    return map
+  }, [commsEventsResponse.data])
+
   const { isLoading, isFetching, refetch } = deploymentLogsOnly
     ? deploymentResponse
     : allLogsResponse
@@ -1033,6 +1047,7 @@ export const ScheduleSection: React.FC<ScheduleSectionProps> = ({
                 isParamUpdate: isParam,
                 isConfigSetUpdate: isConfigSet,
                 commsStatus: commsLookup.get(mission.event.eventId),
+                ...commsMsgIdLookup.get(mission.event.eventId),
               },
             },
           })

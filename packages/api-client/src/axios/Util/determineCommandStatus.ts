@@ -5,6 +5,10 @@ export interface CommsEvent extends GetEventsResponse {
   via?: 'cellsat' | 'cell' | 'sat'
   commsIsoTime?: string
   timeout?: string
+  /** Mobile Terminated Message Sequence Number — Iridium ID of the command sent to the vehicle (sat comms) */
+  mtmsn?: number
+  /** Mobile Originated Message Sequence Number — Iridium ID of the vehicle's acknowledgment reply (sat comms) */
+  momsn?: number
 }
 
 export const digitsForIdRegEx = /\d+/
@@ -88,6 +92,8 @@ export const determineCommandStatus = (
         timeout,
         status: 'ack',
         commsIsoTime: matchingSbdReceive.isoTime,
+        mtmsn: matchingSbdReceipt.mtmsn ?? undefined,
+        momsn: matchingSbdReceive.momsn ?? undefined,
       }
     }
   }
@@ -98,5 +104,6 @@ export const determineCommandStatus = (
     timeout,
     status: 'sent',
     commsIsoTime: matchingSbdSend.isoTime,
+    mtmsn: matchingSbdReceipt?.mtmsn ?? undefined,
   }
 }
