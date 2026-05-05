@@ -651,25 +651,27 @@ export const ScheduleSection: React.FC<ScheduleSectionProps> = ({
 
     // If comms confirmed a timeout, demote to history so the operator sees
     // it alongside completed/cancelled items and can re-run from there.
-    // Only applies to items without a specific future scheduled start — a
-    // future-scheduled item should never be demoted before its run window.
+    // Only skip demotion when the payload contains a specific scheduled
+    // timestamp — those items haven't had their run window yet.
     const schedDateMatch = rawText.match(/sched\s+(\d{8}}?T\d{2,4})/i)
     const scheduleDate = rawText.match(/sched\s+asap/i)
       ? 'asap'
       : schedDateMatch
       ? schedDateMatch[1]
       : undefined
-    const isFutureScheduled = !!(scheduleDate && scheduleDate !== 'asap')
-    if (!isFutureScheduled && v.event?.eventId != null) {
+    // hasScheduledTimestamp is true when the payload names a specific start
+    // time (not asap). It does NOT guarantee the timestamp is in the future —
+    // use parseScheduledUnixTime for actual time comparisons.
+    const hasScheduledTimestamp = !!(scheduleDate && scheduleDate !== 'asap')
+    if (!hasScheduledTimestamp && v.event?.eventId != null) {
       if (commsLookup.get(v.event.eventId) === 'timeout') return false
     }
 
     if (isMissionCommand(v.event?.data, v.event?.text)) return true
     // Non-mission commands: only stay above separator if they have a specific
-    // future scheduled start. Reuse the scheduleDate already computed above so
-    // bare-sched quoted commands like `sched "restart logs"` (no timestamp or
-    // asap token) are correctly treated as ASAP/dispatched and sent to history.
-    return isFutureScheduled
+    // scheduled timestamp. Bare-sched quoted commands like `sched "restart logs"`
+    // (no timestamp or asap token) are treated as ASAP/dispatched → history.
+    return hasScheduledTimestamp
   }
 
   const scheduledCells = missions?.filter(isAboveSeparator)
