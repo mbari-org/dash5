@@ -112,10 +112,12 @@ const formatScheduleDate = (scheduleDate?: string): string => {
   if (!scheduleDate) return 'N/A'
   if (scheduleDate.toLowerCase() === 'asap') return 'ASAP'
 
+  // Strip legacy } (from older makeCommand builds) before parsing so events
+  // stored as YYYYMMDD}THHMM continue to display a formatted timestamp.
+  const normalized = scheduleDate.replace('}', '')
+
   // Format: 20260401T0600 or 20260331T18 (UTC)
-  const shortMatch = scheduleDate.match(
-    /^(\d{4})(\d{2})(\d{2})T(\d{2})(\d{2})?$/
-  )
+  const shortMatch = normalized.match(/^(\d{4})(\d{2})(\d{2})T(\d{2})(\d{2})?$/)
   if (shortMatch) {
     const utc = DateTime.fromObject(
       {
