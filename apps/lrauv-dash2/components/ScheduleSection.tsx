@@ -1074,8 +1074,14 @@ export const ScheduleSection: React.FC<ScheduleSectionProps> = ({
                 commandType: cellCommandType,
                 status: cellStatus,
                 label: commandLabel,
+                // For load+run missions: structured params summary from parsing.
+                // For param/configSet updates: the raw command text IS the
+                // parameter, so use it as the summary rather than showing
+                // 'No parsed parameters available' as a misleading fallback.
                 secondary: isLoadRunMission
                   ? missionParams ?? undefined
+                  : isParam || isConfigSet
+                  ? rawText || undefined
                   : undefined,
                 user: mission.event.user ?? undefined,
                 note: mission.event.note ?? undefined,
