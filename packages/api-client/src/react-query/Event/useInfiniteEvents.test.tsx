@@ -83,8 +83,10 @@ describe('useInfiniteEvents', () => {
       </MockProviders>
     )
 
-    // Wait long enough for any unintended fetch to settle, then assert idle
-    await waitFor(() => expect(requestCount).toBe(0))
+    // Wait until the component has fully rendered (query lifecycle complete),
+    // then assert that no network request was made
+    await screen.findByTestId('disabled-container')
+    expect(requestCount).toBe(0)
     expect(
       screen.queryByTestId('disabled-event-16932998')
     ).not.toBeInTheDocument()

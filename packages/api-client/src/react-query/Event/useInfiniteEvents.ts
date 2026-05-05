@@ -26,7 +26,7 @@ export const useInfiniteEvents = (
     },
     {
       enabled: options?.enabled ?? true,
-      staleTime: 5 * 60 * 1000,
+      staleTime: options?.staleTime ?? 5 * 60 * 1000,
       refetchOnWindowFocus: options?.refetchOnWindowFocus,
       refetchOnReconnect: options?.refetchOnReconnect,
       refetchInterval: options?.refetchInterval,
