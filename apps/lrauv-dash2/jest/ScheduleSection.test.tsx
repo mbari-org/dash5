@@ -647,3 +647,82 @@ test('configSet command row shows Sent status and config badge tooltip', async (
     expect(wrenchIcon).toBeInTheDocument()
   })
 })
+
+test('parses corrected sched YYYYMMDDT timestamp without }', async () => {
+  // Use a far-future date so isQueued stays true regardless of test runtime.
+  const futureStamp = '20991231T2359'
+  server.use(
+    rest.get('/events', (_req, res, ctx) =>
+      res(
+        ctx.status(200),
+        ctx.json({
+          result: [
+            {
+              data: `sched ${futureStamp} "load Science/profile_station.tl;run"`,
+              unixTime: Date.now() - 5 * 1000,
+              eventId: 701,
+              eventType: 'run',
+              text: null,
+              note: null,
+              user: 'test-engineer',
+            },
+          ],
+        })
+      )
+    ),
+    rest.get('/events/mission-started', (_req, res, ctx) =>
+      res(ctx.status(200), ctx.json({ result: [] }))
+    )
+  )
+
+  render(
+    <MockProviders queryClient={new QueryClient()}>
+      <ScheduleSection {...props} currentDeploymentId={1} />
+    </MockProviders>
+  )
+
+  // The row should display a scheduled start time derived from the timestamp,
+  // not fall back to 'N/A' (which would mean parsing failed).
+  await waitFor(() => {
+    expect(screen.getByText(/Dec 31/)).toBeInTheDocument()
+  })
+})
+
+test('parses legacy sched YYYYMMDD}T timestamp for backwards compatibility', async () => {
+  // Simulate an event stored before the makeCommand } fix was deployed.
+  const legacyStamp = '20991231}T2359'
+  server.use(
+    rest.get('/events', (_req, res, ctx) =>
+      res(
+        ctx.status(200),
+        ctx.json({
+          result: [
+            {
+              data: `sched ${legacyStamp} "load Science/profile_station.tl;run"`,
+              unixTime: Date.now() - 5 * 1000,
+              eventId: 702,
+              eventType: 'run',
+              text: null,
+              note: null,
+              user: 'test-engineer',
+            },
+          ],
+        })
+      )
+    ),
+    rest.get('/events/mission-started', (_req, res, ctx) =>
+      res(ctx.status(200), ctx.json({ result: [] }))
+    )
+  )
+
+  render(
+    <MockProviders queryClient={new QueryClient()}>
+      <ScheduleSection {...props} currentDeploymentId={1} />
+    </MockProviders>
+  )
+
+  // The row should still display a scheduled start time despite the legacy }T.
+  await waitFor(() => {
+    expect(screen.getByText(/Dec 31/)).toBeInTheDocument()
+  })
+})

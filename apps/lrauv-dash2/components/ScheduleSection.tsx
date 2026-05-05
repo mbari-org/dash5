@@ -314,8 +314,9 @@ export const ScheduleSection: React.FC<ScheduleSectionProps> = ({
       text?: string
     ): number | undefined => {
       const raw = data ?? text ?? ''
-      // Format: 20260331T18 or 20260331T1800 (UTC)
-      const m = raw.match(/sched\s+(\d{4})(\d{2})(\d{2})T(\d{2})(\d{2})?/)
+      // Format: 20260331T18 or 20260331T1800 (UTC). Also accept the legacy
+      // }T format emitted by older makeCommand builds until old events age out.
+      const m = raw.match(/sched\s+(\d{4})(\d{2})(\d{2})}?T(\d{2})(\d{2})?/)
       if (!m) return undefined
       const dt = DateTime.fromObject(
         {
@@ -865,7 +866,8 @@ export const ScheduleSection: React.FC<ScheduleSectionProps> = ({
       ? 'mission'
       : 'command'
     const rawText = mission?.event.data ?? mission?.event.text ?? ''
-    const schedDateMatch = rawText.match(/sched\s+(\d{8}T\d{2,4})/)
+    // Also accept the legacy }T format for historical events in the database.
+    const schedDateMatch = rawText.match(/sched\s+(\d{8}}?T\d{2,4})/)
     const scheduleDate = rawText.match(/sched\s+asap/i)
       ? 'asap'
       : schedDateMatch
@@ -928,9 +930,11 @@ export const ScheduleSection: React.FC<ScheduleSectionProps> = ({
           // WHEN it will run, not when the command was sent.
           const scheduledDt = (() => {
             if (!isQueued || !scheduleDate) return null
+            // Strip legacy } (from older makeCommand builds) before parsing.
+            const clean = scheduleDate.replace('}', '')
             const m =
-              scheduleDate.match(/^(\d{4})(\d{2})(\d{2})T(\d{2})(\d{2})$/) ||
-              scheduleDate.match(/^(\d{4})(\d{2})(\d{2})T(\d{2})$/)
+              clean.match(/^(\d{4})(\d{2})(\d{2})T(\d{2})(\d{2})$/) ||
+              clean.match(/^(\d{4})(\d{2})(\d{2})T(\d{2})$/)
             if (!m) return null
             return DateTime.fromObject(
               {
