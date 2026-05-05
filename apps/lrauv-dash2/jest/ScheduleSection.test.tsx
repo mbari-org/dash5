@@ -828,10 +828,15 @@ test('single-segment non-mission command renders label without separator', async
     </MockProviders>
   )
 
+  let labelEl: HTMLElement
   await waitFor(() => {
-    expect(screen.getByText('restart logs')).toBeInTheDocument()
+    labelEl = screen.getByText('restart logs')
+    expect(labelEl).toBeInTheDocument()
   })
-  expect(screen.queryByText(/·/)).not.toBeInTheDocument()
+  // The label element's closest list (the ScheduleCell row) must not contain
+  // a middle-dot separator — this scopes the check to the row rather than the
+  // full document, so future unrelated UI changes don't break this assertion.
+  expect(labelEl!.closest('ul')?.textContent).not.toContain('·')
 })
 
 // ── secondary label gating integration tests (#585) ──────────────────────────
