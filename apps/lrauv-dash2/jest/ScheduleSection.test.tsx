@@ -8,6 +8,7 @@ import {
   isMissionCommand,
   isParamCommand,
   isConfigSetCommand,
+  parseMissionCommand,
 } from '../components/ScheduleSection'
 import { QueryClient } from 'react-query'
 import { rest } from 'msw'
@@ -935,6 +936,77 @@ test('mission command stays pending when no comms entry exists (outside fetch wi
     expect(screen.getByTitle(/pending/i)).toBeInTheDocument()
   })
   expect(screen.queryByTitle(/Received by/i)).not.toBeInTheDocument()
+})
+
+// ── parseMissionCommand unit tests (#585) ─────────────────────────────────────
+
+test('parseMissionCommand strips trailing run from semicolon-delimited commands', () => {
+  // load;run with no set params should return parameters: undefined so the
+  // row falls back to "No parameters" rather than showing "run" as a param.
+  expect(parseMissionCommand('load Transport/transit.tl;run')).toEqual({
+    name: 'load Transport/transit.tl',
+    parameters: undefined,
+  })
+})
+
+test('parseMissionCommand preserves set params between load and run', () => {
+  expect(
+    parseMissionCommand('load Transport/transit.tl;set transit.Depth 50 m;run')
+  ).toEqual({
+    name: 'load Transport/transit.tl',
+    parameters: 'set transit.Depth 50 m',
+  })
+})
+
+test('parseMissionCommand strips bare sched/asap tokens', () => {
+  expect(
+    parseMissionCommand('sched asap load Science/profile_station.tl;run')
+  ).toEqual({
+    name: 'load Science/profile_station.tl',
+    parameters: undefined,
+  })
+})
+
+// ── Legacy run <file> — no parameter summary row (#585) ───────────────────────
+
+test('legacy run <file> mission row does not show "No parameters" subtitle', async () => {
+  // Legacy format: eventType 'run' but command data is bare 'run <file>'.
+  // isMission is true (eventType=run), but isLoadRunMission is false (no load),
+  // so the secondary text should be suppressed entirely.
+  server.use(
+    rest.get('/events', (_req, res, ctx) =>
+      res(
+        ctx.status(200),
+        ctx.json({
+          result: [
+            {
+              data: 'run Science/mbts_sci2.tl',
+              unixTime: Date.now() - 60 * 1000,
+              eventId: 410,
+              eventType: 'run',
+              text: null,
+              note: null,
+              user: 'test-operator',
+            },
+          ],
+        })
+      )
+    ),
+    rest.get('/events/mission-started', (_req, res, ctx) =>
+      res(ctx.status(200), ctx.json({ result: [] }))
+    )
+  )
+
+  render(
+    <MockProviders queryClient={new QueryClient()}>
+      <ScheduleSection {...props} currentDeploymentId={1} />
+    </MockProviders>
+  )
+
+  await waitFor(() => {
+    expect(screen.getByText(/mbts_sci2/)).toBeInTheDocument()
+  })
+  expect(screen.queryByText('No parameters')).not.toBeInTheDocument()
 })
 
 // ── Sched timestamp format regression tests (#587) ───────────────────────────
