@@ -1164,3 +1164,48 @@ test('parses legacy sched YYYYMMDD}T timestamp for backwards compatibility', asy
     expect(screen.getByText(/Dec 31/)).toBeInTheDocument()
   })
 })
+
+// ── sched-prefixed quoted-payload label regression test (#592) ────────────────
+
+test('sched-prefixed quoted command strips sched wrapper and shows full label', async () => {
+  // Regression: sched "restart logs" was previously parsed with /^sched\s+\S+\s*/
+  // which consumed 'sched "restart' (stopping at the space inside the quotes)
+  // and left 'logs"' as the visible label.
+  // The fix uses an explicit alternation /^sched\s+(?:\d{8}}?T\d{2,4}|asap)?\s*/i
+  // so bare `sched "..."` correctly strips only `sched ` before quote-unwrapping.
+  server.use(
+    rest.get('/events', (_req, res, ctx) =>
+      res(
+        ctx.status(200),
+        ctx.json({
+          result: [
+            {
+              data: 'sched "restart logs"',
+              unixTime: Date.now() - 60 * 1000,
+              eventId: 502,
+              eventType: 'command',
+              text: null,
+              note: '[[via:cellsat, timeout:5min]]',
+              user: 'test-operator',
+            },
+          ],
+        })
+      )
+    ),
+    rest.get('/events/mission-started', (_req, res, ctx) =>
+      res(ctx.status(200), ctx.json({ result: [] }))
+    )
+  )
+
+  render(
+    <MockProviders queryClient={new QueryClient()}>
+      <ScheduleSection {...props} currentDeploymentId={1} />
+    </MockProviders>
+  )
+
+  await waitFor(() => {
+    expect(screen.getByText('restart logs')).toBeInTheDocument()
+  })
+  // Must not contain the corrupted fragment from the old \S+ regex
+  expect(screen.queryByText(/logs"/)).not.toBeInTheDocument()
+})
