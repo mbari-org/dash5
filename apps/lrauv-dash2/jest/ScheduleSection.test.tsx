@@ -647,3 +647,82 @@ test('configSet command row shows Sent status and config badge tooltip', async (
     expect(wrenchIcon).toBeInTheDocument()
   })
 })
+
+// ── multi-segment non-mission command label tests (#592) ──────────────────────
+
+test('multi-segment non-mission command renders all segments joined with ·', async () => {
+  server.use(
+    rest.get('/events', (_req, res, ctx) =>
+      res(
+        ctx.status(200),
+        ctx.json({
+          result: [
+            {
+              data: 'schedule clear;schedule resume',
+              unixTime: Date.now() - 60 * 1000,
+              eventId: 500,
+              eventType: 'command',
+              text: null,
+              note: '[[via:cell, timeout:5min]]',
+              user: 'test-operator',
+            },
+          ],
+        })
+      )
+    ),
+    rest.get('/events/mission-started', (_req, res, ctx) =>
+      res(ctx.status(200), ctx.json({ result: [] }))
+    )
+  )
+
+  render(
+    <MockProviders queryClient={new QueryClient()}>
+      <ScheduleSection {...props} currentDeploymentId={1} />
+    </MockProviders>
+  )
+
+  await waitFor(() => {
+    expect(
+      screen.getByText('schedule clear · schedule resume')
+    ).toBeInTheDocument()
+  })
+  // secondary text is suppressed for non-mission commands
+  expect(screen.queryByText('No parameters')).not.toBeInTheDocument()
+})
+
+test('single-segment non-mission command renders label without separator', async () => {
+  server.use(
+    rest.get('/events', (_req, res, ctx) =>
+      res(
+        ctx.status(200),
+        ctx.json({
+          result: [
+            {
+              data: 'restart logs',
+              unixTime: Date.now() - 60 * 1000,
+              eventId: 501,
+              eventType: 'command',
+              text: null,
+              note: null,
+              user: 'test-operator',
+            },
+          ],
+        })
+      )
+    ),
+    rest.get('/events/mission-started', (_req, res, ctx) =>
+      res(ctx.status(200), ctx.json({ result: [] }))
+    )
+  )
+
+  render(
+    <MockProviders queryClient={new QueryClient()}>
+      <ScheduleSection {...props} currentDeploymentId={1} />
+    </MockProviders>
+  )
+
+  await waitFor(() => {
+    expect(screen.getByText('restart logs')).toBeInTheDocument()
+  })
+  expect(screen.queryByText(/·/)).not.toBeInTheDocument()
+})

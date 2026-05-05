@@ -218,14 +218,17 @@ export const ScheduleSection: React.FC<ScheduleSectionProps> = ({
     return map
   }, [commsEventsResponse.data])
 
-  // eventId → { mtmsn, momsn } for sat-ACKed commands
+  // eventId → { mtmsn, momsn } for sat commands with Iridium sequence number
+  // data. Includes pre-ACK sat sends (MTMSN only) as well as fully ACKed
+  // commands (both MTMSN and MOMSN). 0 is a sentinel for "not present" in
+  // TethysDash so both values are normalized to undefined when falsy.
   const commsMsgIdLookup = useMemo(() => {
     const map = new Map<number, { mtmsn?: number; momsn?: number }>()
     commsEventsResponse.data.forEach((e) => {
-      if (e.eventId != null && (e.mtmsn != null || e.momsn != null)) {
+      if (e.eventId != null && (e.mtmsn || e.momsn)) {
         map.set(e.eventId, {
-          mtmsn: e.mtmsn ?? undefined,
-          momsn: e.momsn ?? undefined,
+          mtmsn: e.mtmsn || undefined,
+          momsn: e.momsn || undefined,
         })
       }
     })
@@ -328,8 +331,9 @@ export const ScheduleSection: React.FC<ScheduleSectionProps> = ({
       text?: string
     ): number | undefined => {
       const raw = data ?? text ?? ''
-      // Format: 20260331T18 or 20260331T1800 (UTC)
-      const m = raw.match(/sched\s+(\d{4})(\d{2})(\d{2})T(\d{2})(\d{2})?/)
+      // Format: 20260331T18 or 20260331T1800 (UTC). Also accept the legacy
+      // }T format emitted by older makeCommand builds until old events age out.
+      const m = raw.match(/sched\s+(\d{4})(\d{2})(\d{2})}?T(\d{2})(\d{2})?/)
       if (!m) return undefined
       const dt = DateTime.fromObject(
         {
@@ -879,7 +883,8 @@ export const ScheduleSection: React.FC<ScheduleSectionProps> = ({
       ? 'mission'
       : 'command'
     const rawText = mission?.event.data ?? mission?.event.text ?? ''
-    const schedDateMatch = rawText.match(/sched\s+(\d{8}T\d{2,4})/)
+    // Also accept the legacy }T format for historical events in the database.
+    const schedDateMatch = rawText.match(/sched\s+(\d{8}}?T\d{2,4})/)
     const scheduleDate = rawText.match(/sched\s+asap/i)
       ? 'asap'
       : schedDateMatch
