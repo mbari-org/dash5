@@ -5,6 +5,7 @@ import '@testing-library/jest-dom'
 import {
   ScheduleSection,
   ScheduleSectionProps,
+  isMissionCommand,
   isParamCommand,
   isConfigSetCommand,
 } from '../components/ScheduleSection'
@@ -646,4 +647,108 @@ test('configSet command row shows Sent status and config badge tooltip', async (
     const wrenchIcon = document.querySelector('svg[data-icon="wrench"]')
     expect(wrenchIcon).toBeInTheDocument()
   })
+})
+
+// ── isMissionCommand unit tests ───────────────────────────────────────────────
+
+test('isMissionCommand returns true for load+run commands', () => {
+  expect(
+    isMissionCommand(
+      'load Science/profile_station.tl;set profile_station.NeedCommsTime 30 min;run'
+    )
+  ).toBe(true)
+  expect(isMissionCommand('load Transport/transit.tl;run')).toBe(true)
+  expect(isMissionCommand(undefined, 'load Science/sci2.xml;run')).toBe(true)
+})
+
+test('isMissionCommand returns false for commands without load+run', () => {
+  expect(isMissionCommand('restart logs')).toBe(false)
+  expect(isMissionCommand('schedule clear;schedule resume')).toBe(false)
+  expect(isMissionCommand('set profile_station.YoYoMaxDepth 40 meter')).toBe(
+    false
+  )
+  expect(
+    isMissionCommand('configSet CTD_Seabird.loadAtStartup 1 bool persist')
+  ).toBe(false)
+  expect(isMissionCommand('schedule clear')).toBe(false)
+  expect(isMissionCommand(undefined, undefined)).toBe(false)
+})
+
+// ── secondary label gating integration tests ──────────────────────────────────
+
+test('bare command row does not show "No parameters" secondary text', async () => {
+  server.use(
+    rest.get('/events', (_req, res, ctx) =>
+      res(
+        ctx.status(200),
+        ctx.json({
+          result: [
+            {
+              data: 'restart logs',
+              unixTime: Date.now() - 60 * 1000,
+              eventId: 400,
+              eventType: 'command',
+              text: null,
+              note: null,
+              user: 'test-operator',
+            },
+          ],
+        })
+      )
+    ),
+    rest.get('/events/mission-started', (_req, res, ctx) =>
+      res(ctx.status(200), ctx.json({ result: [] }))
+    )
+  )
+
+  render(
+    <MockProviders queryClient={new QueryClient()}>
+      <ScheduleSection {...props} currentDeploymentId={1} />
+    </MockProviders>
+  )
+
+  await waitFor(() => {
+    expect(screen.getByText('restart logs')).toBeInTheDocument()
+  })
+  expect(screen.queryByText('No parameters')).not.toBeInTheDocument()
+  expect(
+    screen.queryByText('No parsed parameters available')
+  ).not.toBeInTheDocument()
+})
+
+test('mission command row shows "No parameters" secondary text when no params set', async () => {
+  server.use(
+    rest.get('/events', (_req, res, ctx) =>
+      res(
+        ctx.status(200),
+        ctx.json({
+          result: [
+            {
+              data: 'load Transport/transit.tl;run',
+              unixTime: Date.now() - 60 * 1000,
+              eventId: 401,
+              eventType: 'run',
+              text: null,
+              note: null,
+              user: 'test-operator',
+            },
+          ],
+        })
+      )
+    ),
+    rest.get('/events/mission-started', (_req, res, ctx) =>
+      res(ctx.status(200), ctx.json({ result: [] }))
+    )
+  )
+
+  render(
+    <MockProviders queryClient={new QueryClient()}>
+      <ScheduleSection {...props} currentDeploymentId={1} />
+    </MockProviders>
+  )
+
+  await waitFor(() => {
+    expect(screen.getByText('load Transport/transit.tl')).toBeInTheDocument()
+  })
+  expect(screen.getByText('No parameters')).toBeInTheDocument()
 })
