@@ -27,9 +27,15 @@ export const useInfiniteEvents = (
     {
       enabled: options?.enabled ?? true,
       staleTime: options?.staleTime ?? 5 * 60 * 1000,
-      refetchOnWindowFocus: options?.refetchOnWindowFocus ?? false,
-      refetchOnReconnect: options?.refetchOnReconnect ?? false,
-      refetchInterval: options?.refetchInterval,
+      ...(options?.refetchOnWindowFocus !== undefined && {
+        refetchOnWindowFocus: options.refetchOnWindowFocus,
+      }),
+      ...(options?.refetchOnReconnect !== undefined && {
+        refetchOnReconnect: options.refetchOnReconnect,
+      }),
+      ...(options?.refetchInterval !== undefined && {
+        refetchInterval: options.refetchInterval,
+      }),
       getNextPageParam: (lastPage) => {
         // empty or short page  →  no more data
         if (!lastPage || lastPage.length < limit) return undefined
