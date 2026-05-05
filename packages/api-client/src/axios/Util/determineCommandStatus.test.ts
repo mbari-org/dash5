@@ -200,31 +200,53 @@ describe('determineCommandStatus', () => {
     expect(result.momsn).toBeUndefined()
   })
 
-  it('should normalize mtmsn/momsn 0 sentinel to undefined', () => {
+  it('should normalize mtmsn sentinel 0 to undefined on sat-sent status', () => {
+    // When sbdReceipt.mtmsn is 0, the sent path must return mtmsn: undefined
+    // rather than 0, because 0 is used as a "missing" sentinel in the API.
     const zeroMtmsnReceipt = { ...baseSbdReceipt, mtmsn: 0 }
-    const zeroMomsnReceive = { ...baseSbdReceive, momsn: 0 }
     const sbdSendMap = new Map<string, GetEventsResponse>([
       [String(baseSatCommand.eventId), baseSbdSend],
     ])
     const sbdReceiptMap = new Map<string, GetEventsResponse>([
       [String(baseSbdSend.eventId), zeroMtmsnReceipt],
     ])
-    const sbdReceiveMap = new Map<number, GetEventsResponse>([
-      [123, zeroMomsnReceive],
-    ])
 
-    // mtmsn:0 on the receipt means no MTMSN — should not match the sbdReceive
-    // (map key is 0, receive is only inserted via mtmsn > 0 in useCommsEvents)
-    // This tests the sent path where mtmsn receipt exists but mtmsn is 0.
+    // No sbdReceive → stays 'sent'; mtmsn:0 on the receipt must be normalized.
     const sentResult = determineCommandStatus(
       baseSatCommand,
       sbdSendMap,
       sbdReceiptMap,
-      new Map(), // no sbdReceive → stays 'sent'
+      new Map(),
       new Map()
     )
     expect(sentResult.status).toBe('sent')
     expect(sentResult.mtmsn).toBeUndefined()
+  })
+
+  it('should normalize momsn sentinel 0 to undefined on sat-ack status', () => {
+    // When sbdReceive.momsn is 0, the ack path must return momsn: undefined
+    // rather than 0, because 0 is used as a "missing" sentinel in the API.
+    const zeroMomsnReceive = { ...baseSbdReceive, momsn: 0 }
+    const sbdSendMap = new Map<string, GetEventsResponse>([
+      [String(baseSatCommand.eventId), baseSbdSend],
+    ])
+    const sbdReceiptMap = new Map<string, GetEventsResponse>([
+      [String(baseSbdSend.eventId), baseSbdReceipt], // valid mtmsn: 123
+    ])
+    const sbdReceiveMap = new Map<number, GetEventsResponse>([
+      [baseSbdReceipt.mtmsn as number, zeroMomsnReceive], // keyed by receipt's mtmsn
+    ])
+
+    const ackResult = determineCommandStatus(
+      baseSatCommand,
+      sbdSendMap,
+      sbdReceiptMap,
+      sbdReceiveMap,
+      new Map()
+    )
+    expect(ackResult.status).toBe('ack')
+    expect(ackResult.mtmsn).toBe(123) // valid mtmsn preserved
+    expect(ackResult.momsn).toBeUndefined() // momsn:0 normalized to undefined
   })
 
   it('should return ack status for cell command when sbdSend exists with state 2', () => {
