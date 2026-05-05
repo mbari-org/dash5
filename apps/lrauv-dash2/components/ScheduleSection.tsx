@@ -891,6 +891,11 @@ export const ScheduleSection: React.FC<ScheduleSectionProps> = ({
         if (commsStatus === 'ack') return 'ack'
         if (commsStatus === 'timeout') return 'timeout'
         if (commsStatus === 'sent') return 'sent'
+        // Non-mission ASAP/immediate commands are always dispatched to the
+        // comms layer — fall back to 'sent' even when the comms event falls
+        // outside the fetch window. Mission commands stay 'pending' until
+        // a comms entry confirms transmission to avoid misleading operators.
+        if (!isMission) return 'sent'
       }
       return raw
     })()
