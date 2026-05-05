@@ -16,11 +16,13 @@ export const useCommsEvents = ({
   from,
   to,
   limit = 500,
+  enabled = true,
 }: {
   vehicles: string[]
   from: number
   to?: number
   limit?: number
+  enabled?: boolean
 }) => {
   const params = useMemo(
     () => ({
@@ -48,7 +50,7 @@ export const useCommsEvents = ({
     fetchNextPage,
     hasNextPage,
     refetch,
-  } = useInfiniteEvents(params)
+  } = useInfiniteEvents(params, { enabled })
 
   const flatData = useMemo(() => {
     if (!data?.pages) return []

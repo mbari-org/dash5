@@ -4,7 +4,10 @@ import { useTethysApiContext } from '../TethysApiProvider'
 
 const DEFAULT_LIMIT = 500
 
-export const useInfiniteEvents = (params: GetEventsParams) => {
+export const useInfiniteEvents = (
+  params: GetEventsParams,
+  options?: { enabled?: boolean }
+) => {
   const { axiosInstance } = useTethysApiContext()
   const limit = params.limit ?? DEFAULT_LIMIT
 
@@ -21,6 +24,7 @@ export const useInfiniteEvents = (params: GetEventsParams) => {
       return getEvents(query, { instance: axiosInstance })
     },
     {
+      enabled: options?.enabled ?? true,
       getNextPageParam: (lastPage) => {
         // empty or short page  →  no more data
         if (!lastPage || lastPage.length < limit) return undefined
