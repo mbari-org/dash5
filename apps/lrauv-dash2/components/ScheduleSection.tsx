@@ -899,18 +899,20 @@ export const ScheduleSection: React.FC<ScheduleSectionProps> = ({
         return 'sent'
       }
       const raw = toScheduleCellStatus(mission?.status ?? '')
-      // Non-mission, non-param commands with no future scheduled start
-      // are already dispatched — API 'pending'/'TBD' just means the vehicle
-      // hasn't confirmed yet. Use comms lookup for the most accurate status.
-      if (
-        raw === 'pending' &&
-        !isMission &&
-        !(scheduleDate && scheduleDate !== 'asap')
-      ) {
+      // For any pending command with no specific future scheduled start,
+      // use the comms lookup to upgrade status based on actual vehicle
+      // receipt. The API always returns TBD/'pending' for mission commands
+      // so comms data is the only reliable signal for missions too.
+      if (raw === 'pending' && !(scheduleDate && scheduleDate !== 'asap')) {
         const commsStatus = commsLookup.get(mission.event.eventId)
         if (commsStatus === 'ack') return 'ack'
         if (commsStatus === 'timeout') return 'timeout'
-        return 'sent'
+        if (commsStatus === 'sent') return 'sent'
+        // Non-mission ASAP/immediate commands are always dispatched to the
+        // comms layer — fall back to 'sent' even when the comms event falls
+        // outside the fetch window. Mission commands stay 'pending' until
+        // a comms entry confirms transmission to avoid misleading operators.
+        if (!isMission) return 'sent'
       }
       return raw
     })()
@@ -992,6 +994,14 @@ export const ScheduleSection: React.FC<ScheduleSectionProps> = ({
                 : 'Sent'
               : cellStatus === 'running'
               ? 'Started'
+              : cellStatus === 'ack'
+              ? // Comms ACK means the vehicle received the command via comms
+                // (cell or sat) — not that the mission started executing.
+                'Received'
+              : cellStatus === 'timeout'
+              ? 'Timed out'
+              : cellStatus === 'sent'
+              ? 'Sent'
               : isMission
               ? 'Started'
               : 'Ran'
