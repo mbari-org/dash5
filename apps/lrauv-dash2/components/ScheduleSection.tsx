@@ -882,18 +882,15 @@ export const ScheduleSection: React.FC<ScheduleSectionProps> = ({
         return 'sent'
       }
       const raw = toScheduleCellStatus(mission?.status ?? '')
-      // Non-mission, non-param commands with no future scheduled start
-      // are already dispatched — API 'pending'/'TBD' just means the vehicle
-      // hasn't confirmed yet. Use comms lookup for the most accurate status.
-      if (
-        raw === 'pending' &&
-        !isMission &&
-        !(scheduleDate && scheduleDate !== 'asap')
-      ) {
+      // For any pending command with no specific future scheduled start,
+      // use the comms lookup to upgrade status based on actual vehicle
+      // receipt. The API always returns TBD/'pending' for mission commands
+      // so comms data is the only reliable signal for missions too.
+      if (raw === 'pending' && !(scheduleDate && scheduleDate !== 'asap')) {
         const commsStatus = commsLookup.get(mission.event.eventId)
         if (commsStatus === 'ack') return 'ack'
         if (commsStatus === 'timeout') return 'timeout'
-        return 'sent'
+        if (commsStatus === 'sent') return 'sent'
       }
       return raw
     })()
