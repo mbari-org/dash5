@@ -7,6 +7,8 @@ import {
   ScheduleSectionProps,
   isParamCommand,
   isConfigSetCommand,
+  isMissionCommand,
+  parseMissionCommand,
 } from '../components/ScheduleSection'
 import { QueryClient } from 'react-query'
 import { rest } from 'msw'
@@ -646,6 +648,204 @@ test('configSet command row shows Sent status and config badge tooltip', async (
     const wrenchIcon = document.querySelector('svg[data-icon="wrench"]')
     expect(wrenchIcon).toBeInTheDocument()
   })
+})
+
+// ── isMissionCommand unit tests (#585) ───────────────────────────────────────
+
+test('isMissionCommand returns true for load+run commands', () => {
+  expect(
+    isMissionCommand(
+      'load Science/profile_station.tl;set profile_station.NeedCommsTime 30 min;run'
+    )
+  ).toBe(true)
+  expect(isMissionCommand('load Transport/transit.tl;run')).toBe(true)
+  expect(isMissionCommand(undefined, 'load Science/sci2.xml;run')).toBe(true)
+})
+
+test('isMissionCommand returns false for commands without load+run', () => {
+  expect(isMissionCommand('restart logs')).toBe(false)
+  expect(isMissionCommand('schedule clear;schedule resume')).toBe(false)
+  expect(isMissionCommand('set profile_station.YoYoMaxDepth 40 meter')).toBe(
+    false
+  )
+  expect(
+    isMissionCommand('configSet CTD_Seabird.loadAtStartup 1 bool persist')
+  ).toBe(false)
+  expect(isMissionCommand('schedule clear')).toBe(false)
+  expect(isMissionCommand(undefined, undefined)).toBe(false)
+})
+
+// ── secondary label gating integration tests (#585) ──────────────────────────
+
+test('bare command row does not show "No parameters" secondary text', async () => {
+  server.use(
+    rest.get('/events', (_req, res, ctx) =>
+      res(
+        ctx.status(200),
+        ctx.json({
+          result: [
+            {
+              data: 'restart logs',
+              unixTime: Date.now() - 60 * 1000,
+              eventId: 400,
+              eventType: 'command',
+              text: null,
+              note: null,
+              user: 'test-operator',
+            },
+          ],
+        })
+      )
+    ),
+    rest.get('/events/mission-started', (_req, res, ctx) =>
+      res(ctx.status(200), ctx.json({ result: [] }))
+    )
+  )
+
+  render(
+    <MockProviders queryClient={new QueryClient()}>
+      <ScheduleSection {...props} currentDeploymentId={1} />
+    </MockProviders>
+  )
+
+  await waitFor(() => {
+    expect(screen.getByText('restart logs')).toBeInTheDocument()
+  })
+  expect(screen.queryByText('No parameters')).not.toBeInTheDocument()
+  expect(
+    screen.queryByText('No parsed parameters available')
+  ).not.toBeInTheDocument()
+})
+
+test('mission command row shows "No parameters" secondary text when no params set', async () => {
+  server.use(
+    rest.get('/events', (_req, res, ctx) =>
+      res(
+        ctx.status(200),
+        ctx.json({
+          result: [
+            {
+              data: 'load Transport/transit.tl;run',
+              unixTime: Date.now() - 60 * 1000,
+              eventId: 401,
+              eventType: 'run',
+              text: null,
+              note: null,
+              user: 'test-operator',
+            },
+          ],
+        })
+      )
+    ),
+    rest.get('/events/mission-started', (_req, res, ctx) =>
+      res(ctx.status(200), ctx.json({ result: [] }))
+    )
+  )
+
+  render(
+    <MockProviders queryClient={new QueryClient()}>
+      <ScheduleSection {...props} currentDeploymentId={1} />
+    </MockProviders>
+  )
+
+  await waitFor(() => {
+    expect(screen.getByText('load Transport/transit.tl')).toBeInTheDocument()
+  })
+  expect(screen.getByText('No parameters')).toBeInTheDocument()
+})
+
+// ── parseMissionCommand unit tests (#585) ─────────────────────────────────────
+
+test('parseMissionCommand strips trailing run from semicolon-delimited commands', () => {
+  expect(parseMissionCommand('load Transport/transit.tl;run')).toEqual({
+    name: 'load Transport/transit.tl',
+    parameters: undefined,
+  })
+})
+
+test('parseMissionCommand preserves set params between load and run', () => {
+  expect(
+    parseMissionCommand('load Transport/transit.tl;set transit.Depth 50 m;run')
+  ).toEqual({
+    name: 'load Transport/transit.tl',
+    parameters: 'set transit.Depth 50 m',
+  })
+})
+
+test('parseMissionCommand strips bare sched/asap tokens', () => {
+  expect(
+    parseMissionCommand('sched asap load Science/profile_station.tl;run')
+  ).toEqual({
+    name: 'load Science/profile_station.tl',
+    parameters: undefined,
+  })
+})
+
+test('parseMissionCommand strips sched timestamp prefix', () => {
+  expect(
+    parseMissionCommand(
+      'sched 20250616T0415 load Science/profile_station.tl;run'
+    )
+  ).toEqual({
+    name: 'load Science/profile_station.tl',
+    parameters: undefined,
+  })
+})
+
+test('parseMissionCommand extracts payload from quoted chunked cell-comms form', () => {
+  // Chunked cell delivery wraps the payload in quotes and appends a chunk ID
+  // suffix (e.g. "41tnk 1 6"). The parser should extract the quoted content
+  // and discard the suffix, yielding clean name/parameters.
+  expect(
+    parseMissionCommand(
+      'sched 20250616T0415 "load Science/sci2_circle_hotspot.tl;set sci2_circle_hotspot.MissionTimeout 24 h;run" 41tnk 1 6'
+    )
+  ).toEqual({
+    name: 'load Science/sci2_circle_hotspot.tl',
+    parameters: 'set sci2_circle_hotspot.MissionTimeout 24 h',
+  })
+})
+
+// ── Legacy run <file> — no parameter summary row (#585) ───────────────────────
+
+test('legacy run <file> mission row does not show "No parameters" subtitle', async () => {
+  // Legacy format: eventType 'run' but command data is bare 'run <file>'.
+  // isMission is true (eventType=run), but isLoadRunMission is false (no load),
+  // so the secondary text should be suppressed entirely.
+  server.use(
+    rest.get('/events', (_req, res, ctx) =>
+      res(
+        ctx.status(200),
+        ctx.json({
+          result: [
+            {
+              data: 'run Science/mbts_sci2.tl',
+              unixTime: Date.now() - 60 * 1000,
+              eventId: 410,
+              eventType: 'run',
+              text: null,
+              note: null,
+              user: 'test-operator',
+            },
+          ],
+        })
+      )
+    ),
+    rest.get('/events/mission-started', (_req, res, ctx) =>
+      res(ctx.status(200), ctx.json({ result: [] }))
+    )
+  )
+
+  render(
+    <MockProviders queryClient={new QueryClient()}>
+      <ScheduleSection {...props} currentDeploymentId={1} />
+    </MockProviders>
+  )
+
+  await waitFor(() => {
+    expect(screen.getByText('Science/mbts_sci2.tl')).toBeInTheDocument()
+  })
+  expect(screen.queryByText('No parameters')).not.toBeInTheDocument()
 })
 
 // ── Mission comms-lookup upgrade regression tests (#584) ─────────────────────

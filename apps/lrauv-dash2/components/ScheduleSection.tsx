@@ -105,11 +105,26 @@ const missionKeysMatch = (leftPath: string, rightPath: string) => {
 }
 
 export const parseMissionCommand = (name: string) => {
-  const info = name
+  const keywords = new Set(['run', 'sched', 'asap'])
+  // Strip sched <timestamp_or_asap> prefix so scheduled missions parse cleanly
+  // (e.g. "sched 20250616T0415 load ...;run" → "load ...;run").
+  // Also extract the payload from surrounding quotes when present — the
+  // chunked cell-comms form wraps each chunk in quotes:
+  //   sched 20250616T0415 "load ...;set ...;run" 41tnk 1 6
+  // The quoted content is extracted so the chunk ID suffix is discarded.
+  let cleaned = name
+    .replace(/^sched\s+(?:\d{8}}?T\d{2,4}|asap)?\s*/i, '')
+    .trim()
+  const quoted = cleaned.match(/^"([\s\S]*)"/)
+  if (quoted) cleaned = quoted[1].trim()
+
+  const info = cleaned
     .split(' ')
-    .filter((s) => !['run', 'sched', 'asap'].includes(s))
+    .filter((s) => !keywords.has(s))
     .join(' ')
     .split(';')
+    .map((s) => s.trim())
+    .filter((s) => s && !keywords.has(s))
   return {
     name: info[0],
     parameters: info[1],
@@ -873,6 +888,13 @@ export const ScheduleSection: React.FC<ScheduleSectionProps> = ({
     const isMission =
       mission?.event?.eventType === 'run' ||
       isMissionCommand(mission?.event?.data, mission?.event?.text)
+    // Narrower check: only load+run missions (load <file>;[set ...;]run) can
+    // carry parameter overrides. Legacy bare-run events (run Science/mbts_sci2.tl)
+    // are still classified as missions but never have parameters.
+    const isLoadRunMission = isMissionCommand(
+      mission?.event?.data,
+      mission?.event?.text
+    )
     const isParam =
       !isMission && isParamCommand(mission?.event?.data, mission?.event?.text)
     const isConfigSet =
@@ -920,7 +942,9 @@ export const ScheduleSection: React.FC<ScheduleSectionProps> = ({
     return mission ? (
       <ScheduleCell
         label={missionName ?? 'Unknown'}
-        secondary={missionParams ?? 'No parameters'}
+        secondary={
+          isLoadRunMission ? missionParams ?? 'No parameters' : undefined
+        }
         status={cellStatus}
         statusTooltip={
           cellStatus === 'ack' ? `Received by ${vehicleName}` : undefined
@@ -1051,7 +1075,15 @@ export const ScheduleSection: React.FC<ScheduleSectionProps> = ({
                 commandType: cellCommandType,
                 status: cellStatus,
                 label: missionName ?? 'Unknown',
-                secondary: missionParams ?? undefined,
+                // For load+run missions: structured params summary from parsing.
+                // For param/configSet updates: the raw command text IS the
+                // parameter, so use it as the summary rather than showing
+                // 'No parsed parameters available' as a misleading fallback.
+                secondary: isLoadRunMission
+                  ? missionParams ?? undefined
+                  : isParam || isConfigSet
+                  ? rawText || undefined
+                  : undefined,
                 user: mission.event.user ?? undefined,
                 note: mission.event.note ?? undefined,
                 eventData: mission.event.data ?? undefined,
@@ -1066,6 +1098,7 @@ export const ScheduleSection: React.FC<ScheduleSectionProps> = ({
                 via: getVia(mission.event.note) ?? undefined,
                 isParamUpdate: isParam,
                 isConfigSetUpdate: isConfigSet,
+                isLoadRunMission,
                 commsStatus: commsLookup.get(mission.event.eventId),
                 ...commsMsgIdLookup.get(mission.event.eventId),
               },
