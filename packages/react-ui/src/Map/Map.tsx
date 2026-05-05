@@ -114,7 +114,7 @@ const MapReadyBridge: React.FC<{
   return null
 }
 
-const ESRI_MAX_NATIVE_ZOOM = 16
+const ESRI_MAX_NATIVE_ZOOM = 13
 
 const Map = React.forwardRef<L.Map, MapProps>(
   (
@@ -656,8 +656,28 @@ const Map = React.forwardRef<L.Map, MapProps>(
             ignored, so onMapReady and ref forwarding must go through here. */}
         <MapReadyBridge
           onReady={(map) => {
-            console.log('[Map] Map ready — storing in internalMapRef:', map)
+            console.log('[Map] Map ready — attaching baselayerchange listener')
             internalMapRef.current = map
+            map.on('baselayerchange', (e: any) => {
+              console.log(
+                '[Map] baselayerchange fired:',
+                e.name,
+                'current zoom:',
+                map.getZoom()
+              )
+              if (
+                e.name === 'ESRI Oceans/Labels' &&
+                map.getZoom() > ESRI_MAX_NATIVE_ZOOM
+              ) {
+                console.log(
+                  '[Map] Zooming out from',
+                  map.getZoom(),
+                  'to',
+                  ESRI_MAX_NATIVE_ZOOM
+                )
+                map.setZoom(ESRI_MAX_NATIVE_ZOOM)
+              }
+            })
             onMapReady?.(map)
           }}
           forwardedRef={ref}
@@ -710,7 +730,7 @@ const Map = React.forwardRef<L.Map, MapProps>(
               <TileLayer
                 url={esriTileUrl()}
                 attribution='&copy; <a href="https://developers.arcgis.com/">ArcGIS</a>'
-                maxNativeZoom={16}
+                maxNativeZoom={ESRI_MAX_NATIVE_ZOOM}
                 maxZoom={maxZoom}
                 eventHandlers={{
                   add: addBaseLayerHandler('ESRI Oceans/Labels'),
