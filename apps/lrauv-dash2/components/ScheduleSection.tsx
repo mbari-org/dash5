@@ -906,7 +906,7 @@ export const ScheduleSection: React.FC<ScheduleSectionProps> = ({
       : 'command'
     const rawText = mission?.event.data ?? mission?.event.text ?? ''
     // Also accept the legacy }T format for historical events in the database.
-    const schedDateMatch = rawText.match(/sched\s+(\d{8}}?T\d{2,4})/)
+    const schedDateMatch = rawText.match(/sched\s+(\d{8}}?T\d{2,4})/i)
     const scheduleDate = rawText.match(/sched\s+asap/i)
       ? 'asap'
       : schedDateMatch
@@ -930,18 +930,44 @@ export const ScheduleSection: React.FC<ScheduleSectionProps> = ({
         if (commsStatus === 'ack') return 'ack'
         if (commsStatus === 'timeout') return 'timeout'
         if (commsStatus === 'sent') return 'sent'
-        // Non-mission ASAP/immediate commands are always dispatched to the
-        // comms layer — fall back to 'sent' even when the comms event falls
-        // outside the fetch window. Mission commands stay 'pending' until
-        // a comms entry confirms transmission to avoid misleading operators.
-        if (!isMission) return 'sent'
+        // Non-mission commands are always dispatched immediately. If no comms
+        // entry exists (outside the fetch window), default to 'sent'. But if
+        // comms reports 'queued' (sbdSend not yet dispatched), preserve
+        // 'pending' so the row doesn't mislead the operator.
+        if (!isMission && commsStatus !== 'queued') return 'sent'
       }
       return raw
     })()
 
+    // For non-mission commands, join all semicolon-separated segments with
+    // ' · ' so the full command intent is visible in green on the row.
+    // Strip any leading "sched <timestamp>" wrapper and surrounding quotes
+    // so queued commands (e.g. sched 20260505T1844 "cmd1;cmd2") show only
+    // the actual command text.
+    // Strip:  sched <timestamp>   e.g. sched 20260505T1844 "..."
+    //         sched asap          e.g. sched asap "..."
+    //         sched               e.g. sched "restart logs"  (bare ASAP with quotes)
+    // Using an explicit alternation avoids the previous \S+ approach, which
+    // consumed only up to the first space inside a quoted payload like
+    // sched "restart logs" → "restart (stops) → leaves logs".
+    const commandPayload = rawText
+      .replace(/^sched\s+(?:\d{8}}?T\d{2,4}|asap)\s*/i, '')
+      .replace(/^sched\s+(?=")/i, '')
+      .replace(/^"([\s\S]*)"$/, '$1')
+      .trim()
+    const commandLabel = isMission
+      ? missionName ?? 'Unknown'
+      : commandPayload
+          .split(';')
+          .map((s) => s.trim())
+          .filter(Boolean)
+          .join(' · ') ||
+        commandPayload.trim() ||
+        'Unknown'
+
     return mission ? (
       <ScheduleCell
-        label={missionName ?? 'Unknown'}
+        label={commandLabel}
         secondary={
           isLoadRunMission ? missionParams ?? 'No parameters' : undefined
         }
@@ -1074,7 +1100,7 @@ export const ScheduleSection: React.FC<ScheduleSectionProps> = ({
                 eventId: mission.event.eventId,
                 commandType: cellCommandType,
                 status: cellStatus,
-                label: missionName ?? 'Unknown',
+                label: commandLabel,
                 // For load+run missions: structured params summary from parsing.
                 // For param/configSet updates: the raw command text IS the
                 // parameter, so use it as the summary rather than showing
