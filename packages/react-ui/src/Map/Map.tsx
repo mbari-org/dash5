@@ -37,6 +37,8 @@ import { CenterView } from './MapViews'
 import type { MapProps } from './Map.types'
 import { createLogger } from '@mbari/utils'
 
+import { esriTileUrl } from './esriTileUrl'
+
 const logger = createLogger('Map')
 
 const DEFAULT_CENTER: [number, number] = [36.8022, -121.788]
@@ -111,6 +113,8 @@ const MapReadyBridge: React.FC<{
 
   return null
 }
+
+const ESRI_MAX_NATIVE_ZOOM = 13
 
 const Map = React.forwardRef<L.Map, MapProps>(
   (
@@ -596,6 +600,8 @@ const Map = React.forwardRef<L.Map, MapProps>(
       }
     }, [isAddingMarkers])
 
+    const esriApiKey = process.env.NEXT_PUBLIC_ESRI_API_KEY
+
     return (
       <MapContainer
         center={validatedCenter}
@@ -653,15 +659,16 @@ const Map = React.forwardRef<L.Map, MapProps>(
               />
             </LayersControl.BaseLayer>
           )}
-          {mapReady && (
+          {mapReady && esriApiKey && (
             <LayersControl.BaseLayer
               name="ESRI Oceans/Labels"
               checked={baseLayer === 'ESRI Oceans/Labels'}
             >
               <TileLayer
-                url="https://ibasemaps-api.arcgis.com/arcgis/rest/services/Ocean/World_Ocean_Base/MapServer/tile/{z}/{y}/{x}?//token=<ACCESS_TOKEN>process.env.REACT_APP_ESRI_API_KEY</ACCESS_TOKEN>"
+                url={esriTileUrl(esriApiKey)}
                 attribution='&copy; <a href="https://developers.arcgis.com/">ArcGIS</a>'
-                maxNativeZoom={maxNativeZoom}
+                maxNativeZoom={ESRI_MAX_NATIVE_ZOOM}
+                maxZoom={maxZoom}
                 eventHandlers={{
                   add: addBaseLayerHandler('ESRI Oceans/Labels'),
                 }}
