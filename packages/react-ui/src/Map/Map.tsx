@@ -160,7 +160,6 @@ const Map = React.forwardRef<L.Map, MapProps>(
     const [isAddingMarkersLocal, setIsAddingMarkersLocal] =
       useState(isAddingMarkers)
     const { baseLayer, setBaseLayer } = useMapBaseLayer()
-    const internalMapRef = useRef<L.Map | null>(null)
     const addBaseLayerHandler = useCallback(
       (layer: BaseLayerOption) => () => {
         setBaseLayer(layer)
@@ -619,7 +618,6 @@ const Map = React.forwardRef<L.Map, MapProps>(
             ignored, so onMapReady and ref forwarding must go through here. */}
         <MapReadyBridge
           onReady={(map) => {
-            internalMapRef.current = map
             const onBaseLayerChange = (e: any) => {
               if (
                 e.name === 'ESRI Oceans/Labels' &&
@@ -676,22 +674,28 @@ const Map = React.forwardRef<L.Map, MapProps>(
               />
             </LayersControl.BaseLayer>
           )}
-          {mapReady && !!process.env.NEXT_PUBLIC_ESRI_API_KEY && (
-            <LayersControl.BaseLayer
-              name="ESRI Oceans/Labels"
-              checked={baseLayer === 'ESRI Oceans/Labels'}
-            >
-              <TileLayer
-                url={esriTileUrl(process.env.NEXT_PUBLIC_ESRI_API_KEY)}
-                attribution='&copy; <a href="https://developers.arcgis.com/">ArcGIS</a>'
-                maxNativeZoom={ESRI_MAX_NATIVE_ZOOM}
-                maxZoom={maxZoom}
-                eventHandlers={{
-                  add: addBaseLayerHandler('ESRI Oceans/Labels'),
-                }}
-              />
-            </LayersControl.BaseLayer>
-          )}
+          {mapReady &&
+            (() => {
+              const esriApiKey = process.env.NEXT_PUBLIC_ESRI_API_KEY
+              return (
+                esriApiKey && (
+                  <LayersControl.BaseLayer
+                    name="ESRI Oceans/Labels"
+                    checked={baseLayer === 'ESRI Oceans/Labels'}
+                  >
+                    <TileLayer
+                      url={esriTileUrl(esriApiKey)}
+                      attribution='&copy; <a href="https://developers.arcgis.com/">ArcGIS</a>'
+                      maxNativeZoom={ESRI_MAX_NATIVE_ZOOM}
+                      maxZoom={maxZoom}
+                      eventHandlers={{
+                        add: addBaseLayerHandler('ESRI Oceans/Labels'),
+                      }}
+                    />
+                  </LayersControl.BaseLayer>
+                )
+              )
+            })()}
           {gmrtLayer}
           {mapReady && (
             <LayersControl.BaseLayer
