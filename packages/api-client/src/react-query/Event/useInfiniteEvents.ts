@@ -27,8 +27,8 @@ export const useInfiniteEvents = (
     {
       enabled: options?.enabled ?? true,
       staleTime: options?.staleTime ?? 5 * 60 * 1000,
-      refetchOnWindowFocus: options?.refetchOnWindowFocus,
-      refetchOnReconnect: options?.refetchOnReconnect,
+      refetchOnWindowFocus: options?.refetchOnWindowFocus ?? false,
+      refetchOnReconnect: options?.refetchOnReconnect ?? false,
       refetchInterval: options?.refetchInterval,
       getNextPageParam: (lastPage) => {
         // empty or short page  →  no more data
