@@ -907,9 +907,21 @@ export const ScheduleSection: React.FC<ScheduleSectionProps> = ({
       return raw
     })()
 
+    // For non-mission commands, join all semicolon-separated segments with
+    // ' · ' so the full command intent is visible in green on the row.
+    const commandLabel = isMission
+      ? missionName ?? 'Unknown'
+      : rawText
+          .split(';')
+          .map((s) => s.trim())
+          .filter(Boolean)
+          .join(' · ') ||
+        rawText.trim() ||
+        'Unknown'
+
     return mission ? (
       <ScheduleCell
-        label={missionName ?? 'Unknown'}
+        label={commandLabel}
         secondary={isMission ? missionParams ?? 'No parameters' : undefined}
         status={cellStatus}
         statusTooltip={

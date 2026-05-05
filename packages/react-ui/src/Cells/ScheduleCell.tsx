@@ -34,7 +34,7 @@ export interface ScheduleCellProps {
   scheduleStatus?: 'paused' | 'running'
   label: string
   ariaLabel?: string
-  secondary: string
+  secondary?: string
   name: string
   eventId: number
   commandType: CommandType
@@ -207,14 +207,16 @@ export const ScheduleCell: React.FC<ScheduleCellProps> = ({
               </Tippy>
             )}
           </li>
-          <li
-            className={clsx(
-              'flex truncate italic',
-              isOpen ? styles.text : styles.textLight
-            )}
-          >
-            {secondary}
-          </li>
+          {secondary && (
+            <li
+              className={clsx(
+                'flex truncate italic',
+                isOpen ? styles.text : styles.textLight
+              )}
+            >
+              {secondary}
+            </li>
+          )}
           <li
             className={clsx(
               'flex truncate',
