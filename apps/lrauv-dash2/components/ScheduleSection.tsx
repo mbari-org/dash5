@@ -901,7 +901,7 @@ export const ScheduleSection: React.FC<ScheduleSectionProps> = ({
     return mission ? (
       <ScheduleCell
         label={missionName ?? 'Unknown'}
-        secondary={missionParams ?? 'No parameters'}
+        secondary={isMission ? missionParams ?? 'No parameters' : undefined}
         status={cellStatus}
         statusTooltip={
           cellStatus === 'ack' ? `Received by ${vehicleName}` : undefined
@@ -1023,7 +1023,7 @@ export const ScheduleSection: React.FC<ScheduleSectionProps> = ({
                 commandType: cellCommandType,
                 status: cellStatus,
                 label: missionName ?? 'Unknown',
-                secondary: missionParams ?? undefined,
+                secondary: isMission ? missionParams ?? undefined : undefined,
                 user: mission.event.user ?? undefined,
                 note: mission.event.note ?? undefined,
                 eventData: mission.event.data ?? undefined,
