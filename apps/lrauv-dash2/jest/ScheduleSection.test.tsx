@@ -1115,10 +1115,11 @@ test('parses corrected sched YYYYMMDDT timestamp without }', async () => {
     </MockProviders>
   )
 
-  // The row should display a scheduled start time derived from the timestamp,
-  // not fall back to 'N/A' (which would mean parsing failed).
+  // The row should display "Sent and Queued for … UTC" — the fixed prefix and
+  // UTC suffix are locale-independent and confirm that timestamp parsing
+  // succeeded (a parse failure falls back to 'N/A' with no "Queued" prefix).
   await waitFor(() => {
-    expect(screen.getByText(/Dec 31/)).toBeInTheDocument()
+    expect(screen.getByText(/Sent and Queued for .+ UTC/)).toBeInTheDocument()
   })
 })
 
@@ -1155,9 +1156,10 @@ test('parses legacy sched YYYYMMDD}T timestamp for backwards compatibility', asy
     </MockProviders>
   )
 
-  // The row should still display a scheduled start time despite the legacy }T.
+  // The row should still display "Sent and Queued for … UTC" despite the
+  // legacy }T — same locale-independent assertion used for the clean timestamp.
   await waitFor(() => {
-    expect(screen.getByText(/Dec 31/)).toBeInTheDocument()
+    expect(screen.getByText(/Sent and Queued for .+ UTC/)).toBeInTheDocument()
   })
 })
 
