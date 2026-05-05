@@ -929,14 +929,21 @@ export const ScheduleSection: React.FC<ScheduleSectionProps> = ({
 
     // For non-mission commands, join all semicolon-separated segments with
     // ' · ' so the full command intent is visible in green on the row.
+    // Strip any leading "sched <timestamp>" wrapper and surrounding quotes
+    // so queued commands (e.g. sched 20260505T1844 "cmd1;cmd2") show only
+    // the actual command text.
+    const commandPayload = rawText
+      .replace(/^sched\s+\S+\s*/, '')
+      .replace(/^"(.*)"$/, '$1')
+      .trim()
     const commandLabel = isMission
       ? missionName ?? 'Unknown'
-      : rawText
+      : commandPayload
           .split(';')
           .map((s) => s.trim())
           .filter(Boolean)
           .join(' · ') ||
-        rawText.trim() ||
+        commandPayload.trim() ||
         'Unknown'
 
     return mission ? (
@@ -1066,7 +1073,7 @@ export const ScheduleSection: React.FC<ScheduleSectionProps> = ({
                 eventId: mission.event.eventId,
                 commandType: cellCommandType,
                 status: cellStatus,
-                label: missionName ?? 'Unknown',
+                label: commandLabel,
                 secondary: isLoadRunMission
                   ? missionParams ?? undefined
                   : undefined,
