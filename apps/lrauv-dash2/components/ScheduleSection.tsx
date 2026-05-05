@@ -978,8 +978,8 @@ export const ScheduleSection: React.FC<ScheduleSectionProps> = ({
               : cellStatus === 'running'
               ? 'Started'
               : cellStatus === 'ack'
-              ? // Comms ACK means the vehicle received the command via SBD —
-                // not that the mission started executing.
+              ? // Comms ACK means the vehicle received the command via comms
+                // (cell or sat) — not that the mission started executing.
                 'Received'
               : cellStatus === 'timeout'
               ? 'Timed out'

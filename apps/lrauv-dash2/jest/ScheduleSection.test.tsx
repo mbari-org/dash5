@@ -762,7 +762,7 @@ test('mission command stays pending when no comms entry exists (outside fetch wi
   expect(screen.queryByTitle(/Received by/i)).not.toBeInTheDocument()
 })
 
-test('future-scheduled mission stays pending even when comms indicates sent', async () => {
+test('future-scheduled mission stays pending even when comms indicates ack', async () => {
   // A mission scheduled for a far-future time should not be upgraded via the
   // comms lookup because the scheduleDate gate prevents it: only ASAP/unscheduled
   // missions should be upgraded based on comms data.
