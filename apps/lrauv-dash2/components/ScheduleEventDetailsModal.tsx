@@ -825,7 +825,7 @@ export const ScheduleEventDetailsModal: React.FC<
           </div>
         </div>
 
-        {(event.commandType === 'mission' ||
+        {(event.isLoadRunMission ||
           event.isParamUpdate ||
           event.isConfigSetUpdate) && (
           <div>

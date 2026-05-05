@@ -105,11 +105,14 @@ const missionKeysMatch = (leftPath: string, rightPath: string) => {
 }
 
 export const parseMissionCommand = (name: string) => {
+  const keywords = new Set(['run', 'sched', 'asap'])
   const info = name
     .split(' ')
-    .filter((s) => !['run', 'sched', 'asap'].includes(s))
+    .filter((s) => !keywords.has(s))
     .join(' ')
     .split(';')
+    .map((s) => s.trim())
+    .filter((s) => s && !keywords.has(s))
   return {
     name: info[0],
     parameters: info[1],
@@ -857,6 +860,13 @@ export const ScheduleSection: React.FC<ScheduleSectionProps> = ({
     const isMission =
       mission?.event?.eventType === 'run' ||
       isMissionCommand(mission?.event?.data, mission?.event?.text)
+    // Narrower check: only load+run missions (load <file>;[set ...;]run) can
+    // carry parameter overrides. Legacy bare-run events (run Science/mbts_sci2.tl)
+    // are still classified as missions but never have parameters.
+    const isLoadRunMission = isMissionCommand(
+      mission?.event?.data,
+      mission?.event?.text
+    )
     const isParam =
       !isMission && isParamCommand(mission?.event?.data, mission?.event?.text)
     const isConfigSet =
@@ -901,7 +911,9 @@ export const ScheduleSection: React.FC<ScheduleSectionProps> = ({
     return mission ? (
       <ScheduleCell
         label={missionName ?? 'Unknown'}
-        secondary={isMission ? missionParams ?? 'No parameters' : undefined}
+        secondary={
+          isLoadRunMission ? missionParams ?? 'No parameters' : undefined
+        }
         status={cellStatus}
         statusTooltip={
           cellStatus === 'ack' ? `Received by ${vehicleName}` : undefined
@@ -1023,7 +1035,9 @@ export const ScheduleSection: React.FC<ScheduleSectionProps> = ({
                 commandType: cellCommandType,
                 status: cellStatus,
                 label: missionName ?? 'Unknown',
-                secondary: isMission ? missionParams ?? undefined : undefined,
+                secondary: isLoadRunMission
+                  ? missionParams ?? undefined
+                  : undefined,
                 user: mission.event.user ?? undefined,
                 note: mission.event.note ?? undefined,
                 eventData: mission.event.data ?? undefined,
@@ -1038,6 +1052,7 @@ export const ScheduleSection: React.FC<ScheduleSectionProps> = ({
                 via: getVia(mission.event.note) ?? undefined,
                 isParamUpdate: isParam,
                 isConfigSetUpdate: isConfigSet,
+                isLoadRunMission,
                 commsStatus: commsLookup.get(mission.event.eventId),
               },
             },

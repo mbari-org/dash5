@@ -63,6 +63,8 @@ export interface GlobalModalMetaData {
     via?: 'cell' | 'sat' | 'cellsat'
     isParamUpdate?: boolean
     isConfigSetUpdate?: boolean
+    /** True for load+run missions (load <file>;[set ...;]run) — the only format that can carry parameter overrides */
+    isLoadRunMission?: boolean
     /** Raw comms status from the Comms Queue — 'queued'|'sent'|'ack'|'timeout' */
     commsStatus?: string
     /** True for automatic Default mission rows (not operator-commanded) */
