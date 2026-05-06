@@ -72,8 +72,8 @@ const VehicleAccordion: React.FC<VehicleAccordionProps> = ({
     },
     {
       enabled: !!activeDeployment && !!vehicleName,
-      staleTime: 30 * 1000,
-      refetchInterval: 30 * 1000,
+      staleTime: 10 * 1000,
+      refetchInterval: 10 * 1000,
     }
   )
 

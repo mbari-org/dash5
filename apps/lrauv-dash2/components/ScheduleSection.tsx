@@ -275,7 +275,7 @@ export const ScheduleSection: React.FC<ScheduleSectionProps> = ({
       from: 0,
       limit: 500,
     },
-    { enabled: !!vehicleName, staleTime: 30 * 1000, refetchInterval: 30 * 1000 }
+    { enabled: !!vehicleName, staleTime: 10 * 1000, refetchInterval: 10 * 1000 }
   )
 
   // Build a Set of eventIds that were explicitly cancelled by an operator.
@@ -298,7 +298,7 @@ export const ScheduleSection: React.FC<ScheduleSectionProps> = ({
       from: 1, // non-zero so useEvents recursive backfill fetches all history
       limit: 500,
     },
-    { enabled: !!vehicleName, staleTime: 30 * 1000, refetchInterval: 30 * 1000 }
+    { enabled: !!vehicleName, staleTime: 10 * 1000, refetchInterval: 10 * 1000 }
   )
 
   // Build a Set of eventIds that have a recorded timeout note.
