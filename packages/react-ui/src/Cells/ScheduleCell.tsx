@@ -10,7 +10,6 @@ import {
   faPauseCircle,
   faPersonRunning,
   faStarOfLife,
-  faExclamationTriangle,
 } from '@fortawesome/free-solid-svg-icons'
 import { faClock } from '@fortawesome/free-regular-svg-icons'
 import { IconProp } from '@fortawesome/fontawesome-svg-core'
@@ -18,6 +17,7 @@ import { IconButton } from '../Navigation'
 import { CommandType } from '../types'
 import { ConnectedIcon } from '../Icons/ConnectedIcon'
 import { AcknowledgeIcon } from '../Icons/AcknowledgeIcon'
+import { StopwatchWarningIcon } from '../Icons/StopwatchWarningIcon'
 export type ScheduleCellStatus =
   | 'pending'
   | 'running'
@@ -79,7 +79,6 @@ const icons: { [key: string]: IconProp } = {
   cancelled: faTimes as IconProp,
   completed: faCheck as IconProp,
   paused: faPauseCircle as IconProp,
-  timeout: faExclamationTriangle as IconProp,
 }
 
 export const ScheduleCellBackgrounds = {
@@ -167,6 +166,16 @@ export const ScheduleCell: React.FC<ScheduleCellProps> = ({
                     : 'stroke-stone-500 opacity-60'
                 )}
               />
+            </span>
+          ) : status === 'timeout' ? (
+            <span
+              title={statusTooltip ?? status}
+              className={clsx(
+                'self-center text-2xl text-[rgb(255,132,59)]',
+                scheduleStatus !== 'running' && 'opacity-60'
+              )}
+            >
+              <StopwatchWarningIcon />
             </span>
           ) : (
             <FontAwesomeIcon

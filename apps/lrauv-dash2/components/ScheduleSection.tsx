@@ -275,7 +275,7 @@ export const ScheduleSection: React.FC<ScheduleSectionProps> = ({
       from: 0,
       limit: 500,
     },
-    { enabled: !!vehicleName, staleTime: 30 * 1000, refetchInterval: 30 * 1000 }
+    { enabled: !!vehicleName, staleTime: 10 * 1000, refetchInterval: 10 * 1000 }
   )
 
   // Build a Set of eventIds that were explicitly cancelled by an operator.
@@ -290,6 +290,9 @@ export const ScheduleSection: React.FC<ScheduleSectionProps> = ({
 
   // Fetch timeout notes across all history so that older timed-out commands
   // are detected even when commsEventsResponse hasn't paginated that far back.
+  // from: 1 (non-zero) enables recursive backfill, which re-executes on every
+  // refetch — keep the interval long (60 s) to avoid repeated multi-page fetches.
+  // New timeouts in the current session are already captured by commsEventsResponse.
   const timeoutNotesResponse = useEvents(
     {
       vehicles: [vehicleName],
@@ -298,7 +301,7 @@ export const ScheduleSection: React.FC<ScheduleSectionProps> = ({
       from: 1, // non-zero so useEvents recursive backfill fetches all history
       limit: 500,
     },
-    { enabled: !!vehicleName, staleTime: 30 * 1000, refetchInterval: 30 * 1000 }
+    { enabled: !!vehicleName, staleTime: 60 * 1000, refetchInterval: 60 * 1000 }
   )
 
   // Build a Set of eventIds that have a recorded timeout note.

@@ -5,7 +5,13 @@ import DocsSection from './DocsSection'
 import HandoffSection from './HandoffSection'
 import LogsSection from './LogsSection'
 import ScienceDataSection from './ScienceDataSection'
-import { useCommsEvents, useMissionStartedEvent } from '@mbari/api-client'
+import {
+  useCommsEvents,
+  useMissionStartedEvent,
+  useEvents,
+  timeoutExpiredRegEx,
+  EventType,
+} from '@mbari/api-client'
 import { DateTime } from 'luxon'
 import { ScheduleSection } from './ScheduleSection'
 import useGlobalModalId from '../lib/useGlobalModalId'
@@ -41,24 +47,59 @@ const VehicleAccordion: React.FC<VehicleAccordionProps> = ({
   currentDeploymentId,
   isRecovered,
 }) => {
-  // Only fetch comms events for active deployments — the queue count label
-  // is hidden for historical deployments so there's no need to load the data
+  // Use from:0 (all history) so the badge shares the same React Query cache
+  // entry as CommsSection's allLogsResponse — identical params mean both see
+  // the same sbdSend/sbdReceipt/sbdReceive chain and agree on every status.
+  // Using the deployment-scoped query (from: deploymentStartTime) produced a
+  // different cache entry where receipts sometimes fell outside the fetch window,
+  // causing a command to show 'ack' in the list but still 'sent' in the badge.
   const { data: commsEvents, isLoading: commsLoading } = useCommsEvents({
     vehicles: [vehicleName],
-    from,
-    to,
+    from: 0,
     enabled: !!activeDeployment,
   })
 
+  // Fetch all timeout notes across full history so older timed-out commands
+  // are not miscounted as 'sent' when commsEvents pagination hasn't reached
+  // their timeout note (same fix applied to ScheduleSection in PR #611).
+  const timeoutNotesResponse = useEvents(
+    {
+      vehicles: [vehicleName],
+      eventTypes: ['note'] as EventType[],
+      noteMatches: 'Timeout while waiting',
+      from: 1,
+      limit: 500,
+    },
+    {
+      enabled: !!activeDeployment && !!vehicleName,
+      // from: 1 triggers recursive backfill on every refetch — use a longer
+      // interval to avoid repeated multi-page fetches. New timeouts are already
+      // captured by commsEvents (which refreshes on its own schedule).
+      staleTime: 60 * 1000,
+      refetchInterval: 60 * 1000,
+    }
+  )
+
+  const timedOutEventIds = useMemo(() => {
+    const ids = new Set<number>()
+    timeoutNotesResponse.data?.forEach((note) => {
+      const match = note.note?.match(timeoutExpiredRegEx)
+      if (match) ids.add(parseInt(match[1], 10))
+    })
+    return ids
+  }, [timeoutNotesResponse.data])
+
   // Count commands genuinely waiting for vehicle receipt: 'queued' (not yet
   // dispatched via SBD) and 'sent' (dispatched but no vehicle fetch confirmed).
-  // 'timeout' is excluded — a timeout means delivery definitively failed and
-  // the command is no longer pending, so it must not inflate the queue badge.
+  // 'ack' and 'timeout' are excluded — the vehicle has already dealt with them.
   const unackedCount = useMemo(
     () =>
-      commsEvents.filter((e) => e.status === 'queued' || e.status === 'sent')
-        .length,
-    [commsEvents]
+      commsEvents.filter(
+        (e) =>
+          (e.status === 'queued' || e.status === 'sent') &&
+          !timedOutEventIds.has(e.eventId)
+      ).length,
+    [commsEvents, timedOutEventIds]
   )
 
   const { data: missionStartedEvent } = useMissionStartedEvent(
