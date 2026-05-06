@@ -192,6 +192,55 @@ test('queue count shows 0 for a timed-out command — timeout is not "in queue"'
   })
 })
 
+test('queue count ignores sent commands from a previous deployment', async () => {
+  // A 'sent' command whose unixTime is before the deployment start (from) must
+  // not inflate the badge — it belongs to a prior deployment.
+  server.use(
+    rest.get('/events', (_req, res, ctx) =>
+      res(
+        ctx.status(200),
+        ctx.json({
+          result: [
+            {
+              eventId: 450,
+              eventType: 'command',
+              data: 'old command',
+              // 2 hours before the deployment start (props.from = now - 1hr)
+              unixTime: Date.now() - 2 * 3600 * 1000,
+              note: '[[via:sat, timeout:30min]]',
+              user: 'test-operator',
+            },
+            {
+              eventId: 1450,
+              eventType: 'sbdSend',
+              refId: 450,
+              state: 1,
+              unixTime: Date.now() - 2 * 3600 * 1000 + 5000,
+              isoTime: new Date(
+                Date.now() - 2 * 3600 * 1000 + 5000
+              ).toISOString(),
+              data: null,
+              text: null,
+              note: null,
+              user: null,
+            },
+          ],
+        })
+      )
+    )
+  )
+
+  render(
+    <MockProviders queryClient={new QueryClient()}>
+      <VehicleAccordion {...props} />
+    </MockProviders>
+  )
+
+  await waitFor(() => {
+    expect(screen.getByText('0 item(s) in queue')).toBeInTheDocument()
+  })
+})
+
 test('queue count correctly mixes ack, sent, timeout, and queued commands', async () => {
   // 1 queued + 1 sent = 2 in queue; 1 ack + 1 timeout = 0 added
   server.use(

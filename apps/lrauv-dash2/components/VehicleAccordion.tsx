@@ -92,14 +92,21 @@ const VehicleAccordion: React.FC<VehicleAccordionProps> = ({
   // Count commands genuinely waiting for vehicle receipt: 'queued' (not yet
   // dispatched via SBD) and 'sent' (dispatched but no vehicle fetch confirmed).
   // 'ack' and 'timeout' are excluded — the vehicle has already dealt with them.
+  // Scope to the current deployment window (from/to) so commands from prior
+  // deployments — which may legitimately never have been acked — don't inflate
+  // the badge. commsEvents uses from:0 to share the React Query cache with
+  // CommsSection, so we filter by isoTime here instead.
   const unackedCount = useMemo(
     () =>
-      commsEvents.filter(
-        (e) =>
+      commsEvents.filter((e) => {
+        const inDeployment = e.unixTime >= from && (!to || e.unixTime <= to)
+        return (
+          inDeployment &&
           (e.status === 'queued' || e.status === 'sent') &&
           !timedOutEventIds.has(e.eventId)
-      ).length,
-    [commsEvents, timedOutEventIds]
+        )
+      }).length,
+    [commsEvents, timedOutEventIds, from, to]
   )
 
   const { data: missionStartedEvent } = useMissionStartedEvent(
