@@ -32,8 +32,10 @@ export const determineCommandStatus = (
     ? (command.note.match(timeoutRegEx) || [])[1]
     : undefined
 
-  // Check if the cell comm has timed out by looking for a timeout note event with command eventId
-  if (command.eventId && timeout && via === 'cell') {
+  // A timeout note is ground truth for any comms type (cell, sat, cellsat, unknown).
+  // Check it first — before sbdSend state — so a timed-out command is never
+  // misreported as 'sent' or 'ack' regardless of what Iridium bookkeeping exists.
+  if (command.eventId) {
     const timeoutEvent = timeoutMap.get(String(command.eventId))
     if (timeoutEvent) {
       return {
@@ -65,27 +67,9 @@ export const determineCommandStatus = (
     }
   }
 
-  // A state of 2 indicates cell comms, aka direct comms in dash4.
-  // Cell comms are considered ACKed if they are sent since that indicates the socket is open.
-  // However, for queue-and-fetch cell delivery the vehicle must still poll and retrieve the
-  // command — a timeout note means it never did. Timeout always takes priority over the
-  // cell send so we re-check timeoutMap here even though we checked it above, because the
-  // earlier check requires (via === 'cell' && timeout), which may not match all cell paths.
-  if (matchingSbdSend && (matchingSbdSend?.state === 2 || via === undefined)) {
-    if (command.eventId) {
-      const timeoutEvent = timeoutMap.get(String(command.eventId))
-      if (timeoutEvent) {
-        return {
-          ...command,
-          via,
-          timeout,
-          status: 'timeout',
-          commsIsoTime: timeoutEvent.isoTime,
-          mtmsn: undefined,
-          momsn: undefined,
-        }
-      }
-    }
+  // A state of 2 indicates cell comms (direct socket delivery).
+  // Cell comms are considered ACKed when sent since an open socket means delivery.
+  if (matchingSbdSend?.state === 2 || via === undefined) {
     // Explicitly clear mtmsn/momsn — cell comms do not carry Iridium SBD IDs.
     return {
       ...command,
