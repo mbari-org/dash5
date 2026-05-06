@@ -171,7 +171,7 @@ export const ScheduleCell: React.FC<ScheduleCellProps> = ({
             <span
               title={statusTooltip ?? status}
               className={clsx(
-                'self-center text-2xl',
+                'self-center text-2xl text-[rgb(255,132,59)]',
                 scheduleStatus !== 'running' && 'opacity-60'
               )}
             >

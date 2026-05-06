@@ -72,8 +72,11 @@ const VehicleAccordion: React.FC<VehicleAccordionProps> = ({
     },
     {
       enabled: !!activeDeployment && !!vehicleName,
-      staleTime: 10 * 1000,
-      refetchInterval: 10 * 1000,
+      // from: 1 triggers recursive backfill on every refetch — use a longer
+      // interval to avoid repeated multi-page fetches. New timeouts are already
+      // captured by commsEvents (which refreshes on its own schedule).
+      staleTime: 60 * 1000,
+      refetchInterval: 60 * 1000,
     }
   )
 
