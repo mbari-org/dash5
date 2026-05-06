@@ -47,12 +47,15 @@ const VehicleAccordion: React.FC<VehicleAccordionProps> = ({
   currentDeploymentId,
   isRecovered,
 }) => {
-  // Only fetch comms events for active deployments — the queue count label
-  // is hidden for historical deployments so there's no need to load the data
+  // Use from:0 (all history) so the badge shares the same React Query cache
+  // entry as CommsSection's allLogsResponse — identical params mean both see
+  // the same sbdSend/sbdReceipt/sbdReceive chain and agree on every status.
+  // Using the deployment-scoped query (from: deploymentStartTime) produced a
+  // different cache entry where receipts sometimes fell outside the fetch window,
+  // causing a command to show 'ack' in the list but still 'sent' in the badge.
   const { data: commsEvents, isLoading: commsLoading } = useCommsEvents({
     vehicles: [vehicleName],
-    from,
-    to,
+    from: 0,
     enabled: !!activeDeployment,
   })
 
@@ -85,9 +88,7 @@ const VehicleAccordion: React.FC<VehicleAccordionProps> = ({
 
   // Count commands genuinely waiting for vehicle receipt: 'queued' (not yet
   // dispatched via SBD) and 'sent' (dispatched but no vehicle fetch confirmed).
-  // Exclude anything with a timeout note — commsEvents pagination may not have
-  // fetched the note yet, leaving the command as 'sent' when it has in fact
-  // already timed out (timedOutEventIds covers the full history via useEvents).
+  // 'ack' and 'timeout' are excluded — the vehicle has already dealt with them.
   const unackedCount = useMemo(
     () =>
       commsEvents.filter(
