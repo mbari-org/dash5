@@ -951,8 +951,9 @@ export const ScheduleSection: React.FC<ScheduleSectionProps> = ({
       if (commsStatusForTimeout === 'timeout') return 'timeout'
       // For any pending command with no specific future scheduled start,
       // use the comms lookup to upgrade status based on actual vehicle
-      // receipt. The API always returns TBD/'pending' for mission commands
-      // so comms data is the only reliable signal for missions too.
+      // receipt. The API status is not fully reliable for missions — it can
+      // return 'TBD' (pending), 'completed', or other values depending on
+      // the code path; comms lookup is the authoritative source for ack/timeout.
       if (raw === 'pending' && !(scheduleDate && scheduleDate !== 'asap')) {
         const commsStatus = commsStatusForTimeout
         if (commsStatus === 'ack') return 'ack'

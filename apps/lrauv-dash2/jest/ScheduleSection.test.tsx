@@ -1342,28 +1342,33 @@ test('timed-out command with explicit scheduled timestamp shows timeout pill and
   })
 })
 
-test('timed-out command reported as "completed" by API still shows timeout pill (#606b)', async () => {
-  // Regression: the API sometimes returns status:'completed' for a command
-  // that actually timed out. The previous fix only checked commsLookup when
-  // raw === 'pending', so 'completed' bypassed the timeout check entirely.
-  // A timeout note in commsLookup must override any API-reported status.
+test('timed-out command enriched to "completed" via isRecovered still shows timeout pill (#606b)', async () => {
+  // Regression: when isRecovered=true, every remaining 'TBD'/'pending' item is
+  // promoted to 'completed' so the history looks clean. Before this fix,
+  // cellStatus skipped commsLookup when raw!=='pending', so the command showed
+  // 'completed' even when a timeout note existed. A timeout note must always win.
+  //
+  // Strategy: pass isRecovered={true} so the command becomes 'completed' via
+  // the recovered-deployment enrichment path, then assert the timeout pill wins.
+  const eventId = 910
+  const ts = Date.now() - 90 * 1000
   const missionEvent = {
     data: 'load Science/profile_station.tl;run',
-    unixTime: Date.now() - 90 * 1000,
-    eventId: 900,
+    unixTime: ts,
+    eventId,
     eventType: 'run',
     text: null,
     note: '[[via:cell, timeout:5min]]',
     user: 'test-operator',
   }
   const timeoutNote = {
-    eventId: 901,
+    eventId: 911,
     eventType: 'note',
-    unixTime: Date.now() - 60 * 1000,
-    isoTime: new Date(Date.now() - 60 * 1000).toISOString(),
+    unixTime: ts + 60 * 1000,
+    isoTime: new Date(ts + 60 * 1000).toISOString(),
     data: null,
     text: null,
-    note: 'id=900: Timeout while waiting for ack',
+    note: `id=${eventId}: Timeout while waiting for ack`,
     user: null,
   }
   server.use(
@@ -1375,7 +1380,7 @@ test('timed-out command reported as "completed" by API still shows timeout pill 
         ? []
         : isCommsQuery
         ? [missionEvent, timeoutNote]
-        : [{ ...missionEvent, status: 'completed' }] // API says completed
+        : [missionEvent]
       return res(ctx.status(200), ctx.json({ result }))
     }),
     rest.get('/events/mission-started', (_req, res, ctx) =>
@@ -1389,12 +1394,13 @@ test('timed-out command reported as "completed" by API still shows timeout pill 
         {...props}
         currentDeploymentId={1}
         deploymentStartTime={Date.now() - 3600 * 1000}
+        isRecovered={true}
       />
     </MockProviders>
   )
 
   await waitFor(() => {
-    // Timeout pill must win over API 'completed' status
+    // Timeout pill must win over the isRecovered-enriched 'completed' status
     expect(screen.getByTitle(/timeout/i)).toBeInTheDocument()
   })
 })
