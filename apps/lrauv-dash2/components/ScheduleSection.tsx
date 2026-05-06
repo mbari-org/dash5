@@ -649,26 +649,23 @@ export const ScheduleSection: React.FC<ScheduleSectionProps> = ({
 
     const rawText = v.event?.data ?? v.event?.text ?? ''
 
-    // If comms confirmed a timeout, demote to history so the operator sees
-    // it alongside completed/cancelled items and can re-run from there.
-    // Only skip demotion when the payload carries an explicit scheduled
-    // timestamp (not asap) — such items are deliberately queued and the
-    // operator needs them to remain visible above the separator. Note: we
-    // do not compare the timestamp against Date.now() here; the presence
-    // of any explicit start time is treated as "intentionally scheduled".
+    // A timeout note is ground truth — always demote to history so the
+    // operator sees the failed command alongside completed/cancelled items.
+    // This applies even when the payload carries an explicit scheduled
+    // timestamp: once the schedule time passes and the vehicle fails to
+    // receive the command the timeout overrides the "intentionally queued"
+    // intent and the row must move to history.
+    if (v.event?.eventId != null) {
+      if (commsLookup.get(v.event.eventId) === 'timeout') return false
+    }
+
     const schedDateMatch = rawText.match(/sched\s+(\d{8}}?T\d{2,4})/i)
     const scheduleDate = rawText.match(/sched\s+asap/i)
       ? 'asap'
       : schedDateMatch
       ? schedDateMatch[1]
       : undefined
-    // hasScheduledTimestamp is true when the payload names a specific start
-    // time (not asap/ASAP). It does NOT verify whether that time is in the
-    // future — it only confirms a concrete start was requested.
     const hasScheduledTimestamp = !!(scheduleDate && scheduleDate !== 'asap')
-    if (!hasScheduledTimestamp && v.event?.eventId != null) {
-      if (commsLookup.get(v.event.eventId) === 'timeout') return false
-    }
 
     if (isMissionCommand(v.event?.data, v.event?.text)) return true
     // Non-mission commands: only stay above separator if they have a specific
@@ -947,14 +944,18 @@ export const ScheduleSection: React.FC<ScheduleSectionProps> = ({
         return 'sent'
       }
       const raw = toScheduleCellStatus(mission?.status ?? '')
+      // A timeout note is ground truth regardless of scheduled timestamp —
+      // always surface it so the pill displays correctly for any comms type.
+      const commsStatusForTimeout = commsLookup.get(mission.event.eventId)
+      if (raw === 'pending' && commsStatusForTimeout === 'timeout')
+        return 'timeout'
       // For any pending command with no specific future scheduled start,
       // use the comms lookup to upgrade status based on actual vehicle
       // receipt. The API always returns TBD/'pending' for mission commands
       // so comms data is the only reliable signal for missions too.
       if (raw === 'pending' && !(scheduleDate && scheduleDate !== 'asap')) {
-        const commsStatus = commsLookup.get(mission.event.eventId)
+        const commsStatus = commsStatusForTimeout
         if (commsStatus === 'ack') return 'ack'
-        if (commsStatus === 'timeout') return 'timeout'
         if (commsStatus === 'sent') return 'sent'
         // Non-mission commands are always dispatched immediately. If no comms
         // entry exists (outside the fetch window), default to 'sent'. But if

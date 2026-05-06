@@ -1277,6 +1277,71 @@ test('parses corrected sched YYYYMMDDT timestamp without }', async () => {
   })
 })
 
+test('timed-out command with explicit scheduled timestamp shows timeout pill and moves to history (#606)', async () => {
+  // Regression for #606:
+  // Commands scheduled with a specific timestamp (e.g. `sched 20991231T1200 run ...`)
+  // that subsequently time out must:
+  //   (a) be demoted to the "Previous Vehicle Directives" history section, and
+  //   (b) display the timeout pill (cellStatus = 'timeout'), not 'pending'.
+  //
+  // Before this fix, isAboveSeparator() and cellStatus both skipped the
+  // commsLookup timeout check when hasScheduledTimestamp was true, leaving
+  // the command stuck as 'pending' in the active zone forever.
+  const futureStamp = '20991231T1200'
+  const missionEvent = {
+    data: `sched ${futureStamp} load Science/profile_station.tl;run`,
+    unixTime: Date.now() - 90 * 1000,
+    eventId: 800,
+    eventType: 'run',
+    text: null,
+    note: '[[via:cell, timeout:5min]]',
+    user: 'test-operator',
+  }
+  const timeoutNote = {
+    eventId: 801,
+    eventType: 'note',
+    unixTime: Date.now() - 60 * 1000,
+    isoTime: new Date(Date.now() - 60 * 1000).toISOString(),
+    data: null,
+    text: null,
+    note: 'id=800: Timeout while waiting for ack',
+    user: null,
+  }
+  server.use(
+    rest.get('/events', (req, res, ctx) => {
+      const eventTypes = req.url.searchParams.get('eventTypes') ?? ''
+      const isNoteQuery = eventTypes === 'note'
+      const isCommsQuery = eventTypes.includes('sbdSend')
+      const result = isNoteQuery
+        ? []
+        : isCommsQuery
+        ? [missionEvent, timeoutNote]
+        : [missionEvent]
+      return res(ctx.status(200), ctx.json({ result }))
+    }),
+    rest.get('/events/mission-started', (_req, res, ctx) =>
+      res(ctx.status(200), ctx.json({ result: [] }))
+    )
+  )
+
+  render(
+    <MockProviders queryClient={new QueryClient()}>
+      <ScheduleSection
+        {...props}
+        currentDeploymentId={1}
+        deploymentStartTime={Date.now() - 3600 * 1000}
+      />
+    </MockProviders>
+  )
+
+  await waitFor(() => {
+    // (a) Timeout pill must appear
+    expect(screen.getByTitle(/timeout/i)).toBeInTheDocument()
+    // (b) Must be in history section, not stuck above separator
+    expect(screen.getByText('Previous Vehicle Directives')).toBeInTheDocument()
+  })
+})
+
 test('parses legacy sched YYYYMMDD}T timestamp for backwards compatibility', async () => {
   // Simulate an event stored before the makeCommand } fix was deployed.
   const legacyStamp = '20991231}T2359'
