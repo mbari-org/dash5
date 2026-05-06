@@ -286,39 +286,42 @@ test('handles mission-started events with missing text gracefully', async () => 
 // live in jest/missionUtils.test.ts where they run without React component overhead.
 
 test('shows "Received by" tooltip when a non-mission command is acked via cell comms', async () => {
+  const gfscanCommand = {
+    data: 'gfscan',
+    unixTime: Date.now() - 90 * 1000,
+    eventId: 500,
+    eventType: 'command',
+    text: null,
+    note: null,
+    user: null,
+  }
+  const sbdSendCell = {
+    eventId: 600,
+    eventType: 'sbdSend',
+    refId: 500,
+    state: 2,
+    unixTime: Date.now() - 88 * 1000,
+    isoTime: new Date(Date.now() - 88 * 1000).toISOString(),
+    data: null,
+    text: null,
+    note: null,
+    user: null,
+  }
   server.use(
-    rest.get('/events', (_req, res, ctx) =>
-      res(
-        ctx.status(200),
-        ctx.json({
-          result: [
-            // Non-mission command (gfscan) that was sent
-            {
-              data: 'gfscan',
-              unixTime: Date.now() - 90 * 1000,
-              eventId: 500,
-              eventType: 'command',
-              text: null,
-              note: null,
-              user: null,
-            },
-            // sbdSend event with refId matching the command's eventId and state:2 (cell = instant ack)
-            {
-              eventId: 600,
-              eventType: 'sbdSend',
-              refId: 500,
-              state: 2,
-              unixTime: Date.now() - 88 * 1000,
-              isoTime: new Date(Date.now() - 88 * 1000).toISOString(),
-              data: null,
-              text: null,
-              note: null,
-              user: null,
-            },
-          ],
-        })
-      )
-    ),
+    rest.get('/events', (req, res, ctx) => {
+      const eventTypes = req.url.searchParams.get('eventTypes') ?? ''
+      // History query (eventTypes=command,run) gets only the command event;
+      // comms query gets both command + sbdSend; note query gets nothing
+      // so cancellation detection stays clean.
+      const isNoteQuery = eventTypes === 'note'
+      const isCommsQuery = eventTypes.includes('sbdSend')
+      const result = isNoteQuery
+        ? []
+        : isCommsQuery
+        ? [gfscanCommand, sbdSendCell]
+        : [gfscanCommand]
+      return res(ctx.status(200), ctx.json({ result }))
+    }),
     rest.get('/events/mission-started', (_req, res, ctx) =>
       res(ctx.status(200), ctx.json({ result: [] }))
     )
@@ -334,43 +337,49 @@ test('shows "Received by" tooltip when a non-mission command is acked via cell c
     </MockProviders>
   )
 
+  // After fix #602 the acked command is in Previous Vehicle Directives.
+  // The "Received by" tooltip and the section label must both be visible.
   await waitFor(() => {
     expect(screen.getByTitle(/Received by example/i)).toBeInTheDocument()
+    expect(screen.getByText('Previous Vehicle Directives')).toBeInTheDocument()
   })
 })
 
 test('shows timeout icon when a non-mission cell command times out', async () => {
+  const gfscanCommand = {
+    data: 'gfscan',
+    unixTime: Date.now() - 90 * 1000,
+    eventId: 700,
+    eventType: 'command',
+    text: null,
+    note: '[timeout:30min via:cell]',
+    user: null,
+  }
+  const timeoutNote = {
+    eventId: 800,
+    eventType: 'note',
+    unixTime: Date.now() - 60 * 1000,
+    isoTime: new Date(Date.now() - 60 * 1000).toISOString(),
+    data: null,
+    text: null,
+    note: 'id=700: Timeout while waiting for ack',
+    user: null,
+  }
   server.use(
-    rest.get('/events', (_req, res, ctx) =>
-      res(
-        ctx.status(200),
-        ctx.json({
-          result: [
-            // Non-mission command with timeout note for cell comms
-            {
-              data: 'gfscan',
-              unixTime: Date.now() - 90 * 1000,
-              eventId: 700,
-              eventType: 'command',
-              text: null,
-              note: '[timeout:30min via:cell]',
-              user: null,
-            },
-            // note event signalling timeout for eventId 700
-            {
-              eventId: 800,
-              eventType: 'note',
-              unixTime: Date.now() - 60 * 1000,
-              isoTime: new Date(Date.now() - 60 * 1000).toISOString(),
-              data: null,
-              text: null,
-              note: 'id=700: Timeout while waiting for ack',
-              user: null,
-            },
-          ],
-        })
-      )
-    ),
+    rest.get('/events', (req, res, ctx) => {
+      const eventTypes = req.url.searchParams.get('eventTypes') ?? ''
+      // History query gets only the command; comms query gets command + note
+      // so determineCommandStatus can see the timeout; note query returns []
+      // so the cancellation detector doesn't mis-classify the timeout note.
+      const isNoteQuery = eventTypes === 'note'
+      const isCommsQuery = eventTypes.includes('sbdSend')
+      const result = isNoteQuery
+        ? []
+        : isCommsQuery
+        ? [gfscanCommand, timeoutNote]
+        : [gfscanCommand]
+      return res(ctx.status(200), ctx.json({ result }))
+    }),
     rest.get('/events/mission-started', (_req, res, ctx) =>
       res(ctx.status(200), ctx.json({ result: [] }))
     )
@@ -386,23 +395,25 @@ test('shows timeout icon when a non-mission cell command times out', async () =>
     </MockProviders>
   )
 
+  // After fix #602 the timed-out command is in Previous Vehicle Directives.
+  // The timeout icon and the section label must both be visible.
   await waitFor(() => {
     expect(screen.getByTitle(/timeout/i)).toBeInTheDocument()
+    expect(screen.getByText('Previous Vehicle Directives')).toBeInTheDocument()
   })
 })
 
-test('timed-out mission directive moves to history: no active-zone items remain', async () => {
-  // Regression test for #594: before the fix, a mission command would stay in
-  // the active zone even after timing out because isAboveSeparator returned
-  // true for any pending isMissionCommand.
+test('timed-out mission directive moves to history: Previous Vehicle Directives always visible', async () => {
+  // Regression test for #594 / #602:
+  // - Before #594 fix: a timed-out mission stayed in the active zone (no separator).
+  // - After #594 fix:  it moves to historicCells; the "Previous Vehicle Directives"
+  //   separator must now always render when historicCells is non-empty, even when
+  //   scheduledCells is empty (i.e. the mission is the only item).
   //
-  // Strategy: a SINGLE timed-out mission is the only event. After the fix,
-  // it moves to historicCells (scheduledCells becomes empty → no separator).
-  // The timeout icon should be within the virtualizer's render window (first
-  // items). We verify:
+  // Strategy: a SINGLE timed-out mission is the only event. We verify:
   //   (a) the timeout icon appears  (mission renders with correct cellStatus)
-  //   (b) no "Previous Vehicle Directives" separator appears (nothing left in
-  //       the active zone — the mission went entirely to history).
+  //   (b) "Previous Vehicle Directives" separator appears — proving hasSeparator
+  //       no longer requires scheduledCells to be non-empty (fix for #602).
   const missionEvent = {
     data: 'load Transport/transit.tl;set transit.Depth 50 m;run',
     unixTime: Date.now() - 90 * 1000,
@@ -455,21 +466,16 @@ test('timed-out mission directive moves to history: no active-zone items remain'
 
   // Both assertions must hold in the same render to distinguish pre/post-fix:
   //
-  // (a) Timeout icon appears — mission renders with cellStatus='timeout'.
+  // (a) Timeout icon — mission renders with cellStatus='timeout' (fix #594).
   //
-  // (b) "Schedule History" header appears — this header is rendered only when
-  //     hasPastSchedule is true (historicCells.length > 0). Without the fix,
-  //     the mission stays in scheduledCells, historicCells is empty, and
-  //     "Schedule History" never renders. With the fix, the mission moves to
-  //     historicCells, hasPastSchedule becomes true, and the header renders.
-  //     This is the state change that actually proves the demotion happened.
+  // (b) "Previous Vehicle Directives" separator — proves hasSeparator is true
+  //     even with an empty active zone (fix #602: separator no longer requires
+  //     scheduledCells to be non-empty). This guarantees operators always see
+  //     the complete audit trail of every sent command.
   await waitFor(() => {
     expect(screen.getByTitle(/timeout/i)).toBeInTheDocument()
-    expect(screen.getByText('Schedule History')).toBeInTheDocument()
+    expect(screen.getByText('Previous Vehicle Directives')).toBeInTheDocument()
   })
-  expect(
-    screen.queryByText('Previous Vehicle Directives')
-  ).not.toBeInTheDocument()
 })
 
 test('Cancel this Directive calls DELETE /commands/queue when confirmed', async () => {
