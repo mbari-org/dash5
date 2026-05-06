@@ -170,7 +170,7 @@ export const ScheduleCell: React.FC<ScheduleCellProps> = ({
           ) : status === 'timeout' ? (
             <span
               title={statusTooltip ?? status}
-              className="self-center text-3xl"
+              className="self-center text-2xl"
             >
               <StopwatchWarningIcon />
             </span>
