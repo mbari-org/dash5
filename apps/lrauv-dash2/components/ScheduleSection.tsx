@@ -706,8 +706,11 @@ export const ScheduleSection: React.FC<ScheduleSectionProps> = ({
   const staticFilterCellOffset = hasPastSchedule ? 1 : 0
 
   const results = [scheduledCells, historicCells].flat()
-  const hasSeparator =
-    (scheduledCells?.length ?? 0) > 0 && (historicCells?.length ?? 0) > 0
+  // Show the "Previous Vehicle Directives" separator whenever there are
+  // historic items, even if no commands are currently active above it.
+  // Operators require a complete audit trail — timed-out or completed
+  // commands must always be visible and clearly labeled.
+  const hasSeparator = (historicCells?.length ?? 0) > 0
   const staticSeparatorCellOffset = hasSeparator ? 1 : 0
   const indexOfSeparator = hasSeparator
     ? staticHeaderCellOffset +
