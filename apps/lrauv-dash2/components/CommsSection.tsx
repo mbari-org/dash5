@@ -26,11 +26,15 @@ export interface CommsSectionProps {
   timedOutEventIds?: Set<number>
 }
 
+// Stable empty set used as default so externalTimedOutIds never changes
+// identity between renders when the caller doesn't pass the prop.
+const EMPTY_TIMED_OUT_IDS = new Set<number>()
+
 const CommsSection: React.FC<CommsSectionProps> = ({
   vehicleName,
   from,
   to,
-  timedOutEventIds: externalTimedOutIds = new Set(),
+  timedOutEventIds: externalTimedOutIds = EMPTY_TIMED_OUT_IDS,
 }) => {
   const [deploymentLogsOnly, setDeploymentLogsOnly] = useState(true)
   const toggleDeploymentLogsOnly = () => {
@@ -51,8 +55,10 @@ const CommsSection: React.FC<CommsSectionProps> = ({
     },
     {
       enabled: !!vehicleName,
-      staleTime: 60 * 1000,
-      refetchInterval: 60 * 1000,
+      // from: 1 triggers recursive backfill on every refetch. Historical timeout
+      // notes only accumulate — fetch once per session and rely on the client-side
+      // Date.now() inference in determineCommandStatus for new timeouts.
+      staleTime: Infinity,
     }
   )
 

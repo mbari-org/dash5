@@ -57,10 +57,6 @@ const VehicleAccordion: React.FC<VehicleAccordionProps> = ({
     vehicles: [vehicleName],
     from: 0,
     enabled: !!activeDeployment,
-    // Refetch every 60 s so the client-side timeout inference in
-    // determineCommandStatus (which uses Date.now()) re-evaluates and
-    // transitions queued/sent commands to timeout as their windows expire.
-    refetchInterval: 60 * 1000,
   })
 
   // Fetch all timeout notes across full history so older timed-out commands

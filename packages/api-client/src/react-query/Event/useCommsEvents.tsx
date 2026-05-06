@@ -17,16 +17,12 @@ export const useCommsEvents = ({
   to,
   limit = 500,
   enabled = true,
-  refetchInterval,
 }: {
   vehicles: string[]
   from: number
   to?: number
   limit?: number
   enabled?: boolean
-  /** Re-fetch interval in ms. Useful for re-evaluating client-side timeout
-   *  inference (determineCommandStatus uses Date.now()) without a page reload. */
-  refetchInterval?: number
 }) => {
   const params = useMemo(
     () => ({
@@ -54,7 +50,7 @@ export const useCommsEvents = ({
     fetchNextPage,
     hasNextPage,
     refetch,
-  } = useInfiniteEvents(params, { enabled, refetchInterval })
+  } = useInfiniteEvents(params, { enabled })
 
   const flatData = useMemo(() => {
     if (!data?.pages) return []
@@ -96,6 +92,17 @@ export const useCommsEvents = ({
 
       return { commands, sbdSendMap, sbdReceiptMap, sbdReceiveMap, timeoutMap }
     }, [flatData])
+
+  // Tick every 60 s to re-evaluate client-side timeout inference in
+  // determineCommandStatus (which calls Date.now()) without triggering a
+  // network refetch. Commands transition queued/sent → timeout as their
+  // windows expire purely via local recomputation.
+  const [clockTick, setClockTick] = useState(0)
+  useEffect(() => {
+    if (!enabled) return
+    const id = setInterval(() => setClockTick((t) => t + 1), 60 * 1000)
+    return () => clearInterval(id)
+  }, [enabled])
 
   const [isFetchingMore, setIsFetchingMore] = useState(false)
   const [targetCommandCount, setTargetCommandCount] = useState(0)
@@ -182,7 +189,17 @@ export const useCommsEvents = ({
         timeoutMap
       )
     })
-  }, [commands, sbdSendMap, sbdReceiptMap, sbdReceiveMap, timeoutMap])
+    // clockTick is included so the memo re-runs every 60 s and client-side
+    // timeout inference (Date.now()) is re-evaluated without a network request.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [
+    commands,
+    sbdSendMap,
+    sbdReceiptMap,
+    sbdReceiveMap,
+    timeoutMap,
+    clockTick,
+  ])
 
   const fetching = isFetching || isFetchingMore || isFetchingNextPage
 
