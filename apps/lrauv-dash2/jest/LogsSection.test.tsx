@@ -140,7 +140,7 @@ test('timeout notes for same event ID outside the time window are NOT grouped', 
     user: null,
     state: 0,
   }
-  // More than 2 minutes later — should NOT be folded into the same group
+  // 10 minutes later (well outside the 5-second window) — should NOT be folded into the same group
   const oldNote = {
     eventId: 9002,
     vehicleName: 'triton',
@@ -155,7 +155,7 @@ test('timeout notes for same event ID outside the time window are NOT grouped', 
   renderLogs([recentNote, oldNote])
 
   await waitFor(() => {
-    // Two Note rows should be visible — not grouped, since they're 10 min apart
+    // Two Note rows should be visible — not grouped, since they're 10 min apart (> 5s window)
     const noteLabels = screen.getAllByText(/^Note$/)
     expect(noteLabels).toHaveLength(2)
     // No group badge should appear

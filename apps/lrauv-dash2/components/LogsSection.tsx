@@ -189,35 +189,36 @@ const LogsSection: React.FC<LogsSectionProps> = ({
   //   (a) The note immediately follows the previous note in the list (consecutive).
   //       A non-timeout event or a timeout for a different ID breaks the group.
   //   (b) The note's timestamp is within GROUP_WINDOW_MS of the representative.
-  //       This prevents a later retry incident (same command ID, far in time) from
-  //       being silently folded into an earlier group.
+  //       5 s is generous for a sub-second burst while preventing accidental
+  //       merging of close-but-distinct retry incidents.
   //
-  // Groups are keyed by the representative's index in processedData so that
-  // two separate incidents with the same event ID never share the same bucket.
-  const GROUP_WINDOW_MS = 2 * 60 * 1000 // 2 minutes — well above any chunk burst
+  // Groups are keyed by a stable composite `${eventId}-${unixTime}` string so
+  // that pagination, filter changes, and list refreshes never shift a key onto
+  // a different row. The same key is used for expand/collapse state.
+  const GROUP_WINDOW_MS = 5 * 1000 // 5 seconds — chunk bursts are sub-second
   type TimeoutGroup = { all: GetEventsResponse[] }
   const { processedData, timeoutGroups } = useMemo(() => {
-    const groups = new Map<number, TimeoutGroup>() // key = index in processedData
+    const groups = new Map<string, TimeoutGroup>() // key = `${repEventId}-${repUnixTime}`
     const processed: GetEventsResponse[] = []
-    let lastGroupIdx: number | undefined = undefined
+    let lastGroupKey: string | undefined = undefined
 
     flatData.forEach((event) => {
       if (event.eventType !== 'note') {
         processed.push(event)
-        lastGroupIdx = undefined
+        lastGroupKey = undefined
         return
       }
       const match = event.note?.match(timeoutExpiredRegEx)
       if (!match) {
         processed.push(event)
-        lastGroupIdx = undefined
+        lastGroupKey = undefined
         return
       }
       const eventId = Number(match[1])
       const eventMs = event.unixTime ?? 0
 
-      if (lastGroupIdx !== undefined) {
-        const openGroup = groups.get(lastGroupIdx)
+      if (lastGroupKey !== undefined) {
+        const openGroup = groups.get(lastGroupKey)
         const repNote = openGroup?.all[0]
         const repId = repNote?.note
           ? Number(repNote.note.match(timeoutExpiredRegEx)?.[1])
@@ -230,26 +231,26 @@ const LogsSection: React.FC<LogsSectionProps> = ({
         }
       }
 
-      // Start a new group at the current position in processedData.
-      const newIdx = processed.length
-      groups.set(newIdx, { all: [event] })
+      // Start a new group keyed by the representative's stable identity.
+      const newKey = `${event.eventId ?? 'x'}-${eventMs}`
+      groups.set(newKey, { all: [event] })
       processed.push(event)
-      lastGroupIdx = newIdx
+      lastGroupKey = newKey
     })
 
     return { processedData: processed, timeoutGroups: groups }
   }, [flatData])
 
-  const [expandedGroupIds, setExpandedGroupIds] = useState<Set<number>>(
+  const [expandedGroupKeys, setExpandedGroupKeys] = useState<Set<string>>(
     new Set()
   )
-  const toggleGroup = useCallback((eventId: number) => {
-    setExpandedGroupIds((prev) => {
+  const toggleGroup = useCallback((groupKey: string) => {
+    setExpandedGroupKeys((prev) => {
       const next = new Set(prev)
-      if (next.has(eventId)) {
-        next.delete(eventId)
+      if (next.has(groupKey)) {
+        next.delete(groupKey)
       } else {
-        next.add(eventId)
+        next.add(groupKey)
       }
       return next
     })
@@ -298,10 +299,14 @@ const LogsSection: React.FC<LogsSectionProps> = ({
     const time = DateTime.fromISO(isoTime).toFormat('H:mm:ss')
 
     // Check if this item is the representative of a multi-note timeout group.
-    // Groups are keyed by the representative's index in processedData, so
-    // the lookup is simply timeoutGroups.get(index) — no event-ID lookup needed.
+    // The stable group key mirrors what was set during processedData construction:
+    // `${eventId}-${unixTime}`. Using a stable key means the expand/collapse state
+    // survives pagination loads, filter changes, and list refreshes.
     const isTimeoutNote = item.note?.match(timeoutExpiredRegEx) != null
-    const group = isTimeoutNote ? timeoutGroups.get(index) : undefined
+    const groupKey = isTimeoutNote
+      ? `${item.eventId ?? 'x'}-${item.unixTime ?? 0}`
+      : undefined
+    const group = groupKey != null ? timeoutGroups.get(groupKey) : undefined
     const isGrouped = group != null && group.all.length > 1
 
     const baseLog = formatEvent(
@@ -318,16 +323,19 @@ const LogsSection: React.FC<LogsSectionProps> = ({
           <button
             type="button"
             className="text-xs text-primary-600 underline hover:no-underline"
-            onClick={() => toggleGroup(index)}
-            aria-expanded={expandedGroupIds.has(index)}
+            onClick={() => groupKey != null && toggleGroup(groupKey)}
+            aria-expanded={groupKey != null && expandedGroupKeys.has(groupKey)}
           >
-            {expandedGroupIds.has(index) ? 'Collapse' : 'Expand all'}
+            {groupKey != null && expandedGroupKeys.has(groupKey)
+              ? 'Collapse'
+              : 'Expand all'}
           </button>
         </div>
         {/* Always show the first (representative) note */}
         <div className="opacity-80">{baseLog}</div>
         {/* Show remaining notes only when expanded */}
-        {expandedGroupIds.has(index) &&
+        {groupKey != null &&
+          expandedGroupKeys.has(groupKey) &&
           group.all.slice(1).map((note) => (
             <div
               key={note.eventId}
