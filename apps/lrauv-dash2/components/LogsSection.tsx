@@ -180,49 +180,61 @@ const LogsSection: React.FC<LogsSectionProps> = ({
     hasSelection,
     includeDataEvents,
   ])
-  // Group timeout notes that share the same event ID into a single row.
+  // Group consecutive timeout notes that share the same event ID into one row.
   // When a mission command is split into N SBD chunks and all N chunks time out,
   // the API emits N separate note events with the same id=XXXXX prefix — all
   // within the same second. This collapses them so the log stays readable.
   //
-  // Grouping is intentionally conservative: a note only joins an existing group
-  // when (a) it shares the same event ID AND (b) its timestamp is within
-  // GROUP_WINDOW_MS of the representative note. This prevents non-consecutive
-  // notes (e.g. a retry incident much later) from being silently swallowed into
-  // an older group, and preserves correct event ordering in the timeline.
+  // Grouping rules (both must hold):
+  //   (a) The note immediately follows the previous note in the list (consecutive).
+  //       A non-timeout event or a timeout for a different ID breaks the group.
+  //   (b) The note's timestamp is within GROUP_WINDOW_MS of the representative.
+  //       This prevents a later retry incident (same command ID, far in time) from
+  //       being silently folded into an earlier group.
+  //
+  // Groups are keyed by the representative's index in processedData so that
+  // two separate incidents with the same event ID never share the same bucket.
   const GROUP_WINDOW_MS = 2 * 60 * 1000 // 2 minutes — well above any chunk burst
-  type TimeoutGroup = {
-    representative: GetEventsResponse
-    all: GetEventsResponse[]
-  }
+  type TimeoutGroup = { all: GetEventsResponse[] }
   const { processedData, timeoutGroups } = useMemo(() => {
-    const groups = new Map<number, TimeoutGroup>()
+    const groups = new Map<number, TimeoutGroup>() // key = index in processedData
     const processed: GetEventsResponse[] = []
+    let lastGroupIdx: number | undefined = undefined
 
     flatData.forEach((event) => {
       if (event.eventType !== 'note') {
         processed.push(event)
+        lastGroupIdx = undefined
         return
       }
       const match = event.note?.match(timeoutExpiredRegEx)
       if (!match) {
         processed.push(event)
+        lastGroupIdx = undefined
         return
       }
       const eventId = Number(match[1])
-      const existing = groups.get(eventId)
       const eventMs = event.unixTime ?? 0
-      const representativeMs = existing?.representative.unixTime ?? 0
-      // Only join the group when the note is temporally close to the
-      // representative (same incident burst). If it falls outside the window,
-      // treat it as a new standalone note — don't group across incidents.
-      if (existing && Math.abs(eventMs - representativeMs) <= GROUP_WINDOW_MS) {
-        existing.all.push(event)
-      } else {
-        const group: TimeoutGroup = { representative: event, all: [event] }
-        groups.set(eventId, group)
-        processed.push(event) // only the representative goes into the list
+
+      if (lastGroupIdx !== undefined) {
+        const openGroup = groups.get(lastGroupIdx)
+        const repNote = openGroup?.all[0]
+        const repId = repNote?.note
+          ? Number(repNote.note.match(timeoutExpiredRegEx)?.[1])
+          : NaN
+        const repMs = repNote?.unixTime ?? 0
+        // Join when consecutive, same command, and within the time window.
+        if (repId === eventId && Math.abs(eventMs - repMs) <= GROUP_WINDOW_MS) {
+          openGroup!.all.push(event)
+          return
+        }
       }
+
+      // Start a new group at the current position in processedData.
+      const newIdx = processed.length
+      groups.set(newIdx, { all: [event] })
+      processed.push(event)
+      lastGroupIdx = newIdx
     })
 
     return { processedData: processed, timeoutGroups: groups }
@@ -286,10 +298,10 @@ const LogsSection: React.FC<LogsSectionProps> = ({
     const time = DateTime.fromISO(isoTime).toFormat('H:mm:ss')
 
     // Check if this item is the representative of a multi-note timeout group.
-    const timeoutMatch = item.note?.match(timeoutExpiredRegEx)
-    const groupEventId = timeoutMatch ? Number(timeoutMatch[1]) : undefined
-    const group =
-      groupEventId != null ? timeoutGroups.get(groupEventId) : undefined
+    // Groups are keyed by the representative's index in processedData, so
+    // the lookup is simply timeoutGroups.get(index) — no event-ID lookup needed.
+    const isTimeoutNote = item.note?.match(timeoutExpiredRegEx) != null
+    const group = isTimeoutNote ? timeoutGroups.get(index) : undefined
     const isGrouped = group != null && group.all.length > 1
 
     const baseLog = formatEvent(
@@ -306,16 +318,16 @@ const LogsSection: React.FC<LogsSectionProps> = ({
           <button
             type="button"
             className="text-xs text-primary-600 underline hover:no-underline"
-            onClick={() => toggleGroup(groupEventId!)}
-            aria-expanded={expandedGroupIds.has(groupEventId!)}
+            onClick={() => toggleGroup(index)}
+            aria-expanded={expandedGroupIds.has(index)}
           >
-            {expandedGroupIds.has(groupEventId!) ? 'Collapse' : 'Expand all'}
+            {expandedGroupIds.has(index) ? 'Collapse' : 'Expand all'}
           </button>
         </div>
         {/* Always show the first (representative) note */}
         <div className="opacity-80">{baseLog}</div>
         {/* Show remaining notes only when expanded */}
-        {expandedGroupIds.has(groupEventId!) &&
+        {expandedGroupIds.has(index) &&
           group.all.slice(1).map((note) => (
             <div
               key={note.eventId}
