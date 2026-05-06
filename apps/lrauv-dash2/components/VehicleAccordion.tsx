@@ -5,7 +5,13 @@ import DocsSection from './DocsSection'
 import HandoffSection from './HandoffSection'
 import LogsSection from './LogsSection'
 import ScienceDataSection from './ScienceDataSection'
-import { useCommsEvents, useMissionStartedEvent } from '@mbari/api-client'
+import {
+  useCommsEvents,
+  useMissionStartedEvent,
+  useEvents,
+  timeoutExpiredRegEx,
+  EventType,
+} from '@mbari/api-client'
 import { DateTime } from 'luxon'
 import { ScheduleSection } from './ScheduleSection'
 import useGlobalModalId from '../lib/useGlobalModalId'
@@ -50,15 +56,46 @@ const VehicleAccordion: React.FC<VehicleAccordionProps> = ({
     enabled: !!activeDeployment,
   })
 
+  // Fetch all timeout notes across full history so older timed-out commands
+  // are not miscounted as 'sent' when commsEvents pagination hasn't reached
+  // their timeout note (same fix applied to ScheduleSection in PR #611).
+  const timeoutNotesResponse = useEvents(
+    {
+      vehicles: [vehicleName],
+      eventTypes: ['note'] as EventType[],
+      noteMatches: 'Timeout while waiting',
+      from: 1,
+      limit: 500,
+    },
+    {
+      enabled: !!activeDeployment && !!vehicleName,
+      staleTime: 30 * 1000,
+      refetchInterval: 30 * 1000,
+    }
+  )
+
+  const timedOutEventIds = useMemo(() => {
+    const ids = new Set<number>()
+    timeoutNotesResponse.data?.forEach((note) => {
+      const match = note.note?.match(timeoutExpiredRegEx)
+      if (match) ids.add(parseInt(match[1], 10))
+    })
+    return ids
+  }, [timeoutNotesResponse.data])
+
   // Count commands genuinely waiting for vehicle receipt: 'queued' (not yet
   // dispatched via SBD) and 'sent' (dispatched but no vehicle fetch confirmed).
-  // 'timeout' is excluded — a timeout means delivery definitively failed and
-  // the command is no longer pending, so it must not inflate the queue badge.
+  // Exclude anything with a timeout note — commsEvents pagination may not have
+  // fetched the note yet, leaving the command as 'sent' when it has in fact
+  // already timed out (timedOutEventIds covers the full history via useEvents).
   const unackedCount = useMemo(
     () =>
-      commsEvents.filter((e) => e.status === 'queued' || e.status === 'sent')
-        .length,
-    [commsEvents]
+      commsEvents.filter(
+        (e) =>
+          (e.status === 'queued' || e.status === 'sent') &&
+          !timedOutEventIds.has(e.eventId)
+      ).length,
+    [commsEvents, timedOutEventIds]
   )
 
   const { data: missionStartedEvent } = useMissionStartedEvent(
