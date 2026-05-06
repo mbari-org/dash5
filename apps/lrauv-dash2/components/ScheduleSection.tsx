@@ -295,7 +295,7 @@ export const ScheduleSection: React.FC<ScheduleSectionProps> = ({
       vehicles: [vehicleName],
       eventTypes: ['note'] as EventType[],
       noteMatches: 'Timeout while waiting',
-      from: 0,
+      from: 1, // non-zero so useEvents recursive backfill fetches all history
       limit: 500,
     },
     { enabled: !!vehicleName, staleTime: 30 * 1000, refetchInterval: 30 * 1000 }

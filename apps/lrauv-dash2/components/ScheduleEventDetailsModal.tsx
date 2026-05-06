@@ -666,7 +666,7 @@ export const ScheduleEventDetailsModal: React.FC<
                   return (
                     <span
                       className={statusPillClass()}
-                      style={statusPillStyle('pending')}
+                      style={statusPillStyle('timeout')}
                     >
                       N/A
                     </span>
