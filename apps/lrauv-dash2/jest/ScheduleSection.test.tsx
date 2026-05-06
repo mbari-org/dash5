@@ -310,8 +310,9 @@ test('shows "Received by" tooltip when a non-mission command is acked via cell c
   server.use(
     rest.get('/events', (req, res, ctx) => {
       const eventTypes = req.url.searchParams.get('eventTypes') ?? ''
-      // History query gets only command events; comms query gets both;
-      // note query gets nothing so cancellation detection stays clean.
+      // History query (eventTypes=command,run) gets only the command event;
+      // comms query gets both command + sbdSend; note query gets nothing
+      // so cancellation detection stays clean.
       const isNoteQuery = eventTypes === 'note'
       const isCommsQuery = eventTypes.includes('sbdSend')
       const result = isNoteQuery
