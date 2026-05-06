@@ -1,5 +1,10 @@
-import React, { useMemo, useState } from 'react'
-import { useInfiniteEvents, useTethysApiContext } from '@mbari/api-client'
+import React, { useMemo, useState, useCallback } from 'react'
+import {
+  useInfiniteEvents,
+  useTethysApiContext,
+  timeoutExpiredRegEx,
+  GetEventsResponse,
+} from '@mbari/api-client'
 import {
   Virtualizer,
   LogCell,
@@ -175,7 +180,58 @@ const LogsSection: React.FC<LogsSectionProps> = ({
     hasSelection,
     includeDataEvents,
   ])
-  const dataCount = flatData?.length ?? 0
+  // Group timeout notes that share the same event ID into a single row.
+  // When a mission command is split into N SBD chunks and all N chunks time out,
+  // the API emits N separate note events with the same id=XXXXX prefix. This
+  // collapses them into one representative row so the log stays readable.
+  type TimeoutGroup = {
+    representative: GetEventsResponse
+    all: GetEventsResponse[]
+  }
+  const { processedData, timeoutGroups } = useMemo(() => {
+    const groups = new Map<number, TimeoutGroup>()
+    const processed: GetEventsResponse[] = []
+
+    flatData.forEach((event) => {
+      if (event.eventType !== 'note') {
+        processed.push(event)
+        return
+      }
+      const match = event.note?.match(timeoutExpiredRegEx)
+      if (!match) {
+        processed.push(event)
+        return
+      }
+      const eventId = Number(match[1])
+      const existing = groups.get(eventId)
+      if (existing) {
+        existing.all.push(event)
+      } else {
+        const group: TimeoutGroup = { representative: event, all: [event] }
+        groups.set(eventId, group)
+        processed.push(event) // only the representative goes into the list
+      }
+    })
+
+    return { processedData: processed, timeoutGroups: groups }
+  }, [flatData])
+
+  const [expandedGroupIds, setExpandedGroupIds] = useState<Set<number>>(
+    new Set()
+  )
+  const toggleGroup = useCallback((eventId: number) => {
+    setExpandedGroupIds((prev) => {
+      const next = new Set(prev)
+      if (next.has(eventId)) {
+        next.delete(eventId)
+      } else {
+        next.add(eventId)
+      }
+      return next
+    })
+  }, [])
+
+  const dataCount = processedData?.length ?? 0
   const totalCount = hasNextPage ? dataCount + 1 : dataCount
   const listLoading = hasSelection && (isLoading || isFetching)
   const showNoFiltersMessage = !hasSelection && !listLoading
@@ -206,26 +262,74 @@ const LogsSection: React.FC<LogsSectionProps> = ({
       )
     }
 
-    const item = flatData[index]
-    const isoTime = item?.isoTime ?? ''
+    const item = processedData[index]
+    if (!item) return <span />
+
+    const isoTime = item.isoTime ?? ''
     const diff = DateTime.fromISO(isoTime).diffNow('days').days
     const date =
       Math.abs(diff) < 1
         ? 'Today'
         : DateTime.fromISO(isoTime).toFormat('yyyy-MM-dd')
     const time = DateTime.fromISO(isoTime).toFormat('H:mm:ss')
-    return item ? (
+
+    // Check if this item is the representative of a multi-note timeout group.
+    const timeoutMatch = item.note?.match(timeoutExpiredRegEx)
+    const groupEventId = timeoutMatch ? Number(timeoutMatch[1]) : undefined
+    const group =
+      groupEventId != null ? timeoutGroups.get(groupEventId) : undefined
+    const isGrouped = group != null && group.all.length > 1
+
+    const baseLog = formatEvent(
+      item,
+      siteConfig?.appConfig.external.tethysdash ?? ''
+    )
+
+    const log = isGrouped ? (
+      <div className="flex flex-col gap-1 text-sm">
+        <div className="flex items-center gap-2">
+          <span className="rounded bg-amber-100 px-1.5 py-0.5 text-xs font-semibold text-amber-800">
+            {group.all.length} timeout notes
+          </span>
+          <button
+            type="button"
+            className="text-xs text-primary-600 underline hover:no-underline"
+            onClick={() => toggleGroup(groupEventId!)}
+            aria-expanded={expandedGroupIds.has(groupEventId!)}
+          >
+            {expandedGroupIds.has(groupEventId!) ? 'Collapse' : 'Expand all'}
+          </button>
+        </div>
+        {/* Always show the first (representative) note */}
+        <div className="opacity-80">{baseLog}</div>
+        {/* Show remaining notes only when expanded */}
+        {expandedGroupIds.has(groupEventId!) &&
+          group.all.slice(1).map((note) => (
+            <div
+              key={note.eventId}
+              className="border-t border-amber-100 pt-1 opacity-70"
+            >
+              {formatEvent(
+                note,
+                siteConfig?.appConfig.external.tethysdash ?? ''
+              )}
+            </div>
+          ))}
+      </div>
+    ) : (
+      baseLog
+    )
+
+    return (
       <LogCell
         className="border-b border-slate-200"
         date={date}
         time={time}
         label={displayNameForEventType(item)}
-        log={formatEvent(item, siteConfig?.appConfig.external.tethysdash ?? '')}
+        log={log}
         isUpload={isUploadEvent(item)}
         onCopy={handleCopyEventLogs}
       />
-    ) : (
-      <span />
     )
   }
 
