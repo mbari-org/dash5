@@ -29,7 +29,7 @@ export const StopwatchWarningIcon: React.FC<StopwatchWarningIconProps> = ({
           position: 'absolute',
           top: '-0.4em',
           right: '-0.5em',
-          fontSize: '0.55em',
+          fontSize: '0.75em',
         }}
       />
     </span>
