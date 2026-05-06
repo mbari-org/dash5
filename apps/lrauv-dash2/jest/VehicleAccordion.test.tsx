@@ -245,8 +245,13 @@ test('queue count ignores sent commands from a previous deployment', async () =>
   // A 'sent' command whose unixTime is before the deployment start (from) must
   // not inflate the badge — it belongs to a prior deployment.
   server.use(
-    rest.get('/events', (_req, res, ctx) =>
-      res(
+    rest.get('/events', (req, res, ctx) => {
+      // The timeout-notes sub-query (noteMatches=Timeout while waiting) must
+      // return an empty note list so it doesn't interfere with this test.
+      if (req.url.searchParams.get('noteMatches') === 'Timeout while waiting') {
+        return res(ctx.status(200), ctx.json({ result: [] }))
+      }
+      return res(
         ctx.status(200),
         ctx.json({
           result: [
@@ -256,7 +261,9 @@ test('queue count ignores sent commands from a previous deployment', async () =>
               data: 'old command',
               // 2 hours before the deployment start (props.from = now - 1hr)
               unixTime: Date.now() - 2 * 3600 * 1000,
+              isoTime: new Date(Date.now() - 2 * 3600 * 1000).toISOString(),
               note: '[[via:sat, timeout:30min]]',
+              vehicleName: 'example',
               user: 'test-operator',
             },
             {
@@ -271,12 +278,13 @@ test('queue count ignores sent commands from a previous deployment', async () =>
               data: null,
               text: null,
               note: null,
+              vehicleName: 'example',
               user: null,
             },
           ],
         })
       )
-    )
+    })
   )
 
   render(
