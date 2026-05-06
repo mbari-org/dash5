@@ -34,16 +34,19 @@ const renderLogs = (events: object[]) => {
 }
 
 // Helpers to build note events for tests
-const makeTimeoutNote = (eventId: number, chunkNum: number): object => ({
-  eventId: eventId * 100 + chunkNum,
-  vehicleName: 'triton',
-  eventType: 'note',
-  unixTime: Date.now() - 60 * 1000,
-  isoTime: new Date(Date.now() - 60 * 1000).toISOString(),
-  note: `id=${eventId}: Timeout while waiting for 'triton' to fetch command via cell: 'sched "chunk ${chunkNum}"'`,
-  user: null,
-  state: 0,
-})
+const makeTimeoutNote = (eventId: number, chunkNum: number): object => {
+  const ts = Date.now() - 60 * 1000
+  return {
+    eventId: eventId * 100 + chunkNum,
+    vehicleName: 'triton',
+    eventType: 'note',
+    unixTime: ts,
+    isoTime: new Date(ts).toISOString(),
+    note: `id=${eventId}: Timeout while waiting for 'triton' to fetch command via cell: 'sched "chunk ${chunkNum}"'`,
+    user: null,
+    state: 0,
+  }
+}
 
 // ── Grouping regression tests (#596) ──────────────────────────────────────────
 

@@ -192,9 +192,11 @@ const LogsSection: React.FC<LogsSectionProps> = ({
   //       5 s is generous for a sub-second burst while preventing accidental
   //       merging of close-but-distinct retry incidents.
   //
-  // Groups are keyed by a stable composite `${eventId}-${unixTime}` string so
-  // that pagination, filter changes, and list refreshes never shift a key onto
-  // a different row. The same key is used for expand/collapse state.
+  // Groups are keyed by a stable composite `${event.eventId}-${unixTime}` string
+  // (event.eventId is the database row ID, distinct from the parsed id=XXXXX in
+  // the note text which is stored in the local `eventId` variable below) so that
+  // pagination, filter changes, and list refreshes never shift a key onto a
+  // different row. The same key is used for expand/collapse state.
   const GROUP_WINDOW_MS = 5 * 1000 // 5 seconds — chunk bursts are sub-second
   type TimeoutGroup = { all: GetEventsResponse[] }
   const { processedData, timeoutGroups } = useMemo(() => {
