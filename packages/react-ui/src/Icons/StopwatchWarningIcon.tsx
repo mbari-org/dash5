@@ -1,9 +1,7 @@
 import React from 'react'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
-import {
-  faClockRotateLeft,
-  faTriangleExclamation,
-} from '@fortawesome/free-solid-svg-icons'
+import { faTriangleExclamation } from '@fortawesome/free-solid-svg-icons'
+import { faClock } from '@fortawesome/free-regular-svg-icons'
 import { IconProp } from '@fortawesome/fontawesome-svg-core'
 
 export interface StopwatchWarningIconProps {
@@ -23,8 +21,7 @@ export const StopwatchWarningIcon: React.FC<StopwatchWarningIconProps> = ({
       style={{ position: 'relative', display: 'inline-block', ...style }}
       aria-label="timeout warning icon"
     >
-      {/* Clock with circular arc — closest free FA match to the reference icon */}
-      <FontAwesomeIcon icon={faClockRotateLeft as IconProp} style={{ color }} />
+      <FontAwesomeIcon icon={faClock as IconProp} style={{ color }} />
       {/* Solid warning triangle — orange with white ! built in */}
       <FontAwesomeIcon
         icon={faTriangleExclamation as IconProp}
