@@ -225,7 +225,12 @@ const VehicleAccordion: React.FC<VehicleAccordionProps> = ({
         onExpand={handleExpand('comms')}
       />
       {section === 'comms' && (
-        <CommsSection vehicleName={vehicleName} from={from} to={to} />
+        <CommsSection
+          vehicleName={vehicleName}
+          from={from}
+          to={to}
+          timedOutEventIds={timedOutEventIds}
+        />
       )}
       <AccordionHeader
         label="Log"

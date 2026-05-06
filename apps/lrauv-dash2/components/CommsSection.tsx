@@ -15,12 +15,17 @@ export interface CommsSectionProps {
   vehicleName: string
   from: number // milliseconds since epoch
   to?: number // milliseconds since epoch
+  /** Event IDs confirmed timed-out via the dedicated full-history notes query.
+   *  Overrides the status derived from useCommsEvents pagination, which may not
+   *  have fetched the timeout note for older commands. */
+  timedOutEventIds?: Set<number>
 }
 
 const CommsSection: React.FC<CommsSectionProps> = ({
   vehicleName,
   from,
   to,
+  timedOutEventIds = new Set(),
 }) => {
   const [deploymentLogsOnly, setDeploymentLogsOnly] = useState(true)
   const toggleDeploymentLogsOnly = () => {
@@ -80,6 +85,12 @@ const CommsSection: React.FC<CommsSectionProps> = ({
     }
 
     const item = data[index]
+    // Override status when the dedicated full-history notes query found a
+    // timeout note that useCommsEvents pagination didn't reach.
+    const resolvedStatus =
+      item?.eventId !== undefined && timedOutEventIds.has(item.eventId)
+        ? 'timeout'
+        : item?.status
     const commandType = item?.eventType === 'run' ? 'mission' : 'command'
     const today = DateTime.fromISO(item?.commsIsoTime ?? '').hasSame(
       DateTime.now(),
@@ -94,7 +105,7 @@ const CommsSection: React.FC<CommsSectionProps> = ({
       <CommsCell
         className="border-b border-slate-200"
         commandType={commandType}
-        status={item?.status}
+        status={resolvedStatus}
         command={item?.data ?? item?.text ?? ''}
         entry={`Mission ${item?.eventId}`}
         name={item?.user ?? ''}
