@@ -65,10 +65,28 @@ export const determineCommandStatus = (
     }
   }
 
-  // A state of 2 indicates cell comms, aka direct comms in dash4
+  // A state of 2 indicates cell comms, aka direct comms in dash4.
   // Cell comms are considered ACKed if they are sent since that indicates the socket is open.
-  // Explicitly clear mtmsn/momsn — cell comms do not carry Iridium SBD IDs.
+  // However, for queue-and-fetch cell delivery the vehicle must still poll and retrieve the
+  // command — a timeout note means it never did. Timeout always takes priority over the
+  // cell send so we re-check timeoutMap here even though we checked it above, because the
+  // earlier check requires (via === 'cell' && timeout), which may not match all cell paths.
   if (matchingSbdSend && (matchingSbdSend?.state === 2 || via === undefined)) {
+    if (command.eventId) {
+      const timeoutEvent = timeoutMap.get(String(command.eventId))
+      if (timeoutEvent) {
+        return {
+          ...command,
+          via,
+          timeout,
+          status: 'timeout',
+          commsIsoTime: timeoutEvent.isoTime,
+          mtmsn: undefined,
+          momsn: undefined,
+        }
+      }
+    }
+    // Explicitly clear mtmsn/momsn — cell comms do not carry Iridium SBD IDs.
     return {
       ...command,
       via,
