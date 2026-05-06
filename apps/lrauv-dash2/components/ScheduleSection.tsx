@@ -944,11 +944,11 @@ export const ScheduleSection: React.FC<ScheduleSectionProps> = ({
         return 'sent'
       }
       const raw = toScheduleCellStatus(mission?.status ?? '')
-      // A timeout note is ground truth regardless of scheduled timestamp —
-      // always surface it so the pill displays correctly for any comms type.
+      // A timeout note is ground truth regardless of the API-reported status
+      // (pending, completed, etc.) or scheduled timestamp. Check it first so
+      // the pill always shows correctly for any comms type.
       const commsStatusForTimeout = commsLookup.get(mission.event.eventId)
-      if (raw === 'pending' && commsStatusForTimeout === 'timeout')
-        return 'timeout'
+      if (commsStatusForTimeout === 'timeout') return 'timeout'
       // For any pending command with no specific future scheduled start,
       // use the comms lookup to upgrade status based on actual vehicle
       // receipt. The API always returns TBD/'pending' for mission commands

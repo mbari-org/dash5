@@ -1342,6 +1342,63 @@ test('timed-out command with explicit scheduled timestamp shows timeout pill and
   })
 })
 
+test('timed-out command reported as "completed" by API still shows timeout pill (#606b)', async () => {
+  // Regression: the API sometimes returns status:'completed' for a command
+  // that actually timed out. The previous fix only checked commsLookup when
+  // raw === 'pending', so 'completed' bypassed the timeout check entirely.
+  // A timeout note in commsLookup must override any API-reported status.
+  const missionEvent = {
+    data: 'load Science/profile_station.tl;run',
+    unixTime: Date.now() - 90 * 1000,
+    eventId: 900,
+    eventType: 'run',
+    text: null,
+    note: '[[via:cell, timeout:5min]]',
+    user: 'test-operator',
+  }
+  const timeoutNote = {
+    eventId: 901,
+    eventType: 'note',
+    unixTime: Date.now() - 60 * 1000,
+    isoTime: new Date(Date.now() - 60 * 1000).toISOString(),
+    data: null,
+    text: null,
+    note: 'id=900: Timeout while waiting for ack',
+    user: null,
+  }
+  server.use(
+    rest.get('/events', (req, res, ctx) => {
+      const eventTypes = req.url.searchParams.get('eventTypes') ?? ''
+      const isNoteQuery = eventTypes === 'note'
+      const isCommsQuery = eventTypes.includes('sbdSend')
+      const result = isNoteQuery
+        ? []
+        : isCommsQuery
+        ? [missionEvent, timeoutNote]
+        : [{ ...missionEvent, status: 'completed' }] // API says completed
+      return res(ctx.status(200), ctx.json({ result }))
+    }),
+    rest.get('/events/mission-started', (_req, res, ctx) =>
+      res(ctx.status(200), ctx.json({ result: [] }))
+    )
+  )
+
+  render(
+    <MockProviders queryClient={new QueryClient()}>
+      <ScheduleSection
+        {...props}
+        currentDeploymentId={1}
+        deploymentStartTime={Date.now() - 3600 * 1000}
+      />
+    </MockProviders>
+  )
+
+  await waitFor(() => {
+    // Timeout pill must win over API 'completed' status
+    expect(screen.getByTitle(/timeout/i)).toBeInTheDocument()
+  })
+})
+
 test('parses legacy sched YYYYMMDD}T timestamp for backwards compatibility', async () => {
   // Simulate an event stored before the makeCommand } fix was deployed.
   const legacyStamp = '20991231}T2359'
