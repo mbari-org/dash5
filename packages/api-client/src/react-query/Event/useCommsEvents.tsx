@@ -17,12 +17,16 @@ export const useCommsEvents = ({
   to,
   limit = 500,
   enabled = true,
+  refetchInterval,
 }: {
   vehicles: string[]
   from: number
   to?: number
   limit?: number
   enabled?: boolean
+  /** Re-fetch interval in ms. Useful for re-evaluating client-side timeout
+   *  inference (determineCommandStatus uses Date.now()) without a page reload. */
+  refetchInterval?: number
 }) => {
   const params = useMemo(
     () => ({
@@ -50,7 +54,7 @@ export const useCommsEvents = ({
     fetchNextPage,
     hasNextPage,
     refetch,
-  } = useInfiniteEvents(params, { enabled })
+  } = useInfiniteEvents(params, { enabled, refetchInterval })
 
   const flatData = useMemo(() => {
     if (!data?.pages) return []

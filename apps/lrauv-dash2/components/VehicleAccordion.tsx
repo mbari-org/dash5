@@ -57,6 +57,10 @@ const VehicleAccordion: React.FC<VehicleAccordionProps> = ({
     vehicles: [vehicleName],
     from: 0,
     enabled: !!activeDeployment,
+    // Refetch every 60 s so the client-side timeout inference in
+    // determineCommandStatus (which uses Date.now()) re-evaluates and
+    // transitions queued/sent commands to timeout as their windows expire.
+    refetchInterval: 60 * 1000,
   })
 
   // Fetch all timeout notes across full history so older timed-out commands
@@ -95,7 +99,7 @@ const VehicleAccordion: React.FC<VehicleAccordionProps> = ({
   // Scope to the current deployment window (from/to) so commands from prior
   // deployments — which may legitimately never have been acked — don't inflate
   // the badge. commsEvents uses from:0 to share the React Query cache with
-  // CommsSection, so we filter by isoTime here instead.
+  // CommsSection, so we filter by unixTime (ms) here instead.
   const unackedCount = useMemo(
     () =>
       commsEvents.filter((e) => {

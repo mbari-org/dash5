@@ -1,5 +1,10 @@
 import React, { useMemo, useState } from 'react'
-import { EventType, useCommsEvents } from '@mbari/api-client'
+import {
+  EventType,
+  useCommsEvents,
+  useEvents,
+  timeoutExpiredRegEx,
+} from '@mbari/api-client'
 import {
   AccordionCells,
   Virtualizer,
@@ -15,9 +20,9 @@ export interface CommsSectionProps {
   vehicleName: string
   from: number // milliseconds since epoch
   to?: number // milliseconds since epoch
-  /** Event IDs confirmed timed-out via the dedicated full-history notes query.
-   *  Overrides the status derived from useCommsEvents pagination, which may not
-   *  have fetched the timeout note for older commands. */
+  /** Additional event IDs known to be timed-out (e.g. from VehicleAccordion's
+   *  badge query). CommsSection runs its own timeout-notes query internally, so
+   *  this is a supplemental override rather than the primary source. */
   timedOutEventIds?: Set<number>
 }
 
@@ -25,12 +30,46 @@ const CommsSection: React.FC<CommsSectionProps> = ({
   vehicleName,
   from,
   to,
-  timedOutEventIds = new Set(),
+  timedOutEventIds: externalTimedOutIds = new Set(),
 }) => {
   const [deploymentLogsOnly, setDeploymentLogsOnly] = useState(true)
   const toggleDeploymentLogsOnly = () => {
     setDeploymentLogsOnly((prev) => !prev)
   }
+
+  // Internal full-history timeout-notes query — covers all entry points
+  // (CommsModal, VehicleAccordion inline) without requiring callers to pass
+  // timedOutEventIds. Builds a map of eventId → timeout isoTime so the cell
+  // can display the correct timestamp when overriding a stale queued/sent status.
+  const timeoutNotesResponse = useEvents(
+    {
+      vehicles: [vehicleName],
+      eventTypes: ['note'] as EventType[],
+      noteMatches: 'Timeout while waiting',
+      from: 1,
+      limit: 500,
+    },
+    {
+      enabled: !!vehicleName,
+      staleTime: 60 * 1000,
+      refetchInterval: 60 * 1000,
+    }
+  )
+
+  // Map of eventId → timeout note isoTime for display-accurate timestamp override.
+  const timedOutMap = useMemo(() => {
+    const map = new Map<number, string>()
+    timeoutNotesResponse.data?.forEach((note) => {
+      const match = note.note?.match(timeoutExpiredRegEx)
+      if (match) map.set(parseInt(match[1], 10), note.isoTime ?? '')
+    })
+    // Merge supplemental IDs from parent (no isoTime available — use empty string
+    // as sentinel; the cell will fall back to the item's own commsIsoTime).
+    externalTimedOutIds.forEach((id) => {
+      if (!map.has(id)) map.set(id, '')
+    })
+    return map
+  }, [timeoutNotesResponse.data, externalTimedOutIds])
 
   const deploymentParams = useMemo(
     () => ({
@@ -85,21 +124,24 @@ const CommsSection: React.FC<CommsSectionProps> = ({
     }
 
     const item = data[index]
-    // Override status when the dedicated full-history notes query found a
-    // timeout note that useCommsEvents pagination didn't reach.
+    // Override status when the internal timeout-notes query found a timeout note
+    // that useCommsEvents pagination didn't reach.
+    const timeoutIsoTime =
+      item?.eventId !== undefined ? timedOutMap.get(item.eventId) : undefined
     const resolvedStatus =
-      item?.eventId !== undefined && timedOutEventIds.has(item.eventId)
-        ? 'timeout'
-        : item?.status
+      timeoutIsoTime !== undefined ? 'timeout' : item?.status
+    // Use the timeout note's isoTime for the cell timestamp when available;
+    // fall back to the item's commsIsoTime (sent/queued time) otherwise.
+    const displayIsoTime = timeoutIsoTime || item?.commsIsoTime || ''
     const commandType = item?.eventType === 'run' ? 'mission' : 'command'
-    const today = DateTime.fromISO(item?.commsIsoTime ?? '').hasSame(
+    const today = DateTime.fromISO(displayIsoTime).hasSame(
       DateTime.now(),
       'day'
     )
     const day = today
       ? 'Today'
-      : DateTime.fromISO(item?.commsIsoTime ?? '').toFormat('MMM d yyyy')
-    const time = DateTime.fromISO(item?.commsIsoTime ?? '').toFormat('H:mm:ss')
+      : DateTime.fromISO(displayIsoTime).toFormat('MMM d yyyy')
+    const time = DateTime.fromISO(displayIsoTime).toFormat('H:mm:ss')
 
     return item ? (
       <CommsCell

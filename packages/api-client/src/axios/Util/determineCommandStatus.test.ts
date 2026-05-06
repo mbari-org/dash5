@@ -290,8 +290,13 @@ describe('determineCommandStatus', () => {
   it('should return timeout for cellsat command when sbdSend exists but its timeout has elapsed', () => {
     // baseSbdSend is from 2023 with a 60-minute timeout — long since expired.
     // Client-side inference should return 'timeout' instead of 'sent'.
+    // refId on the map entry is the command's eventId (how useCommsEvents builds the map).
+    const expiredCellsatSend: GetEventsResponse = {
+      ...baseSbdSend,
+      refId: baseCellsatCommand.eventId,
+    }
     const sbdSendMap = new Map<string, GetEventsResponse>([
-      [String(baseCellsatCommand.eventId), baseSbdSend],
+      [String(baseCellsatCommand.eventId), expiredCellsatSend],
     ])
 
     const result = determineCommandStatus(
@@ -312,7 +317,7 @@ describe('determineCommandStatus', () => {
       ...baseSbdSend,
       unixTime: Date.now() - 30 * 1000, // sent 30 seconds ago
       isoTime: new Date(Date.now() - 30 * 1000).toISOString(),
-      refId: baseCellsatCommand.eventId,
+      refId: baseCellsatCommand.eventId, // correctly linked to the cellsat command
     }
     const sbdSendMap = new Map<string, GetEventsResponse>([
       [String(baseCellsatCommand.eventId), recentSbdSend],
