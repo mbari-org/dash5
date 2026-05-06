@@ -182,8 +182,15 @@ const LogsSection: React.FC<LogsSectionProps> = ({
   ])
   // Group timeout notes that share the same event ID into a single row.
   // When a mission command is split into N SBD chunks and all N chunks time out,
-  // the API emits N separate note events with the same id=XXXXX prefix. This
-  // collapses them into one representative row so the log stays readable.
+  // the API emits N separate note events with the same id=XXXXX prefix — all
+  // within the same second. This collapses them so the log stays readable.
+  //
+  // Grouping is intentionally conservative: a note only joins an existing group
+  // when (a) it shares the same event ID AND (b) its timestamp is within
+  // GROUP_WINDOW_MS of the representative note. This prevents non-consecutive
+  // notes (e.g. a retry incident much later) from being silently swallowed into
+  // an older group, and preserves correct event ordering in the timeline.
+  const GROUP_WINDOW_MS = 2 * 60 * 1000 // 2 minutes — well above any chunk burst
   type TimeoutGroup = {
     representative: GetEventsResponse
     all: GetEventsResponse[]
@@ -204,7 +211,12 @@ const LogsSection: React.FC<LogsSectionProps> = ({
       }
       const eventId = Number(match[1])
       const existing = groups.get(eventId)
-      if (existing) {
+      const eventMs = event.unixTime ?? 0
+      const representativeMs = existing?.representative.unixTime ?? 0
+      // Only join the group when the note is temporally close to the
+      // representative (same incident burst). If it falls outside the window,
+      // treat it as a new standalone note — don't group across incidents.
+      if (existing && Math.abs(eventMs - representativeMs) <= GROUP_WINDOW_MS) {
         existing.all.push(event)
       } else {
         const group: TimeoutGroup = { representative: event, all: [event] }

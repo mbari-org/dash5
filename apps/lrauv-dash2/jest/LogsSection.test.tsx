@@ -124,3 +124,41 @@ test('notes with different event IDs are kept as separate rows', async () => {
     expect(badges).toHaveLength(2)
   })
 })
+
+test('timeout notes for same event ID outside the time window are NOT grouped', async () => {
+  // Regression for Copilot review: grouping must be time-bounded so a timeout
+  // note from a later incident (same event ID, far apart in time) doesn't get
+  // silently swallowed into an earlier group and disappear from the timeline.
+  const now = Date.now()
+  const recentNote = {
+    eventId: 9001,
+    vehicleName: 'triton',
+    eventType: 'note',
+    unixTime: now - 30 * 1000,
+    isoTime: new Date(now - 30 * 1000).toISOString(),
+    note: 'id=400: Timeout while waiting for triton to fetch command via cell',
+    user: null,
+    state: 0,
+  }
+  // More than 2 minutes later — should NOT be folded into the same group
+  const oldNote = {
+    eventId: 9002,
+    vehicleName: 'triton',
+    eventType: 'note',
+    unixTime: now - 10 * 60 * 1000,
+    isoTime: new Date(now - 10 * 60 * 1000).toISOString(),
+    note: 'id=400: Timeout while waiting for triton to fetch command via cell',
+    user: null,
+    state: 0,
+  }
+
+  renderLogs([recentNote, oldNote])
+
+  await waitFor(() => {
+    // Two Note rows should be visible — not grouped, since they're 10 min apart
+    const noteLabels = screen.getAllByText(/^Note$/)
+    expect(noteLabels).toHaveLength(2)
+    // No group badge should appear
+    expect(screen.queryByText(/timeout notes/i)).not.toBeInTheDocument()
+  })
+})
