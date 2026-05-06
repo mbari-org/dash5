@@ -1,7 +1,9 @@
 import React from 'react'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
-import { faExclamation } from '@fortawesome/free-solid-svg-icons'
-import { faHourglass } from '@fortawesome/free-regular-svg-icons'
+import {
+  faExclamation,
+  faHourglassEnd,
+} from '@fortawesome/free-solid-svg-icons'
 import { IconProp } from '@fortawesome/fontawesome-svg-core'
 
 export interface StopwatchWarningIconProps {
@@ -21,7 +23,7 @@ export const StopwatchWarningIcon: React.FC<StopwatchWarningIconProps> = ({
       style={{ position: 'relative', display: 'inline-block', ...style }}
       aria-label="timeout warning icon"
     >
-      <FontAwesomeIcon icon={faHourglass as IconProp} style={{ color }} />
+      <FontAwesomeIcon icon={faHourglassEnd as IconProp} style={{ color }} />
       <FontAwesomeIcon
         icon={faExclamation as IconProp}
         style={{
