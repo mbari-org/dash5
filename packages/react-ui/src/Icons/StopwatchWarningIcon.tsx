@@ -13,16 +13,18 @@ export interface StopwatchWarningIconProps {
 export const StopwatchWarningIcon: React.FC<StopwatchWarningIconProps> = ({
   className,
   style,
-  color = 'rgb(255, 132, 59)',
+  color = 'currentColor',
 }) => {
   return (
     <span
       className={className}
-      style={{ position: 'relative', display: 'inline-block', ...style }}
+      // Spread caller style first so the required overlay positioning cannot
+      // be accidentally overridden by a parent's style prop.
+      style={{ ...style, position: 'relative', display: 'inline-block' }}
       aria-label="timeout warning icon"
     >
       <FontAwesomeIcon icon={faClock as IconProp} style={{ color }} />
-      {/* Solid warning triangle — orange with white ! built in */}
+      {/* Solid warning triangle — inherits the same color as the clock */}
       <FontAwesomeIcon
         icon={faTriangleExclamation as IconProp}
         style={{

@@ -94,6 +94,40 @@ test('should render secondary text when secondary prop is provided', () => {
   expect(screen.getByText('breakfast of champions')).toBeInTheDocument()
 })
 
+test('should render the timeout icon with its tooltip when status is timeout', () => {
+  render(
+    <ScheduleCell {...props} status={'timeout'} statusTooltip="Timed out" />
+  )
+
+  expect(screen.getByTitle('Timed out')).toBeInTheDocument()
+  expect(screen.getByLabelText('timeout warning icon')).toBeInTheDocument()
+})
+
+test('timeout icon span is dimmed when schedule is not running', () => {
+  render(
+    <ScheduleCell {...props} status={'timeout'} scheduleStatus={undefined} />
+  )
+
+  // The outer span (title wrapper) gets opacity-60 for non-running schedules;
+  // the inner span is the icon's own wrapper, so use parentElement to reach the outer one.
+  expect(
+    screen.getByLabelText('timeout warning icon').parentElement
+  ).toHaveClass('opacity-60')
+})
+
+test('timeout icon span is not dimmed when schedule is running', () => {
+  render(
+    <ScheduleCell
+      {...props}
+      status={'timeout'}
+      scheduleStatus="running"
+      statusTooltip="Timed out"
+    />
+  )
+
+  expect(screen.getByTitle('Timed out')).not.toHaveClass('opacity-60')
+})
+
 test('should not render an empty secondary row when secondary is undefined', () => {
   // Previously ScheduleCell always rendered the secondary <li> even when
   // secondary was undefined, leaving an empty subtitle row for non-mission
