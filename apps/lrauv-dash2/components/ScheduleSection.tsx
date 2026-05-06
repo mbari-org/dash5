@@ -27,6 +27,7 @@ import {
   useCommsEvents,
   useDeleteCommandQueue,
   useCreateNote,
+  timeoutExpiredRegEx,
 } from '@mbari/api-client'
 import { useQueryClient } from 'react-query'
 import useGlobalModalId from '../lib/useGlobalModalId'
@@ -286,6 +287,29 @@ export const ScheduleSection: React.FC<ScheduleSectionProps> = ({
     })
     return ids
   }, [cancellationNotesResponse.data])
+
+  // Fetch timeout notes across all history so that older timed-out commands
+  // are detected even when commsEventsResponse hasn't paginated that far back.
+  const timeoutNotesResponse = useEvents(
+    {
+      vehicles: [vehicleName],
+      eventTypes: ['note'] as EventType[],
+      noteMatches: 'Timeout while waiting',
+      from: 0,
+      limit: 500,
+    },
+    { enabled: !!vehicleName, staleTime: 30 * 1000, refetchInterval: 30 * 1000 }
+  )
+
+  // Build a Set of eventIds that have a recorded timeout note.
+  const timedOutEventIds = useMemo(() => {
+    const ids = new Set<number>()
+    timeoutNotesResponse.data?.forEach((note) => {
+      const match = note.note?.match(timeoutExpiredRegEx)
+      if (match) ids.add(parseInt(match[1], 10))
+    })
+    return ids
+  }, [timeoutNotesResponse.data])
 
   // Build a timeline: each entry knows its own start time and when it ended
   // (= the start time of the mission that replaced it, or undefined if running).
@@ -940,15 +964,27 @@ export const ScheduleSection: React.FC<ScheduleSectionProps> = ({
         // Dispatched one-shots — use comms lookup to upgrade to ack/timeout.
         const commsStatus = commsLookup.get(mission.event.eventId)
         if (commsStatus === 'ack') return 'ack'
-        if (commsStatus === 'timeout') return 'timeout'
+        if (
+          commsStatus === 'timeout' ||
+          (mission.event.eventId != null &&
+            timedOutEventIds.has(mission.event.eventId))
+        )
+          return 'timeout'
         return 'sent'
       }
       const raw = toScheduleCellStatus(mission?.status ?? '')
       // A timeout note is ground truth regardless of the API-reported status
       // (pending, completed, etc.) or scheduled timestamp. Check it first so
       // the pill always shows correctly for any comms type.
+      // timedOutEventIds covers the full history; commsLookup covers the current
+      // window — either source is sufficient to declare a timeout.
       const commsStatusForTimeout = commsLookup.get(mission.event.eventId)
-      if (commsStatusForTimeout === 'timeout') return 'timeout'
+      if (
+        commsStatusForTimeout === 'timeout' ||
+        (mission.event.eventId != null &&
+          timedOutEventIds.has(mission.event.eventId))
+      )
+        return 'timeout'
       // For any pending command with no specific future scheduled start,
       // use the comms lookup to upgrade status based on actual vehicle
       // receipt. The API status is not fully reliable for missions — it can
@@ -1089,14 +1125,14 @@ export const ScheduleSection: React.FC<ScheduleSectionProps> = ({
         description2={
           isParam || isConfigSet
             ? undefined
+            : cellStatus === 'timeout'
+            ? 'Ended: N/A'
             : cellStatus === 'pending' &&
               scheduleDate &&
               scheduleDate !== 'asap'
             ? 'Starts: scheduled time above'
             : cellStatus === 'running' || cellStatus === 'pending'
             ? 'Ended: TBD'
-            : cellStatus === 'timeout'
-            ? 'Ended: N/A'
             : mission.endedAt
             ? `Ended: ~${(() => {
                 const endDt = DateTime.fromMillis(mission.endedAt)

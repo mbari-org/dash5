@@ -480,6 +480,77 @@ test('timed-out mission directive moves to history: Previous Vehicle Directives 
   })
 })
 
+test('historic timed-out mission shows timeout pill and Ended: N/A even when timeout note is only in timeout-notes query (not comms)', async () => {
+  // Regression for the case where a command was sent long enough ago that
+  // commsEventsResponse pagination has not fetched its timeout note.
+  // The dedicated timeout-notes query (noteMatches='Timeout while waiting')
+  // must serve as the fallback source, populating timedOutEventIds.
+  const missionEvent = {
+    data: 'load Transport/transit.tl;run',
+    unixTime: Date.now() - 7 * 24 * 3600 * 1000, // 7 days ago
+    eventId: 880,
+    eventType: 'run',
+    text: null,
+    note: '[[via:cell, timeout:5min]]',
+    user: 'test-operator',
+  }
+  const timeoutNoteEvent = {
+    eventId: 881,
+    eventType: 'note',
+    unixTime: Date.now() - 7 * 24 * 3600 * 1000 + 300 * 1000,
+    isoTime: new Date(
+      Date.now() - 7 * 24 * 3600 * 1000 + 300 * 1000
+    ).toISOString(),
+    data: null,
+    text: null,
+    note: 'id=880: Timeout while waiting for ack',
+    user: null,
+  }
+  server.use(
+    rest.get('/events', (req, res, ctx) => {
+      const eventTypes = req.url.searchParams.get('eventTypes') ?? ''
+      const noteMatches = req.url.searchParams.get('noteMatches') ?? ''
+      // History query (command,run): the old mission event
+      // Comms query (includes sbdSend): only the mission, NO timeout note —
+      //   simulating pagination that hasn't fetched this far back
+      // Timeout-notes query (note + noteMatches='Timeout while waiting'):
+      //   returns the note so timedOutEventIds picks it up
+      // Cancellation-notes query (note + noteMatches='Cancelled request'): []
+      const isCommsQuery = eventTypes.includes('sbdSend')
+      const isTimeoutNoteQuery =
+        eventTypes === 'note' && noteMatches.includes('Timeout while waiting')
+      const isCancellationQuery =
+        eventTypes === 'note' && noteMatches.includes('Cancelled request')
+      const result = isCommsQuery
+        ? [missionEvent] // timeout note intentionally absent from comms window
+        : isTimeoutNoteQuery
+        ? [timeoutNoteEvent]
+        : isCancellationQuery
+        ? []
+        : [missionEvent] // history query
+      return res(ctx.status(200), ctx.json({ result }))
+    }),
+    rest.get('/events/mission-started', (_req, res, ctx) =>
+      res(ctx.status(200), ctx.json({ result: [] }))
+    )
+  )
+
+  render(
+    <MockProviders queryClient={new QueryClient()}>
+      <ScheduleSection
+        {...props}
+        currentDeploymentId={1}
+        deploymentStartTime={Date.now() - 14 * 24 * 3600 * 1000}
+      />
+    </MockProviders>
+  )
+
+  await waitFor(() => {
+    expect(screen.getByTitle(/timeout/i)).toBeInTheDocument()
+    expect(screen.getByText('Ended: N/A')).toBeInTheDocument()
+  })
+})
+
 test('Cancel this Directive calls DELETE /commands/queue when confirmed', async () => {
   let deleteCalled = false
   let noteCalled = false
