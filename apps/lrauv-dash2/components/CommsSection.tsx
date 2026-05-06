@@ -22,7 +22,7 @@ const CommsSection: React.FC<CommsSectionProps> = ({
   from,
   to,
 }) => {
-  const [deploymentLogsOnly, setDeploymentLogsOnly] = useState(false)
+  const [deploymentLogsOnly, setDeploymentLogsOnly] = useState(true)
   const toggleDeploymentLogsOnly = () => {
     setDeploymentLogsOnly((prev) => !prev)
   }
