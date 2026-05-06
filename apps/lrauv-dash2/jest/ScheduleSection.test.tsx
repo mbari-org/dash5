@@ -475,6 +475,8 @@ test('timed-out mission directive moves to history: Previous Vehicle Directives 
   await waitFor(() => {
     expect(screen.getByTitle(/timeout/i)).toBeInTheDocument()
     expect(screen.getByText('Previous Vehicle Directives')).toBeInTheDocument()
+    // #609: timed-out commands show "Ended: N/A" not a timestamp or TBD
+    expect(screen.getByText('Ended: N/A')).toBeInTheDocument()
   })
 })
 

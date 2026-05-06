@@ -1094,6 +1094,8 @@ export const ScheduleSection: React.FC<ScheduleSectionProps> = ({
             ? 'Starts: scheduled time above'
             : cellStatus === 'running' || cellStatus === 'pending'
             ? 'Ended: TBD'
+            : cellStatus === 'timeout'
+            ? 'Ended: N/A'
             : mission.endedAt
             ? `Ended: ~${(() => {
                 const endDt = DateTime.fromMillis(mission.endedAt)
