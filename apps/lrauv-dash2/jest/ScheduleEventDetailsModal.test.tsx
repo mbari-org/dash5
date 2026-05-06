@@ -176,3 +176,48 @@ test('shows Summary Parameters with raw payload for isConfigSetUpdate commands',
   ).not.toBeInTheDocument()
   expect(screen.getAllByText(rawCmd).length).toBeGreaterThan(0)
 })
+
+// ── Ended field for timed-out directives ──────────────────────────────────────
+
+test('popup shows N/A (not TBD) in Ended field for a timed-out mission directive', () => {
+  // Regression: timed-out missions have commandType='mission' so isInstantaneous
+  // was false, causing the Ended field to fall through to "TBD" even though the
+  // command never reached the vehicle.
+  ;(useGlobalModalId as jest.Mock).mockReturnValue(
+    makeModalId({
+      ...baseEvent,
+      commandType: 'mission' as const,
+      status: 'timeout',
+      isLoadRunMission: true,
+      secondary: 'set transit.Depth 50 m',
+      endedAt: undefined,
+    })
+  )
+
+  render(<ScheduleEventDetailsModal onClose={() => {}} />)
+
+  // "Ended" section must show N/A, never TBD
+  expect(screen.getAllByText('N/A').length).toBeGreaterThan(0)
+  expect(screen.queryByText('TBD')).not.toBeInTheDocument()
+})
+
+test('popup shows N/A (not TBD) in Ended field for a timed-out non-mission command', () => {
+  ;(useGlobalModalId as jest.Mock).mockReturnValue(
+    makeModalId({
+      ...baseEvent,
+      commandType: 'command' as const,
+      status: 'timeout',
+      isLoadRunMission: false,
+      isParamUpdate: false,
+      isConfigSetUpdate: false,
+      secondary: undefined,
+      eventData: 'gfscan',
+      endedAt: undefined,
+    })
+  )
+
+  render(<ScheduleEventDetailsModal onClose={() => {}} />)
+
+  expect(screen.getAllByText('N/A').length).toBeGreaterThan(0)
+  expect(screen.queryByText('TBD')).not.toBeInTheDocument()
+})

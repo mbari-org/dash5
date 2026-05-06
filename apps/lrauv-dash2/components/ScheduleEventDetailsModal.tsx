@@ -643,8 +643,8 @@ export const ScheduleEventDetailsModal: React.FC<
                       mission.
                     </p>
                     <p className="mt-1 normal-case">
-                      <strong>N/A</strong>: End time is unknown or unavailable
-                      from current logs.
+                      <strong>N/A</strong>: Directive timed out before reaching
+                      the vehicle, or end time is otherwise unavailable.
                     </p>
                   </div>
                 )}
@@ -660,6 +660,18 @@ export const ScheduleEventDetailsModal: React.FC<
                   event.isConfigSetUpdate ||
                   (event.commandType === 'command' &&
                     ['ack', 'timeout', 'sent'].includes(s))
+                // Timed-out directives never reached the vehicle — there is no
+                // end time regardless of command type.
+                if (s === 'timeout') {
+                  return (
+                    <span
+                      className={statusPillClass()}
+                      style={statusPillStyle('timeout')}
+                    >
+                      N/A
+                    </span>
+                  )
+                }
                 if (
                   !isInstantaneous &&
                   !['completed', 'cancelled'].includes(s)
