@@ -330,6 +330,69 @@ describe('determineCommandStatus', () => {
     expect(result.commsIsoTime).toBe(baseSbdSend.isoTime)
   })
 
+  it('should return timeout (not ack) for cell command with state:2 sbdSend when timeout note exists', () => {
+    // Regression for #597: a cell command dispatched via state:2 sbdSend was
+    // incorrectly shown as 'received by vehicle' even when the vehicle never
+    // fetched it and a timeout note existed for the same eventId.
+    // Timeout is ground-truth for queue-and-fetch cell delivery.
+    const sbdSendMap = new Map<string, GetEventsResponse>([
+      [String(baseCellCommand.eventId), cellSbdSend],
+    ])
+    const timeoutMap = new Map<string, GetEventsResponse>([
+      [String(baseCellCommand.eventId), baseTimeoutEvent],
+    ])
+
+    const result = determineCommandStatus(
+      baseCellCommand,
+      sbdSendMap,
+      new Map(),
+      new Map(),
+      timeoutMap
+    )
+
+    expect(result.status).toBe('timeout')
+    expect(result.via).toBe('cell')
+    expect(result.commsIsoTime).toBe(baseTimeoutEvent.isoTime)
+    expect(result.mtmsn).toBeUndefined()
+    expect(result.momsn).toBeUndefined()
+  })
+
+  it('should return timeout (not ack) for cellsat command with state:2 sbdSend when timeout note exists', () => {
+    // Same scenario via 'cellsat': the earlier timeout guard required via==='cell',
+    // so cellsat commands would bypass it and incorrectly fall through to 'ack'.
+    const cellsatSbdSend: GetEventsResponse = {
+      ...cellSbdSend,
+      eventId: 50,
+      refId: baseCellsatCommand.eventId, // references eventId 3
+      state: 2,
+    }
+    const cellsatTimeoutEvent: GetEventsResponse = {
+      ...baseTimeoutEvent,
+      eventId: 51,
+      note: `id=${baseCellsatCommand.eventId}: Timeout while waiting`,
+    }
+    const sbdSendMap = new Map<string, GetEventsResponse>([
+      [String(baseCellsatCommand.eventId), cellsatSbdSend],
+    ])
+    const timeoutMap = new Map<string, GetEventsResponse>([
+      [String(baseCellsatCommand.eventId), cellsatTimeoutEvent],
+    ])
+
+    const result = determineCommandStatus(
+      baseCellsatCommand,
+      sbdSendMap,
+      new Map(),
+      new Map(),
+      timeoutMap
+    )
+
+    expect(result.status).toBe('timeout')
+    expect(result.via).toBe('cellsat')
+    expect(result.commsIsoTime).toBe(cellsatTimeoutEvent.isoTime)
+    expect(result.mtmsn).toBeUndefined()
+    expect(result.momsn).toBeUndefined()
+  })
+
   it('should handle missing receipt mtmsn', () => {
     const sbdSendMap = new Map<string, GetEventsResponse>([
       [String(baseSatCommand.eventId), baseSbdSend],
