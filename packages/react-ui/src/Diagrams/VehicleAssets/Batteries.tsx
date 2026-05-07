@@ -161,7 +161,7 @@ export const Batteries: React.FC<BatteryProps> = ({
       {textVoltThresh && (
         <text
           aria-label="text_voltthresh"
-          transform="matrix(1 0 0 1 291.5 258.0)"
+          transform="matrix(1 0 0 1 293.5 258.0)"
           className="st12 st9"
           style={{ fontSize: '7px' }}
         >
@@ -180,7 +180,7 @@ export const Batteries: React.FC<BatteryProps> = ({
       {textAmpThresh && (
         <text
           aria-label="text_ampthresh"
-          transform="matrix(1 0 0 1 293.5 270.0)"
+          transform="matrix(1 0 0 1 295.5 270.0)"
           className="st12 st9"
           style={{ fontSize: '7px' }}
         >
