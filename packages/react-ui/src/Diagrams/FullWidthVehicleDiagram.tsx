@@ -27,8 +27,6 @@ import { useResizeObserver } from '@mbari/utils'
 import { Leak } from './VehicleAssets/Leak'
 
 export interface FullWidthVehicleDiagramProps extends VehicleProps {
-  vehicleWidth?: number
-  vehicleHeight?: number
   onBatteryClick?: BatteryProps['onClick']
 }
 
@@ -131,8 +129,6 @@ export const FullWidthVehicleDiagram: React.FC<
   textVersion,
   svgCurrent,
   colorDuration,
-  vehicleWidth = 800,
-  vehicleHeight = 300,
   onBatteryClick: handleBatteryClick,
 }) => {
   const containerRef = useRef<HTMLDivElement | null>(null)

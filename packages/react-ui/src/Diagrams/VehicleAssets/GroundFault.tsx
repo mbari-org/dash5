@@ -38,17 +38,15 @@ export const GroundFault: React.FC<GroundFaultProps> = ({
           width="24.43"
           height="10.5"
         />
-        {/* Low GF triangle — filled when colorLowGf is not st18/invisible */}
+        {/* GF triangle — server makes low/high mutually exclusive via st18 */}
         <polygon
-          data-testid="ground fault low triangle"
+          data-testid="ground fault triangle"
           points="507,264.5 511,254 515,264.5"
-          className={colorLowGf ?? 'st18'}
-        />
-        {/* High GF triangle — filled when colorHighGf is not st18/invisible */}
-        <polygon
-          data-testid="ground fault high triangle"
-          points="507,264.5 511,254 515,264.5"
-          className={colorHighGf ?? 'st18'}
+          className={
+            colorHighGf && colorHighGf !== 'st18'
+              ? colorHighGf
+              : colorLowGf ?? 'st18'
+          }
         />
       </g>
       <g>

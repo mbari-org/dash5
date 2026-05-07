@@ -162,7 +162,7 @@ export const Batteries: React.FC<BatteryProps> = ({
         <text
           aria-label="text_voltthresh"
           transform="matrix(1 0 0 1 293.5 258.0)"
-          className="st12 st9"
+          className={clsx('st9', colorVoltThresh ?? 'st12')}
           style={{ fontSize: '7px' }}
         >
           {textVoltThresh}
@@ -181,7 +181,7 @@ export const Batteries: React.FC<BatteryProps> = ({
         <text
           aria-label="text_ampthresh"
           transform="matrix(1 0 0 1 295.5 270.0)"
-          className="st12 st9"
+          className={clsx('st9', colorAmpThresh ?? 'st12')}
           style={{ fontSize: '7px' }}
         >
           {textAmpThresh}
@@ -191,8 +191,9 @@ export const Batteries: React.FC<BatteryProps> = ({
       {/* Battery duration / current draw — server-provided bar + text labels */}
       {(textBatteryDuration != null || textCurrent != null) && (
         <>
-          {/* Outer frame around the bar + labels */}
-          {/* Server-provided colored bar (svg_current) sized to current draw */}
+          {/* svgCurrent is a trusted server-provided SVG rect string from the
+              internal okeanids.mbari.org widget API. Sanitization would require
+              restructuring the API response to expose numeric current levels. */}
           {svgCurrent && <g dangerouslySetInnerHTML={{ __html: svgCurrent }} />}
           {/* Dark border matching the max bar area (volt+amp column height) */}
           <rect

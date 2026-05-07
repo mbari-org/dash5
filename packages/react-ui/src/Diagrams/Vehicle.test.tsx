@@ -323,3 +323,32 @@ test("should display the vehicle's last update ", async () => {
   render(<Vehicle {...props} />)
   expect(screen.queryByText(`${props.textLastUpdate}`)).toBeInTheDocument()
 })
+
+test('should render CTD dot indicator when colorCtd is provided', async () => {
+  render(<Vehicle {...props} colorCtd="st4" />)
+  expect(screen.queryByLabelText('ctd dot')).toHaveClass('st4')
+})
+
+test('should render CTD toggle knob on the right when CTD is ON', async () => {
+  render(<Vehicle {...props} textCameraAgo="ON" />)
+  const knob = screen.queryByLabelText('ctd toggle knob')
+  expect(knob).toBeInTheDocument()
+  expect(knob).toHaveAttribute('cx', '547')
+})
+
+test('should render CTD toggle knob on the left when CTD is OFF', async () => {
+  render(<Vehicle {...props} textCameraAgo="OFF" />)
+  const knob = screen.queryByLabelText('ctd toggle knob')
+  expect(knob).toBeInTheDocument()
+  expect(knob).toHaveAttribute('cx', '541')
+})
+
+test('should display CTD status text when provided', async () => {
+  render(<Vehicle {...props} textCameraAgo="ON" />)
+  expect(screen.queryByLabelText('ctd status')).toBeInTheDocument()
+})
+
+test('should display version label when textVersion is provided', async () => {
+  render(<Vehicle {...props} textVersion="v2.99" />)
+  expect(screen.queryByText('v2.99')).toBeInTheDocument()
+})

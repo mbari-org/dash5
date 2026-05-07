@@ -298,3 +298,53 @@ test('should display reckoned label', async () => {
   )
   expect(screen.queryByTestId('reckoned_label')).toBeInTheDocument()
 })
+
+test('should render CTD dot with provided color', async () => {
+  render(<FullWidthVehicleDiagram {...props} colorCtd="st4" />)
+  expect(screen.queryByLabelText('ctd dot')).toHaveClass('st4')
+})
+
+test('should render CTD toggle knob on the right when CTD is ON', async () => {
+  render(<FullWidthVehicleDiagram {...props} textCameraAgo="ON" />)
+  expect(screen.queryByLabelText('ctd toggle knob')).toHaveAttribute(
+    'cx',
+    '547'
+  )
+})
+
+test('should display version label when textVersion is provided', async () => {
+  render(<FullWidthVehicleDiagram {...props} textVersion="v2.99" />)
+  expect(screen.queryByText('v2.99')).toBeInTheDocument()
+})
+
+test('should display mission text with colorMissionText class', async () => {
+  render(
+    <FullWidthVehicleDiagram
+      {...props}
+      textMission="test mission"
+      colorMissionText="st31"
+    />
+  )
+  expect(screen.queryByLabelText('mission name')).toHaveClass('st31')
+})
+
+test('should display log start dot with colorLogAgo class', async () => {
+  render(<FullWidthVehicleDiagram {...props} colorLogAgo="st4" />)
+  expect(screen.queryByTestId('log ago indicator')).toHaveClass('st4')
+})
+
+test('should display ground fault triangle with colorHighGf class', async () => {
+  render(<FullWidthVehicleDiagram {...props} colorHighGf="st25" />)
+  expect(screen.queryByTestId('ground fault triangle')).toHaveClass('st25')
+})
+
+test('should display next comm text with colorNextCommsText class', async () => {
+  render(
+    <FullWidthVehicleDiagram
+      {...props}
+      textNextComm="12:00 - in 30m"
+      colorNextCommsText="st31"
+    />
+  )
+  expect(screen.queryByLabelText('next comm')).toHaveClass('st31')
+})
