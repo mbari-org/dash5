@@ -119,6 +119,7 @@ export const FullWidthVehicleDiagram: React.FC<
   textMissionAgo,
   textVersion,
   svgCurrent,
+  colorDuration,
   vehicleWidth = 800,
   vehicleHeight = 300,
   onBatteryClick: handleBatteryClick,
@@ -247,6 +248,7 @@ export const FullWidthVehicleDiagram: React.FC<
             textBatteryUnits={textBatteryUnits}
             textCurrent={textCurrent}
             svgCurrent={svgCurrent}
+            colorDuration={colorDuration}
           />
 
           <ArgosBatteryIndicator colorArgo={colorArgo} />

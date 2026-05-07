@@ -172,6 +172,7 @@ const VehicleDiagram: React.FC<{
         textMissionAgo={vehicle?.text_missionago}
         textVersion={vehicle?.text_version}
         svgCurrent={vehicle?.svg_current}
+        colorDuration={vehicle?.color_duration}
         colorOt={vehicle?.color_ot}
         onBatteryClick={handleBatteryClick}
       />

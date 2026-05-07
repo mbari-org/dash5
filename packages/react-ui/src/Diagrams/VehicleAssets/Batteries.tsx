@@ -24,6 +24,7 @@ export interface BatteryProps {
   textBatteryUnits?: VehicleProps['textBatteryUnits']
   textCurrent?: VehicleProps['textCurrent']
   svgCurrent?: VehicleProps['svgCurrent']
+  colorDuration?: VehicleProps['colorDuration']
   isDocked?: boolean
   onClick?: (event: React.MouseEvent<SVGElement, MouseEvent>) => void
 }
@@ -50,6 +51,7 @@ export const Batteries: React.FC<BatteryProps> = ({
   textBatteryUnits,
   textCurrent,
   svgCurrent,
+  colorDuration,
   onClick: handleClick,
 }) => {
   return (
@@ -205,8 +207,8 @@ export const Batteries: React.FC<BatteryProps> = ({
           {textBatteryDuration != null && (
             <text
               aria-label="text_batteryduration"
-              transform="matrix(1 0 0 1 371.0 257.5)"
-              className="st12 st9 st13"
+              transform="matrix(1 0 0 1 372.0 257.5)"
+              className={clsx('st9 st13', colorDuration ?? 'st12')}
             >
               {textBatteryDuration}
             </text>
@@ -214,7 +216,7 @@ export const Batteries: React.FC<BatteryProps> = ({
           {textBatteryUnits && (
             <text
               aria-label="text_batteryunits"
-              transform="matrix(1 0 0 1 371.0 264.0)"
+              transform="matrix(1 0 0 1 372.0 264.0)"
               className="st12 st9 st13"
             >
               {textBatteryUnits}
@@ -223,7 +225,7 @@ export const Batteries: React.FC<BatteryProps> = ({
           {textCurrent != null && (
             <text
               aria-label="text_current"
-              transform="matrix(1 0 0 1 371.0 270.5)"
+              transform="matrix(1 0 0 1 372.0 270.5)"
               className="st12 st9 st13"
             >
               {textCurrent}a

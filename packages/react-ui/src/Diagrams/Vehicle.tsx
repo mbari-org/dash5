@@ -116,6 +116,7 @@ export interface VehicleProps {
   textMissionAgo?: string
   textVersion?: string
   svgCurrent?: string
+  colorDuration?: string
 }
 
 export const Vehicle: React.FC<VehicleProps> = ({
@@ -206,6 +207,7 @@ export const Vehicle: React.FC<VehicleProps> = ({
   textMissionAgo,
   textVersion,
   svgCurrent,
+  colorDuration,
 }) => {
   const isDocked = status === 'pluggedIn' || status === 'recovered'
   return (
@@ -298,6 +300,7 @@ export const Vehicle: React.FC<VehicleProps> = ({
           textBatteryUnits={textBatteryUnits}
           textCurrent={textCurrent}
           svgCurrent={svgCurrent}
+          colorDuration={colorDuration}
         />
 
         <ArgosBatteryIndicator colorArgo={colorArgo} />

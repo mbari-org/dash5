@@ -260,6 +260,7 @@ const ConnectedVehicleCellComponent: React.FC<{
         textMissionAgo: vehicle.text_missionago,
         textVersion: vehicle.text_version,
         svgCurrent: vehicle.svg_current,
+        colorDuration: vehicle.color_duration,
       }
     : undefined
 
