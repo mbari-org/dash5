@@ -191,10 +191,23 @@ export const Batteries: React.FC<BatteryProps> = ({
       {/* Battery duration / current draw — server-provided bar + text labels */}
       {(textBatteryDuration != null || textCurrent != null) && (
         <>
-          {/* svgCurrent is a trusted server-provided SVG rect string from the
-              internal okeanids.mbari.org widget API. Sanitization would require
-              restructuring the API response to expose numeric current levels. */}
-          {svgCurrent && <g dangerouslySetInnerHTML={{ __html: svgCurrent }} />}
+          {/* Parse the server-provided rect string into a React element to avoid
+              dangerouslySetInnerHTML. The API always returns a single <rect>. */}
+          {svgCurrent &&
+            (() => {
+              const attr = (name: string) =>
+                svgCurrent.match(new RegExp(`${name}="([^"]*)"`))?.[1]
+              return (
+                <rect
+                  aria-label="battery current bar"
+                  x={attr('x')}
+                  y={attr('y')}
+                  width={attr('width')}
+                  height={attr('height')}
+                  className={attr('class')}
+                />
+              )
+            })()}
           {/* Dark border matching the max bar area (volt+amp column height) */}
           <rect
             aria-label="battery bar border"

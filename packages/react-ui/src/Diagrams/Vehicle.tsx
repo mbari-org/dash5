@@ -105,6 +105,7 @@ export interface VehicleProps {
   textLeakAgo?: string
   colorCtd?: string
   textCameraAgo?: string
+  textCtdStatus?: string
   colorVoltThresh?: string
   textVoltThresh?: string
   colorAmpThresh?: string
@@ -207,6 +208,7 @@ export const Vehicle: React.FC<VehicleProps> = ({
   textFlow,
   colorCtd = 'st18',
   textCameraAgo,
+  textCtdStatus,
   colorVoltThresh,
   textVoltThresh,
   colorAmpThresh,
@@ -385,7 +387,7 @@ export const Vehicle: React.FC<VehicleProps> = ({
 
         <CtdIndicator
           colorCtd={colorCtd}
-          textCameraAgo={textCameraAgo}
+          textCtdStatus={textCtdStatus ?? textCameraAgo}
           isDocked={isDocked}
         />
 

@@ -4,17 +4,17 @@ import { VehicleProps } from '../Vehicle'
 
 export interface CtdIndicatorProps {
   colorCtd?: VehicleProps['colorCtd']
-  textCameraAgo?: VehicleProps['textCameraAgo']
+  textCtdStatus?: VehicleProps['textCtdStatus']
   isDocked?: boolean
 }
 
 export const CtdIndicator: React.FC<CtdIndicatorProps> = ({
   colorCtd,
-  textCameraAgo,
+  textCtdStatus,
   isDocked,
 }) => {
   // Server sends "ON " or "OFF"; knob sits right when on, left when off.
-  const isOn = textCameraAgo?.trim().toUpperCase() === 'ON'
+  const isOn = textCtdStatus?.trim().toUpperCase() === 'ON'
   const knobCx = isOn ? '547' : '541'
 
   return (
@@ -57,7 +57,7 @@ export const CtdIndicator: React.FC<CtdIndicatorProps> = ({
         className={clsx(isDocked ? 'st18' : 'st9')}
         style={{ fontSize: '7.5px' }}
       >
-        {textCameraAgo}
+        {textCtdStatus}
       </text>
     </>
   )
