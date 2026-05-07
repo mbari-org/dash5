@@ -190,17 +190,18 @@ export const Batteries: React.FC<BatteryProps> = ({
       {(textBatteryDuration != null || textCurrent != null) && (
         <>
           {/* Outer frame around the bar + labels */}
+          {/* Server-provided colored bar (svg_current) sized to current draw */}
+          {svgCurrent && <g dangerouslySetInnerHTML={{ __html: svgCurrent }} />}
+          {/* Dark border framing the bar — fixed to the max bar area */}
           <rect
-            aria-label="battery duration frame"
-            x="362"
-            y="249"
-            width="38"
+            aria-label="battery bar border"
+            x="364.5"
+            y="249.5"
+            width="6"
             height="23"
             className="st1"
             fill="none"
           />
-          {/* Server-provided colored bar (svg_current) sized to current draw */}
-          {svgCurrent && <g dangerouslySetInnerHTML={{ __html: svgCurrent }} />}
           {textBatteryDuration != null && (
             <text
               aria-label="text_batteryduration"
