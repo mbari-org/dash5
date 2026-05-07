@@ -194,21 +194,21 @@ export const Batteries: React.FC<BatteryProps> = ({
           {/* Outer frame around the bar + labels */}
           {/* Server-provided colored bar (svg_current) sized to current draw */}
           {svgCurrent && <g dangerouslySetInnerHTML={{ __html: svgCurrent }} />}
-          {/* Dark border framing the bar — spans all 4 text rows */}
+          {/* Dark border matching the max bar area (volt+amp column height) */}
           <rect
             aria-label="battery bar border"
             x="364.5"
             y="249.5"
             width="6"
-            height="27"
+            height="23"
             className="st1"
             fill="none"
           />
           {textBatteryDuration != null && (
             <text
               aria-label="text_batteryduration"
-              transform="matrix(1 0 0 1 372.0 254.5)"
-              className={clsx('st9 st13', colorDuration ?? 'st12')}
+              transform="matrix(1 0 0 1 372.0 254.0)"
+              className={clsx('st9 st24', colorDuration ?? 'st12')}
             >
               {textBatteryDuration}
             </text>
@@ -216,8 +216,8 @@ export const Batteries: React.FC<BatteryProps> = ({
           {textBatteryUnits && (
             <text
               aria-label="text_batteryunits"
-              transform="matrix(1 0 0 1 372.0 261.0)"
-              className={clsx('st9 st13', colorDuration ?? 'st12')}
+              transform="matrix(1 0 0 1 372.0 259.5)"
+              className={clsx('st9 st24', colorDuration ?? 'st12')}
             >
               {textBatteryUnits}
             </text>
@@ -225,8 +225,8 @@ export const Batteries: React.FC<BatteryProps> = ({
           {textCurrent != null && (
             <text
               aria-label="text_current"
-              transform="matrix(1 0 0 1 372.0 267.5)"
-              className="st12 st9 st13"
+              transform="matrix(1 0 0 1 372.0 265.5)"
+              className="st12 st9 st24"
             >
               {textCurrent}
             </text>
@@ -234,8 +234,8 @@ export const Batteries: React.FC<BatteryProps> = ({
           {textCurrent != null && (
             <text
               aria-label="text_current_units"
-              transform="matrix(1 0 0 1 372.0 274.0)"
-              className="st12 st9 st13"
+              transform="matrix(1 0 0 1 372.0 271.5)"
+              className="st12 st9 st24"
             >
               amps
             </text>
