@@ -56,6 +56,26 @@ export const determineCommandStatus = (
     : undefined
 
   if (!matchingSbdSend) {
+    // If the command carries a timeout duration and that window has already
+    // elapsed since it was created, treat it as timed out on the client side.
+    // This covers commands that were never dispatched (no sbdSend) and for
+    // which the backend may never write a timeout note.
+    const timeoutMinutes = timeout ? parseInt(timeout, 10) : undefined
+    const timeoutMs =
+      timeoutMinutes && command.unixTime
+        ? command.unixTime + timeoutMinutes * 60 * 1000
+        : undefined
+    if (timeoutMs && Date.now() > timeoutMs) {
+      return {
+        ...command,
+        via,
+        timeout,
+        status: 'timeout',
+        commsIsoTime: new Date(timeoutMs).toISOString(),
+        mtmsn: undefined,
+        momsn: undefined,
+      }
+    }
     return {
       ...command,
       via,
@@ -105,6 +125,24 @@ export const determineCommandStatus = (
         mtmsn: matchingSbdReceipt.mtmsn || undefined,
         momsn: matchingSbdReceive.momsn || undefined,
       }
+    }
+  }
+
+  // Same client-side timeout inference for dispatched-but-unacknowledged commands.
+  const timeoutMinutes = timeout ? parseInt(timeout, 10) : undefined
+  const sentTimeoutMs =
+    timeoutMinutes && matchingSbdSend.unixTime
+      ? matchingSbdSend.unixTime + timeoutMinutes * 60 * 1000
+      : undefined
+  if (sentTimeoutMs && Date.now() > sentTimeoutMs) {
+    return {
+      ...command,
+      via,
+      timeout,
+      status: 'timeout',
+      commsIsoTime: new Date(sentTimeoutMs).toISOString(),
+      mtmsn: matchingSbdReceipt?.mtmsn || undefined,
+      momsn: undefined,
     }
   }
 

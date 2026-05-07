@@ -192,6 +192,112 @@ test('queue count shows 0 for a timed-out command — timeout is not "in queue"'
   })
 })
 
+test('queue count excludes a command that is "sent" in commsEvents but timed-out in the timeout-notes query', async () => {
+  // Regression for the cross-query gap: useCommsEvents paginates newest-first
+  // and may not reach an old timeout note, leaving the command as 'sent'.
+  // The dedicated timeout-notes query (noteMatches=Timeout while waiting) covers
+  // the full history via recursive backfill and should override that status.
+  server.use(
+    rest.get('/events', (req, res, ctx) => {
+      const noteMatches = req.url.searchParams.get('noteMatches')
+      if (noteMatches === 'Timeout while waiting') {
+        // The dedicated timeout-notes query returns the note for command 350.
+        return res(
+          ctx.status(200),
+          ctx.json({
+            result: [
+              {
+                eventId: 1350,
+                eventType: 'note',
+                unixTime: Date.now() - 55 * 1000,
+                isoTime: new Date(Date.now() - 55 * 1000).toISOString(),
+                data: null,
+                text: null,
+                note: 'id=350: Timeout while waiting for ack',
+                user: null,
+              },
+            ],
+          })
+        )
+      }
+      // The commsEvents query returns command 350 as 'sent' (no timeout note here).
+      return res(
+        ctx.status(200),
+        ctx.json({
+          result: makeEvents([{ eventId: 350, commsStatus: 'sent' }]),
+        })
+      )
+    })
+  )
+
+  render(
+    <MockProviders queryClient={new QueryClient()}>
+      <VehicleAccordion {...props} />
+    </MockProviders>
+  )
+
+  await waitFor(() => {
+    expect(screen.getByText('0 item(s) in queue')).toBeInTheDocument()
+  })
+})
+
+test('queue count ignores sent commands from a previous deployment', async () => {
+  // A 'sent' command whose unixTime is before the deployment start (from) must
+  // not inflate the badge — it belongs to a prior deployment.
+  server.use(
+    rest.get('/events', (req, res, ctx) => {
+      // The timeout-notes sub-query (noteMatches=Timeout while waiting) must
+      // return an empty note list so it doesn't interfere with this test.
+      if (req.url.searchParams.get('noteMatches') === 'Timeout while waiting') {
+        return res(ctx.status(200), ctx.json({ result: [] }))
+      }
+      return res(
+        ctx.status(200),
+        ctx.json({
+          result: [
+            {
+              eventId: 450,
+              eventType: 'command',
+              data: 'old command',
+              // 2 hours before the deployment start (props.from = now - 1hr)
+              unixTime: Date.now() - 2 * 3600 * 1000,
+              isoTime: new Date(Date.now() - 2 * 3600 * 1000).toISOString(),
+              note: '[[via:sat, timeout:30min]]',
+              vehicleName: 'example',
+              user: 'test-operator',
+            },
+            {
+              eventId: 1450,
+              eventType: 'sbdSend',
+              refId: 450,
+              state: 1,
+              unixTime: Date.now() - 2 * 3600 * 1000 + 5000,
+              isoTime: new Date(
+                Date.now() - 2 * 3600 * 1000 + 5000
+              ).toISOString(),
+              data: null,
+              text: null,
+              note: null,
+              vehicleName: 'example',
+              user: null,
+            },
+          ],
+        })
+      )
+    })
+  )
+
+  render(
+    <MockProviders queryClient={new QueryClient()}>
+      <VehicleAccordion {...props} />
+    </MockProviders>
+  )
+
+  await waitFor(() => {
+    expect(screen.getByText('0 item(s) in queue')).toBeInTheDocument()
+  })
+})
+
 test('queue count correctly mixes ack, sent, timeout, and queued commands', async () => {
   // 1 queued + 1 sent = 2 in queue; 1 ack + 1 timeout = 0 added
   server.use(

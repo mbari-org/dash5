@@ -171,8 +171,10 @@ export const ScheduleCell: React.FC<ScheduleCellProps> = ({
             <span
               title={statusTooltip ?? status}
               className={clsx(
-                'self-center text-2xl text-[rgb(255,132,59)]',
-                scheduleStatus !== 'running' && 'opacity-60'
+                'self-center text-2xl',
+                scheduleStatus === 'running'
+                  ? 'text-black'
+                  : 'text-stone-500 opacity-60'
               )}
             >
               <StopwatchWarningIcon />

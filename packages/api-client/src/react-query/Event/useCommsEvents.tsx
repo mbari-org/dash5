@@ -93,6 +93,23 @@ export const useCommsEvents = ({
       return { commands, sbdSendMap, sbdReceiptMap, sbdReceiveMap, timeoutMap }
     }, [flatData])
 
+  // Tick every 60 s to re-evaluate client-side timeout inference in
+  // determineCommandStatus (which calls Date.now()) without triggering a
+  // network refetch. Commands transition queued/sent → timeout as their
+  // windows expire purely via local recomputation.
+  //
+  // Note: each enabled hook instance owns one 60 s interval. Components that
+  // mount multiple useCommsEvents queries (e.g. CommsSection pre-fetches two)
+  // will have one timer per query. The overhead is intentionally minimal —
+  // only a cheap setState per tick — and is avoided entirely when enabled is
+  // false (e.g. pass enabled={false} for a query that is never displayed).
+  const [clockTick, setClockTick] = useState(0)
+  useEffect(() => {
+    if (!enabled) return
+    const id = setInterval(() => setClockTick((t) => t + 1), 60 * 1000)
+    return () => clearInterval(id)
+  }, [enabled])
+
   const [isFetchingMore, setIsFetchingMore] = useState(false)
   const [targetCommandCount, setTargetCommandCount] = useState(0)
 
@@ -178,7 +195,17 @@ export const useCommsEvents = ({
         timeoutMap
       )
     })
-  }, [commands, sbdSendMap, sbdReceiptMap, sbdReceiveMap, timeoutMap])
+    // clockTick is intentionally included: the memo re-runs every 60 s so
+    // client-side timeout inference (Date.now()) is re-evaluated without any
+    // network request. All other deps are exhaustive.
+  }, [
+    commands,
+    sbdSendMap,
+    sbdReceiptMap,
+    sbdReceiveMap,
+    timeoutMap,
+    clockTick,
+  ])
 
   const fetching = isFetching || isFetchingMore || isFetchingNextPage
 

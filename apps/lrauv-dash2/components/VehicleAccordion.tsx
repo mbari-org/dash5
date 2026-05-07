@@ -72,11 +72,11 @@ const VehicleAccordion: React.FC<VehicleAccordionProps> = ({
     },
     {
       enabled: !!activeDeployment && !!vehicleName,
-      // from: 1 triggers recursive backfill on every refetch — use a longer
-      // interval to avoid repeated multi-page fetches. New timeouts are already
-      // captured by commsEvents (which refreshes on its own schedule).
-      staleTime: 60 * 1000,
-      refetchInterval: 60 * 1000,
+      // from: 1 triggers recursive backfill on every refetch. Historical timeout
+      // notes only ever accumulate — they are never removed — so fetch once per
+      // session (Infinity staleTime, no interval). New timeouts are captured by
+      // the commsEvents query which runs on its own polling schedule.
+      staleTime: Infinity,
     }
   )
 
@@ -92,14 +92,21 @@ const VehicleAccordion: React.FC<VehicleAccordionProps> = ({
   // Count commands genuinely waiting for vehicle receipt: 'queued' (not yet
   // dispatched via SBD) and 'sent' (dispatched but no vehicle fetch confirmed).
   // 'ack' and 'timeout' are excluded — the vehicle has already dealt with them.
+  // Scope to the current deployment window (from/to) so commands from prior
+  // deployments — which may legitimately never have been acked — don't inflate
+  // the badge. commsEvents uses from:0 to share the React Query cache with
+  // CommsSection, so we filter by unixTime (ms) here instead.
   const unackedCount = useMemo(
     () =>
-      commsEvents.filter(
-        (e) =>
+      commsEvents.filter((e) => {
+        const inDeployment = e.unixTime >= from && (!to || e.unixTime <= to)
+        return (
+          inDeployment &&
           (e.status === 'queued' || e.status === 'sent') &&
           !timedOutEventIds.has(e.eventId)
-      ).length,
-    [commsEvents, timedOutEventIds]
+        )
+      }).length,
+    [commsEvents, timedOutEventIds, from, to]
   )
 
   const { data: missionStartedEvent } = useMissionStartedEvent(
@@ -218,7 +225,12 @@ const VehicleAccordion: React.FC<VehicleAccordionProps> = ({
         onExpand={handleExpand('comms')}
       />
       {section === 'comms' && (
-        <CommsSection vehicleName={vehicleName} from={from} to={to} />
+        <CommsSection
+          vehicleName={vehicleName}
+          from={from}
+          to={to}
+          timedOutEventIds={timedOutEventIds}
+        />
       )}
       <AccordionHeader
         label="Log"
