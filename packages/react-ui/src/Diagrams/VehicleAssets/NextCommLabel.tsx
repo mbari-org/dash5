@@ -4,14 +4,25 @@ import { VehicleProps } from '../Vehicle'
 export interface NextCommProps {
   textNextComm: VehicleProps['textNextComm']
   colorNextComm: VehicleProps['colorNextComm']
+  textNeedsComms?: VehicleProps['textNeedsComms']
 }
 
 export const NextCommLabel: React.FC<NextCommProps> = ({
   textNextComm,
   colorNextComm,
+  textNeedsComms,
 }) => {
   return (
     <g>
+      {textNeedsComms && (
+        <text
+          aria-label="needs comms"
+          transform="matrix(1 0 0 1 143.5 288.0)"
+          className="st12 st9 st13"
+        >
+          {textNeedsComms}
+        </text>
+      )}
       <circle
         data-testid="next comm indicator"
         className={colorNextComm}

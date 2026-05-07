@@ -80,6 +80,20 @@ export interface GetVehicleInfoResponse {
   text_volts: string
   color_volts: string
   color_argo?: string
+  color_ot?: string
+  color_ctd?: string
+  color_voltthresh?: string
+  color_ampthresh?: string
+  color_duration?: string
+  text_voltthresh?: string
+  text_ampthresh?: string
+  text_batteryduration?: number
+  text_batteryunits?: string
+  text_current?: number
+  text_needcomms?: string
+  text_missionago?: string
+  text_cameraago?: string
+  text_version?: string
   not_found: boolean
 }
 

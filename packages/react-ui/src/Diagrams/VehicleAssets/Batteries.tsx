@@ -16,6 +16,13 @@ export interface BatteryProps {
   textAmpAgo?: VehicleProps['textAmpAgo']
   colorVolts?: VehicleProps['colorVolts']
   colorAmps?: VehicleProps['colorAmps']
+  colorVoltThresh?: VehicleProps['colorVoltThresh']
+  textVoltThresh?: VehicleProps['textVoltThresh']
+  colorAmpThresh?: VehicleProps['colorAmpThresh']
+  textAmpThresh?: VehicleProps['textAmpThresh']
+  textBatteryDuration?: VehicleProps['textBatteryDuration']
+  textBatteryUnits?: VehicleProps['textBatteryUnits']
+  textCurrent?: VehicleProps['textCurrent']
   isDocked?: boolean
   onClick?: (event: React.MouseEvent<SVGElement, MouseEvent>) => void
 }
@@ -34,6 +41,13 @@ export const Batteries: React.FC<BatteryProps> = ({
   textAmpAgo,
   colorVolts,
   colorAmps,
+  colorVoltThresh,
+  textVoltThresh,
+  colorAmpThresh,
+  textAmpThresh,
+  textBatteryDuration,
+  textBatteryUnits,
+  textCurrent,
   onClick: handleClick,
 }) => {
   return (
@@ -132,18 +146,93 @@ export const Batteries: React.FC<BatteryProps> = ({
       >
         {textAmpAgo}
       </text>
+      {/* Voltage threshold label */}
       <text
-        transform="matrix(1 0 0 1 308.64 258.2642)"
-        className={clsx(isDocked ? 'st18' : 'st9 st10')}
+        transform="matrix(1 0 0 1 310.64 258.2642)"
+        className={clsx(isDocked ? 'st18' : 'st9')}
+        style={{ fontSize: '9.4px' }}
       >
         Volts:
       </text>
+      {textVoltThresh && (
+        <text
+          aria-label="text_voltthresh"
+          transform="matrix(1 0 0 1 291.5 258.0)"
+          className="st9"
+          style={{ fontSize: '7.5px' }}
+        >
+          {textVoltThresh}
+        </text>
+      )}
+
+      {/* Amp threshold label */}
       <text
         transform="matrix(1 0 0 1 304.7791 270.4165)"
-        className={clsx(isDocked ? 'st18' : 'st9 st10')}
+        className={clsx(isDocked ? 'st18' : 'st9')}
+        style={{ fontSize: '9.4px' }}
       >
         AmpH:
       </text>
+      {textAmpThresh && (
+        <text
+          aria-label="text_ampthresh"
+          transform="matrix(1 0 0 1 293.5 270.0)"
+          className="st9"
+          style={{ fontSize: '7.5px' }}
+        >
+          {textAmpThresh}
+        </text>
+      )}
+
+      {/* Battery duration / current draw — framed box to the right of volt/amp */}
+      {(textBatteryDuration != null || textCurrent != null) && (
+        <rect
+          aria-label="battery duration frame"
+          x="365"
+          y="249"
+          width="30"
+          height="23"
+          className="st1"
+          fill="none"
+        />
+      )}
+      {textBatteryDuration != null && (
+        <text
+          aria-label="text_batteryduration"
+          transform="matrix(1 0 0 1 367.0 257.5)"
+          className="st12 st9 st13"
+        >
+          {textBatteryDuration}
+        </text>
+      )}
+      {textBatteryUnits && (
+        <text
+          aria-label="text_batteryunits"
+          transform="matrix(1 0 0 1 367.0 264.0)"
+          className="st12 st9 st13"
+        >
+          {textBatteryUnits}
+        </text>
+      )}
+      {textCurrent != null && (
+        <text
+          aria-label="text_current"
+          transform="matrix(1 0 0 1 367.0 270.5)"
+          className="st12 st9 st13"
+        >
+          {textCurrent}
+        </text>
+      )}
+      {textCurrent != null && (
+        <text
+          aria-label="text_current_units"
+          transform="matrix(1 0 0 1 367.0 277.0)"
+          className="st12 st9 st13"
+        >
+          amps
+        </text>
+      )}
+
       <rect
         x="300"
         y="234"

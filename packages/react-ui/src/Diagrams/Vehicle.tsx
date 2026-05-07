@@ -23,6 +23,7 @@ import { ArriveInfo } from './VehicleAssets/ArriveInfo'
 import { ErrorLabel } from './VehicleAssets/ErrorLabel'
 import { Leak } from './VehicleAssets/Leak'
 import { Note } from './VehicleAssets/Note'
+import { CtdIndicator } from './VehicleAssets/CtdIndicator'
 
 export interface VehicleProps {
   className?: string
@@ -102,6 +103,18 @@ export interface VehicleProps {
   colorLeak?: string
   textLeak?: string
   textLeakAgo?: string
+  colorCtd?: string
+  textCameraAgo?: string
+  colorVoltThresh?: string
+  textVoltThresh?: string
+  colorAmpThresh?: string
+  textAmpThresh?: string
+  textBatteryDuration?: number | string
+  textBatteryUnits?: string
+  textCurrent?: number | string
+  textNeedsComms?: string
+  textMissionAgo?: string
+  textVersion?: string
 }
 
 export const Vehicle: React.FC<VehicleProps> = ({
@@ -179,6 +192,18 @@ export const Vehicle: React.FC<VehicleProps> = ({
   textNoteTime,
   colorFlow = 'st3',
   textFlow,
+  colorCtd = 'st18',
+  textCameraAgo,
+  colorVoltThresh,
+  textVoltThresh,
+  colorAmpThresh,
+  textAmpThresh,
+  textBatteryDuration,
+  textBatteryUnits,
+  textCurrent,
+  textNeedsComms,
+  textMissionAgo,
+  textVersion,
 }) => {
   const isDocked = status === 'pluggedIn' || status === 'recovered'
   return (
@@ -263,6 +288,13 @@ export const Vehicle: React.FC<VehicleProps> = ({
           textAmpAgo={textAmpAgo}
           colorVolts={colorVolts}
           colorAmps={colorAmps}
+          colorVoltThresh={colorVoltThresh}
+          textVoltThresh={textVoltThresh}
+          colorAmpThresh={colorAmpThresh}
+          textAmpThresh={textAmpThresh}
+          textBatteryDuration={textBatteryDuration}
+          textBatteryUnits={textBatteryUnits}
+          textCurrent={textCurrent}
         />
 
         <ArgosBatteryIndicator colorArgo={colorArgo} />
@@ -270,6 +302,7 @@ export const Vehicle: React.FC<VehicleProps> = ({
         <MissionLabel
           textMission={textMission}
           colorMissionDefault={colorMissionDefault}
+          textMissionAgo={textMissionAgo}
         />
 
         {textScheduled && (
@@ -283,6 +316,7 @@ export const Vehicle: React.FC<VehicleProps> = ({
           <NextCommLabel
             textNextComm={textNextComm}
             colorNextComm={colorNextComm}
+            textNeedsComms={textNeedsComms}
           />
         )}
 
@@ -307,6 +341,12 @@ export const Vehicle: React.FC<VehicleProps> = ({
           textGps={textGps}
           textGpsAgo={textGpsAgo}
           colorGps={colorGps}
+          isDocked={isDocked}
+        />
+
+        <CtdIndicator
+          colorCtd={colorCtd}
+          textCameraAgo={textCameraAgo}
           isDocked={isDocked}
         />
 
@@ -381,6 +421,15 @@ export const Vehicle: React.FC<VehicleProps> = ({
         >
           {textFlow}
         </text>
+        {textVersion && (
+          <text
+            aria-label="version"
+            transform="matrix(1 0 0 1 618.0 314.0)"
+            className="st12 st9 st13"
+          >
+            {textVersion}
+          </text>
+        )}
       </svg>
     </div>
   )

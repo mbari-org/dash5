@@ -4,14 +4,25 @@ import { VehicleProps } from '../Vehicle'
 interface MissionProps {
   textMission: VehicleProps['textMission']
   colorMissionDefault: VehicleProps['colorMissionDefault']
+  textMissionAgo?: VehicleProps['textMissionAgo']
 }
 
 export const MissionLabel: React.FC<MissionProps> = ({
   textMission,
   colorMissionDefault,
+  textMissionAgo,
 }) => {
   return (
     <g>
+      {textMissionAgo && (
+        <text
+          aria-label="mission ago"
+          transform="matrix(1 0 0 1 462.0 178.0)"
+          className="st12 st9 st13"
+        >
+          {textMissionAgo}
+        </text>
+      )}
       <circle
         data-testid="mission status indicator"
         className={colorMissionDefault}
