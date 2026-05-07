@@ -118,6 +118,7 @@ export const FullWidthVehicleDiagram: React.FC<
   textNeedsComms,
   textMissionAgo,
   textVersion,
+  svgCurrent,
   vehicleWidth = 800,
   vehicleHeight = 300,
   onBatteryClick: handleBatteryClick,

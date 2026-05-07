@@ -246,6 +246,20 @@ const ConnectedVehicleCellComponent: React.FC<{
         textLeak: vehicle.text_leak,
         textLeakAgo: vehicle.text_leakago,
         colorLeak: vehicle.color_leak,
+        colorOt: vehicle.color_ot,
+        colorCtd: vehicle.color_ctd,
+        textCameraAgo: vehicle.text_cameraago,
+        colorVoltThresh: vehicle.color_voltthresh,
+        textVoltThresh: vehicle.text_voltthresh,
+        colorAmpThresh: vehicle.color_ampthresh,
+        textAmpThresh: vehicle.text_ampthresh,
+        textBatteryDuration: vehicle.text_batteryduration,
+        textBatteryUnits: vehicle.text_batteryunits,
+        textCurrent: vehicle.text_current,
+        textNeedsComms: vehicle.text_needcomms,
+        textMissionAgo: vehicle.text_missionago,
+        textVersion: vehicle.text_version,
+        svgCurrent: vehicle.svg_current,
       }
     : undefined
 
