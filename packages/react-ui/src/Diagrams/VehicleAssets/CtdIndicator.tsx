@@ -15,7 +15,7 @@ export const CtdIndicator: React.FC<CtdIndicatorProps> = ({
 }) => {
   // Server sends "ON " or "OFF"; knob sits right when on, left when off.
   const isOn = textCameraAgo?.trim().toUpperCase() === 'ON'
-  const knobCx = isOn ? '552' : '541'
+  const knobCx = isOn ? '547' : '541'
 
   return (
     <>
