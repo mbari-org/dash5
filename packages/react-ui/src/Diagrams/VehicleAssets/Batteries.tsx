@@ -23,6 +23,7 @@ export interface BatteryProps {
   textBatteryDuration?: VehicleProps['textBatteryDuration']
   textBatteryUnits?: VehicleProps['textBatteryUnits']
   textCurrent?: VehicleProps['textCurrent']
+  svgCurrent?: VehicleProps['svgCurrent']
   isDocked?: boolean
   onClick?: (event: React.MouseEvent<SVGElement, MouseEvent>) => void
 }
@@ -48,6 +49,7 @@ export const Batteries: React.FC<BatteryProps> = ({
   textBatteryDuration,
   textBatteryUnits,
   textCurrent,
+  svgCurrent,
   onClick: handleClick,
 }) => {
   return (
@@ -184,53 +186,49 @@ export const Batteries: React.FC<BatteryProps> = ({
         </text>
       )}
 
-      {/* Battery duration / current draw — framed box to the right of volt/amp */}
+      {/* Battery duration / current draw — server-provided bar + text labels */}
       {(textBatteryDuration != null || textCurrent != null) && (
-        <rect
-          aria-label="battery duration frame"
-          x="365"
-          y="249"
-          width="30"
-          height="23"
-          className="st1"
-          fill="none"
-        />
-      )}
-      {textBatteryDuration != null && (
-        <text
-          aria-label="text_batteryduration"
-          transform="matrix(1 0 0 1 367.0 257.5)"
-          className="st12 st9 st13"
-        >
-          {textBatteryDuration}
-        </text>
-      )}
-      {textBatteryUnits && (
-        <text
-          aria-label="text_batteryunits"
-          transform="matrix(1 0 0 1 367.0 264.0)"
-          className="st12 st9 st13"
-        >
-          {textBatteryUnits}
-        </text>
-      )}
-      {textCurrent != null && (
-        <text
-          aria-label="text_current"
-          transform="matrix(1 0 0 1 367.0 270.5)"
-          className="st12 st9 st13"
-        >
-          {textCurrent}
-        </text>
-      )}
-      {textCurrent != null && (
-        <text
-          aria-label="text_current_units"
-          transform="matrix(1 0 0 1 367.0 277.0)"
-          className="st12 st9 st13"
-        >
-          amps
-        </text>
+        <>
+          {/* Outer frame around the bar + labels */}
+          <rect
+            aria-label="battery duration frame"
+            x="362"
+            y="249"
+            width="38"
+            height="23"
+            className="st1"
+            fill="none"
+          />
+          {/* Server-provided colored bar (svg_current) sized to current draw */}
+          {svgCurrent && <g dangerouslySetInnerHTML={{ __html: svgCurrent }} />}
+          {textBatteryDuration != null && (
+            <text
+              aria-label="text_batteryduration"
+              transform="matrix(1 0 0 1 371.0 257.5)"
+              className="st12 st9 st13"
+            >
+              {textBatteryDuration}
+            </text>
+          )}
+          {textBatteryUnits && (
+            <text
+              aria-label="text_batteryunits"
+              transform="matrix(1 0 0 1 371.0 264.0)"
+              className="st12 st9 st13"
+            >
+              {textBatteryUnits}
+            </text>
+          )}
+          {textCurrent != null && (
+            <text
+              aria-label="text_current"
+              transform="matrix(1 0 0 1 371.0 270.5)"
+              className="st12 st9 st13"
+            >
+              {textCurrent}a
+            </text>
+          )}
+        </>
       )}
 
       <rect

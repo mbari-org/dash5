@@ -94,6 +94,7 @@ export interface GetVehicleInfoResponse {
   text_missionago?: string
   text_cameraago?: string
   text_version?: string
+  svg_current?: string
   not_found: boolean
 }
 

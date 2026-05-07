@@ -245,6 +245,7 @@ export const FullWidthVehicleDiagram: React.FC<
             textBatteryDuration={textBatteryDuration}
             textBatteryUnits={textBatteryUnits}
             textCurrent={textCurrent}
+            svgCurrent={svgCurrent}
           />
 
           <ArgosBatteryIndicator colorArgo={colorArgo} />
