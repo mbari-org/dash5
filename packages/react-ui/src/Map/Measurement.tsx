@@ -54,12 +54,23 @@ function ConvertDEGToDMS(deg: number, dir: boolean) {
 
 // DEFINE DERIVED CONST
 // CalculateDistance (Path Perimeter)
-const calculateDistance = (positions: L.LatLng[]): number => {
+// When closed=true the last→first segment is included, giving the full
+// perimeter for polygon (area) measurements.
+const calculateDistance = (positions: L.LatLng[], closed = false): number => {
   totalDistance = 0
   for (let i = 0; i < positions.length - 1; i++) {
     const from = point([positions[i].lng, positions[i].lat])
     const to = point([positions[i + 1].lng, positions[i + 1].lat])
     totalDistance += distance(from, to)
+    perimeter = totalDistance
+  }
+  if (closed && positions.length >= 3) {
+    const last = positions[positions.length - 1]
+    const first = positions[0]
+    totalDistance += distance(
+      point([last.lng, last.lat]),
+      point([first.lng, first.lat])
+    )
     perimeter = totalDistance
   }
   return totalDistance
@@ -240,9 +251,11 @@ export const Measurement: React.FC<MeasurementProps> = ({
       </div>
     )
   }
-  // Distance based on measurements
+  // Distance based on measurements.
+  // Area measurements are closed polygons, so the perimeter includes the
+  // final segment from the last vertex back to the first.
   const pathDist: number = useMemo(
-    () => calculateDistance(measurements),
+    () => calculateDistance(measurements, feature.current === 'area'),
     [measurements]
   )
   // Area based on measurements
