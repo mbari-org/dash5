@@ -287,12 +287,14 @@ test("should display the vehicle's last update ", async () => {
   expect(screen.queryByText(`${props.textLastUpdate}`)).toBeInTheDocument()
 })
 
-test('should display heading label', async () => {
-  render(<FullWidthVehicleDiagram {...props} />)
-  expect(screen.queryByTestId('heading label')).toBeInTheDocument()
+test('should display heading bearing text when arrow provided', async () => {
+  render(<FullWidthVehicleDiagram {...props} textArrow="270" />)
+  expect(screen.queryByLabelText('bearing')).toBeInTheDocument()
 })
 
-test('should display speed label', async () => {
-  render(<FullWidthVehicleDiagram {...props} />)
-  expect(screen.queryByTestId('speed label')).toBeInTheDocument()
+test('should display reckoned label', async () => {
+  render(
+    <FullWidthVehicleDiagram {...props} textReckonDistance="1.2km in 0.5h" />
+  )
+  expect(screen.queryByTestId('reckoned_label')).toBeInTheDocument()
 })

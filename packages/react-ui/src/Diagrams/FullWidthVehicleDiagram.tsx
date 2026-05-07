@@ -347,7 +347,6 @@ export const FullWidthVehicleDiagram: React.FC<
             textReckonDistance={textReckonDistance}
             colorArrow={colorArrow}
             isDocked={isDocked}
-            isFullWidthDiagram
           />
 
           <ArriveInfo
