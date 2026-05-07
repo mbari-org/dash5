@@ -13,6 +13,10 @@ export const CtdIndicator: React.FC<CtdIndicatorProps> = ({
   textCameraAgo,
   isDocked,
 }) => {
+  // Server sends "ON " or "OFF"; knob sits right when on, left when off.
+  const isOn = textCameraAgo?.trim().toUpperCase() === 'ON'
+  const knobCx = isOn ? '552' : '541'
+
   return (
     <>
       {/* Row 1: filled circle indicator + "CTD" label */}
@@ -42,7 +46,7 @@ export const CtdIndicator: React.FC<CtdIndicatorProps> = ({
       />
       <circle
         aria-label="ctd toggle knob"
-        cx="547"
+        cx={knobCx}
         cy="255.5"
         r="2.8"
         className="st3"
