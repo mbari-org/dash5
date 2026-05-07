@@ -5,12 +5,14 @@ export interface NextCommProps {
   textNextComm: VehicleProps['textNextComm']
   colorNextComm: VehicleProps['colorNextComm']
   textNeedsComms?: VehicleProps['textNeedsComms']
+  colorNextCommsText?: VehicleProps['colorNextCommsText']
 }
 
 export const NextCommLabel: React.FC<NextCommProps> = ({
   textNextComm,
   colorNextComm,
   textNeedsComms,
+  colorNextCommsText,
 }) => {
   return (
     <g>
@@ -33,7 +35,7 @@ export const NextCommLabel: React.FC<NextCommProps> = ({
       <text
         aria-label="next comm"
         transform="matrix(1 0 0 1 195 298.3899)"
-        className="st9 st10"
+        className={`st9 st10 ${colorNextCommsText ?? ''}`}
       >
         {textNextComm}
       </text>

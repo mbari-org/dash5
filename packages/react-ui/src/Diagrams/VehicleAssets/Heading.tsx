@@ -25,18 +25,18 @@ export const Heading: React.FC<HeadingProps> = ({
       {!isFullWidthDiagram && (
         <g
           aria-label="arrow"
-          transform={`rotate (-90,604.94,259.74), rotate(${
+          transform={`translate(0,-7) rotate(-90,604.94,259.74) rotate(${
             textArrow ? textArrow : '90'
           },605,259.74)`}
         >
-          <rect
-            x="594.14"
-            y="256.24"
-            className={colorArrow}
-            width="11.73"
-            height="7"
-          />
-          <g>
+          <g transform="translate(604.94,259.74) scale(1.33) translate(-604.94,-259.74)">
+            <rect
+              x="594.14"
+              y="256.24"
+              className={colorArrow}
+              width="11.73"
+              height="7"
+            />
             <polygon
               data-testid="arrow head"
               className={colorArrow}
@@ -51,7 +51,7 @@ export const Heading: React.FC<HeadingProps> = ({
           transform={
             isFullWidthDiagram
               ? 'matrix(1 0 0 1 142 298)'
-              : 'matrix(1 0 0 1 596 262.3)'
+              : 'matrix(1 0 0 1 616 256)'
           }
           className={clsx(isFullWidthDiagram ? 'st24' : 'st9 st13')}
         >

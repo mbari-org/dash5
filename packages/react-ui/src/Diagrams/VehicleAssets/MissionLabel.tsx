@@ -5,12 +5,14 @@ interface MissionProps {
   textMission: VehicleProps['textMission']
   colorMissionDefault: VehicleProps['colorMissionDefault']
   textMissionAgo?: VehicleProps['textMissionAgo']
+  colorMissionText?: VehicleProps['colorMissionText']
 }
 
 export const MissionLabel: React.FC<MissionProps> = ({
   textMission,
   colorMissionDefault,
   textMissionAgo,
+  colorMissionText,
 }) => {
   return (
     <g>
@@ -36,7 +38,7 @@ export const MissionLabel: React.FC<MissionProps> = ({
       <text
         aria-label="mission name"
         transform="matrix(1 0 0 1 462.0 186)"
-        className="st9 st10 st12"
+        className={`st9 st10 ${colorMissionText ?? 'st12'}`}
       >
         {textMission}
       </text>

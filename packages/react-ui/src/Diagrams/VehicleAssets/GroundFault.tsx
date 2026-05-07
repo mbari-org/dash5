@@ -6,6 +6,8 @@ interface GroundFaultProps {
   textGf?: VehicleProps['textGf']
   colorGf?: VehicleProps['colorGf']
   textGfTime?: VehicleProps['textGfTime']
+  colorLowGf?: VehicleProps['colorLowGf']
+  colorHighGf?: VehicleProps['colorHighGf']
   isDocked?: boolean
 }
 
@@ -13,6 +15,8 @@ export const GroundFault: React.FC<GroundFaultProps> = ({
   textGf,
   colorGf,
   textGfTime,
+  colorLowGf,
+  colorHighGf,
   isDocked,
 }) => {
   return (
@@ -33,6 +37,18 @@ export const GroundFault: React.FC<GroundFaultProps> = ({
           className={colorGf}
           width="24.43"
           height="10.5"
+        />
+        {/* Low GF triangle — filled when colorLowGf is not st18/invisible */}
+        <polygon
+          data-testid="ground fault low triangle"
+          points="507,264.5 511,254 515,264.5"
+          className={colorLowGf ?? 'st18'}
+        />
+        {/* High GF triangle — filled when colorHighGf is not st18/invisible */}
+        <polygon
+          data-testid="ground fault high triangle"
+          points="507,264.5 511,254 515,264.5"
+          className={colorHighGf ?? 'st18'}
         />
       </g>
       <g>

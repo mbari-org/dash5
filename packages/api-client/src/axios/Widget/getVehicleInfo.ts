@@ -95,6 +95,17 @@ export interface GetVehicleInfoResponse {
   text_cameraago?: string
   text_version?: string
   svg_current?: string
+  color_lowgf?: string
+  color_highgf?: string
+  color_missiontext?: string
+  color_logago?: string
+  color_satcommstext?: string
+  color_nextcommstext?: string
+  color_timeouttext?: string
+  dock_buoy?: string
+  dock_eye?: string
+  dock_line?: string
+  dock_tri?: string
   not_found: boolean
 }
 

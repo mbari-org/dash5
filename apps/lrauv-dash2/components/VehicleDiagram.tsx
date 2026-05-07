@@ -99,6 +99,7 @@ const VehicleDiagram: React.FC<{
         textCriticalError={vehicle?.text_criticalerror}
         textTimeout={vehicle?.text_timeout}
         colorSatComm={vehicle?.color_satcomm}
+        colorNextComm={vehicle?.color_satcomm}
         colorSmallCable={vehicle?.color_smallcable}
         textNote={vehicle?.text_note}
         textArriveStation={vehicle?.text_arrivestation}
@@ -113,6 +114,17 @@ const VehicleDiagram: React.FC<{
         colorHw={vehicle?.color_hw}
         colorArrow={vehicle?.color_arrow}
         colorGf={vehicle?.color_gf}
+        colorLowGf={vehicle?.color_lowgf}
+        colorHighGf={vehicle?.color_highgf}
+        colorMissionText={vehicle?.color_missiontext}
+        colorLogAgo={vehicle?.color_logago}
+        colorSatCommsText={vehicle?.color_satcommstext}
+        colorNextCommsText={vehicle?.color_nextcommstext}
+        colorTimeoutText={vehicle?.color_timeouttext}
+        dockBuoy={vehicle?.dock_buoy}
+        dockEye={vehicle?.dock_eye}
+        dockLine={vehicle?.dock_line}
+        dockTri={vehicle?.dock_tri}
         textGf={vehicle?.text_gf}
         colorFlow={vehicle?.color_flow}
         colorWavecolor={vehicle?.color_wavecolor ?? 'st0'}

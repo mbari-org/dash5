@@ -1,6 +1,19 @@
 import React from 'react'
+import { VehicleProps } from '../Vehicle'
 
-export const AuvBody = () => {
+export interface AuvBodyProps {
+  dockBuoy?: VehicleProps['dockBuoy']
+  dockEye?: VehicleProps['dockEye']
+  dockLine?: VehicleProps['dockLine']
+  dockTri?: VehicleProps['dockTri']
+}
+
+export const AuvBody: React.FC<AuvBodyProps> = ({
+  dockBuoy,
+  dockEye,
+  dockLine,
+  dockTri,
+}) => {
   return (
     <g>
       <path
@@ -15,6 +28,34 @@ export const AuvBody = () => {
       <polygon
         className="st3"
         points="255.42,235.44 244.05,237.4 244.8,183.82 255.99,180.82 "
+      />
+      {/* Docking station indicators — visible only when vehicle is docked */}
+      <line
+        data-testid="dock line"
+        className={dockLine ?? 'st18'}
+        x1="275.29"
+        y1="231.72"
+        x2="275.29"
+        y2="210"
+      />
+      <circle
+        data-testid="dock buoy"
+        className={dockBuoy ?? 'st18'}
+        cx="275.29"
+        cy="205"
+        r="8"
+      />
+      <circle
+        data-testid="dock eye"
+        className={dockEye ?? 'st18'}
+        cx="275.29"
+        cy="205"
+        r="3"
+      />
+      <polygon
+        data-testid="dock tri"
+        className={dockTri ?? 'st18'}
+        points="268,212 275.29,198 282.58,212"
       />
     </g>
   )

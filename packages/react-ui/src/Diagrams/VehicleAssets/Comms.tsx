@@ -9,6 +9,7 @@ export interface CommsProps {
   textCellAgo: VehicleProps['textCellAgo']
   colorSatComm: VehicleProps['colorSatComm']
   colorCell: VehicleProps['colorCell']
+  colorSatCommsText?: VehicleProps['colorSatCommsText']
   isDocked: boolean
 }
 export const Comms: React.FC<CommsProps> = ({
@@ -18,6 +19,7 @@ export const Comms: React.FC<CommsProps> = ({
   textCellAgo,
   colorSatComm,
   colorCell,
+  colorSatCommsText,
   isDocked,
 }) => {
   return (
@@ -67,14 +69,14 @@ export const Comms: React.FC<CommsProps> = ({
       <text
         name="text_commago"
         transform="matrix(1 0 0 1 339.0 191.2224)"
-        className="st12 st9 st13"
+        className={`st9 st13 ${colorSatCommsText || 'st12'}`}
       >
         {textCommAgo}
       </text>
       <text
         name="text_cellago"
         transform="matrix(1 0 0 1 342.0 221.2224)"
-        className="st12 st9 st13"
+        className={`st9 st13 ${colorSatCommsText || 'st12'}`}
       >
         {textCellAgo}
       </text>

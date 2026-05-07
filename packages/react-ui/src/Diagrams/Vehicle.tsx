@@ -117,6 +117,17 @@ export interface VehicleProps {
   textVersion?: string
   svgCurrent?: string
   colorDuration?: string
+  colorLowGf?: string
+  colorHighGf?: string
+  colorMissionText?: string
+  colorLogAgo?: string
+  colorSatCommsText?: string
+  colorNextCommsText?: string
+  colorTimeoutText?: string
+  dockBuoy?: string
+  dockEye?: string
+  dockLine?: string
+  dockTri?: string
 }
 
 export const Vehicle: React.FC<VehicleProps> = ({
@@ -208,6 +219,17 @@ export const Vehicle: React.FC<VehicleProps> = ({
   textVersion,
   svgCurrent,
   colorDuration,
+  colorLowGf,
+  colorHighGf,
+  colorMissionText,
+  colorLogAgo,
+  colorSatCommsText,
+  colorNextCommsText,
+  colorTimeoutText,
+  dockBuoy,
+  dockEye,
+  dockLine,
+  dockTri,
 }) => {
   const isDocked = status === 'pluggedIn' || status === 'recovered'
   return (
@@ -253,7 +275,12 @@ export const Vehicle: React.FC<VehicleProps> = ({
           colorBigCable={colorBigCable}
         />
 
-        <AuvBody />
+        <AuvBody
+          dockBuoy={dockBuoy}
+          dockEye={dockEye}
+          dockLine={dockLine}
+          dockTri={dockTri}
+        />
 
         <DropWeightIndicator
           textDroptime={textDroptime}
@@ -265,6 +292,8 @@ export const Vehicle: React.FC<VehicleProps> = ({
           textGf={textGf}
           colorGf={colorGf}
           textGfTime={textGfTime}
+          colorLowGf={colorLowGf}
+          colorHighGf={colorHighGf}
           isDocked={isDocked}
         />
 
@@ -309,6 +338,7 @@ export const Vehicle: React.FC<VehicleProps> = ({
           textMission={textMission}
           colorMissionDefault={colorMissionDefault}
           textMissionAgo={textMissionAgo}
+          colorMissionText={colorMissionText}
         />
 
         {textScheduled && (
@@ -323,6 +353,7 @@ export const Vehicle: React.FC<VehicleProps> = ({
             textNextComm={textNextComm}
             colorNextComm={colorNextComm}
             textNeedsComms={textNeedsComms}
+            colorNextCommsText={colorNextCommsText}
           />
         )}
 
@@ -330,6 +361,7 @@ export const Vehicle: React.FC<VehicleProps> = ({
           <TimeoutLabel
             textTimeout={textTimeout}
             colorMissionAgo={colorMissionAgo}
+            colorTimeoutText={colorTimeoutText}
           />
         )}
 
@@ -340,6 +372,7 @@ export const Vehicle: React.FC<VehicleProps> = ({
           textCell={textCell}
           textCellAgo={textCellAgo}
           colorCell={colorCell}
+          colorSatCommsText={colorSatCommsText}
           isDocked={isDocked}
         />
 
@@ -376,6 +409,7 @@ export const Vehicle: React.FC<VehicleProps> = ({
         <Log
           textLogTime={textLogTime}
           textLogAgo={textLogAgo}
+          colorLogAgo={colorLogAgo}
           isDocked={isDocked}
         />
 

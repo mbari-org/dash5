@@ -63,6 +63,17 @@ export const FullWidthVehicleDiagram: React.FC<
   colorGf = 'st3',
   textGf,
   textGfTime,
+  colorLowGf,
+  colorHighGf,
+  colorMissionText,
+  colorLogAgo,
+  colorSatCommsText,
+  colorNextCommsText,
+  colorTimeoutText,
+  dockBuoy,
+  dockEye,
+  dockLine,
+  dockTri,
   textSpeed,
   colorHw = 'st3',
   colorSw = 'st3',
@@ -200,7 +211,12 @@ export const FullWidthVehicleDiagram: React.FC<
             isFullWidthDiagram
           />
 
-          <AuvBody />
+          <AuvBody
+            dockBuoy={dockBuoy}
+            dockEye={dockEye}
+            dockLine={dockLine}
+            dockTri={dockTri}
+          />
 
           <DropWeightIndicator
             textDroptime={textDroptime}
@@ -212,6 +228,8 @@ export const FullWidthVehicleDiagram: React.FC<
             textGf={textGf}
             colorGf={colorGf}
             textGfTime={textGfTime}
+            colorLowGf={colorLowGf}
+            colorHighGf={colorHighGf}
             isDocked={isDocked}
           />
 
@@ -257,6 +275,7 @@ export const FullWidthVehicleDiagram: React.FC<
             textMission={textMission}
             colorMissionDefault={colorMissionDefault}
             textMissionAgo={textMissionAgo}
+            colorMissionText={colorMissionText}
           />
 
           {textScheduled && (
@@ -271,6 +290,7 @@ export const FullWidthVehicleDiagram: React.FC<
               textNextComm={textNextComm}
               colorNextComm={colorNextComm}
               textNeedsComms={textNeedsComms}
+              colorNextCommsText={colorNextCommsText}
             />
           )}
 
@@ -278,12 +298,14 @@ export const FullWidthVehicleDiagram: React.FC<
             <TimeoutLabel
               textTimeout={textTimeout}
               colorMissionAgo={colorMissionAgo}
+              colorTimeoutText={colorTimeoutText}
             />
           )}
 
           <Log
             textLogTime={textLogTime}
             textLogAgo={textLogAgo}
+            colorLogAgo={colorLogAgo}
             isDocked={isDocked}
           />
 
@@ -294,6 +316,7 @@ export const FullWidthVehicleDiagram: React.FC<
             textCell={textCell}
             textCellAgo={textCellAgo}
             colorCell={colorCell}
+            colorSatCommsText={colorSatCommsText}
             isDocked={isDocked}
           />
 
