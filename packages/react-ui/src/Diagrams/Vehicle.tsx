@@ -393,6 +393,18 @@ export const Vehicle: React.FC<VehicleProps> = ({
           isDocked={isDocked}
         />
 
+        {/* UBAT/flow rendered before CtdIndicator so the camera body rect
+            (inside CtdIndicator) paints on top and covers them — matching Dash4 SVG order. */}
+        <circle name="UBAT" className={ubatColor} cx="544" cy="251" r="4" />
+        <circle name="flow" className={colorFlow} cx="544" cy="261" r="4" />
+        <text
+          name="text_flowago"
+          transform="matrix(1 0 0 1 541.0 272.0)"
+          className="st12 st9 st13"
+        >
+          {textFlow}
+        </text>
+
         <CtdIndicator
           colorCtd={colorCtd}
           colorCameraBody={colorCameraBody}
@@ -452,16 +464,6 @@ export const Vehicle: React.FC<VehicleProps> = ({
           colorLeak={colorLeak}
         />
 
-        {/* <!--pontus specific but can be made invisible--> */}
-        <circle name="UBAT" className={ubatColor} cx="544" cy="251" r="4" />
-        <circle name="flow" className={colorFlow} cx="544" cy="261" r="4" />
-        <text
-          name="text_flowago"
-          transform="matrix(1 0 0 1 541.0 272.0)"
-          className="st12 st9 st13"
-        >
-          {textFlow}
-        </text>
         {textVersion && (
           <text
             aria-label="version"

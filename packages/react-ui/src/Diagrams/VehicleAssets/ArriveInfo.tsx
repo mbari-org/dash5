@@ -38,7 +38,7 @@ export const ArriveInfo: React.FC<ArriveInfoProps> = ({
             ? 'matrix(1 0 0 1 135 180)'
             : 'matrix(1 0 0 1 581 225)'
         }
-        className="st9 st13"
+        className={clsx(isDocked ? 'st18' : 'st9 st13')}
       >
         {textArriveStation}
       </text>
@@ -49,7 +49,7 @@ export const ArriveInfo: React.FC<ArriveInfoProps> = ({
             ? 'matrix(1 0 0 1 135 188)'
             : 'matrix(1 0 0 1 582 233)'
         }
-        className="st12 st9 st24"
+        className={clsx(isDocked ? 'st18' : 'st12 st9 st24')}
       >
         {textStationDist}
       </text>
@@ -60,7 +60,7 @@ export const ArriveInfo: React.FC<ArriveInfoProps> = ({
             ? 'matrix(1 0 0 1 135 195)'
             : 'matrix(1 0 0 1 582 240)'
         }
-        className="st12 st9 st24"
+        className={clsx(isDocked ? 'st18' : 'st12 st9 st24')}
       >
         {textCurrentDist}
       </text>

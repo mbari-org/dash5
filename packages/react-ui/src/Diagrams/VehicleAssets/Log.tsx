@@ -29,14 +29,14 @@ export const Log: React.FC<LogProps> = ({
       <text
         aria-label="log time"
         transform="matrix(1 0 0 1 189.0 221.6039)"
-        className="st9 st10"
+        className={clsx(isDocked ? 'st18' : 'st9 st10')}
       >
         {textLogTime}
       </text>
       <text
         aria-label="time since last log"
         transform="matrix(1 0 0 1 148.0 231.2224)"
-        className="st12 st9 st13"
+        className={clsx(isDocked ? 'st18' : 'st12 st9 st13')}
       >
         {textLogAgo}
       </text>
