@@ -33,13 +33,13 @@ export const Heading: React.FC<HeadingProps> = ({
             <rect
               x="594.14"
               y="256.24"
-              className={colorArrow}
+              className={colorArrow ?? 'st16'}
               width="11.73"
               height="7"
             />
             <polygon
               data-testid="arrow head"
-              className={colorArrow}
+              className={colorArrow ?? 'st16'}
               points="618.22,259.74 600.81,266.86 604.94,259.74 600.81,252.63"
             />
           </g>

@@ -328,6 +328,23 @@ export const FullWidthVehicleDiagram: React.FC<
             isDocked={isDocked}
           />
 
+          {/* UBAT/flow before CtdIndicator so camera body paints on top — matching Dash4 SVG order.
+              White (st3) when docked, hidden when deployed (pontus-specific). */}
+          <circle
+            name="UBAT"
+            className={isDocked ? 'st3' : 'st18'}
+            cx="544"
+            cy="251"
+            r="4"
+          />
+          <circle
+            name="flow"
+            className={isDocked ? 'st3' : 'st18'}
+            cx="544"
+            cy="261"
+            r="4"
+          />
+
           <CtdIndicator
             colorCtd={colorCtd}
             colorCameraBody={colorCameraBody}
