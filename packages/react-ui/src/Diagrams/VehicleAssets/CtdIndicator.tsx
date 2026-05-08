@@ -13,20 +13,28 @@ export const CtdIndicator: React.FC<CtdIndicatorProps> = ({
   textCtdStatus,
   isDocked,
 }) => {
-  // Server sends "ON " or "OFF"; knob sits right when on, left when off.
-  const isOn = textCtdStatus?.trim().toUpperCase() === 'ON'
+  // Server sends "ON " or "OFF"; knob is centered (cx=547) when ON, left when OFF.
+  // cx=547 is the horizontal center of the toggle rect (x=538, width=18).
+  const normalizedStatus = textCtdStatus?.trim().toUpperCase()
+  const isKnownStatus = normalizedStatus === 'ON' || normalizedStatus === 'OFF'
+  const isOn = normalizedStatus === 'ON'
   const knobCx = isOn ? '547' : '541'
+
   // st18 is the server's "invisible / no data" sentinel class.
-  const isHidden = isDocked || !colorCtd || colorCtd === 'st18'
+  // Dot + label hide when no valid colorCtd or docked.
+  const isDotHidden = isDocked || !colorCtd || colorCtd === 'st18'
+  // Toggle also requires a recognized status so a missing value doesn't
+  // render the switch in a misleading default-OFF position.
+  const isToggleHidden = isDotHidden || !isKnownStatus
 
   return (
     <>
       {/* Row 1: filled circle indicator + "CTD" label.
-          The dot is also suppressed when hidden so it doesn't float
-          as an orphaned circle while the rest of the widget is absent. */}
+          The dot is also suppressed when isDotHidden so it doesn't float
+          as an orphaned circle while no data is present. */}
       <circle
         aria-label="ctd dot"
-        className={isHidden ? 'st18' : colorCtd}
+        className={isDotHidden ? 'st18' : colorCtd}
         cx="542"
         cy="241"
         r="3.6"
@@ -34,15 +42,14 @@ export const CtdIndicator: React.FC<CtdIndicatorProps> = ({
       <text
         transform="matrix(1 0 0 1 549.0 241)"
         dominantBaseline="central"
-        className={clsx(isHidden ? 'st18' : 'st9 st10')}
+        className={clsx(isDotHidden ? 'st18' : 'st9 st10')}
       >
         CTD
       </text>
 
       {/* Row 2: toggle-switch rectangle + white circle knob + status text.
-          Hidden entirely when colorCtd is absent/st18 or vehicle is docked,
-          so the knob doesn't float as an orphaned white circle. */}
-      {!isHidden && (
+          Hidden when no colorCtd/docked, or status is absent/unrecognized. */}
+      {!isToggleHidden && (
         <>
           <rect
             aria-label="ctd toggle background"
