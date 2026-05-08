@@ -338,6 +338,12 @@ export const FullWidthVehicleDiagram: React.FC<
 
           <Cart colorCart={colorCart} colorCartCircle={colorCartCircle} />
 
+          {/* isFullWidthDiagram intentionally omitted: when true, Heading hides
+              the heading arrow and moves text to front-section SVG coords
+              (~x=135-142). Those positions overlap with the front-section
+              elements already rendered above, causing a visual regression.
+              The rear-section coordinates (default, isFullWidthDiagram=false)
+              are the correct placement for the full-width diagram. */}
           <Heading
             textArrow={textArrow}
             textThrustTime={textThrustTime}
@@ -346,6 +352,9 @@ export const FullWidthVehicleDiagram: React.FC<
             isDocked={isDocked}
           />
 
+          {/* isFullWidthDiagram intentionally omitted for the same reason as
+              Heading above — front-section SVG coords conflict with existing
+              front-section renders when the flag is set. */}
           <ArriveInfo
             textArriveLabel={textArriveLabel}
             textArriveStation={textArriveStation}

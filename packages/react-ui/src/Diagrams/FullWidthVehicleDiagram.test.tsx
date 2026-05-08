@@ -305,7 +305,9 @@ test('should render CTD dot with provided color', async () => {
 })
 
 test('should render CTD toggle knob on the right when CTD is ON', async () => {
-  render(<FullWidthVehicleDiagram {...props} textCtdStatus="ON" />)
+  render(
+    <FullWidthVehicleDiagram {...props} colorCtd="st4" textCtdStatus="ON" />
+  )
   expect(screen.queryByLabelText('ctd toggle knob')).toHaveAttribute(
     'cx',
     '547'

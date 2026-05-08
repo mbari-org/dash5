@@ -63,7 +63,7 @@ export const Batteries: React.FC<BatteryProps> = ({
     const width = attr('width')
     const height = attr('height')
     const className = attr('class')
-    if (!x || !y || !width || !height) return null
+    if (x == null || y == null || width == null || height == null) return null
     return { x, y, width, height, className }
   }, [svgCurrent])
 
