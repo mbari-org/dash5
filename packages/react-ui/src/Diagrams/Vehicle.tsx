@@ -201,7 +201,7 @@ export const Vehicle: React.FC<VehicleProps> = ({
   textStationDist,
   textCriticalError,
   textCriticalTime,
-  ubatColor = 'st3',
+  ubatColor = 'st18',
   textNote,
   textNoteTime,
   colorFlow = 'st3',
