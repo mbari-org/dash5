@@ -864,7 +864,7 @@ export const ScheduleEventDetailsModal: React.FC<
                   )}
                 </span>
               </p>
-              <p className="font-medium font-mono text-sm">
+              <p className="font-mono text-sm text-red-800">
                 {event.mtmsn != null && <span>MTMSN: {event.mtmsn}</span>}
                 {event.mtmsn != null && event.momsn != null && (
                   <span className="mx-2 text-stone-400">·</span>
