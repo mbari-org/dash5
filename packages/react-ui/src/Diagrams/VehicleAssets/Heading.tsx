@@ -45,7 +45,7 @@ export const Heading: React.FC<HeadingProps> = ({
           </g>
         </g>
       )}
-      {textArrow && (
+      {!isDocked && textArrow && (
         <text
           aria-label="bearing"
           transform={
@@ -65,7 +65,7 @@ export const Heading: React.FC<HeadingProps> = ({
             ? 'matrix(1 0 0 1 135 252)'
             : 'matrix(1 0 0 1 592 276.3205)'
         }
-        className="st9 st10"
+        className={clsx(isDocked ? 'st18' : 'st9 st10')}
       >
         {textThrustTime}
       </text>
