@@ -86,6 +86,8 @@ export const FullWidthVehicleDiagram: React.FC<
   colorBat7 = 'st3',
   colorBat8 = 'st3',
   colorArgo = 'st18',
+  ubatColor = 'st18',
+  colorFlow = 'st18',
   colorLeak = 'st18',
   textLeak,
   textLeakAgo,
@@ -329,17 +331,17 @@ export const FullWidthVehicleDiagram: React.FC<
           />
 
           {/* UBAT/flow before CtdIndicator so camera body paints on top — matching Dash4 SVG order.
-              White (st3) when docked, hidden when deployed (pontus-specific). */}
+              White (st3) when docked, otherwise server-driven (pontus-specific). */}
           <circle
             name="UBAT"
-            className={isDocked ? 'st3' : 'st18'}
+            className={isDocked ? 'st3' : ubatColor}
             cx="544"
             cy="251"
             r="4"
           />
           <circle
             name="flow"
-            className={isDocked ? 'st3' : 'st18'}
+            className={isDocked ? 'st3' : colorFlow}
             cx="544"
             cy="261"
             r="4"
