@@ -14,14 +14,14 @@ export const ErrorLabel: React.FC<ErrorLabelProps> = ({
     <g>
       <text
         aria-label="critical error"
-        transform="matrix(1 0 0 1 154.0 176)"
+        transform="matrix(1 0 0 1 343.0 300)"
         className="st9 st30 st31"
       >
         {textCriticalError}
       </text>
       <text
         aria-label="critical error time"
-        transform="matrix(1 0 0 1 156 183)"
+        transform="matrix(1 0 0 1 343 307)"
         className="st12 st9 st13"
       >
         {textCriticalTime}

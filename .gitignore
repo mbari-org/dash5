@@ -48,3 +48,6 @@ coverage
 
 # turborepo cache
 .turbo
+
+# Cursor IDE local rules (machine-specific, not for sharing)
+.cursor/rules/

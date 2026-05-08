@@ -99,6 +99,7 @@ const VehicleDiagram: React.FC<{
         textCriticalError={vehicle?.text_criticalerror}
         textTimeout={vehicle?.text_timeout}
         colorSatComm={vehicle?.color_satcomm}
+        colorNextComm={vehicle?.color_satcomm}
         colorSmallCable={vehicle?.color_smallcable}
         textNote={vehicle?.text_note}
         textArriveStation={vehicle?.text_arrivestation}
@@ -113,6 +114,17 @@ const VehicleDiagram: React.FC<{
         colorHw={vehicle?.color_hw}
         colorArrow={vehicle?.color_arrow}
         colorGf={vehicle?.color_gf}
+        colorLowGf={vehicle?.color_lowgf}
+        colorHighGf={vehicle?.color_highgf}
+        colorMissionText={vehicle?.color_missiontext}
+        colorLogAgo={vehicle?.color_logago}
+        colorSatCommsText={vehicle?.color_satcommstext}
+        colorNextCommsText={vehicle?.color_nextcommstext}
+        colorTimeoutText={vehicle?.color_timeouttext}
+        dockBuoy={vehicle?.dock_buoy}
+        dockEye={vehicle?.dock_eye}
+        dockLine={vehicle?.dock_line}
+        dockTri={vehicle?.dock_tri}
         textGf={vehicle?.text_gf}
         colorFlow={vehicle?.color_flow}
         colorWavecolor={vehicle?.color_wavecolor ?? 'st0'}
@@ -159,6 +171,25 @@ const VehicleDiagram: React.FC<{
         colorLeak={vehicle?.color_leak}
         textLeakAgo={vehicle?.text_leakago}
         textLeak={vehicle?.text_leak}
+        colorCtd={vehicle?.color_ctd}
+        colorCameraBody={vehicle?.color_camerabody}
+        colorCameraLens={vehicle?.color_cameralens}
+        colorCam1={vehicle?.color_cam1}
+        colorCam2={vehicle?.color_cam2}
+        textCameraAgo={vehicle?.text_cameraago}
+        colorVoltThresh={vehicle?.color_voltthresh}
+        textVoltThresh={vehicle?.text_voltthresh}
+        colorAmpThresh={vehicle?.color_ampthresh}
+        textAmpThresh={vehicle?.text_ampthresh}
+        textBatteryDuration={vehicle?.text_batteryduration}
+        textBatteryUnits={vehicle?.text_batteryunits}
+        textCurrent={vehicle?.text_current}
+        textNeedsComms={vehicle?.text_needcomms}
+        textMissionAgo={vehicle?.text_missionago}
+        textVersion={vehicle?.text_version}
+        svgCurrent={vehicle?.svg_current}
+        colorDuration={vehicle?.color_duration}
+        colorOt={vehicle?.color_ot}
         onBatteryClick={handleBatteryClick}
       />
     </div>

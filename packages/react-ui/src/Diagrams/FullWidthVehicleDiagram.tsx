@@ -14,15 +14,19 @@ import { VehicleInfo } from './VehicleAssets/VehicleInfo'
 import { Cart } from './VehicleAssets/Cart'
 import { ErrorLabel } from './VehicleAssets/ErrorLabel'
 import { Note } from './VehicleAssets/Note'
+import { CtdIndicator } from './VehicleAssets/CtdIndicator'
+import { MissionLabel } from './VehicleAssets/MissionLabel'
+import { ScheduleLabel } from './VehicleAssets/ScheduleLabel'
+import { NextCommLabel } from './VehicleAssets/NextCommLabel'
+import { TimeoutLabel } from './VehicleAssets/TimeoutLabel'
+import { Log } from './VehicleAssets/Log'
+import { Heading } from './VehicleAssets/Heading'
+import { ArriveInfo } from './VehicleAssets/ArriveInfo'
 import { VehicleProps } from './Vehicle'
 import { useResizeObserver } from '@mbari/utils'
-import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
-import { faArrowUp } from '@fortawesome/free-solid-svg-icons'
 import { Leak } from './VehicleAssets/Leak'
 
 export interface FullWidthVehicleDiagramProps extends VehicleProps {
-  vehicleWidth?: number
-  vehicleHeight?: number
   onBatteryClick?: BatteryProps['onClick']
 }
 
@@ -57,6 +61,17 @@ export const FullWidthVehicleDiagram: React.FC<
   colorGf = 'st3',
   textGf,
   textGfTime,
+  colorLowGf,
+  colorHighGf,
+  colorMissionText,
+  colorLogAgo,
+  colorSatCommsText,
+  colorNextCommsText,
+  colorTimeoutText,
+  dockBuoy,
+  dockEye,
+  dockLine,
+  dockTri,
   textSpeed,
   colorHw = 'st3',
   colorSw = 'st3',
@@ -71,6 +86,8 @@ export const FullWidthVehicleDiagram: React.FC<
   colorBat7 = 'st3',
   colorBat8 = 'st3',
   colorArgo = 'st18',
+  ubatColor = 'st18',
+  colorFlow = 'st18',
   colorLeak = 'st18',
   textLeak,
   textLeakAgo,
@@ -81,6 +98,17 @@ export const FullWidthVehicleDiagram: React.FC<
   colorAmps = 'st3',
   colorCart = 'st18',
   colorCartCircle = 'st18',
+  textMission = '',
+  colorMissionDefault = 'st1',
+  textScheduled,
+  colorScheduled = 'st1',
+  textNextComm,
+  colorNextComm,
+  textTimeout,
+  colorMissionAgo = 'st3',
+  textLogTime,
+  textLogAgo,
+  colorArrow,
   textArriveLabel = 'Arrive Station',
   textArriveStation,
   textCurrentDist,
@@ -89,17 +117,29 @@ export const FullWidthVehicleDiagram: React.FC<
   textCriticalTime,
   textNote,
   textNoteTime,
-  vehicleWidth = 800,
-  vehicleHeight = 300,
+  colorCtd,
+  colorCameraBody,
+  colorCameraLens,
+  colorCam1,
+  colorCam2,
+  colorVoltThresh,
+  textVoltThresh,
+  colorAmpThresh,
+  textAmpThresh,
+  textBatteryDuration,
+  textBatteryUnits,
+  textCurrent,
+  textNeedsComms,
+  textMissionAgo,
+  textVersion,
+  svgCurrent,
+  colorDuration,
   onBatteryClick: handleBatteryClick,
 }) => {
   const containerRef = useRef<HTMLDivElement | null>(null)
   const { size: containerSize } = useResizeObserver({ element: containerRef })
 
   const isDocked = status === 'pluggedIn' || status === 'recovered'
-
-  const xOffset = (containerSize.width - vehicleWidth) / 2
-  const yOffset = (containerSize.height - vehicleHeight) / 2
 
   const waveHeight = containerSize?.height * 0.8
   const waveOffset = containerSize?.height * 0.2
@@ -108,13 +148,11 @@ export const FullWidthVehicleDiagram: React.FC<
   const wavePath = `M0,${waveOffset} ${new Array(numberOfWaves)
     .fill(null)
     .reduce((a, _, i) => {
-      const start = 0 //(waveWidth / numberOfWaves) * i
-      const end = waveWidth / numberOfWaves // * (i + 1)
+      const start = 0
+      const end = waveWidth / numberOfWaves
       const curveHeight = i < 1 ? 20 : 30
       return `${a} c${start},${curveHeight} ${end},${curveHeight + 20} ${end},0`
     }, '')} l0,${waveHeight} l${-waveWidth},${waveHeight} Z`
-
-  const upArrow = String.fromCharCode(8593)
 
   return (
     <div
@@ -123,6 +161,38 @@ export const FullWidthVehicleDiagram: React.FC<
       aria-label="vehicle diagram"
       ref={containerRef}
     >
+      {/* Background: waves when on mission, dirtbox when docked */}
+      <svg
+        xmlns="http://www.w3.org/2000/svg"
+        version="1.1"
+        x="0px"
+        y="0px"
+        height="100%"
+        width="100%"
+        viewBox={`0 0 ${containerSize?.width ?? 0} ${
+          containerSize.height ?? 0
+        }`}
+        xmlSpace="preserve"
+      >
+        {isDocked ? (
+          <rect
+            data-testid="dirtbox"
+            x="0"
+            y={containerSize?.height - containerSize?.height * 0.4}
+            className={colorDirtbox}
+            width={containerSize?.width}
+            height={containerSize?.height * 0.4}
+          />
+        ) : (
+          <path
+            data-testid="background wave"
+            className={colorWavecolor}
+            d={wavePath}
+          />
+        )}
+      </svg>
+
+      {/* Vehicle diagram: scales to fill container while preserving aspect ratio */}
       <svg
         xmlns="http://www.w3.org/2000/svg"
         xmlnsXlink="http://www.w3.org/1999/xlink"
@@ -130,15 +200,10 @@ export const FullWidthVehicleDiagram: React.FC<
         id="Layer_1"
         x="0px"
         y="0px"
-        viewBox="128 155 510 162.5"
+        viewBox="120 155 534 176"
+        preserveAspectRatio="xMidYMid meet"
         xmlSpace="preserve"
-        className="absolute top-0 left-0 z-10"
-        style={{
-          top: yOffset,
-          left: xOffset,
-          width: vehicleWidth,
-          height: vehicleHeight,
-        }}
+        className="absolute inset-0 z-10 h-full w-full"
       >
         <g>
           <ChargingCable
@@ -147,7 +212,12 @@ export const FullWidthVehicleDiagram: React.FC<
             isFullWidthDiagram
           />
 
-          <AuvBody />
+          <AuvBody
+            dockBuoy={dockBuoy}
+            dockEye={dockEye}
+            dockLine={dockLine}
+            dockTri={dockTri}
+          />
 
           <DropWeightIndicator
             textDroptime={textDroptime}
@@ -159,6 +229,8 @@ export const FullWidthVehicleDiagram: React.FC<
             textGf={textGf}
             colorGf={colorGf}
             textGfTime={textGfTime}
+            colorLowGf={colorLowGf}
+            colorHighGf={colorHighGf}
             isDocked={isDocked}
           />
 
@@ -187,9 +259,56 @@ export const FullWidthVehicleDiagram: React.FC<
             textAmpAgo={textAmpAgo}
             colorVolts={colorVolts}
             colorAmps={colorAmps}
+            colorVoltThresh={colorVoltThresh}
+            textVoltThresh={textVoltThresh}
+            colorAmpThresh={colorAmpThresh}
+            textAmpThresh={textAmpThresh}
+            textBatteryDuration={textBatteryDuration}
+            textBatteryUnits={textBatteryUnits}
+            textCurrent={textCurrent}
+            svgCurrent={svgCurrent}
+            colorDuration={colorDuration}
           />
 
           <ArgosBatteryIndicator colorArgo={colorArgo} />
+
+          <MissionLabel
+            textMission={textMission}
+            colorMissionDefault={colorMissionDefault}
+            textMissionAgo={textMissionAgo}
+            colorMissionText={colorMissionText}
+          />
+
+          {textScheduled && (
+            <ScheduleLabel
+              textScheduled={textScheduled}
+              colorScheduled={colorScheduled}
+            />
+          )}
+
+          {textNextComm && (
+            <NextCommLabel
+              textNextComm={textNextComm}
+              colorNextComm={colorNextComm}
+              textNeedsComms={textNeedsComms}
+              colorNextCommsText={colorNextCommsText}
+            />
+          )}
+
+          {textTimeout && (
+            <TimeoutLabel
+              textTimeout={textTimeout}
+              colorMissionAgo={colorMissionAgo}
+              colorTimeoutText={colorTimeoutText}
+            />
+          )}
+
+          <Log
+            textLogTime={textLogTime}
+            textLogAgo={textLogAgo}
+            colorLogAgo={colorLogAgo}
+            isDocked={isDocked}
+          />
 
           <Comms
             textSat={textSat}
@@ -198,6 +317,7 @@ export const FullWidthVehicleDiagram: React.FC<
             textCell={textCell}
             textCellAgo={textCellAgo}
             colorCell={colorCell}
+            colorSatCommsText={colorSatCommsText}
             isDocked={isDocked}
           />
 
@@ -208,6 +328,32 @@ export const FullWidthVehicleDiagram: React.FC<
             isDocked={isDocked}
           />
 
+          {/* UBAT/flow before CtdIndicator so camera body paints on top — matching Dash4 SVG order.
+              White (st3) when docked, otherwise server-driven (pontus-specific). */}
+          <circle
+            name="UBAT"
+            className={isDocked ? 'st3' : ubatColor}
+            cx="544"
+            cy="251"
+            r="4"
+          />
+          <circle
+            name="flow"
+            className={isDocked ? 'st3' : colorFlow}
+            cx="544"
+            cy="261"
+            r="4"
+          />
+
+          <CtdIndicator
+            colorCtd={colorCtd}
+            colorCameraBody={colorCameraBody}
+            colorCameraLens={colorCameraLens}
+            colorCam1={colorCam1}
+            colorCam2={colorCam2}
+            isDocked={isDocked}
+          />
+
           <DvlIndicator
             colorDvl={colorDvl}
             textDvlStatus={textDvlStatus}
@@ -215,6 +361,31 @@ export const FullWidthVehicleDiagram: React.FC<
           />
 
           <Cart colorCart={colorCart} colorCartCircle={colorCartCircle} />
+
+          {/* isFullWidthDiagram intentionally omitted: when true, Heading hides
+              the heading arrow and moves text to front-section SVG coords
+              (~x=135-142). Those positions overlap with the front-section
+              elements already rendered above, causing a visual regression.
+              The rear-section coordinates (default, isFullWidthDiagram=false)
+              are the correct placement for the full-width diagram. */}
+          <Heading
+            textArrow={textArrow}
+            textThrustTime={textThrustTime}
+            textReckonDistance={textReckonDistance}
+            colorArrow={colorArrow}
+            isDocked={isDocked}
+          />
+
+          {/* isFullWidthDiagram intentionally omitted for the same reason as
+              Heading above — front-section SVG coords conflict with existing
+              front-section renders when the flag is set. */}
+          <ArriveInfo
+            textArriveLabel={textArriveLabel}
+            textArriveStation={textArriveStation}
+            textCurrentDist={textCurrentDist}
+            textStationDist={textStationDist}
+            isDocked={isDocked}
+          />
 
           <VehicleInfo
             textVehicle={textVehicle}
@@ -227,130 +398,24 @@ export const FullWidthVehicleDiagram: React.FC<
           />
 
           <Note textNote={textNote} textNoteTime={textNoteTime} />
+
           <Leak
             textLeak={textLeak}
             textLeakAgo={textLeakAgo}
             colorLeak={colorLeak}
           />
-        </g>
-      </svg>
-      <svg
-        xmlns="http://www.w3.org/2000/svg"
-        xmlnsXlink="http://www.w3.org/1999/xlink"
-        version="1.1"
-        id="Layer_1"
-        x="0px"
-        y="0px"
-        height="100%"
-        width="100%"
-        viewBox={`0 0 ${containerSize?.width ?? 0} ${
-          containerSize.height ?? 0
-        }`}
-        xmlSpace="preserve"
-        style={style}
-      >
-        {isDocked ? (
-          <rect
-            data-testid={'dirtbox'}
-            x="0"
-            y={containerSize?.height - containerSize?.height * 0.4}
-            className={colorDirtbox}
-            width={containerSize?.width}
-            height={containerSize?.height * 0.4}
-          />
-        ) : (
-          <path
-            data-testid={'background wave'}
-            className={colorWavecolor}
-            d={wavePath}
-          />
-        )}
 
-        <g transform="scale(2)">
-          <text
-            data-testid="arrive_label"
-            x="10"
-            y="20"
-            className={clsx(isDocked ? 'st18' : 'st12 st9 st24')}
-          >
-            {textArriveLabel}
-          </text>
-          <text
-            data-testid="text_arrivestation"
-            className="st9 st13"
-            x="10"
-            y="30"
-          >
-            {textArriveStation}
-          </text>
-          <text
-            data-testid="text_stationdist"
-            className="st12 st9 st24"
-            x="10"
-            y="40"
-          >
-            {textStationDist}
-          </text>
-          <text
-            data-testid="text_currentdist"
-            className="st12 st9 st24"
-            x="10"
-            y="48"
-          >
-            {textCurrentDist}
-          </text>
-
-          <text
-            data-testid="speed label"
-            className={clsx(isDocked ? 'st18' : 'st12 st9 st24')}
-            x="10"
-            y="68"
-          >
-            SPEED
-          </text>
-          <text aria-label="thrust time" className="st9 st10" x="10" y="78">
-            {textThrustTime}
-          </text>
-          <text
-            data-testid="reckoned_label"
-            className={clsx(isDocked ? 'st18' : 'st12 st9 st24')}
-          >
-            reckoned<title>Speed estimated from last two GPS fixes</title>
-          </text>
-          <text
-            aria-label="reckoned detail"
-            className="st12 st9 st24"
-            x="10"
-            y="88"
-          >
-            {textReckonDistance}
-          </text>
-          <text
-            data-testid="heading label"
-            className={clsx(isDocked ? 'st18' : 'st12 st9 st24')}
-            x="10"
-            y="108"
-          >
-            HEADING
-          </text>
-          {!isDocked && textArrow && (
-            <text aria-label="bearing" className="st24" x="20" y="118">
-              {`${textArrow}°`}
+          {textVersion && (
+            <text
+              aria-label="version"
+              transform="matrix(1 0 0 1 618.0 314.0)"
+              className="st12 st9 st13"
+            >
+              {textVersion}
             </text>
           )}
         </g>
       </svg>
-      {!isDocked && (
-        <FontAwesomeIcon
-          icon={faArrowUp}
-          className="absolute"
-          style={{
-            top: 224,
-            left: 20,
-            transform: `rotate(${textArrow}deg)`,
-          }}
-        />
-      )}
     </div>
   )
 }

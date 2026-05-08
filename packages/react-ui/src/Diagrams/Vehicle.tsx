@@ -23,6 +23,7 @@ import { ArriveInfo } from './VehicleAssets/ArriveInfo'
 import { ErrorLabel } from './VehicleAssets/ErrorLabel'
 import { Leak } from './VehicleAssets/Leak'
 import { Note } from './VehicleAssets/Note'
+import { CtdIndicator } from './VehicleAssets/CtdIndicator'
 
 export interface VehicleProps {
   className?: string
@@ -102,6 +103,36 @@ export interface VehicleProps {
   colorLeak?: string
   textLeak?: string
   textLeakAgo?: string
+  colorCtd?: string
+  colorCameraBody?: string
+  colorCameraLens?: string
+  colorCam1?: string
+  colorCam2?: string
+  textCameraAgo?: string
+  textCtdStatus?: string
+  colorVoltThresh?: string
+  textVoltThresh?: string
+  colorAmpThresh?: string
+  textAmpThresh?: string
+  textBatteryDuration?: number | string
+  textBatteryUnits?: string
+  textCurrent?: number | string
+  textNeedsComms?: string
+  textMissionAgo?: string
+  textVersion?: string
+  svgCurrent?: string
+  colorDuration?: string
+  colorLowGf?: string
+  colorHighGf?: string
+  colorMissionText?: string
+  colorLogAgo?: string
+  colorSatCommsText?: string
+  colorNextCommsText?: string
+  colorTimeoutText?: string
+  dockBuoy?: string
+  dockEye?: string
+  dockLine?: string
+  dockTri?: string
 }
 
 export const Vehicle: React.FC<VehicleProps> = ({
@@ -174,11 +205,39 @@ export const Vehicle: React.FC<VehicleProps> = ({
   textStationDist,
   textCriticalError,
   textCriticalTime,
-  ubatColor = 'st3',
+  ubatColor = 'st18',
   textNote,
   textNoteTime,
-  colorFlow = 'st3',
+  colorFlow = 'st18',
   textFlow,
+  colorCtd,
+  colorCameraBody,
+  colorCameraLens,
+  colorCam1,
+  colorCam2,
+  colorVoltThresh,
+  textVoltThresh,
+  colorAmpThresh,
+  textAmpThresh,
+  textBatteryDuration,
+  textBatteryUnits,
+  textCurrent,
+  textNeedsComms,
+  textMissionAgo,
+  textVersion,
+  svgCurrent,
+  colorDuration,
+  colorLowGf,
+  colorHighGf,
+  colorMissionText,
+  colorLogAgo,
+  colorSatCommsText,
+  colorNextCommsText,
+  colorTimeoutText,
+  dockBuoy,
+  dockEye,
+  dockLine,
+  dockTri,
 }) => {
   const isDocked = status === 'pluggedIn' || status === 'recovered'
   return (
@@ -224,7 +283,12 @@ export const Vehicle: React.FC<VehicleProps> = ({
           colorBigCable={colorBigCable}
         />
 
-        <AuvBody />
+        <AuvBody
+          dockBuoy={dockBuoy}
+          dockEye={dockEye}
+          dockLine={dockLine}
+          dockTri={dockTri}
+        />
 
         <DropWeightIndicator
           textDroptime={textDroptime}
@@ -236,6 +300,8 @@ export const Vehicle: React.FC<VehicleProps> = ({
           textGf={textGf}
           colorGf={colorGf}
           textGfTime={textGfTime}
+          colorLowGf={colorLowGf}
+          colorHighGf={colorHighGf}
           isDocked={isDocked}
         />
 
@@ -263,6 +329,15 @@ export const Vehicle: React.FC<VehicleProps> = ({
           textAmpAgo={textAmpAgo}
           colorVolts={colorVolts}
           colorAmps={colorAmps}
+          colorVoltThresh={colorVoltThresh}
+          textVoltThresh={textVoltThresh}
+          colorAmpThresh={colorAmpThresh}
+          textAmpThresh={textAmpThresh}
+          textBatteryDuration={textBatteryDuration}
+          textBatteryUnits={textBatteryUnits}
+          textCurrent={textCurrent}
+          svgCurrent={svgCurrent}
+          colorDuration={colorDuration}
         />
 
         <ArgosBatteryIndicator colorArgo={colorArgo} />
@@ -270,6 +345,8 @@ export const Vehicle: React.FC<VehicleProps> = ({
         <MissionLabel
           textMission={textMission}
           colorMissionDefault={colorMissionDefault}
+          textMissionAgo={textMissionAgo}
+          colorMissionText={colorMissionText}
         />
 
         {textScheduled && (
@@ -283,6 +360,8 @@ export const Vehicle: React.FC<VehicleProps> = ({
           <NextCommLabel
             textNextComm={textNextComm}
             colorNextComm={colorNextComm}
+            textNeedsComms={textNeedsComms}
+            colorNextCommsText={colorNextCommsText}
           />
         )}
 
@@ -290,6 +369,7 @@ export const Vehicle: React.FC<VehicleProps> = ({
           <TimeoutLabel
             textTimeout={textTimeout}
             colorMissionAgo={colorMissionAgo}
+            colorTimeoutText={colorTimeoutText}
           />
         )}
 
@@ -300,6 +380,7 @@ export const Vehicle: React.FC<VehicleProps> = ({
           textCell={textCell}
           textCellAgo={textCellAgo}
           colorCell={colorCell}
+          colorSatCommsText={colorSatCommsText}
           isDocked={isDocked}
         />
 
@@ -307,6 +388,39 @@ export const Vehicle: React.FC<VehicleProps> = ({
           textGps={textGps}
           textGpsAgo={textGpsAgo}
           colorGps={colorGps}
+          isDocked={isDocked}
+        />
+
+        {/* UBAT/flow rendered before CtdIndicator so the camera body rect
+            (inside CtdIndicator) paints on top and covers them — matching Dash4 SVG order. */}
+        <circle
+          name="UBAT"
+          className={isDocked ? 'st3' : ubatColor}
+          cx="544"
+          cy="251"
+          r="4"
+        />
+        <circle
+          name="flow"
+          className={isDocked ? 'st3' : colorFlow}
+          cx="544"
+          cy="261"
+          r="4"
+        />
+        <text
+          name="text_flowago"
+          transform="matrix(1 0 0 1 541.0 272.0)"
+          className="st12 st9 st13"
+        >
+          {textFlow}
+        </text>
+
+        <CtdIndicator
+          colorCtd={colorCtd}
+          colorCameraBody={colorCameraBody}
+          colorCameraLens={colorCameraLens}
+          colorCam1={colorCam1}
+          colorCam2={colorCam2}
           isDocked={isDocked}
         />
 
@@ -330,6 +444,7 @@ export const Vehicle: React.FC<VehicleProps> = ({
         <Log
           textLogTime={textLogTime}
           textLogAgo={textLogAgo}
+          colorLogAgo={colorLogAgo}
           isDocked={isDocked}
         />
 
@@ -359,28 +474,15 @@ export const Vehicle: React.FC<VehicleProps> = ({
           colorLeak={colorLeak}
         />
 
-        {/* <!--pontus specific but can be made invisible--> */}
-        <circle
-          name="UBAT"
-          className={ubatColor}
-          cx="543.96"
-          cy="246.8"
-          r="4.07"
-        />
-        <circle
-          name="flow"
-          className={colorFlow}
-          cx="544.33"
-          cy="259.45"
-          r="4.07"
-        />
-        <text
-          name="text_flowago"
-          transform="matrix(1 0 0 1 541.0 272.0)"
-          className="st12 st9 st13"
-        >
-          {textFlow}
-        </text>
+        {textVersion && (
+          <text
+            aria-label="version"
+            transform="matrix(1 0 0 1 618.0 314.0)"
+            className="st12 st9 st13"
+          >
+            {textVersion}
+          </text>
+        )}
       </svg>
     </div>
   )

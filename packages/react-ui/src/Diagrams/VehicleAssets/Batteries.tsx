@@ -1,4 +1,4 @@
-import React from 'react'
+import React, { useMemo } from 'react'
 import clsx from 'clsx'
 import { VehicleProps } from '../Vehicle'
 
@@ -16,6 +16,15 @@ export interface BatteryProps {
   textAmpAgo?: VehicleProps['textAmpAgo']
   colorVolts?: VehicleProps['colorVolts']
   colorAmps?: VehicleProps['colorAmps']
+  colorVoltThresh?: VehicleProps['colorVoltThresh']
+  textVoltThresh?: VehicleProps['textVoltThresh']
+  colorAmpThresh?: VehicleProps['colorAmpThresh']
+  textAmpThresh?: VehicleProps['textAmpThresh']
+  textBatteryDuration?: VehicleProps['textBatteryDuration']
+  textBatteryUnits?: VehicleProps['textBatteryUnits']
+  textCurrent?: VehicleProps['textCurrent']
+  svgCurrent?: VehicleProps['svgCurrent']
+  colorDuration?: VehicleProps['colorDuration']
   isDocked?: boolean
   onClick?: (event: React.MouseEvent<SVGElement, MouseEvent>) => void
 }
@@ -34,8 +43,34 @@ export const Batteries: React.FC<BatteryProps> = ({
   textAmpAgo,
   colorVolts,
   colorAmps,
+  colorVoltThresh,
+  textVoltThresh,
+  colorAmpThresh,
+  textAmpThresh,
+  textBatteryDuration,
+  textBatteryUnits,
+  textCurrent,
+  svgCurrent,
+  colorDuration,
   onClick: handleClick,
 }) => {
+  const parsedCurrentBar = useMemo(() => {
+    if (!svgCurrent) return null
+    // Use word-boundary anchor so e.g. "x" doesn't match inside "rx" or
+    // "width" doesn't match inside "stroke-width".
+    const attr = (name: string) =>
+      svgCurrent.match(new RegExp(`(?:^|\\s)${name}="([^"]*)"`))?.[1]
+    const x = attr('x')
+    const y = attr('y')
+    const width = attr('width')
+    const height = attr('height')
+    if (x == null || y == null || width == null || height == null) return null
+    // Fall back to st18 (invisible) if the server omits a class attribute so
+    // the rect never renders as an unintended solid black rectangle.
+    const className = attr('class') ?? 'st18'
+    return { x, y, width, height, className }
+  }, [svgCurrent])
+
   return (
     <g>
       <title>Batteries in 0.5 increment from 13.5 to 16.5</title>
@@ -132,18 +167,109 @@ export const Batteries: React.FC<BatteryProps> = ({
       >
         {textAmpAgo}
       </text>
+      {/* Voltage threshold label */}
       <text
-        transform="matrix(1 0 0 1 308.64 258.2642)"
-        className={clsx(isDocked ? 'st18' : 'st9 st10')}
+        transform="matrix(1 0 0 1 310.64 258.2642)"
+        className={clsx(isDocked ? 'st18' : 'st9')}
+        style={{ fontSize: '9.4px' }}
       >
         Volts:
       </text>
+      {textVoltThresh && (
+        <text
+          aria-label="text_voltthresh"
+          transform="matrix(1 0 0 1 293.5 258.0)"
+          className={clsx('st9', isDocked ? 'st18' : colorVoltThresh ?? 'st12')}
+          style={{ fontSize: '7px' }}
+        >
+          {textVoltThresh}
+        </text>
+      )}
+
+      {/* Amp threshold label */}
       <text
         transform="matrix(1 0 0 1 304.7791 270.4165)"
-        className={clsx(isDocked ? 'st18' : 'st9 st10')}
+        className={clsx(isDocked ? 'st18' : 'st9')}
+        style={{ fontSize: '9.4px' }}
       >
         AmpH:
       </text>
+      {textAmpThresh && (
+        <text
+          aria-label="text_ampthresh"
+          transform="matrix(1 0 0 1 295.5 270.0)"
+          className={clsx('st9', isDocked ? 'st18' : colorAmpThresh ?? 'st12')}
+          style={{ fontSize: '7px' }}
+        >
+          {textAmpThresh}
+        </text>
+      )}
+
+      {/* Current bar: always shown when data available (Dash4 renders it regardless
+          of dock state). Text labels hidden when docked — operational values only. */}
+      {(parsedCurrentBar != null ||
+        textBatteryDuration != null ||
+        textCurrent != null) && (
+        <>
+          {parsedCurrentBar && (
+            <rect
+              aria-label="battery current bar"
+              x={parsedCurrentBar.x}
+              y={parsedCurrentBar.y}
+              width={parsedCurrentBar.width}
+              height={parsedCurrentBar.height}
+              className={parsedCurrentBar.className}
+            />
+          )}
+          {/* Dark border matching the max bar area (volt+amp column height) */}
+          <rect
+            aria-label="battery bar border"
+            x="364.5"
+            y="249.5"
+            width="6"
+            height="23"
+            className="st1"
+            fill="none"
+          />
+          {!isDocked && textBatteryDuration != null && (
+            <text
+              aria-label="text_batteryduration"
+              transform="matrix(1 0 0 1 372.0 254.0)"
+              className={clsx('st9 st24', colorDuration ?? 'st12')}
+            >
+              {textBatteryDuration}
+            </text>
+          )}
+          {!isDocked && textBatteryUnits && (
+            <text
+              aria-label="text_batteryunits"
+              transform="matrix(1 0 0 1 372.0 259.5)"
+              className={clsx('st9 st24', colorDuration ?? 'st12')}
+            >
+              {textBatteryUnits}
+            </text>
+          )}
+          {!isDocked && textCurrent != null && (
+            <text
+              aria-label="text_current"
+              transform="matrix(1 0 0 1 372.0 265.5)"
+              className="st12 st9 st24"
+            >
+              {textCurrent}
+            </text>
+          )}
+          {!isDocked && textCurrent != null && (
+            <text
+              aria-label="text_current_units"
+              transform="matrix(1 0 0 1 372.0 271.5)"
+              className="st12 st9 st24"
+            >
+              amps
+            </text>
+          )}
+        </>
+      )}
+
       <rect
         x="300"
         y="234"
