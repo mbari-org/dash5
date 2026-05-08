@@ -7,6 +7,7 @@ export interface CtdIndicatorProps {
   colorCameraLens?: VehicleProps['colorCameraLens']
   colorCam1?: VehicleProps['colorCam1']
   colorCam2?: VehicleProps['colorCam2']
+  isDocked?: boolean
 }
 
 export const CtdIndicator: React.FC<CtdIndicatorProps> = ({
@@ -15,10 +16,12 @@ export const CtdIndicator: React.FC<CtdIndicatorProps> = ({
   colorCameraLens,
   colorCam1,
   colorCam2,
+  isDocked,
 }) => {
-  // Visibility is driven entirely by the server-provided class (st18 = invisible).
-  // isDocked is NOT applied here — Dash4 always renders CTD/UBAT/flow circles and
-  // lets the server choose st3 (white) vs a status color vs st18 (hidden).
+  // Circle visibility is driven by the server-provided class (st18 = invisible).
+  // Dash4 always renders CTD/UBAT/flow circles and lets the server choose
+  // st3 (white) vs a status color vs st18 (hidden), regardless of dock state.
+  // The "CTD" text label is conditionally excluded when docked (matches Dash4).
   const isDotHidden = colorCtd == null || colorCtd === 'st18'
   const isCameraHidden = colorCameraBody == null || colorCameraBody === 'st18'
 
@@ -32,10 +35,11 @@ export const CtdIndicator: React.FC<CtdIndicatorProps> = ({
         cy="241"
         r="4"
       />
-      {/* "CTD" label is static art in Dash4 — always visible. */}
-      <text transform="matrix(1 0 0 1 551 244)" className="st9 st10">
-        CTD
-      </text>
+      {!isDocked && (
+        <text transform="matrix(1 0 0 1 551 244)" className="st9 st10">
+          CTD
+        </text>
+      )}
 
       {/* Camera indicator — body rectangle + lens circle + channel dots.
           Matches Dash4 galene section: color_camerabody drives the body rect,

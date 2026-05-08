@@ -334,6 +334,7 @@ export const FullWidthVehicleDiagram: React.FC<
             colorCameraLens={colorCameraLens}
             colorCam1={colorCam1}
             colorCam2={colorCam2}
+            isDocked={isDocked}
           />
 
           <DvlIndicator
