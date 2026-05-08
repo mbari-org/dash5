@@ -21,11 +21,14 @@ export const CtdIndicator: React.FC<CtdIndicatorProps> = ({
   const knobCx = isOn ? '547' : '541'
 
   // st18 is the server's "invisible / no data" sentinel class.
-  // Dot + label hide when no valid colorCtd or docked.
+  // Dot + "CTD" label hide when no valid colorCtd (server sends st18 when OFF).
   const isDotHidden = isDocked || !colorCtd || colorCtd === 'st18'
-  // Toggle also requires a recognized status so a missing value doesn't
-  // render the switch in a misleading default-OFF position.
-  const isToggleHidden = isDotHidden || !isKnownStatus
+  // Toggle is independent of the dot: server sends colorCtd=st18 when OFF but
+  // still sends textCtdStatus="OFF", so we show the toggle (in gray) whenever
+  // the status is a recognized value and the vehicle is not docked.
+  const isToggleHidden = isDocked || !isKnownStatus
+  // Rectangle is green (colorCtd) when ON, dark gray (st12) when OFF.
+  const toggleBgClass = isOn ? colorCtd : 'st12'
 
   return (
     <>
@@ -55,7 +58,7 @@ export const CtdIndicator: React.FC<CtdIndicatorProps> = ({
             aria-label="ctd toggle background"
             x="538"
             y="250"
-            className={colorCtd}
+            className={toggleBgClass}
             width="18"
             height="11"
           />

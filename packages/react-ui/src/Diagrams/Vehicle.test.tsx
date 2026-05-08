@@ -337,14 +337,20 @@ test('should render CTD toggle knob on the right when CTD is ON', async () => {
 })
 
 test('should render CTD toggle knob on the left when CTD is OFF', async () => {
-  render(<Vehicle {...props} colorCtd="st4" textCtdStatus="OFF" />)
+  // Server sends colorCtd=st18 when OFF — toggle still renders in gray
+  render(<Vehicle {...props} textCtdStatus="OFF" />)
   const knob = screen.queryByLabelText('ctd toggle knob')
   expect(knob).toBeInTheDocument()
   expect(knob).toHaveAttribute('cx', '541')
 })
 
-test('should not render CTD toggle when colorCtd is absent', async () => {
-  render(<Vehicle {...props} textCtdStatus="ON" />)
+test('should render CTD toggle background in gray when CTD is OFF', async () => {
+  render(<Vehicle {...props} textCtdStatus="OFF" />)
+  expect(screen.queryByLabelText('ctd toggle background')).toHaveClass('st12')
+})
+
+test('should not render CTD toggle when textCtdStatus is absent', async () => {
+  render(<Vehicle {...props} colorCtd="st4" />)
   expect(screen.queryByLabelText('ctd toggle knob')).not.toBeInTheDocument()
 })
 
