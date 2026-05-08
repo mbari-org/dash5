@@ -87,9 +87,9 @@ export interface GetVehicleInfoResponse {
   color_duration?: string
   text_voltthresh?: string
   text_ampthresh?: string
-  text_batteryduration?: number
+  text_batteryduration?: number | string
   text_batteryunits?: string
-  text_current?: number
+  text_current?: number | string
   text_needcomms?: string
   text_missionago?: string
   text_cameraago?: string
