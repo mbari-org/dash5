@@ -1,11 +1,17 @@
 import { AccordionHeader } from '@mbari/react-ui'
-import { useState } from 'react'
+import { useState, useMemo } from 'react'
 import CommsSection from './CommsSection'
 import DocsSection from './DocsSection'
 import HandoffSection from './HandoffSection'
 import LogsSection from './LogsSection'
 import ScienceDataSection from './ScienceDataSection'
-import { useEvents, useMissionStartedEvent } from '@mbari/api-client'
+import {
+  useCommsEvents,
+  useMissionStartedEvent,
+  useEvents,
+  timeoutExpiredRegEx,
+  EventType,
+} from '@mbari/api-client'
 import { DateTime } from 'luxon'
 import { ScheduleSection } from './ScheduleSection'
 import useGlobalModalId from '../lib/useGlobalModalId'
@@ -41,12 +47,67 @@ const VehicleAccordion: React.FC<VehicleAccordionProps> = ({
   currentDeploymentId,
   isRecovered,
 }) => {
-  const { data: commsLogs, isLoading: commsLoading } = useEvents({
+  // Use from:0 (all history) so the badge shares the same React Query cache
+  // entry as CommsSection's allLogsResponse — identical params mean both see
+  // the same sbdSend/sbdReceipt/sbdReceive chain and agree on every status.
+  // Using the deployment-scoped query (from: deploymentStartTime) produced a
+  // different cache entry where receipts sometimes fell outside the fetch window,
+  // causing a command to show 'ack' in the list but still 'sent' in the badge.
+  const { data: commsEvents, isLoading: commsLoading } = useCommsEvents({
     vehicles: [vehicleName],
-    eventTypes: ['command', 'run'],
-    from,
-    to,
+    from: 0,
+    enabled: !!activeDeployment,
   })
+
+  // Fetch all timeout notes across full history so older timed-out commands
+  // are not miscounted as 'sent' when commsEvents pagination hasn't reached
+  // their timeout note (same fix applied to ScheduleSection in PR #611).
+  const timeoutNotesResponse = useEvents(
+    {
+      vehicles: [vehicleName],
+      eventTypes: ['note'] as EventType[],
+      noteMatches: 'Timeout while waiting',
+      from: 1,
+      limit: 500,
+    },
+    {
+      enabled: !!activeDeployment && !!vehicleName,
+      // from: 1 triggers recursive backfill on every refetch. Historical timeout
+      // notes only ever accumulate — they are never removed — so fetch once per
+      // session (Infinity staleTime, no interval). New timeouts are captured by
+      // the commsEvents query which runs on its own polling schedule.
+      staleTime: Infinity,
+    }
+  )
+
+  const timedOutEventIds = useMemo(() => {
+    const ids = new Set<number>()
+    timeoutNotesResponse.data?.forEach((note) => {
+      const match = note.note?.match(timeoutExpiredRegEx)
+      if (match) ids.add(parseInt(match[1], 10))
+    })
+    return ids
+  }, [timeoutNotesResponse.data])
+
+  // Count commands genuinely waiting for vehicle receipt: 'queued' (not yet
+  // dispatched via SBD) and 'sent' (dispatched but no vehicle fetch confirmed).
+  // 'ack' and 'timeout' are excluded — the vehicle has already dealt with them.
+  // Scope to the current deployment window (from/to) so commands from prior
+  // deployments — which may legitimately never have been acked — don't inflate
+  // the badge. commsEvents uses from:0 to share the React Query cache with
+  // CommsSection, so we filter by unixTime (ms) here instead.
+  const unackedCount = useMemo(
+    () =>
+      commsEvents.filter((e) => {
+        const inDeployment = e.unixTime >= from && (!to || e.unixTime <= to)
+        return (
+          inDeployment &&
+          (e.status === 'queued' || e.status === 'sent') &&
+          !timedOutEventIds.has(e.eventId)
+        )
+      }).length,
+    [commsEvents, timedOutEventIds, from, to]
+  )
 
   const { data: missionStartedEvent } = useMissionStartedEvent(
     {
@@ -155,7 +216,7 @@ const VehicleAccordion: React.FC<VehicleAccordionProps> = ({
         label="Comms Queue"
         secondaryLabel={
           activeDeployment && !commsLoading
-            ? `${commsLogs?.length ?? 0} item(s) in queue`
+            ? `${unackedCount} item(s) in queue`
             : ''
         }
         onToggle={handleToggleForSection('comms')}
@@ -164,7 +225,12 @@ const VehicleAccordion: React.FC<VehicleAccordionProps> = ({
         onExpand={handleExpand('comms')}
       />
       {section === 'comms' && (
-        <CommsSection vehicleName={vehicleName} from={from} to={to} />
+        <CommsSection
+          vehicleName={vehicleName}
+          from={from}
+          to={to}
+          timedOutEventIds={timedOutEventIds}
+        />
       )}
       <AccordionHeader
         label="Log"

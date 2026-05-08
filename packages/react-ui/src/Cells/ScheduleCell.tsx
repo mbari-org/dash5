@@ -10,7 +10,6 @@ import {
   faPauseCircle,
   faPersonRunning,
   faStarOfLife,
-  faExclamationTriangle,
 } from '@fortawesome/free-solid-svg-icons'
 import { faClock } from '@fortawesome/free-regular-svg-icons'
 import { IconProp } from '@fortawesome/fontawesome-svg-core'
@@ -18,6 +17,7 @@ import { IconButton } from '../Navigation'
 import { CommandType } from '../types'
 import { ConnectedIcon } from '../Icons/ConnectedIcon'
 import { AcknowledgeIcon } from '../Icons/AcknowledgeIcon'
+import { StopwatchWarningIcon } from '../Icons/StopwatchWarningIcon'
 export type ScheduleCellStatus =
   | 'pending'
   | 'running'
@@ -34,7 +34,7 @@ export interface ScheduleCellProps {
   scheduleStatus?: 'paused' | 'running'
   label: string
   ariaLabel?: string
-  secondary: string
+  secondary?: string
   name: string
   eventId: number
   commandType: CommandType
@@ -79,7 +79,6 @@ const icons: { [key: string]: IconProp } = {
   cancelled: faTimes as IconProp,
   completed: faCheck as IconProp,
   paused: faPauseCircle as IconProp,
-  timeout: faExclamationTriangle as IconProp,
 }
 
 export const ScheduleCellBackgrounds = {
@@ -168,6 +167,18 @@ export const ScheduleCell: React.FC<ScheduleCellProps> = ({
                 )}
               />
             </span>
+          ) : status === 'timeout' ? (
+            <span
+              title={statusTooltip ?? status}
+              className={clsx(
+                'self-center text-2xl',
+                scheduleStatus === 'running'
+                  ? 'text-black'
+                  : 'text-stone-500 opacity-60'
+              )}
+            >
+              <StopwatchWarningIcon />
+            </span>
           ) : (
             <FontAwesomeIcon
               icon={icons[status]}
@@ -207,14 +218,16 @@ export const ScheduleCell: React.FC<ScheduleCellProps> = ({
               </Tippy>
             )}
           </li>
-          <li
-            className={clsx(
-              'flex truncate italic',
-              isOpen ? styles.text : styles.textLight
-            )}
-          >
-            {secondary}
-          </li>
+          {secondary && (
+            <li
+              className={clsx(
+                'flex truncate italic',
+                isOpen ? styles.text : styles.textLight
+              )}
+            >
+              {secondary}
+            </li>
+          )}
           <li
             className={clsx(
               'flex truncate',

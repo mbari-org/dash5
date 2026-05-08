@@ -27,6 +27,7 @@ import {
   useCommsEvents,
   useDeleteCommandQueue,
   useCreateNote,
+  timeoutExpiredRegEx,
 } from '@mbari/api-client'
 import { useQueryClient } from 'react-query'
 import useGlobalModalId from '../lib/useGlobalModalId'
@@ -105,11 +106,26 @@ const missionKeysMatch = (leftPath: string, rightPath: string) => {
 }
 
 export const parseMissionCommand = (name: string) => {
-  const info = name
+  const keywords = new Set(['run', 'sched', 'asap'])
+  // Strip sched <timestamp_or_asap> prefix so scheduled missions parse cleanly
+  // (e.g. "sched 20250616T0415 load ...;run" → "load ...;run").
+  // Also extract the payload from surrounding quotes when present — the
+  // chunked cell-comms form wraps each chunk in quotes:
+  //   sched 20250616T0415 "load ...;set ...;run" 41tnk 1 6
+  // The quoted content is extracted so the chunk ID suffix is discarded.
+  let cleaned = name
+    .replace(/^sched\s+(?:\d{8}}?T\d{2,4}|asap)?\s*/i, '')
+    .trim()
+  const quoted = cleaned.match(/^"([\s\S]*)"/)
+  if (quoted) cleaned = quoted[1].trim()
+
+  const info = cleaned
     .split(' ')
-    .filter((s) => !['run', 'sched', 'asap'].includes(s))
+    .filter((s) => !keywords.has(s))
     .join(' ')
     .split(';')
+    .map((s) => s.trim())
+    .filter((s) => s && !keywords.has(s))
   return {
     name: info[0],
     parameters: info[1],
@@ -218,6 +234,23 @@ export const ScheduleSection: React.FC<ScheduleSectionProps> = ({
     return map
   }, [commsEventsResponse.data])
 
+  // eventId → { mtmsn, momsn } for sat commands with Iridium sequence number
+  // data. Includes pre-ACK sat sends (MTMSN only) as well as fully ACKed
+  // commands (both MTMSN and MOMSN). 0 is a sentinel for "not present" in
+  // TethysDash so both values are normalized to undefined when falsy.
+  const commsMsgIdLookup = useMemo(() => {
+    const map = new Map<number, { mtmsn?: number; momsn?: number }>()
+    commsEventsResponse.data.forEach((e) => {
+      if (e.eventId != null && (e.mtmsn || e.momsn)) {
+        map.set(e.eventId, {
+          mtmsn: e.mtmsn || undefined,
+          momsn: e.momsn || undefined,
+        })
+      }
+    })
+    return map
+  }, [commsEventsResponse.data])
+
   const { isLoading, isFetching, refetch } = deploymentLogsOnly
     ? deploymentResponse
     : allLogsResponse
@@ -242,7 +275,7 @@ export const ScheduleSection: React.FC<ScheduleSectionProps> = ({
       from: 0,
       limit: 500,
     },
-    { enabled: !!vehicleName, staleTime: 30 * 1000, refetchInterval: 30 * 1000 }
+    { enabled: !!vehicleName, staleTime: 10 * 1000, refetchInterval: 10 * 1000 }
   )
 
   // Build a Set of eventIds that were explicitly cancelled by an operator.
@@ -254,6 +287,32 @@ export const ScheduleSection: React.FC<ScheduleSectionProps> = ({
     })
     return ids
   }, [cancellationNotesResponse.data])
+
+  // Fetch timeout notes across all history so that older timed-out commands
+  // are detected even when commsEventsResponse hasn't paginated that far back.
+  // from: 1 (non-zero) enables recursive backfill, which re-executes on every
+  // refetch — keep the interval long (60 s) to avoid repeated multi-page fetches.
+  // New timeouts in the current session are already captured by commsEventsResponse.
+  const timeoutNotesResponse = useEvents(
+    {
+      vehicles: [vehicleName],
+      eventTypes: ['note'] as EventType[],
+      noteMatches: 'Timeout while waiting',
+      from: 1, // non-zero so useEvents recursive backfill fetches all history
+      limit: 500,
+    },
+    { enabled: !!vehicleName, staleTime: 60 * 1000, refetchInterval: 60 * 1000 }
+  )
+
+  // Build a Set of eventIds that have a recorded timeout note.
+  const timedOutEventIds = useMemo(() => {
+    const ids = new Set<number>()
+    timeoutNotesResponse.data?.forEach((note) => {
+      const match = note.note?.match(timeoutExpiredRegEx)
+      if (match) ids.add(parseInt(match[1], 10))
+    })
+    return ids
+  }, [timeoutNotesResponse.data])
 
   // Build a timeline: each entry knows its own start time and when it ended
   // (= the start time of the mission that replaced it, or undefined if running).
@@ -314,10 +373,9 @@ export const ScheduleSection: React.FC<ScheduleSectionProps> = ({
       text?: string
     ): number | undefined => {
       const raw = data ?? text ?? ''
-      // Format: 20260401}T0600 or 20260331T18 or 20260331T1800 (UTC)
-      const m =
-        raw.match(/sched\s+(\d{4})(\d{2})(\d{2})}T(\d{2})(\d{2})/) ||
-        raw.match(/sched\s+(\d{4})(\d{2})(\d{2})T(\d{2})(\d{2})?/)
+      // Format: 20260331T18 or 20260331T1800 (UTC). Also accept the legacy
+      // }T format emitted by older makeCommand builds until old events age out.
+      const m = raw.match(/sched\s+(\d{4})(\d{2})(\d{2})}?T(\d{2})(\d{2})?/)
       if (!m) return undefined
       const dt = DateTime.fromObject(
         {
@@ -615,12 +673,32 @@ export const ScheduleSection: React.FC<ScheduleSectionProps> = ({
     const raw = toScheduleCellStatus(v.status)
     if (!scheduledTypes.includes(raw)) return false
     if (raw !== 'pending') return true // running stays above
-    if (isMissionCommand(v.event?.data, v.event?.text)) return true
-    // Non-mission with no future scheduled start → already dispatched → history
+
     const rawText = v.event?.data ?? v.event?.text ?? ''
-    const schedMatch = rawText.match(/sched\s+(\S+)/i)
-    const sched = schedMatch?.[1]
-    return !!sched && sched.toLowerCase() !== 'asap'
+
+    // A timeout note is ground truth — always demote to history so the
+    // operator sees the failed command alongside completed/cancelled items.
+    // This applies even when the payload carries an explicit scheduled
+    // timestamp: once the schedule time passes and the vehicle fails to
+    // receive the command the timeout overrides the "intentionally queued"
+    // intent and the row must move to history.
+    if (v.event?.eventId != null) {
+      if (commsLookup.get(v.event.eventId) === 'timeout') return false
+    }
+
+    const schedDateMatch = rawText.match(/sched\s+(\d{8}}?T\d{2,4})/i)
+    const scheduleDate = rawText.match(/sched\s+asap/i)
+      ? 'asap'
+      : schedDateMatch
+      ? schedDateMatch[1]
+      : undefined
+    const hasScheduledTimestamp = !!(scheduleDate && scheduleDate !== 'asap')
+
+    if (isMissionCommand(v.event?.data, v.event?.text)) return true
+    // Non-mission commands: only stay above separator if they have a specific
+    // scheduled timestamp. Bare-sched quoted commands like `sched "restart logs"`
+    // (no timestamp or asap token) are treated as ASAP/dispatched → history.
+    return hasScheduledTimestamp
   }
 
   const scheduledCells = missions?.filter(isAboveSeparator)
@@ -652,8 +730,11 @@ export const ScheduleSection: React.FC<ScheduleSectionProps> = ({
   const staticFilterCellOffset = hasPastSchedule ? 1 : 0
 
   const results = [scheduledCells, historicCells].flat()
-  const hasSeparator =
-    (scheduledCells?.length ?? 0) > 0 && (historicCells?.length ?? 0) > 0
+  // Show the "Previous Vehicle Directives" separator whenever there are
+  // historic items, even if no commands are currently active above it.
+  // Operators require a complete audit trail — timed-out or completed
+  // commands must always be visible and clearly labeled.
+  const hasSeparator = (historicCells?.length ?? 0) > 0
   const staticSeparatorCellOffset = hasSeparator ? 1 : 0
   const indexOfSeparator = hasSeparator
     ? staticHeaderCellOffset +
@@ -857,6 +938,13 @@ export const ScheduleSection: React.FC<ScheduleSectionProps> = ({
     const isMission =
       mission?.event?.eventType === 'run' ||
       isMissionCommand(mission?.event?.data, mission?.event?.text)
+    // Narrower check: only load+run missions (load <file>;[set ...;]run) can
+    // carry parameter overrides. Legacy bare-run events (run Science/mbts_sci2.tl)
+    // are still classified as missions but never have parameters.
+    const isLoadRunMission = isMissionCommand(
+      mission?.event?.data,
+      mission?.event?.text
+    )
     const isParam =
       !isMission && isParamCommand(mission?.event?.data, mission?.event?.text)
     const isConfigSet =
@@ -867,7 +955,8 @@ export const ScheduleSection: React.FC<ScheduleSectionProps> = ({
       ? 'mission'
       : 'command'
     const rawText = mission?.event.data ?? mission?.event.text ?? ''
-    const schedDateMatch = rawText.match(/sched\s+(\d{8}}?T\d{2,4})/)
+    // Also accept the legacy }T format for historical events in the database.
+    const schedDateMatch = rawText.match(/sched\s+(\d{8}}?T\d{2,4})/i)
     const scheduleDate = rawText.match(/sched\s+asap/i)
       ? 'asap'
       : schedDateMatch
@@ -878,30 +967,77 @@ export const ScheduleSection: React.FC<ScheduleSectionProps> = ({
         // Dispatched one-shots — use comms lookup to upgrade to ack/timeout.
         const commsStatus = commsLookup.get(mission.event.eventId)
         if (commsStatus === 'ack') return 'ack'
-        if (commsStatus === 'timeout') return 'timeout'
+        if (
+          commsStatus === 'timeout' ||
+          (mission.event.eventId != null &&
+            timedOutEventIds.has(mission.event.eventId))
+        )
+          return 'timeout'
         return 'sent'
       }
       const raw = toScheduleCellStatus(mission?.status ?? '')
-      // Non-mission, non-param commands with no future scheduled start
-      // are already dispatched — API 'pending'/'TBD' just means the vehicle
-      // hasn't confirmed yet. Use comms lookup for the most accurate status.
+      // A timeout note is ground truth regardless of the API-reported status
+      // (pending, completed, etc.) or scheduled timestamp. Check it first so
+      // the pill always shows correctly for any comms type.
+      // timedOutEventIds covers the full history; commsLookup covers the current
+      // window — either source is sufficient to declare a timeout.
+      const commsStatusForTimeout = commsLookup.get(mission.event.eventId)
       if (
-        raw === 'pending' &&
-        !isMission &&
-        !(scheduleDate && scheduleDate !== 'asap')
-      ) {
-        const commsStatus = commsLookup.get(mission.event.eventId)
+        commsStatusForTimeout === 'timeout' ||
+        (mission.event.eventId != null &&
+          timedOutEventIds.has(mission.event.eventId))
+      )
+        return 'timeout'
+      // For any pending command with no specific future scheduled start,
+      // use the comms lookup to upgrade status based on actual vehicle
+      // receipt. The API status is not fully reliable for missions — it can
+      // return 'TBD' (pending), 'completed', or other values depending on
+      // the code path; comms lookup is the authoritative source for ack/timeout.
+      if (raw === 'pending' && !(scheduleDate && scheduleDate !== 'asap')) {
+        const commsStatus = commsStatusForTimeout
         if (commsStatus === 'ack') return 'ack'
-        if (commsStatus === 'timeout') return 'timeout'
-        return 'sent'
+        if (commsStatus === 'sent') return 'sent'
+        // Non-mission commands are always dispatched immediately. If no comms
+        // entry exists (outside the fetch window), default to 'sent'. But if
+        // comms reports 'queued' (sbdSend not yet dispatched), preserve
+        // 'pending' so the row doesn't mislead the operator.
+        if (!isMission && commsStatus !== 'queued') return 'sent'
       }
       return raw
     })()
 
+    // For non-mission commands, join all semicolon-separated segments with
+    // ' · ' so the full command intent is visible in green on the row.
+    // Strip scheduling wrappers before splitting so queued commands like
+    //   sched 20260505T1844 "cmd1;cmd2"  →  cmd1 · cmd2
+    //   sched asap "restart logs"        →  restart logs
+    //   sched "restart logs"             →  restart logs
+    // Only strip `sched` when it is acting as a scheduling wrapper (followed
+    // by a timestamp, `asap`, or a quoted payload). Bare `sched <subcommand>`
+    // forms (e.g. `sched pause`, `sched resume`) are scheduler-control
+    // commands where `sched` is the verb — leave those intact so they display
+    // as "sched pause" / "sched resume" rather than just "pause" / "resume".
+    const commandPayload = rawText
+      .replace(/^sched\s+(?:\d{8}}?T\d{2,4}|asap)\s*/i, '')
+      .replace(/^sched\s+(?=")/i, '')
+      .replace(/^"([\s\S]*)"$/, '$1')
+      .trim()
+    const commandLabel = isMission
+      ? missionName ?? 'Unknown'
+      : commandPayload
+          .split(';')
+          .map((s) => s.trim())
+          .filter(Boolean)
+          .join(' · ') ||
+        commandPayload.trim() ||
+        'Unknown'
+
     return mission ? (
       <ScheduleCell
-        label={missionName ?? 'Unknown'}
-        secondary={missionParams ?? 'No parameters'}
+        label={commandLabel}
+        secondary={
+          isLoadRunMission ? missionParams ?? 'No parameters' : undefined
+        }
         status={cellStatus}
         statusTooltip={
           cellStatus === 'ack' ? `Received by ${vehicleName}` : undefined
@@ -930,6 +1066,7 @@ export const ScheduleSection: React.FC<ScheduleSectionProps> = ({
           // WHEN it will run, not when the command was sent.
           const scheduledDt = (() => {
             if (!isQueued || !scheduleDate) return null
+            // Strip legacy } (from older makeCommand builds) before parsing.
             const clean = scheduleDate.replace('}', '')
             const m =
               clean.match(/^(\d{4})(\d{2})(\d{2})T(\d{2})(\d{2})$/) ||
@@ -975,6 +1112,14 @@ export const ScheduleSection: React.FC<ScheduleSectionProps> = ({
                 : 'Sent'
               : cellStatus === 'running'
               ? 'Started'
+              : cellStatus === 'ack'
+              ? // Comms ACK means the vehicle received the command via comms
+                // (cell or sat) — not that the mission started executing.
+                'Received'
+              : cellStatus === 'timeout'
+              ? 'Timed out'
+              : cellStatus === 'sent'
+              ? 'Sent'
               : isMission
               ? 'Started'
               : 'Ran'
@@ -983,6 +1128,8 @@ export const ScheduleSection: React.FC<ScheduleSectionProps> = ({
         description2={
           isParam || isConfigSet
             ? undefined
+            : cellStatus === 'timeout'
+            ? 'Ended: N/A'
             : cellStatus === 'pending' &&
               scheduleDate &&
               scheduleDate !== 'asap'
@@ -1022,8 +1169,16 @@ export const ScheduleSection: React.FC<ScheduleSectionProps> = ({
                 eventId: mission.event.eventId,
                 commandType: cellCommandType,
                 status: cellStatus,
-                label: missionName ?? 'Unknown',
-                secondary: missionParams ?? undefined,
+                label: commandLabel,
+                // For load+run missions: structured params summary from parsing.
+                // For param/configSet updates: the raw command text IS the
+                // parameter, so use it as the summary rather than showing
+                // 'No parsed parameters available' as a misleading fallback.
+                secondary: isLoadRunMission
+                  ? missionParams ?? undefined
+                  : isParam || isConfigSet
+                  ? rawText || undefined
+                  : undefined,
                 user: mission.event.user ?? undefined,
                 note: mission.event.note ?? undefined,
                 eventData: mission.event.data ?? undefined,
@@ -1038,7 +1193,9 @@ export const ScheduleSection: React.FC<ScheduleSectionProps> = ({
                 via: getVia(mission.event.note) ?? undefined,
                 isParamUpdate: isParam,
                 isConfigSetUpdate: isConfigSet,
+                isLoadRunMission,
                 commsStatus: commsLookup.get(mission.event.eventId),
+                ...commsMsgIdLookup.get(mission.event.eventId),
               },
             },
           })

@@ -190,6 +190,61 @@ test('should hide Argos fill when no color from server (st18)', async () => {
   expect(screen.getByTestId('argos-battery fill')).toHaveClass('st18')
 })
 
+test('should display volt threshold text with colorVoltThresh class when not docked', async () => {
+  render(<Vehicle {...props} textVoltThresh="13.5" colorVoltThresh="st31" />)
+  expect(screen.getByLabelText('text_voltthresh')).toHaveClass('st31')
+  expect(screen.getByLabelText('text_voltthresh')).toHaveTextContent('13.5')
+})
+
+test('should hide volt threshold text when docked', async () => {
+  render(
+    <Vehicle
+      {...props}
+      status="pluggedIn"
+      textVoltThresh="13.5"
+      colorVoltThresh="st31"
+    />
+  )
+  expect(screen.getByLabelText('text_voltthresh')).toHaveClass('st18')
+})
+
+test('should display amp threshold text with colorAmpThresh class when not docked', async () => {
+  render(<Vehicle {...props} textAmpThresh="50" colorAmpThresh="st31" />)
+  expect(screen.getByLabelText('text_ampthresh')).toHaveClass('st31')
+  expect(screen.getByLabelText('text_ampthresh')).toHaveTextContent('50')
+})
+
+test('should render current bar border when svgCurrent is provided', async () => {
+  render(
+    <Vehicle
+      {...props}
+      svgCurrent='<rect x="365" y="250" class="st4" width="5" height="10"/>'
+    />
+  )
+  expect(screen.getByLabelText('battery current bar')).toBeInTheDocument()
+  expect(screen.getByLabelText('battery bar border')).toBeInTheDocument()
+})
+
+test('should hide battery duration text when docked even if value present', async () => {
+  render(
+    <Vehicle
+      {...props}
+      status="pluggedIn"
+      textBatteryDuration={24}
+      svgCurrent='<rect x="365" y="250" class="st4" width="5" height="10"/>'
+    />
+  )
+  expect(
+    screen.queryByLabelText('text_batteryduration')
+  ).not.toBeInTheDocument()
+  expect(screen.getByLabelText('battery current bar')).toBeInTheDocument()
+})
+
+test('should display battery duration text when not docked', async () => {
+  render(<Vehicle {...props} textBatteryDuration={24} textBatteryUnits="hrs" />)
+  expect(screen.getByLabelText('text_batteryduration')).toHaveTextContent('24')
+})
+
 test('should display ground fault text box background color as provided color', async () => {
   render(<Vehicle {...props} colorGf={'st6'} />)
   expect(screen.queryByTestId(/ground fault color/i)).toHaveClass('st6')
@@ -322,4 +377,35 @@ test('should display vehicle name', async () => {
 test("should display the vehicle's last update ", async () => {
   render(<Vehicle {...props} />)
   expect(screen.queryByText(`${props.textLastUpdate}`)).toBeInTheDocument()
+})
+
+test('should render CTD dot when colorCtd is a valid color', async () => {
+  render(<Vehicle {...props} colorCtd="st4" />)
+  expect(screen.queryByLabelText('ctd dot')).toHaveClass('st4')
+})
+
+test('should render camera body when colorCameraBody is provided', async () => {
+  render(<Vehicle {...props} colorCameraBody="st11" />)
+  expect(screen.queryByLabelText('camera body')).toBeInTheDocument()
+  expect(screen.queryByLabelText('camera body')).toHaveClass('st11')
+})
+
+test('should render camera lens with colorCameraLens class', async () => {
+  render(<Vehicle {...props} colorCameraBody="st11" colorCameraLens="st3" />)
+  expect(screen.queryByLabelText('camera lens')).toHaveClass('st3')
+})
+
+test('should not render camera when colorCameraBody is absent', async () => {
+  render(<Vehicle {...props} />)
+  expect(screen.queryByLabelText('camera body')).not.toBeInTheDocument()
+})
+
+test('should not render camera when colorCameraBody is st18', async () => {
+  render(<Vehicle {...props} colorCameraBody="st18" />)
+  expect(screen.queryByLabelText('camera body')).not.toBeInTheDocument()
+})
+
+test('should display version label when textVersion is provided', async () => {
+  render(<Vehicle {...props} textVersion="v2.99" />)
+  expect(screen.queryByText('v2.99')).toBeInTheDocument()
 })

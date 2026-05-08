@@ -163,6 +163,9 @@ describe('determineCommandStatus', () => {
     expect(result.via).toBe('sat')
     expect(result.timeout).toBeUndefined() // Sat commands don't have timeouts
     expect(result.commsIsoTime).toBe(baseSbdSend.isoTime)
+    // No receipt yet — no MTMSN available
+    expect(result.mtmsn).toBeUndefined()
+    expect(result.momsn).toBeUndefined()
   })
 
   it('should return ack status for sat command when sbdSend, receipt, and receive all exist', () => {
@@ -192,6 +195,58 @@ describe('determineCommandStatus', () => {
     expect(result.via).toBe('sat')
     expect(result.timeout).toBeUndefined() // Sat commands don't have timeouts
     expect(result.commsIsoTime).toBe(baseSbdReceive.isoTime)
+    // MTMSN from sbdReceipt (123), MOMSN from sbdReceive (not set on base — undefined)
+    expect(result.mtmsn).toBe(123)
+    expect(result.momsn).toBeUndefined()
+  })
+
+  it('should normalize mtmsn sentinel 0 to undefined on sat-sent status', () => {
+    // When sbdReceipt.mtmsn is 0, the sent path must return mtmsn: undefined
+    // rather than 0, because 0 is used as a "missing" sentinel in the API.
+    const zeroMtmsnReceipt = { ...baseSbdReceipt, mtmsn: 0 }
+    const sbdSendMap = new Map<string, GetEventsResponse>([
+      [String(baseSatCommand.eventId), baseSbdSend],
+    ])
+    const sbdReceiptMap = new Map<string, GetEventsResponse>([
+      [String(baseSbdSend.eventId), zeroMtmsnReceipt],
+    ])
+
+    // No sbdReceive → stays 'sent'; mtmsn:0 on the receipt must be normalized.
+    const sentResult = determineCommandStatus(
+      baseSatCommand,
+      sbdSendMap,
+      sbdReceiptMap,
+      new Map(),
+      new Map()
+    )
+    expect(sentResult.status).toBe('sent')
+    expect(sentResult.mtmsn).toBeUndefined()
+  })
+
+  it('should normalize momsn sentinel 0 to undefined on sat-ack status', () => {
+    // When sbdReceive.momsn is 0, the ack path must return momsn: undefined
+    // rather than 0, because 0 is used as a "missing" sentinel in the API.
+    const zeroMomsnReceive = { ...baseSbdReceive, momsn: 0 }
+    const sbdSendMap = new Map<string, GetEventsResponse>([
+      [String(baseSatCommand.eventId), baseSbdSend],
+    ])
+    const sbdReceiptMap = new Map<string, GetEventsResponse>([
+      [String(baseSbdSend.eventId), baseSbdReceipt], // valid mtmsn: 123
+    ])
+    const sbdReceiveMap = new Map<number, GetEventsResponse>([
+      [baseSbdReceipt.mtmsn as number, zeroMomsnReceive], // keyed by receipt's mtmsn
+    ])
+
+    const ackResult = determineCommandStatus(
+      baseSatCommand,
+      sbdSendMap,
+      sbdReceiptMap,
+      sbdReceiveMap,
+      new Map()
+    )
+    expect(ackResult.status).toBe('ack')
+    expect(ackResult.mtmsn).toBe(123) // valid mtmsn preserved
+    expect(ackResult.momsn).toBeUndefined() // momsn:0 normalized to undefined
   })
 
   it('should return ack status for cell command when sbdSend exists with state 2', () => {
@@ -232,9 +287,40 @@ describe('determineCommandStatus', () => {
     expect(result.commsIsoTime).toBe(baseTimeoutEvent.isoTime)
   })
 
-  it('should handle cellsat commands properly', () => {
+  it('should return timeout for cellsat command when sbdSend exists but its timeout has elapsed', () => {
+    // baseSbdSend is from 2023 with a 60-minute timeout — long since expired.
+    // Client-side inference should return 'timeout' instead of 'sent'.
+    // refId on the map entry is the command's eventId (how useCommsEvents builds the map).
+    const expiredCellsatSend: GetEventsResponse = {
+      ...baseSbdSend,
+      refId: baseCellsatCommand.eventId,
+    }
     const sbdSendMap = new Map<string, GetEventsResponse>([
-      [String(baseCellsatCommand.eventId), baseSbdSend],
+      [String(baseCellsatCommand.eventId), expiredCellsatSend],
+    ])
+
+    const result = determineCommandStatus(
+      baseCellsatCommand,
+      sbdSendMap,
+      new Map(),
+      new Map(),
+      new Map()
+    )
+
+    expect(result.status).toBe('timeout')
+    expect(result.via).toBe('cellsat')
+    expect(result.timeout).toBe('60')
+  })
+
+  it('should return sent for cellsat command when sbdSend exists and timeout has NOT yet elapsed', () => {
+    const recentSbdSend: GetEventsResponse = {
+      ...baseSbdSend,
+      unixTime: Date.now() - 30 * 1000, // sent 30 seconds ago
+      isoTime: new Date(Date.now() - 30 * 1000).toISOString(),
+      refId: baseCellsatCommand.eventId, // correctly linked to the cellsat command
+    }
+    const sbdSendMap = new Map<string, GetEventsResponse>([
+      [String(baseCellsatCommand.eventId), recentSbdSend],
     ])
 
     const result = determineCommandStatus(
@@ -248,7 +334,47 @@ describe('determineCommandStatus', () => {
     expect(result.status).toBe('sent')
     expect(result.via).toBe('cellsat')
     expect(result.timeout).toBe('60')
-    expect(result.commsIsoTime).toBe(baseSbdSend.isoTime)
+    expect(result.commsIsoTime).toBe(recentSbdSend.isoTime)
+  })
+
+  it('should return timeout for a queued cell command whose timeout window has elapsed (no backend note needed)', () => {
+    // Command created 2 hours ago with a 5-minute timeout — definitively timed out.
+    // No sbdSend (never dispatched) and no backend timeout note.
+    const expiredQueuedCommand: GetEventsResponse = {
+      ...baseCellCommand,
+      unixTime: Date.now() - 2 * 60 * 60 * 1000, // 2 hours ago
+      note: '[[via:cell, timeout:5min]]',
+    }
+
+    const result = determineCommandStatus(
+      expiredQueuedCommand,
+      new Map(),
+      new Map(),
+      new Map(),
+      new Map()
+    )
+
+    expect(result.status).toBe('timeout')
+    expect(result.via).toBe('cell')
+    expect(result.timeout).toBe('5')
+  })
+
+  it('should return queued for a cell command whose timeout has NOT yet elapsed', () => {
+    const recentQueuedCommand: GetEventsResponse = {
+      ...baseCellCommand,
+      unixTime: Date.now() - 30 * 1000, // 30 seconds ago, timeout is 60 min
+    }
+
+    const result = determineCommandStatus(
+      recentQueuedCommand,
+      new Map(),
+      new Map(),
+      new Map(),
+      new Map()
+    )
+
+    expect(result.status).toBe('queued')
+    expect(result.via).toBe('cell')
   })
 
   it('should handle commands with no via', () => {
@@ -273,6 +399,110 @@ describe('determineCommandStatus', () => {
     expect(result.via).toBeUndefined()
     expect(result.timeout).toBe('60')
     expect(result.commsIsoTime).toBe(baseSbdSend.isoTime)
+  })
+
+  it('should return timeout (not ack) for cell command with state:2 sbdSend when timeout note exists', () => {
+    // Regression for #597: a cell command dispatched via state:2 sbdSend was
+    // incorrectly shown as 'received by vehicle' even when the vehicle never
+    // fetched it and a timeout note existed for the same eventId.
+    // Timeout is ground-truth for queue-and-fetch cell delivery.
+    const sbdSendMap = new Map<string, GetEventsResponse>([
+      [String(baseCellCommand.eventId), cellSbdSend],
+    ])
+    const timeoutMap = new Map<string, GetEventsResponse>([
+      [String(baseCellCommand.eventId), baseTimeoutEvent],
+    ])
+
+    const result = determineCommandStatus(
+      baseCellCommand,
+      sbdSendMap,
+      new Map(),
+      new Map(),
+      timeoutMap
+    )
+
+    expect(result.status).toBe('timeout')
+    expect(result.via).toBe('cell')
+    expect(result.commsIsoTime).toBe(baseTimeoutEvent.isoTime)
+    expect(result.mtmsn).toBeUndefined()
+    expect(result.momsn).toBeUndefined()
+  })
+
+  it('should return timeout (not ack) for cellsat command with state:2 sbdSend when timeout note exists', () => {
+    // Same scenario via 'cellsat': the earlier timeout guard required via==='cell',
+    // so cellsat commands would bypass it and incorrectly fall through to 'ack'.
+    const cellsatSbdSend: GetEventsResponse = {
+      ...cellSbdSend,
+      eventId: 50,
+      refId: baseCellsatCommand.eventId, // references eventId 3
+      state: 2,
+    }
+    const cellsatTimeoutEvent: GetEventsResponse = {
+      ...baseTimeoutEvent,
+      eventId: 51,
+      note: `id=${baseCellsatCommand.eventId}: Timeout while waiting`,
+    }
+    const sbdSendMap = new Map<string, GetEventsResponse>([
+      [String(baseCellsatCommand.eventId), cellsatSbdSend],
+    ])
+    const timeoutMap = new Map<string, GetEventsResponse>([
+      [String(baseCellsatCommand.eventId), cellsatTimeoutEvent],
+    ])
+
+    const result = determineCommandStatus(
+      baseCellsatCommand,
+      sbdSendMap,
+      new Map(),
+      new Map(),
+      timeoutMap
+    )
+
+    expect(result.status).toBe('timeout')
+    expect(result.via).toBe('cellsat')
+    expect(result.commsIsoTime).toBe(cellsatTimeoutEvent.isoTime)
+    expect(result.mtmsn).toBeUndefined()
+    expect(result.momsn).toBeUndefined()
+  })
+
+  it('should return timeout (not sent) for sat command with sbdSend state:1 when timeout note exists', () => {
+    // Regression for #604: sat comms bypass the original cell-only timeout guard and
+    // fall through to 'sent' (sbdSend exists, no sbdReceive). A timeout note is ground
+    // truth regardless of via type — the command must return 'timeout'.
+    const satCommandWithTimeout: GetEventsResponse = {
+      ...baseSatCommand,
+      note: 'command[via: sat, timeout:30min]',
+    }
+    const satSbdSend: GetEventsResponse = {
+      ...baseSbdSend,
+      eventId: 60,
+      refId: satCommandWithTimeout.eventId,
+      state: 1, // sent to Iridium, but vehicle never responded
+    }
+    const satTimeoutEvent: GetEventsResponse = {
+      ...baseTimeoutEvent,
+      eventId: 61,
+      note: `id=${satCommandWithTimeout.eventId}: Timeout while waiting`,
+    }
+    const sbdSendMap = new Map<string, GetEventsResponse>([
+      [String(satCommandWithTimeout.eventId), satSbdSend],
+    ])
+    const timeoutMap = new Map<string, GetEventsResponse>([
+      [String(satCommandWithTimeout.eventId), satTimeoutEvent],
+    ])
+
+    const result = determineCommandStatus(
+      satCommandWithTimeout,
+      sbdSendMap,
+      new Map(),
+      new Map(),
+      timeoutMap
+    )
+
+    expect(result.status).toBe('timeout')
+    expect(result.via).toBe('sat')
+    expect(result.commsIsoTime).toBe(satTimeoutEvent.isoTime)
+    expect(result.mtmsn).toBeUndefined()
+    expect(result.momsn).toBeUndefined()
   })
 
   it('should handle missing receipt mtmsn', () => {

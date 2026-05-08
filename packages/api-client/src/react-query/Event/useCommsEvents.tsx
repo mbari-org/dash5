@@ -16,11 +16,13 @@ export const useCommsEvents = ({
   from,
   to,
   limit = 500,
+  enabled = true,
 }: {
   vehicles: string[]
   from: number
   to?: number
   limit?: number
+  enabled?: boolean
 }) => {
   const params = useMemo(
     () => ({
@@ -48,7 +50,7 @@ export const useCommsEvents = ({
     fetchNextPage,
     hasNextPage,
     refetch,
-  } = useInfiniteEvents(params)
+  } = useInfiniteEvents(params, { enabled })
 
   const flatData = useMemo(() => {
     if (!data?.pages) return []
@@ -91,19 +93,38 @@ export const useCommsEvents = ({
       return { commands, sbdSendMap, sbdReceiptMap, sbdReceiveMap, timeoutMap }
     }, [flatData])
 
+  // Tick every 60 s to re-evaluate client-side timeout inference in
+  // determineCommandStatus (which calls Date.now()) without triggering a
+  // network refetch. Commands transition queued/sent → timeout as their
+  // windows expire purely via local recomputation.
+  //
+  // Note: each enabled hook instance owns one 60 s interval. Components that
+  // mount multiple useCommsEvents queries (e.g. CommsSection pre-fetches two)
+  // will have one timer per query. The overhead is intentionally minimal —
+  // only a cheap setState per tick — and is avoided entirely when enabled is
+  // false (e.g. pass enabled={false} for a query that is never displayed).
+  const [clockTick, setClockTick] = useState(0)
+  useEffect(() => {
+    if (!enabled) return
+    const id = setInterval(() => setClockTick((t) => t + 1), 60 * 1000)
+    return () => clearInterval(id)
+  }, [enabled])
+
   const [isFetchingMore, setIsFetchingMore] = useState(false)
   const [targetCommandCount, setTargetCommandCount] = useState(0)
 
   // If initial fetch does not have enough commands/missions, fetch more (this avoids sending back an empty array of updated commands and ui flickering during the initial load)
   const fetchingInitialCommands =
-    commands.length < minCommandEvents && hasNextPage
+    enabled && commands.length < minCommandEvents && hasNextPage
 
   useEffect(() => {
+    if (!enabled) return
     if (fetchingInitialCommands && !isLoading && !isFetchingNextPage) {
       fetchNextPage()
       return
     }
   }, [
+    enabled,
     fetchingInitialCommands,
     isLoading,
     isFetchingNextPage,
@@ -113,6 +134,12 @@ export const useCommsEvents = ({
 
   // If we're manually fetching more commands, keep fetching until we have more commands (this makes sure that additional commands are fetched not just sbd/note events)
   useEffect(() => {
+    // If the query is disabled, stop any in-progress pagination so state
+    // does not get stuck and no fetches fire when the hook is re-enabled
+    if (!enabled) {
+      if (isFetchingMore) setIsFetchingMore(false)
+      return
+    }
     if (isFetchingMore) {
       if (
         !isLoading &&
@@ -133,6 +160,7 @@ export const useCommsEvents = ({
       }
     }
   }, [
+    enabled,
     commands.length,
     fetchNextPage,
     hasNextPage,
@@ -167,7 +195,17 @@ export const useCommsEvents = ({
         timeoutMap
       )
     })
-  }, [commands, sbdSendMap, sbdReceiptMap, sbdReceiveMap, timeoutMap])
+    // clockTick is intentionally included: the memo re-runs every 60 s so
+    // client-side timeout inference (Date.now()) is re-evaluated without any
+    // network request. All other deps are exhaustive.
+  }, [
+    commands,
+    sbdSendMap,
+    sbdReceiptMap,
+    sbdReceiveMap,
+    timeoutMap,
+    clockTick,
+  ])
 
   const fetching = isFetching || isFetchingMore || isFetchingNextPage
 

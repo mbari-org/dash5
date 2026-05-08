@@ -1,6 +1,6 @@
 import '@testing-library/jest-dom'
 import React from 'react'
-import { render, screen, waitFor } from '@testing-library/react'
+import { act, render, screen, waitFor } from '@testing-library/react'
 import { QueryClient } from 'react-query'
 import { rest } from 'msw'
 import { setupServer } from 'msw/node'
@@ -47,7 +47,54 @@ const MockEventsList: React.FC = () => {
   )
 }
 
+const MockEventsListDisabled: React.FC = () => {
+  const { data, isLoading } = useInfiniteEvents(
+    { vehicles: ['pontus'], from: 1656435000000, to: 1656437000000 },
+    { enabled: false }
+  )
+
+  if (isLoading) return <div>Loading...</div>
+
+  return (
+    <div data-testid="disabled-container">
+      {data?.pages?.[0]?.map((event) => (
+        <div
+          key={event.eventId}
+          data-testid={`disabled-event-${event.eventId}`}
+        />
+      )) ?? null}
+    </div>
+  )
+}
+
 describe('useInfiniteEvents', () => {
+  it('should not fetch when enabled is false', async () => {
+    let requestCount = 0
+    server.use(
+      rest.get('/events', (_req, res, ctx) => {
+        requestCount++
+        return res(ctx.status(200), ctx.json(mockResponse))
+      })
+    )
+
+    render(
+      <MockProviders queryClient={new QueryClient()}>
+        <MockEventsListDisabled />
+      </MockProviders>
+    )
+
+    // Wait for the component to render, then flush any pending async effects
+    // (microtasks, timers, react-query observers) before asserting no fetch fired
+    await screen.findByTestId('disabled-container')
+    await act(async () => {
+      await new Promise((resolve) => setTimeout(resolve, 0))
+    })
+    expect(requestCount).toBe(0)
+    expect(
+      screen.queryByTestId('disabled-event-16932998')
+    ).not.toBeInTheDocument()
+  })
+
   it('should load and display events from the API', async () => {
     render(
       <MockProviders queryClient={new QueryClient()}>

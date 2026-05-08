@@ -5,6 +5,10 @@ export interface CommsEvent extends GetEventsResponse {
   via?: 'cellsat' | 'cell' | 'sat'
   commsIsoTime?: string
   timeout?: string
+  /** Mobile Terminated Message Sequence Number — Iridium ID of the command sent to the vehicle (sat comms) */
+  mtmsn?: number
+  /** Mobile Originated Message Sequence Number — Iridium ID of the vehicle's acknowledgment reply (sat comms) */
+  momsn?: number
 }
 
 export const digitsForIdRegEx = /\d+/
@@ -28,8 +32,10 @@ export const determineCommandStatus = (
     ? (command.note.match(timeoutRegEx) || [])[1]
     : undefined
 
-  // Check if the cell comm has timed out by looking for a timeout note event with command eventId
-  if (command.eventId && timeout && via === 'cell') {
+  // A timeout note is ground truth for any comms type (cell, sat, cellsat, unknown).
+  // Check it first — before sbdSend state — so a timed-out command is never
+  // misreported as 'sent' or 'ack' regardless of what Iridium bookkeeping exists.
+  if (command.eventId) {
     const timeoutEvent = timeoutMap.get(String(command.eventId))
     if (timeoutEvent) {
       return {
@@ -38,6 +44,8 @@ export const determineCommandStatus = (
         timeout,
         status: 'timeout',
         commsIsoTime: timeoutEvent.isoTime,
+        mtmsn: undefined,
+        momsn: undefined,
       }
     }
   }
@@ -48,24 +56,49 @@ export const determineCommandStatus = (
     : undefined
 
   if (!matchingSbdSend) {
+    // If the command carries a timeout duration and that window has already
+    // elapsed since it was created, treat it as timed out on the client side.
+    // This covers commands that were never dispatched (no sbdSend) and for
+    // which the backend may never write a timeout note.
+    const timeoutMinutes = timeout ? parseInt(timeout, 10) : undefined
+    const timeoutMs =
+      timeoutMinutes && command.unixTime
+        ? command.unixTime + timeoutMinutes * 60 * 1000
+        : undefined
+    if (timeoutMs && Date.now() > timeoutMs) {
+      return {
+        ...command,
+        via,
+        timeout,
+        status: 'timeout',
+        commsIsoTime: new Date(timeoutMs).toISOString(),
+        mtmsn: undefined,
+        momsn: undefined,
+      }
+    }
     return {
       ...command,
       via,
       timeout,
       status: 'queued',
       commsIsoTime: command.isoTime,
+      mtmsn: undefined,
+      momsn: undefined,
     }
   }
 
-  // A state of 2 indicates cell comms, aka direct comms in dash4
-  // Cells comms are considered ACKed if they are sent since that indicates the socket is open
-  if (matchingSbdSend && (matchingSbdSend?.state === 2 || via === undefined)) {
+  // A state of 2 indicates cell comms (direct socket delivery).
+  // Cell comms are considered ACKed when sent since an open socket means delivery.
+  if (matchingSbdSend?.state === 2 || via === undefined) {
+    // Explicitly clear mtmsn/momsn — cell comms do not carry Iridium SBD IDs.
     return {
       ...command,
       via,
       timeout,
       status: 'ack',
       commsIsoTime: matchingSbdSend.isoTime,
+      mtmsn: undefined,
+      momsn: undefined,
     }
   }
 
@@ -88,7 +121,28 @@ export const determineCommandStatus = (
         timeout,
         status: 'ack',
         commsIsoTime: matchingSbdReceive.isoTime,
+        // 0 is a sentinel for "no MTMSN/MOMSN" in TethysDash — normalize to undefined
+        mtmsn: matchingSbdReceipt.mtmsn || undefined,
+        momsn: matchingSbdReceive.momsn || undefined,
       }
+    }
+  }
+
+  // Same client-side timeout inference for dispatched-but-unacknowledged commands.
+  const timeoutMinutes = timeout ? parseInt(timeout, 10) : undefined
+  const sentTimeoutMs =
+    timeoutMinutes && matchingSbdSend.unixTime
+      ? matchingSbdSend.unixTime + timeoutMinutes * 60 * 1000
+      : undefined
+  if (sentTimeoutMs && Date.now() > sentTimeoutMs) {
+    return {
+      ...command,
+      via,
+      timeout,
+      status: 'timeout',
+      commsIsoTime: new Date(sentTimeoutMs).toISOString(),
+      mtmsn: matchingSbdReceipt?.mtmsn || undefined,
+      momsn: undefined,
     }
   }
 
@@ -98,5 +152,6 @@ export const determineCommandStatus = (
     timeout,
     status: 'sent',
     commsIsoTime: matchingSbdSend.isoTime,
+    mtmsn: matchingSbdReceipt?.mtmsn || undefined,
   }
 }

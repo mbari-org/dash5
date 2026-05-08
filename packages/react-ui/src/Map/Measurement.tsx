@@ -54,12 +54,25 @@ function ConvertDEGToDMS(deg: number, dir: boolean) {
 
 // DEFINE DERIVED CONST
 // CalculateDistance (Path Perimeter)
-const calculateDistance = (positions: L.LatLng[]): number => {
+// When closed=true the last→first segment is included, giving the full
+// perimeter for polygon (area) measurements.
+const calculateDistance = (positions: L.LatLng[], closed = false): number => {
+  // Reset perimeter so stale values are never shown when positions is empty.
+  perimeter = 0
   totalDistance = 0
   for (let i = 0; i < positions.length - 1; i++) {
     const from = point([positions[i].lng, positions[i].lat])
     const to = point([positions[i + 1].lng, positions[i + 1].lat])
     totalDistance += distance(from, to)
+    perimeter = totalDistance
+  }
+  if (closed && positions.length >= 3) {
+    const last = positions[positions.length - 1]
+    const first = positions[0]
+    totalDistance += distance(
+      point([last.lng, last.lat]),
+      point([first.lng, first.lat])
+    )
     perimeter = totalDistance
   }
   return totalDistance
@@ -240,9 +253,12 @@ export const Measurement: React.FC<MeasurementProps> = ({
       </div>
     )
   }
-  // Distance based on measurements
+  // Distance based on measurements.
+  // Treat as a closed polygon whenever there are 3+ points — this covers
+  // both active area measurement and the finished state, fixing the bug
+  // where feature.current is only set after the user finishes measuring.
   const pathDist: number = useMemo(
-    () => calculateDistance(measurements),
+    () => calculateDistance(measurements, measurements.length >= 3),
     [measurements]
   )
   // Area based on measurements

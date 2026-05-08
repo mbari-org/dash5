@@ -4,10 +4,12 @@ import { VehicleProps } from '../Vehicle'
 export interface TimeoutLabelProps {
   textTimeout: VehicleProps['textTimeout']
   colorMissionAgo: VehicleProps['colorMissionAgo']
+  colorTimeoutText?: VehicleProps['colorTimeoutText']
 }
 export const TimeoutLabel: React.FC<TimeoutLabelProps> = ({
   textTimeout,
   colorMissionAgo,
+  colorTimeoutText,
 }) => {
   return (
     <g>
@@ -21,7 +23,7 @@ export const TimeoutLabel: React.FC<TimeoutLabelProps> = ({
       <text
         aria-label="timeout"
         transform="matrix(1 0 0 1 195 309.1899)"
-        className="st9 st10"
+        className={`st9 st10 ${colorTimeoutText ?? ''}`}
       >
         {textTimeout}
       </text>

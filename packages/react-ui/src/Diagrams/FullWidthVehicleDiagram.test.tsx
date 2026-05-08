@@ -220,6 +220,67 @@ test('should hide Argos fill when no color from server (st18)', async () => {
   expect(screen.getByTestId('argos-battery fill')).toHaveClass('st18')
 })
 
+test('should display volt threshold text with colorVoltThresh class when not docked', async () => {
+  render(
+    <FullWidthVehicleDiagram
+      {...props}
+      textVoltThresh="13.5"
+      colorVoltThresh="st31"
+    />
+  )
+  expect(screen.getByLabelText('text_voltthresh')).toHaveClass('st31')
+  expect(screen.getByLabelText('text_voltthresh')).toHaveTextContent('13.5')
+})
+
+test('should hide volt threshold text when docked', async () => {
+  render(
+    <FullWidthVehicleDiagram
+      {...props}
+      status="pluggedIn"
+      textVoltThresh="13.5"
+      colorVoltThresh="st31"
+    />
+  )
+  expect(screen.getByLabelText('text_voltthresh')).toHaveClass('st18')
+})
+
+test('should render current bar border when svgCurrent is provided', async () => {
+  render(
+    <FullWidthVehicleDiagram
+      {...props}
+      svgCurrent='<rect x="365" y="250" class="st4" width="5" height="10"/>'
+    />
+  )
+  expect(screen.getByLabelText('battery current bar')).toBeInTheDocument()
+  expect(screen.getByLabelText('battery bar border')).toBeInTheDocument()
+})
+
+test('should hide battery duration text when docked even if value present', async () => {
+  render(
+    <FullWidthVehicleDiagram
+      {...props}
+      status="pluggedIn"
+      textBatteryDuration={24}
+      svgCurrent='<rect x="365" y="250" class="st4" width="5" height="10"/>'
+    />
+  )
+  expect(
+    screen.queryByLabelText('text_batteryduration')
+  ).not.toBeInTheDocument()
+  expect(screen.getByLabelText('battery current bar')).toBeInTheDocument()
+})
+
+test('should display battery duration text when not docked', async () => {
+  render(
+    <FullWidthVehicleDiagram
+      {...props}
+      textBatteryDuration={24}
+      textBatteryUnits="hrs"
+    />
+  )
+  expect(screen.getByLabelText('text_batteryduration')).toHaveTextContent('24')
+})
+
 test('should display ground fault text box background color as provided color', async () => {
   render(<FullWidthVehicleDiagram {...props} colorGf={'st6'} />)
   expect(screen.queryByTestId(/ground fault color/i)).toHaveClass('st6')
@@ -287,12 +348,67 @@ test("should display the vehicle's last update ", async () => {
   expect(screen.queryByText(`${props.textLastUpdate}`)).toBeInTheDocument()
 })
 
-test('should display heading label', async () => {
-  render(<FullWidthVehicleDiagram {...props} />)
-  expect(screen.queryByTestId('heading label')).toBeInTheDocument()
+test('should display heading bearing text when arrow provided', async () => {
+  render(<FullWidthVehicleDiagram {...props} textArrow="270" />)
+  expect(screen.queryByLabelText('bearing')).toBeInTheDocument()
 })
 
-test('should display speed label', async () => {
+test('should display reckoned label', async () => {
+  render(
+    <FullWidthVehicleDiagram {...props} textReckonDistance="1.2km in 0.5h" />
+  )
+  expect(screen.queryByTestId('reckoned_label')).toBeInTheDocument()
+})
+
+test('should render CTD dot when colorCtd is a valid color', async () => {
+  render(<FullWidthVehicleDiagram {...props} colorCtd="st4" />)
+  expect(screen.queryByLabelText('ctd dot')).toHaveClass('st4')
+})
+
+test('should render camera body when colorCameraBody is provided', async () => {
+  render(<FullWidthVehicleDiagram {...props} colorCameraBody="st11" />)
+  expect(screen.queryByLabelText('camera body')).toBeInTheDocument()
+  expect(screen.queryByLabelText('camera body')).toHaveClass('st11')
+})
+
+test('should not render camera when colorCameraBody is absent', async () => {
   render(<FullWidthVehicleDiagram {...props} />)
-  expect(screen.queryByTestId('speed label')).toBeInTheDocument()
+  expect(screen.queryByLabelText('camera body')).not.toBeInTheDocument()
+})
+
+test('should display version label when textVersion is provided', async () => {
+  render(<FullWidthVehicleDiagram {...props} textVersion="v2.99" />)
+  expect(screen.queryByText('v2.99')).toBeInTheDocument()
+})
+
+test('should display mission text with colorMissionText class', async () => {
+  render(
+    <FullWidthVehicleDiagram
+      {...props}
+      textMission="test mission"
+      colorMissionText="st31"
+    />
+  )
+  expect(screen.queryByLabelText('mission name')).toHaveClass('st31')
+})
+
+test('should display log start dot with colorLogAgo class', async () => {
+  render(<FullWidthVehicleDiagram {...props} colorLogAgo="st4" />)
+  expect(screen.queryByTestId('log ago indicator')).toHaveClass('st4')
+})
+
+test('should display ground fault triangle with colorHighGf class', async () => {
+  render(<FullWidthVehicleDiagram {...props} colorHighGf="st25" />)
+  expect(screen.queryByTestId('ground fault triangle')).toHaveClass('st25')
+})
+
+test('should display next comm text with colorNextCommsText class', async () => {
+  render(
+    <FullWidthVehicleDiagram
+      {...props}
+      textNextComm="12:00 - in 30m"
+      colorNextCommsText="st31"
+    />
+  )
+  expect(screen.queryByLabelText('next comm')).toHaveClass('st31')
 })

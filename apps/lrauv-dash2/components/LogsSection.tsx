@@ -1,5 +1,10 @@
-import React, { useMemo, useState } from 'react'
-import { useInfiniteEvents, useTethysApiContext } from '@mbari/api-client'
+import React, { useMemo, useState, useCallback } from 'react'
+import {
+  useInfiniteEvents,
+  useTethysApiContext,
+  timeoutExpiredRegEx,
+  GetEventsResponse,
+} from '@mbari/api-client'
 import {
   Virtualizer,
   LogCell,
@@ -175,7 +180,85 @@ const LogsSection: React.FC<LogsSectionProps> = ({
     hasSelection,
     includeDataEvents,
   ])
-  const dataCount = flatData?.length ?? 0
+  // Group consecutive timeout notes that share the same event ID into one row.
+  // When a mission command is split into N SBD chunks and all N chunks time out,
+  // the API emits N separate note events with the same id=XXXXX prefix — all
+  // within the same second. This collapses them so the log stays readable.
+  //
+  // Grouping rules (both must hold):
+  //   (a) The note immediately follows the previous note in the list (consecutive).
+  //       A non-timeout event or a timeout for a different ID breaks the group.
+  //   (b) The note's timestamp is within GROUP_WINDOW_MS of the representative.
+  //       5 s is generous for a sub-second burst while preventing accidental
+  //       merging of close-but-distinct retry incidents.
+  //
+  // Groups are keyed by a stable composite `${event.eventId}-${unixTime}` string
+  // (event.eventId is the database row ID, distinct from the parsed id=XXXXX in
+  // the note text which is stored in the local `eventId` variable below) so that
+  // pagination, filter changes, and list refreshes never shift a key onto a
+  // different row. The same key is used for expand/collapse state.
+  const GROUP_WINDOW_MS = 5 * 1000 // 5 seconds — chunk bursts are sub-second
+  type TimeoutGroup = { all: GetEventsResponse[] }
+  const { processedData, timeoutGroups } = useMemo(() => {
+    const groups = new Map<string, TimeoutGroup>() // key = `${repEventId}-${repUnixTime}`
+    const processed: GetEventsResponse[] = []
+    let lastGroupKey: string | undefined = undefined
+
+    flatData.forEach((event) => {
+      if (event.eventType !== 'note') {
+        processed.push(event)
+        lastGroupKey = undefined
+        return
+      }
+      const match = event.note?.match(timeoutExpiredRegEx)
+      if (!match) {
+        processed.push(event)
+        lastGroupKey = undefined
+        return
+      }
+      const eventId = Number(match[1])
+      const eventMs = event.unixTime ?? 0
+
+      if (lastGroupKey !== undefined) {
+        const openGroup = groups.get(lastGroupKey)
+        const repNote = openGroup?.all[0]
+        const repId = repNote?.note
+          ? Number(repNote.note.match(timeoutExpiredRegEx)?.[1])
+          : NaN
+        const repMs = repNote?.unixTime ?? 0
+        // Join when consecutive, same command, and within the time window.
+        if (repId === eventId && Math.abs(eventMs - repMs) <= GROUP_WINDOW_MS) {
+          openGroup!.all.push(event)
+          return
+        }
+      }
+
+      // Start a new group keyed by the representative's stable identity.
+      const newKey = `${event.eventId ?? 'x'}-${eventMs}`
+      groups.set(newKey, { all: [event] })
+      processed.push(event)
+      lastGroupKey = newKey
+    })
+
+    return { processedData: processed, timeoutGroups: groups }
+  }, [flatData])
+
+  const [expandedGroupKeys, setExpandedGroupKeys] = useState<Set<string>>(
+    new Set()
+  )
+  const toggleGroup = useCallback((groupKey: string) => {
+    setExpandedGroupKeys((prev) => {
+      const next = new Set(prev)
+      if (next.has(groupKey)) {
+        next.delete(groupKey)
+      } else {
+        next.add(groupKey)
+      }
+      return next
+    })
+  }, [])
+
+  const dataCount = processedData?.length ?? 0
   const totalCount = hasNextPage ? dataCount + 1 : dataCount
   const listLoading = hasSelection && (isLoading || isFetching)
   const showNoFiltersMessage = !hasSelection && !listLoading
@@ -206,26 +289,81 @@ const LogsSection: React.FC<LogsSectionProps> = ({
       )
     }
 
-    const item = flatData[index]
-    const isoTime = item?.isoTime ?? ''
+    const item = processedData[index]
+    if (!item) return <span />
+
+    const isoTime = item.isoTime ?? ''
     const diff = DateTime.fromISO(isoTime).diffNow('days').days
     const date =
       Math.abs(diff) < 1
         ? 'Today'
         : DateTime.fromISO(isoTime).toFormat('yyyy-MM-dd')
     const time = DateTime.fromISO(isoTime).toFormat('H:mm:ss')
-    return item ? (
+
+    // Check if this item is the representative of a multi-note timeout group.
+    // The stable group key mirrors what was set during processedData construction:
+    // `${eventId}-${unixTime}`. Using a stable key means the expand/collapse state
+    // survives pagination loads, filter changes, and list refreshes.
+    const isTimeoutNote = item.note?.match(timeoutExpiredRegEx) != null
+    const groupKey = isTimeoutNote
+      ? `${item.eventId ?? 'x'}-${item.unixTime ?? 0}`
+      : undefined
+    const group = groupKey != null ? timeoutGroups.get(groupKey) : undefined
+    const isGrouped = group != null && group.all.length > 1
+
+    const baseLog = formatEvent(
+      item,
+      siteConfig?.appConfig.external.tethysdash ?? ''
+    )
+
+    const log = isGrouped ? (
+      <div className="flex flex-col gap-1 text-sm">
+        <div className="flex items-center gap-2">
+          <span className="rounded bg-amber-100 px-1.5 py-0.5 text-xs font-semibold text-amber-800">
+            {group.all.length} timeout notes
+          </span>
+          <button
+            type="button"
+            className="text-xs text-primary-600 underline hover:no-underline"
+            onClick={() => groupKey != null && toggleGroup(groupKey)}
+            aria-expanded={groupKey != null && expandedGroupKeys.has(groupKey)}
+          >
+            {groupKey != null && expandedGroupKeys.has(groupKey)
+              ? 'Collapse'
+              : 'Expand all'}
+          </button>
+        </div>
+        {/* Always show the first (representative) note */}
+        <div className="opacity-80">{baseLog}</div>
+        {/* Show remaining notes only when expanded */}
+        {groupKey != null &&
+          expandedGroupKeys.has(groupKey) &&
+          group.all.slice(1).map((note) => (
+            <div
+              key={note.eventId}
+              className="border-t border-amber-100 pt-1 opacity-70"
+            >
+              {formatEvent(
+                note,
+                siteConfig?.appConfig.external.tethysdash ?? ''
+              )}
+            </div>
+          ))}
+      </div>
+    ) : (
+      baseLog
+    )
+
+    return (
       <LogCell
         className="border-b border-slate-200"
         date={date}
         time={time}
         label={displayNameForEventType(item)}
-        log={formatEvent(item, siteConfig?.appConfig.external.tethysdash ?? '')}
+        log={log}
         isUpload={isUploadEvent(item)}
         onCopy={handleCopyEventLogs}
       />
-    ) : (
-      <span />
     )
   }
 

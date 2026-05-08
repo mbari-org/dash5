@@ -80,6 +80,36 @@ export interface GetVehicleInfoResponse {
   text_volts: string
   color_volts: string
   color_argo?: string
+  color_ot?: string
+  color_ctd?: string
+  color_camerabody?: string
+  color_cameralens?: string
+  color_cam1?: string
+  color_cam2?: string
+  color_voltthresh?: string
+  color_ampthresh?: string
+  color_duration?: string
+  text_voltthresh?: string
+  text_ampthresh?: string
+  text_batteryduration?: number | string
+  text_batteryunits?: string
+  text_current?: number | string
+  text_needcomms?: string
+  text_missionago?: string
+  text_cameraago?: string
+  text_version?: string
+  svg_current?: string
+  color_lowgf?: string
+  color_highgf?: string
+  color_missiontext?: string
+  color_logago?: string
+  color_satcommstext?: string
+  color_nextcommstext?: string
+  color_timeouttext?: string
+  dock_buoy?: string
+  dock_eye?: string
+  dock_line?: string
+  dock_tri?: string
   not_found: boolean
 }
 

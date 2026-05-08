@@ -5,8 +5,10 @@ import '@testing-library/jest-dom'
 import {
   ScheduleSection,
   ScheduleSectionProps,
+  isMissionCommand,
   isParamCommand,
   isConfigSetCommand,
+  parseMissionCommand,
 } from '../components/ScheduleSection'
 import { QueryClient } from 'react-query'
 import { rest } from 'msw'
@@ -284,39 +286,42 @@ test('handles mission-started events with missing text gracefully', async () => 
 // live in jest/missionUtils.test.ts where they run without React component overhead.
 
 test('shows "Received by" tooltip when a non-mission command is acked via cell comms', async () => {
+  const gfscanCommand = {
+    data: 'gfscan',
+    unixTime: Date.now() - 90 * 1000,
+    eventId: 500,
+    eventType: 'command',
+    text: null,
+    note: null,
+    user: null,
+  }
+  const sbdSendCell = {
+    eventId: 600,
+    eventType: 'sbdSend',
+    refId: 500,
+    state: 2,
+    unixTime: Date.now() - 88 * 1000,
+    isoTime: new Date(Date.now() - 88 * 1000).toISOString(),
+    data: null,
+    text: null,
+    note: null,
+    user: null,
+  }
   server.use(
-    rest.get('/events', (_req, res, ctx) =>
-      res(
-        ctx.status(200),
-        ctx.json({
-          result: [
-            // Non-mission command (gfscan) that was sent
-            {
-              data: 'gfscan',
-              unixTime: Date.now() - 90 * 1000,
-              eventId: 500,
-              eventType: 'command',
-              text: null,
-              note: null,
-              user: null,
-            },
-            // sbdSend event with refId matching the command's eventId and state:2 (cell = instant ack)
-            {
-              eventId: 600,
-              eventType: 'sbdSend',
-              refId: 500,
-              state: 2,
-              unixTime: Date.now() - 88 * 1000,
-              isoTime: new Date(Date.now() - 88 * 1000).toISOString(),
-              data: null,
-              text: null,
-              note: null,
-              user: null,
-            },
-          ],
-        })
-      )
-    ),
+    rest.get('/events', (req, res, ctx) => {
+      const eventTypes = req.url.searchParams.get('eventTypes') ?? ''
+      // History query (eventTypes=command,run) gets only the command event;
+      // comms query gets both command + sbdSend; note query gets nothing
+      // so cancellation detection stays clean.
+      const isNoteQuery = eventTypes === 'note'
+      const isCommsQuery = eventTypes.includes('sbdSend')
+      const result = isNoteQuery
+        ? []
+        : isCommsQuery
+        ? [gfscanCommand, sbdSendCell]
+        : [gfscanCommand]
+      return res(ctx.status(200), ctx.json({ result }))
+    }),
     rest.get('/events/mission-started', (_req, res, ctx) =>
       res(ctx.status(200), ctx.json({ result: [] }))
     )
@@ -332,43 +337,49 @@ test('shows "Received by" tooltip when a non-mission command is acked via cell c
     </MockProviders>
   )
 
+  // After fix #602 the acked command is in Previous Vehicle Directives.
+  // The "Received by" tooltip and the section label must both be visible.
   await waitFor(() => {
     expect(screen.getByTitle(/Received by example/i)).toBeInTheDocument()
+    expect(screen.getByText('Previous Vehicle Directives')).toBeInTheDocument()
   })
 })
 
 test('shows timeout icon when a non-mission cell command times out', async () => {
+  const gfscanCommand = {
+    data: 'gfscan',
+    unixTime: Date.now() - 90 * 1000,
+    eventId: 700,
+    eventType: 'command',
+    text: null,
+    note: '[timeout:30min via:cell]',
+    user: null,
+  }
+  const timeoutNote = {
+    eventId: 800,
+    eventType: 'note',
+    unixTime: Date.now() - 60 * 1000,
+    isoTime: new Date(Date.now() - 60 * 1000).toISOString(),
+    data: null,
+    text: null,
+    note: 'id=700: Timeout while waiting for ack',
+    user: null,
+  }
   server.use(
-    rest.get('/events', (_req, res, ctx) =>
-      res(
-        ctx.status(200),
-        ctx.json({
-          result: [
-            // Non-mission command with timeout note for cell comms
-            {
-              data: 'gfscan',
-              unixTime: Date.now() - 90 * 1000,
-              eventId: 700,
-              eventType: 'command',
-              text: null,
-              note: '[timeout:30min via:cell]',
-              user: null,
-            },
-            // note event signalling timeout for eventId 700
-            {
-              eventId: 800,
-              eventType: 'note',
-              unixTime: Date.now() - 60 * 1000,
-              isoTime: new Date(Date.now() - 60 * 1000).toISOString(),
-              data: null,
-              text: null,
-              note: 'id=700: Timeout while waiting for ack',
-              user: null,
-            },
-          ],
-        })
-      )
-    ),
+    rest.get('/events', (req, res, ctx) => {
+      const eventTypes = req.url.searchParams.get('eventTypes') ?? ''
+      // History query gets only the command; comms query gets command + note
+      // so determineCommandStatus can see the timeout; note query returns []
+      // so the cancellation detector doesn't mis-classify the timeout note.
+      const isNoteQuery = eventTypes === 'note'
+      const isCommsQuery = eventTypes.includes('sbdSend')
+      const result = isNoteQuery
+        ? []
+        : isCommsQuery
+        ? [gfscanCommand, timeoutNote]
+        : [gfscanCommand]
+      return res(ctx.status(200), ctx.json({ result }))
+    }),
     rest.get('/events/mission-started', (_req, res, ctx) =>
       res(ctx.status(200), ctx.json({ result: [] }))
     )
@@ -380,12 +391,163 @@ test('shows timeout icon when a non-mission cell command times out', async () =>
         {...props}
         currentDeploymentId={1}
         deploymentStartTime={Date.now() - 3600 * 1000}
+      />
+    </MockProviders>
+  )
+
+  // After fix #602 the timed-out command is in Previous Vehicle Directives.
+  // The timeout icon and the section label must both be visible.
+  await waitFor(() => {
+    expect(screen.getByTitle(/timeout/i)).toBeInTheDocument()
+    expect(screen.getByText('Previous Vehicle Directives')).toBeInTheDocument()
+  })
+})
+
+test('timed-out mission directive moves to history: Previous Vehicle Directives always visible', async () => {
+  // Regression test for #594 / #602:
+  // - Before #594 fix: a timed-out mission stayed in the active zone (no separator).
+  // - After #594 fix:  it moves to historicCells; the "Previous Vehicle Directives"
+  //   separator must now always render when historicCells is non-empty, even when
+  //   scheduledCells is empty (i.e. the mission is the only item).
+  //
+  // Strategy: a SINGLE timed-out mission is the only event. We verify:
+  //   (a) the timeout icon appears  (mission renders with correct cellStatus)
+  //   (b) "Previous Vehicle Directives" separator appears — proving hasSeparator
+  //       no longer requires scheduledCells to be non-empty (fix for #602).
+  const missionEvent = {
+    data: 'load Transport/transit.tl;set transit.Depth 50 m;run',
+    unixTime: Date.now() - 90 * 1000,
+    eventId: 770,
+    eventType: 'run',
+    text: null,
+    note: '[[via:cell, timeout:5min]]',
+    user: 'test-operator',
+  }
+  const timeoutNoteEvent = {
+    eventId: 771,
+    eventType: 'note',
+    unixTime: Date.now() - 60 * 1000,
+    isoTime: new Date(Date.now() - 60 * 1000).toISOString(),
+    data: null,
+    text: null,
+    note: 'id=770: Timeout while waiting for ack',
+    user: null,
+  }
+  server.use(
+    rest.get('/events', (req, res, ctx) => {
+      // History query (command,run) must not receive the note event lest it
+      // appear as a spurious row; comms query gets all including the note;
+      // the cancellation-notes query (eventTypes=note) gets [] so it doesn't
+      // interfere with the timeout-note path under test.
+      const eventTypes = req.url.searchParams.get('eventTypes') ?? ''
+      const isNoteQuery = eventTypes === 'note'
+      const isCommsQuery = eventTypes.includes('sbdSend')
+      const result = isNoteQuery
+        ? []
+        : isCommsQuery
+        ? [missionEvent, timeoutNoteEvent]
+        : [missionEvent]
+      return res(ctx.status(200), ctx.json({ result }))
+    }),
+    rest.get('/events/mission-started', (_req, res, ctx) =>
+      res(ctx.status(200), ctx.json({ result: [] }))
+    )
+  )
+
+  render(
+    <MockProviders queryClient={new QueryClient()}>
+      <ScheduleSection
+        {...props}
+        currentDeploymentId={1}
+        deploymentStartTime={Date.now() - 3600 * 1000}
+      />
+    </MockProviders>
+  )
+
+  // Both assertions must hold in the same render to distinguish pre/post-fix:
+  //
+  // (a) Timeout icon — mission renders with cellStatus='timeout' (fix #594).
+  //
+  // (b) "Previous Vehicle Directives" separator — proves hasSeparator is true
+  //     even with an empty active zone (fix #602: separator no longer requires
+  //     scheduledCells to be non-empty). This guarantees operators always see
+  //     the complete audit trail of every sent command.
+  await waitFor(() => {
+    expect(screen.getByTitle(/timeout/i)).toBeInTheDocument()
+    expect(screen.getByText('Previous Vehicle Directives')).toBeInTheDocument()
+    // #609: timed-out commands show "Ended: N/A" not a timestamp or TBD
+    expect(screen.getByText('Ended: N/A')).toBeInTheDocument()
+  })
+})
+
+test('historic timed-out mission shows timeout pill and Ended: N/A even when timeout note is only in timeout-notes query (not comms)', async () => {
+  // Regression for the case where a command was sent long enough ago that
+  // commsEventsResponse pagination has not fetched its timeout note.
+  // The dedicated timeout-notes query (noteMatches='Timeout while waiting')
+  // must serve as the fallback source, populating timedOutEventIds.
+  const missionEvent = {
+    data: 'load Transport/transit.tl;run',
+    unixTime: Date.now() - 7 * 24 * 3600 * 1000, // 7 days ago
+    eventId: 880,
+    eventType: 'run',
+    text: null,
+    note: '[[via:cell, timeout:5min]]',
+    user: 'test-operator',
+  }
+  const timeoutNoteEvent = {
+    eventId: 881,
+    eventType: 'note',
+    unixTime: Date.now() - 7 * 24 * 3600 * 1000 + 300 * 1000,
+    isoTime: new Date(
+      Date.now() - 7 * 24 * 3600 * 1000 + 300 * 1000
+    ).toISOString(),
+    data: null,
+    text: null,
+    note: 'id=880: Timeout while waiting for ack',
+    user: null,
+  }
+  server.use(
+    rest.get('/events', (req, res, ctx) => {
+      const eventTypes = req.url.searchParams.get('eventTypes') ?? ''
+      const noteMatches = req.url.searchParams.get('noteMatches') ?? ''
+      // History query (command,run): the old mission event
+      // Comms query (includes sbdSend): only the mission, NO timeout note —
+      //   simulating pagination that hasn't fetched this far back
+      // Timeout-notes query (note + noteMatches='Timeout while waiting'):
+      //   returns the note so timedOutEventIds picks it up
+      // Cancellation-notes query (note + noteMatches='Cancelled request'): []
+      const isCommsQuery = eventTypes.includes('sbdSend')
+      const isTimeoutNoteQuery =
+        eventTypes === 'note' && noteMatches.includes('Timeout while waiting')
+      const isCancellationQuery =
+        eventTypes === 'note' && noteMatches.includes('Cancelled request')
+      const result = isCommsQuery
+        ? [missionEvent] // timeout note intentionally absent from comms window
+        : isTimeoutNoteQuery
+        ? [timeoutNoteEvent]
+        : isCancellationQuery
+        ? []
+        : [missionEvent] // history query
+      return res(ctx.status(200), ctx.json({ result }))
+    }),
+    rest.get('/events/mission-started', (_req, res, ctx) =>
+      res(ctx.status(200), ctx.json({ result: [] }))
+    )
+  )
+
+  render(
+    <MockProviders queryClient={new QueryClient()}>
+      <ScheduleSection
+        {...props}
+        currentDeploymentId={1}
+        deploymentStartTime={Date.now() - 14 * 24 * 3600 * 1000}
       />
     </MockProviders>
   )
 
   await waitFor(() => {
     expect(screen.getByTitle(/timeout/i)).toBeInTheDocument()
+    expect(screen.getByText('Ended: N/A')).toBeInTheDocument()
   })
 })
 
@@ -645,5 +807,713 @@ test('configSet command row shows Sent status and config badge tooltip', async (
   await waitFor(() => {
     const wrenchIcon = document.querySelector('svg[data-icon="wrench"]')
     expect(wrenchIcon).toBeInTheDocument()
+  })
+})
+
+// ── multi-segment non-mission command label tests (#592) ──────────────────────
+
+test('multi-segment non-mission command renders all segments joined with ·', async () => {
+  server.use(
+    rest.get('/events', (_req, res, ctx) =>
+      res(
+        ctx.status(200),
+        ctx.json({
+          result: [
+            {
+              data: 'schedule clear;schedule resume',
+              unixTime: Date.now() - 60 * 1000,
+              eventId: 500,
+              eventType: 'command',
+              text: null,
+              note: '[[via:cell, timeout:5min]]',
+              user: 'test-operator',
+            },
+          ],
+        })
+      )
+    ),
+    rest.get('/events/mission-started', (_req, res, ctx) =>
+      res(ctx.status(200), ctx.json({ result: [] }))
+    )
+  )
+
+  render(
+    <MockProviders queryClient={new QueryClient()}>
+      <ScheduleSection {...props} currentDeploymentId={1} />
+    </MockProviders>
+  )
+
+  await waitFor(() => {
+    expect(
+      screen.getByText('schedule clear · schedule resume')
+    ).toBeInTheDocument()
+  })
+  expect(screen.queryByText('No parameters')).not.toBeInTheDocument()
+})
+
+test('single-segment non-mission command renders label without separator', async () => {
+  server.use(
+    rest.get('/events', (_req, res, ctx) =>
+      res(
+        ctx.status(200),
+        ctx.json({
+          result: [
+            {
+              data: 'restart logs',
+              unixTime: Date.now() - 60 * 1000,
+              eventId: 501,
+              eventType: 'command',
+              text: null,
+              note: null,
+              user: 'test-operator',
+            },
+          ],
+        })
+      )
+    ),
+    rest.get('/events/mission-started', (_req, res, ctx) =>
+      res(ctx.status(200), ctx.json({ result: [] }))
+    )
+  )
+
+  render(
+    <MockProviders queryClient={new QueryClient()}>
+      <ScheduleSection {...props} currentDeploymentId={1} />
+    </MockProviders>
+  )
+
+  let labelEl: HTMLElement
+  await waitFor(() => {
+    labelEl = screen.getByText('restart logs')
+    expect(labelEl).toBeInTheDocument()
+  })
+  expect(labelEl!.closest('ul')?.textContent).not.toContain('·')
+})
+
+test('sched-prefixed quoted command strips sched wrapper and shows full label', async () => {
+  server.use(
+    rest.get('/events', (_req, res, ctx) =>
+      res(
+        ctx.status(200),
+        ctx.json({
+          result: [
+            {
+              data: 'sched "restart logs"',
+              unixTime: Date.now() - 60 * 1000,
+              eventId: 502,
+              eventType: 'command',
+              text: null,
+              note: '[[via:cellsat, timeout:5min]]',
+              user: 'test-operator',
+            },
+          ],
+        })
+      )
+    ),
+    rest.get('/events/mission-started', (_req, res, ctx) =>
+      res(ctx.status(200), ctx.json({ result: [] }))
+    )
+  )
+
+  render(
+    <MockProviders queryClient={new QueryClient()}>
+      <ScheduleSection {...props} currentDeploymentId={1} />
+    </MockProviders>
+  )
+
+  await waitFor(() => {
+    expect(screen.getByText('restart logs')).toBeInTheDocument()
+  })
+  expect(screen.queryByText(/logs"/)).not.toBeInTheDocument()
+})
+
+// ── isMissionCommand unit tests (#585) ───────────────────────────────────────
+
+test('isMissionCommand returns true for load+run commands', () => {
+  expect(
+    isMissionCommand(
+      'load Science/profile_station.tl;set profile_station.NeedCommsTime 30 min;run'
+    )
+  ).toBe(true)
+  expect(isMissionCommand('load Transport/transit.tl;run')).toBe(true)
+  expect(isMissionCommand(undefined, 'load Science/sci2.xml;run')).toBe(true)
+})
+
+test('isMissionCommand returns false for commands without load+run', () => {
+  expect(isMissionCommand('restart logs')).toBe(false)
+  expect(isMissionCommand('schedule clear;schedule resume')).toBe(false)
+  expect(isMissionCommand('set profile_station.YoYoMaxDepth 40 meter')).toBe(
+    false
+  )
+  expect(
+    isMissionCommand('configSet CTD_Seabird.loadAtStartup 1 bool persist')
+  ).toBe(false)
+  expect(isMissionCommand('schedule clear')).toBe(false)
+  expect(isMissionCommand(undefined, undefined)).toBe(false)
+})
+
+// ── secondary label gating integration tests (#585) ──────────────────────────
+
+test('bare command row does not show "No parameters" secondary text', async () => {
+  server.use(
+    rest.get('/events', (_req, res, ctx) =>
+      res(
+        ctx.status(200),
+        ctx.json({
+          result: [
+            {
+              data: 'restart logs',
+              unixTime: Date.now() - 60 * 1000,
+              eventId: 400,
+              eventType: 'command',
+              text: null,
+              note: null,
+              user: 'test-operator',
+            },
+          ],
+        })
+      )
+    ),
+    rest.get('/events/mission-started', (_req, res, ctx) =>
+      res(ctx.status(200), ctx.json({ result: [] }))
+    )
+  )
+
+  render(
+    <MockProviders queryClient={new QueryClient()}>
+      <ScheduleSection {...props} currentDeploymentId={1} />
+    </MockProviders>
+  )
+
+  await waitFor(() => {
+    expect(screen.getByText('restart logs')).toBeInTheDocument()
+  })
+  expect(screen.queryByText('No parameters')).not.toBeInTheDocument()
+  expect(
+    screen.queryByText('No parsed parameters available')
+  ).not.toBeInTheDocument()
+})
+
+test('mission command row shows "No parameters" secondary text when no params set', async () => {
+  server.use(
+    rest.get('/events', (_req, res, ctx) =>
+      res(
+        ctx.status(200),
+        ctx.json({
+          result: [
+            {
+              data: 'load Transport/transit.tl;run',
+              unixTime: Date.now() - 60 * 1000,
+              eventId: 401,
+              eventType: 'run',
+              text: null,
+              note: null,
+              user: 'test-operator',
+            },
+          ],
+        })
+      )
+    ),
+    rest.get('/events/mission-started', (_req, res, ctx) =>
+      res(ctx.status(200), ctx.json({ result: [] }))
+    )
+  )
+
+  render(
+    <MockProviders queryClient={new QueryClient()}>
+      <ScheduleSection {...props} currentDeploymentId={1} />
+    </MockProviders>
+  )
+
+  await waitFor(() => {
+    expect(screen.getByText('load Transport/transit.tl')).toBeInTheDocument()
+  })
+  expect(screen.getByText('No parameters')).toBeInTheDocument()
+})
+
+// ── parseMissionCommand unit tests (#585) ─────────────────────────────────────
+
+test('parseMissionCommand strips trailing run from semicolon-delimited commands', () => {
+  expect(parseMissionCommand('load Transport/transit.tl;run')).toEqual({
+    name: 'load Transport/transit.tl',
+    parameters: undefined,
+  })
+})
+
+test('parseMissionCommand preserves set params between load and run', () => {
+  expect(
+    parseMissionCommand('load Transport/transit.tl;set transit.Depth 50 m;run')
+  ).toEqual({
+    name: 'load Transport/transit.tl',
+    parameters: 'set transit.Depth 50 m',
+  })
+})
+
+test('parseMissionCommand strips bare sched/asap tokens', () => {
+  expect(
+    parseMissionCommand('sched asap load Science/profile_station.tl;run')
+  ).toEqual({
+    name: 'load Science/profile_station.tl',
+    parameters: undefined,
+  })
+})
+
+test('parseMissionCommand strips sched timestamp prefix', () => {
+  expect(
+    parseMissionCommand(
+      'sched 20250616T0415 load Science/profile_station.tl;run'
+    )
+  ).toEqual({
+    name: 'load Science/profile_station.tl',
+    parameters: undefined,
+  })
+})
+
+test('parseMissionCommand extracts payload from quoted chunked cell-comms form', () => {
+  // Chunked cell delivery wraps the payload in quotes and appends a chunk ID
+  // suffix (e.g. "41tnk 1 6"). The parser should extract the quoted content
+  // and discard the suffix, yielding clean name/parameters.
+  expect(
+    parseMissionCommand(
+      'sched 20250616T0415 "load Science/sci2_circle_hotspot.tl;set sci2_circle_hotspot.MissionTimeout 24 h;run" 41tnk 1 6'
+    )
+  ).toEqual({
+    name: 'load Science/sci2_circle_hotspot.tl',
+    parameters: 'set sci2_circle_hotspot.MissionTimeout 24 h',
+  })
+})
+
+// ── Legacy run <file> — no parameter summary row (#585) ───────────────────────
+
+test('legacy run <file> mission row does not show "No parameters" subtitle', async () => {
+  // Legacy format: eventType 'run' but command data is bare 'run <file>'.
+  // isMission is true (eventType=run), but isLoadRunMission is false (no load),
+  // so the secondary text should be suppressed entirely.
+  server.use(
+    rest.get('/events', (_req, res, ctx) =>
+      res(
+        ctx.status(200),
+        ctx.json({
+          result: [
+            {
+              data: 'run Science/mbts_sci2.tl',
+              unixTime: Date.now() - 60 * 1000,
+              eventId: 410,
+              eventType: 'run',
+              text: null,
+              note: null,
+              user: 'test-operator',
+            },
+          ],
+        })
+      )
+    ),
+    rest.get('/events/mission-started', (_req, res, ctx) =>
+      res(ctx.status(200), ctx.json({ result: [] }))
+    )
+  )
+
+  render(
+    <MockProviders queryClient={new QueryClient()}>
+      <ScheduleSection {...props} currentDeploymentId={1} />
+    </MockProviders>
+  )
+
+  await waitFor(() => {
+    expect(screen.getByText('Science/mbts_sci2.tl')).toBeInTheDocument()
+  })
+  expect(screen.queryByText('No parameters')).not.toBeInTheDocument()
+})
+
+// ── Mission comms-lookup upgrade regression tests (#584) ─────────────────────
+
+test('mission command upgrades from pending to ack when cell comms ACK is received', async () => {
+  // The mission run event returned by the schedule history query.
+  const missionRunEvent = {
+    data: 'load Transport/transit.tl;set transit.Depth 50 m;run',
+    unixTime: Date.now() - 90 * 1000,
+    eventId: 450,
+    eventType: 'run',
+    text: null,
+    note: '[[via:cell, timeout:5min]]',
+    user: 'test-operator',
+  }
+  // The sbdSend comms event returned only by the useCommsEvents query.
+  const sbdSendEvent = {
+    eventId: 451,
+    eventType: 'sbdSend',
+    refId: 450,
+    state: 2,
+    unixTime: Date.now() - 88 * 1000,
+    isoTime: new Date(Date.now() - 88 * 1000).toISOString(),
+    data: null,
+    text: null,
+    note: null,
+    user: null,
+  }
+
+  server.use(
+    rest.get('/events', (req, res, ctx) => {
+      // The history query requests only command,run; the comms query also
+      // includes sbdSend,sbdReceipt,sbdReceive,note. Branch accordingly so
+      // sbdSend is only visible to the comms lookup, matching production.
+      // The cancellation-notes query uses eventTypes=note exclusively — return
+      // [] so that query doesn't accidentally receive run/sbdSend events.
+      const eventTypes = req.url.searchParams.get('eventTypes') ?? ''
+      const isNoteQuery = eventTypes === 'note'
+      const isCommsQuery = eventTypes.includes('sbdSend')
+      return res(
+        ctx.status(200),
+        ctx.json({
+          result: isNoteQuery
+            ? []
+            : isCommsQuery
+            ? [missionRunEvent, sbdSendEvent]
+            : [missionRunEvent],
+        })
+      )
+    }),
+    rest.get('/events/mission-started', (_req, res, ctx) =>
+      res(ctx.status(200), ctx.json({ result: [] }))
+    )
+  )
+
+  render(
+    <MockProviders queryClient={new QueryClient()}>
+      <ScheduleSection
+        {...props}
+        currentDeploymentId={1}
+        deploymentStartTime={Date.now() - 3600 * 1000}
+      />
+    </MockProviders>
+  )
+
+  // Row should show ACK icon (AcknowledgeIcon) with "Received by" tooltip,
+  // not the clock/pending icon.
+  await waitFor(() => {
+    expect(screen.getByTitle(/Received by example/i)).toBeInTheDocument()
+  })
+})
+
+test('mission command stays pending when no comms entry exists (outside fetch window)', async () => {
+  server.use(
+    rest.get('/events', (_req, res, ctx) =>
+      res(
+        ctx.status(200),
+        ctx.json({
+          result: [
+            // Mission run event with no matching sbdSend in the response
+            {
+              data: 'load Transport/transit.tl;run',
+              unixTime: Date.now() - 90 * 1000,
+              eventId: 460,
+              eventType: 'run',
+              text: null,
+              note: '[[via:sat, timeout:60min]]',
+              user: 'test-operator',
+            },
+          ],
+        })
+      )
+    ),
+    rest.get('/events/mission-started', (_req, res, ctx) =>
+      res(ctx.status(200), ctx.json({ result: [] }))
+    )
+  )
+
+  render(
+    <MockProviders queryClient={new QueryClient()}>
+      <ScheduleSection
+        {...props}
+        currentDeploymentId={1}
+        deploymentStartTime={Date.now() - 3600 * 1000}
+      />
+    </MockProviders>
+  )
+
+  // Without a comms entry, mission should remain 'pending' (clock icon),
+  // not fall through to 'sent'.
+  await waitFor(() => {
+    expect(screen.getByTitle(/pending/i)).toBeInTheDocument()
+  })
+  expect(screen.queryByTitle(/Received by/i)).not.toBeInTheDocument()
+})
+
+test('future-scheduled mission stays pending even when comms indicates ack', async () => {
+  // A mission scheduled for a far-future time should not be upgraded via the
+  // comms lookup because the scheduleDate gate prevents it: only ASAP/unscheduled
+  // missions should be upgraded based on comms data.
+  const futureStamp = '20991231T2359'
+  const scheduledMission = {
+    data: `sched ${futureStamp} "load Transport/transit.tl;run"`,
+    unixTime: Date.now() - 60 * 1000,
+    eventId: 470,
+    eventType: 'run',
+    text: null,
+    note: '[[via:cell, timeout:5min]]',
+    user: 'test-operator',
+  }
+  const sbdSendEvent = {
+    eventId: 471,
+    eventType: 'sbdSend',
+    refId: 470,
+    state: 2,
+    unixTime: Date.now() - 58 * 1000,
+    isoTime: new Date(Date.now() - 58 * 1000).toISOString(),
+    data: null,
+    text: null,
+    note: null,
+    user: null,
+  }
+
+  server.use(
+    rest.get('/events', (req, res, ctx) => {
+      // Return [] for note-only queries (cancellation-notes lookup) so test
+      // data is isolated and doesn't bleed into unrelated component branches.
+      const eventTypes = req.url.searchParams.get('eventTypes') ?? ''
+      const isNoteQuery = eventTypes === 'note'
+      const isCommsQuery = eventTypes.includes('sbdSend')
+      return res(
+        ctx.status(200),
+        ctx.json({
+          result: isNoteQuery
+            ? []
+            : isCommsQuery
+            ? [scheduledMission, sbdSendEvent]
+            : [scheduledMission],
+        })
+      )
+    }),
+    rest.get('/events/mission-started', (_req, res, ctx) =>
+      res(ctx.status(200), ctx.json({ result: [] }))
+    )
+  )
+
+  render(
+    <MockProviders queryClient={new QueryClient()}>
+      <ScheduleSection
+        {...props}
+        currentDeploymentId={1}
+        deploymentStartTime={Date.now() - 3600 * 1000}
+      />
+    </MockProviders>
+  )
+
+  // Despite the sbdSend comms event, the mission must stay 'pending' because
+  // it has a future scheduled start time (scheduleDate !== 'asap').
+  await waitFor(() => {
+    expect(screen.getByTitle(/pending/i)).toBeInTheDocument()
+  })
+  expect(screen.queryByTitle(/Received by/i)).not.toBeInTheDocument()
+})
+
+// ── Sched timestamp format regression tests (#587) ────────────────────────────
+
+test('parses corrected sched YYYYMMDDT timestamp without }', async () => {
+  // Use a far-future date so isQueued stays true regardless of test runtime.
+  const futureStamp = '20991231T2359'
+  server.use(
+    rest.get('/events', (_req, res, ctx) =>
+      res(
+        ctx.status(200),
+        ctx.json({
+          result: [
+            {
+              data: `sched ${futureStamp} "load Science/profile_station.tl;run"`,
+              unixTime: Date.now() - 5 * 1000,
+              eventId: 701,
+              eventType: 'run',
+              text: null,
+              note: null,
+              user: 'test-engineer',
+            },
+          ],
+        })
+      )
+    ),
+    rest.get('/events/mission-started', (_req, res, ctx) =>
+      res(ctx.status(200), ctx.json({ result: [] }))
+    )
+  )
+
+  render(
+    <MockProviders queryClient={new QueryClient()}>
+      <ScheduleSection {...props} currentDeploymentId={1} />
+    </MockProviders>
+  )
+
+  // The row should display "Sent and Queued for … UTC" — the fixed prefix and
+  // UTC suffix are locale-independent and confirm that timestamp parsing
+  // succeeded (a parse failure falls back to 'N/A' with no "Queued" prefix).
+  await waitFor(() => {
+    expect(screen.getByText(/Sent and Queued for .+ UTC/)).toBeInTheDocument()
+  })
+})
+
+test('timed-out command with explicit scheduled timestamp shows timeout pill and moves to history (#606)', async () => {
+  // Regression for #606:
+  // Commands scheduled with a specific timestamp (e.g. `sched 20991231T1200 run ...`)
+  // that subsequently time out must:
+  //   (a) be demoted to the "Previous Vehicle Directives" history section, and
+  //   (b) display the timeout pill (cellStatus = 'timeout'), not 'pending'.
+  //
+  // Before this fix, isAboveSeparator() and cellStatus both skipped the
+  // commsLookup timeout check when hasScheduledTimestamp was true, leaving
+  // the command stuck as 'pending' in the active zone forever.
+  const futureStamp = '20991231T1200'
+  const missionEvent = {
+    data: `sched ${futureStamp} load Science/profile_station.tl;run`,
+    unixTime: Date.now() - 90 * 1000,
+    eventId: 800,
+    eventType: 'run',
+    text: null,
+    note: '[[via:cell, timeout:5min]]',
+    user: 'test-operator',
+  }
+  const timeoutNote = {
+    eventId: 801,
+    eventType: 'note',
+    unixTime: Date.now() - 60 * 1000,
+    isoTime: new Date(Date.now() - 60 * 1000).toISOString(),
+    data: null,
+    text: null,
+    note: 'id=800: Timeout while waiting for ack',
+    user: null,
+  }
+  server.use(
+    rest.get('/events', (req, res, ctx) => {
+      const eventTypes = req.url.searchParams.get('eventTypes') ?? ''
+      const isNoteQuery = eventTypes === 'note'
+      const isCommsQuery = eventTypes.includes('sbdSend')
+      const result = isNoteQuery
+        ? []
+        : isCommsQuery
+        ? [missionEvent, timeoutNote]
+        : [missionEvent]
+      return res(ctx.status(200), ctx.json({ result }))
+    }),
+    rest.get('/events/mission-started', (_req, res, ctx) =>
+      res(ctx.status(200), ctx.json({ result: [] }))
+    )
+  )
+
+  render(
+    <MockProviders queryClient={new QueryClient()}>
+      <ScheduleSection
+        {...props}
+        currentDeploymentId={1}
+        deploymentStartTime={Date.now() - 3600 * 1000}
+      />
+    </MockProviders>
+  )
+
+  await waitFor(() => {
+    // (a) Timeout pill must appear
+    expect(screen.getByTitle(/timeout/i)).toBeInTheDocument()
+    // (b) Must be in history section, not stuck above separator
+    expect(screen.getByText('Previous Vehicle Directives')).toBeInTheDocument()
+  })
+})
+
+test('timed-out command enriched to "completed" via isRecovered still shows timeout pill (#606b)', async () => {
+  // Regression: when isRecovered=true, every remaining 'TBD'/'pending' item is
+  // promoted to 'completed' so the history looks clean. Before this fix,
+  // cellStatus skipped commsLookup when raw!=='pending', so the command showed
+  // 'completed' even when a timeout note existed. A timeout note must always win.
+  //
+  // Strategy: pass isRecovered={true} so the command becomes 'completed' via
+  // the recovered-deployment enrichment path, then assert the timeout pill wins.
+  const eventId = 910
+  const ts = Date.now() - 90 * 1000
+  const missionEvent = {
+    data: 'load Science/profile_station.tl;run',
+    unixTime: ts,
+    eventId,
+    eventType: 'run',
+    text: null,
+    note: '[[via:cell, timeout:5min]]',
+    user: 'test-operator',
+  }
+  const timeoutNote = {
+    eventId: 911,
+    eventType: 'note',
+    unixTime: ts + 60 * 1000,
+    isoTime: new Date(ts + 60 * 1000).toISOString(),
+    data: null,
+    text: null,
+    note: `id=${eventId}: Timeout while waiting for ack`,
+    user: null,
+  }
+  server.use(
+    rest.get('/events', (req, res, ctx) => {
+      const eventTypes = req.url.searchParams.get('eventTypes') ?? ''
+      const isNoteQuery = eventTypes === 'note'
+      const isCommsQuery = eventTypes.includes('sbdSend')
+      const result = isNoteQuery
+        ? []
+        : isCommsQuery
+        ? [missionEvent, timeoutNote]
+        : [missionEvent]
+      return res(ctx.status(200), ctx.json({ result }))
+    }),
+    rest.get('/events/mission-started', (_req, res, ctx) =>
+      res(ctx.status(200), ctx.json({ result: [] }))
+    )
+  )
+
+  render(
+    <MockProviders queryClient={new QueryClient()}>
+      <ScheduleSection
+        {...props}
+        currentDeploymentId={1}
+        deploymentStartTime={Date.now() - 3600 * 1000}
+        isRecovered={true}
+      />
+    </MockProviders>
+  )
+
+  await waitFor(() => {
+    // Timeout pill must win over the isRecovered-enriched 'completed' status
+    expect(screen.getByTitle(/timeout/i)).toBeInTheDocument()
+  })
+})
+
+test('parses legacy sched YYYYMMDD}T timestamp for backwards compatibility', async () => {
+  // Simulate an event stored before the makeCommand } fix was deployed.
+  const legacyStamp = '20991231}T2359'
+  server.use(
+    rest.get('/events', (_req, res, ctx) =>
+      res(
+        ctx.status(200),
+        ctx.json({
+          result: [
+            {
+              data: `sched ${legacyStamp} "load Science/profile_station.tl;run"`,
+              unixTime: Date.now() - 5 * 1000,
+              eventId: 702,
+              eventType: 'run',
+              text: null,
+              note: null,
+              user: 'test-engineer',
+            },
+          ],
+        })
+      )
+    ),
+    rest.get('/events/mission-started', (_req, res, ctx) =>
+      res(ctx.status(200), ctx.json({ result: [] }))
+    )
+  )
+
+  render(
+    <MockProviders queryClient={new QueryClient()}>
+      <ScheduleSection {...props} currentDeploymentId={1} />
+    </MockProviders>
+  )
+
+  // The row should still display "Sent and Queued for … UTC" despite the
+  // legacy }T — same locale-independent assertion used for the clean timestamp.
+  await waitFor(() => {
+    expect(screen.getByText(/Sent and Queued for .+ UTC/)).toBeInTheDocument()
   })
 })

@@ -87,3 +87,59 @@ test('should have teal label when pending and the schedule is paused', async () 
     'text-teal-600'
   )
 })
+
+test('should render secondary text when secondary prop is provided', () => {
+  render(<ScheduleCell {...props} secondary="breakfast of champions" />)
+
+  expect(screen.getByText('breakfast of champions')).toBeInTheDocument()
+})
+
+test('should render the timeout icon with its tooltip when status is timeout', () => {
+  render(
+    <ScheduleCell {...props} status={'timeout'} statusTooltip="Timed out" />
+  )
+
+  expect(screen.getByTitle('Timed out')).toBeInTheDocument()
+  expect(screen.getByLabelText('timeout warning icon')).toBeInTheDocument()
+})
+
+test('timeout icon span is dimmed when schedule is not running', () => {
+  render(
+    <ScheduleCell {...props} status={'timeout'} scheduleStatus={undefined} />
+  )
+
+  // The outer span (title wrapper) gets opacity-60 for non-running schedules;
+  // the inner span is the icon's own wrapper, so use parentElement to reach the outer one.
+  expect(
+    screen.getByLabelText('timeout warning icon').parentElement
+  ).toHaveClass('opacity-60')
+})
+
+test('timeout icon span is not dimmed when schedule is running', () => {
+  render(
+    <ScheduleCell
+      {...props}
+      status={'timeout'}
+      scheduleStatus="running"
+      statusTooltip="Timed out"
+    />
+  )
+
+  expect(screen.getByTitle('Timed out')).not.toHaveClass('opacity-60')
+})
+
+test('should not render an empty secondary row when secondary is undefined', () => {
+  // Previously ScheduleCell always rendered the secondary <li> even when
+  // secondary was undefined, leaving an empty subtitle row for non-mission
+  // commands. This guards against regressions.
+  // Base props include secondary='breakfast of champions'; override to undefined.
+  render(<ScheduleCell {...props} secondary={undefined} />)
+
+  // The label still renders...
+  expect(screen.getByText(props.label)).toBeInTheDocument()
+  // ...but the secondary text from the base props must not appear.
+  expect(screen.queryByText('breakfast of champions')).not.toBeInTheDocument()
+  // ...and there must be no italic subtitle <li> in the DOM at all.
+  const italicLis = document.querySelectorAll('li.italic')
+  expect(italicLis).toHaveLength(0)
+})
