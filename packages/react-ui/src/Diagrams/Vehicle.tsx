@@ -206,7 +206,7 @@ export const Vehicle: React.FC<VehicleProps> = ({
   textNoteTime,
   colorFlow = 'st3',
   textFlow,
-  colorCtd = 'st18',
+  colorCtd,
   textCameraAgo,
   textCtdStatus,
   colorVoltThresh,

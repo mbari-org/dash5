@@ -299,19 +299,26 @@ test('should display reckoned label', async () => {
   expect(screen.queryByTestId('reckoned_label')).toBeInTheDocument()
 })
 
-test('should render CTD dot with provided color', async () => {
+test('should render CTD dot with provided color when ON', async () => {
   render(<FullWidthVehicleDiagram {...props} colorCtd="st4" />)
   expect(screen.queryByLabelText('ctd dot')).toHaveClass('st4')
 })
 
 test('should render CTD toggle knob on the right when CTD is ON', async () => {
-  render(
-    <FullWidthVehicleDiagram {...props} colorCtd="st4" textCtdStatus="ON" />
-  )
+  render(<FullWidthVehicleDiagram {...props} colorCtd="st4" />)
   expect(screen.queryByLabelText('ctd toggle knob')).toHaveAttribute(
     'cx',
     '547'
   )
+})
+
+test('should render CTD toggle in gray with knob left when CTD is OFF', async () => {
+  render(<FullWidthVehicleDiagram {...props} colorCtd="st18" />)
+  expect(screen.queryByLabelText('ctd toggle knob')).toHaveAttribute(
+    'cx',
+    '541'
+  )
+  expect(screen.queryByLabelText('ctd toggle background')).toHaveClass('st12')
 })
 
 test('should display version label when textVersion is provided', async () => {

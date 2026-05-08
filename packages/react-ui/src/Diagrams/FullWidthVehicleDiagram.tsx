@@ -115,7 +115,7 @@ export const FullWidthVehicleDiagram: React.FC<
   textCriticalTime,
   textNote,
   textNoteTime,
-  colorCtd = 'st18',
+  colorCtd,
   textCameraAgo,
   textCtdStatus,
   colorVoltThresh,

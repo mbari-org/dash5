@@ -324,33 +324,32 @@ test("should display the vehicle's last update ", async () => {
   expect(screen.queryByText(`${props.textLastUpdate}`)).toBeInTheDocument()
 })
 
-test('should render CTD dot indicator when colorCtd is provided', async () => {
+test('should render CTD dot indicator when CTD is ON (colorCtd is not st18)', async () => {
   render(<Vehicle {...props} colorCtd="st4" />)
   expect(screen.queryByLabelText('ctd dot')).toHaveClass('st4')
 })
 
 test('should render CTD toggle knob on the right when CTD is ON', async () => {
-  render(<Vehicle {...props} colorCtd="st4" textCtdStatus="ON" />)
+  render(<Vehicle {...props} colorCtd="st4" />)
   const knob = screen.queryByLabelText('ctd toggle knob')
   expect(knob).toBeInTheDocument()
   expect(knob).toHaveAttribute('cx', '547')
 })
 
-test('should render CTD toggle knob on the left when CTD is OFF', async () => {
-  // Server sends colorCtd=st18 when OFF — toggle still renders in gray
-  render(<Vehicle {...props} textCtdStatus="OFF" />)
+test('should render CTD toggle knob on the left when CTD is OFF (colorCtd=st18)', async () => {
+  render(<Vehicle {...props} colorCtd="st18" />)
   const knob = screen.queryByLabelText('ctd toggle knob')
   expect(knob).toBeInTheDocument()
   expect(knob).toHaveAttribute('cx', '541')
 })
 
 test('should render CTD toggle background in gray when CTD is OFF', async () => {
-  render(<Vehicle {...props} textCtdStatus="OFF" />)
+  render(<Vehicle {...props} colorCtd="st18" />)
   expect(screen.queryByLabelText('ctd toggle background')).toHaveClass('st12')
 })
 
-test('should not render CTD toggle when textCtdStatus is absent', async () => {
-  render(<Vehicle {...props} colorCtd="st4" />)
+test('should not render CTD toggle when colorCtd is absent', async () => {
+  render(<Vehicle {...props} />)
   expect(screen.queryByLabelText('ctd toggle knob')).not.toBeInTheDocument()
 })
 
