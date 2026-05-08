@@ -21,10 +21,12 @@ export const CtdIndicator: React.FC<CtdIndicatorProps> = ({
 
   return (
     <>
-      {/* Row 1: filled circle indicator + "CTD" label */}
+      {/* Row 1: filled circle indicator + "CTD" label.
+          The dot is also suppressed when hidden so it doesn't float
+          as an orphaned circle while the rest of the widget is absent. */}
       <circle
         aria-label="ctd dot"
-        className={colorCtd}
+        className={isHidden ? 'st18' : colorCtd}
         cx="542"
         cy="241"
         r="3.6"

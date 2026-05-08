@@ -17,12 +17,14 @@ export const Log: React.FC<LogProps> = ({
 }) => {
   return (
     <g>
+      {/* Defaults to st18 (invisible) so older servers that don't send
+          color_logago don't produce an orphaned dot. Also hidden when docked. */}
       <circle
         data-testid="log ago indicator"
         cx="141"
         cy="219.5"
         r="2"
-        className={colorLogAgo ?? 'st4'}
+        className={isDocked ? 'st18' : colorLogAgo ?? 'st18'}
       />
       <text
         aria-label="log time"
