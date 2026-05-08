@@ -51,7 +51,7 @@ export const Heading: React.FC<HeadingProps> = ({
           transform={
             isFullWidthDiagram
               ? 'matrix(1 0 0 1 142 298)'
-              : 'matrix(1 0 0 1 616 256)'
+              : 'matrix(1 0 0 1 618 256)'
           }
           className={clsx(isFullWidthDiagram ? 'st24' : 'st9 st13')}
         >
