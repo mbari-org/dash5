@@ -304,25 +304,15 @@ test('should render CTD dot when colorCtd is a valid color', async () => {
   expect(screen.queryByLabelText('ctd dot')).toHaveClass('st4')
 })
 
-test('should render CTD toggle knob on the right when textCtdStatus is ON', async () => {
-  render(
-    <FullWidthVehicleDiagram {...props} colorCtd="st4" textCtdStatus="ON" />
-  )
-  expect(screen.queryByLabelText('ctd toggle knob')).toHaveAttribute(
-    'cx',
-    '547'
-  )
+test('should render camera body when colorCameraBody is provided', async () => {
+  render(<FullWidthVehicleDiagram {...props} colorCameraBody="st11" />)
+  expect(screen.queryByLabelText('camera body')).toBeInTheDocument()
+  expect(screen.queryByLabelText('camera body')).toHaveClass('st11')
 })
 
-test('should render CTD toggle in gray with knob left when textCtdStatus is OFF', async () => {
-  render(
-    <FullWidthVehicleDiagram {...props} colorCtd="st4" textCtdStatus="OFF" />
-  )
-  expect(screen.queryByLabelText('ctd toggle knob')).toHaveAttribute(
-    'cx',
-    '541'
-  )
-  expect(screen.queryByLabelText('ctd toggle background')).toHaveClass('st12')
+test('should not render camera when colorCameraBody is absent', async () => {
+  render(<FullWidthVehicleDiagram {...props} />)
+  expect(screen.queryByLabelText('camera body')).not.toBeInTheDocument()
 })
 
 test('should display version label when textVersion is provided', async () => {

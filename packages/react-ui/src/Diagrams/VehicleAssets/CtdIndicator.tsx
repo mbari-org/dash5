@@ -4,37 +4,33 @@ import { VehicleProps } from '../Vehicle'
 
 export interface CtdIndicatorProps {
   colorCtd?: VehicleProps['colorCtd']
-  textCtdStatus?: VehicleProps['textCtdStatus']
+  colorCameraBody?: VehicleProps['colorCameraBody']
+  colorCameraLens?: VehicleProps['colorCameraLens']
+  colorCam1?: VehicleProps['colorCam1']
+  colorCam2?: VehicleProps['colorCam2']
   isDocked?: boolean
 }
 
 export const CtdIndicator: React.FC<CtdIndicatorProps> = ({
   colorCtd,
-  textCtdStatus,
+  colorCameraBody,
+  colorCameraLens,
+  colorCam1,
+  colorCam2,
   isDocked,
 }) => {
-  // colorCtd is the dot color — stays green while CTD sensor is present,
-  // regardless of ON/OFF. Absent or 'st18' means no CTD data at all.
+  // CTD dot: visible when color_ctd is a real color (not st18 = no data) and not docked.
   const hasCtdData = colorCtd != null && colorCtd !== 'st18'
-
-  // ON/OFF toggle state comes from textCtdStatus (text_cameraago on the server).
-  // Default to OFF (knob left) when status is absent so the toggle still renders.
-  const isOn = textCtdStatus?.trim().toUpperCase() === 'ON'
-  // cx=547 is the horizontal center of the toggle rect (x=538, width=18).
-  const knobCx = isOn ? '547' : '541'
-
-  // Dot + "CTD" label: visible when CTD sensor data is present and not docked.
   const isDotHidden = isDocked || !hasCtdData
-  // Toggle: visible whenever the CTD dot is visible (sensor present and not docked).
-  const isToggleHidden = isDotHidden
-  // Rectangle is green (colorCtd) when ON, dark gray (st12, #606060) when OFF.
-  const toggleBgClass = isOn ? colorCtd : 'st12'
+
+  // Camera body: visible when color_camerabody is set and not docked.
+  // The camera icon = gray rectangle (body) + colored circle (lens).
+  const hasCameraData = colorCameraBody != null && colorCameraBody !== 'st18'
+  const isCameraHidden = isDocked || !hasCameraData
 
   return (
     <>
-      {/* Row 1: filled circle indicator + "CTD" label.
-          The dot is also suppressed when isDotHidden so it doesn't float
-          as an orphaned circle while no data is present. */}
+      {/* Row 1: CTD status dot + "CTD" label */}
       <circle
         aria-label="ctd dot"
         className={isDotHidden ? 'st18' : colorCtd}
@@ -50,33 +46,41 @@ export const CtdIndicator: React.FC<CtdIndicatorProps> = ({
         CTD
       </text>
 
-      {/* Row 2: toggle-switch rectangle + white circle knob + status text.
-          Hidden when no colorCtd/docked, or status is absent/unrecognized. */}
-      {!isToggleHidden && (
+      {/* Row 2: Camera indicator — body rectangle + lens circle + channel dots.
+          Matches Dash4: color_camerabody drives the body rect,
+          color_cameralens drives the lens circle, color_cam1/cam2 are
+          small channel indicator dots to the right of the body. */}
+      {!isCameraHidden && (
         <>
           <rect
-            aria-label="ctd toggle background"
+            aria-label="camera body"
             x="538"
             y="250"
-            className={toggleBgClass}
+            className={colorCameraBody}
             width="18"
             height="11"
           />
           <circle
-            aria-label="ctd toggle knob"
-            cx={knobCx}
+            aria-label="camera lens"
+            cx="547"
             cy="255.5"
             r="2.8"
-            className="st3"
+            className={colorCameraLens ?? 'st3'}
           />
-          <text
-            aria-label="ctd status"
-            transform="matrix(1 0 0 1 558.0 258.0)"
-            className="st9"
-            style={{ fontSize: '7.5px' }}
-          >
-            {textCtdStatus}
-          </text>
+          <circle
+            aria-label="camera channel 1"
+            cx="559"
+            cy="252"
+            r="1.5"
+            className={colorCam1 ?? 'st18'}
+          />
+          <circle
+            aria-label="camera channel 2"
+            cx="559"
+            cy="258"
+            r="1.5"
+            className={colorCam2 ?? 'st18'}
+          />
         </>
       )}
     </>

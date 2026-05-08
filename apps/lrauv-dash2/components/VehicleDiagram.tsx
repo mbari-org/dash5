@@ -172,6 +172,10 @@ const VehicleDiagram: React.FC<{
         textLeakAgo={vehicle?.text_leakago}
         textLeak={vehicle?.text_leak}
         colorCtd={vehicle?.color_ctd}
+        colorCameraBody={vehicle?.color_camerabody}
+        colorCameraLens={vehicle?.color_cameralens}
+        colorCam1={vehicle?.color_cam1}
+        colorCam2={vehicle?.color_cam2}
         textCameraAgo={vehicle?.text_cameraago}
         textCtdStatus={vehicle?.text_cameraago}
         colorVoltThresh={vehicle?.color_voltthresh}

@@ -329,33 +329,25 @@ test('should render CTD dot when colorCtd is a valid color', async () => {
   expect(screen.queryByLabelText('ctd dot')).toHaveClass('st4')
 })
 
-test('should render CTD toggle knob on the right when textCtdStatus is ON', async () => {
-  render(<Vehicle {...props} colorCtd="st4" textCtdStatus="ON" />)
-  const knob = screen.queryByLabelText('ctd toggle knob')
-  expect(knob).toBeInTheDocument()
-  expect(knob).toHaveAttribute('cx', '547')
+test('should render camera body when colorCameraBody is provided', async () => {
+  render(<Vehicle {...props} colorCameraBody="st11" />)
+  expect(screen.queryByLabelText('camera body')).toBeInTheDocument()
+  expect(screen.queryByLabelText('camera body')).toHaveClass('st11')
 })
 
-test('should render CTD toggle knob on the left when textCtdStatus is OFF', async () => {
-  render(<Vehicle {...props} colorCtd="st4" textCtdStatus="OFF" />)
-  const knob = screen.queryByLabelText('ctd toggle knob')
-  expect(knob).toBeInTheDocument()
-  expect(knob).toHaveAttribute('cx', '541')
+test('should render camera lens with colorCameraLens class', async () => {
+  render(<Vehicle {...props} colorCameraBody="st11" colorCameraLens="st3" />)
+  expect(screen.queryByLabelText('camera lens')).toHaveClass('st3')
 })
 
-test('should render CTD toggle background in gray when textCtdStatus is OFF', async () => {
-  render(<Vehicle {...props} colorCtd="st4" textCtdStatus="OFF" />)
-  expect(screen.queryByLabelText('ctd toggle background')).toHaveClass('st12')
-})
-
-test('should not render CTD toggle when colorCtd is absent', async () => {
+test('should not render camera when colorCameraBody is absent', async () => {
   render(<Vehicle {...props} />)
-  expect(screen.queryByLabelText('ctd toggle knob')).not.toBeInTheDocument()
+  expect(screen.queryByLabelText('camera body')).not.toBeInTheDocument()
 })
 
-test('should display CTD status text when provided', async () => {
-  render(<Vehicle {...props} colorCtd="st4" textCtdStatus="ON" />)
-  expect(screen.queryByLabelText('ctd status')).toBeInTheDocument()
+test('should not render camera when colorCameraBody is st18', async () => {
+  render(<Vehicle {...props} colorCameraBody="st18" />)
+  expect(screen.queryByLabelText('camera body')).not.toBeInTheDocument()
 })
 
 test('should display version label when textVersion is provided', async () => {

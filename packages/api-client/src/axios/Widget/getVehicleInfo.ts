@@ -82,6 +82,10 @@ export interface GetVehicleInfoResponse {
   color_argo?: string
   color_ot?: string
   color_ctd?: string
+  color_camerabody?: string
+  color_cameralens?: string
+  color_cam1?: string
+  color_cam2?: string
   color_voltthresh?: string
   color_ampthresh?: string
   color_duration?: string

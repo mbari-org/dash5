@@ -116,6 +116,10 @@ export const FullWidthVehicleDiagram: React.FC<
   textNote,
   textNoteTime,
   colorCtd,
+  colorCameraBody,
+  colorCameraLens,
+  colorCam1,
+  colorCam2,
   textCameraAgo,
   textCtdStatus,
   colorVoltThresh,
@@ -326,7 +330,10 @@ export const FullWidthVehicleDiagram: React.FC<
 
           <CtdIndicator
             colorCtd={colorCtd}
-            textCtdStatus={textCtdStatus ?? textCameraAgo}
+            colorCameraBody={colorCameraBody}
+            colorCameraLens={colorCameraLens}
+            colorCam1={colorCam1}
+            colorCam2={colorCam2}
             isDocked={isDocked}
           />
 
