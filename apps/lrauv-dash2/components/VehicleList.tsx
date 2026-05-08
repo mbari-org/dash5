@@ -252,9 +252,10 @@ const ConnectedVehicleCellComponent: React.FC<{
         colorMissionDefault: vehicle.color_missiondefault,
         textVolts: vehicle.text_volts,
         colorVolts: vehicle.color_volts,
-        status: (lastDeployment?.recoverEvent ? 'pluggedIn' : 'onMission') as
-          | 'pluggedIn'
-          | 'onMission',
+        status: (lastDeployment?.recoverEvent ||
+        (vehicle?.text_mission?.indexOf('PLUGGED') ?? -1) >= 0
+          ? 'pluggedIn'
+          : 'onMission') as 'pluggedIn' | 'onMission',
         textLeak: vehicle.text_leak,
         textLeakAgo: vehicle.text_leakago,
         colorLeak: vehicle.color_leak,
