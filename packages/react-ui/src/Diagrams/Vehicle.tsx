@@ -205,7 +205,7 @@ export const Vehicle: React.FC<VehicleProps> = ({
   textStationDist,
   textCriticalError,
   textCriticalTime,
-  ubatColor = 'st18',
+  ubatColor = 'st3',
   textNote,
   textNoteTime,
   colorFlow = 'st3',
@@ -399,7 +399,6 @@ export const Vehicle: React.FC<VehicleProps> = ({
           colorCameraLens={colorCameraLens}
           colorCam1={colorCam1}
           colorCam2={colorCam2}
-          isDocked={isDocked}
         />
 
         <DvlIndicator
@@ -453,20 +452,8 @@ export const Vehicle: React.FC<VehicleProps> = ({
         />
 
         {/* <!--pontus specific but can be made invisible--> */}
-        <circle
-          name="UBAT"
-          className={ubatColor}
-          cx="543.96"
-          cy="246.8"
-          r="4.07"
-        />
-        <circle
-          name="flow"
-          className={colorFlow}
-          cx="544.33"
-          cy="259.45"
-          r="4.07"
-        />
+        <circle name="UBAT" className={ubatColor} cx="544" cy="251" r="4" />
+        <circle name="flow" className={colorFlow} cx="544" cy="261" r="4" />
         <text
           name="text_flowago"
           transform="matrix(1 0 0 1 541.0 272.0)"

@@ -1,5 +1,4 @@
 import React from 'react'
-import clsx from 'clsx'
 import { VehicleProps } from '../Vehicle'
 
 export interface CtdIndicatorProps {
@@ -8,7 +7,6 @@ export interface CtdIndicatorProps {
   colorCameraLens?: VehicleProps['colorCameraLens']
   colorCam1?: VehicleProps['colorCam1']
   colorCam2?: VehicleProps['colorCam2']
-  isDocked?: boolean
 }
 
 export const CtdIndicator: React.FC<CtdIndicatorProps> = ({
@@ -17,54 +15,47 @@ export const CtdIndicator: React.FC<CtdIndicatorProps> = ({
   colorCameraLens,
   colorCam1,
   colorCam2,
-  isDocked,
 }) => {
-  // CTD dot: visible when color_ctd is a real color (not st18 = no data) and not docked.
-  const hasCtdData = colorCtd != null && colorCtd !== 'st18'
-  const isDotHidden = isDocked || !hasCtdData
-
-  // Camera body: visible when color_camerabody is set and not docked.
-  // The camera icon = gray rectangle (body) + colored circle (lens).
-  const hasCameraData = colorCameraBody != null && colorCameraBody !== 'st18'
-  const isCameraHidden = isDocked || !hasCameraData
+  // Visibility is driven entirely by the server-provided class (st18 = invisible).
+  // isDocked is NOT applied here — Dash4 always renders CTD/UBAT/flow circles and
+  // lets the server choose st3 (white) vs a status color vs st18 (hidden).
+  const isDotHidden = colorCtd == null || colorCtd === 'st18'
+  const isCameraHidden = colorCameraBody == null || colorCameraBody === 'st18'
 
   return (
     <>
-      {/* Row 1: CTD status dot + "CTD" label */}
+      {/* CTD status dot — always rendered; class from server controls visibility/color. */}
       <circle
         aria-label="ctd dot"
         className={isDotHidden ? 'st18' : colorCtd}
-        cx="542"
+        cx="544"
         cy="241"
-        r="3.6"
+        r="4"
       />
-      <text
-        transform="matrix(1 0 0 1 549.0 241)"
-        dominantBaseline="central"
-        className={clsx(isDotHidden ? 'st18' : 'st9 st10')}
-      >
+      {/* "CTD" label is static art in Dash4 — always visible. */}
+      <text transform="matrix(1 0 0 1 551 244)" className="st9 st10">
         CTD
       </text>
 
-      {/* Row 2: Camera indicator — body rectangle + lens circle + channel dots.
-          Matches Dash4: color_camerabody drives the body rect,
+      {/* Camera indicator — body rectangle + lens circle + channel dots.
+          Matches Dash4 galene section: color_camerabody drives the body rect,
           color_cameralens drives the lens circle, color_cam1/cam2 are
           small channel indicator dots to the right of the body. */}
       {!isCameraHidden && (
         <>
           <rect
             aria-label="camera body"
-            x="538"
+            x="540"
             y="250"
             className={colorCameraBody}
-            width="18"
-            height="11"
+            width="16"
+            height="10"
           />
           <circle
             aria-label="camera lens"
-            cx="547"
-            cy="255.5"
-            r="2.8"
+            cx="548"
+            cy="255"
+            r="3"
             className={colorCameraLens ?? 'st3'}
           />
           <circle
