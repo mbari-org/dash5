@@ -356,7 +356,7 @@ export const Vehicle: React.FC<VehicleProps> = ({
           />
         )}
 
-        {textNextComm && (
+        {!isDocked && textNextComm && (
           <NextCommLabel
             textNextComm={textNextComm}
             colorNextComm={colorNextComm}
