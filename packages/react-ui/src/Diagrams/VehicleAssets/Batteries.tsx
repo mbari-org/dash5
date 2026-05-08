@@ -201,10 +201,11 @@ export const Batteries: React.FC<BatteryProps> = ({
         </text>
       )}
 
-      {/* Battery duration / current draw — server-provided bar + text labels.
-          Hidden when docked to match the existing docked-visibility behaviour
-          of all other battery UI elements in this component. */}
-      {!isDocked && (textBatteryDuration != null || textCurrent != null) && (
+      {/* Current bar: always shown when data available (Dash4 renders it regardless
+          of dock state). Text labels hidden when docked — operational values only. */}
+      {(parsedCurrentBar != null ||
+        textBatteryDuration != null ||
+        textCurrent != null) && (
         <>
           {parsedCurrentBar && (
             <rect
@@ -226,7 +227,7 @@ export const Batteries: React.FC<BatteryProps> = ({
             className="st1"
             fill="none"
           />
-          {textBatteryDuration != null && (
+          {!isDocked && textBatteryDuration != null && (
             <text
               aria-label="text_batteryduration"
               transform="matrix(1 0 0 1 372.0 254.0)"
@@ -235,7 +236,7 @@ export const Batteries: React.FC<BatteryProps> = ({
               {textBatteryDuration}
             </text>
           )}
-          {textBatteryUnits && (
+          {!isDocked && textBatteryUnits && (
             <text
               aria-label="text_batteryunits"
               transform="matrix(1 0 0 1 372.0 259.5)"
@@ -244,7 +245,7 @@ export const Batteries: React.FC<BatteryProps> = ({
               {textBatteryUnits}
             </text>
           )}
-          {textCurrent != null && (
+          {!isDocked && textCurrent != null && (
             <text
               aria-label="text_current"
               transform="matrix(1 0 0 1 372.0 265.5)"
@@ -253,7 +254,7 @@ export const Batteries: React.FC<BatteryProps> = ({
               {textCurrent}
             </text>
           )}
-          {textCurrent != null && (
+          {!isDocked && textCurrent != null && (
             <text
               aria-label="text_current_units"
               transform="matrix(1 0 0 1 372.0 271.5)"
