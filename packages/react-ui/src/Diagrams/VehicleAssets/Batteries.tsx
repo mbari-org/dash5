@@ -1,4 +1,4 @@
-import React from 'react'
+import React, { useMemo } from 'react'
 import clsx from 'clsx'
 import { VehicleProps } from '../Vehicle'
 
@@ -54,6 +54,19 @@ export const Batteries: React.FC<BatteryProps> = ({
   colorDuration,
   onClick: handleClick,
 }) => {
+  const parsedCurrentBar = useMemo(() => {
+    if (!svgCurrent) return null
+    const attr = (name: string) =>
+      svgCurrent.match(new RegExp(`${name}="([^"]*)"`))?.[1]
+    const x = attr('x')
+    const y = attr('y')
+    const width = attr('width')
+    const height = attr('height')
+    const className = attr('class')
+    if (!x || !y || !width || !height) return null
+    return { x, y, width, height, className }
+  }, [svgCurrent])
+
   return (
     <g>
       <title>Batteries in 0.5 increment from 13.5 to 16.5</title>
@@ -191,23 +204,16 @@ export const Batteries: React.FC<BatteryProps> = ({
       {/* Battery duration / current draw — server-provided bar + text labels */}
       {(textBatteryDuration != null || textCurrent != null) && (
         <>
-          {/* Parse the server-provided rect string into a React element to avoid
-              dangerouslySetInnerHTML. The API always returns a single <rect>. */}
-          {svgCurrent &&
-            (() => {
-              const attr = (name: string) =>
-                svgCurrent.match(new RegExp(`${name}="([^"]*)"`))?.[1]
-              return (
-                <rect
-                  aria-label="battery current bar"
-                  x={attr('x')}
-                  y={attr('y')}
-                  width={attr('width')}
-                  height={attr('height')}
-                  className={attr('class')}
-                />
-              )
-            })()}
+          {parsedCurrentBar && (
+            <rect
+              aria-label="battery current bar"
+              x={parsedCurrentBar.x}
+              y={parsedCurrentBar.y}
+              width={parsedCurrentBar.width}
+              height={parsedCurrentBar.height}
+              className={parsedCurrentBar.className}
+            />
+          )}
           {/* Dark border matching the max bar area (volt+amp column height) */}
           <rect
             aria-label="battery bar border"
