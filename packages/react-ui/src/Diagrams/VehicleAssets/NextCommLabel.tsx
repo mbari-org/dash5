@@ -27,7 +27,7 @@ export const NextCommLabel: React.FC<NextCommProps> = ({
       )}
       <circle
         data-testid="next comm indicator"
-        className={colorNextComm}
+        className={colorNextComm ?? 'st18'}
         cx="138.5"
         cy="295.5"
         r="2"

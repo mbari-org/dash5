@@ -122,8 +122,6 @@ export const FullWidthVehicleDiagram: React.FC<
   colorCameraLens,
   colorCam1,
   colorCam2,
-  textCameraAgo,
-  textCtdStatus,
   colorVoltThresh,
   textVoltThresh,
   colorAmpThresh,

@@ -215,8 +215,6 @@ export const Vehicle: React.FC<VehicleProps> = ({
   colorCameraLens,
   colorCam1,
   colorCam2,
-  textCameraAgo,
-  textCtdStatus,
   colorVoltThresh,
   textVoltThresh,
   colorAmpThresh,
