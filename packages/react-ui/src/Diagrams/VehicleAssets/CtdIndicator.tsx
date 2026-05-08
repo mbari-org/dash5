@@ -18,11 +18,10 @@ export const CtdIndicator: React.FC<CtdIndicatorProps> = ({
   colorCam2,
   isDocked,
 }) => {
-  // Circle visibility is driven by the server-provided class (st18 = invisible).
-  // Dash4 always renders CTD/UBAT/flow circles and lets the server choose
-  // st3 (white) vs a status color vs st18 (hidden), regardless of dock state.
-  // The "CTD" text label is conditionally excluded when docked (matches Dash4).
-  const isDotHidden = colorCtd == null || colorCtd === 'st18'
+  // When docked, all three nose dots (CTD, UBAT, flow) render white (st3).
+  // When deployed, visibility/color is server-driven: st18 = hidden, any other
+  // class = that status color. The "CTD" text label is hidden when docked.
+  const isDotHidden = !isDocked && (colorCtd == null || colorCtd === 'st18')
   const isCameraHidden = colorCameraBody == null || colorCameraBody === 'st18'
 
   return (
@@ -30,7 +29,7 @@ export const CtdIndicator: React.FC<CtdIndicatorProps> = ({
       {/* CTD status dot — always rendered; class from server controls visibility/color. */}
       <circle
         aria-label="ctd dot"
-        className={isDotHidden ? 'st18' : colorCtd}
+        className={isDotHidden ? 'st18' : isDocked ? 'st3' : colorCtd}
         cx="544"
         cy="241"
         r="4"

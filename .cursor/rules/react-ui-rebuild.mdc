@@ -1,0 +1,24 @@
+---
+description: Always rebuild react-ui, kill stale ports, and restart dev server after any packages/react-ui edit
+alwaysApply: true
+---
+
+# Rebuild react-ui and Restart Dev Server After Every Change
+
+After editing ANY file under `packages/react-ui/`, you MUST run ALL of these steps in order:
+
+```bash
+# 1. Rebuild the package
+yarn workspace @mbari/react-ui build
+
+# 2. Kill ALL stale processes on ports 3000 and 3002
+lsof -ti :3000 | xargs kill -9 2>/dev/null
+lsof -ti :3002 | xargs kill -9 2>/dev/null
+
+# 3. Start a fresh dev server
+cd /Users/salamy/workspace/Github/dash5/apps/lrauv-dash2 && yarn dev
+```
+
+**All three steps are mandatory every time.** Skipping any step means the browser serves stale compiled output and changes appear to have no effect.
+
+Then commit and push once the server is confirmed ready (`✓ Ready` in output).
