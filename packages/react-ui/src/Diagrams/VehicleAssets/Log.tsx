@@ -28,7 +28,7 @@ export const Log: React.FC<LogProps> = ({
       />
       <text
         aria-label="log time"
-        transform="matrix(1 0 0 1 185.0 221.6039)"
+        transform="matrix(1 0 0 1 189.0 221.6039)"
         className="st9 st10"
       >
         {textLogTime}
