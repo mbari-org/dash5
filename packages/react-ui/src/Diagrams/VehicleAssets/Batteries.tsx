@@ -56,14 +56,18 @@ export const Batteries: React.FC<BatteryProps> = ({
 }) => {
   const parsedCurrentBar = useMemo(() => {
     if (!svgCurrent) return null
+    // Use word-boundary anchor so e.g. "x" doesn't match inside "rx" or
+    // "width" doesn't match inside "stroke-width".
     const attr = (name: string) =>
-      svgCurrent.match(new RegExp(`${name}="([^"]*)"`))?.[1]
+      svgCurrent.match(new RegExp(`(?:^|\\s)${name}="([^"]*)"`))?.[1]
     const x = attr('x')
     const y = attr('y')
     const width = attr('width')
     const height = attr('height')
-    const className = attr('class')
     if (x == null || y == null || width == null || height == null) return null
+    // Fall back to st18 (invisible) if the server omits a class attribute so
+    // the rect never renders as an unintended solid black rectangle.
+    const className = attr('class') ?? 'st18'
     return { x, y, width, height, className }
   }, [svgCurrent])
 

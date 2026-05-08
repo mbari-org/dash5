@@ -26,7 +26,7 @@ export const Heading: React.FC<HeadingProps> = ({
         <g
           aria-label="arrow"
           transform={`translate(0,-7) rotate(-90,604.94,259.74) rotate(${
-            isDocked ? '90' : textArrow ?? '90'
+            isDocked ? '90' : textArrow || '90'
           },605,259.74)`}
         >
           <g transform="translate(604.94,259.74) scale(1.33) translate(-604.94,-259.74)">
