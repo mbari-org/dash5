@@ -13,21 +13,21 @@ export const CtdIndicator: React.FC<CtdIndicatorProps> = ({
   textCtdStatus,
   isDocked,
 }) => {
-  // The server always sends color_ctd when CTD data is available:
-  //   colorCtd = some green class (e.g. 'st4') → CTD ON
-  //   colorCtd = 'st18'                        → CTD OFF (invisible dot, gray toggle)
-  //   colorCtd = undefined                     → no CTD data at all → hide everything
-  // We drive ON/OFF from colorCtd so the toggle shows even when textCtdStatus
-  // is absent (server may not send text_cameraago when CTD is OFF).
-  const isOn = colorCtd != null && colorCtd !== 'st18'
+  // colorCtd is the dot color — stays green while CTD sensor is present,
+  // regardless of ON/OFF. Absent or 'st18' means no CTD data at all.
+  const hasCtdData = colorCtd != null && colorCtd !== 'st18'
+
+  // ON/OFF toggle state comes from textCtdStatus (text_cameraago on the server).
+  // Default to OFF (knob left) when status is absent so the toggle still renders.
+  const isOn = textCtdStatus?.trim().toUpperCase() === 'ON'
   // cx=547 is the horizontal center of the toggle rect (x=538, width=18).
   const knobCx = isOn ? '547' : '541'
 
-  // Dot + "CTD" label: visible only when CTD is ON (green dot) and not docked.
-  const isDotHidden = isDocked || !isOn
-  // Toggle: visible whenever the server has sent color_ctd (even st18 = OFF) and not docked.
-  const isToggleHidden = isDocked || colorCtd == null
-  // Rectangle is green when ON, dark gray (st12, #606060) when OFF.
+  // Dot + "CTD" label: visible when CTD sensor data is present and not docked.
+  const isDotHidden = isDocked || !hasCtdData
+  // Toggle: visible whenever the CTD dot is visible (sensor present and not docked).
+  const isToggleHidden = isDotHidden
+  // Rectangle is green (colorCtd) when ON, dark gray (st12, #606060) when OFF.
   const toggleBgClass = isOn ? colorCtd : 'st12'
 
   return (
