@@ -1,5 +1,6 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react'
 import { Modal, Button } from '@mbari/react-ui'
+import toast from 'react-hot-toast'
 import {
   useTethysApiContext,
   useEmailSettings,
@@ -259,36 +260,33 @@ const EmailNotificationsModal: React.FC<EmailNotificationsModalProps> = ({
       {
         onSuccess: () => onClose?.(),
         onError: () =>
-          alert('Failed to save notification settings. Please try again.'),
+          toast.error(
+            'Failed to save notification settings. Please try again.'
+          ),
       }
     )
   }
 
   const handleSendTest = () => {
-    if (!email) {
-      console.warn('[SendTestEmail] Aborted: email is empty')
-      return
-    }
-    const params = { email, plainText: plainText ? 'y' : ('n' as 'y' | 'n') }
-    console.log('[SendTestEmail] Firing request:', params)
+    if (!email) return
     setSendTestStatus('idle')
     setSendTestMessage('')
-    sendTest(params, {
-      onSuccess: (data) => {
-        console.log('[SendTestEmail] TethysDash response:', data)
-        const msg = data?.email_sent
-          ? `Test email sent to ${data.email_sent}`
-          : 'Test email sent'
-        setSendTestStatus('success')
-        setSendTestMessage(msg)
-      },
-      onError: (err) => {
-        console.error('[SendTestEmail] Error:', err)
-        const msg = (err as { message?: string })?.message ?? 'Unknown error'
-        setSendTestStatus('error')
-        setSendTestMessage(msg)
-      },
-    })
+    sendTest(
+      { email, plainText: plainText ? 'y' : ('n' as 'y' | 'n') },
+      {
+        onSuccess: (data) => {
+          const msg = data?.email_sent
+            ? `Test email sent to ${data.email_sent}`
+            : 'Test email sent'
+          setSendTestStatus('success')
+          setSendTestMessage(msg)
+        },
+        onError: () => {
+          setSendTestStatus('error')
+          setSendTestMessage('Failed to send test email. Please try again.')
+        },
+      }
+    )
   }
 
   const handleDeleteAll = async () => {
@@ -304,7 +302,7 @@ const EmailNotificationsModal: React.FC<EmailNotificationsModalProps> = ({
       queryClient.removeQueries(['email', 'settings', email])
       onClose?.()
     } catch {
-      alert('Failed to delete notification settings. Please try again.')
+      toast.error('Failed to delete notification settings. Please try again.')
     } finally {
       setIsDeleting(false)
     }
