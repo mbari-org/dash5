@@ -168,7 +168,7 @@ export default function DocEditorToolbar({
   }
 
   return (
-    <div className="mb-2 flex flex-wrap items-center gap-1 border-b border-stone-200 pb-2">
+    <div className="sticky top-0 z-10 mb-2 flex flex-wrap items-center gap-1 border-b border-stone-200 bg-white pb-2">
       {/* Form Inputs (only for FORM documents) */}
       {withFormInputs && (
         <>
@@ -200,7 +200,9 @@ export default function DocEditorToolbar({
           <Button
             appearance="transparent"
             tight
-            onClick={() => editor.chain().focus().setParagraph().run()}
+            onClick={() =>
+              editor.chain().focus().setParagraph().unsetFontSize().run()
+            }
             className={clsx(
               editor.isActive('paragraph') && !editor.isActive('heading')
                 ? 'bg-stone-200'

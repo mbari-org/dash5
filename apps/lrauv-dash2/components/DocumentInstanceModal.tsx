@@ -364,6 +364,9 @@ const DocumentInstanceModal: React.FC<{ onClose?: () => void }> = ({
       // Close modal after saving (for both new and existing documents)
       setGlobalModalId(null)
       onClose?.()
+    } catch (err) {
+      console.error('Failed to save document:', err)
+      toast.error('Failed to save document. Please try again.')
     } finally {
       setLocalStateLoading(false)
     }
@@ -448,6 +451,17 @@ const DocumentInstanceModal: React.FC<{ onClose?: () => void }> = ({
               </div>
             )}
           </div>
+          {isEditingExisting && existingData?.user && (
+            <p className="mb-1 text-xs text-stone-500">
+              Last saved{' '}
+              {existingData.unixTime
+                ? DateTime.fromMillis(existingData.unixTime).toLocaleString(
+                    DateTime.DATETIME_MED
+                  )
+                : ''}{' '}
+              by {existingData.user}
+            </p>
+          )}
           {isEditingExisting &&
             existingData?.docInstanceBriefs &&
             existingData.docInstanceBriefs.length > 1 &&
