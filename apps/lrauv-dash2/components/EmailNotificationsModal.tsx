@@ -259,10 +259,9 @@ const EmailNotificationsModal: React.FC<EmailNotificationsModalProps> = ({
       },
       {
         onSuccess: () => onClose?.(),
-        onError: () =>
-          toast.error(
-            'Failed to save notification settings. Please try again.'
-          ),
+        onError: () => {
+          toast.error('Failed to save notification settings. Please try again.')
+        },
       }
     )
   }
