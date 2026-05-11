@@ -282,7 +282,7 @@ const EmailNotificationsModal: React.FC<EmailNotificationsModalProps> = ({
         },
         onError: () => {
           setSendTestStatus('error')
-          setSendTestMessage('Failed to send test email. Please try again.')
+          setSendTestMessage('Could not send test email. Please try again.')
         },
       }
     )
