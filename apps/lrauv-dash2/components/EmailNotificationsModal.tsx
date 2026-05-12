@@ -73,7 +73,7 @@ const EmailNotificationsModal: React.FC<EmailNotificationsModalProps> = ({
   )
 
   const initialPlainText = useMemo(() => {
-    const pt = (settings?.plainText as string | boolean | undefined) ?? 'y'
+    const pt = (settings?.plainText as string | boolean | undefined) ?? 'n'
     if (typeof pt === 'string') return pt.toLowerCase() === 'y'
     return Boolean(pt)
   }, [settings])
@@ -170,6 +170,18 @@ const EmailNotificationsModal: React.FC<EmailNotificationsModalProps> = ({
           a.eventKindName !== b.eventKindName ||
           a.textFilter !== b.textFilter ||
           a.filteringType !== b.filteringType
+        ) {
+          return next
+        }
+        // Also compare vehiclesChecked so switching emails resets per-row vehicle selections.
+        const aKeys = Object.keys(a.vehiclesChecked)
+        const bKeys = Object.keys(b.vehiclesChecked)
+        if (aKeys.length !== bKeys.length) return next
+        if (
+          aKeys.some(
+            (k) =>
+              Boolean(a.vehiclesChecked[k]) !== Boolean(b.vehiclesChecked[k])
+          )
         ) {
           return next
         }
