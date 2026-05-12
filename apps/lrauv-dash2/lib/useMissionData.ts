@@ -40,8 +40,7 @@ export const useMissionData = (params: {
   const recentRunsParams = useMemo(
     () => ({
       vehicles: showAllVehicleMissions ? [] : vehicleName ? [vehicleName] : [],
-      from: showAllVehicleMissions ? LAST_60_DAYS : 0,
-      limit: showAllVehicleMissions ? undefined : 100,
+      from: LAST_60_DAYS,
     }),
     [vehicleName, showAllVehicleMissions]
   )
@@ -67,43 +66,38 @@ export const useMissionData = (params: {
 
   const recentRuns: Mission[] = useMemo(() => {
     return (
-      recentRunsData
-        ?.map(
-          ({
-            data,
-            mission,
-            vehicleName,
-            isoTime,
-            user,
+      recentRunsData?.map(
+        ({
+          data,
+          mission,
+          vehicleName,
+          isoTime,
+          user,
+          note,
+          parameterOverrides,
+          waypointOverrides,
+        }) => {
+          const { category, name } = parseMissionPath(mission)
+          return {
+            id: `${isoTime}|${mission}`,
+            missionPath: mission,
+            category,
+            name,
+            description: data,
+            vehicle: vehicleName,
+            ranOn: capitalize(
+              DateTime.fromISO(isoTime).toFormat('MMM. d yyyy')
+            ),
+            ranBy: capitalizeEach(user ?? ''),
+            recentRun: true,
             note,
-            parameterOverrides,
             waypointOverrides,
-          }) => {
-            const { category, name } = parseMissionPath(mission)
-            return {
-              id: mission,
-              missionPath: mission,
-              category,
-              name,
-              description: data,
-              vehicle: vehicleName,
-              ranOn: capitalize(
-                DateTime.fromISO(isoTime).toFormat('MMM. d yyyy')
-              ),
-              ranBy: capitalizeEach(user ?? ''),
-              recentRun: true,
-              note,
-              waypointOverrides,
-              parameterOverrides,
-              parameterCount: parameterOverrides.length,
-              waypointCount: waypointOverrides.length,
-            }
+            parameterOverrides,
+            parameterCount: parameterOverrides.length,
+            waypointCount: waypointOverrides.length,
           }
-        )
-        .filter(
-          (mission, index, s) =>
-            s.findIndex((m) => m.id === mission.id) === index
-        ) ?? []
+        }
+      ) ?? []
     )
   }, [recentRunsData])
 
