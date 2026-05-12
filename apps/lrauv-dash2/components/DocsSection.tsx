@@ -47,14 +47,19 @@ const DocsSection: React.FC<DocsSectionProps> = ({
       enabled: isFilteringDeployment,
     }
   )
-  const data = documentData?.filter((doc) =>
-    filterDocuments({
-      type: selectedType,
-      doc,
-      deploymentId: selectedDeployment,
-      vehicleName,
-    })
-  )
+  const data = documentData
+    ?.filter((doc) =>
+      filterDocuments({
+        type: selectedType,
+        doc,
+        deploymentId: selectedDeployment,
+        vehicleName,
+      })
+    )
+    .sort(
+      (a, b) =>
+        (b.latestRevision?.unixTime ?? 0) - (a.latestRevision?.unixTime ?? 0)
+    )
 
   const [currentMoreMenu, setCurrentMoreMenu] = useState<{
     docId: number
