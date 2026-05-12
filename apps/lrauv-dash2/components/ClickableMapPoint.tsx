@@ -1,3 +1,4 @@
+import React from 'react'
 import { useMapEvents } from 'react-leaflet'
 import { useManagedWaypoints } from 'react-ui/dist'
 import { createLogger } from '@mbari/utils'

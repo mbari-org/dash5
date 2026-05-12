@@ -34,7 +34,8 @@ const VehicleDeploymentDropdown: React.FC<Omit<DropdownProps, 'options'>> = (
   props
 ) => {
   const { setTrackedVehicles, trackedVehicles } = useTrackedVehicles()
-  const { data: vehicleNames } = useSortedVehicleNames()
+  const { data } = useSortedVehicleNames()
+  const vehicleNames = data ?? []
 
   return (
     <VehicleDropdown

@@ -48,6 +48,7 @@ coverage
 
 # turborepo cache
 .turbo
+run-email-test.sh
 
 # Cursor IDE local rules (machine-specific, not for sharing)
 .cursor/rules/

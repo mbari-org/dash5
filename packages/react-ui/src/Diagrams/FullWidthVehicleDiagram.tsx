@@ -286,7 +286,7 @@ export const FullWidthVehicleDiagram: React.FC<
             />
           )}
 
-          {textNextComm && (
+          {!isDocked && textNextComm && (
             <NextCommLabel
               textNextComm={textNextComm}
               colorNextComm={colorNextComm}
