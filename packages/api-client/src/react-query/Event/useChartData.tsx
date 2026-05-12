@@ -79,6 +79,7 @@ export const useChartData = (
       ...options,
       staleTime: 5 * 60 * 1000,
       enabled:
+        !!axiosInstance &&
         !!siteConfig?.appConfig?.external?.tethysdash &&
         !!path &&
         (options?.enabled ?? true),

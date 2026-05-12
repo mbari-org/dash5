@@ -41,6 +41,9 @@ export const useMissionData = (params: {
     () => ({
       vehicles: showAllVehicleMissions ? [] : vehicleName ? [vehicleName] : [],
       from: LAST_60_DAYS,
+      // Cap single-vehicle queries to prevent runaway pagination; showAll
+      // already had no limit but covers a bounded multi-vehicle window.
+      limit: showAllVehicleMissions ? undefined : 500,
     }),
     [vehicleName, showAllVehicleMissions]
   )
