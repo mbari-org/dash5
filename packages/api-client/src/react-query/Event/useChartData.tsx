@@ -21,7 +21,7 @@ export const useChartData = (
   },
   options?: SupportedQueryOptions
 ) => {
-  const { axiosInstance, siteConfig, token } = useTethysApiContext()
+  const { axiosInstance, siteConfig } = useTethysApiContext()
   const updatedParams = {
     ...params,
     vehicles: [vehicle],
@@ -44,39 +44,37 @@ export const useChartData = (
 
   const path = events?.data?.[0]?.path
 
-  const reprocessParams = {
-    vehicle,
-    path,
-    action: 'plot',
-  }
-
   const query = useQuery(
     ['event', 'events', vehicle, 'realtime/sbdlogs', path],
     async () => {
-      try {
-        const result = await axiosInstance?.get(
-          `${siteConfig?.appConfig.external.tethysdash}/data/${vehicle}/realtime/sbdlogs/${path}/chartData2.json`
+      const result = await axiosInstance?.get(
+        `${siteConfig?.appConfig?.external?.tethysdash}/data/${vehicle}/realtime/sbdlogs/${path}/chartData2.json`,
+        // Fetch as raw text so we can sanitize malformed numbers before parsing.
+        { responseType: 'text', transformResponse: (data) => data }
+      )
+      // Some TethysDash versions emit numbers with a trailing decimal point
+      // (e.g. `12345.`) which is valid in JavaScript but invalid JSON.
+      // Normalise them to `12345.0` before parsing.
+      const sanitized = ((result?.data as string) ?? '').replace(
+        /(\d\.)(?=\D|$)/g,
+        '$10'
+      )
+      const parsed = JSON.parse(sanitized)
+      const chartData = parsed?.chartData
+      if (!Array.isArray(chartData)) {
+        throw new Error(
+          `chartData2.json for ${vehicle} returned invalid data — TethysDash may need to reprocess this mission.`
         )
-        return result?.data?.chartData as ChartData[]
-      } catch (e) {
-        await axiosInstance?.post(
-          `${siteConfig?.appConfig.external.tethysdash}/dash/reprocess`,
-          undefined,
-          {
-            headers: { Authorization: `Bearer ${token}` },
-            params: reprocessParams,
-          }
-        )
-        throw e
       }
+      return chartData as ChartData[]
     },
     {
       ...options,
       staleTime: 5 * 60 * 1000,
       enabled:
-        !!siteConfig?.appConfig.external.tethysdash &&
+        !!siteConfig?.appConfig?.external?.tethysdash &&
         !!path &&
-        options?.enabled,
+        (options?.enabled ?? true),
     }
   )
   return query
