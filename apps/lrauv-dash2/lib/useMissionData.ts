@@ -40,9 +40,10 @@ export const useMissionData = (params: {
   const recentRunsParams = useMemo(
     () => ({
       vehicles: showAllVehicleMissions ? [] : vehicleName ? [vehicleName] : [],
-      from: LAST_60_DAYS,
-      // Cap single-vehicle queries to prevent runaway pagination; showAll
-      // already had no limit but covers a bounded multi-vehicle window.
+      // from: 0 (falsy) skips useEvents' recursive backfill pagination.
+      // limit: 500 replaces the old cap of 100, giving enough history to
+      // surface runs from active vehicles without triggering multi-page fetches.
+      from: 0,
       limit: showAllVehicleMissions ? undefined : 500,
     }),
     [vehicleName, showAllVehicleMissions]

@@ -94,7 +94,6 @@ const ScienceDataSection: React.FC<{
     isLoading,
     isFetching,
     isError,
-    error,
   } = useChartData({
     vehicle: vehicleName,
     from: from,
