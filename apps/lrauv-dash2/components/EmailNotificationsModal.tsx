@@ -2,7 +2,6 @@ import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { Modal, Button } from '@mbari/react-ui'
 import toast from 'react-hot-toast'
 import Tippy from '@tippyjs/react'
-import 'tippy.js/dist/tippy.css'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { faPencil, faPlus } from '@fortawesome/free-solid-svg-icons'
 import {
