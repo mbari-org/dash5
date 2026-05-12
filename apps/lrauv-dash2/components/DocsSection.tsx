@@ -47,8 +47,8 @@ const DocsSection: React.FC<DocsSectionProps> = ({
       enabled: isFilteringDeployment,
     }
   )
-  const data = documentData
-    ?.filter((doc) =>
+  const data = (documentData ?? [])
+    .filter((doc) =>
       filterDocuments({
         type: selectedType,
         doc,
