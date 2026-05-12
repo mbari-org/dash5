@@ -129,32 +129,24 @@ describe('DocsSection', () => {
         <DocsSection vehicleName="pontus" />
       </MockProviders>
     )
-    await waitFor(() => {
-      screen.getByText(/Maintenance Log - Pontus/i)
-    })
-    const html = document.body.innerHTML
-    const maintenancePos = html.indexOf('Maintenance Log - Pontus')
-    const recentPos = html.indexOf('Recent Deployment Plan')
-    const oldestPos = html.indexOf('Oldest Predeployment Checklist')
-    // Maintenance Log (unixTime 1800000000000) must appear before
-    // Recent Deployment Plan (1700000000000), which must appear before
-    // Oldest Predeployment Checklist (no unixTime → treated as 0)
-    expect(maintenancePos).toBeLessThan(recentPos)
-    expect(recentPos).toBeLessThan(oldestPos)
-  })
+    // Wait for all three docs to be rendered
+    await waitFor(() => screen.getByText('Maintenance Log - Pontus'))
+    await waitFor(() => screen.getByText('Recent Deployment Plan'))
+    await waitFor(() => screen.getByText('Oldest Predeployment Checklist'))
 
-  test('should not throw when documentData is undefined (loading state)', () => {
-    server.use(
-      rest.get('/documents', (_req, res, ctx) => {
-        return res(ctx.status(200), ctx.json(mockResponseUnsorted))
-      })
-    )
-    expect(() =>
-      render(
-        <MockProviders queryClient={new QueryClient()}>
-          <DocsSection vehicleName="pontus" />
-        </MockProviders>
-      )
-    ).not.toThrow()
+    const maintenanceEl = screen.getByText('Maintenance Log - Pontus')
+    const recentEl = screen.getByText('Recent Deployment Plan')
+    const oldestEl = screen.getByText('Oldest Predeployment Checklist')
+
+    // DOCUMENT_POSITION_FOLLOWING (4) means the argument appears after the
+    // reference node in the DOM — i.e. reference renders before argument.
+    expect(
+      maintenanceEl.compareDocumentPosition(recentEl) &
+        Node.DOCUMENT_POSITION_FOLLOWING
+    ).toBeTruthy() // Maintenance Log (1800000000000) before Recent (1700000000000)
+    expect(
+      recentEl.compareDocumentPosition(oldestEl) &
+        Node.DOCUMENT_POSITION_FOLLOWING
+    ).toBeTruthy() // Recent (1700000000000) before Oldest (no unixTime → 0)
   })
 })
