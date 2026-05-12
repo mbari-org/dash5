@@ -543,11 +543,6 @@ const EmailNotificationsModal: React.FC<EmailNotificationsModalProps> = ({
               aria-haspopup="listbox"
               aria-expanded={dropdownOpen}
               aria-controls="email-selector-listbox"
-              aria-activedescendant={
-                dropdownOpen && focusedIdx >= 0
-                  ? `email-option-${focusedIdx}`
-                  : undefined
-              }
             >
               <span className="truncate">
                 {selectedEmail || '—'}

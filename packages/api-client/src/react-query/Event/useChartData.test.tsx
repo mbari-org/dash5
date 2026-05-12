@@ -163,4 +163,34 @@ describe('useChartData', () => {
     )
     expect(screen.getByTestId('error').textContent).toMatch(/invalid data/)
   })
+
+  it('parses chartData2.json that contains trailing-decimal numbers', async () => {
+    // Simulate TethysDash emitting a number like `-12345.` (trailing decimal)
+    // which is valid JS but invalid JSON. The sanitizer must normalise it.
+    const rawWithTrailingDecimal = JSON.stringify({
+      chartData: mockChartData,
+    }).replace(/"values":\[10,/, '"values":[-5286934840629677038283784192.,')
+    // The above still needs to be valid after replace for the test to make sense;
+    // instead build the raw string directly:
+    const malformedRaw = `{"chartData":[{"name":"depth","values":[-5286934840629677038283784192.,20,30],"times":[1000,2000,3000],"units":"m"},{"name":"temperature","values":[15,16,17],"times":[1000,2000,3000],"units":"C"}]}`
+
+    server.use(
+      rest.get(/chartData2\.json$/, (_req, res, ctx) =>
+        res(ctx.status(200), ctx.text(malformedRaw))
+      )
+    )
+
+    render(
+      <MockProviders queryClient={makeQueryClient()}>
+        <MockConsumer />
+      </MockProviders>
+    )
+
+    await waitFor(
+      () => expect(screen.getByTestId('count')).toBeInTheDocument(),
+      { timeout: 5000 }
+    )
+    expect(screen.getByTestId('count')).toHaveTextContent('2')
+    expect(screen.getByTestId('first-name')).toHaveTextContent('depth')
+  })
 })

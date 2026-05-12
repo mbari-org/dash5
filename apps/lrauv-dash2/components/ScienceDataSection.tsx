@@ -94,6 +94,7 @@ const ScienceDataSection: React.FC<{
     isLoading,
     isFetching,
     isError,
+    error,
   } = useChartData({
     vehicle: vehicleName,
     from: from,
@@ -167,6 +168,11 @@ const ScienceDataSection: React.FC<{
                 Please ask your TethysDash administrator to reprocess this
                 mission.
               </p>
+              {(error as Error)?.message && (
+                <p className="mt-1 font-mono text-xs opacity-75">
+                  {(error as Error).message}
+                </p>
+              )}
             </div>
           )}
           <AccordionCells
