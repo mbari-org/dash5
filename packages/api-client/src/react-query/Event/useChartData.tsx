@@ -59,8 +59,15 @@ export const useChartData = (
         /(\d\.)(?=\D|$)/g,
         '$10'
       )
-      const parsed = JSON.parse(sanitized)
-      const chartData = parsed?.chartData
+      let parsed: unknown
+      try {
+        parsed = JSON.parse(sanitized)
+      } catch {
+        throw new Error(
+          `chartData2.json for ${vehicle} (${path}) could not be parsed — the file may be truncated or malformed on the TethysDash server.`
+        )
+      }
+      const chartData = (parsed as { chartData?: unknown })?.chartData
       if (!Array.isArray(chartData)) {
         throw new Error(
           `chartData2.json for ${vehicle} returned invalid data — TethysDash may need to reprocess this mission.`

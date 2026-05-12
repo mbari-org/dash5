@@ -166,11 +166,7 @@ const ScienceDataSection: React.FC<{
                 This may be caused by invalid or malformed data in{' '}
                 <span className="font-mono font-bold">chartData2.json</span>.
                 Please ask your TethysDash administrator to reprocess this
-                mission (Carlos Rueda:{' '}
-                <a href="mailto:carueda@mbari.org" className="underline">
-                  carueda@mbari.org
-                </a>
-                ).
+                mission.
               </p>
             </div>
           )}

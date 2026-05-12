@@ -134,11 +134,13 @@ const EmailNotificationsModal: React.FC<EmailNotificationsModalProps> = ({
     })
   }, [settings, initVehiclesSelection])
 
-  const [plainText, setPlainText] = useState<boolean>(true)
+  const [plainText, setPlainText] = useState<boolean>(initialPlainText)
   const [vehiclesEnabled, setVehiclesEnabled] = useState<
     Record<string, boolean>
-  >(() => initVehiclesSelection())
-  const [filteredRows, setFilteredRows] = useState<FilterRowUi[]>([])
+  >(initialVehiclesEnabled)
+  const [filteredRows, setFilteredRows] = useState<FilterRowUi[]>(() =>
+    toUiFilteredRows()
+  )
 
   // re-init local state whenever selected email or loaded settings change
   useEffect(() => {
