@@ -17,8 +17,8 @@ export const useEmailAddresses = (
       })
     },
     {
-      enabled: (options?.enabled ?? true) && (token?.length ?? 0) > 0,
       ...options,
+      enabled: (options?.enabled ?? true) && (token?.length ?? 0) > 0,
     }
   )
   return query

@@ -71,8 +71,11 @@ const EditEmailDialog: React.FC<EditEmailDialogProps> = ({
     >
       <article className="flex flex-col gap-3 pb-2">
         <div className="flex flex-col gap-1">
-          <label className="text-xs text-stone-600">Address</label>
+          <label htmlFor="edit-email-input" className="text-xs text-stone-600">
+            Address
+          </label>
           <input
+            id="edit-email-input"
             autoFocus
             type="email"
             className={`w-full rounded border px-3 py-2 text-sm ${

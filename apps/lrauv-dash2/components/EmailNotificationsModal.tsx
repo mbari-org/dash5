@@ -189,6 +189,7 @@ const EmailNotificationsModal: React.FC<EmailNotificationsModalProps> = ({
 
   const [isDeleting, setIsDeleting] = useState(false)
   const [dropdownOpen, setDropdownOpen] = useState(false)
+  const [focusedIdx, setFocusedIdx] = useState(-1)
   const dropdownRef = useRef<HTMLDivElement>(null)
 
   // close dropdown when clicking outside
@@ -204,6 +205,40 @@ const EmailNotificationsModal: React.FC<EmailNotificationsModalProps> = ({
     document.addEventListener('mousedown', handler)
     return () => document.removeEventListener('mousedown', handler)
   }, [])
+
+  const openDropdown = useCallback(() => {
+    setFocusedIdx(allEmails.indexOf(selectedEmail))
+    setDropdownOpen(true)
+  }, [allEmails, selectedEmail])
+
+  const handleDropdownKeyDown = useCallback(
+    (e: React.KeyboardEvent) => {
+      if (!dropdownOpen) {
+        if (e.key === 'Enter' || e.key === ' ' || e.key === 'ArrowDown') {
+          e.preventDefault()
+          openDropdown()
+        }
+        return
+      }
+      if (e.key === 'ArrowDown') {
+        e.preventDefault()
+        setFocusedIdx((i) => Math.min(i + 1, allEmails.length - 1))
+      } else if (e.key === 'ArrowUp') {
+        e.preventDefault()
+        setFocusedIdx((i) => Math.max(i - 1, 0))
+      } else if (e.key === 'Enter' || e.key === ' ') {
+        e.preventDefault()
+        if (focusedIdx >= 0 && focusedIdx < allEmails.length) {
+          setSelectedEmail(allEmails[focusedIdx])
+        }
+        setDropdownOpen(false)
+      } else if (e.key === 'Escape' || e.key === 'Tab') {
+        setDropdownOpen(false)
+      }
+    },
+    [dropdownOpen, focusedIdx, allEmails, openDropdown]
+  )
+
   const [sendTestStatus, setSendTestStatus] = useState<
     'idle' | 'success' | 'error'
   >('idle')
@@ -363,7 +398,6 @@ const EmailNotificationsModal: React.FC<EmailNotificationsModalProps> = ({
         headers: { Authorization: `Bearer ${token}` },
       })
       queryClient.removeQueries(['email', 'settings', selectedEmail])
-      // if we deleted an extra email's settings, stay on it; user can delete the address separately
       onClose?.()
     } catch {
       toast.error('Failed to delete notification settings. Please try again.')
@@ -475,11 +509,14 @@ const EmailNotificationsModal: React.FC<EmailNotificationsModalProps> = ({
             Settings for:
           </span>
 
-          {/* Custom dropdown — always opens downward */}
+          {/* Custom dropdown — always opens downward, keyboard accessible */}
           <div ref={dropdownRef} className="relative">
             <button
               className="flex min-w-[220px] items-center justify-between gap-2 rounded border border-stone-300 bg-white px-3 py-1 text-sm transition-colors hover:border-primary-400 hover:bg-blue-50 active:bg-blue-100 disabled:cursor-not-allowed disabled:opacity-50"
-              onClick={() => setDropdownOpen((v) => !v)}
+              onClick={() =>
+                dropdownOpen ? setDropdownOpen(false) : openDropdown()
+              }
+              onKeyDown={handleDropdownKeyDown}
               disabled={isAddressesLoading}
               aria-haspopup="listbox"
               aria-expanded={dropdownOpen}
@@ -518,8 +555,11 @@ const EmailNotificationsModal: React.FC<EmailNotificationsModalProps> = ({
                     className={`cursor-pointer px-3 py-2 text-sm transition-colors ${
                       e === selectedEmail
                         ? 'bg-yellow-50 font-semibold text-primary-700'
+                        : allEmails.indexOf(e) === focusedIdx
+                        ? 'bg-blue-100 text-primary-700'
                         : 'text-stone-700 hover:bg-blue-50 hover:text-primary-700 active:bg-blue-100'
                     }`}
+                    onMouseEnter={() => setFocusedIdx(allEmails.indexOf(e))}
                     onClick={() => {
                       setSelectedEmail(e)
                       setDropdownOpen(false)
@@ -540,7 +580,8 @@ const EmailNotificationsModal: React.FC<EmailNotificationsModalProps> = ({
             )}
           </div>
 
-          {/* Pencil — always visible; disabled + tooltip explains why for primary */}
+          {/* Pencil — always visible; disabled + tooltip explains why for primary.
+              Wrapped in <span> so Tippy fires even when the button is disabled. */}
           <Tippy
             content={
               isExtraEmail
@@ -549,14 +590,16 @@ const EmailNotificationsModal: React.FC<EmailNotificationsModalProps> = ({
             }
             placement="top"
           >
-            <button
-              className="flex h-7 w-7 items-center justify-center rounded-full border border-stone-300 bg-white text-stone-500 transition-colors hover:border-primary-500 hover:bg-blue-100 hover:text-primary-600 active:bg-blue-200 disabled:cursor-not-allowed disabled:opacity-40"
-              onClick={() => isExtraEmail && setShowEditEmail(true)}
-              disabled={isBusy || !isExtraEmail}
-              aria-label="Edit address"
-            >
-              <FontAwesomeIcon icon={faPencil} className="text-xs" />
-            </button>
+            <span className="inline-flex">
+              <button
+                className="flex h-7 w-7 items-center justify-center rounded-full border border-stone-300 bg-white text-stone-500 transition-colors hover:border-primary-500 hover:bg-blue-100 hover:text-primary-600 active:bg-blue-200 disabled:cursor-not-allowed disabled:opacity-40"
+                onClick={() => isExtraEmail && setShowEditEmail(true)}
+                disabled={isBusy || !isExtraEmail}
+                aria-label="Edit address"
+              >
+                <FontAwesomeIcon icon={faPencil} className="text-xs" />
+              </button>
+            </span>
           </Tippy>
 
           {/* Plus — add a new address */}
