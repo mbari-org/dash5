@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import React from 'react'
 import clsx from 'clsx'
 
 export type ButtonAlignment = 'left' | 'right' | 'center' | 'stretch'
@@ -25,7 +25,8 @@ export interface ButtonProps {
 }
 
 const styles = {
-  button: 'rounded text-sm text-center w-auto font-display',
+  button:
+    'rounded text-sm text-center w-auto font-display transition-all duration-150 ease-in-out',
   normal: 'px-4 py-2',
   tight: 'px-2 py-1',
   link: 'flex font-semibold text-emerald-600 underline',
@@ -35,18 +36,18 @@ const styles = {
 export const backgroundStyles = (appearance?: ButtonAppearance) => {
   switch (appearance) {
     case 'primary':
-      return 'bg-primary-600 text-white'
+      return 'bg-primary-600 text-white hover:bg-primary-700 hover:scale-[1.03] hover:shadow-md active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-400 focus-visible:ring-offset-1'
     case 'secondary':
-      return 'bg-white border border-stone-400 text-stone-600'
+      return 'bg-white border border-stone-400 text-stone-600 hover:border-primary-500 hover:text-primary-700 hover:bg-primary-50 hover:scale-[1.03] hover:shadow-md active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-400 focus-visible:ring-offset-1'
     case 'destructive':
-      return 'bg-red-600 text-white'
+      return 'bg-red-600 text-white hover:bg-red-700 hover:scale-[1.03] hover:shadow-md active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-400 focus-visible:ring-offset-1'
     case 'transparent':
-      return 'bg-transparent hover:bg-primary-600/10 transition-colors duration-200'
+      return 'bg-transparent hover:bg-primary-600/10 hover:scale-[1.03] transition-colors duration-200'
     case 'custom':
     case 'link':
       return ''
     default:
-      return 'bg-indigo-600 text-white'
+      return 'bg-indigo-600 text-white hover:bg-indigo-700 hover:scale-[1.03] hover:shadow-md active:scale-[0.98]'
   }
 }
 
@@ -77,13 +78,6 @@ export const Button: React.FC<ButtonProps> = ({
   type = 'button',
   tight,
 }) => {
-  const [focus, setFocus] = useState(false)
-  const [hover, setHover] = useState(false)
-  const toggleState = (state: 'hover' | 'focus', newVal: boolean) => () => {
-    state === 'hover' ? setHover(newVal) : setFocus(newVal)
-  }
-  const brightness = focus ? 0.97 : hover ? 1.03 : 1
-
   const isStandardButton = !['custom', 'link'].includes(appearance ?? '')
 
   return (
@@ -98,14 +92,7 @@ export const Button: React.FC<ButtonProps> = ({
         className
       )}
       disabled={disabled}
-      style={{
-        filter: brightness !== 1 ? `brightness(${brightness})` : '',
-        ...style,
-      }}
-      onMouseDown={toggleState('focus', true)}
-      onMouseUp={toggleState('focus', false)}
-      onMouseEnter={toggleState('hover', true)}
-      onMouseLeave={toggleState('hover', false)}
+      style={style}
       onClick={onClick}
       form={form}
       type={type}

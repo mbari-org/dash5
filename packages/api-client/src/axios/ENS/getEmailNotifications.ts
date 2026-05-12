@@ -3,15 +3,20 @@ import { getInstance } from '../getInstance'
 import { RequestConfig } from '../types'
 
 export interface GetEmailNotificationsParams {
-  allUsers: string
+  allUsers?: string
+}
+
+export interface EmailOwner {
+  ownerEmail: string | null
+  ownerName: string
 }
 
 export interface GetEmailNotificationsResponse {
-  result: string
+  result: Record<string, EmailOwner>
 }
 
 export const getEmailNotifications = async (
-  params: GetEmailNotificationsParams,
+  params: GetEmailNotificationsParams = {},
   { debug, instance = getInstance(), ...config }: RequestConfig = {}
 ) => {
   const url = '/ens/emails'
@@ -20,9 +25,11 @@ export const getEmailNotifications = async (
     console.debug(`GET ${url}`)
   }
 
-  const response = await instance.get(
-    `${url}?${new URLSearchParams({ ...params })}`,
-    config
-  )
+  const searchParams = new URLSearchParams()
+  if (params.allUsers) {
+    searchParams.set('allUsers', params.allUsers)
+  }
+  const query = searchParams.toString()
+  const response = await instance.get(query ? `${url}?${query}` : url, config)
   return response.data as GetEmailNotificationsResponse
 }
