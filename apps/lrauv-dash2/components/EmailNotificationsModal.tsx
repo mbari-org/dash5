@@ -520,6 +520,12 @@ const EmailNotificationsModal: React.FC<EmailNotificationsModalProps> = ({
               disabled={isAddressesLoading}
               aria-haspopup="listbox"
               aria-expanded={dropdownOpen}
+              aria-controls="email-selector-listbox"
+              aria-activedescendant={
+                dropdownOpen && focusedIdx >= 0
+                  ? `email-option-${focusedIdx}`
+                  : undefined
+              }
             >
               <span className="truncate">
                 {selectedEmail || '—'}
@@ -544,22 +550,24 @@ const EmailNotificationsModal: React.FC<EmailNotificationsModalProps> = ({
 
             {dropdownOpen && (
               <ul
+                id="email-selector-listbox"
                 role="listbox"
                 className="absolute left-0 top-full z-50 mt-1 max-h-60 w-full overflow-auto rounded border border-stone-200 bg-white shadow-lg"
               >
-                {allEmails.map((e) => (
+                {allEmails.map((e, idx) => (
                   <li
                     key={e}
+                    id={`email-option-${idx}`}
                     role="option"
                     aria-selected={e === selectedEmail}
                     className={`cursor-pointer px-3 py-2 text-sm transition-colors ${
                       e === selectedEmail
                         ? 'bg-yellow-50 font-semibold text-primary-700'
-                        : allEmails.indexOf(e) === focusedIdx
+                        : idx === focusedIdx
                         ? 'bg-blue-100 text-primary-700'
                         : 'text-stone-700 hover:bg-blue-50 hover:text-primary-700 active:bg-blue-100'
                     }`}
-                    onMouseEnter={() => setFocusedIdx(allEmails.indexOf(e))}
+                    onMouseEnter={() => setFocusedIdx(idx)}
                     onClick={() => {
                       setSelectedEmail(e)
                       setDropdownOpen(false)
@@ -602,16 +610,18 @@ const EmailNotificationsModal: React.FC<EmailNotificationsModalProps> = ({
             </span>
           </Tippy>
 
-          {/* Plus — add a new address */}
+          {/* Plus — add a new address. Wrapped in <span> so Tippy fires when disabled. */}
           <Tippy content="Add a notification address" placement="top">
-            <button
-              className="flex h-7 w-7 items-center justify-center rounded-full border border-stone-300 bg-white text-stone-500 transition-colors hover:border-primary-500 hover:bg-blue-100 hover:text-primary-600 active:bg-blue-200 disabled:cursor-not-allowed disabled:opacity-40"
-              onClick={() => setShowAddEmail(true)}
-              disabled={isBusy}
-              aria-label="Add address"
-            >
-              <FontAwesomeIcon icon={faPlus} className="text-xs" />
-            </button>
+            <span className="inline-flex">
+              <button
+                className="flex h-7 w-7 items-center justify-center rounded-full border border-stone-300 bg-white text-stone-500 transition-colors hover:border-primary-500 hover:bg-blue-100 hover:text-primary-600 active:bg-blue-200 disabled:cursor-not-allowed disabled:opacity-40"
+                onClick={() => setShowAddEmail(true)}
+                disabled={isBusy}
+                aria-label="Add address"
+              >
+                <FontAwesomeIcon icon={faPlus} className="text-xs" />
+              </button>
+            </span>
           </Tippy>
         </section>
 

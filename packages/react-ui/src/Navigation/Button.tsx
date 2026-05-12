@@ -30,24 +30,26 @@ const styles = {
   normal: 'px-4 py-2',
   tight: 'px-2 py-1',
   link: 'flex font-semibold text-emerald-600 underline',
-  disabled: 'opacity-50 cursor-not-allowed',
+  // disabled: suppress all hover/active/scale effects so disabled buttons look inert
+  disabled:
+    'opacity-50 cursor-not-allowed hover:scale-100 hover:shadow-none active:scale-100',
 }
 
 export const backgroundStyles = (appearance?: ButtonAppearance) => {
   switch (appearance) {
     case 'primary':
-      return 'bg-primary-600 text-white hover:bg-primary-700 hover:scale-[1.03] hover:shadow-md active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-400 focus-visible:ring-offset-1'
+      return 'bg-primary-600 text-white hover:enabled:bg-primary-700 hover:enabled:scale-[1.03] hover:enabled:shadow-md active:enabled:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-400 focus-visible:ring-offset-1'
     case 'secondary':
-      return 'bg-white border border-stone-400 text-stone-600 hover:border-primary-500 hover:text-primary-700 hover:bg-primary-50 hover:scale-[1.03] hover:shadow-md active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-400 focus-visible:ring-offset-1'
+      return 'bg-white border border-stone-400 text-stone-600 hover:enabled:border-primary-500 hover:enabled:text-primary-700 hover:enabled:bg-primary-50 hover:enabled:scale-[1.03] hover:enabled:shadow-md active:enabled:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-400 focus-visible:ring-offset-1'
     case 'destructive':
-      return 'bg-red-600 text-white hover:bg-red-700 hover:scale-[1.03] hover:shadow-md active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-400 focus-visible:ring-offset-1'
+      return 'bg-red-600 text-white hover:enabled:bg-red-700 hover:enabled:scale-[1.03] hover:enabled:shadow-md active:enabled:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-400 focus-visible:ring-offset-1'
     case 'transparent':
-      return 'bg-transparent hover:bg-primary-600/10 hover:scale-[1.03] transition-colors duration-200'
+      return 'bg-transparent hover:enabled:bg-primary-600/10 hover:enabled:scale-[1.03] transition-colors duration-200'
     case 'custom':
     case 'link':
       return ''
     default:
-      return 'bg-indigo-600 text-white hover:bg-indigo-700 hover:scale-[1.03] hover:shadow-md active:scale-[0.98]'
+      return 'bg-indigo-600 text-white hover:enabled:bg-indigo-700 hover:enabled:scale-[1.03] hover:enabled:shadow-md active:enabled:scale-[0.98]'
   }
 }
 
