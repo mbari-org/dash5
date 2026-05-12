@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { AccordionCells, DocCell, SelectField } from '@mbari/react-ui'
 import {
   useDeployments,
@@ -47,13 +47,23 @@ const DocsSection: React.FC<DocsSectionProps> = ({
       enabled: isFilteringDeployment,
     }
   )
-  const data = documentData?.filter((doc) =>
-    filterDocuments({
-      type: selectedType,
-      doc,
-      deploymentId: selectedDeployment,
-      vehicleName,
-    })
+  const data = useMemo(
+    () =>
+      (documentData ?? [])
+        .filter((doc) =>
+          filterDocuments({
+            type: selectedType,
+            doc,
+            deploymentId: selectedDeployment,
+            vehicleName,
+          })
+        )
+        .sort(
+          (a, b) =>
+            (b.latestRevision?.unixTime ?? 0) -
+            (a.latestRevision?.unixTime ?? 0)
+        ),
+    [documentData, selectedType, selectedDeployment, vehicleName]
   )
 
   const [currentMoreMenu, setCurrentMoreMenu] = useState<{
