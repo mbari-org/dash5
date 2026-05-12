@@ -39,9 +39,18 @@ const EmailNotificationsModal: React.FC<EmailNotificationsModalProps> = ({
     useEmailAddresses(undefined, { enabled: accountEmail.length > 0 })
 
   const allEmails: string[] = useMemo(() => {
-    if (!addressesData?.result) return accountEmail ? [accountEmail] : []
-    return Object.keys(addressesData.result).sort()
-  }, [addressesData, accountEmail])
+    const base = addressesData?.result
+      ? Object.keys(addressesData.result).sort()
+      : accountEmail
+      ? [accountEmail]
+      : []
+    // Keep selectedEmail in the list during a pending refetch so the dropdown
+    // never shows a selected address that isn't present in the options.
+    if (selectedEmail && !base.includes(selectedEmail)) {
+      return [...base, selectedEmail].sort()
+    }
+    return base
+  }, [addressesData, accountEmail, selectedEmail])
 
   const [selectedEmail, setSelectedEmail] = useState<string>('')
 
