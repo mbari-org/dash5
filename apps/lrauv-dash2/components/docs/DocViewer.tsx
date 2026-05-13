@@ -115,7 +115,13 @@ export default function DocViewer(props: DocViewerProps) {
                 const raw = (element as HTMLElement).getAttribute('style')
                 if (!raw) return null
                 // Whitelist only safe CSS properties to prevent style injection.
-                const allowed = ['color', 'font-size', 'background-color']
+                // font-family is included for dash4 <font face="..."> compatibility.
+                const allowed = [
+                  'color',
+                  'font-size',
+                  'background-color',
+                  'font-family',
+                ]
                 const filtered = raw
                   .split(';')
                   .map((s) => s.trim())
