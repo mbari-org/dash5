@@ -2,7 +2,6 @@ import React, { useState } from 'react'
 import {
   useVehiclePicAndOnCall,
   useAssignPicAndOnCall,
-  useCreateNote,
 } from '@mbari/api-client'
 import {
   ReassignmentModal,
@@ -19,6 +18,15 @@ import toast from 'react-hot-toast'
 interface PendingSignOff {
   vehicleName: string
   hours: string
+}
+
+/** Convert decimal hours to ISO 8601 duration, e.g. 8.5 → "PT8H30M" */
+const toWatchDuration = (hours: string): string | undefined => {
+  const h = parseFloat(hours)
+  if (isNaN(h) || h <= 0) return undefined
+  const wholeHours = Math.floor(h)
+  const minutes = Math.round((h - wholeHours) * 60)
+  return `PT${wholeHours}H${minutes}M`
 }
 
 const Reassignment: React.FC<{ vehicleNames: string[] }> = ({
@@ -38,7 +46,6 @@ const Reassignment: React.FC<{ vehicleNames: string[] }> = ({
 
   const { mutate: assignPicAndOnCall, isLoading: loadingAssignPicAndOnCall } =
     useAssignPicAndOnCall()
-  const { mutate: createNote } = useCreateNote()
 
   // When signing off as PIC, capture the vehicle name and prompt for hours.
   const [pendingSignOff, setPendingSignOff] = useState<PendingSignOff | null>(
@@ -53,28 +60,13 @@ const Reassignment: React.FC<{ vehicleNames: string[] }> = ({
         email: profile.email,
         sign: 'off',
         subRole: 'PIC',
+        watchDuration: toWatchDuration(hours),
       },
       {
         onSuccess: () => {
           toast.success(`Successfully signed off as PIC for ${vehicleName}`)
           queryClient.invalidateQueries(['users', 'picAndOnCall'])
           queryClient.invalidateQueries(['users', 'role'])
-
-          const h = parseFloat(hours)
-          if (!isNaN(h) && h > 0) {
-            createNote(
-              {
-                vehicle: vehicleName.toLowerCase(),
-                note: `PIC watchstanding: ${h}h`,
-              },
-              {
-                onError: () =>
-                  toast.error(
-                    'Signed off, but could not record piloting hours'
-                  ),
-              }
-            )
-          }
         },
         onError: () => {
           toast.error(`Failed to sign off as PIC for ${vehicleName}`)
