@@ -1,4 +1,5 @@
 import React, { useMemo, useState, useCallback } from 'react'
+import useTick from '../lib/useTick'
 import {
   useInfiniteEvents,
   useTethysApiContext,
@@ -30,7 +31,7 @@ import {
   modalVisibleFilterIds,
 } from '../lib/logFilters'
 import { handleCopyEventLogs } from '../lib/handleCopyEventLogs'
-import { createLogger, useDebounce } from '@mbari/utils'
+import { createLogger, formatCompactDuration, useDebounce } from '@mbari/utils'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import {
   faChevronDown,
@@ -122,7 +123,9 @@ const LogsSection: React.FC<LogsSectionProps> = ({
     [vehicleName, eventTypes, from, to]
   )
 
-  const deploymentResponse = useInfiniteEvents(deploymentParams)
+  const deploymentResponse = useInfiniteEvents(deploymentParams, {
+    refetchInterval: 60_000,
+  })
 
   const allLogsParams = useMemo(
     () => ({
@@ -134,7 +137,9 @@ const LogsSection: React.FC<LogsSectionProps> = ({
     [vehicleName, eventTypes]
   )
 
-  const allLogsResponse = useInfiniteEvents(allLogsParams)
+  const allLogsResponse = useInfiniteEvents(allLogsParams, {
+    refetchInterval: 60_000,
+  })
 
   const {
     data,
@@ -144,7 +149,17 @@ const LogsSection: React.FC<LogsSectionProps> = ({
     fetchNextPage,
     hasNextPage,
     refetch,
+    dataUpdatedAt,
   } = deploymentLogsOnly ? deploymentResponse : allLogsResponse
+
+  const nowMs = useTick(30_000)
+  const nowDT = DateTime.fromMillis(nowMs)
+
+  const lastUpdatedAgo = dataUpdatedAt
+    ? `${formatCompactDuration(DateTime.fromMillis(dataUpdatedAt), nowDT, {
+        maxDays: 1,
+      })} ago`
+    : undefined
 
   const flatData = useMemo(() => {
     if (!hasSelection) return []
@@ -293,12 +308,14 @@ const LogsSection: React.FC<LogsSectionProps> = ({
     if (!item) return <span />
 
     const isoTime = item.isoTime ?? ''
-    const diff = DateTime.fromISO(isoTime).diffNow('days').days
-    const date =
-      Math.abs(diff) < 1
-        ? 'Today'
-        : DateTime.fromISO(isoTime).toFormat('yyyy-MM-dd')
-    const time = DateTime.fromISO(isoTime).toFormat('H:mm:ss')
+    const eventDT = DateTime.fromISO(isoTime)
+    const diff = eventDT.diffNow('days').days
+    const date = Math.abs(diff) < 1 ? 'Today' : eventDT.toFormat('yyyy-MM-dd')
+    const time = eventDT.toFormat('H:mm:ss')
+    const timeAgo =
+      Math.abs(diff) < 7
+        ? `${formatCompactDuration(eventDT, nowDT, { maxDays: 6 })} ago`
+        : undefined
 
     // Check if this item is the representative of a multi-note timeout group.
     // The stable group key mirrors what was set during processedData construction:
@@ -359,6 +376,7 @@ const LogsSection: React.FC<LogsSectionProps> = ({
         className="border-b border-slate-200"
         date={date}
         time={time}
+        timeAgo={timeAgo}
         label={displayNameForEventType(item)}
         log={log}
         isUpload={isUploadEvent(item)}
@@ -408,6 +426,7 @@ const LogsSection: React.FC<LogsSectionProps> = ({
           toggleDeploymentLogsOnly={toggleDeploymentLogsOnly}
           disabled={isLoading || isFetching}
           handleRefresh={handleRefresh}
+          lastUpdatedAgo={lastUpdatedAgo}
         />
       </header>
 

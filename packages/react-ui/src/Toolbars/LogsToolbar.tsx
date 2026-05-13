@@ -10,6 +10,8 @@ export interface LogsToolbarProps {
   toggleDeploymentLogsOnly: () => void
   disabled: boolean
   handleRefresh: () => void
+  /** Compact relative string for the last successful fetch, e.g. "2m ago". */
+  lastUpdatedAgo?: string
   className?: string
 }
 
@@ -18,9 +20,10 @@ export const LogsToolbar: React.FC<LogsToolbarProps> = ({
   toggleDeploymentLogsOnly,
   disabled,
   handleRefresh,
+  lastUpdatedAgo,
   className,
 }) => (
-  <div className={clsx('flex items-center', className)}>
+  <div className={clsx('flex items-center gap-3', className)}>
     <IconToggle
       iconLeft={
         <HistoricalListIcon
@@ -51,6 +54,12 @@ export const LogsToolbar: React.FC<LogsToolbarProps> = ({
       className="mr-4"
       disabled={disabled}
     />
+
+    {lastUpdatedAgo && (
+      <span className="text-xs text-stone-400" aria-live="polite">
+        Updated {lastUpdatedAgo}
+      </span>
+    )}
 
     <IconButton
       icon={faSync}
