@@ -1,13 +1,12 @@
 import clsx from 'clsx'
-import { ReassignmentCell } from '../Cells/ReassignmentCell'
+import {
+  ReassignmentCell,
+  ReassignmentOperator,
+} from '../Cells/ReassignmentCell'
 import { RoleChangeType } from '../Modals/ReassignmentModal'
 import { AbsoluteOverlay } from '../Indicators/AbsoluteOverlay'
 
-export interface ReassignmentOperator {
-  user: string
-  /** Unix timestamp (ms) of the sign-in event — used to show elapsed watch time. */
-  unixTime: number
-}
+export type { ReassignmentOperator }
 
 export interface ReassignmentTableProps {
   vehicles?: {

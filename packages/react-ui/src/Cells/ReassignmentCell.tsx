@@ -1,9 +1,8 @@
-import React from 'react'
+import React, { useEffect, useState } from 'react'
 import { faXmark } from '@fortawesome/free-solid-svg-icons'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { Button } from '../Navigation/Button'
 import clsx from 'clsx'
-import { DateTime } from 'luxon'
 
 export interface ReassignmentOperator {
   user: string
@@ -58,12 +57,20 @@ export const ReassignmentCell: React.FC<ReassignmentCellProps> = ({
   const currentUserEntry = operators.find((op) => op.user === currentUserName)
   const otherOperators = operators.filter((op) => op.user !== currentUserName)
 
-  const elapsedLabel = React.useMemo(() => {
+  // Tick every minute so the elapsed label stays live while the modal is open.
+  const [now, setNow] = useState(() => Date.now())
+  useEffect(() => {
+    if (!showElapsed || !currentUserEntry) return
+    const id = setInterval(() => setNow(Date.now()), 60_000)
+    return () => clearInterval(id)
+  }, [showElapsed, currentUserEntry])
+
+  const elapsedLabel = (() => {
     if (!showElapsed || !currentUserEntry) return null
-    const elapsed = DateTime.now().toMillis() - currentUserEntry.unixTime
+    const elapsed = now - currentUserEntry.unixTime
     if (elapsed < 0) return null
     return `(signed in ${formatElapsed(elapsed)})`
-  }, [showElapsed, currentUserEntry])
+  })()
 
   return (
     <ul className={clsx(styles.container, className)} style={style}>
