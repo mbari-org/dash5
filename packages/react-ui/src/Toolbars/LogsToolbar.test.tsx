@@ -44,4 +44,14 @@ describe('LogsToolbar', () => {
     fireEvent.click(refreshButton)
     expect(defaultProps.handleRefresh).toHaveBeenCalledTimes(1)
   })
+
+  test('renders lastUpdatedAgo when provided', () => {
+    render(<LogsToolbar {...defaultProps} lastUpdatedAgo="2m ago" />)
+    expect(screen.getByText(/updated 2m ago/i)).toBeInTheDocument()
+  })
+
+  test('does not render last-updated text when lastUpdatedAgo is omitted', () => {
+    render(<LogsToolbar {...defaultProps} />)
+    expect(screen.queryByText(/updated/i)).not.toBeInTheDocument()
+  })
 })

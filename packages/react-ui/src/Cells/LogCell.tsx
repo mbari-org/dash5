@@ -8,6 +8,8 @@ export interface LogCellProps {
   style?: React.CSSProperties
   label: string
   time: string
+  /** Compact relative time string, e.g. "3m ago". Rendered inline after the transmission icon. */
+  timeAgo?: string
   date: string
   log: string | JSX.Element
   isUpload: boolean
@@ -25,6 +27,7 @@ export const LogCell: React.FC<LogCellProps> = ({
   style,
   label,
   time,
+  timeAgo,
   date,
   log,
   isUpload,
@@ -38,13 +41,18 @@ export const LogCell: React.FC<LogCellProps> = ({
       >
         <ul className={styles.details}>
           <li>{label}</li>
-          <li className="flex flex-row">
-            <span className="pr-2 opacity-60" aria-label="time">
+          <li className="flex flex-row items-baseline gap-1">
+            <span className="pr-1 opacity-60" aria-label="time">
               {time}
             </span>
             <span aria-label="data transmission icon">
               {isUpload ? <UploadIcon /> : <DownloadIcon />}
             </span>
+            {timeAgo && (
+              <span className="text-xs opacity-40" aria-label="time ago">
+                {timeAgo}
+              </span>
+            )}
           </li>
           <li className="opacity-60" aria-label="date">
             {date}

@@ -1,4 +1,5 @@
 import React, { useMemo, useState, useCallback } from 'react'
+import { useTick } from '../lib/useTick'
 import {
   useInfiniteEvents,
   useTethysApiContext,
@@ -30,7 +31,7 @@ import {
   modalVisibleFilterIds,
 } from '../lib/logFilters'
 import { handleCopyEventLogs } from '../lib/handleCopyEventLogs'
-import { createLogger, useDebounce } from '@mbari/utils'
+import { createLogger, formatCompactDuration, useDebounce } from '@mbari/utils'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import {
   faChevronDown,
@@ -122,7 +123,20 @@ const LogsSection: React.FC<LogsSectionProps> = ({
     [vehicleName, eventTypes, from, to]
   )
 
-  const deploymentResponse = useInfiniteEvents(deploymentParams)
+  // Note: refetchInterval on useInfiniteQuery re-fetches all loaded pages on each
+  // tick, not just the first page. In practice, most sessions stay on page 1 so
+  // the extra load is negligible. A future improvement could use a separate
+  // lightweight query for the newest slice and merge results.
+  //
+  // Only the active view polls. The inactive query keeps its cache warm on
+  // initial mount and param changes, but does not poll on an interval or
+  // refetch on window focus / reconnect while inactive.
+  const deploymentResponse = useInfiniteEvents(deploymentParams, {
+    enabled: hasSelection,
+    refetchInterval: hasSelection && deploymentLogsOnly ? 30_000 : false,
+    refetchOnWindowFocus: deploymentLogsOnly,
+    refetchOnReconnect: deploymentLogsOnly,
+  })
 
   const allLogsParams = useMemo(
     () => ({
@@ -134,7 +148,12 @@ const LogsSection: React.FC<LogsSectionProps> = ({
     [vehicleName, eventTypes]
   )
 
-  const allLogsResponse = useInfiniteEvents(allLogsParams)
+  const allLogsResponse = useInfiniteEvents(allLogsParams, {
+    enabled: hasSelection,
+    refetchInterval: hasSelection && !deploymentLogsOnly ? 30_000 : false,
+    refetchOnWindowFocus: !deploymentLogsOnly,
+    refetchOnReconnect: !deploymentLogsOnly,
+  })
 
   const {
     data,
@@ -144,7 +163,27 @@ const LogsSection: React.FC<LogsSectionProps> = ({
     fetchNextPage,
     hasNextPage,
     refetch,
+    dataUpdatedAt,
   } = deploymentLogsOnly ? deploymentResponse : allLogsResponse
+
+  const nowMs = useTick(30_000, hasSelection)
+  const nowDT = DateTime.fromMillis(nowMs)
+
+  // Only show the last-updated indicator when logs are actively displayed.
+  // When hasSelection is false the toolbar prompts the user to choose filters,
+  // so a stale (and no-longer-ticking) "Updated X ago" would be misleading.
+  // Use DateTime.now() rather than nowDT so the counter resets immediately
+  // after a refetch instead of waiting up to 30s for the next tick.
+  const lastUpdatedAgo =
+    hasSelection && dataUpdatedAt
+      ? `${formatCompactDuration(
+          DateTime.fromMillis(dataUpdatedAt),
+          DateTime.now(),
+          {
+            maxDays: 1,
+          }
+        )} ago`
+      : undefined
 
   const flatData = useMemo(() => {
     if (!hasSelection) return []
@@ -293,12 +332,17 @@ const LogsSection: React.FC<LogsSectionProps> = ({
     if (!item) return <span />
 
     const isoTime = item.isoTime ?? ''
-    const diff = DateTime.fromISO(isoTime).diffNow('days').days
-    const date =
-      Math.abs(diff) < 1
-        ? 'Today'
-        : DateTime.fromISO(isoTime).toFormat('yyyy-MM-dd')
-    const time = DateTime.fromISO(isoTime).toFormat('H:mm:ss')
+    const eventDT = DateTime.fromISO(isoTime)
+    const diff = eventDT.diffNow('days').days
+    const date = Math.abs(diff) < 1 ? 'Today' : eventDT.toFormat('yyyy-MM-dd')
+    const time = eventDT.toFormat('H:mm:ss')
+    // Show a relative duration for past events within the last 7 days. The diff
+    // is negative when eventDT is in the past (diffNow measures now→target), so
+    // diff <= 0 guards against future timestamps caused by clock skew.
+    const timeAgo =
+      diff <= 0 && Math.abs(diff) < 7
+        ? `${formatCompactDuration(eventDT, nowDT)} ago`
+        : undefined
 
     // Check if this item is the representative of a multi-note timeout group.
     // The stable group key mirrors what was set during processedData construction:
@@ -359,6 +403,7 @@ const LogsSection: React.FC<LogsSectionProps> = ({
         className="border-b border-slate-200"
         date={date}
         time={time}
+        timeAgo={timeAgo}
         label={displayNameForEventType(item)}
         log={log}
         isUpload={isUploadEvent(item)}
@@ -408,6 +453,7 @@ const LogsSection: React.FC<LogsSectionProps> = ({
           toggleDeploymentLogsOnly={toggleDeploymentLogsOnly}
           disabled={isLoading || isFetching}
           handleRefresh={handleRefresh}
+          lastUpdatedAgo={lastUpdatedAgo}
         />
       </header>
 

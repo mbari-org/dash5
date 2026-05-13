@@ -48,6 +48,59 @@ const makeTimeoutNote = (eventId: number, chunkNum: number): object => {
   }
 }
 
+// ── Auto-refresh / relative timestamp tests (#627) ────────────────────────────
+
+test('shows "Updated ... ago" in toolbar after a successful data load', async () => {
+  renderLogs([makeTimeoutNote(1, 1)])
+
+  await waitFor(() => {
+    expect(screen.getByText(/Updated .+ ago/)).toBeInTheDocument()
+  })
+})
+
+test('shows timeAgo for events within the last 7 days', async () => {
+  const ts = Date.now() - 3 * 24 * 60 * 60 * 1000
+  renderLogs([
+    {
+      eventId: 5001,
+      vehicleName: 'triton',
+      eventType: 'note',
+      unixTime: ts,
+      isoTime: new Date(ts).toISOString(),
+      note: 'Some 3-day-old event',
+      user: null,
+      state: 0,
+    },
+  ])
+
+  await waitFor(() => {
+    // Should render a relative duration like "3d 0h ago" or "2d 23h ago"
+    expect(screen.getByText(/\d+d.+ago/)).toBeInTheDocument()
+  })
+})
+
+test('hides timeAgo for events older than 7 days', async () => {
+  const ts = Date.now() - 8 * 24 * 60 * 60 * 1000
+  renderLogs([
+    {
+      eventId: 5002,
+      vehicleName: 'triton',
+      eventType: 'note',
+      unixTime: ts,
+      isoTime: new Date(ts).toISOString(),
+      note: 'Some 8-day-old event',
+      user: null,
+      state: 0,
+    },
+  ])
+
+  await waitFor(() => {
+    expect(screen.getByText(/Note/i)).toBeInTheDocument()
+  })
+  // 8 days old → no timeAgo chip should appear
+  expect(screen.queryByText(/\d+d.+ago/)).not.toBeInTheDocument()
+})
+
 // ── Grouping regression tests (#596) ──────────────────────────────────────────
 
 test('single timeout note renders normally (no grouping needed)', async () => {
