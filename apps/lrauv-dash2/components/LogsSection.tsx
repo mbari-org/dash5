@@ -128,9 +128,9 @@ const LogsSection: React.FC<LogsSectionProps> = ({
   // the extra load is negligible. A future improvement could use a separate
   // lightweight query for the newest slice and merge results.
   //
-  // Only the active view polls. The inactive query keeps its cache warm but has
-  // refetchInterval, refetchOnWindowFocus, and refetchOnReconnect all disabled so
-  // it cannot generate background traffic in any scenario.
+  // Only the active view polls. The inactive query keeps its cache warm on
+  // initial mount and param changes, but does not poll on an interval or
+  // refetch on window focus / reconnect while inactive.
   const deploymentResponse = useInfiniteEvents(deploymentParams, {
     enabled: hasSelection,
     refetchInterval: hasSelection && deploymentLogsOnly ? 30_000 : false,
@@ -169,17 +169,21 @@ const LogsSection: React.FC<LogsSectionProps> = ({
   const nowMs = useTick(30_000, hasSelection)
   const nowDT = DateTime.fromMillis(nowMs)
 
-  // Use DateTime.now() rather than nowDT so the indicator resets immediately
+  // Only show the last-updated indicator when logs are actively displayed.
+  // When hasSelection is false the toolbar prompts the user to choose filters,
+  // so a stale (and no-longer-ticking) "Updated X ago" would be misleading.
+  // Use DateTime.now() rather than nowDT so the counter resets immediately
   // after a refetch instead of waiting up to 30s for the next tick.
-  const lastUpdatedAgo = dataUpdatedAt
-    ? `${formatCompactDuration(
-        DateTime.fromMillis(dataUpdatedAt),
-        DateTime.now(),
-        {
-          maxDays: 1,
-        }
-      )} ago`
-    : undefined
+  const lastUpdatedAgo =
+    hasSelection && dataUpdatedAt
+      ? `${formatCompactDuration(
+          DateTime.fromMillis(dataUpdatedAt),
+          DateTime.now(),
+          {
+            maxDays: 1,
+          }
+        )} ago`
+      : undefined
 
   const flatData = useMemo(() => {
     if (!hasSelection) return []
