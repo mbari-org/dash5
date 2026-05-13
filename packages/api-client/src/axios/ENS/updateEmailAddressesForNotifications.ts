@@ -22,10 +22,6 @@ export const updateEmailAddressesForNotifications = async (
     console.debug(`PUT ${url}`)
   }
 
-  const response = await instance.put(
-    `${url}?${new URLSearchParams({ ...params })}`,
-    null,
-    config
-  )
+  const response = await instance.put(url, undefined, { ...config, params })
   return response.data as UpdateEmailAddressesForNotificationsResponse
 }

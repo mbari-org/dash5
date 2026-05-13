@@ -304,9 +304,13 @@ const ConnectedVehicleCellComponent: React.FC<{
     ? deploymentStartDateTime > DateTime.now()
     : false
   const timeSpanSinceDeployment = deploymentStartDateTime
-    ? `${formatCompactDuration(deploymentStartDateTime, nowDT, {
-        maxDays: 6,
-      })} ago`
+    ? isFutureDeployment
+      ? `in ${formatCompactDuration(nowDT, deploymentStartDateTime, {
+          maxDays: 6,
+        })}`
+      : `${formatCompactDuration(deploymentStartDateTime, nowDT, {
+          maxDays: 6,
+        })} ago`
     : undefined
 
   const missionTimeSpan = missionStartedEvent?.[0]?.unixTime
