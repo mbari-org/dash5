@@ -16,8 +16,6 @@ export interface LogCellProps {
   onCopy?: (e: React.ClipboardEvent<HTMLElement>) => void
   /** When true, reduces padding and font size for a denser log view. */
   compact?: boolean
-  /** Component or module name shown in the rightmost column of the compact table layout. */
-  component?: string
 }
 
 const styles = {
@@ -37,7 +35,6 @@ export const LogCell: React.FC<LogCellProps> = ({
   isUpload,
   onCopy,
   compact = false,
-  component,
 }) => {
   if (compact) {
     return (

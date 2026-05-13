@@ -1,4 +1,4 @@
-import React, { useMemo, useState, useCallback, useRef } from 'react'
+import React, { useMemo, useState, useCallback, useEffect, useRef } from 'react'
 import { useTick } from '../lib/useTick'
 import {
   useInfiniteEvents,
@@ -86,13 +86,16 @@ const LogsSection: React.FC<LogsSectionProps> = ({
   // width where their text would wrap and increase the row height.
   const hideIcons = headerSize.width > 0 && headerSize.width < 500
 
-  const [compact, setCompact] = useState<boolean>(() => {
+  // Initialize to false so SSR and the first client render always match,
+  // then load the persisted preference after mount to avoid hydration warnings.
+  const [compact, setCompact] = useState<boolean>(false)
+  useEffect(() => {
     try {
-      return localStorage.getItem('logs:compact') === 'true'
+      if (localStorage.getItem('logs:compact') === 'true') setCompact(true)
     } catch {
-      return false
+      // localStorage unavailable (private browsing, etc.)
     }
-  })
+  }, [])
   const handleToggleCompact = useCallback(() => {
     setCompact((prev) => {
       const next = !prev
@@ -442,7 +445,6 @@ const LogsSection: React.FC<LogsSectionProps> = ({
         isUpload={isUploadEvent(item)}
         onCopy={handleCopyEventLogs}
         compact={compact}
-        component={item.name ?? undefined}
       />
     )
   }

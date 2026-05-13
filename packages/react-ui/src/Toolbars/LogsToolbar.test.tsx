@@ -8,9 +8,11 @@ jest.mock('../Icons', () => ({
   SubIcon: () => <div data-testid="sub-icon" />,
 }))
 
-// Mock FontAwesome icon
+// Mock FontAwesome icons
 jest.mock('@fortawesome/free-solid-svg-icons', () => ({
   faSync: 'mockFaSyncIcon',
+  faGripLines: 'mockFaGripLinesIcon',
+  faAlignJustify: 'mockFaAlignJustifyIcon',
 }))
 
 const defaultProps = {
