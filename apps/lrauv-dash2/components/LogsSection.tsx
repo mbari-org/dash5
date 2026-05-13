@@ -125,7 +125,7 @@ const LogsSection: React.FC<LogsSectionProps> = ({
 
   const deploymentResponse = useInfiniteEvents(deploymentParams, {
     enabled: hasSelection,
-    refetchInterval: hasSelection ? 60_000 : false,
+    refetchInterval: hasSelection ? 30_000 : false,
   })
 
   const allLogsParams = useMemo(
@@ -140,7 +140,7 @@ const LogsSection: React.FC<LogsSectionProps> = ({
 
   const allLogsResponse = useInfiniteEvents(allLogsParams, {
     enabled: hasSelection,
-    refetchInterval: hasSelection ? 60_000 : false,
+    refetchInterval: hasSelection ? 30_000 : false,
   })
 
   const {
