@@ -25,11 +25,9 @@ export const getEmailNotifications = async (
     console.debug(`GET ${url}`)
   }
 
-  const searchParams = new URLSearchParams()
-  if (params.allUsers) {
-    searchParams.set('allUsers', params.allUsers)
-  }
-  const query = searchParams.toString()
-  const response = await instance.get(query ? `${url}?${query}` : url, config)
+  const response = await instance.get(url, {
+    ...config,
+    params: params.allUsers ? { allUsers: params.allUsers } : undefined,
+  })
   return response.data as GetEmailNotificationsResponse
 }

@@ -80,8 +80,8 @@ export const useChartData = (
       return chartData as ChartData[]
     },
     {
-      ...options,
       staleTime: 5 * 60 * 1000,
+      ...options,
       enabled:
         !!axiosInstance &&
         !!siteConfig?.appConfig?.external?.tethysdash &&

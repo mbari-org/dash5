@@ -602,6 +602,7 @@ const EmailNotificationsModal: React.FC<EmailNotificationsModalProps> = ({
                 ref={listboxRef}
                 id="email-selector-listbox"
                 role="listbox"
+                aria-label="Notification email address"
                 tabIndex={-1}
                 aria-activedescendant={
                   focusedIdx >= 0 ? `email-option-${focusedIdx}` : undefined
@@ -683,12 +684,13 @@ const EmailNotificationsModal: React.FC<EmailNotificationsModalProps> = ({
         {/* ── Plain text + test email row ── */}
         <section className="flex items-center justify-between pb-4">
           <div className="flex items-center gap-2">
-            <span className="text-sm font-medium">
+            <span id="plain-text-label" className="text-sm font-medium">
               Send emails as plain text
             </span>
             {/* Toggle slider */}
             <button
               role="switch"
+              aria-labelledby="plain-text-label"
               aria-checked={plainText}
               disabled={isDataLoading}
               onClick={() => setPlainText((v) => !v)}
