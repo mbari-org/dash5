@@ -26,8 +26,9 @@ export interface ReassignmentCellProps {
 
 const styles = {
   container: 'flex w-fit flex-col items-start font-display list-none gap-0.5',
-  signInButton: 'text-primary-600 hover:text-black mt-1.5',
-  currentUser: 'mr-1 text-teal-500',
+  signInButton: 'text-stone-500 hover:text-stone-800 mt-1.5',
+  currentUser: 'mr-1 text-primary-600',
+  otherOperator: 'text-primary-600',
 }
 
 /** Format elapsed ms as "Xh Ym" or "Ym" for durations under 1 hour. */
@@ -68,7 +69,7 @@ export const ReassignmentCell: React.FC<ReassignmentCellProps> = ({
     <ul className={clsx(styles.container, className)} style={style}>
       {!operators.length && <li className="italic text-stone-300">No one</li>}
       {otherOperators.map((op) => (
-        <li key={op.user} className="text-stone-500/80">
+        <li key={op.user} className={styles.otherOperator}>
           {op.user}
         </li>
       ))}

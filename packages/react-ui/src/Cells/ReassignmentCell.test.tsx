@@ -50,7 +50,7 @@ describe('ReassignmentCell', () => {
     )
 
     const currentUserElement = screen.getByText('Jane Doe')
-    expect(currentUserElement).toHaveClass('text-teal-500')
+    expect(currentUserElement).toHaveClass('text-primary-600')
   })
 
   test('should show elapsed time for current user when showElapsed is true', () => {
