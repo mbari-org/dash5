@@ -1,9 +1,10 @@
-import React, { useState } from 'react'
+import React, { useMemo, useState } from 'react'
 import {
   useVehiclePicAndOnCall,
   useAssignPicAndOnCall,
 } from '@mbari/api-client'
 import {
+  Modal,
   ReassignmentModal,
   ReassignmentTableProps,
   RoleChangeType,
@@ -52,6 +53,15 @@ const Reassignment: React.FC<{ vehicleNames: string[] }> = ({
   const [pendingSignOff, setPendingSignOff] = useState<PendingSignOff | null>(
     null
   )
+
+  const hoursError = useMemo(() => {
+    if (!pendingSignOff || pendingSignOff.hours === '') return null
+    const h = parseFloat(pendingSignOff.hours)
+    if (isNaN(h)) return 'Please enter a valid number'
+    if (h < 0) return 'Hours cannot be negative'
+    if (h > 24) return 'A single watch cannot exceed 24 hours'
+    return null
+  }, [pendingSignOff])
 
   /** Round elapsed ms to the nearest 0.5h, formatted as a string. */
   const elapsedHours = (sinceMs: number): string => {
@@ -155,60 +165,43 @@ const Reassignment: React.FC<{ vehicleNames: string[] }> = ({
         open
       />
 
-      {pendingSignOff && (
-        <div
-          role="dialog"
-          aria-modal="true"
-          aria-labelledby="pic-signoff-title"
-          className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/40"
-        >
-          <div className="w-80 rounded-lg bg-white p-6 shadow-xl">
-            <h2
-              id="pic-signoff-title"
-              className="mb-4 text-base font-semibold text-gray-800"
-            >
-              Sign off as PIC — {pendingSignOff.vehicleName}
-            </h2>
-            <label
-              htmlFor="pic-hours"
-              className="mb-1 block text-sm text-gray-600"
-            >
+      <Modal
+        title={`Sign off as PIC — ${pendingSignOff?.vehicleName ?? ''}`}
+        open={!!pendingSignOff}
+        zIndex="z-[9999]"
+        onClose={() => setPendingSignOff(null)}
+        onCancel={() => setPendingSignOff(null)}
+        onConfirm={() => {
+          if (!pendingSignOff) return
+          doSignOff(pendingSignOff.vehicleName, pendingSignOff.hours)
+          setPendingSignOff(null)
+        }}
+        confirmButtonText="Sign off"
+        cancelButtonText="Cancel"
+        disableConfirm={!!hoursError}
+      >
+        {pendingSignOff && (
+          <div className="flex flex-col gap-1">
+            <label htmlFor="pic-hours" className="text-sm text-gray-600">
               Hours piloted <span className="text-gray-400">(optional)</span>
             </label>
             <input
               id="pic-hours"
               type="number"
               min="0"
+              max="24"
               step="0.5"
               value={pendingSignOff.hours}
               onChange={(e) =>
                 setPendingSignOff({ ...pendingSignOff, hours: e.target.value })
               }
-              className="mb-5 w-full rounded border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400"
+              className="w-full rounded border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400"
               autoFocus
             />
-            <div className="flex justify-end gap-3">
-              <button
-                type="button"
-                onClick={() => setPendingSignOff(null)}
-                className="rounded px-4 py-2 text-sm text-gray-600 hover:bg-gray-100"
-              >
-                Cancel
-              </button>
-              <button
-                type="button"
-                onClick={() => {
-                  doSignOff(pendingSignOff.vehicleName, pendingSignOff.hours)
-                  setPendingSignOff(null)
-                }}
-                className="rounded bg-blue-500 px-4 py-2 text-sm text-white hover:bg-blue-600"
-              >
-                Sign off
-              </button>
-            </div>
+            {hoursError && <p className="text-xs text-red-500">{hoursError}</p>}
           </div>
-        </div>
-      )}
+        )}
+      </Modal>
     </>
   )
 }
