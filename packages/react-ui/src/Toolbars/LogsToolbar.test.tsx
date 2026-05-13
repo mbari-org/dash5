@@ -47,14 +47,15 @@ describe('LogsToolbar', () => {
     expect(defaultProps.handleRefresh).toHaveBeenCalledTimes(1)
   })
 
-  test('renders lastUpdatedAgo when provided', () => {
-    render(<LogsToolbar {...defaultProps} lastUpdatedAgo="2m ago" />)
+  test('renders lastUpdatedDuration when provided', () => {
+    render(<LogsToolbar {...defaultProps} lastUpdatedDuration="2m" />)
     // Text is split across 3 stacked spans: "Updated" / "2m" / "ago"
     expect(screen.getByText('Updated')).toBeInTheDocument()
     expect(screen.getByText('2m')).toBeInTheDocument()
+    expect(screen.getByText('ago')).toBeInTheDocument()
   })
 
-  test('does not render last-updated text when lastUpdatedAgo is omitted', () => {
+  test('does not render last-updated text when lastUpdatedDuration is omitted', () => {
     render(<LogsToolbar {...defaultProps} />)
     expect(screen.queryByText(/updated/i)).not.toBeInTheDocument()
   })

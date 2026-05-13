@@ -14,8 +14,8 @@ export interface LogsToolbarProps {
   toggleDeploymentLogsOnly: () => void
   disabled: boolean
   handleRefresh: () => void
-  /** Compact relative string for the last successful fetch, e.g. "2m ago". */
-  lastUpdatedAgo?: string
+  /** Duration since the last successful fetch, e.g. "2m". The component renders this as "Updated 2m ago". */
+  lastUpdatedDuration?: string
   /** When true, the log list is rendered in compact/dense mode. */
   compact?: boolean
   /** Called when the user toggles compact mode. */
@@ -28,7 +28,7 @@ export const LogsToolbar: React.FC<LogsToolbarProps> = ({
   toggleDeploymentLogsOnly,
   disabled,
   handleRefresh,
-  lastUpdatedAgo,
+  lastUpdatedDuration,
   compact = false,
   onToggleCompact,
   className,
@@ -65,13 +65,13 @@ export const LogsToolbar: React.FC<LogsToolbarProps> = ({
       disabled={disabled}
     />
 
-    {lastUpdatedAgo && (
+    {lastUpdatedDuration && (
       <div
         className="flex flex-col items-center text-[9px] leading-tight text-stone-400"
         aria-live="polite"
       >
         <span>Updated</span>
-        <span>{lastUpdatedAgo.replace(/ ago$/, '')}</span>
+        <span>{lastUpdatedDuration}</span>
         <span>ago</span>
       </div>
     )}

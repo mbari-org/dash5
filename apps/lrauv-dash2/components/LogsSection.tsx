@@ -217,15 +217,15 @@ const LogsSection: React.FC<LogsSectionProps> = ({
   // so a stale (and no-longer-ticking) "Updated X ago" would be misleading.
   // Use DateTime.now() rather than nowDT so the counter resets immediately
   // after a refetch instead of waiting up to 30s for the next tick.
-  const lastUpdatedAgo =
+  const lastUpdatedDuration =
     hasSelection && dataUpdatedAt
-      ? `${formatCompactDuration(
+      ? formatCompactDuration(
           DateTime.fromMillis(dataUpdatedAt),
           DateTime.now(),
           {
             maxDays: 1,
           }
-        )} ago`
+        )
       : undefined
 
   const flatData = useMemo(() => {
@@ -502,7 +502,7 @@ const LogsSection: React.FC<LogsSectionProps> = ({
           toggleDeploymentLogsOnly={toggleDeploymentLogsOnly}
           disabled={isLoading || isFetching}
           handleRefresh={handleRefresh}
-          lastUpdatedAgo={lastUpdatedAgo}
+          lastUpdatedDuration={lastUpdatedDuration}
           compact={compact}
           onToggleCompact={handleToggleCompact}
           className="min-w-0 shrink pl-2"
