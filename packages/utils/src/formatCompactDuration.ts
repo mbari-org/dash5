@@ -31,15 +31,23 @@ export const formatCompactDuration = (
     return `${d + (h >= 12 ? 1 : 0)}d`
   }
 
-  const diff = later.diff(earlier, ['days', 'hours', 'minutes']).toObject()
+  const diff = later
+    .diff(earlier, ['days', 'hours', 'minutes', 'seconds'])
+    .toObject()
   const days = Math.trunc(diff.days ?? 0)
   const hours = Math.trunc(diff.hours ?? 0)
   const minutes = Math.trunc(diff.minutes ?? 0)
+  const seconds = Math.trunc(diff.seconds ?? 0)
 
   const parts: string[] = []
   if (days > 0) parts.push(`${days}d`)
   if (hours > 0 || days > 0) parts.push(`${hours}h`)
-  if (minutes > 0 || (days === 0 && hours === 0)) parts.push(`${minutes}m`)
+  // Sub-minute: show seconds instead of "0m"
+  if (days === 0 && hours === 0 && minutes === 0) {
+    parts.push(`${seconds}s`)
+  } else if (minutes > 0 || (days === 0 && hours === 0)) {
+    parts.push(`${minutes}m`)
+  }
 
   return parts.join(' ')
 }

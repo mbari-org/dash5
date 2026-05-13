@@ -33,7 +33,7 @@ export const LogsToolbar: React.FC<LogsToolbarProps> = ({
   onToggleCompact,
   className,
 }) => (
-  <div className={clsx('flex items-center gap-3', className)}>
+  <div className={clsx('flex items-center gap-2', className)}>
     <IconToggle
       iconLeft={
         <HistoricalListIcon
@@ -61,14 +61,19 @@ export const LogsToolbar: React.FC<LogsToolbarProps> = ({
       tooltipAlignment="right"
       ariaLabelLeft="Displaying all logs"
       ariaLabelRight="Displaying deployment logs"
-      className="mr-4"
+      className="mr-2"
       disabled={disabled}
     />
 
     {lastUpdatedAgo && (
-      <span className="text-xs text-stone-400" aria-live="polite">
-        Updated {lastUpdatedAgo}
-      </span>
+      <div
+        className="flex flex-col items-center text-[9px] leading-tight text-stone-400"
+        aria-live="polite"
+      >
+        <span>Updated</span>
+        <span>{lastUpdatedAgo.replace(/ ago$/, '')}</span>
+        <span>ago</span>
+      </div>
     )}
 
     {onToggleCompact && (
@@ -98,7 +103,7 @@ export const LogsToolbar: React.FC<LogsToolbarProps> = ({
       onClick={handleRefresh}
       size="text-md"
       iconClassName="text-xl"
-      className="flex items-center justify-center rounded-full border-2 border-blue-400 text-blue-400"
+      className="flex shrink-0 items-center justify-center rounded-full border-2 border-blue-400 text-blue-400"
     />
   </div>
 )

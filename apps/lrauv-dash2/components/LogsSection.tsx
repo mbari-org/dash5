@@ -1,4 +1,4 @@
-import React, { useMemo, useState, useCallback } from 'react'
+import React, { useMemo, useState, useCallback, useRef } from 'react'
 import { useTick } from '../lib/useTick'
 import {
   useInfiniteEvents,
@@ -31,7 +31,12 @@ import {
   modalVisibleFilterIds,
 } from '../lib/logFilters'
 import { handleCopyEventLogs } from '../lib/handleCopyEventLogs'
-import { createLogger, formatCompactDuration, useDebounce } from '@mbari/utils'
+import {
+  createLogger,
+  formatCompactDuration,
+  useDebounce,
+  useResizeObserver,
+} from '@mbari/utils'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import {
   faChevronDown,
@@ -71,6 +76,13 @@ const LogsSection: React.FC<LogsSectionProps> = ({
   }
 
   const { siteConfig } = useTethysApiContext()
+
+  const headerRef = useRef<HTMLElement>(null)
+  const { size: headerSize } = useResizeObserver({ element: headerRef })
+  // Hide button icons before the header gets narrow enough to compress the
+  // buttons themselves. 500 px gives enough buffer that buttons never reach a
+  // width where their text would wrap and increase the row height.
+  const hideIcons = headerSize.width > 0 && headerSize.width < 500
 
   const [compact, setCompact] = useState<boolean>(() => {
     try {
@@ -429,6 +441,7 @@ const LogsSection: React.FC<LogsSectionProps> = ({
         isUpload={isUploadEvent(item)}
         onCopy={handleCopyEventLogs}
         compact={compact}
+        component={item.name ?? undefined}
       />
     )
   }
@@ -437,19 +450,25 @@ const LogsSection: React.FC<LogsSectionProps> = ({
 
   return (
     <>
-      <header className="flex justify-between p-2">
-        <div className="flex items-center gap-2">
+      <header ref={headerRef} className="flex items-center justify-between p-2">
+        <div className="flex min-w-0 shrink items-center gap-2">
           <div
             className="relative"
             onMouseDown={(e) => e.stopPropagation()}
             onTouchStart={(e) => e.stopPropagation()}
           >
-            <Button appearance="secondary" onClick={handleToggleFilters}>
+            <Button
+              appearance="secondary"
+              onClick={handleToggleFilters}
+              className="shrink-0 whitespace-nowrap"
+            >
               Filter{' '}
-              <FontAwesomeIcon
-                icon={!!filtersOpen ? faChevronDown : faChevronUp}
-                className={styles.icon}
-              />
+              {!hideIcons && (
+                <FontAwesomeIcon
+                  icon={!!filtersOpen ? faChevronDown : faChevronUp}
+                  className={styles.icon}
+                />
+              )}
             </Button>
             {!!filtersOpen && (
               <div className="absolute z-50">
@@ -467,7 +486,7 @@ const LogsSection: React.FC<LogsSectionProps> = ({
               </div>
             )}
           </div>
-          <RealTimeLogs vehicleName={vehicleName} />
+          <RealTimeLogs vehicleName={vehicleName} hideIcons={hideIcons} />
         </div>
         <LogsToolbar
           deploymentLogsOnly={deploymentLogsOnly}
@@ -477,6 +496,7 @@ const LogsSection: React.FC<LogsSectionProps> = ({
           lastUpdatedAgo={lastUpdatedAgo}
           compact={compact}
           onToggleCompact={handleToggleCompact}
+          className="min-w-0 shrink pl-2"
         />
       </header>
 

@@ -6,9 +6,14 @@ import { faExternalLink } from '@fortawesome/free-solid-svg-icons'
 
 export interface RealTimeLogsProps {
   vehicleName: string
+  /** When true, hides the icon inside each button to save horizontal space. */
+  hideIcons?: boolean
 }
 
-export const RealTimeLogs: React.FC<RealTimeLogsProps> = ({ vehicleName }) => {
+export const RealTimeLogs: React.FC<RealTimeLogsProps> = ({
+  vehicleName,
+  hideIcons = false,
+}) => {
   const { siteConfig } = useTethysApiContext()
 
   // Latest dataProcessed event (for Shore Log link)
@@ -53,9 +58,13 @@ export const RealTimeLogs: React.FC<RealTimeLogsProps> = ({ vehicleName }) => {
         onClick={handleShoreClick}
         disabled={!shoreUrl}
         aria-label="Open shore log file in a new browser tab"
+        title="Shore Log — open in new tab"
+        className="shrink-0 whitespace-nowrap"
       >
-        <FontAwesomeIcon icon={faExternalLink} className="mr-2" />
-        Shore Log
+        {!hideIcons && (
+          <FontAwesomeIcon icon={faExternalLink} className="mr-2" />
+        )}
+        Shore
       </Button>
 
       <Button
@@ -63,9 +72,13 @@ export const RealTimeLogs: React.FC<RealTimeLogsProps> = ({ vehicleName }) => {
         onClick={handleEspClick}
         disabled={!espUrl}
         aria-label="Open ESP Logs listing in a new browser tab"
+        title="ESP Log — open in new tab"
+        className="shrink-0 whitespace-nowrap"
       >
-        <FontAwesomeIcon icon={faExternalLink} className="mr-2" />
-        ESP Log
+        {!hideIcons && (
+          <FontAwesomeIcon icon={faExternalLink} className="mr-2" />
+        )}
+        ESP
       </Button>
     </>
   )

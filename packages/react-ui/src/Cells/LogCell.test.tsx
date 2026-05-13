@@ -48,16 +48,17 @@ test('does not render timeAgo element when omitted', async () => {
 
 test('applies compact padding and text size when compact is true', async () => {
   const { container } = render(<LogCell {...props} compact />)
-  const grid = container.querySelector('.grid')
-  expect(grid).toHaveClass('px-2')
-  expect(grid).toHaveClass('py-0.5')
-  expect(grid).toHaveClass('text-xs')
-  expect(grid).not.toHaveClass('p-4')
+  // Compact mode uses a flex-row layout; the inner wrapper is the direct child of article
+  const inner = container.querySelector('article > div') as HTMLElement
+  expect(inner).toHaveClass('px-2')
+  expect(inner).toHaveClass('py-0.5')
+  expect(inner).toHaveClass('text-xs')
+  expect(inner).not.toHaveClass('p-4')
 })
 
 test('applies default padding and text size when compact is false', async () => {
   const { container } = render(<LogCell {...props} compact={false} />)
-  const grid = container.querySelector('.grid')
+  const grid = container.querySelector('.grid') as HTMLElement
   expect(grid).toHaveClass('p-4')
   expect(grid).toHaveClass('text-sm')
   expect(grid).not.toHaveClass('px-2')

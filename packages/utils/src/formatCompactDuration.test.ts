@@ -2,9 +2,15 @@ import { DateTime } from 'luxon'
 import { formatCompactDuration } from './formatCompactDuration'
 
 describe('formatCompactDuration', () => {
-  it('returns 0m for equal times', () => {
+  it('returns 0s for equal times', () => {
     const t = DateTime.fromISO('2024-01-01T00:00:00')
-    expect(formatCompactDuration(t, t)).toBe('0m')
+    expect(formatCompactDuration(t, t)).toBe('0s')
+  })
+
+  it('formats seconds for sub-minute durations', () => {
+    const ref = DateTime.fromISO('2024-01-01T00:00:00')
+    const target = ref.plus({ seconds: 45 })
+    expect(formatCompactDuration(target, ref)).toBe('45s')
   })
 
   it('formats minutes-only differences', () => {
