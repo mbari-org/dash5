@@ -160,13 +160,12 @@ const ScienceDataSection: React.FC<{
             <div className="m-2 rounded bg-red-200 p-2 text-red-700">
               <p className="font-bold">
                 Vehicle and Science data could not be processed for this
-                mission.
+                dataset.
               </p>
               <p className="mt-1">
                 This may be caused by invalid or malformed data in{' '}
                 <span className="font-mono font-bold">chartData2.json</span>.
-                Please ask your TethysDash administrator to reprocess this
-                mission.
+                Please ask a TethysDash administrator to reprocess this dataset.
               </p>
               {(error as Error)?.message && (
                 <p className="mt-1 font-mono text-xs opacity-75">

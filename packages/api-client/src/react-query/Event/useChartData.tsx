@@ -74,7 +74,7 @@ export const useChartData = (
       const chartData = (parsed as { chartData?: unknown })?.chartData
       if (!Array.isArray(chartData)) {
         throw new Error(
-          `chartData2.json for ${vehicle} returned invalid data — TethysDash may need to reprocess this mission.`
+          `chartData2.json for ${vehicle} returned invalid data — please ask a TethysDash administrator to reprocess this dataset.`
         )
       }
       return chartData as ChartData[]
