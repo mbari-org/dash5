@@ -541,7 +541,6 @@ const EmailNotificationsModal: React.FC<EmailNotificationsModalProps> = ({
           {/* Custom dropdown — always opens downward, keyboard accessible */}
           <div ref={dropdownRef} className="relative">
             <button
-              role="combobox"
               aria-label="Select notification email address"
               className="flex min-w-[220px] items-center justify-between gap-2 rounded border border-stone-300 bg-white px-3 py-1 text-sm transition-colors hover:border-primary-400 hover:bg-blue-50 active:bg-blue-100 disabled:cursor-not-allowed disabled:opacity-50"
               onClick={() =>
