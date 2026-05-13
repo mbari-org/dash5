@@ -1,5 +1,5 @@
 import React, { useMemo, useState, useCallback } from 'react'
-import useTick from '../lib/useTick'
+import { useTick } from '../lib/useTick'
 import {
   useInfiniteEvents,
   useTethysApiContext,
