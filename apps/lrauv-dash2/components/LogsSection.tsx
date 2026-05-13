@@ -123,6 +123,10 @@ const LogsSection: React.FC<LogsSectionProps> = ({
     [vehicleName, eventTypes, from, to]
   )
 
+  // Note: refetchInterval on useInfiniteQuery re-fetches all loaded pages on each
+  // tick, not just the first page. In practice, most sessions stay on page 1 so
+  // the extra load is negligible. A future improvement could use a separate
+  // lightweight query for the newest slice and merge results.
   const deploymentResponse = useInfiniteEvents(deploymentParams, {
     enabled: hasSelection,
     refetchInterval: hasSelection ? 30_000 : false,
@@ -320,9 +324,12 @@ const LogsSection: React.FC<LogsSectionProps> = ({
     const diff = eventDT.diffNow('days').days
     const date = Math.abs(diff) < 1 ? 'Today' : eventDT.toFormat('yyyy-MM-dd')
     const time = eventDT.toFormat('H:mm:ss')
+    // Show a relative duration for events within the last 7 days. No maxDays cap
+    // is needed here — the < 7 gate already prevents anything ≥ 7 days from being
+    // formatted, so formatCompactDuration's natural output is always appropriate.
     const timeAgo =
       Math.abs(diff) < 7
-        ? `${formatCompactDuration(eventDT, nowDT, { maxDays: 6 })} ago`
+        ? `${formatCompactDuration(eventDT, nowDT)} ago`
         : undefined
 
     // Check if this item is the representative of a multi-note timeout group.
