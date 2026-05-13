@@ -38,6 +38,8 @@ const EmailNotificationsModal: React.FC<EmailNotificationsModalProps> = ({
   const { data: addressesData, isLoading: isAddressesLoading } =
     useEmailAddresses(undefined, { enabled: accountEmail.length > 0 })
 
+  const [selectedEmail, setSelectedEmail] = useState<string>('')
+
   const allEmails: string[] = useMemo(() => {
     const base = addressesData?.result
       ? Object.keys(addressesData.result).sort()
@@ -51,8 +53,6 @@ const EmailNotificationsModal: React.FC<EmailNotificationsModalProps> = ({
     }
     return base
   }, [addressesData, accountEmail, selectedEmail])
-
-  const [selectedEmail, setSelectedEmail] = useState<string>('')
 
   // default to account email once list loads
   useEffect(() => {
