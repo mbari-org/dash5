@@ -213,6 +213,8 @@ const EmailNotificationsModal: React.FC<EmailNotificationsModalProps> = ({
   const [dropdownOpen, setDropdownOpen] = useState(false)
   const [focusedIdx, setFocusedIdx] = useState(-1)
   const dropdownRef = useRef<HTMLDivElement>(null)
+  const listboxRef = useRef<HTMLUListElement>(null)
+  const triggerRef = useRef<HTMLButtonElement>(null)
 
   // close dropdown when clicking outside
   useEffect(() => {
@@ -228,20 +230,39 @@ const EmailNotificationsModal: React.FC<EmailNotificationsModalProps> = ({
     return () => document.removeEventListener('mousedown', handler)
   }, [])
 
+  const closeDropdown = useCallback(() => {
+    setDropdownOpen(false)
+    // Return focus to the trigger button so the user's position is preserved.
+    triggerRef.current?.focus()
+  }, [])
+
   const openDropdown = useCallback(() => {
     setFocusedIdx(allEmails.indexOf(selectedEmail))
     setDropdownOpen(true)
   }, [allEmails, selectedEmail])
 
+  // When the listbox mounts, move focus into it so aria-activedescendant
+  // is on the focused element (as required by the ARIA listbox pattern).
+  useEffect(() => {
+    if (dropdownOpen) {
+      listboxRef.current?.focus()
+    }
+  }, [dropdownOpen])
+
+  // Key handler for the trigger button — only handles "open" keys.
+  const handleTriggerKeyDown = useCallback(
+    (e: React.KeyboardEvent) => {
+      if (e.key === 'Enter' || e.key === ' ' || e.key === 'ArrowDown') {
+        e.preventDefault()
+        openDropdown()
+      }
+    },
+    [openDropdown]
+  )
+
+  // Key handler for the listbox — handles navigation while open.
   const handleDropdownKeyDown = useCallback(
     (e: React.KeyboardEvent) => {
-      if (!dropdownOpen) {
-        if (e.key === 'Enter' || e.key === ' ' || e.key === 'ArrowDown') {
-          e.preventDefault()
-          openDropdown()
-        }
-        return
-      }
       if (e.key === 'ArrowDown') {
         e.preventDefault()
         setFocusedIdx((i) => Math.min(i + 1, allEmails.length - 1))
@@ -253,12 +274,12 @@ const EmailNotificationsModal: React.FC<EmailNotificationsModalProps> = ({
         if (focusedIdx >= 0 && focusedIdx < allEmails.length) {
           setSelectedEmail(allEmails[focusedIdx])
         }
-        setDropdownOpen(false)
+        closeDropdown()
       } else if (e.key === 'Escape' || e.key === 'Tab') {
-        setDropdownOpen(false)
+        closeDropdown()
       }
     },
-    [dropdownOpen, focusedIdx, allEmails, openDropdown]
+    [focusedIdx, allEmails, closeDropdown]
   )
 
   const [sendTestStatus, setSendTestStatus] = useState<
@@ -541,12 +562,11 @@ const EmailNotificationsModal: React.FC<EmailNotificationsModalProps> = ({
           {/* Custom dropdown — always opens downward, keyboard accessible */}
           <div ref={dropdownRef} className="relative">
             <button
+              ref={triggerRef}
               aria-label="Select notification email address"
               className="flex min-w-[220px] items-center justify-between gap-2 rounded border border-stone-300 bg-white px-3 py-1 text-sm transition-colors hover:border-primary-400 hover:bg-blue-50 active:bg-blue-100 disabled:cursor-not-allowed disabled:opacity-50"
-              onClick={() =>
-                dropdownOpen ? setDropdownOpen(false) : openDropdown()
-              }
-              onKeyDown={handleDropdownKeyDown}
+              onClick={() => (dropdownOpen ? closeDropdown() : openDropdown())}
+              onKeyDown={handleTriggerKeyDown}
               disabled={isAddressesLoading}
               aria-haspopup="listbox"
               aria-expanded={dropdownOpen}
@@ -575,12 +595,15 @@ const EmailNotificationsModal: React.FC<EmailNotificationsModalProps> = ({
 
             {dropdownOpen && (
               <ul
+                ref={listboxRef}
                 id="email-selector-listbox"
                 role="listbox"
+                tabIndex={-1}
                 aria-activedescendant={
                   focusedIdx >= 0 ? `email-option-${focusedIdx}` : undefined
                 }
-                className="absolute left-0 top-full z-50 mt-1 max-h-60 w-full overflow-auto rounded border border-stone-200 bg-white shadow-lg"
+                onKeyDown={handleDropdownKeyDown}
+                className="absolute left-0 top-full z-50 mt-1 max-h-60 w-full overflow-auto rounded border border-stone-200 bg-white shadow-lg outline-none"
               >
                 {allEmails.map((e, idx) => (
                   <li
@@ -598,7 +621,7 @@ const EmailNotificationsModal: React.FC<EmailNotificationsModalProps> = ({
                     onMouseEnter={() => setFocusedIdx(idx)}
                     onClick={() => {
                       setSelectedEmail(e)
-                      setDropdownOpen(false)
+                      closeDropdown()
                     }}
                   >
                     {e === selectedEmail && (
