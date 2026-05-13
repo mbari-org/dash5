@@ -1,6 +1,10 @@
 import React from 'react'
 import clsx from 'clsx'
-import { faSync } from '@fortawesome/free-solid-svg-icons'
+import {
+  faSync,
+  faGripLines,
+  faAlignJustify,
+} from '@fortawesome/free-solid-svg-icons'
 import { IconToggle } from '../Indicators'
 import { IconButton } from '../Navigation'
 import { HistoricalListIcon, SubIcon } from '../Icons'
@@ -10,8 +14,12 @@ export interface LogsToolbarProps {
   toggleDeploymentLogsOnly: () => void
   disabled: boolean
   handleRefresh: () => void
-  /** Compact relative string for the last successful fetch, e.g. "2m ago". */
-  lastUpdatedAgo?: string
+  /** Duration since the last successful fetch, e.g. "2m". The component renders this as "Updated 2m ago". */
+  lastUpdatedDuration?: string
+  /** When true, the log list is rendered in compact/dense mode. */
+  compact?: boolean
+  /** Called when the user toggles compact mode. */
+  onToggleCompact?: () => void
   className?: string
 }
 
@@ -20,10 +28,12 @@ export const LogsToolbar: React.FC<LogsToolbarProps> = ({
   toggleDeploymentLogsOnly,
   disabled,
   handleRefresh,
-  lastUpdatedAgo,
+  lastUpdatedDuration,
+  compact = false,
+  onToggleCompact,
   className,
 }) => (
-  <div className={clsx('flex items-center gap-3', className)}>
+  <div className={clsx('flex items-center gap-2', className)}>
     <IconToggle
       iconLeft={
         <HistoricalListIcon
@@ -51,14 +61,40 @@ export const LogsToolbar: React.FC<LogsToolbarProps> = ({
       tooltipAlignment="right"
       ariaLabelLeft="Displaying all logs"
       ariaLabelRight="Displaying deployment logs"
-      className="mr-4"
+      className="mr-2"
       disabled={disabled}
     />
 
-    {lastUpdatedAgo && (
-      <span className="text-xs text-stone-400" aria-live="polite">
-        Updated {lastUpdatedAgo}
-      </span>
+    {lastUpdatedDuration && (
+      <div
+        className="flex flex-col items-center text-[9px] leading-tight text-stone-400"
+        aria-live="polite"
+      >
+        <span>Updated</span>
+        <span>{lastUpdatedDuration}</span>
+        <span>ago</span>
+      </div>
+    )}
+
+    {onToggleCompact && (
+      <IconButton
+        icon={compact ? faAlignJustify : faGripLines}
+        ariaLabel={
+          compact ? 'Switch to comfortable view' : 'Switch to compact view'
+        }
+        tooltipAlignment="right"
+        tooltip={
+          compact ? 'Switch to comfortable view' : 'Switch to compact view'
+        }
+        onClick={onToggleCompact}
+        disabled={disabled}
+        size="text-md"
+        iconClassName={clsx(
+          'text-xl',
+          compact ? 'text-blue-500' : 'text-gray-400'
+        )}
+        className="flex items-center justify-center"
+      />
     )}
 
     <IconButton
@@ -70,7 +106,7 @@ export const LogsToolbar: React.FC<LogsToolbarProps> = ({
       onClick={handleRefresh}
       size="text-md"
       iconClassName="text-xl"
-      className="flex items-center justify-center rounded-full border-2 border-blue-400 text-blue-400"
+      className="flex shrink-0 items-center justify-center rounded-full border-2 border-blue-400 text-blue-400"
     />
   </div>
 )

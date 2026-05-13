@@ -90,8 +90,8 @@ const LineChart: React.FC<LineChartProps> = ({
             title: yAxisLabel,
             autorange: inverted ? 'reversed' : undefined,
           },
-          width: size.width,
-          height: size.height,
+          width: size.width || undefined,
+          height: size.height || undefined,
           margin: {
             t: title ? 28 : 0,
             b: 40,

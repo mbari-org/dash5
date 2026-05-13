@@ -14,10 +14,12 @@ export interface LogCellProps {
   log: string | JSX.Element
   isUpload: boolean
   onCopy?: (e: React.ClipboardEvent<HTMLElement>) => void
+  /** When true, reduces padding and font size for a denser log view. */
+  compact?: boolean
 }
 
 const styles = {
-  container: 'flex bg-white font-display text-sm',
+  container: 'flex bg-white font-display',
   details: 'flex flex-col text-left col-span-2',
   log: 'flex whitespace-pre-line text-left',
 }
@@ -32,11 +34,71 @@ export const LogCell: React.FC<LogCellProps> = ({
   log,
   isUpload,
   onCopy,
+  compact = false,
 }) => {
+  if (compact) {
+    return (
+      <article style={style} className={clsx(styles.container, className)}>
+        <div
+          className="flex w-full select-text items-start gap-2 px-2 py-0.5 text-xs"
+          onCopy={onCopy}
+        >
+          {/* Time — flows inline when the column is wide enough, wraps when narrow */}
+          <div className="flex flex-row flex-wrap items-baseline gap-x-1.5">
+            <div className="whitespace-nowrap opacity-60" aria-label="time">
+              {time}
+            </div>
+            <div
+              className="whitespace-nowrap opacity-40 text-[10px]"
+              aria-label="date"
+            >
+              {date}
+            </div>
+            {timeAgo && (
+              <div
+                className="whitespace-nowrap opacity-40 text-[10px]"
+                aria-label="time ago"
+              >
+                {timeAgo}
+              </div>
+            )}
+          </div>
+
+          {/* Type — fixed width, never wraps */}
+          <div className="flex w-24 shrink-0 items-start gap-1">
+            <span
+              className="mt-px shrink-0"
+              aria-label="data transmission icon"
+            >
+              {isUpload ? <UploadIcon /> : <DownloadIcon />}
+            </span>
+            <span className="truncate">{label}</span>
+          </div>
+
+          {/* Description — expands to fill remaining width; collapses to one row
+              when wide enough, wraps naturally when narrow.
+              String logs use whitespace-pre-line to preserve \n characters.
+              JSX element logs use whitespace-normal + arbitrary-child variants
+              to override the flex-col / block-span patterns that formatEvent
+              uses so content flows horizontally. */}
+          {typeof log === 'string' ? (
+            <span className="min-w-0 flex-1 whitespace-pre-line text-left">
+              {log}
+            </span>
+          ) : (
+            <div className="min-w-0 flex-1 whitespace-normal text-left [&>*]:!flex-row [&>*]:flex-wrap [&>*]:gap-x-1 [&_span]:!inline">
+              {log}
+            </div>
+          )}
+        </div>
+      </article>
+    )
+  }
+
   return (
     <article style={style} className={clsx(styles.container, className)}>
       <div
-        className="grid flex-grow select-text grid-cols-5 gap-2 p-4"
+        className="grid flex-grow select-text grid-cols-5 gap-2 p-4 text-sm"
         onCopy={onCopy}
       >
         <ul className={styles.details}>
