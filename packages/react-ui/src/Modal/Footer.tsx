@@ -60,7 +60,6 @@ export const Footer: React.FC<FooterProps> = ({
               appearance="primary"
               onClick={handleConfirm ? swallow(handleConfirm) : undefined}
               disabled={disableConfirm}
-              aria-label="Confirm"
               type={form ? 'submit' : 'button'}
               form={form}
             >
@@ -74,7 +73,6 @@ export const Footer: React.FC<FooterProps> = ({
               appearance="secondary"
               onClick={swallow(handleCancel)}
               disabled={disableCancel}
-              aria-label="Cancel"
             >
               {cancelButtonText}
             </Button>
