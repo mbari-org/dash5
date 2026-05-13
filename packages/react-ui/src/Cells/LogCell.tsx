@@ -77,11 +77,19 @@ export const LogCell: React.FC<LogCellProps> = ({
 
           {/* Description — expands to fill remaining width; collapses to one row
               when wide enough, wraps naturally when narrow.
-              The arbitrary-child variants override the flex-col / block-span
-              patterns that formatEvent uses so content flows horizontally. */}
-          <div className="min-w-0 flex-1 whitespace-normal text-left [&>*]:!flex-row [&>*]:flex-wrap [&>*]:gap-x-1 [&_span]:!inline">
-            {typeof log === 'string' ? <span>{log}</span> : log}
-          </div>
+              String logs use whitespace-pre-line to preserve \n characters.
+              JSX element logs use whitespace-normal + arbitrary-child variants
+              to override the flex-col / block-span patterns that formatEvent
+              uses so content flows horizontally. */}
+          {typeof log === 'string' ? (
+            <span className="min-w-0 flex-1 whitespace-pre-line text-left">
+              {log}
+            </span>
+          ) : (
+            <div className="min-w-0 flex-1 whitespace-normal text-left [&>*]:!flex-row [&>*]:flex-wrap [&>*]:gap-x-1 [&_span]:!inline">
+              {log}
+            </div>
+          )}
         </div>
       </article>
     )
