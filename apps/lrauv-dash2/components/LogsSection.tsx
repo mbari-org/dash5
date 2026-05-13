@@ -96,16 +96,22 @@ const LogsSection: React.FC<LogsSectionProps> = ({
       // localStorage unavailable (private browsing, etc.)
     }
   }, [])
+  // Persist on every change; skip the initial render so we don't clobber a
+  // stored 'true' before the load effect above has applied it.
+  const compactMounted = useRef(false)
+  useEffect(() => {
+    if (!compactMounted.current) {
+      compactMounted.current = true
+      return
+    }
+    try {
+      localStorage.setItem('logs:compact', String(compact))
+    } catch {
+      // localStorage unavailable
+    }
+  }, [compact])
   const handleToggleCompact = useCallback(() => {
-    setCompact((prev) => {
-      const next = !prev
-      try {
-        localStorage.setItem('logs:compact', String(next))
-      } catch {
-        // localStorage unavailable (private browsing, etc.) — state still updates in memory
-      }
-      return next
-    })
+    setCompact((prev) => !prev)
   }, [])
 
   const [filters, setFilters] = useState<MultiValue<SelectOption>>(

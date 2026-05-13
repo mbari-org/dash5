@@ -11,18 +11,12 @@ export type ButtonAppearance =
   | 'custom'
   | 'link'
 
-export interface ButtonProps {
+export interface ButtonProps
+  extends Omit<React.ButtonHTMLAttributes<HTMLButtonElement>, 'type'> {
   appearance?: ButtonAppearance
   align?: ButtonAlignment
-  className?: string
-  style?: React.CSSProperties
-  type?: ButtonType
-  disabled?: boolean
-  onClick?: React.MouseEventHandler<HTMLButtonElement>
-  form?: string
   tight?: boolean
-  title?: string
-  children?: React.ReactNode
+  type?: ButtonType
 }
 
 const styles = {
@@ -74,33 +68,25 @@ export const Button: React.FC<ButtonProps> = ({
   appearance = 'primary',
   children,
   className,
-  disabled,
-  style = {},
-  onClick,
-  form,
-  type = 'button',
   tight,
-  title,
+  type = 'button',
+  ...rest
 }) => {
   const isStandardButton = !['custom', 'link'].includes(appearance ?? '')
 
   return (
     <button
-      title={title}
+      type={type}
       className={clsx(
         appearance === 'link' && styles.link,
         backgroundStyles(appearance),
         alignmentStyles(align),
         isStandardButton && styles.button,
         isStandardButton && (tight ? styles.tight : styles.normal),
-        disabled && styles.disabled,
+        rest.disabled && styles.disabled,
         className
       )}
-      disabled={disabled}
-      style={style}
-      onClick={onClick}
-      form={form}
-      type={type}
+      {...rest}
     >
       {children}
     </button>
