@@ -8,7 +8,7 @@ export interface LogCellProps {
   style?: React.CSSProperties
   label: string
   time: string
-  /** Compact relative time string, e.g. "3m ago". Shown below the absolute time. */
+  /** Compact relative time string, e.g. "3m ago". Rendered inline after the transmission icon. */
   timeAgo?: string
   date: string
   log: string | JSX.Element

@@ -35,3 +35,13 @@ test('should contain the download data icon when downloading data', async () => 
 
   expect(screen.getByLabelText(/download data/i)).toBeInTheDocument()
 })
+
+test('renders timeAgo when provided', async () => {
+  render(<LogCell {...props} timeAgo="3m ago" />)
+  expect(screen.getByLabelText(/time ago/i)).toHaveTextContent('3m ago')
+})
+
+test('does not render timeAgo element when omitted', async () => {
+  render(<LogCell {...props} />)
+  expect(screen.queryByLabelText(/time ago/i)).not.toBeInTheDocument()
+})

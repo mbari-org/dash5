@@ -124,7 +124,8 @@ const LogsSection: React.FC<LogsSectionProps> = ({
   )
 
   const deploymentResponse = useInfiniteEvents(deploymentParams, {
-    refetchInterval: 60_000,
+    enabled: hasSelection,
+    refetchInterval: hasSelection ? 60_000 : false,
   })
 
   const allLogsParams = useMemo(
@@ -138,7 +139,8 @@ const LogsSection: React.FC<LogsSectionProps> = ({
   )
 
   const allLogsResponse = useInfiniteEvents(allLogsParams, {
-    refetchInterval: 60_000,
+    enabled: hasSelection,
+    refetchInterval: hasSelection ? 60_000 : false,
   })
 
   const {
@@ -155,10 +157,16 @@ const LogsSection: React.FC<LogsSectionProps> = ({
   const nowMs = useTick(30_000)
   const nowDT = DateTime.fromMillis(nowMs)
 
+  // Use DateTime.now() rather than nowDT so the indicator resets immediately
+  // after a refetch instead of waiting up to 30s for the next tick.
   const lastUpdatedAgo = dataUpdatedAt
-    ? `${formatCompactDuration(DateTime.fromMillis(dataUpdatedAt), nowDT, {
-        maxDays: 1,
-      })} ago`
+    ? `${formatCompactDuration(
+        DateTime.fromMillis(dataUpdatedAt),
+        DateTime.now(),
+        {
+          maxDays: 1,
+        }
+      )} ago`
     : undefined
 
   const flatData = useMemo(() => {
