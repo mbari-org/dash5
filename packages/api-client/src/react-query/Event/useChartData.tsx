@@ -52,20 +52,24 @@ export const useChartData = (
         // Fetch as raw text so we can sanitize malformed numbers before parsing.
         { responseType: 'text', transformResponse: (data) => data }
       )
-      // Some TethysDash versions emit numbers with a trailing decimal point
-      // (e.g. `12345.`) which is valid in JavaScript but invalid JSON.
-      // Normalise them to `12345.0` before parsing.
-      const sanitized = ((result?.data as string) ?? '').replace(
-        /(\d\.)(?=\D|$)/g,
-        (m) => m + '0'
-      )
+      const raw = (result?.data as string) ?? ''
       let parsed: unknown
       try {
-        parsed = JSON.parse(sanitized)
+        // Try parsing without modification first — the happy path.
+        parsed = JSON.parse(raw)
       } catch {
-        throw new Error(
-          `chartData2.json for ${vehicle} (${path}) could not be parsed — the file may be truncated or malformed on the TethysDash server.`
-        )
+        // Some TethysDash versions emit numbers with a trailing decimal point
+        // (e.g. `12345.`) which is valid in JavaScript but invalid JSON.
+        // Only attempt sanitization after a parse failure so the regex never
+        // mutates digit+dot sequences inside quoted string values in valid JSON.
+        const sanitized = raw.replace(/(\d\.)(?=\D|$)/g, (m) => m + '0')
+        try {
+          parsed = JSON.parse(sanitized)
+        } catch {
+          throw new Error(
+            `chartData2.json for ${vehicle} (${path}) could not be parsed — the file may be truncated or malformed on the TethysDash server.`
+          )
+        }
       }
       const chartData = (parsed as { chartData?: unknown })?.chartData
       if (!Array.isArray(chartData)) {

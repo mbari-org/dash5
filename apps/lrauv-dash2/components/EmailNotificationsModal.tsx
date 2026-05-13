@@ -275,8 +275,12 @@ const EmailNotificationsModal: React.FC<EmailNotificationsModalProps> = ({
           setSelectedEmail(allEmails[focusedIdx])
         }
         closeDropdown()
-      } else if (e.key === 'Escape' || e.key === 'Tab') {
+      } else if (e.key === 'Escape') {
         closeDropdown()
+      } else if (e.key === 'Tab') {
+        // Close the dropdown but let the browser handle Tab focus naturally;
+        // don't force focus back to the trigger or it disrupts Tab order.
+        setDropdownOpen(false)
       }
     },
     [focusedIdx, allEmails, closeDropdown]
