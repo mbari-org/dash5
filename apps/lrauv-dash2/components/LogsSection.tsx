@@ -71,6 +71,26 @@ const LogsSection: React.FC<LogsSectionProps> = ({
   }
 
   const { siteConfig } = useTethysApiContext()
+
+  const [compact, setCompact] = useState<boolean>(() => {
+    try {
+      return localStorage.getItem('logs:compact') === 'true'
+    } catch {
+      return false
+    }
+  })
+  const handleToggleCompact = useCallback(() => {
+    setCompact((prev) => {
+      const next = !prev
+      try {
+        localStorage.setItem('logs:compact', String(next))
+      } catch {
+        // localStorage unavailable (private browsing, etc.) — state still updates in memory
+      }
+      return next
+    })
+  }, [])
+
   const [filters, setFilters] = useState<MultiValue<SelectOption>>(
     defaultModalSelections
   )
@@ -408,6 +428,7 @@ const LogsSection: React.FC<LogsSectionProps> = ({
         log={log}
         isUpload={isUploadEvent(item)}
         onCopy={handleCopyEventLogs}
+        compact={compact}
       />
     )
   }
@@ -454,6 +475,8 @@ const LogsSection: React.FC<LogsSectionProps> = ({
           disabled={isLoading || isFetching}
           handleRefresh={handleRefresh}
           lastUpdatedAgo={lastUpdatedAgo}
+          compact={compact}
+          onToggleCompact={handleToggleCompact}
         />
       </header>
 

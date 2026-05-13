@@ -1,6 +1,10 @@
 import React from 'react'
 import clsx from 'clsx'
-import { faSync } from '@fortawesome/free-solid-svg-icons'
+import {
+  faSync,
+  faGripLines,
+  faAlignJustify,
+} from '@fortawesome/free-solid-svg-icons'
 import { IconToggle } from '../Indicators'
 import { IconButton } from '../Navigation'
 import { HistoricalListIcon, SubIcon } from '../Icons'
@@ -12,6 +16,10 @@ export interface LogsToolbarProps {
   handleRefresh: () => void
   /** Compact relative string for the last successful fetch, e.g. "2m ago". */
   lastUpdatedAgo?: string
+  /** When true, the log list is rendered in compact/dense mode. */
+  compact?: boolean
+  /** Called when the user toggles compact mode. */
+  onToggleCompact?: () => void
   className?: string
 }
 
@@ -21,6 +29,8 @@ export const LogsToolbar: React.FC<LogsToolbarProps> = ({
   disabled,
   handleRefresh,
   lastUpdatedAgo,
+  compact = false,
+  onToggleCompact,
   className,
 }) => (
   <div className={clsx('flex items-center gap-3', className)}>
@@ -59,6 +69,24 @@ export const LogsToolbar: React.FC<LogsToolbarProps> = ({
       <span className="text-xs text-stone-400" aria-live="polite">
         Updated {lastUpdatedAgo}
       </span>
+    )}
+
+    {onToggleCompact && (
+      <IconButton
+        icon={compact ? faAlignJustify : faGripLines}
+        ariaLabel={compact ? 'comfortable view' : 'compact view'}
+        tooltipAlignment="right"
+        tooltip={
+          compact ? 'Switch to comfortable view' : 'Switch to compact view'
+        }
+        onClick={onToggleCompact}
+        size="text-md"
+        iconClassName={clsx(
+          'text-xl',
+          compact ? 'text-blue-500' : 'text-gray-400'
+        )}
+        className="flex items-center justify-center"
+      />
     )}
 
     <IconButton

@@ -14,10 +14,12 @@ export interface LogCellProps {
   log: string | JSX.Element
   isUpload: boolean
   onCopy?: (e: React.ClipboardEvent<HTMLElement>) => void
+  /** When true, reduces padding and font size for a denser log view. */
+  compact?: boolean
 }
 
 const styles = {
-  container: 'flex bg-white font-display text-sm',
+  container: 'flex bg-white font-display',
   details: 'flex flex-col text-left col-span-2',
   log: 'flex whitespace-pre-line text-left',
 }
@@ -32,11 +34,15 @@ export const LogCell: React.FC<LogCellProps> = ({
   log,
   isUpload,
   onCopy,
+  compact = false,
 }) => {
   return (
     <article style={style} className={clsx(styles.container, className)}>
       <div
-        className="grid flex-grow select-text grid-cols-5 gap-2 p-4"
+        className={clsx(
+          'grid flex-grow select-text grid-cols-5 gap-2',
+          compact ? 'px-2 py-0.5 text-xs' : 'p-4 text-sm'
+        )}
         onCopy={onCopy}
       >
         <ul className={styles.details}>

@@ -54,4 +54,40 @@ describe('LogsToolbar', () => {
     render(<LogsToolbar {...defaultProps} />)
     expect(screen.queryByText(/updated/i)).not.toBeInTheDocument()
   })
+
+  test('renders compact toggle button when onToggleCompact is provided', () => {
+    const onToggleCompact = jest.fn()
+    render(<LogsToolbar {...defaultProps} onToggleCompact={onToggleCompact} />)
+    expect(
+      screen.getByRole('button', { name: /compact view/i })
+    ).toBeInTheDocument()
+  })
+
+  test('compact toggle shows comfortable view label when compact is true', () => {
+    const onToggleCompact = jest.fn()
+    render(
+      <LogsToolbar
+        {...defaultProps}
+        compact
+        onToggleCompact={onToggleCompact}
+      />
+    )
+    expect(
+      screen.getByRole('button', { name: /comfortable view/i })
+    ).toBeInTheDocument()
+  })
+
+  test('calls onToggleCompact when compact toggle is clicked', () => {
+    const onToggleCompact = jest.fn()
+    render(<LogsToolbar {...defaultProps} onToggleCompact={onToggleCompact} />)
+    fireEvent.click(screen.getByRole('button', { name: /compact view/i }))
+    expect(onToggleCompact).toHaveBeenCalledTimes(1)
+  })
+
+  test('does not render compact toggle when onToggleCompact is omitted', () => {
+    render(<LogsToolbar {...defaultProps} />)
+    expect(
+      screen.queryByRole('button', { name: /compact view/i })
+    ).not.toBeInTheDocument()
+  })
 })
