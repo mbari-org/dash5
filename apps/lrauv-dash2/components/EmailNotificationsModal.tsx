@@ -255,9 +255,14 @@ const EmailNotificationsModal: React.FC<EmailNotificationsModalProps> = ({
       if (e.key === 'Enter' || e.key === ' ' || e.key === 'ArrowDown') {
         e.preventDefault()
         openDropdown()
+      } else if (e.key === 'ArrowUp') {
+        // ArrowUp opens the dropdown with focus on the last option.
+        e.preventDefault()
+        setFocusedIdx(allEmails.length - 1)
+        setDropdownOpen(true)
       }
     },
-    [openDropdown]
+    [openDropdown, allEmails.length]
   )
 
   // Key handler for the listbox — handles navigation while open.

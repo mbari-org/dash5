@@ -138,9 +138,13 @@ describe('useChartData', () => {
       </MockProviders>
     )
 
-    // Should stay in idle/no-data state since queries are disabled
-    await new Promise((r) => setTimeout(r, 500))
+    // The "No data" state should appear immediately and persist —
+    // verify it renders and that no data or error state ever replaces it.
     expect(screen.getByText('No data')).toBeInTheDocument()
+    // Wait a tick to confirm no async state change fires.
+    await new Promise((r) => setTimeout(r, 100))
+    expect(screen.queryByTestId('count')).not.toBeInTheDocument()
+    expect(screen.queryByTestId('error')).not.toBeInTheDocument()
   })
 
   it('shows an error when chartData2.json returns malformed data', async () => {
