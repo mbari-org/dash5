@@ -130,9 +130,9 @@ const MissionModal: React.FC<MissionModalProps> = ({
       missionsWithTemporaryEntry.length > 0 &&
       !hasAutoSelectedRef.current
     ) {
-      // Find mission by matching id (which is the mission path)
+      // Find mission by id (temporary re-run entries) or missionPath (recent runs)
       const matchingMission = missionsWithTemporaryEntry.find(
-        (m) => m.id === missionPath
+        (m) => m.id === missionPath || m.missionPath === missionPath
       )
       // Only auto-select once per modal open
       if (matchingMission) {

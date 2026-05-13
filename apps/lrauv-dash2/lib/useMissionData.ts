@@ -40,8 +40,12 @@ export const useMissionData = (params: {
   const recentRunsParams = useMemo(
     () => ({
       vehicles: showAllVehicleMissions ? [] : vehicleName ? [vehicleName] : [],
+      // showAllVehicleMissions uses LAST_60_DAYS to bound the multi-vehicle
+      // window. Single-vehicle uses from: 0 (falsy) to skip useEvents'
+      // recursive backfill, with a raised limit of 500 (was 100) so more
+      // history is returned without triggering multi-page fetches.
       from: showAllVehicleMissions ? LAST_60_DAYS : 0,
-      limit: showAllVehicleMissions ? undefined : 100,
+      limit: showAllVehicleMissions ? undefined : 500,
     }),
     [vehicleName, showAllVehicleMissions]
   )
@@ -67,43 +71,38 @@ export const useMissionData = (params: {
 
   const recentRuns: Mission[] = useMemo(() => {
     return (
-      recentRunsData
-        ?.map(
-          ({
-            data,
-            mission,
-            vehicleName,
-            isoTime,
-            user,
+      recentRunsData?.map(
+        ({
+          data,
+          mission,
+          vehicleName,
+          isoTime,
+          user,
+          note,
+          parameterOverrides,
+          waypointOverrides,
+        }) => {
+          const { category, name } = parseMissionPath(mission)
+          return {
+            id: `${isoTime}|${mission}`,
+            missionPath: mission,
+            category,
+            name,
+            description: data,
+            vehicle: vehicleName,
+            ranOn: capitalize(
+              DateTime.fromISO(isoTime).toFormat('MMM. d yyyy')
+            ),
+            ranBy: capitalizeEach(user ?? ''),
+            recentRun: true,
             note,
-            parameterOverrides,
             waypointOverrides,
-          }) => {
-            const { category, name } = parseMissionPath(mission)
-            return {
-              id: mission,
-              missionPath: mission,
-              category,
-              name,
-              description: data,
-              vehicle: vehicleName,
-              ranOn: capitalize(
-                DateTime.fromISO(isoTime).toFormat('MMM. d yyyy')
-              ),
-              ranBy: capitalizeEach(user ?? ''),
-              recentRun: true,
-              note,
-              waypointOverrides,
-              parameterOverrides,
-              parameterCount: parameterOverrides.length,
-              waypointCount: waypointOverrides.length,
-            }
+            parameterOverrides,
+            parameterCount: parameterOverrides.length,
+            waypointCount: waypointOverrides.length,
           }
-        )
-        .filter(
-          (mission, index, s) =>
-            s.findIndex((m) => m.id === mission.id) === index
-        ) ?? []
+        }
+      ) ?? []
     )
   }, [recentRunsData])
 

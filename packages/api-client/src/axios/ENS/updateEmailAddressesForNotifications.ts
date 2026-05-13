@@ -22,6 +22,6 @@ export const updateEmailAddressesForNotifications = async (
     console.debug(`PUT ${url}`)
   }
 
-  const response = await instance.put(url, params, config)
+  const response = await instance.put(url, undefined, { ...config, params })
   return response.data as UpdateEmailAddressesForNotificationsResponse
 }

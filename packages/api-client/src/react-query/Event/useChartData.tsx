@@ -21,7 +21,7 @@ export const useChartData = (
   },
   options?: SupportedQueryOptions
 ) => {
-  const { axiosInstance, siteConfig, token } = useTethysApiContext()
+  const { axiosInstance, siteConfig } = useTethysApiContext()
   const updatedParams = {
     ...params,
     vehicles: [vehicle],
@@ -44,39 +44,49 @@ export const useChartData = (
 
   const path = events?.data?.[0]?.path
 
-  const reprocessParams = {
-    vehicle,
-    path,
-    action: 'plot',
-  }
-
   const query = useQuery(
     ['event', 'events', vehicle, 'realtime/sbdlogs', path],
     async () => {
+      const result = await axiosInstance?.get(
+        `${siteConfig?.appConfig?.external?.tethysdash}/data/${vehicle}/realtime/sbdlogs/${path}/chartData2.json`,
+        // Fetch as raw text so we can sanitize malformed numbers before parsing.
+        { responseType: 'text', transformResponse: (data) => data }
+      )
+      const raw = (result?.data as string) ?? ''
+      let parsed: unknown
       try {
-        const result = await axiosInstance?.get(
-          `${siteConfig?.appConfig.external.tethysdash}/data/${vehicle}/realtime/sbdlogs/${path}/chartData2.json`
-        )
-        return result?.data?.chartData as ChartData[]
-      } catch (e) {
-        await axiosInstance?.post(
-          `${siteConfig?.appConfig.external.tethysdash}/dash/reprocess`,
-          undefined,
-          {
-            headers: { Authorization: `Bearer ${token}` },
-            params: reprocessParams,
-          }
-        )
-        throw e
+        // Try parsing without modification first — the happy path.
+        parsed = JSON.parse(raw)
+      } catch {
+        // Some TethysDash versions emit numbers with a trailing decimal point
+        // (e.g. `12345.`) which is valid in JavaScript but invalid JSON.
+        // Only attempt sanitization after a parse failure so the regex never
+        // mutates digit+dot sequences inside quoted string values in valid JSON.
+        const sanitized = raw.replace(/(\d\.)(?=\D|$)/g, (m) => m + '0')
+        try {
+          parsed = JSON.parse(sanitized)
+        } catch {
+          throw new Error(
+            `chartData2.json for ${vehicle} (${path}) could not be parsed — the file may be truncated or malformed on the TethysDash server.`
+          )
+        }
       }
+      const chartData = (parsed as { chartData?: unknown })?.chartData
+      if (!Array.isArray(chartData)) {
+        throw new Error(
+          `chartData2.json for ${vehicle} returned invalid data — TethysDash may need to reprocess this mission.`
+        )
+      }
+      return chartData as ChartData[]
     },
     {
-      ...options,
       staleTime: 5 * 60 * 1000,
+      ...options,
       enabled:
-        !!siteConfig?.appConfig.external.tethysdash &&
+        !!axiosInstance &&
+        !!siteConfig?.appConfig?.external?.tethysdash &&
         !!path &&
-        options?.enabled,
+        (options?.enabled ?? true),
     }
   )
   return query
