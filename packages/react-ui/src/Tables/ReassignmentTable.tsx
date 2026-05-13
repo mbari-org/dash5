@@ -3,11 +3,17 @@ import { ReassignmentCell } from '../Cells/ReassignmentCell'
 import { RoleChangeType } from '../Modals/ReassignmentModal'
 import { AbsoluteOverlay } from '../Indicators/AbsoluteOverlay'
 
+export interface ReassignmentOperator {
+  user: string
+  /** Unix timestamp (ms) of the sign-in event — used to show elapsed watch time. */
+  unixTime: number
+}
+
 export interface ReassignmentTableProps {
   vehicles?: {
     name: string
-    picOperators: string[]
-    onCallOperators: string[]
+    picOperators: ReassignmentOperator[]
+    onCallOperators: ReassignmentOperator[]
   }[]
   currentUserName: string
   onRoleChange: (
@@ -53,6 +59,7 @@ export const ReassignmentTable: React.FC<ReassignmentTableProps> = ({
                 onSignIn={() => onRoleChange(vehicle.name, 'in', true)}
                 onSignOut={() => onRoleChange(vehicle.name, 'off', true)}
                 isLoading={isLoading}
+                showElapsed
                 signInAriaLabel={`Join ${vehicle.name} as PIC`}
                 signOutAriaLabel={`Remove ${currentUserName} from ${vehicle.name} as PIC`}
               />

@@ -13,6 +13,7 @@ import useGlobalModalId from '../lib/useGlobalModalId'
 import { capitalize } from '@mbari/utils'
 import { useQueryClient } from 'react-query'
 import { useTethysApiContext } from '@mbari/api-client'
+import { DateTime } from 'luxon'
 import toast from 'react-hot-toast'
 
 interface PendingSignOff {
@@ -52,6 +53,12 @@ const Reassignment: React.FC<{ vehicleNames: string[] }> = ({
     null
   )
 
+  /** Round elapsed ms to the nearest 0.5h, formatted as a string. */
+  const elapsedHours = (sinceMs: number): string => {
+    const raw = sinceMs / 3_600_000
+    return (Math.round(raw * 2) / 2).toFixed(1).replace(/\.0$/, '')
+  }
+
   const doSignOff = (vehicleName: string, hours: string) => {
     if (!profile?.email) return
     assignPicAndOnCall(
@@ -83,8 +90,16 @@ const Reassignment: React.FC<{ vehicleNames: string[] }> = ({
     if (!profile?.email) return
 
     // For PIC sign-off only, prompt for hours piloted before submitting.
+    // Pre-fill with actual elapsed time since sign-in, rounded to nearest 0.5h.
     if (isPic && roleChangeType === 'off') {
-      setPendingSignOff({ vehicleName, hours: '8' })
+      const vehicleData = data?.find(
+        (v) => v.vehicleName.toLowerCase() === vehicleName.toLowerCase()
+      )
+      const picEntry = vehicleData?.pics.find((p) => p.user === currentUserName)
+      const hours = picEntry
+        ? elapsedHours(DateTime.now().toMillis() - picEntry.unixTime)
+        : '8'
+      setPendingSignOff({ vehicleName, hours })
       return
     }
 
@@ -119,8 +134,14 @@ const Reassignment: React.FC<{ vehicleNames: string[] }> = ({
   const vehicleData: ReassignmentTableProps['vehicles'] =
     data?.map((v) => ({
       name: capitalize(v.vehicleName),
-      picOperators: v.pics.map((pic) => pic.user),
-      onCallOperators: v.onCalls.map((onCall) => onCall.user),
+      picOperators: v.pics.map((pic) => ({
+        user: pic.user,
+        unixTime: pic.unixTime,
+      })),
+      onCallOperators: v.onCalls.map((onCall) => ({
+        user: onCall.user,
+        unixTime: onCall.unixTime,
+      })),
     })) || []
 
   return (

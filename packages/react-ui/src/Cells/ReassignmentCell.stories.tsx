@@ -13,8 +13,10 @@ const Template: Story<ReassignmentCellProps> = (args) => (
   </div>
 )
 
+const makeOp = (user: string) => ({ user, unixTime: Date.now() - 2 * 3600_000 })
+
 const args: ReassignmentCellProps = {
-  operators: ['John Doe', 'Jane Smith'],
+  operators: [makeOp('John Doe'), makeOp('Jane Smith')],
   currentUserName: 'John Doe',
   onSignIn: () => console.log('Sign in clicked'),
   onSignOut: () => console.log('Sign out clicked'),

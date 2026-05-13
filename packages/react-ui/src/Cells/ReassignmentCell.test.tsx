@@ -27,11 +27,13 @@ describe('ReassignmentCell', () => {
     expect(screen.getByText('Join')).toBeInTheDocument()
   })
 
+  const makeOp = (user: string) => ({ user, unixTime: Date.now() })
+
   test('should display operator names when operators are provided', () => {
     render(
       <ReassignmentCell
         {...defaultProps}
-        operators={['John Smith', 'Bob Johnson']}
+        operators={[makeOp('John Smith'), makeOp('Bob Johnson')]}
       />
     )
 
@@ -43,7 +45,7 @@ describe('ReassignmentCell', () => {
     render(
       <ReassignmentCell
         {...defaultProps}
-        operators={['John Smith', 'Jane Doe']}
+        operators={[makeOp('John Smith'), makeOp('Jane Doe')]}
       />
     )
 

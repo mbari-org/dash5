@@ -12,16 +12,18 @@ const Template: Story<ReassignmentTableProps> = (args) => (
   </div>
 )
 
+const makeOp = (user: string) => ({ user, unixTime: Date.now() - 2 * 3600_000 })
+
 const mockVehicles = [
   {
     name: 'Ahi',
-    picOperators: ['John Doe', 'Marc Allentoft-Larsen'],
-    onCallOperators: ['Alice Cooper'],
+    picOperators: [makeOp('John Doe'), makeOp('Marc Allentoft-Larsen')],
+    onCallOperators: [makeOp('Alice Cooper')],
   },
   {
     name: 'Galene',
-    picOperators: ['Mike mccan@mbari.org'],
-    onCallOperators: ['Andrea Vander Woude'],
+    picOperators: [makeOp('Mike mccan@mbari.org')],
+    onCallOperators: [makeOp('Andrea Vander Woude')],
   },
   {
     name: 'Triton',
