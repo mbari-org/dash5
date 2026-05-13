@@ -21,6 +21,7 @@ export interface ButtonProps {
   onClick?: React.MouseEventHandler<HTMLButtonElement>
   form?: string
   tight?: boolean
+  title?: string
   children?: React.ReactNode
 }
 
@@ -79,11 +80,13 @@ export const Button: React.FC<ButtonProps> = ({
   form,
   type = 'button',
   tight,
+  title,
 }) => {
   const isStandardButton = !['custom', 'link'].includes(appearance ?? '')
 
   return (
     <button
+      title={title}
       className={clsx(
         appearance === 'link' && styles.link,
         backgroundStyles(appearance),

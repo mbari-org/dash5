@@ -57,6 +57,8 @@ export interface LogsSectionProps {
   setDeploymentLogsOnly: (value: boolean) => void
 }
 
+const GROUP_WINDOW_MS = 5 * 1000 // 5 seconds — chunk bursts are sub-second
+
 const styles = {
   icon: 'ml-1 my-auto flex-grow-0 mr-2 flex-shrink-0',
   emptyLogBanner:
@@ -268,7 +270,6 @@ const LogsSection: React.FC<LogsSectionProps> = ({
   // the note text which is stored in the local `eventId` variable below) so that
   // pagination, filter changes, and list refreshes never shift a key onto a
   // different row. The same key is used for expand/collapse state.
-  const GROUP_WINDOW_MS = 5 * 1000 // 5 seconds — chunk bursts are sub-second
   type TimeoutGroup = { all: GetEventsResponse[] }
   const { processedData, timeoutGroups } = useMemo(() => {
     const groups = new Map<string, TimeoutGroup>() // key = `${repEventId}-${repUnixTime}`
