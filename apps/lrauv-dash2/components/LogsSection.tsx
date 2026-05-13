@@ -127,9 +127,12 @@ const LogsSection: React.FC<LogsSectionProps> = ({
   // tick, not just the first page. In practice, most sessions stay on page 1 so
   // the extra load is negligible. A future improvement could use a separate
   // lightweight query for the newest slice and merge results.
+  //
+  // Only poll the query that is currently displayed; the inactive one is kept
+  // enabled so its cache stays warm but does not generate background traffic.
   const deploymentResponse = useInfiniteEvents(deploymentParams, {
     enabled: hasSelection,
-    refetchInterval: hasSelection ? 30_000 : false,
+    refetchInterval: hasSelection && deploymentLogsOnly ? 30_000 : false,
   })
 
   const allLogsParams = useMemo(
@@ -144,7 +147,7 @@ const LogsSection: React.FC<LogsSectionProps> = ({
 
   const allLogsResponse = useInfiniteEvents(allLogsParams, {
     enabled: hasSelection,
-    refetchInterval: hasSelection ? 30_000 : false,
+    refetchInterval: hasSelection && !deploymentLogsOnly ? 30_000 : false,
   })
 
   const {
