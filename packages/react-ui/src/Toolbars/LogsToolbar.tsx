@@ -79,12 +79,15 @@ export const LogsToolbar: React.FC<LogsToolbarProps> = ({
     {onToggleCompact && (
       <IconButton
         icon={compact ? faAlignJustify : faGripLines}
-        ariaLabel={compact ? 'comfortable view' : 'compact view'}
+        ariaLabel={
+          compact ? 'Switch to comfortable view' : 'Switch to compact view'
+        }
         tooltipAlignment="right"
         tooltip={
           compact ? 'Switch to comfortable view' : 'Switch to compact view'
         }
         onClick={onToggleCompact}
+        disabled={disabled}
         size="text-md"
         iconClassName={clsx(
           'text-xl',

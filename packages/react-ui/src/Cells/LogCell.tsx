@@ -66,10 +66,13 @@ export const LogCell: React.FC<LogCellProps> = ({
 
           {/* Type — fixed width, never wraps */}
           <div className="flex w-24 shrink-0 items-start gap-1">
-            <span className="mt-px" aria-label="data transmission icon">
+            <span
+              className="mt-px shrink-0"
+              aria-label="data transmission icon"
+            >
               {isUpload ? <UploadIcon /> : <DownloadIcon />}
             </span>
-            <span>{label}</span>
+            <span className="truncate">{label}</span>
           </div>
 
           {/* Description — expands to fill remaining width; collapses to one row
