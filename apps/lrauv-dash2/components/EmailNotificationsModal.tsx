@@ -577,6 +577,9 @@ const EmailNotificationsModal: React.FC<EmailNotificationsModalProps> = ({
               <ul
                 id="email-selector-listbox"
                 role="listbox"
+                aria-activedescendant={
+                  focusedIdx >= 0 ? `email-option-${focusedIdx}` : undefined
+                }
                 className="absolute left-0 top-full z-50 mt-1 max-h-60 w-full overflow-auto rounded border border-stone-200 bg-white shadow-lg"
               >
                 {allEmails.map((e, idx) => (

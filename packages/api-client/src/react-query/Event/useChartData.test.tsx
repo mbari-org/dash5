@@ -167,11 +167,6 @@ describe('useChartData', () => {
   it('parses chartData2.json that contains trailing-decimal numbers', async () => {
     // Simulate TethysDash emitting a number like `-12345.` (trailing decimal)
     // which is valid JS but invalid JSON. The sanitizer must normalise it.
-    const rawWithTrailingDecimal = JSON.stringify({
-      chartData: mockChartData,
-    }).replace(/"values":\[10,/, '"values":[-5286934840629677038283784192.,')
-    // The above still needs to be valid after replace for the test to make sense;
-    // instead build the raw string directly:
     const malformedRaw = `{"chartData":[{"name":"depth","values":[-5286934840629677038283784192.,20,30],"times":[1000,2000,3000],"units":"m"},{"name":"temperature","values":[15,16,17],"times":[1000,2000,3000],"units":"C"}]}`
 
     server.use(

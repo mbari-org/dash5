@@ -57,7 +57,7 @@ export const useChartData = (
       // Normalise them to `12345.0` before parsing.
       const sanitized = ((result?.data as string) ?? '').replace(
         /(\d\.)(?=\D|$)/g,
-        '$10'
+        (m) => m + '0'
       )
       let parsed: unknown
       try {
