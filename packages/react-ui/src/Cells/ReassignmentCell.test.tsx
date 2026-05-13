@@ -52,4 +52,48 @@ describe('ReassignmentCell', () => {
     const currentUserElement = screen.getByText('Jane Doe')
     expect(currentUserElement).toHaveClass('text-teal-500')
   })
+
+  test('should show elapsed time for current user when showElapsed is true', () => {
+    const TWO_HOURS_MS = 2 * 60 * 60 * 1000
+    const signInTime = Date.now() - TWO_HOURS_MS
+
+    render(
+      <ReassignmentCell
+        {...defaultProps}
+        operators={[{ user: 'Jane Doe', unixTime: signInTime }]}
+        showElapsed
+      />
+    )
+
+    expect(screen.getByText(/signed in 2h 0m/)).toBeInTheDocument()
+  })
+
+  test('should not show elapsed time when showElapsed is false', () => {
+    const signInTime = Date.now() - 2 * 60 * 60 * 1000
+
+    render(
+      <ReassignmentCell
+        {...defaultProps}
+        operators={[{ user: 'Jane Doe', unixTime: signInTime }]}
+        showElapsed={false}
+      />
+    )
+
+    expect(screen.queryByText(/signed in/)).not.toBeInTheDocument()
+  })
+
+  test('should show elapsed time in minutes only when under one hour', () => {
+    const FORTY_FIVE_MIN_MS = 45 * 60 * 1000
+    const signInTime = Date.now() - FORTY_FIVE_MIN_MS
+
+    render(
+      <ReassignmentCell
+        {...defaultProps}
+        operators={[{ user: 'Jane Doe', unixTime: signInTime }]}
+        showElapsed
+      />
+    )
+
+    expect(screen.getByText(/signed in 45m/)).toBeInTheDocument()
+  })
 })
