@@ -128,11 +128,14 @@ const LogsSection: React.FC<LogsSectionProps> = ({
   // the extra load is negligible. A future improvement could use a separate
   // lightweight query for the newest slice and merge results.
   //
-  // Only poll the query that is currently displayed; the inactive one is kept
-  // enabled so its cache stays warm but does not generate background traffic.
+  // Only the active view polls. The inactive query keeps its cache warm but has
+  // refetchInterval, refetchOnWindowFocus, and refetchOnReconnect all disabled so
+  // it cannot generate background traffic in any scenario.
   const deploymentResponse = useInfiniteEvents(deploymentParams, {
     enabled: hasSelection,
     refetchInterval: hasSelection && deploymentLogsOnly ? 30_000 : false,
+    refetchOnWindowFocus: deploymentLogsOnly,
+    refetchOnReconnect: deploymentLogsOnly,
   })
 
   const allLogsParams = useMemo(
@@ -148,6 +151,8 @@ const LogsSection: React.FC<LogsSectionProps> = ({
   const allLogsResponse = useInfiniteEvents(allLogsParams, {
     enabled: hasSelection,
     refetchInterval: hasSelection && !deploymentLogsOnly ? 30_000 : false,
+    refetchOnWindowFocus: !deploymentLogsOnly,
+    refetchOnReconnect: !deploymentLogsOnly,
   })
 
   const {
@@ -161,7 +166,7 @@ const LogsSection: React.FC<LogsSectionProps> = ({
     dataUpdatedAt,
   } = deploymentLogsOnly ? deploymentResponse : allLogsResponse
 
-  const nowMs = useTick(30_000)
+  const nowMs = useTick(30_000, hasSelection)
   const nowDT = DateTime.fromMillis(nowMs)
 
   // Use DateTime.now() rather than nowDT so the indicator resets immediately
@@ -327,11 +332,11 @@ const LogsSection: React.FC<LogsSectionProps> = ({
     const diff = eventDT.diffNow('days').days
     const date = Math.abs(diff) < 1 ? 'Today' : eventDT.toFormat('yyyy-MM-dd')
     const time = eventDT.toFormat('H:mm:ss')
-    // Show a relative duration for events within the last 7 days. No maxDays cap
-    // is needed here — the < 7 gate already prevents anything ≥ 7 days from being
-    // formatted, so formatCompactDuration's natural output is always appropriate.
+    // Show a relative duration for past events within the last 7 days. The diff
+    // is negative when eventDT is in the past (diffNow measures now→target), so
+    // diff <= 0 guards against future timestamps caused by clock skew.
     const timeAgo =
-      Math.abs(diff) < 7
+      diff <= 0 && Math.abs(diff) < 7
         ? `${formatCompactDuration(eventDT, nowDT)} ago`
         : undefined
 

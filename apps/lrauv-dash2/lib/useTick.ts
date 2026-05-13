@@ -11,10 +11,15 @@ import { useEffect, useState } from 'react'
  * (e.g., “next comms in X minutes”) without relying on constant renders.
  */
 
-export const useTick = (intervalMs: number = 60_000) => {
+export const useTick = (
+  intervalMs: number = 60_000,
+  enabled: boolean = true
+) => {
   const [nowMs, setNowMs] = useState<number>(Date.now())
 
   useEffect(() => {
+    if (!enabled) return
+
     let timer: ReturnType<typeof setInterval> | null = null
 
     const start = () => {
@@ -50,7 +55,7 @@ export const useTick = (intervalMs: number = 60_000) => {
         document.removeEventListener('visibilitychange', handleVisibility)
       }
     }
-  }, [intervalMs])
+  }, [intervalMs, enabled])
 
   return nowMs
 }
