@@ -70,12 +70,12 @@ describe('useTethysSubscription', () => {
     expect(MockWebSocket.instances[0].url).toBe('wss://okeanids.mbari.org/ws')
   })
 
-  test('strips trailing slash from base URL', () => {
-    process.env.NEXT_PUBLIC_WEBSOCKET_URL = 'wss://okeanids.mbari.org/ws/'
+  test('strips trailing slashes from base URL', () => {
+    process.env.NEXT_PUBLIC_WEBSOCKET_URL = 'wss://okeanids.mbari.org/ws//'
     const wrapper = makeWrapper('test-token-123', 'user@mbari.org')
     render(<Probe />, { wrapper })
 
-    expect(MockWebSocket.instances[0].url).not.toMatch(/\/$/)
+    expect(MockWebSocket.instances[0].url).toBe('wss://okeanids.mbari.org/ws')
   })
 
   test('sends auth frame with token, tduiv, and aem on open', () => {

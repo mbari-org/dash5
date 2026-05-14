@@ -34,9 +34,9 @@ export const useTethysSubscription = () => {
   const { token, profile } = useTethysApiContext()
   const queryClient = useQueryClient()
 
-  // Strip trailing slash so the URL is exactly the /ws endpoint.
+  // Strip all trailing slashes so the URL is exactly the /ws endpoint.
   const baseUrl = (process.env.NEXT_PUBLIC_WEBSOCKET_URL as string)?.replace(
-    /\/$/,
+    /\/+$/,
     ''
   )
 
