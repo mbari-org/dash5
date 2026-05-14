@@ -21,3 +21,21 @@ test('should indicate a disabled state', async () => {
     'cursor-not-allowed opacity-50'
   )
 })
+
+test('should default to autoCapitalize="none" to prevent mobile auto-caps on login fields', async () => {
+  render(<Input name="email" placeholder="Email" />)
+  expect(screen.getByPlaceholderText('Email')).toHaveAttribute(
+    'autocapitalize',
+    'none'
+  )
+})
+
+test('should allow autoCapitalize to be overridden for name fields', async () => {
+  render(
+    <Input name="firstName" placeholder="First name" autoCapitalize="words" />
+  )
+  expect(screen.getByPlaceholderText('First name')).toHaveAttribute(
+    'autocapitalize',
+    'words'
+  )
+})
