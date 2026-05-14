@@ -14,7 +14,6 @@ import useGlobalModalId from '../lib/useGlobalModalId'
 import { capitalize } from '@mbari/utils'
 import { useQueryClient } from 'react-query'
 import { useTethysApiContext } from '@mbari/api-client'
-import { DateTime } from 'luxon'
 import toast from 'react-hot-toast'
 
 interface PendingSignOff {
@@ -22,10 +21,14 @@ interface PendingSignOff {
   hours: string
 }
 
-/** Convert decimal hours to ISO 8601 duration, e.g. 8.5 → "PT8H30M" */
+/** Convert decimal hours to ISO 8601 duration, e.g. 8.5 → "PT8H30M".
+ *  Returns undefined for empty input (field left blank — watchDuration omitted).
+ *  Returns PT0H0M for an explicit 0, so the backend can distinguish a
+ *  deliberate zero-duration shift from a missing estimate. */
 const toWatchDuration = (hours: string): string | undefined => {
-  const h = parseFloat(hours)
-  if (isNaN(h) || h <= 0) return undefined
+  if (hours.trim() === '') return undefined
+  const h = Number(hours)
+  if (!Number.isFinite(h) || h < 0) return undefined
   const wholeHours = Math.floor(h)
   const minutes = Math.round((h - wholeHours) * 60)
   return `PT${wholeHours}H${minutes}M`
@@ -55,19 +58,13 @@ const Reassignment: React.FC<{ vehicleNames: string[] }> = ({
   )
 
   const hoursError = useMemo(() => {
-    if (!pendingSignOff || pendingSignOff.hours === '') return null
-    const h = parseFloat(pendingSignOff.hours)
-    if (isNaN(h)) return 'Please enter a valid number'
+    if (!pendingSignOff || pendingSignOff.hours.trim() === '') return null
+    const h = Number(pendingSignOff.hours)
+    if (!Number.isFinite(h)) return 'Please enter a valid number'
     if (h < 0) return 'Hours cannot be negative'
     if (h > 24) return 'A single watch cannot exceed 24 hours'
     return null
   }, [pendingSignOff])
-
-  /** Round elapsed ms to the nearest 0.5h, formatted as a string. */
-  const elapsedHours = (sinceMs: number): string => {
-    const raw = sinceMs / 3_600_000
-    return (Math.round(raw * 2) / 2).toFixed(1).replace(/\.0$/, '')
-  }
 
   const doSignOff = (vehicleName: string, hours: string) => {
     if (!profile?.email) return
@@ -99,18 +96,9 @@ const Reassignment: React.FC<{ vehicleNames: string[] }> = ({
   ) => {
     if (!profile?.email) return
 
-    // For PIC sign-off only, prompt for hours piloted before submitting.
-    // Pre-fill with actual elapsed time since sign-in, rounded to nearest 0.5h.
+    // For PIC sign-off only, prompt for active hours piloted before submitting.
     if (isPic && roleChangeType === 'off') {
-      const vehicleData = data?.find(
-        (v) => v.vehicleName.toLowerCase() === vehicleName.toLowerCase()
-      )
-      const picEntry = vehicleData?.pics.find((p) => p.user === currentUserName)
-      // Leave blank if sign-in time is unavailable — avoid fabricating a duration.
-      const hours = picEntry
-        ? elapsedHours(DateTime.now().toMillis() - picEntry.unixTime)
-        : ''
-      setPendingSignOff({ vehicleName, hours })
+      setPendingSignOff({ vehicleName, hours: '' })
       return
     }
 
@@ -167,7 +155,8 @@ const Reassignment: React.FC<{ vehicleNames: string[] }> = ({
       />
 
       <Modal
-        title={`Sign off as PIC — ${pendingSignOff?.vehicleName ?? ''}`}
+        title="Confirm"
+        titleClassName="text-xl font-semibold"
         open={!!pendingSignOff}
         zIndex="z-[9999]"
         onClose={() => setPendingSignOff(null)}
@@ -182,24 +171,50 @@ const Reassignment: React.FC<{ vehicleNames: string[] }> = ({
         disableConfirm={!!hoursError}
       >
         {pendingSignOff && (
-          <div className="flex flex-col gap-1">
-            <label htmlFor="pic-hours" className="text-sm text-gray-600">
-              Hours piloted <span className="text-gray-400">(optional)</span>
-            </label>
-            <input
-              id="pic-hours"
-              type="number"
-              min="0"
-              max="24"
-              step="0.5"
-              value={pendingSignOff.hours}
-              onChange={(e) =>
-                setPendingSignOff({ ...pendingSignOff, hours: e.target.value })
-              }
-              className="w-full rounded border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400"
-              autoFocus
-            />
-            {hoursError && <p className="text-xs text-red-500">{hoursError}</p>}
+          <div className="flex flex-col gap-3">
+            <p className="text-base text-gray-700">
+              You are signing off as <span className="font-semibold">PIC</span>{' '}
+              for vehicle{' '}
+              <span className="font-semibold">
+                {pendingSignOff.vehicleName}
+              </span>
+              .
+            </p>
+            <p className="text-base text-gray-700">
+              During this PIC shift for this vehicle, please estimate the time
+              you spent actively piloting. Enter your estimate in decimal hours,
+              for example, enter <code className="font-mono">2.5</code> to
+              indicate 2 hours and 30 minutes.
+            </p>
+            <p className="text-base text-gray-700">
+              Not an actual shift? Just enter{' '}
+              <code className="font-mono">0</code> (zero).
+            </p>
+            <div className="flex flex-col gap-1">
+              <label htmlFor="pic-hours" className="text-base text-gray-600">
+                Hours actively piloted{' '}
+                <span className="text-gray-400">(optional)</span>
+              </label>
+              <input
+                id="pic-hours"
+                type="number"
+                min="0"
+                max="24"
+                step="0.5"
+                value={pendingSignOff.hours}
+                onChange={(e) =>
+                  setPendingSignOff({
+                    ...pendingSignOff,
+                    hours: e.target.value,
+                  })
+                }
+                className="w-full rounded border border-gray-300 px-3 py-2 text-base focus:outline-none focus:ring-2 focus:ring-blue-400"
+                autoFocus
+              />
+              {hoursError && (
+                <p className="text-xs text-red-500">{hoursError}</p>
+              )}
+            </div>
           </div>
         )}
       </Modal>
