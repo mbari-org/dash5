@@ -41,7 +41,7 @@ export const useTethysSubscription = () => {
   )
 
   useEffect(() => {
-    if (!baseUrl || !profile?.email) {
+    if (!baseUrl || !token || !profile?.email) {
       return
     }
     const accountEmail = profile.email
@@ -54,7 +54,7 @@ export const useTethysSubscription = () => {
       // closes the connection on failure; silence means success.
       websocket.send(
         JSON.stringify({
-          auth: token ?? '-',
+          auth: token,
           tduiv: process.env.NEXT_PUBLIC_APP_VERSION ?? 'dev',
           aem: accountEmail,
         })
