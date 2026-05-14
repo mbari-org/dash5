@@ -22,9 +22,9 @@ interface PendingSignOff {
 }
 
 /** Convert decimal hours to ISO 8601 duration, e.g. 8.5 → "PT8H30M".
- *  Returns undefined for empty input (field left blank — watchDuration omitted).
- *  Returns PT0H0M for an explicit 0, so the backend can distinguish a
- *  deliberate zero-duration shift from a missing estimate. */
+ *  Returns PT0H0M for an explicit 0 so the backend records a zero-duration shift.
+ *  Returns undefined for empty/invalid input as a safety fallback (the UI
+ *  prevents submission while the field is blank). */
 const toWatchDuration = (hours: string): string | undefined => {
   if (hours.trim() === '') return undefined
   const h = Number(hours)
