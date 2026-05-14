@@ -19,7 +19,7 @@ export interface InputProps {
    *  prevent browsers from capitalising the first character of email/password
    *  fields. Pass "words" or "sentences" for name fields where capitalisation
    *  is appropriate. */
-  autoCapitalize?: 'none' | 'sentences' | 'words' | 'characters'
+  autoCapitalize?: React.HTMLAttributes<HTMLInputElement>['autoCapitalize']
 }
 
 const style = {
