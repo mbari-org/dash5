@@ -34,22 +34,33 @@ export const useTethysSubscription = () => {
   const { token, profile } = useTethysApiContext()
   const queryClient = useQueryClient()
 
-  const url =
-    profile?.email &&
-    token &&
-    `${process.env.NEXT_PUBLIC_WEBSOCKET_URL as string}/${token}?aem=${
-      profile?.email
-    }`
+  // Strip trailing slashes so we don't end up with /ws/ or /ws//.
+  const baseUrl = (process.env.NEXT_PUBLIC_WEBSOCKET_URL as string)?.replace(
+    /\/+$/,
+    ''
+  )
 
   useEffect(() => {
-    if (!url) {
+    if (!baseUrl || !token || !profile?.email) {
       return
     }
-    const accountEmail = profile?.email
-    const websocket = new WebSocket(url)
+    const accountEmail = profile.email
+
+    const websocket = new WebSocket(baseUrl)
+
     websocket.onopen = () => {
-      console.log('connected')
+      // Send auth as the first frame per the new /ws security protocol
+      // (mbari-org/tethysdash#66). The server validates within ~5s and
+      // closes the connection on failure; silence means success.
+      websocket.send(
+        JSON.stringify({
+          auth: token,
+          tduiv: process.env.NEXT_PUBLIC_APP_VERSION ?? 'dev',
+          aem: accountEmail,
+        })
+      )
     }
+
     websocket.onmessage = (event) => {
       const data = JSON.parse(event.data) as TethysSubscriptionEvent
       if (
@@ -71,7 +82,7 @@ export const useTethysSubscription = () => {
     return () => {
       websocket.close()
     }
-  }, [queryClient, url, profile?.email])
+  }, [queryClient, baseUrl, token, profile?.email])
 }
 
 /**
