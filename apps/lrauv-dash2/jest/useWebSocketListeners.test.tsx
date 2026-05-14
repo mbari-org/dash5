@@ -23,12 +23,23 @@ class MockWebSocket {
   close() {}
 }
 
+const originalWebSocket = global.WebSocket
+const originalWsUrl = process.env.NEXT_PUBLIC_WEBSOCKET_URL
+const originalAppVersion = process.env.NEXT_PUBLIC_APP_VERSION
+
 beforeEach(() => {
   MockWebSocket.instances = []
   // @ts-expect-error mocking global WebSocket
   global.WebSocket = MockWebSocket
   process.env.NEXT_PUBLIC_WEBSOCKET_URL = 'wss://okeanids.mbari.org/ws/'
   process.env.NEXT_PUBLIC_APP_VERSION = '5.1.31'
+})
+
+afterEach(() => {
+  // @ts-expect-error restoring global WebSocket
+  global.WebSocket = originalWebSocket
+  process.env.NEXT_PUBLIC_WEBSOCKET_URL = originalWsUrl
+  process.env.NEXT_PUBLIC_APP_VERSION = originalAppVersion
 })
 
 const makeWrapper = (token: string | null, email: string | null) => {
