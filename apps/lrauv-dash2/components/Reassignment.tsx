@@ -168,7 +168,7 @@ const Reassignment: React.FC<{ vehicleNames: string[] }> = ({
         }}
         confirmButtonText="Sign off"
         cancelButtonText="Cancel"
-        disableConfirm={!!hoursError}
+        disableConfirm={!!hoursError || pendingSignOff?.hours.trim() === ''}
       >
         {pendingSignOff && (
           <div className="flex flex-col gap-3">
@@ -192,8 +192,7 @@ const Reassignment: React.FC<{ vehicleNames: string[] }> = ({
             </p>
             <div className="flex flex-col gap-1">
               <label htmlFor="pic-hours" className="text-base text-gray-600">
-                Hours actively piloted{' '}
-                <span className="text-gray-400">(optional)</span>
+                Hours actively piloted
               </label>
               <input
                 id="pic-hours"
