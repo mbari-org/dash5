@@ -1,7 +1,6 @@
 import { useEffect } from 'react'
 import { useTethysApiContext } from '@mbari/api-client'
 import { useQuery, useQueryClient } from 'react-query'
-import pkg from '../../package.json'
 
 type SubscriptionEventType =
   | 'VehicleConnected'
@@ -56,7 +55,7 @@ export const useTethysSubscription = () => {
       websocket.send(
         JSON.stringify({
           auth: token ?? '-',
-          tduiv: pkg.version,
+          tduiv: process.env.NEXT_PUBLIC_APP_VERSION ?? 'dev',
           aem: accountEmail,
         })
       )
