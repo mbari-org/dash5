@@ -65,6 +65,7 @@ export const Input = React.forwardRef<HTMLInputElement, InputProps>(
         type={type}
         autoComplete="off"
         autoCorrect="off"
+        autoCapitalize="none"
         {...controlledInputProps}
       />
     )
