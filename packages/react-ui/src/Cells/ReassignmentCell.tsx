@@ -58,12 +58,16 @@ export const ReassignmentCell: React.FC<ReassignmentCellProps> = ({
   const otherOperators = operators.filter((op) => op.user !== currentUserName)
 
   // Tick every minute so the elapsed label stays live while the modal is open.
+  // Depend on primitives (not the object reference) so the interval is not
+  // recreated on every parent re-render caused by React Query refetches.
   const [now, setNow] = useState(() => Date.now())
+  const signInUnixTime = currentUserEntry?.unixTime
+  const signInUser = currentUserEntry?.user
   useEffect(() => {
-    if (!showElapsed || !currentUserEntry) return
+    if (!showElapsed || !signInUnixTime || !signInUser) return
     const id = setInterval(() => setNow(Date.now()), 60_000)
     return () => clearInterval(id)
-  }, [showElapsed, currentUserEntry])
+  }, [showElapsed, signInUnixTime, signInUser])
 
   const elapsedLabel = (() => {
     if (!showElapsed || !currentUserEntry) return null

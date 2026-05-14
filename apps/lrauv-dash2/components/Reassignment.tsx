@@ -106,9 +106,10 @@ const Reassignment: React.FC<{ vehicleNames: string[] }> = ({
         (v) => v.vehicleName.toLowerCase() === vehicleName.toLowerCase()
       )
       const picEntry = vehicleData?.pics.find((p) => p.user === currentUserName)
+      // Leave blank if sign-in time is unavailable — avoid fabricating a duration.
       const hours = picEntry
         ? elapsedHours(DateTime.now().toMillis() - picEntry.unixTime)
-        : '8'
+        : ''
       setPendingSignOff({ vehicleName, hours })
       return
     }
