@@ -4,17 +4,18 @@ import { ReassignmentTable } from './ReassignmentTable'
 
 describe('ReassignmentTable', () => {
   const mockOnRoleChange = jest.fn()
+  const makeOp = (user: string) => ({ user, unixTime: Date.now() })
   const defaultProps = {
     vehicles: [
       {
         name: 'Vehicle 1',
-        picOperators: ['John Smith'],
-        onCallOperators: ['Jane Doe', 'Ralph Person'],
+        picOperators: [makeOp('John Smith')],
+        onCallOperators: [makeOp('Jane Doe'), makeOp('Ralph Person')],
       },
       {
         name: 'Vehicle 2',
         picOperators: [],
-        onCallOperators: ['Bob Johnson'],
+        onCallOperators: [makeOp('Bob Johnson')],
       },
     ],
     currentUserName: 'Test User',
