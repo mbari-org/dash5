@@ -54,43 +54,29 @@ export function useGoogleMapsApiKey() {
           // )
         }
 
-        // SECOND PRIORITY: Try direct fetch from TethysDash endpoint
+        // SECOND PRIORITY: Direct fetch from TethysDash — needed when the
+        // TethysApi context client is unavailable (e.g. local dev). Errors are
+        // swallowed here; the overlay in Next.js dev mode may still show caught
+        // fetch errors but they do not crash the app.
         try {
-          logger.debug('🔍 Attempting direct fetch from TethysDash API...')
           const response = await fetch(
             'https://okeanids.mbari.org/TethysDash/api/info',
-            {
-              method: 'GET',
-              headers: {
-                Accept: 'application/json',
-                'Content-Type': 'application/json',
-              },
-              // Include credentials if needed for cookies
-              // credentials: 'include',
-            }
+            { method: 'GET', headers: { Accept: 'application/json' } }
           )
-
-          if (!response.ok) {
-            throw new Error(`HTTP error! Status: ${response.status}`)
+          if (response.ok) {
+            const data = await response.json()
+            const directApiKey = data?.result?.appConfig?.googleApiKey
+            if (directApiKey) {
+              logger.debug('✅ Retrieved API key from direct TethysDash fetch')
+              setApiKey(directApiKey)
+              setKeySource('direct')
+              setIsLoading(false)
+              return
+            }
           }
-
-          const data = await response.json()
-          const directApiKey = data?.result?.appConfig?.googleApiKey
-
-          if (directApiKey) {
-            logger.debug(
-              '✅ Successfully retrieved API key from direct TethysDash fetch'
-            )
-            setApiKey(directApiKey)
-            setKeySource('direct')
-            setIsLoading(false)
-            return
-          } else {
-            logger.debug('⚠️ API key not found in direct TethysDash response')
-          }
-        } catch (directError) {
-          logger.error('⚠️ Error with direct TethysDash fetch:', directError)
-          // Continue to next fallback - don't throw
+        } catch {
+          // CORS or network failure — not unexpected, continue to next fallback
+          logger.debug('ℹ️ Direct TethysDash fetch unavailable, trying env var')
         }
 
         // THIRD PRIORITY: Fall back to environment variable
@@ -136,7 +122,10 @@ export function useGoogleMapsApiKey() {
       }
     }
 
-    fetchApiKey()
+    fetchApiKey().catch((err) => {
+      logger.error('❌ Unhandled error in fetchApiKey:', err)
+      setIsLoading(false)
+    })
   }, [tethysApi])
 
   return { apiKey, isLoading, error, keySource }

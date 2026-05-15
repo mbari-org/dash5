@@ -117,7 +117,7 @@ export const getCachedElevation = async (
       locations: [{ lat, lng }],
     })
 
-    if (response.results?.[0]) {
+    if (response?.results?.[0]) {
       const elevation = Math.abs(response.results[0].elevation)
       // Cache the result
       elevationCache.set(key, elevation)
