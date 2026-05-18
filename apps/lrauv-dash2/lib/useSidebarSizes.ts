@@ -1,7 +1,8 @@
-import { useCallback, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 
 const STORAGE_KEY = 'sidebar:rightPct'
 const DEFAULT_SIZES: [number, number] = [75, 25]
+const DEBOUNCE_MS = 300
 
 /**
  * Persists the right-pane percentage of the Allotment split to localStorage
@@ -31,16 +32,32 @@ export function useSidebarSizes(): {
     return DEFAULT_SIZES
   })
 
+  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+
+  // Cancel any pending write on unmount to avoid writing after the component
+  // is gone (e.g. during page navigation).
+  useEffect(() => {
+    return () => {
+      if (debounceRef.current) clearTimeout(debounceRef.current)
+    }
+  }, [])
+
   const onSidebarChange = useCallback((sizes: number[]) => {
     if (sizes.length < 2) return
     const total = sizes[0] + sizes[1]
     if (total <= 0) return
     const rightPct = (sizes[1] / total) * 100
-    try {
-      localStorage.setItem(STORAGE_KEY, rightPct.toFixed(2))
-    } catch {
-      // ignore storage failures
-    }
+    // Skip extreme values so we never overwrite a valid setting with one that
+    // would fall back to defaults on the next mount.
+    if (rightPct < 5 || rightPct > 95) return
+    if (debounceRef.current) clearTimeout(debounceRef.current)
+    debounceRef.current = setTimeout(() => {
+      try {
+        localStorage.setItem(STORAGE_KEY, rightPct.toFixed(2))
+      } catch {
+        // ignore storage failures
+      }
+    }, DEBOUNCE_MS)
   }, [])
 
   return { defaultSizes, onSidebarChange }

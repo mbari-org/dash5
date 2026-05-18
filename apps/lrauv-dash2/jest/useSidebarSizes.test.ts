@@ -3,8 +3,14 @@ import { useSidebarSizes } from '../lib/useSidebarSizes'
 
 const STORAGE_KEY = 'sidebar:rightPct'
 
-beforeEach(() => localStorage.removeItem(STORAGE_KEY))
-afterEach(() => localStorage.removeItem(STORAGE_KEY))
+beforeEach(() => {
+  localStorage.removeItem(STORAGE_KEY)
+  jest.useFakeTimers()
+})
+afterEach(() => {
+  localStorage.removeItem(STORAGE_KEY)
+  jest.useRealTimers()
+})
 
 test('returns default [75, 25] when nothing is stored', () => {
   const { result } = renderHook(() => useSidebarSizes())
@@ -18,25 +24,58 @@ test('restores stored right-pane percentage as defaultSizes on mount', () => {
   expect(result.current.defaultSizes[0]).toBeCloseTo(60, 1)
 })
 
-test('onSidebarChange saves the right-pane percentage to localStorage', () => {
+test('onSidebarChange saves the right-pane percentage after debounce', () => {
   const { result } = renderHook(() => useSidebarSizes())
   act(() => {
     result.current.onSidebarChange([900, 300])
+    jest.runAllTimers()
   })
   const stored = parseFloat(localStorage.getItem(STORAGE_KEY) ?? '')
   expect(stored).toBeCloseTo(25, 1)
 })
 
+test('onSidebarChange does not write immediately — debounces the write', () => {
+  const { result } = renderHook(() => useSidebarSizes())
+  act(() => {
+    result.current.onSidebarChange([900, 300])
+    // Timer has not fired yet
+  })
+  expect(localStorage.getItem(STORAGE_KEY)).toBeNull()
+  act(() => jest.runAllTimers())
+  expect(localStorage.getItem(STORAGE_KEY)).not.toBeNull()
+})
+
 test('onSidebarChange updates the stored value when the user resizes', () => {
   const { result } = renderHook(() => useSidebarSizes())
-  act(() => result.current.onSidebarChange([800, 400]))
+  act(() => {
+    result.current.onSidebarChange([800, 400])
+    jest.runAllTimers()
+  })
   expect(parseFloat(localStorage.getItem(STORAGE_KEY) ?? '')).toBeCloseTo(
     33.33,
     1
   )
 })
 
-test('ignores stored values outside the 5–95 % safety range', () => {
+test('onSidebarChange skips writing out-of-range values (< 5%)', () => {
+  const { result } = renderHook(() => useSidebarSizes())
+  act(() => {
+    result.current.onSidebarChange([990, 10]) // ~1% right — out of range
+    jest.runAllTimers()
+  })
+  expect(localStorage.getItem(STORAGE_KEY)).toBeNull()
+})
+
+test('onSidebarChange skips writing out-of-range values (> 95%)', () => {
+  const { result } = renderHook(() => useSidebarSizes())
+  act(() => {
+    result.current.onSidebarChange([10, 990]) // ~99% right — out of range
+    jest.runAllTimers()
+  })
+  expect(localStorage.getItem(STORAGE_KEY)).toBeNull()
+})
+
+test('ignores stored values outside the 5–95 % safety range on mount', () => {
   localStorage.setItem(STORAGE_KEY, '2.00')
   const { result } = renderHook(() => useSidebarSizes())
   expect(result.current.defaultSizes).toEqual([75, 25])

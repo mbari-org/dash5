@@ -24,6 +24,16 @@ export type VehicleAccordionSection =
   | 'docs'
   | null
 
+const SECTION_STORAGE_KEY = 'accordion:section'
+const VALID_SECTIONS: VehicleAccordionSection[] = [
+  'handoff',
+  'data',
+  'schedule',
+  'comms',
+  'log',
+  'docs',
+]
+
 export interface VehicleAccordionProps {
   vehicleName: string
   from: number
@@ -122,16 +132,6 @@ const VehicleAccordion: React.FC<VehicleAccordionProps> = ({
   // The mission started event text is always in the format "Started mission <mission name>"
   const currentMissionText = missionStartedEvent?.[0]?.text ?? ''
 
-  const SECTION_STORAGE_KEY = 'accordion:section'
-  const VALID_SECTIONS: VehicleAccordionSection[] = [
-    'handoff',
-    'data',
-    'schedule',
-    'comms',
-    'log',
-    'docs',
-  ]
-
   // Initialize to null to match SSR output; restore from localStorage after
   // hydration to avoid server/client markup mismatches.
   const [section, setSection] = useState<VehicleAccordionSection>(null)
@@ -147,7 +147,6 @@ const VehicleAccordion: React.FC<VehicleAccordionProps> = ({
     } catch {
       // localStorage unavailable (SSR, private browsing)
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
   const handleToggleForSection =
