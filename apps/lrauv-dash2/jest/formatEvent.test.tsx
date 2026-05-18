@@ -165,6 +165,33 @@ describe('formatEvent', () => {
     })
   })
 
+  describe('gpsFix Google Maps link', () => {
+    const event: GetEventsResponse = {
+      ...baseEvent,
+      eventType: 'gpsFix',
+      fix: { latitude: 36.7974, longitude: -121.8498 },
+    } as GetEventsResponse
+
+    it('renders a Google Maps anchor with the correct href', () => {
+      const { container } = render(formatEvent(event, DASH_URL))
+      const link = container.querySelector('a') as HTMLAnchorElement
+      expect(link).toBeInTheDocument()
+      expect(link.href).toContain('google.com/maps?q=36.7974,-121.8498')
+    })
+
+    it('opens in a new tab with noopener noreferrer', () => {
+      const { container } = render(formatEvent(event, DASH_URL))
+      const link = container.querySelector('a') as HTMLAnchorElement
+      expect(link).toHaveAttribute('target', '_blank')
+      expect(link).toHaveAttribute('rel', 'noopener noreferrer')
+    })
+
+    it('displays the lat/lon as the link text', () => {
+      render(formatEvent(event, DASH_URL))
+      expect(screen.getByText('36.7974, -121.8498')).toBeInTheDocument()
+    })
+  })
+
   describe('logFault description color', () => {
     const event: GetEventsResponse = {
       ...baseEvent,

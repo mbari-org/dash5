@@ -181,6 +181,53 @@ test('notes with different event IDs are kept as separate rows', async () => {
   })
 })
 
+// ── Color / bold wiring tests (#640) ──────────────────────────────────────────
+
+test('renders Fault label in amber with bold styling', async () => {
+  const ts = Date.now() - 60 * 1000
+  renderLogs([
+    {
+      eventId: 6001,
+      vehicleName: 'triton',
+      eventType: 'logFault',
+      unixTime: ts,
+      isoTime: new Date(ts).toISOString(),
+      name: 'BuoyancyServo',
+      text: 'uart error',
+      user: null,
+      state: 0,
+    },
+  ])
+
+  await waitFor(() => {
+    const label = screen.getByText('Fault')
+    expect(label).toHaveStyle({ color: '#c78204' })
+    expect(label).toHaveClass('font-bold')
+  })
+})
+
+test('renders GPS Fix label in blue with bold styling', async () => {
+  const ts = Date.now() - 60 * 1000
+  renderLogs([
+    {
+      eventId: 6002,
+      vehicleName: 'triton',
+      eventType: 'gpsFix',
+      unixTime: ts,
+      isoTime: new Date(ts).toISOString(),
+      fix: { latitude: 36.8, longitude: -121.9 },
+      user: null,
+      state: 0,
+    },
+  ])
+
+  await waitFor(() => {
+    const label = screen.getByText('GPS Fix')
+    expect(label).toHaveStyle({ color: '#0000ff' })
+    expect(label).toHaveClass('font-bold')
+  })
+})
+
 test('timeout notes for same event ID outside the time window are NOT grouped', async () => {
   // Regression for Copilot review: grouping must be time-bounded so a timeout
   // note from a later incident (same event ID, far apart in time) doesn't get
