@@ -1,5 +1,5 @@
 import React from 'react'
-import { render, screen, waitFor } from '@testing-library/react'
+import { render, screen, waitFor, fireEvent } from '@testing-library/react'
 import '@testing-library/jest-dom'
 import VehicleAccordion from '../components/VehicleAccordion'
 import { QueryClient } from 'react-query'
@@ -295,6 +295,52 @@ test('queue count ignores sent commands from a previous deployment', async () =>
 
   await waitFor(() => {
     expect(screen.getByText('0 item(s) in queue')).toBeInTheDocument()
+  })
+})
+
+// ── Accordion tab persistence (#278) ──────────────────────────────────────────
+
+describe('accordion section persistence via localStorage', () => {
+  const STORAGE_KEY = 'accordion:section'
+
+  beforeEach(() => localStorage.removeItem(STORAGE_KEY))
+  afterEach(() => localStorage.removeItem(STORAGE_KEY))
+
+  const renderAccordion = () =>
+    render(
+      <MockProviders queryClient={new QueryClient()}>
+        <VehicleAccordion {...props} />
+      </MockProviders>
+    )
+
+  test('opening a tab saves the section to localStorage', () => {
+    renderAccordion()
+    fireEvent.click(screen.getByText('Log'))
+    expect(localStorage.getItem(STORAGE_KEY)).toBe('log')
+  })
+
+  test('closing an open tab removes the key from localStorage', () => {
+    localStorage.setItem(STORAGE_KEY, 'log')
+    renderAccordion()
+    // Section starts open; one click closes it
+    fireEvent.click(screen.getByText('Log'))
+    expect(localStorage.getItem(STORAGE_KEY)).toBeNull()
+  })
+
+  test('restores the previously open tab on mount', () => {
+    localStorage.setItem(STORAGE_KEY, 'schedule')
+    renderAccordion()
+    // AccordionHeader marks the open container with bg-primary-600
+    const headerDiv = screen.getByText('Schedule').closest('div') as HTMLElement
+    expect(headerDiv).toHaveClass('bg-primary-600')
+  })
+
+  test('switching sections updates the stored key', () => {
+    renderAccordion()
+    fireEvent.click(screen.getByText('Log'))
+    expect(localStorage.getItem(STORAGE_KEY)).toBe('log')
+    fireEvent.click(screen.getByText('Comms Queue'))
+    expect(localStorage.getItem(STORAGE_KEY)).toBe('comms')
   })
 })
 

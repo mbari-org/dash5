@@ -122,15 +122,31 @@ const VehicleAccordion: React.FC<VehicleAccordionProps> = ({
   // The mission started event text is always in the format "Started mission <mission name>"
   const currentMissionText = missionStartedEvent?.[0]?.text ?? ''
 
-  const [section, setSection] = useState<VehicleAccordionSection>(null)
-  const handleToggleForSection =
-    (currentSection: VehicleAccordionSection) => (open: boolean) =>
-      setSection(open ? currentSection : null)
+  const SECTION_STORAGE_KEY = 'accordion:section'
 
-  if (!currentMissionText || !activeDeployment) {
-    ;(currentSection: VehicleAccordionSection) => (open: boolean) =>
-      setSection(open ? currentSection : 'comms')
-  }
+  const [section, setSection] = useState<VehicleAccordionSection>(() => {
+    try {
+      const stored = localStorage.getItem(SECTION_STORAGE_KEY)
+      return (stored as VehicleAccordionSection) ?? null
+    } catch {
+      return null
+    }
+  })
+
+  const handleToggleForSection =
+    (currentSection: VehicleAccordionSection) => (open: boolean) => {
+      const next = open ? currentSection : null
+      setSection(next)
+      try {
+        if (next) {
+          localStorage.setItem(SECTION_STORAGE_KEY, next)
+        } else {
+          localStorage.removeItem(SECTION_STORAGE_KEY)
+        }
+      } catch {
+        // localStorage unavailable (private browsing, etc.)
+      }
+    }
 
   const handoffLabel =
     (picLabel || onCallLabel) && authenticated
