@@ -80,6 +80,10 @@ export const labelColorForEventType = (
   }
 }
 
+/** Returns true for event types whose label should be rendered in bold. */
+export const labelBoldForEventType = (event: GetEventsResponse): boolean =>
+  event.eventType === 'logFault'
+
 export const isUploadEvent = (event: GetEventsResponse) =>
   (event.eventType === 'sbdSend' && event.state === 2) ||
   (event.eventType === 'sbdReceive' &&
@@ -198,8 +202,20 @@ const formatEvent = (
       )
     }
 
-    case 'logCritical':
     case 'logFault':
+      return (
+        <p className="flex flex-col" style={{ color: '#c78204' }}>
+          <span className="block font-bold">[{name}]</span>
+          {Array.isArray(text) &&
+            text.map((line, i) => (
+              <span key={`${event.eventId}${i}`} className="block">
+                {line}
+              </span>
+            ))}
+        </p>
+      )
+
+    case 'logCritical':
     case 'logImportant':
       if (startedMission || defaultMission) {
         return (

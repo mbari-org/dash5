@@ -81,3 +81,13 @@ test('does not set inline color on label when labelColor is omitted', async () =
   const label = screen.getByText(props.label)
   expect(label).not.toHaveAttribute('style')
 })
+
+test('renders label in bold when labelBold is true', async () => {
+  render(<LogCell {...props} labelBold />)
+  expect(screen.getByText(props.label)).toHaveClass('font-bold')
+})
+
+test('does not render label in bold by default', async () => {
+  render(<LogCell {...props} />)
+  expect(screen.getByText(props.label)).not.toHaveClass('font-bold')
+})
