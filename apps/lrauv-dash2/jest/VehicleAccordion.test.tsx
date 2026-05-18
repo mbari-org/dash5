@@ -1,5 +1,5 @@
 import React from 'react'
-import { render, screen, waitFor, fireEvent } from '@testing-library/react'
+import { render, screen, waitFor, act, fireEvent } from '@testing-library/react'
 import '@testing-library/jest-dom'
 import VehicleAccordion from '../components/VehicleAccordion'
 import { QueryClient } from 'react-query'
@@ -303,8 +303,20 @@ test('queue count ignores sent commands from a previous deployment', async () =>
 describe('accordion section persistence via localStorage', () => {
   const STORAGE_KEY = 'accordion:section'
 
-  beforeEach(() => localStorage.removeItem(STORAGE_KEY))
-  afterEach(() => localStorage.removeItem(STORAGE_KEY))
+  beforeEach(() => {
+    localStorage.removeItem(STORAGE_KEY)
+    // Silence MSW unhandled-request warnings for the queries VehicleAccordion
+    // always fires on mount (useCommsEvents, useEvents timeout-notes).
+    server.use(
+      rest.get('/events', (_req, res, ctx) =>
+        res(ctx.status(200), ctx.json({ result: [] }))
+      )
+    )
+  })
+  afterEach(() => {
+    localStorage.removeItem(STORAGE_KEY)
+    server.resetHandlers()
+  })
 
   const renderAccordion = () =>
     render(
@@ -319,20 +331,30 @@ describe('accordion section persistence via localStorage', () => {
     expect(localStorage.getItem(STORAGE_KEY)).toBe('log')
   })
 
-  test('closing an open tab removes the key from localStorage', () => {
+  test('closing an open tab removes the key from localStorage', async () => {
     localStorage.setItem(STORAGE_KEY, 'log')
     renderAccordion()
-    // Section starts open; one click closes it
-    fireEvent.click(screen.getByText('Log'))
+    // useEffect restores the section after mount — wait for it
+    await waitFor(() =>
+      expect(screen.getByText('Log').closest('div')).toHaveClass(
+        'bg-primary-600'
+      )
+    )
+    // Section is now open; one click closes it
+    act(() => fireEvent.click(screen.getByText('Log')))
     expect(localStorage.getItem(STORAGE_KEY)).toBeNull()
   })
 
-  test('restores the previously open tab on mount', () => {
-    localStorage.setItem(STORAGE_KEY, 'schedule')
+  test('restores the previously open tab on mount', async () => {
+    // Use 'log' rather than 'schedule' to avoid mounting ScheduleSection
+    // (which triggers unmocked network requests)
+    localStorage.setItem(STORAGE_KEY, 'log')
     renderAccordion()
-    // AccordionHeader marks the open container with bg-primary-600
-    const headerDiv = screen.getByText('Schedule').closest('div') as HTMLElement
-    expect(headerDiv).toHaveClass('bg-primary-600')
+    // useEffect restores the section after hydration — wait for it
+    await waitFor(() => {
+      const headerDiv = screen.getByText('Log').closest('div') as HTMLElement
+      expect(headerDiv).toHaveClass('bg-primary-600')
+    })
   })
 
   test('switching sections updates the stored key', () => {

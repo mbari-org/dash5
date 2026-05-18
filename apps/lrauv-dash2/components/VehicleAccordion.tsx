@@ -1,5 +1,5 @@
 import { AccordionHeader } from '@mbari/react-ui'
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useEffect } from 'react'
 import CommsSection from './CommsSection'
 import DocsSection from './DocsSection'
 import HandoffSection from './HandoffSection'
@@ -123,15 +123,32 @@ const VehicleAccordion: React.FC<VehicleAccordionProps> = ({
   const currentMissionText = missionStartedEvent?.[0]?.text ?? ''
 
   const SECTION_STORAGE_KEY = 'accordion:section'
+  const VALID_SECTIONS: VehicleAccordionSection[] = [
+    'handoff',
+    'data',
+    'schedule',
+    'comms',
+    'log',
+    'docs',
+  ]
 
-  const [section, setSection] = useState<VehicleAccordionSection>(() => {
+  // Initialize to null to match SSR output; restore from localStorage after
+  // hydration to avoid server/client markup mismatches.
+  const [section, setSection] = useState<VehicleAccordionSection>(null)
+  useEffect(() => {
     try {
       const stored = localStorage.getItem(SECTION_STORAGE_KEY)
-      return (stored as VehicleAccordionSection) ?? null
+      if (
+        stored &&
+        VALID_SECTIONS.includes(stored as VehicleAccordionSection)
+      ) {
+        setSection(stored as VehicleAccordionSection)
+      }
     } catch {
-      return null
+      // localStorage unavailable (SSR, private browsing)
     }
-  })
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
 
   const handleToggleForSection =
     (currentSection: VehicleAccordionSection) => (open: boolean) => {
