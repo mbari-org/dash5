@@ -93,10 +93,11 @@ export const OverviewToolbar: React.FC<OverviewToolbarProps> = ({
 
   const deploymentDateLabel = deployment?.unixTime
     ? (() => {
+        const now = DateTime.now()
         const dt = DateTime.fromMillis(deployment.unixTime)
-        return `${
-          dt > DateTime.now() ? 'Starts' : 'Started'
-        } ${dt.toRelative()}`
+        return `${dt > now ? 'Starts' : 'Started'} ${dt.toRelative({
+          base: now,
+        })}`
       })()
     : null
 
@@ -147,7 +148,7 @@ export const OverviewToolbar: React.FC<OverviewToolbarProps> = ({
               {deploymentDateLabel && (
                 <span
                   className={styles.deploymentDate}
-                  aria-label="deployment date"
+                  data-testid="deployment-date"
                 >
                   {deploymentDateLabel}
                 </span>
@@ -161,7 +162,7 @@ export const OverviewToolbar: React.FC<OverviewToolbarProps> = ({
               {deploymentDateLabel && (
                 <span
                   className={styles.deploymentDate}
-                  aria-label="deployment date"
+                  data-testid="deployment-date"
                 >
                   {deploymentDateLabel}
                 </span>
