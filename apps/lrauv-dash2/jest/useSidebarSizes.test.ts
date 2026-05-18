@@ -42,6 +42,16 @@ test('ignores stored values outside the 5–95 % safety range', () => {
   expect(result.current.defaultSizes).toEqual([75, 25])
 })
 
+test('accepts boundary values of exactly 5% and 95%', () => {
+  localStorage.setItem(STORAGE_KEY, '5.00')
+  const { result: r5 } = renderHook(() => useSidebarSizes())
+  expect(r5.current.defaultSizes[1]).toBeCloseTo(5, 1)
+
+  localStorage.setItem(STORAGE_KEY, '95.00')
+  const { result: r95 } = renderHook(() => useSidebarSizes())
+  expect(r95.current.defaultSizes[1]).toBeCloseTo(95, 1)
+})
+
 test('onSidebarChange is a stable reference (does not change between renders)', () => {
   const { result, rerender } = renderHook(() => useSidebarSizes())
   const first = result.current.onSidebarChange

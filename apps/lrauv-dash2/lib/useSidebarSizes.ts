@@ -21,7 +21,7 @@ export function useSidebarSizes(): {
         typeof window !== 'undefined' ? localStorage.getItem(STORAGE_KEY) : null
       if (stored) {
         const rightPct = parseFloat(stored)
-        if (!isNaN(rightPct) && rightPct > 5 && rightPct < 95) {
+        if (!isNaN(rightPct) && rightPct >= 5 && rightPct <= 95) {
           return [100 - rightPct, rightPct]
         }
       }
