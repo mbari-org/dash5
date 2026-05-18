@@ -3,7 +3,8 @@ import '@testing-library/jest-dom'
 import { useElevator } from './useGoogleElevator'
 
 // The global `google.maps` mock is set up in jest/setup.js.
-// Reset the module-level singleton between tests so each test starts fresh.
+// elevationService is mocked below so tests can control when the Promise
+// resolves/rejects without touching the real singleton.
 jest.mock('./elevationService', () => {
   let resolvers: Array<(svc: unknown) => void> = []
   let rejecters: Array<(err: unknown) => void> = []
@@ -15,6 +16,12 @@ jest.mock('./elevationService', () => {
   }
   const __rejectAll = (err = new Error('unavailable')) => {
     rejecters.forEach((r) => r(err))
+    resolvers = []
+    rejecters = []
+  }
+  // Drop any pending (unresolved/unrejected) promises from a previous test so
+  // they can't bleed across test boundaries.
+  const __reset = () => {
     resolvers = []
     rejecters = []
   }
@@ -30,6 +37,7 @@ jest.mock('./elevationService', () => {
     getCachedElevation: jest.fn().mockResolvedValue(null),
     __resolveAll,
     __rejectAll,
+    __reset,
   }
 })
 
@@ -37,10 +45,17 @@ const elevationService = jest.requireMock('./elevationService') as {
   getElevationService: jest.Mock
   __resolveAll: (svc?: unknown) => void
   __rejectAll: (err?: unknown) => void
+  __reset: () => void
 }
 
 beforeEach(() => {
   elevationService.getElevationService.mockClear()
+  elevationService.__reset()
+})
+
+afterEach(() => {
+  // Drain any outstanding promises so they don't leak into later tests.
+  elevationService.__reset()
 })
 
 test('starts with elevationAvailable null', () => {
@@ -71,7 +86,8 @@ test('sets elevationAvailable false when service rejects', async () => {
 test('does not update state after unmount (cancelled flag)', async () => {
   const { result, unmount } = renderHook(() => useElevator())
 
-  // Unmount before the service resolves
+  // Unmount before the service resolves — the cancelled flag should prevent
+  // any setState call from firing.
   unmount()
 
   const consoleError = jest.spyOn(console, 'error').mockImplementation(() => {})
@@ -80,13 +96,16 @@ test('does not update state after unmount (cancelled flag)', async () => {
     elevationService.__resolveAll({})
   })
 
-  // React should NOT log a "Can't perform state update on unmounted component"
-  // warning because the cancelled flag prevents the setState call.
-  expect(consoleError).not.toHaveBeenCalledWith(
-    expect.stringMatching(/state update/i)
+  // React logs "Can't perform a React state update on an unmounted component"
+  // (or similar) via console.error. Check every argument across all calls.
+  const allArgs = consoleError.mock.calls.flat()
+  const hasStateWarning = allArgs.some(
+    (arg) => typeof arg === 'string' && /state update/i.test(arg)
   )
+  expect(hasStateWarning).toBe(false)
+
   consoleError.mockRestore()
 
-  // The state should not have changed (result is from before unmount)
+  // The rendered state should remain null since setState was never called.
   expect(result.current.elevationAvailable).toBeNull()
 })
