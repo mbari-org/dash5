@@ -207,6 +207,58 @@ describe('formatEvent', () => {
     })
   })
 
+  describe('run (Mission Request) description color', () => {
+    const event: GetEventsResponse = {
+      ...baseEvent,
+      eventType: 'run',
+      user: 'testuser',
+      note: 'test mission',
+      data: 'speed=1.5;',
+    } as GetEventsResponse
+
+    it('wraps the run description in purple', () => {
+      const { container } = render(formatEvent(event, DASH_URL))
+      const wrapper = container.firstElementChild as HTMLElement
+      expect(wrapper).toHaveStyle({ color: 'purple' })
+    })
+  })
+
+  describe('logImportant startedMission / defaultMission text-base styling', () => {
+    it('renders startedMission text at text-base size', () => {
+      const event: GetEventsResponse = {
+        ...baseEvent,
+        eventType: 'logImportant',
+        text: 'Started mission Sci2000.xml',
+      } as GetEventsResponse
+      const { container } = render(formatEvent(event, DASH_URL))
+      const p = container.querySelector('p') as HTMLElement
+      expect(p).toHaveClass('text-base')
+    })
+
+    it('renders defaultMission text at text-base size', () => {
+      const event: GetEventsResponse = {
+        ...baseEvent,
+        eventType: 'logImportant',
+        text: 'Default mission has been running for 2 hours',
+      } as GetEventsResponse
+      const { container } = render(formatEvent(event, DASH_URL))
+      const p = container.querySelector('p') as HTMLElement
+      expect(p).toHaveClass('text-base')
+    })
+
+    it('does not apply text-base to a plain logImportant event', () => {
+      const event: GetEventsResponse = {
+        ...baseEvent,
+        eventType: 'logImportant',
+        name: 'GFScanner',
+        text: 'Some other important message',
+      } as GetEventsResponse
+      const { container } = render(formatEvent(event, DASH_URL))
+      const p = container.querySelector('p') as HTMLElement
+      expect(p).not.toHaveClass('text-base')
+    })
+  })
+
   describe('command event with newline in data', () => {
     const event: GetEventsResponse = {
       ...baseEvent,
