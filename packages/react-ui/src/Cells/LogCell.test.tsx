@@ -63,3 +63,31 @@ test('applies default padding and text size when compact is false', async () => 
   expect(grid).toHaveClass('text-sm')
   expect(grid).not.toHaveClass('px-2')
 })
+
+test('applies labelColor to the label element in comfortable mode', async () => {
+  render(<LogCell {...props} labelColor="#c78204" />)
+  const label = screen.getByText(props.label)
+  expect(label).toHaveStyle({ color: '#c78204' })
+})
+
+test('applies labelColor to the label element in compact mode', async () => {
+  render(<LogCell {...props} labelColor="#0000ff" compact />)
+  const label = screen.getByText(props.label)
+  expect(label).toHaveStyle({ color: '#0000ff' })
+})
+
+test('does not set inline color on label when labelColor is omitted', async () => {
+  render(<LogCell {...props} />)
+  const label = screen.getByText(props.label)
+  expect(label).not.toHaveAttribute('style')
+})
+
+test('renders label in bold when labelBold is true', async () => {
+  render(<LogCell {...props} labelBold />)
+  expect(screen.getByText(props.label)).toHaveClass('font-bold')
+})
+
+test('does not render label in bold by default', async () => {
+  render(<LogCell {...props} />)
+  expect(screen.getByText(props.label)).not.toHaveClass('font-bold')
+})

@@ -7,6 +7,10 @@ export interface LogCellProps {
   className?: string
   style?: React.CSSProperties
   label: string
+  /** Optional color applied to the event type label, e.g. '#c78204' for Fault. */
+  labelColor?: string
+  /** When true, renders the label in bold. */
+  labelBold?: boolean
   time: string
   /** Compact relative time string, e.g. "3m ago". Rendered inline after the transmission icon. */
   timeAgo?: string
@@ -28,6 +32,8 @@ export const LogCell: React.FC<LogCellProps> = ({
   className,
   style,
   label,
+  labelColor,
+  labelBold = false,
   time,
   timeAgo,
   date,
@@ -43,36 +49,43 @@ export const LogCell: React.FC<LogCellProps> = ({
           className="flex w-full select-text items-start gap-2 px-2 py-0.5 text-xs"
           onCopy={onCopy}
         >
-          {/* Time — flows inline when the column is wide enough, wraps when narrow */}
-          <div className="flex flex-row flex-wrap items-baseline gap-x-1.5">
-            <div className="whitespace-nowrap opacity-60" aria-label="time">
-              {time}
-            </div>
-            <div
+          {/* Time — fixed 170px so all three pieces (time, date, ago) fit on
+              one line for typical entries; the column never compresses */}
+          <div
+            className="flex w-[170px] shrink-0 flex-row items-baseline gap-x-1.5"
+            aria-label="time"
+          >
+            <span className="whitespace-nowrap opacity-60">{time}</span>
+            <span
               className="whitespace-nowrap opacity-40 text-[10px]"
               aria-label="date"
             >
               {date}
-            </div>
+            </span>
             {timeAgo && (
-              <div
+              <span
                 className="whitespace-nowrap opacity-40 text-[10px]"
                 aria-label="time ago"
               >
                 {timeAgo}
-              </div>
+              </span>
             )}
           </div>
 
-          {/* Type — fixed width, never wraps */}
-          <div className="flex w-24 shrink-0 items-start gap-1">
+          {/* Type — wide enough to show "Direct Comms" without truncation */}
+          <div className="flex w-28 shrink-0 items-start gap-1">
             <span
               className="mt-px shrink-0"
               aria-label="data transmission icon"
             >
               {isUpload ? <UploadIcon /> : <DownloadIcon />}
             </span>
-            <span className="truncate">{label}</span>
+            <span
+              className={clsx('truncate', labelBold && 'font-bold')}
+              style={labelColor ? { color: labelColor } : undefined}
+            >
+              {label}
+            </span>
           </div>
 
           {/* Description — expands to fill remaining width; collapses to one row
@@ -102,7 +115,12 @@ export const LogCell: React.FC<LogCellProps> = ({
         onCopy={onCopy}
       >
         <ul className={styles.details}>
-          <li>{label}</li>
+          <li
+            className={clsx(labelBold && 'font-bold')}
+            style={labelColor ? { color: labelColor } : undefined}
+          >
+            {label}
+          </li>
           <li className="flex flex-row items-baseline gap-1">
             <span className="pr-1 opacity-60" aria-label="time">
               {time}

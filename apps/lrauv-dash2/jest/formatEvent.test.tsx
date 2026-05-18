@@ -1,7 +1,10 @@
 import '@testing-library/jest-dom'
 import React from 'react'
 import { render, screen } from '@testing-library/react'
-import formatEvent from '../lib/formatEvent'
+import formatEvent, {
+  labelBoldForEventType,
+  labelColorForEventType,
+} from '../lib/formatEvent'
 import { GetEventsResponse } from '@mbari/api-client'
 
 const DASH_URL = 'https://okeanids.mbari.org'
@@ -114,6 +117,158 @@ describe('formatEvent', () => {
       renderEvent(event)
       expect(screen.getByText('Critical line one')).toBeInTheDocument()
       expect(screen.getByText('Critical line two')).toBeInTheDocument()
+    })
+  })
+
+  describe('labelColorForEventType', () => {
+    it('returns #c78204 for logFault', () => {
+      const event = { ...baseEvent, eventType: 'logFault' } as GetEventsResponse
+      expect(labelColorForEventType(event)).toBe('#c78204')
+    })
+
+    it('returns #0000ff for gpsFix', () => {
+      const event = { ...baseEvent, eventType: 'gpsFix' } as GetEventsResponse
+      expect(labelColorForEventType(event)).toBe('#0000ff')
+    })
+
+    it('returns undefined for run (description is colored by formatEvent, not the label)', () => {
+      const event = { ...baseEvent, eventType: 'run' } as GetEventsResponse
+      expect(labelColorForEventType(event)).toBeUndefined()
+    })
+
+    it('returns undefined for uncolored event types', () => {
+      const event = {
+        ...baseEvent,
+        eventType: 'logImportant',
+      } as GetEventsResponse
+      expect(labelColorForEventType(event)).toBeUndefined()
+    })
+  })
+
+  describe('labelBoldForEventType', () => {
+    it('returns true for logFault', () => {
+      const event = { ...baseEvent, eventType: 'logFault' } as GetEventsResponse
+      expect(labelBoldForEventType(event)).toBe(true)
+    })
+
+    it('returns true for gpsFix', () => {
+      const event = { ...baseEvent, eventType: 'gpsFix' } as GetEventsResponse
+      expect(labelBoldForEventType(event)).toBe(true)
+    })
+
+    it('returns false for other event types', () => {
+      const event = {
+        ...baseEvent,
+        eventType: 'logImportant',
+      } as GetEventsResponse
+      expect(labelBoldForEventType(event)).toBe(false)
+    })
+  })
+
+  describe('gpsFix Google Maps link', () => {
+    const event: GetEventsResponse = {
+      ...baseEvent,
+      eventType: 'gpsFix',
+      fix: { latitude: 36.7974, longitude: -121.8498 },
+    } as GetEventsResponse
+
+    it('renders a Google Maps anchor with the correct href', () => {
+      const { container } = render(formatEvent(event, DASH_URL))
+      const link = container.querySelector('a') as HTMLAnchorElement
+      expect(link).toBeInTheDocument()
+      expect(link.href).toContain('google.com/maps?q=36.7974,-121.8498')
+    })
+
+    it('opens in a new tab with noopener noreferrer', () => {
+      const { container } = render(formatEvent(event, DASH_URL))
+      const link = container.querySelector('a') as HTMLAnchorElement
+      expect(link).toHaveAttribute('target', '_blank')
+      expect(link).toHaveAttribute('rel', 'noopener noreferrer')
+    })
+
+    it('displays the lat/lon as the link text', () => {
+      render(formatEvent(event, DASH_URL))
+      expect(screen.getByText('36.7974, -121.8498')).toBeInTheDocument()
+    })
+  })
+
+  describe('logFault description color', () => {
+    it('wraps the fault description in amber #c78204', () => {
+      const event: GetEventsResponse = {
+        ...baseEvent,
+        eventType: 'logFault',
+        name: 'BuoyancyServo',
+        text: 'Buoyancy getPosition uart error',
+      } as GetEventsResponse
+      const { container } = render(formatEvent(event, DASH_URL))
+      const wrapper = container.firstElementChild as HTMLElement
+      expect(wrapper).toHaveStyle({ color: '#c78204' })
+    })
+
+    it('scopes MTMSN= dark-red styling per-line, leaving other fault lines amber', () => {
+      const event: GetEventsResponse = {
+        ...baseEvent,
+        eventType: 'logFault',
+        name: 'BuoyancyServo',
+        text: 'Buoyancy uart error\nMTMSN=12345',
+      } as GetEventsResponse
+      const { container } = render(formatEvent(event, DASH_URL))
+      const faultLine = screen.getByText('Buoyancy uart error')
+      const mtmsnLine = screen.getByText('MTMSN=12345')
+      expect(faultLine).not.toHaveClass('text-red-800')
+      expect(mtmsnLine).toHaveClass('text-red-800')
+    })
+  })
+
+  describe('run (Mission Request) description color', () => {
+    const event: GetEventsResponse = {
+      ...baseEvent,
+      eventType: 'run',
+      user: 'testuser',
+      note: 'test mission',
+      data: 'speed=1.5;',
+    } as GetEventsResponse
+
+    it('wraps the run description in purple', () => {
+      const { container } = render(formatEvent(event, DASH_URL))
+      const wrapper = container.firstElementChild as HTMLElement
+      expect(wrapper).toHaveStyle({ color: 'purple' })
+    })
+  })
+
+  describe('logImportant startedMission / defaultMission text-base styling', () => {
+    it('renders startedMission text at text-base size', () => {
+      const event: GetEventsResponse = {
+        ...baseEvent,
+        eventType: 'logImportant',
+        text: 'Started mission Sci2000.xml',
+      } as GetEventsResponse
+      const { container } = render(formatEvent(event, DASH_URL))
+      const p = container.querySelector('p') as HTMLElement
+      expect(p).toHaveClass('text-base')
+    })
+
+    it('renders defaultMission text at text-base size', () => {
+      const event: GetEventsResponse = {
+        ...baseEvent,
+        eventType: 'logImportant',
+        text: 'Default mission has been running for 2 hours',
+      } as GetEventsResponse
+      const { container } = render(formatEvent(event, DASH_URL))
+      const p = container.querySelector('p') as HTMLElement
+      expect(p).toHaveClass('text-base')
+    })
+
+    it('does not apply text-base to a plain logImportant event', () => {
+      const event: GetEventsResponse = {
+        ...baseEvent,
+        eventType: 'logImportant',
+        name: 'GFScanner',
+        text: 'Some other important message',
+      } as GetEventsResponse
+      const { container } = render(formatEvent(event, DASH_URL))
+      const p = container.querySelector('p') as HTMLElement
+      expect(p).not.toHaveClass('text-base')
     })
   })
 
