@@ -16,7 +16,6 @@ import React, {
 // } from '@mbari/api-client'
 import toast from 'react-hot-toast'
 import { createLogger } from '@mbari/utils'
-import { set } from 'msw/lib/types/context'
 
 const logger = createLogger('MarkerContext')
 
@@ -103,23 +102,32 @@ export const MarkerProvider: React.FC<{ children: React.ReactNode }> = ({
 
   // Fetch markers on mount
   useEffect(() => {
+    let cancelled = false
     const fetchMarkers = async () => {
+      if (cancelled) return
       setLoading(true)
       try {
         const response = await getMarkers()
-        setMarkers(response)
-        setError(null)
+        if (!cancelled) {
+          setMarkers(response)
+          setError(null)
+        }
       } catch (err) {
-        logger.error('Failed to fetch markers:', err)
-        setError(
-          err instanceof Error ? err : new Error('Failed to fetch markers')
-        )
+        if (!cancelled) {
+          logger.error('Failed to fetch markers:', err)
+          setError(
+            err instanceof Error ? err : new Error('Failed to fetch markers')
+          )
+        }
       } finally {
-        setLoading(false)
+        if (!cancelled) setLoading(false)
       }
     }
 
     fetchMarkers()
+    return () => {
+      cancelled = true
+    }
   }, [])
 
   // Load markers from localStorage on initial mount
