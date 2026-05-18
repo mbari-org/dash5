@@ -1,7 +1,10 @@
 import '@testing-library/jest-dom'
 import React from 'react'
 import { render, screen } from '@testing-library/react'
-import formatEvent from '../lib/formatEvent'
+import formatEvent, {
+  labelBoldForEventType,
+  labelColorForEventType,
+} from '../lib/formatEvent'
 import { GetEventsResponse } from '@mbari/api-client'
 
 const DASH_URL = 'https://okeanids.mbari.org'
@@ -114,6 +117,66 @@ describe('formatEvent', () => {
       renderEvent(event)
       expect(screen.getByText('Critical line one')).toBeInTheDocument()
       expect(screen.getByText('Critical line two')).toBeInTheDocument()
+    })
+  })
+
+  describe('labelColorForEventType', () => {
+    it('returns #c78204 for logFault', () => {
+      const event = { ...baseEvent, eventType: 'logFault' } as GetEventsResponse
+      expect(labelColorForEventType(event)).toBe('#c78204')
+    })
+
+    it('returns #0000ff for gpsFix', () => {
+      const event = { ...baseEvent, eventType: 'gpsFix' } as GetEventsResponse
+      expect(labelColorForEventType(event)).toBe('#0000ff')
+    })
+
+    it('returns purple for run (Mission Request)', () => {
+      const event = { ...baseEvent, eventType: 'run' } as GetEventsResponse
+      expect(labelColorForEventType(event)).toBe('purple')
+    })
+
+    it('returns undefined for uncolored event types', () => {
+      const event = {
+        ...baseEvent,
+        eventType: 'logImportant',
+      } as GetEventsResponse
+      expect(labelColorForEventType(event)).toBeUndefined()
+    })
+  })
+
+  describe('labelBoldForEventType', () => {
+    it('returns true for logFault', () => {
+      const event = { ...baseEvent, eventType: 'logFault' } as GetEventsResponse
+      expect(labelBoldForEventType(event)).toBe(true)
+    })
+
+    it('returns true for gpsFix', () => {
+      const event = { ...baseEvent, eventType: 'gpsFix' } as GetEventsResponse
+      expect(labelBoldForEventType(event)).toBe(true)
+    })
+
+    it('returns false for other event types', () => {
+      const event = {
+        ...baseEvent,
+        eventType: 'logImportant',
+      } as GetEventsResponse
+      expect(labelBoldForEventType(event)).toBe(false)
+    })
+  })
+
+  describe('logFault description color', () => {
+    const event: GetEventsResponse = {
+      ...baseEvent,
+      eventType: 'logFault',
+      name: 'BuoyancyServo',
+      text: 'Buoyancy getPosition uart error',
+    } as GetEventsResponse
+
+    it('wraps the fault description in amber #c78204', () => {
+      const { container } = render(formatEvent(event, DASH_URL))
+      const wrapper = container.firstElementChild as HTMLElement
+      expect(wrapper).toHaveStyle({ color: '#c78204' })
     })
   })
 
