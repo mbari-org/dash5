@@ -49,27 +49,14 @@ export const LogCell: React.FC<LogCellProps> = ({
           className="flex w-full select-text items-start gap-2 px-2 py-0.5 text-xs"
           onCopy={onCopy}
         >
-          {/* Time — fixed-width column so subsequent columns always line up;
-              content flows on one row and wraps only if it must */}
-          <div
-            className="flex w-24 shrink-0 flex-row flex-wrap items-baseline gap-x-1"
-            aria-label="time"
-          >
+          {/* Time — fixed-width, always ≤2 rows: time on row 1, date+ago
+              inline on row 2 so the column never grows taller than 2 lines */}
+          <div className="flex w-24 shrink-0 flex-col" aria-label="time">
             <span className="whitespace-nowrap opacity-60">{time}</span>
-            <span
-              className="whitespace-nowrap opacity-40 text-[10px]"
-              aria-label="date"
-            >
-              {date}
+            <span className="flex flex-row flex-wrap gap-x-1 opacity-40 text-[10px]">
+              <span aria-label="date">{date}</span>
+              {timeAgo && <span aria-label="time ago">{timeAgo}</span>}
             </span>
-            {timeAgo && (
-              <span
-                className="whitespace-nowrap opacity-40 text-[10px]"
-                aria-label="time ago"
-              >
-                {timeAgo}
-              </span>
-            )}
           </div>
 
           {/* Type — wide enough to show "Direct Comms" without truncation */}
