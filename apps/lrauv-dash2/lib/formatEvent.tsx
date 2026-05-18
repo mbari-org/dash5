@@ -82,7 +82,7 @@ export const labelColorForEventType = (
 
 /** Returns true for event types whose label should be rendered in bold. */
 export const labelBoldForEventType = (event: GetEventsResponse): boolean =>
-  event.eventType === 'logFault'
+  event.eventType === 'logFault' || event.eventType === 'gpsFix'
 
 export const isUploadEvent = (event: GetEventsResponse) =>
   (event.eventType === 'sbdSend' && event.state === 2) ||
