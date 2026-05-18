@@ -19,17 +19,27 @@ export function useElevator() {
     null
   )
 
-  // Initialize elevation service on mount
+  // Initialize elevation service on mount. The cancelled flag prevents calling
+  // setState after the component unmounts (avoids "state update on unmounted
+  // component" console warnings when the deployment page is left quickly).
   useEffect(() => {
+    let cancelled = false
     getElevationService()
       .then(() => {
-        setElevationAvailable(true)
-        logger.info('👍 Elevation service ready')
+        if (!cancelled) {
+          setElevationAvailable(true)
+          logger.info('👍 Elevation service ready')
+        }
       })
       .catch(() => {
-        setElevationAvailable(false)
-        logger.warn('⚠️ Elevation service unavailable')
+        if (!cancelled) {
+          setElevationAvailable(false)
+          logger.warn('⚠️ Elevation service unavailable')
+        }
       })
+    return () => {
+      cancelled = true
+    }
   }, [])
 
   const handleDepthRequest = useCallback(
