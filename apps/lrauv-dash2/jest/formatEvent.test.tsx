@@ -131,9 +131,9 @@ describe('formatEvent', () => {
       expect(labelColorForEventType(event)).toBe('#0000ff')
     })
 
-    it('returns purple for run (Mission Request)', () => {
+    it('returns undefined for run (description is colored by formatEvent, not the label)', () => {
       const event = { ...baseEvent, eventType: 'run' } as GetEventsResponse
-      expect(labelColorForEventType(event)).toBe('purple')
+      expect(labelColorForEventType(event)).toBeUndefined()
     })
 
     it('returns undefined for uncolored event types', () => {

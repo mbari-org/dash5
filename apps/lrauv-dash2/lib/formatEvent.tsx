@@ -73,8 +73,6 @@ export const labelColorForEventType = (
       return '#c78204'
     case 'gpsFix':
       return '#0000ff'
-    case 'run':
-      return 'purple'
     default:
       return undefined
   }
@@ -206,12 +204,23 @@ const formatEvent = (
       return (
         <p className="flex flex-col" style={{ color: '#c78204' }}>
           <span className="block font-bold">[{name}]</span>
-          {Array.isArray(text) &&
+          {event.text?.match('MTMSN=') ? (
+            <span className={styles.mtmsn}>
+              {Array.isArray(text) &&
+                text.map((line, i) => (
+                  <span key={`${event.eventId}${i}`} className="block">
+                    {line}
+                  </span>
+                ))}
+            </span>
+          ) : (
+            Array.isArray(text) &&
             text.map((line, i) => (
               <span key={`${event.eventId}${i}`} className="block">
                 {line}
               </span>
-            ))}
+            ))
+          )}
         </p>
       )
 

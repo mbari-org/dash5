@@ -49,9 +49,8 @@ export const LogCell: React.FC<LogCellProps> = ({
           className="flex w-full select-text items-start gap-2 px-2 py-0.5 text-xs"
           onCopy={onCopy}
         >
-          {/* Time — fixed-width, always ≤2 rows: time on row 1, date+ago
-              inline on row 2 so the column never grows taller than 2 lines */}
-          {/* Time — fixed at 34ch so the worst-case string fits on one line */}
+          {/* Time — fixed 170px so all three pieces (time, date, ago) fit on
+              one line for typical entries; the column never compresses */}
           <div
             className="flex w-[170px] shrink-0 flex-row items-baseline gap-x-1.5"
             aria-label="time"
