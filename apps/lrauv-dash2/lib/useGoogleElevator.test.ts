@@ -92,20 +92,22 @@ test('does not update state after unmount (cancelled flag)', async () => {
 
   const consoleError = jest.spyOn(console, 'error').mockImplementation(() => {})
 
-  await act(async () => {
-    elevationService.__resolveAll({})
-  })
+  try {
+    await act(async () => {
+      elevationService.__resolveAll({})
+    })
 
-  // React logs "Can't perform a React state update on an unmounted component"
-  // (or similar) via console.error. Check every argument across all calls.
-  const allArgs = consoleError.mock.calls.flat()
-  const hasStateWarning = allArgs.some(
-    (arg) => typeof arg === 'string' && /state update/i.test(arg)
-  )
-  expect(hasStateWarning).toBe(false)
+    // React logs "Can't perform a React state update on an unmounted component"
+    // (or similar) via console.error. Check every argument across all calls.
+    const allArgs = consoleError.mock.calls.flat()
+    const hasStateWarning = allArgs.some(
+      (arg) => typeof arg === 'string' && /state update/i.test(arg)
+    )
+    expect(hasStateWarning).toBe(false)
 
-  consoleError.mockRestore()
-
-  // The rendered state should remain null since setState was never called.
-  expect(result.current.elevationAvailable).toBeNull()
+    // The rendered state should remain null since setState was never called.
+    expect(result.current.elevationAvailable).toBeNull()
+  } finally {
+    consoleError.mockRestore()
+  }
 })
