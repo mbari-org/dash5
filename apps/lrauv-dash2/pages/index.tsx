@@ -18,6 +18,7 @@ import useGlobalModalId from '../lib/useGlobalModalId'
 import useGoogleElevator from '../lib/useGoogleElevator'
 import { Allotment, LayoutPriority } from 'allotment'
 import { useGoogleMaps } from '../lib/useGoogleMaps'
+import { useSidebarSizes } from '../lib/useSidebarSizes'
 import { VPosDetail, useStations } from '@mbari/api-client'
 import 'allotment/dist/style.css'
 import { StationsListModal } from '../components/StationsListModal'
@@ -898,6 +899,7 @@ const OverviewPage: NextPage = () => {
   // Allotment's onChange fires it so the map re-measures after every
   // layout pass, including the initial one where pane sizes are first set.
   const mapInvalidateSizeRef = useRef<(() => void) | null>(null)
+  const { defaultSizes, onSidebarChange } = useSidebarSizes()
 
   useEffect(() => {
     if (!mounted.current) {
@@ -959,10 +961,11 @@ const OverviewPage: NextPage = () => {
                                 <Allotment
                                   separator
                                   snap
-                                  defaultSizes={[75, 25]}
+                                  defaultSizes={defaultSizes}
                                   proportionalLayout
-                                  onChange={() => {
+                                  onChange={(sizes) => {
                                     mapInvalidateSizeRef.current?.()
+                                    onSidebarChange(sizes)
                                   }}
                                 >
                                   <Allotment.Pane>
