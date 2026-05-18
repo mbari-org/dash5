@@ -33,12 +33,22 @@ export function useSidebarSizes(): {
   })
 
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const pendingPctRef = useRef<number | null>(null)
 
-  // Cancel any pending write on unmount to avoid writing after the component
-  // is gone (e.g. during page navigation).
+  // On unmount flush any pending debounced value immediately so a navigation
+  // that happens within the debounce window still persists the last width.
   useEffect(() => {
     return () => {
-      if (debounceRef.current) clearTimeout(debounceRef.current)
+      if (debounceRef.current) {
+        clearTimeout(debounceRef.current)
+        if (pendingPctRef.current !== null) {
+          try {
+            localStorage.setItem(STORAGE_KEY, pendingPctRef.current.toFixed(2))
+          } catch {
+            // ignore storage failures
+          }
+        }
+      }
     }
   }, [])
 
@@ -50,8 +60,10 @@ export function useSidebarSizes(): {
     // Skip extreme values so we never overwrite a valid setting with one that
     // would fall back to defaults on the next mount.
     if (rightPct < 5 || rightPct > 95) return
+    pendingPctRef.current = rightPct
     if (debounceRef.current) clearTimeout(debounceRef.current)
     debounceRef.current = setTimeout(() => {
+      pendingPctRef.current = null
       try {
         localStorage.setItem(STORAGE_KEY, rightPct.toFixed(2))
       } catch {

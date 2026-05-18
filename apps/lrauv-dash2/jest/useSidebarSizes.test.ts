@@ -91,6 +91,20 @@ test('accepts boundary values of exactly 5% and 95%', () => {
   expect(r95.current.defaultSizes[1]).toBeCloseTo(95, 1)
 })
 
+test('flushes the pending write synchronously on unmount (navigate-away scenario)', () => {
+  const { result, unmount } = renderHook(() => useSidebarSizes())
+  act(() => {
+    result.current.onSidebarChange([700, 300]) // 30% right, timer not yet fired
+  })
+  // Timer has not fired — nothing written yet
+  expect(localStorage.getItem(STORAGE_KEY)).toBeNull()
+  // Unmount (simulate page navigation within debounce window)
+  unmount()
+  // Pending value should have been flushed synchronously
+  const stored = parseFloat(localStorage.getItem(STORAGE_KEY) ?? '')
+  expect(stored).toBeCloseTo(30, 1)
+})
+
 test('onSidebarChange is a stable reference (does not change between renders)', () => {
   const { result, rerender } = renderHook(() => useSidebarSizes())
   const first = result.current.onSidebarChange
