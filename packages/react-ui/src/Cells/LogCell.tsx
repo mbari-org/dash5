@@ -53,7 +53,7 @@ export const LogCell: React.FC<LogCellProps> = ({
               inline on row 2 so the column never grows taller than 2 lines */}
           {/* Time — fixed at 34ch so the worst-case string fits on one line */}
           <div
-            className="flex w-[calc(34ch-15px)] shrink-0 flex-row items-baseline gap-x-1.5"
+            className="flex w-[calc(34ch-30px)] shrink-0 flex-row items-baseline gap-x-1.5"
             aria-label="time"
           >
             <span className="whitespace-nowrap opacity-60">{time}</span>
