@@ -1,5 +1,5 @@
 import { AccordionHeader } from '@mbari/react-ui'
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useEffect } from 'react'
 import CommsSection from './CommsSection'
 import DocsSection from './DocsSection'
 import HandoffSection from './HandoffSection'
@@ -23,6 +23,16 @@ export type VehicleAccordionSection =
   | 'log'
   | 'docs'
   | null
+
+const SECTION_STORAGE_KEY = 'accordion:section'
+const VALID_SECTIONS: VehicleAccordionSection[] = [
+  'handoff',
+  'data',
+  'schedule',
+  'comms',
+  'log',
+  'docs',
+]
 
 export interface VehicleAccordionProps {
   vehicleName: string
@@ -122,15 +132,37 @@ const VehicleAccordion: React.FC<VehicleAccordionProps> = ({
   // The mission started event text is always in the format "Started mission <mission name>"
   const currentMissionText = missionStartedEvent?.[0]?.text ?? ''
 
+  // Initialize to null to match SSR output; restore from localStorage after
+  // hydration to avoid server/client markup mismatches.
   const [section, setSection] = useState<VehicleAccordionSection>(null)
-  const handleToggleForSection =
-    (currentSection: VehicleAccordionSection) => (open: boolean) =>
-      setSection(open ? currentSection : null)
+  useEffect(() => {
+    try {
+      const stored = localStorage.getItem(SECTION_STORAGE_KEY)
+      if (
+        stored &&
+        VALID_SECTIONS.includes(stored as VehicleAccordionSection)
+      ) {
+        setSection(stored as VehicleAccordionSection)
+      }
+    } catch {
+      // localStorage unavailable (SSR, private browsing)
+    }
+  }, [])
 
-  if (!currentMissionText || !activeDeployment) {
-    ;(currentSection: VehicleAccordionSection) => (open: boolean) =>
-      setSection(open ? currentSection : 'comms')
-  }
+  const handleToggleForSection =
+    (currentSection: VehicleAccordionSection) => (open: boolean) => {
+      const next = open ? currentSection : null
+      setSection(next)
+      try {
+        if (next) {
+          localStorage.setItem(SECTION_STORAGE_KEY, next)
+        } else {
+          localStorage.removeItem(SECTION_STORAGE_KEY)
+        }
+      } catch {
+        // localStorage unavailable (private browsing, etc.)
+      }
+    }
 
   const handoffLabel =
     (picLabel || onCallLabel) && authenticated

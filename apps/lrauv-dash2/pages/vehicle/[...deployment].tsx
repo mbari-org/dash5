@@ -41,6 +41,7 @@ import { useLastCommsTime } from '../../lib/useLastCommsTime'
 import { Allotment } from 'allotment'
 import 'allotment/dist/style.css'
 import { useGoogleMaps } from '../../lib/useGoogleMaps'
+import { useSidebarSizes } from '../../lib/useSidebarSizes'
 import { SelectedStationsProvider } from '../../components/SelectedStationContext'
 import { MapCameraProvider } from '../../components/MapCameraContext'
 import { SelectedPolygonsProvider } from '../../components/SelectedPolygonsContext'
@@ -112,6 +113,7 @@ const Vehicle: NextPage = () => {
 
   const [mobileView, setMobileView] = useState<MobileView>('main')
   const isDesktop = useIsDesktop()
+  const { defaultSizes, onSidebarChange } = useSidebarSizes()
 
   const params = (router.query?.deployment ?? []) as string[]
   const vehicleName = params[0]
@@ -496,8 +498,9 @@ const Vehicle: NextPage = () => {
                         <div className={styles.content}>
                           <Allotment
                             separator
-                            defaultSizes={[75, 25]}
+                            defaultSizes={defaultSizes}
                             className="min-h-0"
+                            onChange={onSidebarChange}
                           >
                             <Allotment.Pane minSize={720}>
                               {primarySection}
