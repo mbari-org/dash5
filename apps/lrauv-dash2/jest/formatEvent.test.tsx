@@ -193,17 +193,30 @@ describe('formatEvent', () => {
   })
 
   describe('logFault description color', () => {
-    const event: GetEventsResponse = {
-      ...baseEvent,
-      eventType: 'logFault',
-      name: 'BuoyancyServo',
-      text: 'Buoyancy getPosition uart error',
-    } as GetEventsResponse
-
     it('wraps the fault description in amber #c78204', () => {
+      const event: GetEventsResponse = {
+        ...baseEvent,
+        eventType: 'logFault',
+        name: 'BuoyancyServo',
+        text: 'Buoyancy getPosition uart error',
+      } as GetEventsResponse
       const { container } = render(formatEvent(event, DASH_URL))
       const wrapper = container.firstElementChild as HTMLElement
       expect(wrapper).toHaveStyle({ color: '#c78204' })
+    })
+
+    it('scopes MTMSN= dark-red styling per-line, leaving other fault lines amber', () => {
+      const event: GetEventsResponse = {
+        ...baseEvent,
+        eventType: 'logFault',
+        name: 'BuoyancyServo',
+        text: 'Buoyancy uart error\nMTMSN=12345',
+      } as GetEventsResponse
+      const { container } = render(formatEvent(event, DASH_URL))
+      const faultLine = screen.getByText('Buoyancy uart error')
+      const mtmsnLine = screen.getByText('MTMSN=12345')
+      expect(faultLine).not.toHaveClass('text-red-800')
+      expect(mtmsnLine).toHaveClass('text-red-800')
     })
   })
 

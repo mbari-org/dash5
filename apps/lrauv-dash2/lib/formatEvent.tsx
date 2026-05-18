@@ -204,23 +204,21 @@ const formatEvent = (
       return (
         <p className="flex flex-col" style={{ color: '#c78204' }}>
           <span className="block font-bold">[{name}]</span>
-          {event.text?.match('MTMSN=') ? (
-            <span className={styles.mtmsn}>
-              {Array.isArray(text) &&
-                text.map((line, i) => (
-                  <span key={`${event.eventId}${i}`} className="block">
-                    {line}
-                  </span>
-                ))}
-            </span>
-          ) : (
-            Array.isArray(text) &&
-            text.map((line, i) => (
-              <span key={`${event.eventId}${i}`} className="block">
-                {line}
-              </span>
-            ))
-          )}
+          {Array.isArray(text) &&
+            text.map((line, i) =>
+              line.includes('MTMSN=') ? (
+                <span
+                  key={`${event.eventId}${i}`}
+                  className={`block ${styles.mtmsn}`}
+                >
+                  {line}
+                </span>
+              ) : (
+                <span key={`${event.eventId}${i}`} className="block">
+                  {line}
+                </span>
+              )
+            )}
         </p>
       )
 
