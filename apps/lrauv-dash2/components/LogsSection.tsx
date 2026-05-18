@@ -39,6 +39,7 @@ import {
   useDebounce,
   useResizeObserver,
 } from '@mbari/utils'
+import { useLastCommsTime } from '../lib/useLastCommsTime'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import {
   faChevronDown,
@@ -229,6 +230,21 @@ const LogsSection: React.FC<LogsSectionProps> = ({
           }
         )
       : undefined
+
+  // Last comms — show elapsed time since the most recent sat or cell contact.
+  const { lastSatCommsTime, lastCellCommsTime } = useLastCommsTime(
+    vehicleName,
+    from
+  )
+  const lastCommsTimeMs =
+    lastSatCommsTime !== null || lastCellCommsTime !== null
+      ? Math.max(lastSatCommsTime ?? 0, lastCellCommsTime ?? 0)
+      : null
+  const lastCommsDuration = lastCommsTimeMs
+    ? formatCompactDuration(DateTime.fromMillis(lastCommsTimeMs), nowDT, {
+        maxDays: 7,
+      })
+    : undefined
 
   const flatData = useMemo(() => {
     if (!hasSelection) return []
@@ -507,6 +523,7 @@ const LogsSection: React.FC<LogsSectionProps> = ({
           disabled={isLoading || isFetching}
           handleRefresh={handleRefresh}
           lastUpdatedDuration={lastUpdatedDuration}
+          lastCommsDuration={lastCommsDuration}
           compact={compact}
           onToggleCompact={handleToggleCompact}
           className="min-w-0 shrink pl-2"

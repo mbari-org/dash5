@@ -16,6 +16,8 @@ export interface LogsToolbarProps {
   handleRefresh: () => void
   /** Duration since the last successful fetch, e.g. "2m". The component renders this as "Updated 2m ago". */
   lastUpdatedDuration?: string
+  /** Duration since the most-recent comms event (sat or cell), e.g. "1h 4m". Renders as "Last comms X ago". */
+  lastCommsDuration?: string
   /** When true, the log list is rendered in compact/dense mode. */
   compact?: boolean
   /** Called when the user toggles compact mode. */
@@ -29,6 +31,7 @@ export const LogsToolbar: React.FC<LogsToolbarProps> = ({
   disabled,
   handleRefresh,
   lastUpdatedDuration,
+  lastCommsDuration,
   compact = false,
   onToggleCompact,
   className,
@@ -72,6 +75,18 @@ export const LogsToolbar: React.FC<LogsToolbarProps> = ({
       >
         <span>Updated</span>
         <span>{lastUpdatedDuration}</span>
+        <span>ago</span>
+      </div>
+    )}
+
+    {lastCommsDuration && (
+      <div
+        className="flex flex-col items-center text-[9px] leading-tight text-stone-400"
+        aria-label="last comms time"
+        data-testid="last-comms-duration"
+      >
+        <span>Last comms</span>
+        <span>{lastCommsDuration}</span>
         <span>ago</span>
       </div>
     )}

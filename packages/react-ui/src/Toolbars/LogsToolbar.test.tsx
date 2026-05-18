@@ -60,6 +60,19 @@ describe('LogsToolbar', () => {
     expect(screen.queryByText(/updated/i)).not.toBeInTheDocument()
   })
 
+  test('renders lastCommsDuration when provided', () => {
+    render(<LogsToolbar {...defaultProps} lastCommsDuration="1h 4m" />)
+    expect(screen.getByTestId('last-comms-duration')).toBeInTheDocument()
+    expect(screen.getByText('Last comms')).toBeInTheDocument()
+    expect(screen.getByText('1h 4m')).toBeInTheDocument()
+  })
+
+  test('does not render last-comms indicator when lastCommsDuration is omitted', () => {
+    render(<LogsToolbar {...defaultProps} />)
+    expect(screen.queryByTestId('last-comms-duration')).not.toBeInTheDocument()
+    expect(screen.queryByText('Last comms')).not.toBeInTheDocument()
+  })
+
   test('renders compact toggle button when onToggleCompact is provided', () => {
     const onToggleCompact = jest.fn()
     render(<LogsToolbar {...defaultProps} onToggleCompact={onToggleCompact} />)
