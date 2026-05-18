@@ -21,6 +21,7 @@ import { DateTime } from 'luxon'
 import formatEvent, {
   displayNameForEventType,
   isUploadEvent,
+  labelColorForEventType,
 } from '../lib/formatEvent'
 import {
   applySelectedFilters,
@@ -447,6 +448,7 @@ const LogsSection: React.FC<LogsSectionProps> = ({
         time={time}
         timeAgo={timeAgo}
         label={displayNameForEventType(item)}
+        labelColor={labelColorForEventType(item)}
         log={log}
         isUpload={isUploadEvent(item)}
         onCopy={handleCopyEventLogs}

@@ -7,6 +7,8 @@ export interface LogCellProps {
   className?: string
   style?: React.CSSProperties
   label: string
+  /** Optional color applied to the event type label, e.g. '#c78204' for Fault. */
+  labelColor?: string
   time: string
   /** Compact relative time string, e.g. "3m ago". Rendered inline after the transmission icon. */
   timeAgo?: string
@@ -28,6 +30,7 @@ export const LogCell: React.FC<LogCellProps> = ({
   className,
   style,
   label,
+  labelColor,
   time,
   timeAgo,
   date,
@@ -72,7 +75,12 @@ export const LogCell: React.FC<LogCellProps> = ({
             >
               {isUpload ? <UploadIcon /> : <DownloadIcon />}
             </span>
-            <span className="truncate">{label}</span>
+            <span
+              className="truncate"
+              style={labelColor ? { color: labelColor } : undefined}
+            >
+              {label}
+            </span>
           </div>
 
           {/* Description — expands to fill remaining width; collapses to one row
@@ -102,7 +110,9 @@ export const LogCell: React.FC<LogCellProps> = ({
         onCopy={onCopy}
       >
         <ul className={styles.details}>
-          <li>{label}</li>
+          <li style={labelColor ? { color: labelColor } : undefined}>
+            {label}
+          </li>
           <li className="flex flex-row items-baseline gap-1">
             <span className="pr-1 opacity-60" aria-label="time">
               {time}
