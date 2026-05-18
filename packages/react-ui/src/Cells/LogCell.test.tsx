@@ -91,3 +91,10 @@ test('does not render label in bold by default', async () => {
   render(<LogCell {...props} />)
   expect(screen.getByText(props.label)).not.toHaveClass('font-bold')
 })
+
+test('compact label uses line-clamp-2 so two-word labels wrap to two rows', async () => {
+  render(<LogCell {...props} label="Command Request" compact />)
+  const label = screen.getByText('Command Request')
+  expect(label).toHaveClass('line-clamp-2')
+  expect(label).not.toHaveClass('truncate')
+})
