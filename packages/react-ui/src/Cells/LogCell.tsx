@@ -81,7 +81,10 @@ export const LogCell: React.FC<LogCellProps> = ({
               {isUpload ? <UploadIcon /> : <DownloadIcon />}
             </span>
             <span
-              className={clsx('truncate', labelBold && 'font-bold')}
+              className={clsx(
+                'line-clamp-2 leading-tight',
+                labelBold && 'font-bold'
+              )}
               style={labelColor ? { color: labelColor } : undefined}
             >
               {label}
