@@ -51,10 +51,9 @@ export const LogCell: React.FC<LogCellProps> = ({
         >
           {/* Time — fixed-width, always ≤2 rows: time on row 1, date+ago
               inline on row 2 so the column never grows taller than 2 lines */}
-          {/* Time — no forced wrap; all three pieces flow on one line and
-              only wrap together when the overall row is narrow */}
+          {/* Time — fixed at 34ch so the worst-case string fits on one line */}
           <div
-            className="flex shrink-0 flex-row items-baseline gap-x-1.5"
+            className="flex w-[34ch] shrink-0 flex-row items-baseline gap-x-1.5"
             aria-label="time"
           >
             <span className="whitespace-nowrap opacity-60">{time}</span>
