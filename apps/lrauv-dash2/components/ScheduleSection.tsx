@@ -904,7 +904,7 @@ export const ScheduleSection: React.FC<ScheduleSectionProps> = ({
           secondary="Automatic fallback"
           status={defStatus}
           scheduleStatus={defStatus === 'running' ? 'running' : undefined}
-          name="Vehicle (automatic)"
+          name=""
           description={description}
           eventId={mission.event.eventId}
           commandType="mission"
