@@ -224,7 +224,7 @@ test('popup shows N/A (not TBD) in Ended field for a timed-out non-mission comma
 
 // ── Operator field for Default missions ───────────────────────────────────────
 
-test('hides Operator field when isDefaultMission is true', () => {
+test('hides Operator field when isDefaultMission is true (synthetic row)', () => {
   ;(useGlobalModalId as jest.Mock).mockReturnValue(
     makeModalId({
       ...baseEvent,
@@ -240,12 +240,12 @@ test('hides Operator field when isDefaultMission is true', () => {
   expect(screen.queryByText('karen-salamy')).not.toBeInTheDocument()
 })
 
-test('hides Operator field when label is "Default Mission" (API run event path)', () => {
+test('hides Operator field when isDefaultMission is true (API run event path — ScheduleSection now sets this flag for missionName=Default)', () => {
   ;(useGlobalModalId as jest.Mock).mockReturnValue(
     makeModalId({
       ...baseEvent,
-      label: 'Default Mission',
-      isDefaultMission: false,
+      label: 'Default',
+      isDefaultMission: true,
       user: 'karen-salamy',
     })
   )
@@ -256,7 +256,9 @@ test('hides Operator field when label is "Default Mission" (API run event path)'
   expect(screen.queryByText('karen-salamy')).not.toBeInTheDocument()
 })
 
-test('hides Operator field when label is "Default" (parsed mission name from load Default.tl;run)', () => {
+test('shows Operator field for an operator-sent mission named Default when isDefaultMission is false', () => {
+  // An operator could intentionally send a mission named "Default".
+  // Only the explicit isDefaultMission flag suppresses attribution.
   ;(useGlobalModalId as jest.Mock).mockReturnValue(
     makeModalId({
       ...baseEvent,
@@ -268,8 +270,8 @@ test('hides Operator field when label is "Default" (parsed mission name from loa
 
   render(<ScheduleEventDetailsModal onClose={() => {}} />)
 
-  expect(screen.queryByText('Operator')).not.toBeInTheDocument()
-  expect(screen.queryByText('karen-salamy')).not.toBeInTheDocument()
+  expect(screen.getByText('Operator')).toBeInTheDocument()
+  expect(screen.getByText('karen-salamy')).toBeInTheDocument()
 })
 
 test('shows Operator field for regular operator-sent missions', () => {
