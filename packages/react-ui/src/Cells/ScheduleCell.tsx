@@ -228,14 +228,16 @@ export const ScheduleCell: React.FC<ScheduleCellProps> = ({
               {secondary}
             </li>
           )}
-          <li
-            className={clsx(
-              'flex truncate',
-              isOpen ? styles.text : styles.textLight
-            )}
-          >
-            {name}
-          </li>
+          {name && (
+            <li
+              className={clsx(
+                'flex truncate',
+                isOpen ? styles.text : styles.textLight
+              )}
+            >
+              {name}
+            </li>
+          )}
         </ul>
         <ul
           className={clsx(
