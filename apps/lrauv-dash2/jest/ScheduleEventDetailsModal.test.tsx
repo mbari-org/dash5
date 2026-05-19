@@ -256,6 +256,22 @@ test('hides Operator field when label is "Default Mission" (API run event path)'
   expect(screen.queryByText('karen-salamy')).not.toBeInTheDocument()
 })
 
+test('hides Operator field when label is "Default" (parsed mission name from load Default.tl;run)', () => {
+  ;(useGlobalModalId as jest.Mock).mockReturnValue(
+    makeModalId({
+      ...baseEvent,
+      label: 'Default',
+      isDefaultMission: false,
+      user: 'karen-salamy',
+    })
+  )
+
+  render(<ScheduleEventDetailsModal onClose={() => {}} />)
+
+  expect(screen.queryByText('Operator')).not.toBeInTheDocument()
+  expect(screen.queryByText('karen-salamy')).not.toBeInTheDocument()
+})
+
 test('shows Operator field for regular operator-sent missions', () => {
   ;(useGlobalModalId as jest.Mock).mockReturnValue(
     makeModalId({

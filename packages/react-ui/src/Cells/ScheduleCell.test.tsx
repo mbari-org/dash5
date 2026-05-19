@@ -151,10 +151,9 @@ test('should not render a name row when name is empty string', () => {
   const { container } = render(<ScheduleCell {...props} name="" />)
 
   expect(screen.getByText(props.label)).toBeInTheDocument()
-  // Count <li> elements: label + secondary + description = 3 when name present,
-  // label + secondary + description = 3 when name is omitted (no extra blank li).
-  // More directly: no <li> in the name column should contain any text content,
-  // and the total li count must be one fewer than when name is provided.
+  // With a full name, ScheduleCell renders label + secondary + name + description
+  // list items. With name="", the name <li> must be absent, so the empty-name
+  // render must produce fewer <li> elements than the full render.
   const liCount = container.querySelectorAll('li').length
   const { container: fullContainer } = render(
     <ScheduleCell {...props} name="Kurt Vonnegut" />
