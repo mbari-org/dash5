@@ -809,14 +809,12 @@ export const ScheduleEventDetailsModal: React.FC<
             </p>
             <p className="font-medium">{formatVia(event.via)}</p>
           </div>
-          {!event.isDefaultMission && (
-            <div>
-              <p className="text-sm uppercase tracking-wide text-stone-500">
-                Operator
-              </p>
-              <p className="font-medium">{event.user || 'Unknown'}</p>
-            </div>
-          )}
+          <div>
+            <p className="text-sm uppercase tracking-wide text-stone-500">
+              Operator
+            </p>
+            <p className="font-medium">{event.user || 'Unknown'}</p>
+          </div>
           <div>
             <p className="text-sm uppercase tracking-wide text-stone-500">
               Event ID

@@ -224,7 +224,9 @@ test('popup shows N/A (not TBD) in Ended field for a timed-out non-mission comma
 
 // ── Operator field for Default missions ───────────────────────────────────────
 
-test('hides Operator field when isDefaultMission is true (synthetic row)', () => {
+test('hides Operator field for synthetic Default mission rows (isDefaultMission: true triggers early return)', () => {
+  // Synthetic Default mission rows set isDefaultMission: true and are rendered
+  // by a dedicated modal path that never shows the Operator field.
   ;(useGlobalModalId as jest.Mock).mockReturnValue(
     makeModalId({
       ...baseEvent,
@@ -238,40 +240,6 @@ test('hides Operator field when isDefaultMission is true (synthetic row)', () =>
 
   expect(screen.queryByText('Operator')).not.toBeInTheDocument()
   expect(screen.queryByText('karen-salamy')).not.toBeInTheDocument()
-})
-
-test('hides Operator field when isDefaultMission is true (API run event path — ScheduleSection now sets this flag for missionName=Default)', () => {
-  ;(useGlobalModalId as jest.Mock).mockReturnValue(
-    makeModalId({
-      ...baseEvent,
-      label: 'Default',
-      isDefaultMission: true,
-      user: 'karen-salamy',
-    })
-  )
-
-  render(<ScheduleEventDetailsModal onClose={() => {}} />)
-
-  expect(screen.queryByText('Operator')).not.toBeInTheDocument()
-  expect(screen.queryByText('karen-salamy')).not.toBeInTheDocument()
-})
-
-test('shows Operator field for an operator-sent mission named Default when isDefaultMission is false', () => {
-  // An operator could intentionally send a mission named "Default".
-  // Only the explicit isDefaultMission flag suppresses attribution.
-  ;(useGlobalModalId as jest.Mock).mockReturnValue(
-    makeModalId({
-      ...baseEvent,
-      label: 'Default',
-      isDefaultMission: false,
-      user: 'karen-salamy',
-    })
-  )
-
-  render(<ScheduleEventDetailsModal onClose={() => {}} />)
-
-  expect(screen.getByText('Operator')).toBeInTheDocument()
-  expect(screen.getByText('karen-salamy')).toBeInTheDocument()
 })
 
 test('shows Operator field for regular operator-sent missions', () => {

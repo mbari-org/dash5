@@ -1194,7 +1194,6 @@ export const ScheduleSection: React.FC<ScheduleSectionProps> = ({
                 isParamUpdate: isParam,
                 isConfigSetUpdate: isConfigSet,
                 isLoadRunMission,
-                isDefaultMission: isDefaultMissionName(missionName),
                 commsStatus: commsLookup.get(mission.event.eventId),
                 ...commsMsgIdLookup.get(mission.event.eventId),
               },
