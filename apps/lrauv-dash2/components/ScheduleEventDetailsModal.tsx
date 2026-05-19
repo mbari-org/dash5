@@ -813,7 +813,12 @@ export const ScheduleEventDetailsModal: React.FC<
             <p className="text-sm uppercase tracking-wide text-stone-500">
               Operator
             </p>
-            <p className="font-medium">{event.user || 'Unknown'}</p>
+            <p className="font-medium">
+              {event.isDefaultMission ||
+              event.label?.trim().toLowerCase() === 'default mission'
+                ? 'Automatic (vehicle)'
+                : event.user || 'Unknown'}
+            </p>
           </div>
           <div>
             <p className="text-sm uppercase tracking-wide text-stone-500">
