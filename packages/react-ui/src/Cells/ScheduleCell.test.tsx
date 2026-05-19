@@ -143,3 +143,21 @@ test('should not render an empty secondary row when secondary is undefined', () 
   const italicLis = document.querySelectorAll('li.italic')
   expect(italicLis).toHaveLength(0)
 })
+
+test('should not render a name row when name is empty string', () => {
+  // Default mission rows pass name="" so no operator attribution is shown.
+  // This guards against the conditional rendering regressing back to an
+  // empty <li> that creates a blank line in the schedule history list.
+  const { container } = render(<ScheduleCell {...props} name="" />)
+
+  expect(screen.getByText(props.label)).toBeInTheDocument()
+  // With a full name, ScheduleCell renders label + secondary + name + description
+  // list items. With name="", the name <li> must be absent, so the empty-name
+  // render must produce fewer <li> elements than the full render.
+  const liCount = container.querySelectorAll('li').length
+  const { container: fullContainer } = render(
+    <ScheduleCell {...props} name="Kurt Vonnegut" />
+  )
+  const fullLiCount = fullContainer.querySelectorAll('li').length
+  expect(liCount).toBeLessThan(fullLiCount)
+})

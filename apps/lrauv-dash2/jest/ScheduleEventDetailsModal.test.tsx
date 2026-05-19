@@ -221,3 +221,40 @@ test('popup shows N/A (not TBD) in Ended field for a timed-out non-mission comma
   expect(screen.getAllByText('N/A').length).toBeGreaterThan(0)
   expect(screen.queryByText('TBD')).not.toBeInTheDocument()
 })
+
+// ── Operator field for Default missions ───────────────────────────────────────
+
+test('hides Operator field for synthetic Default mission rows (isDefaultMission: true triggers early return)', () => {
+  // Synthetic Default mission rows set isDefaultMission: true and are rendered
+  // by a dedicated modal path that never shows the Operator field.
+  ;(useGlobalModalId as jest.Mock).mockReturnValue(
+    makeModalId({
+      ...baseEvent,
+      label: 'Default Mission',
+      isDefaultMission: true,
+      user: 'karen-salamy',
+    })
+  )
+
+  render(<ScheduleEventDetailsModal onClose={() => {}} />)
+
+  expect(screen.queryByText('Operator')).not.toBeInTheDocument()
+  expect(screen.queryByText('karen-salamy')).not.toBeInTheDocument()
+})
+
+test('shows Operator field for regular operator-sent missions', () => {
+  ;(useGlobalModalId as jest.Mock).mockReturnValue(
+    makeModalId({
+      ...baseEvent,
+      label: 'Transport/transit.tl',
+      isDefaultMission: false,
+      user: 'test-operator',
+      isLoadRunMission: true,
+    })
+  )
+
+  render(<ScheduleEventDetailsModal onClose={() => {}} />)
+
+  expect(screen.getByText('Operator')).toBeInTheDocument()
+  expect(screen.getByText('test-operator')).toBeInTheDocument()
+})
