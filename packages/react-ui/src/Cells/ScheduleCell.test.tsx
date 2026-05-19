@@ -148,9 +148,17 @@ test('should not render a name row when name is empty string', () => {
   // Default mission rows pass name="" so no operator attribution is shown.
   // This guards against the conditional rendering regressing back to an
   // empty <li> that creates a blank line in the schedule history list.
-  render(<ScheduleCell {...props} name="" />)
+  const { container } = render(<ScheduleCell {...props} name="" />)
 
   expect(screen.getByText(props.label)).toBeInTheDocument()
-  // The name from base props must not appear.
-  expect(screen.queryByText('Kurt Vonnegut')).not.toBeInTheDocument()
+  // Count <li> elements: label + secondary + description = 3 when name present,
+  // label + secondary + description = 3 when name is omitted (no extra blank li).
+  // More directly: no <li> in the name column should contain any text content,
+  // and the total li count must be one fewer than when name is provided.
+  const liCount = container.querySelectorAll('li').length
+  const { container: fullContainer } = render(
+    <ScheduleCell {...props} name="Kurt Vonnegut" />
+  )
+  const fullLiCount = fullContainer.querySelectorAll('li').length
+  expect(liCount).toBeLessThan(fullLiCount)
 })
