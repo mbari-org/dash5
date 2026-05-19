@@ -143,3 +143,14 @@ test('should not render an empty secondary row when secondary is undefined', () 
   const italicLis = document.querySelectorAll('li.italic')
   expect(italicLis).toHaveLength(0)
 })
+
+test('should not render a name row when name is empty string', () => {
+  // Default mission rows pass name="" so no operator attribution is shown.
+  // This guards against the conditional rendering regressing back to an
+  // empty <li> that creates a blank line in the schedule history list.
+  render(<ScheduleCell {...props} name="" />)
+
+  expect(screen.getByText(props.label)).toBeInTheDocument()
+  // The name from base props must not appear.
+  expect(screen.queryByText('Kurt Vonnegut')).not.toBeInTheDocument()
+})
