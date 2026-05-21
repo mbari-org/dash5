@@ -29,9 +29,13 @@ const toWatchDuration = (hours: string): string | undefined => {
   if (hours.trim() === '') return undefined
   const h = Number(hours)
   if (!Number.isFinite(h) || h < 0) return undefined
-  const wholeHours = Math.floor(h)
-  const minutes = Math.round((h - wholeHours) * 60)
-  return `PT${wholeHours}H${minutes}M`
+  let hours = Math.floor(h)
+  let minutes = Math.round((h - hours) * 60)
+  if (minutes === 60) {
+    hours += 1
+    minutes = 0
+  }
+  return `PT${hours}H${minutes}M`
 }
 
 const Reassignment: React.FC<{ vehicleNames: string[] }> = ({
