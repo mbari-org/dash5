@@ -15,6 +15,11 @@ export interface InputProps {
   onKeyUp?: React.KeyboardEventHandler<HTMLInputElement>
   onKeyDown?: React.KeyboardEventHandler<HTMLInputElement>
   type?: string
+  /** Controls mobile keyboard auto-capitalisation. Defaults to "none" to
+   *  prevent browsers from capitalising the first character of email/password
+   *  fields. Pass "words" or "sentences" for name fields where capitalisation
+   *  is appropriate. */
+  autoCapitalize?: React.HTMLAttributes<HTMLInputElement>['autoCapitalize']
 }
 
 const style = {
@@ -38,6 +43,7 @@ export const Input = React.forwardRef<HTMLInputElement, InputProps>(
       onKeyUp,
       onKeyDown,
       type = 'text',
+      autoCapitalize = 'none',
       ...props
     },
     forwardedRef
@@ -65,6 +71,7 @@ export const Input = React.forwardRef<HTMLInputElement, InputProps>(
         type={type}
         autoComplete="off"
         autoCorrect="off"
+        autoCapitalize={autoCapitalize}
         {...controlledInputProps}
       />
     )

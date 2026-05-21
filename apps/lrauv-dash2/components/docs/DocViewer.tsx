@@ -1,8 +1,19 @@
 import React, { useEffect } from 'react'
 import { useEditor, EditorContent } from '@tiptap/react'
 import StarterKit from '@tiptap/starter-kit'
-import { TextStyle } from '@tiptap/extension-text-style'
+import { TextStyle, FontSize } from '@tiptap/extension-text-style'
 import { Color } from '@tiptap/extension-color'
+import { Highlight } from '@tiptap/extension-highlight'
+import { TextAlign } from '@tiptap/extension-text-align'
+import { Underline } from '@tiptap/extension-underline'
+import { Link } from '@tiptap/extension-link'
+import { Subscript } from '@tiptap/extension-subscript'
+import { Superscript } from '@tiptap/extension-superscript'
+import { HorizontalRule } from '@tiptap/extension-horizontal-rule'
+import { Table } from '@tiptap/extension-table'
+import { TableRow } from '@tiptap/extension-table-row'
+import { TableCell } from '@tiptap/extension-table-cell'
+import { TableHeader } from '@tiptap/extension-table-header'
 import { CheckboxNode } from './extensions/CheckboxNode'
 import { RadioNode } from './extensions/RadioNode'
 import { TextFieldNode } from './extensions/TextFieldNode'
@@ -91,7 +102,9 @@ export default function DocViewer(props: DocViewerProps) {
     extensions: [
       StarterKit.configure({
         heading: { levels: [1, 2, 3, 4, 5, 6] },
+        horizontalRule: false,
       }),
+      TextAlign.configure({ types: ['heading', 'paragraph'] }),
       TextStyle.extend({
         addAttributes() {
           return {
@@ -99,24 +112,53 @@ export default function DocViewer(props: DocViewerProps) {
             style: {
               default: null,
               parseHTML: (element: HTMLElement) => {
-                const el = element as HTMLElement
-                const style = el.getAttribute('style')
-                // Preserve style attribute if it contains color
-                if (style && /color:/i.test(style)) {
-                  return style
-                }
-                return null
+                const raw = (element as HTMLElement).getAttribute('style')
+                if (!raw) return null
+                // Whitelist only safe CSS properties to prevent style injection.
+                // font-family is included for dash4 <font face="..."> compatibility.
+                const allowed = [
+                  'color',
+                  'font-size',
+                  'background-color',
+                  'font-family',
+                ]
+                const filtered = raw
+                  .split(';')
+                  .map((s) => s.trim())
+                  .filter((s) =>
+                    allowed.some((prop) =>
+                      s.toLowerCase().startsWith(prop + ':')
+                    )
+                  )
+                  .join('; ')
+                return filtered || null
               },
               renderHTML: (attributes: { style?: string }) => {
-                if (!attributes.style) {
-                  return {}
-                }
+                if (!attributes.style) return {}
                 return { style: attributes.style }
               },
             },
           }
         },
       }),
+      FontSize,
+      Highlight.configure({ multicolor: true }),
+      Underline,
+      Link.configure({
+        openOnClick: true,
+        protocols: ['http', 'https', 'mailto'],
+        HTMLAttributes: {
+          target: '_blank',
+          rel: 'noopener noreferrer',
+        },
+      }),
+      Subscript,
+      Superscript,
+      HorizontalRule,
+      Table.configure({ resizable: false }),
+      TableRow,
+      TableHeader,
+      TableCell,
       Color.extend({
         addAttributes() {
           return {

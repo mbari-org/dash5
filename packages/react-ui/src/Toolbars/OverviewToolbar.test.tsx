@@ -89,11 +89,50 @@ test('should render deployment list toggle to the screen', async () => {
   expect(screen.queryByTestId('deploymentHeadline')).not.toBeInTheDocument()
 })
 
+test('should show the deployment start date below the title without opening the dropdown', async () => {
+  render(<OverviewToolbar {...props} />)
+
+  // The subtitle is always visible — no click needed
+  expect(screen.getByTestId('deployment-date')).toBeInTheDocument()
+  expect(screen.getByText(/3 days ago/i)).toBeInTheDocument()
+})
+
+test('should show "Starts in" subtitle for a future deployment date', async () => {
+  render(
+    <OverviewToolbar
+      {...props}
+      deployment={{
+        ...props.deployment!,
+        unixTime: DateTime.now().plus({ days: 2 }).toMillis(),
+      }}
+    />
+  )
+
+  expect(screen.getByTestId('deployment-date')).toBeInTheDocument()
+  expect(screen.getByText(/starts in/i)).toBeInTheDocument()
+})
+
+test('should also show the deployment date subtitle in the non-interactive headline', async () => {
+  render(
+    <OverviewToolbar
+      {...props}
+      onSelectDeployment={undefined}
+      onSelectNewDeployment={undefined}
+    />
+  )
+
+  expect(screen.getByTestId('deploymentHeadline')).toBeInTheDocument()
+  expect(screen.getByTestId('deployment-date')).toBeInTheDocument()
+  expect(screen.getByText(/3 days ago/i)).toBeInTheDocument()
+})
+
 test('should render the deployment dropdown when selecting the toggle', async () => {
   render(<OverviewToolbar {...props} />)
 
   fireEvent.click(screen.getByTestId('deploymentToggle'))
-  expect(screen.getByText(/3 days ago/i)).toBeInTheDocument()
+  // After opening the dropdown, the deployment name appears twice:
+  // once in the always-visible toolbar title and once in the dropdown header.
+  expect(screen.getAllByText('Brizo 7 EcoHab')).toHaveLength(2)
   expect(screen.getByText(/new brizo/i)).not.toHaveClass('opacity-30')
 })
 
@@ -101,7 +140,6 @@ test('should disable the new deployment dropdown if no handler is present', asyn
   render(<OverviewToolbar {...props} onSelectNewDeployment={undefined} />)
 
   fireEvent.click(screen.getByTestId('deploymentToggle'))
-  expect(screen.getByText(/3 days ago/i)).toBeInTheDocument()
   expect(screen.getByText(/new brizo/i)).toHaveClass('opacity-30')
 })
 
@@ -134,6 +172,8 @@ test('should not render deployment list toggle to the screen if there are no dep
 
   expect(screen.getByTestId('deploymentHeadline')).toBeInTheDocument()
   expect(screen.queryByTestId('deploymentToggle')).not.toBeInTheDocument()
+  // Date subtitle should still render in the static headline path
+  expect(screen.getByTestId('deployment-date')).toBeInTheDocument()
 })
 
 test('should render the role reassign button with pic and oncall', async () => {

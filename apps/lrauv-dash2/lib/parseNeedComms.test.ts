@@ -159,8 +159,10 @@ describe('parseNeedCommsSelection', () => {
   })
 
   it('excludes events before minTime even if they are the only matches', () => {
-    const missionStartTime = 10000
-    const oneMinuteBeforeMission = missionStartTime - 60000 // 4000
+    // Event at unixTime:3000 must be < minTime to be filtered out.
+    // Use missionStartTime=65000 so oneMinuteBeforeMission=5000 > 3000.
+    const missionStartTime = 65000
+    const oneMinuteBeforeMission = missionStartTime - 60000 // 5000
     const events = [
       // Only event from previous mission (before 1 minute before mission start)
       makeEvent({

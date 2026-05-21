@@ -1,7 +1,11 @@
 module.exports = {
   testEnvironment: 'jsdom',
   setupFiles: ['./jest/setup.js'],
-  testMatch: ['**/jest/**/?(*.)+(test).[jt]s?(x)'],
+  testMatch: [
+    '**/jest/**/?(*.)+(test).[jt]s?(x)',
+    '**/components/**/?(*.)+(test).[jt]s?(x)',
+    '**/lib/**/?(*.)+(test).[jt]s?(x)',
+  ],
   moduleNameMapper: {
     '^.+\\.(css|less|scss)$': '<rootDir>/jest/styleMock.js',
     '^.+\\.(jpg|jpeg|png|gif|webp|svg)$': '<rootDir>/jest/fileMock.js',
@@ -10,6 +14,6 @@ module.exports = {
     '^.+\\.(js|jsx|ts|tsx)$': ['babel-jest', { presets: ['next/babel'] }],
   },
   transformIgnorePatterns: [
-    '/node_modules/(?!(react-dnd|react-dnd-html5-backend|@react-dnd|dnd-core)/)',
+    '/node_modules/(?!(react-dnd|react-dnd-html5-backend|@react-dnd|dnd-core|@tiptap|prosemirror-[^/]+|orderedmap)/)',
   ],
 }

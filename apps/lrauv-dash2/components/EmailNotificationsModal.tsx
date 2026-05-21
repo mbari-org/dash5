@@ -1,17 +1,26 @@
-import React, { useCallback, useEffect, useMemo, useState } from 'react'
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { Modal, Button } from '@mbari/react-ui'
 import toast from 'react-hot-toast'
+import Tippy from '@tippyjs/react'
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
+import { faPencil, faPlus } from '@fortawesome/free-solid-svg-icons'
 import {
   useTethysApiContext,
   useEmailSettings,
   useUpdateEmailSettings,
   useSendTestEmail,
   useSiteConfig,
+  useEmailAddresses,
+  useAddExtraEmail,
+  useUpdateEmailAddress,
+  useDeleteEmailAddress,
   EventKind,
 } from '@mbari/api-client'
 import { useQueryClient } from 'react-query'
 import VehiclePickerModal from './VehiclePickerModal'
 import FilteredNotificationEditModal from './FilteredNotificationEditModal'
+import AddEmailDialog from './AddEmailDialog'
+import EditEmailDialog from './EditEmailDialog'
 import { FilterRowUi, FilteringType } from '../types'
 
 export interface EmailNotificationsModalProps {
@@ -23,7 +32,42 @@ const EmailNotificationsModal: React.FC<EmailNotificationsModalProps> = ({
 }) => {
   const { profile, axiosInstance, token } = useTethysApiContext()
   const queryClient = useQueryClient()
-  const email = profile?.email ?? ''
+  const accountEmail = profile?.email ?? ''
+
+  // ── email address list ──────────────────────────────────────────────────
+  const { data: addressesData, isLoading: isAddressesLoading } =
+    useEmailAddresses(undefined, { enabled: accountEmail.length > 0 })
+
+  const [selectedEmail, setSelectedEmail] = useState<string>('')
+
+  const allEmails: string[] = useMemo(() => {
+    const base = addressesData?.result
+      ? Object.keys(addressesData.result).sort()
+      : accountEmail
+      ? [accountEmail]
+      : []
+    // Keep selectedEmail in the list during a pending refetch so the dropdown
+    // never shows a selected address that isn't present in the options.
+    if (selectedEmail && !base.includes(selectedEmail)) {
+      return [...base, selectedEmail].sort()
+    }
+    return base
+  }, [addressesData, accountEmail, selectedEmail])
+
+  // default to account email once list loads
+  useEffect(() => {
+    if (!selectedEmail && accountEmail) {
+      setSelectedEmail(accountEmail)
+    }
+  }, [accountEmail, selectedEmail])
+
+  const isExtraEmail = selectedEmail !== '' && selectedEmail !== accountEmail
+
+  // ── per-selected-email settings ─────────────────────────────────────────
+  const { data: settings, isLoading: isSettingsLoading } = useEmailSettings(
+    { email: selectedEmail },
+    { enabled: selectedEmail.length > 0 }
+  )
 
   const { data: siteInfo, isLoading: isSiteConfigLoading } = useSiteConfig()
   const vehicleNames = useMemo(
@@ -34,11 +78,6 @@ const EmailNotificationsModal: React.FC<EmailNotificationsModalProps> = ({
   const eventKinds: EventKind[] = useMemo(
     () => siteInfo?.eventKinds ?? [],
     [siteInfo?.eventKinds]
-  )
-
-  const { data: settings, isLoading: isSettingsLoading } = useEmailSettings(
-    { email },
-    { enabled: email.length > 0 }
   )
 
   const initialPlainText = useMemo(() => {
@@ -53,18 +92,8 @@ const EmailNotificationsModal: React.FC<EmailNotificationsModalProps> = ({
     return sel
   }, [vehicleNames])
 
-  const displayEventKind = useCallback(
-    (eventKindName: string): string => {
-      const ek = eventKinds.find((k) => k.name === eventKindName)
-      if (!ek) return eventKindName
-      return `${ek.base}${ek.subkind ? ` | ${ek.subkind}` : ''}`
-    },
-    [eventKinds]
-  )
-
   const initialVehiclesEnabled: Record<string, boolean> = useMemo(() => {
     const enabled: Record<string, boolean> = {}
-    // When no settings have been saved yet, default all vehicles to selected
     if (!settings?.details) {
       vehicleNames.forEach((v) => (enabled[v] = true))
       return enabled
@@ -114,14 +143,15 @@ const EmailNotificationsModal: React.FC<EmailNotificationsModalProps> = ({
     })
   }, [settings, initVehiclesSelection])
 
-  const [plainText, setPlainText] = useState<boolean>(() => initialPlainText)
+  const [plainText, setPlainText] = useState<boolean>(initialPlainText)
   const [vehiclesEnabled, setVehiclesEnabled] = useState<
     Record<string, boolean>
-  >(() => initialVehiclesEnabled)
+  >(initialVehiclesEnabled)
   const [filteredRows, setFilteredRows] = useState<FilterRowUi[]>(() =>
     toUiFilteredRows()
   )
 
+  // re-init local state whenever selected email or loaded settings change
   useEffect(() => {
     setPlainText(initialPlainText)
   }, [initialPlainText])
@@ -153,27 +183,136 @@ const EmailNotificationsModal: React.FC<EmailNotificationsModalProps> = ({
         ) {
           return next
         }
+        // Also compare vehiclesChecked so switching emails resets per-row vehicle selections.
+        const aKeys = Object.keys(a.vehiclesChecked)
+        const bKeys = Object.keys(b.vehiclesChecked)
+        if (aKeys.length !== bKeys.length) return next
+        if (
+          aKeys.some(
+            (k) =>
+              Boolean(a.vehiclesChecked[k]) !== Boolean(b.vehiclesChecked[k])
+          )
+        ) {
+          return next
+        }
       }
       return prev
     })
   }, [toUiFilteredRows])
 
+  // ── mutations ────────────────────────────────────────────────────────────
   const { mutate: saveSettings, isLoading: isSaving } = useUpdateEmailSettings()
   const { mutate: sendTest, isLoading: isTesting } = useSendTestEmail()
+  const { mutate: addExtraEmail, isLoading: isAddingEmail } = useAddExtraEmail()
+  const { mutate: updateEmailAddress, isLoading: isUpdatingEmail } =
+    useUpdateEmailAddress()
+  const { mutate: deleteEmailAddress, isLoading: isDeletingEmail } =
+    useDeleteEmailAddress()
 
   const [isDeleting, setIsDeleting] = useState(false)
+  const [dropdownOpen, setDropdownOpen] = useState(false)
+  const [focusedIdx, setFocusedIdx] = useState(-1)
+  const dropdownRef = useRef<HTMLDivElement>(null)
+  const listboxRef = useRef<HTMLUListElement>(null)
+  const triggerRef = useRef<HTMLButtonElement>(null)
+
+  // close dropdown when clicking outside
+  useEffect(() => {
+    const handler = (e: MouseEvent) => {
+      if (
+        dropdownRef.current &&
+        !dropdownRef.current.contains(e.target as Node)
+      ) {
+        setDropdownOpen(false)
+      }
+    }
+    document.addEventListener('mousedown', handler)
+    return () => document.removeEventListener('mousedown', handler)
+  }, [])
+
+  const closeDropdown = useCallback(() => {
+    setDropdownOpen(false)
+    // Return focus to the trigger button so the user's position is preserved.
+    triggerRef.current?.focus()
+  }, [])
+
+  const openDropdown = useCallback(() => {
+    setFocusedIdx(allEmails.indexOf(selectedEmail))
+    setDropdownOpen(true)
+  }, [allEmails, selectedEmail])
+
+  // When the listbox mounts, move focus into it so aria-activedescendant
+  // is on the focused element (as required by the ARIA listbox pattern).
+  useEffect(() => {
+    if (dropdownOpen) {
+      listboxRef.current?.focus()
+    }
+  }, [dropdownOpen])
+
+  // Key handler for the trigger button — only handles "open" keys.
+  const handleTriggerKeyDown = useCallback(
+    (e: React.KeyboardEvent) => {
+      if (e.key === 'Enter' || e.key === ' ' || e.key === 'ArrowDown') {
+        e.preventDefault()
+        openDropdown()
+      } else if (e.key === 'ArrowUp') {
+        // ArrowUp opens the dropdown with focus on the last option.
+        e.preventDefault()
+        setFocusedIdx(allEmails.length - 1)
+        setDropdownOpen(true)
+      }
+    },
+    [openDropdown, allEmails.length]
+  )
+
+  // Key handler for the listbox — handles navigation while open.
+  const handleDropdownKeyDown = useCallback(
+    (e: React.KeyboardEvent) => {
+      if (e.key === 'ArrowDown') {
+        e.preventDefault()
+        setFocusedIdx((i) => Math.min(i + 1, allEmails.length - 1))
+      } else if (e.key === 'ArrowUp') {
+        e.preventDefault()
+        setFocusedIdx((i) => Math.max(i - 1, 0))
+      } else if (e.key === 'Enter' || e.key === ' ') {
+        e.preventDefault()
+        if (focusedIdx >= 0 && focusedIdx < allEmails.length) {
+          setSelectedEmail(allEmails[focusedIdx])
+        }
+        closeDropdown()
+      } else if (e.key === 'Escape') {
+        closeDropdown()
+      } else if (e.key === 'Tab') {
+        // Close the dropdown but let the browser handle Tab focus naturally;
+        // don't force focus back to the trigger or it disrupts Tab order.
+        setDropdownOpen(false)
+      }
+    },
+    [focusedIdx, allEmails, closeDropdown]
+  )
+
   const [sendTestStatus, setSendTestStatus] = useState<
     'idle' | 'success' | 'error'
   >('idle')
   const [sendTestMessage, setSendTestMessage] = useState<string>('')
 
+  // Clear test-email feedback whenever the selected address changes so stale
+  // success/error messages from a previous address don't linger.
+  useEffect(() => {
+    setSendTestStatus('idle')
+    setSendTestMessage('')
+  }, [selectedEmail])
+
+  // ── sub-dialog state ─────────────────────────────────────────────────────
+  const [showAddEmail, setShowAddEmail] = useState(false)
+  const [showEditEmail, setShowEditEmail] = useState(false)
+  const [openPicker, setOpenPicker] = useState<null | 'unfiltered'>(null)
+  const [editModal, setEditModal] = useState<{ idx: number } | null>(null)
+
+  // ── vehicle helpers ──────────────────────────────────────────────────────
   const toggleUnfilteredVehicle = (name: string) => {
     setVehiclesEnabled((prev) => ({ ...prev, [name]: !prev[name] }))
   }
-
-  const [openPicker, setOpenPicker] = useState<null | 'unfiltered'>(null)
-  // Filtered notification edit modal state; idx -1 means create
-  const [editModal, setEditModal] = useState<{ idx: number } | null>(null)
 
   const selectAllUnfiltered = () => {
     const all: Record<string, boolean> = {}
@@ -187,6 +326,21 @@ const EmailNotificationsModal: React.FC<EmailNotificationsModalProps> = ({
     setVehiclesEnabled(none)
   }
 
+  const displayEventKind = useCallback(
+    (eventKindName: string): string => {
+      const ek = eventKinds.find((k) => k.name === eventKindName)
+      if (!ek) return eventKindName
+      return `${ek.base}${ek.subkind ? ` | ${ek.subkind}` : ''}`
+    },
+    [eventKinds]
+  )
+
+  const selectedUnfiltered = useMemo(
+    () => vehicleNames.filter((n) => Boolean(vehiclesEnabled[n])),
+    [vehicleNames, vehiclesEnabled]
+  )
+
+  // ── filtered rows helpers ────────────────────────────────────────────────
   const computeEditInitial = useCallback((): FilterRowUi => {
     const defaultEk = eventKinds[0]?.name ?? ''
     if (editModal?.idx === -1) {
@@ -230,8 +384,9 @@ const EmailNotificationsModal: React.FC<EmailNotificationsModalProps> = ({
     }
   }, [editModal])
 
+  // ── save / delete / test ─────────────────────────────────────────────────
   const handleSave = () => {
-    if (!email) return
+    if (!selectedEmail) return
     const vehiclesEnabledArray = Object.entries(vehiclesEnabled)
       .filter(([, enabled]) => enabled)
       .map(([name]) => name)
@@ -253,7 +408,7 @@ const EmailNotificationsModal: React.FC<EmailNotificationsModalProps> = ({
     }
     saveSettings(
       {
-        email,
+        email: selectedEmail,
         plainText: plainText ? 'y' : 'n',
         details,
       },
@@ -267,11 +422,14 @@ const EmailNotificationsModal: React.FC<EmailNotificationsModalProps> = ({
   }
 
   const handleSendTest = () => {
-    if (!email) return
+    if (!selectedEmail) return
     setSendTestStatus('idle')
     setSendTestMessage('')
     sendTest(
-      { email, plainText: plainText ? 'y' : ('n' as 'y' | 'n') },
+      {
+        email: selectedEmail,
+        plainText: plainText ? 'y' : ('n' as 'y' | 'n'),
+      },
       {
         onSuccess: (data) => {
           const msg = data?.email_sent
@@ -289,16 +447,16 @@ const EmailNotificationsModal: React.FC<EmailNotificationsModalProps> = ({
   }
 
   const handleDeleteAll = async () => {
-    if (!email) return
-    if (!confirm(`Delete all notification settings for ${email}?`)) return
+    if (!selectedEmail) return
+    if (!confirm(`Delete all notification settings for ${selectedEmail}?`))
+      return
     try {
       setIsDeleting(true)
-      const url = '/ens'
-      await axiosInstance!.delete(url, {
-        params: { email },
+      await axiosInstance!.delete('/ens', {
+        params: { email: selectedEmail },
         headers: { Authorization: `Bearer ${token}` },
       })
-      queryClient.removeQueries(['email', 'settings', email])
+      queryClient.removeQueries(['email', 'settings', selectedEmail])
       onClose?.()
     } catch {
       toast.error('Failed to delete notification settings. Please try again.')
@@ -307,19 +465,76 @@ const EmailNotificationsModal: React.FC<EmailNotificationsModalProps> = ({
     }
   }
 
+  // ── extra email address management ───────────────────────────────────────
+  const handleAddEmail = (newEmail: string) => {
+    addExtraEmail(
+      { email: accountEmail, addExtraEmails: newEmail },
+      {
+        onSuccess: () => {
+          setShowAddEmail(false)
+          setSelectedEmail(newEmail)
+        },
+        onError: () => {
+          toast.error('Failed to add email address. Please try again.')
+        },
+      }
+    )
+  }
+
+  const handleEditSaveAddress = (newEmail: string) => {
+    updateEmailAddress(
+      {
+        email: accountEmail,
+        extraEmail: selectedEmail,
+        newExtraEmail: newEmail,
+      },
+      {
+        onSuccess: () => {
+          setShowEditEmail(false)
+          setSelectedEmail(newEmail)
+        },
+        onError: () => {
+          toast.error('Failed to update email address. Please try again.')
+        },
+      }
+    )
+  }
+
+  const handleDeleteAddress = () => {
+    if (!confirm(`Remove ${selectedEmail} from your notification addresses?`))
+      return
+    deleteEmailAddress(
+      { email: accountEmail, extraEmail: selectedEmail },
+      {
+        onSuccess: () => {
+          setShowEditEmail(false)
+          setSelectedEmail(accountEmail)
+        },
+        onError: () => {
+          toast.error('Failed to remove email address. Please try again.')
+        },
+      }
+    )
+  }
+
+  // ── derived flags ────────────────────────────────────────────────────────
+  const isDataLoading =
+    isSiteConfigLoading || isSettingsLoading || isAddressesLoading
+  const isBusy =
+    isSaving ||
+    isTesting ||
+    isDeleting ||
+    isAddingEmail ||
+    isUpdatingEmail ||
+    isDeletingEmail ||
+    !selectedEmail ||
+    isDataLoading
+
   const renderSelectedList = (names: string[]) => {
     if (names.length === 0)
       return <span className="text-stone-400">None selected</span>
     return <span>{names.join(', ')}</span>
   }
-
-  const selectedUnfiltered = useMemo(
-    () => vehicleNames.filter((n) => Boolean(vehiclesEnabled[n])),
-    [vehicleNames, vehiclesEnabled]
-  )
-
-  const isDataLoading = isSiteConfigLoading || isSettingsLoading
-  const isBusy = isSaving || isTesting || isDeleting || !email || isDataLoading
 
   return (
     <Modal
@@ -347,27 +562,166 @@ const EmailNotificationsModal: React.FC<EmailNotificationsModalProps> = ({
       blurBackground
     >
       <article className="flex flex-col">
+        {/* ── Email selector row ── */}
+        <section className="flex items-center gap-2 pb-4">
+          <span className="text-sm font-medium text-stone-600">
+            Settings for:
+          </span>
+
+          {/* Custom dropdown — always opens downward, keyboard accessible */}
+          <div ref={dropdownRef} className="relative">
+            <button
+              ref={triggerRef}
+              aria-label="Select notification email address"
+              className="flex min-w-[220px] items-center justify-between gap-2 rounded border border-stone-300 bg-white px-3 py-1 text-sm transition-colors hover:border-primary-400 hover:bg-blue-50 active:bg-blue-100 disabled:cursor-not-allowed disabled:opacity-50"
+              onClick={() => (dropdownOpen ? closeDropdown() : openDropdown())}
+              onKeyDown={handleTriggerKeyDown}
+              disabled={isAddressesLoading}
+              aria-haspopup="listbox"
+              aria-expanded={dropdownOpen}
+              aria-controls="email-selector-listbox"
+            >
+              <span className="truncate">
+                {selectedEmail || '—'}
+                {selectedEmail === accountEmail ? (
+                  <span className="ml-1 text-stone-400">(primary)</span>
+                ) : null}
+              </span>
+              <svg
+                className={`h-4 w-4 flex-shrink-0 text-stone-400 transition-transform ${
+                  dropdownOpen ? 'rotate-180' : ''
+                }`}
+                viewBox="0 0 20 20"
+                fill="currentColor"
+              >
+                <path
+                  fillRule="evenodd"
+                  d="M5.23 7.21a.75.75 0 011.06.02L10 11.168l3.71-3.938a.75.75 0 111.08 1.04l-4.25 4.5a.75.75 0 01-1.08 0l-4.25-4.5a.75.75 0 01.02-1.06z"
+                  clipRule="evenodd"
+                />
+              </svg>
+            </button>
+
+            {dropdownOpen && (
+              <ul
+                ref={listboxRef}
+                id="email-selector-listbox"
+                role="listbox"
+                aria-label="Notification email address"
+                tabIndex={-1}
+                aria-activedescendant={
+                  focusedIdx >= 0 ? `email-option-${focusedIdx}` : undefined
+                }
+                onKeyDown={handleDropdownKeyDown}
+                className="absolute left-0 top-full z-50 mt-1 max-h-60 w-full overflow-auto rounded border border-stone-200 bg-white shadow-lg outline-none"
+              >
+                {allEmails.map((e, idx) => (
+                  <li
+                    key={e}
+                    id={`email-option-${idx}`}
+                    role="option"
+                    aria-selected={e === selectedEmail}
+                    className={`cursor-pointer px-3 py-2 text-sm transition-colors ${
+                      e === selectedEmail
+                        ? 'bg-yellow-50 font-semibold text-primary-700'
+                        : idx === focusedIdx
+                        ? 'bg-blue-100 text-primary-700'
+                        : 'text-stone-700 hover:bg-blue-50 hover:text-primary-700 active:bg-blue-100'
+                    }`}
+                    onMouseEnter={() => setFocusedIdx(idx)}
+                    onClick={() => {
+                      setSelectedEmail(e)
+                      closeDropdown()
+                    }}
+                  >
+                    {e === selectedEmail && (
+                      <span className="mr-1 text-primary-500">›</span>
+                    )}
+                    {e}
+                    {e === accountEmail && (
+                      <span className="ml-1 text-xs font-normal text-stone-400">
+                        (primary)
+                      </span>
+                    )}
+                  </li>
+                ))}
+              </ul>
+            )}
+          </div>
+
+          {/* Pencil — always visible; disabled + tooltip explains why for primary.
+              Wrapped in <span> so Tippy fires even when the button is disabled. */}
+          <Tippy
+            content={
+              isExtraEmail
+                ? 'Edit or delete this address'
+                : 'Primary email address cannot be edited here'
+            }
+            placement="top"
+          >
+            <span className="inline-flex">
+              <button
+                className="flex h-7 w-7 items-center justify-center rounded-full border border-stone-300 bg-white text-stone-500 transition-colors hover:border-primary-500 hover:bg-blue-100 hover:text-primary-600 active:bg-blue-200 disabled:cursor-not-allowed disabled:opacity-40"
+                onClick={() => isExtraEmail && setShowEditEmail(true)}
+                disabled={isBusy || !isExtraEmail}
+                aria-label="Edit address"
+              >
+                <FontAwesomeIcon icon={faPencil} className="text-xs" />
+              </button>
+            </span>
+          </Tippy>
+
+          {/* Plus — add a new address. Wrapped in <span> so Tippy fires when disabled. */}
+          <Tippy content="Add a notification address" placement="top">
+            <span className="inline-flex">
+              <button
+                className="flex h-7 w-7 items-center justify-center rounded-full border border-stone-300 bg-white text-stone-500 transition-colors hover:border-primary-500 hover:bg-blue-100 hover:text-primary-600 active:bg-blue-200 disabled:cursor-not-allowed disabled:opacity-40"
+                onClick={() => setShowAddEmail(true)}
+                disabled={isBusy}
+                aria-label="Add address"
+              >
+                <FontAwesomeIcon icon={faPlus} className="text-xs" />
+              </button>
+            </span>
+          </Tippy>
+        </section>
+
+        {/* ── Plain text + test email row ── */}
         <section className="flex items-center justify-between pb-4">
-          <div className="flex items-center">
-            <span className="mr-2 text-sm font-medium">
+          <div className="flex items-center gap-2">
+            <span id="plain-text-label" className="text-sm font-medium">
               Send emails as plain text
             </span>
+            {/* Toggle slider */}
             <button
-              className={`rounded border px-3 py-1 ${
-                plainText
-                  ? 'bg-primary-600 text-white'
-                  : 'bg-white text-stone-400'
-              }`}
+              role="switch"
+              aria-labelledby="plain-text-label"
+              aria-checked={plainText}
+              disabled={isDataLoading}
               onClick={() => setPlainText((v) => !v)}
-              aria-pressed={plainText}
+              className={`relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-1 disabled:cursor-not-allowed disabled:opacity-50 ${
+                plainText ? 'bg-primary-600' : 'bg-stone-300'
+              }`}
+            >
+              <span className="sr-only">{plainText ? 'On' : 'Off'}</span>
+              <span
+                className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${
+                  plainText ? 'translate-x-5' : 'translate-x-0'
+                }`}
+              />
+            </button>
+            <span
+              className={`text-xs font-semibold ${
+                plainText ? 'text-primary-600' : 'text-stone-400'
+              }`}
             >
               {plainText ? 'On' : 'Off'}
-            </button>
+            </span>
           </div>
           <div className="flex items-center gap-2">
             {sendTestStatus === 'success' && (
               <span className="text-sm text-green-600">
-                {sendTestMessage || `Test email sent to ${email}`}
+                {sendTestMessage || `Test email sent to ${selectedEmail}`}
               </span>
             )}
             {sendTestStatus === 'error' && (
@@ -375,30 +729,45 @@ const EmailNotificationsModal: React.FC<EmailNotificationsModalProps> = ({
                 Failed: {sendTestMessage || 'Unknown error'}
               </span>
             )}
-            <Button
-              appearance="secondary"
-              onClick={handleSendTest}
-              disabled={isBusy}
+            <Tippy
+              content={`Send a test email to ${selectedEmail}`}
+              placement="top"
             >
-              {isTesting ? 'Sending…' : 'Send test email'}
-            </Button>
+              <span>
+                <Button
+                  appearance="secondary"
+                  onClick={handleSendTest}
+                  disabled={isBusy}
+                >
+                  {isTesting ? 'Sending…' : 'Send test email'}
+                </Button>
+              </span>
+            </Tippy>
           </div>
         </section>
 
+        {/* ── Receive All Notifications ── */}
         <section className="-mx-4 border-t p-4">
           <div className="mb-2 flex items-center justify-between">
             <span className="font-bold">Receive All Notifications</span>
-            <Button
-              appearance="secondary"
-              onClick={() => setOpenPicker('unfiltered')}
-              disabled={isDataLoading}
+            <Tippy
+              content="Choose which vehicles send you all notifications"
+              placement="top"
             >
-              {isDataLoading
-                ? 'Loading…'
-                : selectedUnfiltered.length === 0
-                ? 'Add vehicles'
-                : 'Edit vehicles'}
-            </Button>
+              <span>
+                <Button
+                  appearance="secondary"
+                  onClick={() => setOpenPicker('unfiltered')}
+                  disabled={isDataLoading}
+                >
+                  {isDataLoading
+                    ? 'Loading…'
+                    : selectedUnfiltered.length === 0
+                    ? 'Add vehicles'
+                    : 'Edit vehicles'}
+                </Button>
+              </span>
+            </Tippy>
           </div>
           <div className="overflow-auto rounded border bg-white">
             <table className="w-full text-left text-sm">
@@ -418,15 +787,23 @@ const EmailNotificationsModal: React.FC<EmailNotificationsModalProps> = ({
           </div>
         </section>
 
+        {/* ── Receive Filtered Notifications ── */}
         <section className="-mx-4 border-t p-4">
           <div className="mb-2 flex items-center justify-between">
             <span className="font-bold">Receive Filtered Notifications</span>
-            <Button
-              appearance="secondary"
-              onClick={() => setEditModal({ idx: -1 })}
+            <Tippy
+              content="Add a new filtered notification rule"
+              placement="top"
             >
-              Add filtered notification
-            </Button>
+              <span>
+                <Button
+                  appearance="secondary"
+                  onClick={() => setEditModal({ idx: -1 })}
+                >
+                  Add filtered notification
+                </Button>
+              </span>
+            </Tippy>
           </div>
 
           <div className="overflow-auto rounded border bg-white">
@@ -461,7 +838,8 @@ const EmailNotificationsModal: React.FC<EmailNotificationsModalProps> = ({
                     return (
                       <tr
                         key={`${row.eventKindName}-${idx}`}
-                        className="cursor-pointer border-b align-top text-stone-600 hover:bg-secondary-100"
+                        className="cursor-pointer border-b align-top text-stone-600 transition-colors hover:bg-secondary-100 active:bg-secondary-200"
+                        title="Click to edit this filter rule"
                         onClick={() => setEditModal({ idx })}
                       >
                         <td className="p-2">
@@ -491,6 +869,29 @@ const EmailNotificationsModal: React.FC<EmailNotificationsModalProps> = ({
           </div>
         </section>
       </article>
+
+      {/* ── Sub-dialogs ── */}
+      {showAddEmail && (
+        <AddEmailDialog
+          existingEmails={allEmails}
+          onClose={() => setShowAddEmail(false)}
+          onAdd={handleAddEmail}
+          isAdding={isAddingEmail}
+        />
+      )}
+
+      {showEditEmail && (
+        <EditEmailDialog
+          currentEmail={selectedEmail}
+          existingEmails={allEmails}
+          onClose={() => setShowEditEmail(false)}
+          onSave={handleEditSaveAddress}
+          onDelete={handleDeleteAddress}
+          isSaving={isUpdatingEmail}
+          isDeleting={isDeletingEmail}
+        />
+      )}
+
       {openPicker !== null && (
         <VehiclePickerModal
           vehicleNames={vehicleNames}
@@ -507,6 +908,7 @@ const EmailNotificationsModal: React.FC<EmailNotificationsModalProps> = ({
           onClose={() => setOpenPicker(null)}
         />
       )}
+
       {editModal && (
         <FilteredNotificationEditModal
           open

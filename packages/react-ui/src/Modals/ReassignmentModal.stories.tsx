@@ -16,21 +16,23 @@ export default {
   },
 } as Meta<ReassignmentModalProps>
 
+const makeOp = (user: string) => ({ user, unixTime: Date.now() - 2 * 3600_000 })
+
 const vehicles = [
   {
     name: 'Brizo',
-    picOperators: ['Norville Rogers', 'Daphne Blake'],
+    picOperators: [makeOp('Norville Rogers'), makeOp('Daphne Blake')],
     onCallOperators: [],
   },
   {
     name: 'Aku',
-    picOperators: ['Fred Jones'],
-    onCallOperators: ['Brian Kieft'],
+    picOperators: [makeOp('Fred Jones')],
+    onCallOperators: [makeOp('Brian Kieft')],
   },
   {
     name: 'Pontus',
-    picOperators: ['Velma Dinkley'],
-    onCallOperators: ['Brian Kieft'],
+    picOperators: [makeOp('Velma Dinkley')],
+    onCallOperators: [makeOp('Brian Kieft')],
   },
 ]
 

@@ -48,6 +48,59 @@ const makeTimeoutNote = (eventId: number, chunkNum: number): object => {
   }
 }
 
+// ── Auto-refresh / relative timestamp tests (#627) ────────────────────────────
+
+test('shows "Updated ... ago" in toolbar after a successful data load', async () => {
+  renderLogs([makeTimeoutNote(1, 1)])
+
+  await waitFor(() => {
+    expect(screen.getByText(/Updated .+ ago/)).toBeInTheDocument()
+  })
+})
+
+test('shows timeAgo for events within the last 7 days', async () => {
+  const ts = Date.now() - 3 * 24 * 60 * 60 * 1000
+  renderLogs([
+    {
+      eventId: 5001,
+      vehicleName: 'triton',
+      eventType: 'note',
+      unixTime: ts,
+      isoTime: new Date(ts).toISOString(),
+      note: 'Some 3-day-old event',
+      user: null,
+      state: 0,
+    },
+  ])
+
+  await waitFor(() => {
+    // Should render a relative duration like "3d 0h ago" or "2d 23h ago"
+    expect(screen.getByText(/\d+d.+ago/)).toBeInTheDocument()
+  })
+})
+
+test('hides timeAgo for events older than 7 days', async () => {
+  const ts = Date.now() - 8 * 24 * 60 * 60 * 1000
+  renderLogs([
+    {
+      eventId: 5002,
+      vehicleName: 'triton',
+      eventType: 'note',
+      unixTime: ts,
+      isoTime: new Date(ts).toISOString(),
+      note: 'Some 8-day-old event',
+      user: null,
+      state: 0,
+    },
+  ])
+
+  await waitFor(() => {
+    expect(screen.getByText(/Note/i)).toBeInTheDocument()
+  })
+  // 8 days old → no timeAgo chip should appear
+  expect(screen.queryByText(/\d+d.+ago/)).not.toBeInTheDocument()
+})
+
 // ── Grouping regression tests (#596) ──────────────────────────────────────────
 
 test('single timeout note renders normally (no grouping needed)', async () => {
@@ -125,6 +178,53 @@ test('notes with different event IDs are kept as separate rows', async () => {
   await waitFor(() => {
     const badges = screen.getAllByText(/2 timeout notes/i)
     expect(badges).toHaveLength(2)
+  })
+})
+
+// ── Color / bold wiring tests (#640) ──────────────────────────────────────────
+
+test('renders Fault label in amber with bold styling', async () => {
+  const ts = Date.now() - 60 * 1000
+  renderLogs([
+    {
+      eventId: 6001,
+      vehicleName: 'triton',
+      eventType: 'logFault',
+      unixTime: ts,
+      isoTime: new Date(ts).toISOString(),
+      name: 'BuoyancyServo',
+      text: 'uart error',
+      user: null,
+      state: 0,
+    },
+  ])
+
+  await waitFor(() => {
+    const label = screen.getByText('Fault')
+    expect(label).toHaveStyle({ color: '#c78204' })
+    expect(label).toHaveClass('font-bold')
+  })
+})
+
+test('renders GPS Fix label in blue with bold styling', async () => {
+  const ts = Date.now() - 60 * 1000
+  renderLogs([
+    {
+      eventId: 6002,
+      vehicleName: 'triton',
+      eventType: 'gpsFix',
+      unixTime: ts,
+      isoTime: new Date(ts).toISOString(),
+      fix: { latitude: 36.8, longitude: -121.9 },
+      user: null,
+      state: 0,
+    },
+  ])
+
+  await waitFor(() => {
+    const label = screen.getByText('GPS Fix')
+    expect(label).toHaveStyle({ color: '#0000ff' })
+    expect(label).toHaveClass('font-bold')
   })
 })
 

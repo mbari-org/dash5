@@ -61,6 +61,27 @@ export const displayNameForEventType = (eventType: GetEventsResponse) =>
     return a
   }, '')
 
+/**
+ * Returns the Dash4-matching label color for a given event, or undefined for
+ * events that use the default text color.
+ */
+export const labelColorForEventType = (
+  event: GetEventsResponse
+): string | undefined => {
+  switch (event.eventType) {
+    case 'logFault':
+      return '#c78204'
+    case 'gpsFix':
+      return '#0000ff'
+    default:
+      return undefined
+  }
+}
+
+/** Returns true for event types whose label should be rendered in bold. */
+export const labelBoldForEventType = (event: GetEventsResponse): boolean =>
+  event.eventType === 'logFault' || event.eventType === 'gpsFix'
+
 export const isUploadEvent = (event: GetEventsResponse) =>
   (event.eventType === 'sbdSend' && event.state === 2) ||
   (event.eventType === 'sbdReceive' &&
@@ -148,22 +169,64 @@ const formatEvent = (
         </p>
       )
 
-    case 'gpsFix':
+    case 'gpsFix': {
+      const lat = event.fix?.latitude
+      const lon = event.fix?.longitude
+      const mapsUrl =
+        lat != null && lon != null
+          ? `https://www.google.com/maps?q=${lat},${lon}`
+          : undefined
       return (
         <p className="flex flex-col">
-          <span className="font-bold">Lat/Lon:</span>
-          <span className="font-mono">
-            {event.fix?.latitude}, {event.fix?.longitude}
+          <span className="font-bold" style={{ color: '#0000ff' }}>
+            Lat/Lon:
           </span>
+          {mapsUrl ? (
+            <a
+              href={mapsUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="font-mono"
+              style={{ color: '#0000ff' }}
+            >
+              {lat}, {lon}
+            </a>
+          ) : (
+            <span className="font-mono" style={{ color: '#0000ff' }}>
+              {lat}, {lon}
+            </span>
+          )}
+        </p>
+      )
+    }
+
+    case 'logFault':
+      return (
+        <p className="flex flex-col" style={{ color: '#c78204' }}>
+          <span className="block font-bold">[{name}]</span>
+          {Array.isArray(text) &&
+            text.map((line, i) =>
+              line.includes('MTMSN=') ? (
+                <span
+                  key={`${event.eventId}${i}`}
+                  className={`block ${styles.mtmsn}`}
+                >
+                  {line}
+                </span>
+              ) : (
+                <span key={`${event.eventId}${i}`} className="block">
+                  {line}
+                </span>
+              )
+            )}
         </p>
       )
 
     case 'logCritical':
-    case 'logFault':
     case 'logImportant':
       if (startedMission || defaultMission) {
         return (
-          <p className="font-bold text-purple-700">
+          <p className="text-base font-bold text-purple-700">
             <span>{text}</span>
           </p>
         )
@@ -237,7 +300,7 @@ const formatEvent = (
 
     case 'run':
       return (
-        <div className="flex flex-col">
+        <div className="flex flex-col" style={{ color: 'purple' }}>
           <p>
             <span className="font-bold">by {user ?? 'unknown'},</span> id:{' '}
             {event.eventId}, {note}

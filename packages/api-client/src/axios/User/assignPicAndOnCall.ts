@@ -7,6 +7,8 @@ export interface AssignPicAndOnCallParams {
   email?: string
   sign: 'in' | 'off'
   subRole: 'PIC' | 'On-Call'
+  /** ISO 8601 duration for time spent piloting, e.g. "PT8H0M". Only sent on PIC sign-off. */
+  watchDuration?: string
 }
 
 export interface AssignPicAndOnCallResponse {

@@ -1,3 +1,4 @@
+import '@testing-library/jest-dom'
 import { render, screen, act, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { MarkerProvider, useMarkers } from './MarkerContext'
@@ -109,9 +110,9 @@ describe('MarkerContext', () => {
 
     expect(screen.getByTestId('layer-1').textContent).toBe('In Layer')
 
-    // Check if localStorage was updated
+    // Check if localStorage was updated (MarkerContext uses 'lrauv-map-markers')
     const layerMarkers = JSON.parse(
-      mockLocalStorage.getItem('layerMarkers') || '[]'
+      mockLocalStorage.getItem('lrauv-map-markers') || '[]'
     )
     expect(layerMarkers.length).toBe(1)
     expect(layerMarkers[0].id).toBe(1)
@@ -131,11 +132,13 @@ describe('MarkerContext', () => {
 
     expect(screen.getByTestId('layer-1').textContent).toBe('Not In Layer')
 
-    // Check if localStorage was updated
-    const layerMarkers = JSON.parse(
-      mockLocalStorage.getItem('layerMarkers') || '[]'
+    // MarkerContext's useEffect saves all markers to 'lrauv-map-markers' on
+    // every state change, so the marker remains in storage with savedToLayer=false.
+    const allMarkers = JSON.parse(
+      mockLocalStorage.getItem('lrauv-map-markers') || '[]'
     )
-    expect(layerMarkers.length).toBe(0)
+    expect(allMarkers.length).toBe(1)
+    expect(allMarkers[0].savedToLayer).toBe(false)
   })
 
   test('deletes marker correctly', async () => {

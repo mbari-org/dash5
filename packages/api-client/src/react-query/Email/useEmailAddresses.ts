@@ -1,20 +1,17 @@
 import { useQuery } from 'react-query'
-import {
-  getEmailNotificationSettings,
-  GetEmailNotificationSettingsParams,
-} from '../../axios'
+import { getEmailNotifications, GetEmailNotificationsParams } from '../../axios'
 import { useTethysApiContext } from '../TethysApiProvider'
 import { SupportedQueryOptions } from '../types'
 
-export const useEmailSettings = (
-  params: GetEmailNotificationSettingsParams,
+export const useEmailAddresses = (
+  params?: GetEmailNotificationsParams,
   options?: SupportedQueryOptions
 ) => {
   const { axiosInstance, token } = useTethysApiContext()
   const query = useQuery(
-    ['email', 'settings', params?.email],
+    ['email', 'addresses', params?.allUsers],
     async () => {
-      return await getEmailNotificationSettings(params, {
+      return await getEmailNotifications(params ?? {}, {
         instance: axiosInstance,
         headers: { Authorization: `Bearer ${token}` },
       })

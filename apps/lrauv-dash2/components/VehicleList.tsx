@@ -290,16 +290,28 @@ const ConnectedVehicleCellComponent: React.FC<{
   const recovered = Boolean(lastDeployment?.recoverEvent?.eventId)
   const active = lastDeployment?.active
 
+  // Prefer launchEvent (vehicle in water) over startEvent (deployment record
+  // opened, which can be days before actual launch) for the "deployed X ago"
+  // display. Fall back to startEvent, then the first mission event.
   const deploymentStartUnixTime =
-    lastDeployment?.startEvent?.unixTime ?? missionStartedEvent?.[0]?.unixTime
+    lastDeployment?.launchEvent?.unixTime ??
+    lastDeployment?.startEvent?.unixTime ??
+    missionStartedEvent?.[0]?.unixTime
   const deploymentStartDateTime = deploymentStartUnixTime
     ? DateTime.fromMillis(deploymentStartUnixTime)
     : undefined
   const isFutureDeployment = deploymentStartDateTime
     ? deploymentStartDateTime > DateTime.now()
     : false
-  const timeSpanSinceDeployment =
-    deploymentStartDateTime?.toRelative() ?? undefined
+  const timeSpanSinceDeployment = deploymentStartDateTime
+    ? isFutureDeployment
+      ? `in ${formatCompactDuration(nowDT, deploymentStartDateTime, {
+          maxDays: 6,
+        })}`
+      : `${formatCompactDuration(deploymentStartDateTime, nowDT, {
+          maxDays: 6,
+        })} ago`
+    : undefined
 
   const missionTimeSpan = missionStartedEvent?.[0]?.unixTime
     ? DateTime.fromMillis(missionStartedEvent[0].unixTime).toRelative() ??

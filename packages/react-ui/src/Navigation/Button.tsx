@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import React from 'react'
 import clsx from 'clsx'
 
 export type ButtonAlignment = 'left' | 'right' | 'center' | 'stretch'
@@ -11,42 +11,40 @@ export type ButtonAppearance =
   | 'custom'
   | 'link'
 
-export interface ButtonProps {
+export interface ButtonProps
+  extends Omit<React.ButtonHTMLAttributes<HTMLButtonElement>, 'type'> {
   appearance?: ButtonAppearance
   align?: ButtonAlignment
-  className?: string
-  style?: React.CSSProperties
-  type?: ButtonType
-  disabled?: boolean
-  onClick?: React.MouseEventHandler<HTMLButtonElement>
-  form?: string
   tight?: boolean
-  children?: React.ReactNode
+  type?: ButtonType
 }
 
 const styles = {
-  button: 'rounded text-sm text-center w-auto font-display',
+  button:
+    'rounded text-sm text-center w-auto font-display transition-all duration-150 ease-in-out',
   normal: 'px-4 py-2',
   tight: 'px-2 py-1',
   link: 'flex font-semibold text-emerald-600 underline',
-  disabled: 'opacity-50 cursor-not-allowed',
+  // disabled: suppress all hover/active/scale effects so disabled buttons look inert
+  disabled:
+    'opacity-50 cursor-not-allowed hover:scale-100 hover:shadow-none active:scale-100',
 }
 
 export const backgroundStyles = (appearance?: ButtonAppearance) => {
   switch (appearance) {
     case 'primary':
-      return 'bg-primary-600 text-white'
+      return 'bg-primary-600 text-white hover:enabled:bg-primary-700 hover:enabled:scale-[1.03] hover:enabled:shadow-md active:enabled:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-400 focus-visible:ring-offset-1'
     case 'secondary':
-      return 'bg-white border border-stone-400 text-stone-600'
+      return 'bg-white border border-stone-400 text-stone-600 hover:enabled:border-primary-500 hover:enabled:text-primary-700 hover:enabled:bg-primary-50 hover:enabled:scale-[1.03] hover:enabled:shadow-md active:enabled:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-400 focus-visible:ring-offset-1'
     case 'destructive':
-      return 'bg-red-600 text-white'
+      return 'bg-red-600 text-white hover:enabled:bg-red-700 hover:enabled:scale-[1.03] hover:enabled:shadow-md active:enabled:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-400 focus-visible:ring-offset-1'
     case 'transparent':
-      return 'bg-transparent hover:bg-primary-600/10 transition-colors duration-200'
+      return 'bg-transparent hover:enabled:bg-primary-600/10 hover:enabled:scale-[1.03]'
     case 'custom':
     case 'link':
       return ''
     default:
-      return 'bg-indigo-600 text-white'
+      return 'bg-indigo-600 text-white hover:enabled:bg-indigo-700 hover:enabled:scale-[1.03] hover:enabled:shadow-md active:enabled:scale-[0.98]'
   }
 }
 
@@ -70,45 +68,25 @@ export const Button: React.FC<ButtonProps> = ({
   appearance = 'primary',
   children,
   className,
-  disabled,
-  style = {},
-  onClick,
-  form,
-  type = 'button',
   tight,
+  type = 'button',
+  ...rest
 }) => {
-  const [focus, setFocus] = useState(false)
-  const [hover, setHover] = useState(false)
-  const toggleState = (state: 'hover' | 'focus', newVal: boolean) => () => {
-    state === 'hover' ? setHover(newVal) : setFocus(newVal)
-  }
-  const brightness = focus ? 0.97 : hover ? 1.03 : 1
-
   const isStandardButton = !['custom', 'link'].includes(appearance ?? '')
 
   return (
     <button
+      type={type}
       className={clsx(
         appearance === 'link' && styles.link,
         backgroundStyles(appearance),
         alignmentStyles(align),
         isStandardButton && styles.button,
         isStandardButton && (tight ? styles.tight : styles.normal),
-        disabled && styles.disabled,
+        rest.disabled && styles.disabled,
         className
       )}
-      disabled={disabled}
-      style={{
-        filter: brightness !== 1 ? `brightness(${brightness})` : '',
-        ...style,
-      }}
-      onMouseDown={toggleState('focus', true)}
-      onMouseUp={toggleState('focus', false)}
-      onMouseEnter={toggleState('hover', true)}
-      onMouseLeave={toggleState('hover', false)}
-      onClick={onClick}
-      form={form}
-      type={type}
+      {...rest}
     >
       {children}
     </button>

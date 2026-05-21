@@ -100,6 +100,7 @@ const ScienceDataSection: React.FC<{
     from: from,
     to: to,
   })
+
   const [category, setCategory] = useState<string | null>('vehicle')
 
   const charts = chartData?.filter((d) =>
@@ -158,9 +159,19 @@ const ScienceDataSection: React.FC<{
           {isError && (
             <div className="m-2 rounded bg-red-200 p-2 text-red-700">
               <p className="font-bold">
-                Science data could not be processed for this mission:
+                Vehicle and Science data could not be processed for this
+                dataset.
               </p>
-              <p>{(error as any)?.message}</p>
+              <p className="mt-1">
+                This may be caused by invalid or malformed data in{' '}
+                <span className="font-mono font-bold">chartData2.json</span>.
+                Please ask a TethysDash administrator to reprocess this dataset.
+              </p>
+              {(error as Error)?.message && (
+                <p className="mt-1 font-mono text-xs opacity-75">
+                  {(error as Error).message}
+                </p>
+              )}
             </div>
           )}
           <AccordionCells

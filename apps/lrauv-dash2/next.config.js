@@ -1,5 +1,10 @@
 // This is a workaround for Next.js 15 to handle TypeScript files in workspace packages
+const pkg = require('./package.json')
+
 const nextConfig = {
+  env: {
+    NEXT_PUBLIC_APP_VERSION: pkg.version,
+  },
   output: 'export',
   reactStrictMode: true,
   // Fix for Next.js 15 image optimization with static export

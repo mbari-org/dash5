@@ -1,4 +1,5 @@
-import React, { useMemo, useState, useCallback } from 'react'
+import React, { useMemo, useState, useCallback, useEffect, useRef } from 'react'
+import { useTick } from '../lib/useTick'
 import {
   useInfiniteEvents,
   useTethysApiContext,
@@ -20,6 +21,8 @@ import { DateTime } from 'luxon'
 import formatEvent, {
   displayNameForEventType,
   isUploadEvent,
+  labelBoldForEventType,
+  labelColorForEventType,
 } from '../lib/formatEvent'
 import {
   applySelectedFilters,
@@ -30,7 +33,13 @@ import {
   modalVisibleFilterIds,
 } from '../lib/logFilters'
 import { handleCopyEventLogs } from '../lib/handleCopyEventLogs'
-import { createLogger, useDebounce } from '@mbari/utils'
+import {
+  createLogger,
+  formatCompactDuration,
+  useDebounce,
+  useResizeObserver,
+} from '@mbari/utils'
+import { useLastCommsTime } from '../lib/useLastCommsTime'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import {
   faChevronDown,
@@ -51,6 +60,8 @@ export interface LogsSectionProps {
   setDeploymentLogsOnly: (value: boolean) => void
 }
 
+const GROUP_WINDOW_MS = 5 * 1000 // 5 seconds — chunk bursts are sub-second
+
 const styles = {
   icon: 'ml-1 my-auto flex-grow-0 mr-2 flex-shrink-0',
   emptyLogBanner:
@@ -70,6 +81,42 @@ const LogsSection: React.FC<LogsSectionProps> = ({
   }
 
   const { siteConfig } = useTethysApiContext()
+
+  const headerRef = useRef<HTMLElement>(null)
+  const { size: headerSize } = useResizeObserver({ element: headerRef })
+  // Hide button icons before the header gets narrow enough to compress the
+  // buttons themselves. 500 px gives enough buffer that buttons never reach a
+  // width where their text would wrap and increase the row height.
+  const hideIcons = headerSize.width > 0 && headerSize.width < 500
+
+  // Initialize to false so SSR and the first client render always match,
+  // then load the persisted preference after mount to avoid hydration warnings.
+  const [compact, setCompact] = useState<boolean>(false)
+  useEffect(() => {
+    try {
+      if (localStorage.getItem('logs:compact') === 'true') setCompact(true)
+    } catch {
+      // localStorage unavailable (private browsing, etc.)
+    }
+  }, [])
+  // Persist on every change; skip the initial render so we don't clobber a
+  // stored 'true' before the load effect above has applied it.
+  const compactMounted = useRef(false)
+  useEffect(() => {
+    if (!compactMounted.current) {
+      compactMounted.current = true
+      return
+    }
+    try {
+      localStorage.setItem('logs:compact', String(compact))
+    } catch {
+      // localStorage unavailable
+    }
+  }, [compact])
+  const handleToggleCompact = useCallback(() => {
+    setCompact((prev) => !prev)
+  }, [])
+
   const [filters, setFilters] = useState<MultiValue<SelectOption>>(
     defaultModalSelections
   )
@@ -122,7 +169,20 @@ const LogsSection: React.FC<LogsSectionProps> = ({
     [vehicleName, eventTypes, from, to]
   )
 
-  const deploymentResponse = useInfiniteEvents(deploymentParams)
+  // Note: refetchInterval on useInfiniteQuery re-fetches all loaded pages on each
+  // tick, not just the first page. In practice, most sessions stay on page 1 so
+  // the extra load is negligible. A future improvement could use a separate
+  // lightweight query for the newest slice and merge results.
+  //
+  // Only the active view polls. The inactive query keeps its cache warm on
+  // initial mount and param changes, but does not poll on an interval or
+  // refetch on window focus / reconnect while inactive.
+  const deploymentResponse = useInfiniteEvents(deploymentParams, {
+    enabled: hasSelection,
+    refetchInterval: hasSelection && deploymentLogsOnly ? 30_000 : false,
+    refetchOnWindowFocus: deploymentLogsOnly,
+    refetchOnReconnect: deploymentLogsOnly,
+  })
 
   const allLogsParams = useMemo(
     () => ({
@@ -134,7 +194,12 @@ const LogsSection: React.FC<LogsSectionProps> = ({
     [vehicleName, eventTypes]
   )
 
-  const allLogsResponse = useInfiniteEvents(allLogsParams)
+  const allLogsResponse = useInfiniteEvents(allLogsParams, {
+    enabled: hasSelection,
+    refetchInterval: hasSelection && !deploymentLogsOnly ? 30_000 : false,
+    refetchOnWindowFocus: !deploymentLogsOnly,
+    refetchOnReconnect: !deploymentLogsOnly,
+  })
 
   const {
     data,
@@ -144,7 +209,42 @@ const LogsSection: React.FC<LogsSectionProps> = ({
     fetchNextPage,
     hasNextPage,
     refetch,
+    dataUpdatedAt,
   } = deploymentLogsOnly ? deploymentResponse : allLogsResponse
+
+  const nowMs = useTick(30_000, hasSelection)
+  const nowDT = DateTime.fromMillis(nowMs)
+
+  // Only show the last-updated indicator when logs are actively displayed.
+  // When hasSelection is false the toolbar prompts the user to choose filters,
+  // so a stale (and no-longer-ticking) "Updated X ago" would be misleading.
+  // Use DateTime.now() rather than nowDT so the counter resets immediately
+  // after a refetch instead of waiting up to 30s for the next tick.
+  const lastUpdatedDuration =
+    hasSelection && dataUpdatedAt
+      ? formatCompactDuration(
+          DateTime.fromMillis(dataUpdatedAt),
+          DateTime.now(),
+          {
+            maxDays: 1,
+          }
+        )
+      : undefined
+
+  // Last comms — show elapsed time since the most recent sat or cell contact.
+  const { lastSatCommsTime, lastCellCommsTime } = useLastCommsTime(
+    vehicleName,
+    from
+  )
+  const lastCommsTimeMs =
+    lastSatCommsTime !== null || lastCellCommsTime !== null
+      ? Math.max(lastSatCommsTime ?? 0, lastCellCommsTime ?? 0)
+      : null
+  const lastCommsDuration = lastCommsTimeMs
+    ? formatCompactDuration(DateTime.fromMillis(lastCommsTimeMs), nowDT, {
+        maxDays: 7,
+      })
+    : undefined
 
   const flatData = useMemo(() => {
     if (!hasSelection) return []
@@ -197,7 +297,6 @@ const LogsSection: React.FC<LogsSectionProps> = ({
   // the note text which is stored in the local `eventId` variable below) so that
   // pagination, filter changes, and list refreshes never shift a key onto a
   // different row. The same key is used for expand/collapse state.
-  const GROUP_WINDOW_MS = 5 * 1000 // 5 seconds — chunk bursts are sub-second
   type TimeoutGroup = { all: GetEventsResponse[] }
   const { processedData, timeoutGroups } = useMemo(() => {
     const groups = new Map<string, TimeoutGroup>() // key = `${repEventId}-${repUnixTime}`
@@ -293,12 +392,17 @@ const LogsSection: React.FC<LogsSectionProps> = ({
     if (!item) return <span />
 
     const isoTime = item.isoTime ?? ''
-    const diff = DateTime.fromISO(isoTime).diffNow('days').days
-    const date =
-      Math.abs(diff) < 1
-        ? 'Today'
-        : DateTime.fromISO(isoTime).toFormat('yyyy-MM-dd')
-    const time = DateTime.fromISO(isoTime).toFormat('H:mm:ss')
+    const eventDT = DateTime.fromISO(isoTime)
+    const diff = eventDT.diffNow('days').days
+    const date = Math.abs(diff) < 1 ? 'Today' : eventDT.toFormat('yyyy-MM-dd')
+    const time = eventDT.toFormat('H:mm:ss')
+    // Show a relative duration for past events within the last 7 days. The diff
+    // is negative when eventDT is in the past (diffNow measures now→target), so
+    // diff <= 0 guards against future timestamps caused by clock skew.
+    const timeAgo =
+      diff <= 0 && Math.abs(diff) < 7
+        ? `${formatCompactDuration(eventDT, nowDT)} ago`
+        : undefined
 
     // Check if this item is the representative of a multi-note timeout group.
     // The stable group key mirrors what was set during processedData construction:
@@ -359,10 +463,14 @@ const LogsSection: React.FC<LogsSectionProps> = ({
         className="border-b border-slate-200"
         date={date}
         time={time}
+        timeAgo={timeAgo}
         label={displayNameForEventType(item)}
+        labelColor={labelColorForEventType(item)}
+        labelBold={labelBoldForEventType(item)}
         log={log}
         isUpload={isUploadEvent(item)}
         onCopy={handleCopyEventLogs}
+        compact={compact}
       />
     )
   }
@@ -371,19 +479,25 @@ const LogsSection: React.FC<LogsSectionProps> = ({
 
   return (
     <>
-      <header className="flex justify-between p-2">
-        <div className="flex items-center gap-2">
+      <header ref={headerRef} className="flex items-center justify-between p-2">
+        <div className="flex min-w-0 shrink items-center gap-2">
           <div
             className="relative"
             onMouseDown={(e) => e.stopPropagation()}
             onTouchStart={(e) => e.stopPropagation()}
           >
-            <Button appearance="secondary" onClick={handleToggleFilters}>
+            <Button
+              appearance="secondary"
+              onClick={handleToggleFilters}
+              className="shrink-0 whitespace-nowrap"
+            >
               Filter{' '}
-              <FontAwesomeIcon
-                icon={!!filtersOpen ? faChevronDown : faChevronUp}
-                className={styles.icon}
-              />
+              {!hideIcons && (
+                <FontAwesomeIcon
+                  icon={!!filtersOpen ? faChevronDown : faChevronUp}
+                  className={styles.icon}
+                />
+              )}
             </Button>
             {!!filtersOpen && (
               <div className="absolute z-50">
@@ -401,13 +515,18 @@ const LogsSection: React.FC<LogsSectionProps> = ({
               </div>
             )}
           </div>
-          <RealTimeLogs vehicleName={vehicleName} />
+          <RealTimeLogs vehicleName={vehicleName} hideIcons={hideIcons} />
         </div>
         <LogsToolbar
           deploymentLogsOnly={deploymentLogsOnly}
           toggleDeploymentLogsOnly={toggleDeploymentLogsOnly}
           disabled={isLoading || isFetching}
           handleRefresh={handleRefresh}
+          lastUpdatedDuration={lastUpdatedDuration}
+          lastCommsDuration={lastCommsDuration}
+          compact={compact}
+          onToggleCompact={handleToggleCompact}
+          className="min-w-0 shrink pl-2"
         />
       </header>
 
