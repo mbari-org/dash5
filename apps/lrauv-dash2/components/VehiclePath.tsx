@@ -358,9 +358,8 @@ const VehiclePath: React.FC<VehiclePathProps> = ({
   return route?.length ? (
     <>
       <Polyline
-        pathOptions={lineStyle}
-        positions={route}
-        // positions={activeRoute ?? route}
+        pathOptions={activeRoute ? { ...lineStyle, opacity: 0.35 } : lineStyle}
+        positions={activeRoute ?? route}
         color={color}
         eventHandlers={{
           mouseover: () => {
@@ -471,11 +470,13 @@ const VehiclePath: React.FC<VehiclePathProps> = ({
           position={r}
           color={color}
           radius={10}
+          opacity={activeRoute ? 0.35 : 1}
+          fillOpacity={activeRoute ? 0.35 : 1}
         />
       ))}
       {inactiveRoute && (
         <Polyline
-          pathOptions={{ color, opacity: 0.35 }}
+          pathOptions={{ color, weight: 3, dashArray: '6, 8' }}
           positions={inactiveRoute}
         />
       )}
@@ -491,9 +492,9 @@ const VehiclePath: React.FC<VehiclePathProps> = ({
             }}
             fillColor={color}
             radius={10}
-            fillOpacity={0.25}
+            fillOpacity={1}
             color={color}
-            opacity={0.25}
+            opacity={1}
           />
         ))}
       {/* This handles the Scrub Timeline route */}

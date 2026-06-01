@@ -51,9 +51,12 @@ const MouseCoordinates: React.FC<MouseCoordinatesProps> = ({
     //   return
     // }
     if (mousePoint?.lat && mousePoint.lng) {
-      onRequestDepth?.(mousePoint?.lat, mousePoint?.lng).then((depth) =>
-        setDepth({ depth, coordinate: formattedCoordinates })
-      )
+      onRequestDepth?.(mousePoint?.lat, mousePoint?.lng)
+        .then((depth) => setDepth({ depth, coordinate: formattedCoordinates }))
+        .catch(() => {
+          // Elevation API errors (e.g. MapsServerError UNKNOWN_ERROR) are
+          // handled upstream; swallow here to prevent unhandled rejection.
+        })
     }
   }, [mousePoint, onRequestDepth, formattedCoordinates])
 
