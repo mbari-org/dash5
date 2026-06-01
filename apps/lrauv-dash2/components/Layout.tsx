@@ -151,6 +151,11 @@ const Layout: React.FC<{ children?: React.ReactNode }> = ({ children }) => {
           }
           onLoginClick={setModal({ id: 'login' })}
           signedIn={authenticated}
+          versionLabel={
+            process.env.NEXT_PUBLIC_APP_VERSION
+              ? `Dash5 v${process.env.NEXT_PUBLIC_APP_VERSION}`
+              : undefined
+          }
         />
       )}
       {children}
