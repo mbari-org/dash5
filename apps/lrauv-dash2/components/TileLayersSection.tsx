@@ -18,8 +18,9 @@ const getLegendUrl = (tile: TileLayerItem): string | undefined => {
     const layers = String(tile.options?.layers ?? '')
     if (!layers.trim()) return undefined
     const version = String(tile.options?.version ?? '1.1.1')
+    const sep = base.includes('?') ? '&' : '?'
     return (
-      `${base}?SERVICE=WMS&REQUEST=GetLegendGraphic` +
+      `${base}${sep}SERVICE=WMS&REQUEST=GetLegendGraphic` +
       `&VERSION=${encodeURIComponent(version)}` +
       `&FORMAT=image%2Fpng` +
       `&LAYER=${encodeURIComponent(layers)}`
