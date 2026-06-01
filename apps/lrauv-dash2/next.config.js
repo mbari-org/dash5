@@ -8,6 +8,8 @@ let appVersion = 'dev'
 try {
   const raw = execSync('git describe --tags --abbrev=0', {
     encoding: 'utf8',
+    cwd: __dirname,
+    stdio: ['pipe', 'pipe', 'pipe'],
   }).trim()
   appVersion = raw.replace(/^v/, '')
 } catch {
