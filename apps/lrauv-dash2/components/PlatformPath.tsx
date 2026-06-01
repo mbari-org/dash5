@@ -207,9 +207,11 @@ export const PlatformPath: React.FC<PlatformPathProps> = ({
             </CircleMarker>
           )}
 
-          {/* One circle marker per fix with hover tooltip */}
+          {/* One circle marker per fix with hover tooltip.
+              Skip the latest-position dot when a custom icon already marks it. */}
           {route.map((position, index) => {
             const isLatest = index === 0
+            if (isLatest && platformIcon) return null
             const pos = displayPositions[index]
             const timestamp = pos ? new Date(pos.timeMs).toLocaleString() : ''
 
