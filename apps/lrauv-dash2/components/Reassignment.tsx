@@ -25,7 +25,7 @@ interface PendingSignOff {
  *  Returns PT0H0M for an explicit 0 so the backend records a zero-duration shift.
  *  Returns undefined for empty/invalid input as a safety fallback (the UI
  *  prevents submission while the field is blank). */
-const toWatchDuration = (hours: string): string | undefined => {
+export const toWatchDuration = (hours: string): string | undefined => {
   if (hours.trim() === '') return undefined
   const h = Number(hours)
   if (!Number.isFinite(h) || h < 0) return undefined
