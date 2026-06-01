@@ -477,16 +477,17 @@ const VehiclePath: React.FC<VehiclePathProps> = ({
       {inactiveRoute && (
         <Polyline
           pathOptions={{ color, weight: 3, dashArray: '6, 8' }}
-          positions={inactiveRoute}
+          positions={inactiveRoute.filter(
+            (r, i, arr) =>
+              i === 0 || r[0] !== arr[i - 1][0] || r[1] !== arr[i - 1][1]
+          )}
         />
       )}
       {inactiveRoute &&
         inactiveRoute
           .filter(
-            (r, i) =>
-              i === 0 ||
-              r[0] !== inactiveRoute[i - 1][0] ||
-              r[1] !== inactiveRoute[i - 1][1]
+            (r, i, arr) =>
+              i === 0 || r[0] !== arr[i - 1][0] || r[1] !== arr[i - 1][1]
           )
           .map((r, i) => (
             <Circle
