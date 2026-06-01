@@ -8,9 +8,9 @@ import { useTick } from '../lib/useTick'
 const logger = createLogger('PlatformPath')
 
 // How far back to search for position fixes when no explicit window is given.
-// 30 days balances finding infrequently-updated fixed platforms (e.g. CA
-// offshore structures) without putting excessive load on the TrackDB server.
-const DEFAULT_LOOKBACK_DAYS = 30
+// 365 days ensures infrequently-updated fixed platforms (e.g. CA offshore
+// structures that may not report for months) are still found.
+const DEFAULT_LOOKBACK_DAYS = 365
 
 export interface PlatformPathProps {
   platformId: string
@@ -184,28 +184,27 @@ export const PlatformPath: React.FC<PlatformPathProps> = ({
             </Tooltip>
           </Polyline>
 
-          {/* Name-label dot at latest position — hidden when a custom icon is shown */}
-          {!platformIcon && (
-            <CircleMarker
-              center={[route[0][0], route[0][1]]}
-              radius={1}
-              pathOptions={{
-                color: platformColor,
-                fillColor: platformColor,
-                fillOpacity: 1,
-                weight: 0,
-              }}
-            >
-              <Tooltip permanent opacity={0.6}>
-                <div className="text-italic">
-                  <span className="text-bold">{displayName}</span>
-                  {displayAbbrev ? (
-                    <span className="text-gray-500"> ({displayAbbrev})</span>
-                  ) : null}
-                </div>
-              </Tooltip>
-            </CircleMarker>
-          )}
+          {/* Name-label dot at latest position — always rendered so the position
+              remains visible even if the custom icon image fails to load */}
+          <CircleMarker
+            center={[route[0][0], route[0][1]]}
+            radius={1}
+            pathOptions={{
+              color: platformColor,
+              fillColor: platformColor,
+              fillOpacity: 1,
+              weight: 0,
+            }}
+          >
+            <Tooltip permanent opacity={0.6}>
+              <div className="text-italic">
+                <span className="text-bold">{displayName}</span>
+                {displayAbbrev ? (
+                  <span className="text-gray-500"> ({displayAbbrev})</span>
+                ) : null}
+              </div>
+            </Tooltip>
+          </CircleMarker>
 
           {/* One circle marker per fix with hover tooltip.
               Skip the latest-position dot when a custom icon already marks it. */}

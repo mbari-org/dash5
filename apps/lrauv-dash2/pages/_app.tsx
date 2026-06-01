@@ -6,6 +6,7 @@ import '@fortawesome/fontawesome-svg-core/styles.css'
 import 'leaflet/dist/leaflet.css'
 import { AppProps } from 'next/app'
 import { useEffect } from 'react'
+import { createLogger } from '@mbari/utils'
 import { QueryClientProvider, QueryClient } from 'react-query'
 import { TethysApiProvider } from '@mbari/api-client'
 import { UIProvider } from '@mbari/react-ui'
@@ -21,6 +22,8 @@ import '../styles/docs.css'
 
 // prevent font awesome from auto-adding styles.
 config.autoAddCss = false
+
+const logger = createLogger('App')
 
 const queryClient = new QueryClient()
 
@@ -39,8 +42,11 @@ function MyApp({ Component, pageProps }: AppProps) {
           shadowUrl: '/marker-shadow.png',
         })
       })
-      .catch(() => {
-        // Ignore Leaflet marker setup failures to avoid breaking app startup.
+      .catch((err) => {
+        logger.debug(
+          'Leaflet marker icon setup failed — default markers may be missing:',
+          err
+        )
       })
   }, [])
 
