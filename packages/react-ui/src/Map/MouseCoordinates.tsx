@@ -33,6 +33,7 @@ const MouseCoordinates: React.FC<MouseCoordinatesProps> = ({
   const [depth, setDepth] = useState(
     null as null | { depth: number | null; coordinate: string }
   )
+  const requestIdRef = useRef(0)
 
   const formattedCoordinates =
     mousePoint === null
@@ -51,13 +52,20 @@ const MouseCoordinates: React.FC<MouseCoordinatesProps> = ({
     //   return
     // }
     if (mousePoint != null && onRequestDepth) {
+      const id = ++requestIdRef.current
       onRequestDepth(mousePoint.lat, mousePoint.lng)
-        .then((depth) => setDepth({ depth, coordinate: formattedCoordinates }))
+        .then((depth) => {
+          if (id === requestIdRef.current) {
+            setDepth({ depth, coordinate: formattedCoordinates })
+          }
+        })
         .catch(() => {
           // Elevation API errors (e.g. MapsServerError UNKNOWN_ERROR) are
-          // handled upstream; clear stale depth so we don't show the previous
-          // coordinate's value for the new position.
-          setDepth(null)
+          // handled upstream; clear stale depth so the previous coordinate's
+          // value is not shown for the new position.
+          if (id === requestIdRef.current) {
+            setDepth(null)
+          }
         })
     }
   }, [mousePoint, onRequestDepth, formattedCoordinates])

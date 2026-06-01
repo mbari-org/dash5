@@ -49,9 +49,9 @@ const MapDepthDisplay: React.FC<MapDepthDisplayProps> = ({
 
   const onRequestDepth = useCallback(
     (lat: number, lng: number) =>
-      handleDepthRequestWithFeedback(lat, lng)
-        .then((r: { depth: number | null }) => r.depth)
-        .catch(() => null),
+      handleDepthRequestWithFeedback(lat, lng).then(
+        (r: { depth: number | null }) => r.depth
+      ),
     [handleDepthRequestWithFeedback]
   )
 

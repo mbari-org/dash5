@@ -481,22 +481,29 @@ const VehiclePath: React.FC<VehiclePathProps> = ({
         />
       )}
       {inactiveRoute &&
-        inactiveRoute?.map((r, i) => (
-          <Circle
-            key={`${name}:${
-              grouped ? 'overview' : 'detail'
-            }:inactivePreview:${i}:${r.join()}`}
-            center={{
-              lat: r[0],
-              lng: r[1],
-            }}
-            fillColor={color}
-            radius={10}
-            fillOpacity={1}
-            color={color}
-            opacity={1}
-          />
-        ))}
+        inactiveRoute
+          .filter(
+            (r, i) =>
+              i === 0 ||
+              r[0] !== inactiveRoute[i - 1][0] ||
+              r[1] !== inactiveRoute[i - 1][1]
+          )
+          .map((r, i) => (
+            <Circle
+              key={`${name}:${
+                grouped ? 'overview' : 'detail'
+              }:inactivePreview:${i}:${r.join()}`}
+              center={{
+                lat: r[0],
+                lng: r[1],
+              }}
+              fillColor={color}
+              radius={10}
+              fillOpacity={1}
+              color={color}
+              opacity={1}
+            />
+          ))}
       {/* This handles the Scrub Timeline route */}
       {route.map((r, index) => (
         <Circle
