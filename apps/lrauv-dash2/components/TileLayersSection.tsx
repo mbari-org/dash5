@@ -12,8 +12,9 @@ interface TileLayerItem {
 
 const getLegendUrl = (tile: TileLayerItem): string | undefined => {
   if (tile.legendurl) return tile.legendurl
-  if (tile.wms && tile.urlTemplate) {
-    const base = tile.urlTemplate.replace(/\?$/, '')
+  const urlTemplate = tile.urlTemplate?.trim()
+  if (tile.wms && urlTemplate) {
+    const base = urlTemplate.replace(/\?$/, '')
     const layers = String(tile.options?.layers ?? '')
     if (!layers.trim()) return undefined
     const version = String(tile.options?.version ?? '1.1.1')

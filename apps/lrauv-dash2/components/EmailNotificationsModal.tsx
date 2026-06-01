@@ -1,4 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react'
+import toast from 'react-hot-toast'
 import { Modal, Button } from '@mbari/react-ui'
 import {
   useTethysApiContext,
@@ -262,7 +263,9 @@ const EmailNotificationsModal: React.FC<EmailNotificationsModalProps> = ({
       {
         onSuccess: () => onClose?.(),
         onError: () =>
-          alert('Failed to save notification settings. Please try again.'),
+          toast.error(
+            'Failed to save notification settings. Please try again.'
+          ),
       }
     )
   }
@@ -307,8 +310,9 @@ const EmailNotificationsModal: React.FC<EmailNotificationsModalProps> = ({
       })
       queryClient.removeQueries(['email', 'settings', email])
       onClose?.()
-    } catch {
-      alert('Failed to delete notification settings. Please try again.')
+    } catch (err) {
+      logger.error('handleDeleteAll failed', err)
+      toast.error('Failed to delete notification settings. Please try again.')
     } finally {
       setIsDeleting(false)
     }
