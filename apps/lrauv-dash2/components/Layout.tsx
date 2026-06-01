@@ -93,6 +93,12 @@ const Layout: React.FC<{ children?: React.ReactNode }> = ({ children }) => {
     authenticated ? modalJsx : <UserLogin onClose={setModal(null)} />
 
   const vehicleName = router.query.deployment?.[0] ?? ''
+  const appVersion = process.env.NEXT_PUBLIC_APP_VERSION
+  const versionLabel = appVersion
+    ? appVersion === 'dev'
+      ? 'Dash5 dev'
+      : `Dash5 v${appVersion}`
+    : undefined
   return (
     <div className="flex h-screen min-h-screen w-screen flex-col">
       <Head>
@@ -151,14 +157,7 @@ const Layout: React.FC<{ children?: React.ReactNode }> = ({ children }) => {
           }
           onLoginClick={setModal({ id: 'login' })}
           signedIn={authenticated}
-          versionLabel={
-            process.env.NEXT_PUBLIC_APP_VERSION &&
-            process.env.NEXT_PUBLIC_APP_VERSION !== 'dev'
-              ? `Dash5 v${process.env.NEXT_PUBLIC_APP_VERSION}`
-              : process.env.NEXT_PUBLIC_APP_VERSION === 'dev'
-              ? 'Dash5 dev'
-              : undefined
-          }
+          versionLabel={versionLabel}
         />
       )}
       {children}
