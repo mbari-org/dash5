@@ -32,6 +32,7 @@ export interface PrimaryToolbarProps {
   secondaryDropdown?: JSX.Element | null
   addItemDropdown?: JSX.Element | null
   logo?: JSX.Element
+  versionLabel?: string
 }
 
 const PrimaryToolbarOption: React.FC<{
@@ -101,6 +102,7 @@ export const PrimaryToolbar: React.FC<PrimaryToolbarProps> = ({
   addItemDropdown,
   canRemoveOption = () => true,
   logo,
+  versionLabel,
 }) => {
   const handleOptionClick = (option: string) => (e: React.MouseEvent) => {
     e.preventDefault()
@@ -140,7 +142,19 @@ export const PrimaryToolbar: React.FC<PrimaryToolbarProps> = ({
             {addItemDropdown}
           </li>
         )}
-        <li className="relative my-auto ml-auto flex-shrink-0">
+        {versionLabel && (
+          <li className="my-auto ml-auto flex-shrink-0 pr-4">
+            <span className="text-xs font-medium text-primary-600">
+              {versionLabel}
+            </span>
+          </li>
+        )}
+        <li
+          className={clsx(
+            'relative my-auto flex-shrink-0',
+            !versionLabel && 'ml-auto'
+          )}
+        >
           {!signedIn && (
             <IconButton
               icon={faSignIn}

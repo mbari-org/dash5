@@ -57,3 +57,13 @@ test('should not render a generic profile button if there are profile credential
   render(<PrimaryToolbar options={options} signedIn avatarName="Dynamo Test" />)
   expect(screen.queryByLabelText(/profile/i)).not.toBeInTheDocument()
 })
+
+test('should render the version label when versionLabel is provided', async () => {
+  render(<PrimaryToolbar options={options} versionLabel="Dash5 v5.1.37" />)
+  expect(screen.getByText('Dash5 v5.1.37')).toBeInTheDocument()
+})
+
+test('should not render a version label when versionLabel is omitted', async () => {
+  render(<PrimaryToolbar options={options} />)
+  expect(screen.queryByText(/Dash5 v/i)).not.toBeInTheDocument()
+})
