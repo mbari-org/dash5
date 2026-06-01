@@ -1,5 +1,5 @@
 // jshint esversion:6
-import React, { useState, useEffect, useCallback } from 'react'
+import React, { useState, useEffect, useCallback, useRef } from 'react'
 import { useMapEvents } from 'react-leaflet'
 import 'leaflet/dist/leaflet.css'
 import { useDebouncedEffect } from '@mbari/utils'
