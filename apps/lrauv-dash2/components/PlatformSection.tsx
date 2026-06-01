@@ -4,6 +4,7 @@ import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { faCaretRight } from '@fortawesome/free-solid-svg-icons'
 import Image from 'next/image'
 import { GetPlatformsResponse } from '@mbari/api-client'
+import { ODSS_BASE_URL } from '../lib/constants'
 
 export interface PlatformSectionProps {
   name: string
@@ -28,8 +29,6 @@ export const PlatformSection: React.FC<PlatformSectionProps> = ({
   onlySelected,
   headerRight,
 }) => {
-  const odssApi = 'https://odss.mbari.org/odss'
-
   const filteredItems = useMemo(() => {
     let filtered = items
 
@@ -119,7 +118,7 @@ export const PlatformSection: React.FC<PlatformSectionProps> = ({
                     />
                     {item.iconUrl && (
                       <Image
-                        src={`${odssApi}/${item.iconUrl}`}
+                        src={`${ODSS_BASE_URL}/${item.iconUrl}`}
                         width={16}
                         height={16}
                         className="mr-2 h-4 w-auto"

@@ -2,6 +2,7 @@ import React from 'react'
 import dynamic from 'next/dynamic'
 import { useSelectedPlatforms } from './SelectedPlatformContext'
 import { usePlatformList } from '../lib/usePlatformList'
+import { ODSS_BASE_URL } from '../lib/constants'
 
 const PlatformPath = dynamic(
   () => import('./PlatformPath').then((mod) => ({ default: mod.PlatformPath })),
@@ -25,6 +26,10 @@ export const PlatformPaths: React.FC = () => {
         const platform = platformMap[platformId]
         if (!platform) return null
 
+        const iconUrl = platform.iconUrl
+          ? `${ODSS_BASE_URL}/${platform.iconUrl}`
+          : undefined
+
         return (
           <PlatformPath
             key={platformId}
@@ -32,6 +37,7 @@ export const PlatformPaths: React.FC = () => {
             platformName={platform.name}
             platformAbbrev={platform.abbreviation}
             color={platform.color}
+            iconUrl={iconUrl}
           />
         )
       })}
