@@ -202,40 +202,39 @@ const VehiclePath: React.FC<VehiclePathProps> = ({
 
   const timeout = useRef<ReturnType<typeof setTimeout> | null>(null)
   const [mapHoverFix, setMapHoverFix] = useState<VPosDetail | null>(null)
-  // Track the last hovered fix by unixTime to avoid stale-closure comparisons
-  // and skip setState when the nearest fix hasn't changed.
   const lastHoveredFixTimeRef = useRef<number | null>(null)
+  // Refs keep handleCoord/handleMouseOut deps-free so they never change
+  // reference — preventing HitCircles from re-rendering on every poll/render.
+  const gpsFixesRef = useRef(vehiclePosition?.gpsFixes)
+  const handleScrubRef = useRef(handleScrub)
+  gpsFixesRef.current = vehiclePosition?.gpsFixes
+  handleScrubRef.current = handleScrub
 
-  const handleCoord: LeafletMouseEventHandlerFn = useCallback(
-    (e) => {
-      if (timeout.current) clearTimeout(timeout.current)
-      // O(n) nearest-fix lookup via reduce instead of clone+sort
-      const coord = (vehiclePosition?.gpsFixes ?? []).reduce<VPosDetail | null>(
-        (nearest, fix) =>
-          nearest === null ||
-          getDistance(fix, e.latlng) < getDistance(nearest, e.latlng)
-            ? fix
-            : nearest,
-        null
-      )
-      if (coord && coord.unixTime !== lastHoveredFixTimeRef.current) {
-        lastHoveredFixTimeRef.current = coord.unixTime
-        handleScrub?.(coord.unixTime)
-        setMapHoverFix(coord)
-      }
-    },
-    [timeout, handleScrub, vehiclePosition?.gpsFixes]
-  )
+  const handleCoord: LeafletMouseEventHandlerFn = useCallback((e) => {
+    if (timeout.current) clearTimeout(timeout.current)
+    const coord = (gpsFixesRef.current ?? []).reduce<VPosDetail | null>(
+      (nearest, fix) =>
+        nearest === null ||
+        getDistance(fix, e.latlng) < getDistance(nearest, e.latlng)
+          ? fix
+          : nearest,
+      null
+    )
+    if (coord && coord.unixTime !== lastHoveredFixTimeRef.current) {
+      lastHoveredFixTimeRef.current = coord.unixTime
+      handleScrubRef.current?.(coord.unixTime)
+      setMapHoverFix(coord)
+    }
+  }, []) // stable forever — reads live values via refs
 
   const handleMouseOut: LeafletMouseEventHandlerFn = useCallback(() => {
     if (timeout.current) clearTimeout(timeout.current)
     timeout.current = setTimeout(() => {
-      handleScrub?.(null)
+      handleScrubRef.current?.(null)
       setMapHoverFix(null)
-      // Reset so hovering the same fix again after mouseout re-shows the dot
       lastHoveredFixTimeRef.current = null
     }, 1000)
-  }, [timeout, handleScrub])
+  }, []) // stable forever — reads live values via refs
 
   // Clear pending timeout on unmount to prevent state updates after removal
   useEffect(() => {
