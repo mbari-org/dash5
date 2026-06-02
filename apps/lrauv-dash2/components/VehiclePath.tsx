@@ -195,8 +195,17 @@ const VehiclePath: React.FC<VehiclePathProps> = ({
     timeout.current = setTimeout(() => {
       handleScrub?.(null)
       setMapHoverCoord(null)
+      // Reset so hovering the same fix again after mouseout re-shows the dot
+      lastHoveredFixTimeRef.current = null
     }, 1000)
   }, [timeout, handleScrub])
+
+  // Clear pending timeout on unmount to prevent state updates after removal
+  useEffect(() => {
+    return () => {
+      if (timeout.current) clearTimeout(timeout.current)
+    }
+  }, [])
 
   // Convert minutes to hours, minutes
   const convertMin2HrMin = (timeDiff: number) => {
