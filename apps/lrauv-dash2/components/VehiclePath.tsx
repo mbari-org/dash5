@@ -1,21 +1,15 @@
-import React, { useEffect, useRef, useCallback, useState, useMemo } from 'react'
+import React, { useEffect, useRef, useState, useMemo } from 'react'
 import {
   useVehiclePos,
   useLastDeployment,
-  VPosDetail,
   useWaypointsInfo,
 } from '@mbari/api-client'
 import { Polyline, useMap, Circle, Tooltip } from 'react-leaflet'
-import { LatLng, LeafletMouseEventHandlerFn } from 'leaflet'
 import { useRouter } from 'next/router'
 import { useSharedPath } from './SharedPathContextProvider'
-import { distance } from '@turf/turf'
 import { parseISO, getTime } from 'date-fns'
 import { formatElapsedTime } from '@mbari/utils'
 import { useVehicleColors } from './VehicleColorsContext'
-
-const getDistance = (a: VPosDetail, b: LatLng) =>
-  distance([a.latitude, a.longitude], [b.lat, b.lng])
 
 // VehiclePoint component
 const VehiclePoint: React.FC<{
@@ -156,32 +150,6 @@ const VehiclePath: React.FC<VehiclePathProps> = ({
     hasNotifiedDataLoaded.current = true
     onPositionDataLoaded()
   }, [vehiclePosition?.gpsFixes, onPositionDataLoaded])
-
-  const timeout = useRef<ReturnType<typeof setTimeout> | null>(null)
-
-  // handleCoordinates
-  const handleCoord: LeafletMouseEventHandlerFn = useCallback(
-    (e) => {
-      if (timeout.current) {
-        clearTimeout(timeout.current)
-      }
-      const coord = [...(vehiclePosition?.gpsFixes ?? [])].sort(
-        (a, b) => getDistance(a, e.latlng) - getDistance(b, e.latlng)
-      )[0]
-      handleScrub?.(coord?.unixTime)
-    },
-    [timeout, handleScrub, vehiclePosition?.gpsFixes]
-  )
-
-  // handleMouseOut
-  const handleMouseOut: LeafletMouseEventHandlerFn = useCallback(() => {
-    if (timeout.current) {
-      clearTimeout(timeout.current)
-    }
-    timeout.current = setTimeout(() => {
-      handleScrub?.(null)
-    }, 1000)
-  }, [timeout, handleScrub])
 
   // Convert minutes to hours, minutes
   const convertMin2HrMin = (timeDiff: number) => {
@@ -507,27 +475,6 @@ const VehiclePath: React.FC<VehiclePathProps> = ({
             opacity={0.5}
           />
         ))}
-      {/* Invisible hit targets for map→timeline sync (reverse scrub).
-          These no longer set indicatorTime so hovering the track does not
-          trigger the dimming effect; scrubbing is driven by the timeline bar
-          only. Kept in place so the map can still emit position events via
-          onScrub if needed in future. */}
-      {route.map((r, index) => (
-        <Circle
-          key={`${name}:${
-            grouped ? 'overview' : 'detail'
-          }:touch:${index}:${r.join()}`}
-          center={{
-            lat: r[0],
-            lng: r[1],
-          }}
-          fillColor={color}
-          radius={200}
-          fillOpacity={0}
-          color={color}
-          opacity={0}
-        />
-      ))}
     </>
   ) : null
 }
