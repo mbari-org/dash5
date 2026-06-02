@@ -404,19 +404,25 @@ const VehiclePath: React.FC<VehiclePathProps> = ({
 
   return route?.length ? (
     <>
-      <Polyline
-        pathOptions={lineStyle}
-        positions={activeRoute ?? route}
-        color={color}
-        eventHandlers={{
-          mouseover: () => {
-            setLineStyle({ color, weight: 5 })
-          },
-          mouseout: () => {
-            setLineStyle({ color, weight: 3 })
-          },
-        }}
-      />
+      {/* When split mode is active (dimTime set) only render the past segment.
+          If there are no past fixes yet (before first GPS fix), render nothing
+          rather than falling back to the full route which would double-draw
+          under the dashed future segment. */}
+      {(!dimTime || activeRoute) && (
+        <Polyline
+          pathOptions={lineStyle}
+          positions={activeRoute ?? route}
+          color={color}
+          eventHandlers={{
+            mouseover: () => {
+              setLineStyle({ color, weight: 5 })
+            },
+            mouseout: () => {
+              setLineStyle({ color, weight: 3 })
+            },
+          }}
+        />
+      )}
       {/* dashed future waypoint trajectory */}
       {futureRoute && (
         <Polyline
