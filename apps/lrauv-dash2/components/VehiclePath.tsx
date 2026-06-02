@@ -267,8 +267,12 @@ const VehiclePath: React.FC<VehiclePathProps> = ({
   }
 
   // route
-  const route = vehiclePosition?.gpsFixes?.map(
-    (g) => [g.latitude, g.longitude] as [number, number]
+  const route = useMemo(
+    () =>
+      vehiclePosition?.gpsFixes?.map(
+        (g) => [g.latitude, g.longitude] as [number, number]
+      ),
+    [vehiclePosition?.gpsFixes]
   )
 
   const futureRoute = useMemo(() => {
