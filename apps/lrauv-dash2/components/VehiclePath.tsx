@@ -165,19 +165,25 @@ const VehiclePath: React.FC<VehiclePathProps> = ({
   const [mapHoverCoord, setMapHoverCoord] = useState<[number, number] | null>(
     null
   )
+  // Track the last hovered fix by unixTime to avoid stale-closure comparisons
+  // and skip setMapHoverCoord when the nearest fix hasn't changed.
+  const lastHoveredFixTimeRef = useRef<number | null>(null)
 
   const handleCoord: LeafletMouseEventHandlerFn = useCallback(
     (e) => {
       if (timeout.current) clearTimeout(timeout.current)
-      const coord = [...(vehiclePosition?.gpsFixes ?? [])].sort(
-        (a, b) => getDistance(a, e.latlng) - getDistance(b, e.latlng)
-      )[0]
+      // O(n) nearest-fix lookup via reduce instead of clone+sort
+      const coord = (vehiclePosition?.gpsFixes ?? []).reduce<VPosDetail | null>(
+        (nearest, fix) =>
+          nearest === null ||
+          getDistance(fix, e.latlng) < getDistance(nearest, e.latlng)
+            ? fix
+            : nearest,
+        null
+      )
       handleScrub?.(coord?.unixTime)
-      if (
-        coord &&
-        (coord.latitude !== mapHoverCoord?.[0] ||
-          coord.longitude !== mapHoverCoord?.[1])
-      ) {
+      if (coord && coord.unixTime !== lastHoveredFixTimeRef.current) {
+        lastHoveredFixTimeRef.current = coord.unixTime
         setMapHoverCoord([coord.latitude, coord.longitude])
       }
     },
@@ -276,7 +282,7 @@ const VehiclePath: React.FC<VehiclePathProps> = ({
 
   // indicatorCoord: position marker shown from ANY scrub source (uses indicatorTime)
   const indicatorCoord = useMemo(() => {
-    if (!indicatorTime || !indicatorTime || !gpsFixes?.length) return null
+    if (!indicatorTime || !gpsFixes?.length) return null
     const pastFixes = gpsFixes.filter((fix) => fix.unixTime <= indicatorTime)
     if (!pastFixes.length) return null
     return pastFixes.reduce((latest, fix) =>
