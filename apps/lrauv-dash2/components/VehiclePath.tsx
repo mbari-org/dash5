@@ -212,14 +212,15 @@ const VehiclePath: React.FC<VehiclePathProps> = ({
 
   const handleCoord: LeafletMouseEventHandlerFn = useCallback((e) => {
     if (timeout.current) clearTimeout(timeout.current)
-    const coord = (gpsFixesRef.current ?? []).reduce<VPosDetail | null>(
-      (nearest, fix) =>
-        nearest === null ||
-        getDistance(fix, e.latlng) < getDistance(nearest, e.latlng)
-          ? fix
-          : nearest,
-      null
-    )
+    let coord: VPosDetail | null = null
+    let bestDist = Infinity
+    for (const fix of gpsFixesRef.current ?? []) {
+      const d = getDistance(fix, e.latlng)
+      if (d < bestDist) {
+        bestDist = d
+        coord = fix
+      }
+    }
     if (coord && coord.unixTime !== lastHoveredFixTimeRef.current) {
       lastHoveredFixTimeRef.current = coord.unixTime
       handleScrubRef.current?.(coord.unixTime)
@@ -581,9 +582,7 @@ const VehiclePath: React.FC<VehiclePathProps> = ({
                 {mapHoverFix.longitude.toFixed(5)}
               </div>
               <div className="text-gray-600">
-                {mapHoverFix.isoTime
-                  ? mapHoverFix.isoTime.replace('T', ' ').replace('Z', ' UTC')
-                  : new Date(mapHoverFix.unixTime).toUTCString()}
+                {mapHoverFix.isoTime.replace('T', ' ').replace('Z', ' UTC')}
               </div>
             </div>
           </Tooltip>
