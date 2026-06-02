@@ -1,5 +1,11 @@
 // jshint esversion:6
-import React, { useState, useEffect, useCallback, useRef } from 'react'
+import React, {
+  useState,
+  useEffect,
+  useLayoutEffect,
+  useCallback,
+  useRef,
+} from 'react'
 import { useMapEvents } from 'react-leaflet'
 import 'leaflet/dist/leaflet.css'
 import { useDebouncedEffect } from '@mbari/utils'
@@ -35,12 +41,12 @@ const MouseCoordinates: React.FC<MouseCoordinatesProps> = ({
   )
   const requestIdRef = useRef(0)
 
-  // Clear stale depth immediately when the cursor moves to a new position so
-  // the old value is never shown alongside the new coordinate. The cleanup
-  // bumps the counter on unmount (and before each re-run) so any in-flight
-  // onRequestDepth promise becomes stale and cannot call setDepth after the
-  // component unmounts.
-  useEffect(() => {
+  // useLayoutEffect runs synchronously after DOM mutations but before paint,
+  // preventing the one-frame flicker where new coordinates appear alongside
+  // the previous depth value. The cleanup bumps the counter on unmount (and
+  // before each re-run) so any in-flight onRequestDepth promise becomes stale
+  // and cannot call setDepth after the component unmounts.
+  useLayoutEffect(() => {
     requestIdRef.current++
     setDepth(null)
     return () => {

@@ -269,6 +269,19 @@ const VehiclePath: React.FC<VehiclePathProps> = ({
       ?.filter((g) => g && g.latitude != null && g.longitude != null)
       .map((g) => [g?.latitude ?? 0, g?.longitude ?? 0] as [number, number])
 
+  // Deduplicate adjacent identical points once so both the Polyline and
+  // Circle renders share the same filtered array without recomputing it.
+  const dedupedInactiveRoute = useMemo(
+    () =>
+      inactiveRoute
+        ? inactiveRoute.filter(
+            (r, i, arr) =>
+              i === 0 || r[0] !== arr[i - 1][0] || r[1] !== arr[i - 1][1]
+          )
+        : null,
+    [inactiveRoute]
+  )
+
   const fitRef = useRef<string | null | undefined>(null)
   const fitPositionsAsString = fitPositions?.flat().join()
 
@@ -474,37 +487,29 @@ const VehiclePath: React.FC<VehiclePathProps> = ({
           fillOpacity={activeRoute ? 0.35 : 1}
         />
       ))}
-      {inactiveRoute && (
+      {dedupedInactiveRoute && (
         <Polyline
           pathOptions={{ color, weight: 3, dashArray: '6, 8' }}
-          positions={inactiveRoute.filter(
-            (r, i, arr) =>
-              i === 0 || r[0] !== arr[i - 1][0] || r[1] !== arr[i - 1][1]
-          )}
+          positions={dedupedInactiveRoute}
         />
       )}
-      {inactiveRoute &&
-        inactiveRoute
-          .filter(
-            (r, i, arr) =>
-              i === 0 || r[0] !== arr[i - 1][0] || r[1] !== arr[i - 1][1]
-          )
-          .map((r, i) => (
-            <Circle
-              key={`${name}:${
-                grouped ? 'overview' : 'detail'
-              }:inactivePreview:${i}:${r.join()}`}
-              center={{
-                lat: r[0],
-                lng: r[1],
-              }}
-              fillColor={color}
-              radius={10}
-              fillOpacity={1}
-              color={color}
-              opacity={1}
-            />
-          ))}
+      {dedupedInactiveRoute &&
+        dedupedInactiveRoute.map((r, i) => (
+          <Circle
+            key={`${name}:${
+              grouped ? 'overview' : 'detail'
+            }:inactivePreview:${i}:${r.join()}`}
+            center={{
+              lat: r[0],
+              lng: r[1],
+            }}
+            fillColor={color}
+            radius={10}
+            fillOpacity={1}
+            color={color}
+            opacity={1}
+          />
+        ))}
       {/* This handles the Scrub Timeline route */}
       {route.map((r, index) => (
         <Circle
