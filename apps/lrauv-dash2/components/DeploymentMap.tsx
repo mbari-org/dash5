@@ -77,6 +77,7 @@ const logger = createLogger('DeploymentMap')
 interface DeploymentMapProps {
   vehicleName?: string | null
   indicatorTime?: number | null
+  dimTime?: number | null
   onScrub?: (time?: number | null) => void
   startTime?: number | null
   endTime?: number | null
@@ -85,6 +86,7 @@ interface DeploymentMapProps {
 const DeploymentMap: React.FC<DeploymentMapProps> = ({
   vehicleName,
   indicatorTime,
+  dimTime,
   onScrub: handleScrub,
   startTime,
   endTime,
@@ -772,6 +774,7 @@ const DeploymentMap: React.FC<DeploymentMapProps> = ({
             from={startTime as number}
             to={endTime as number}
             indicatorTime={indicatorTime}
+            dimTime={dimTime}
             onScrub={handleMapScrub}
             onGPSFix={handleGPSFix}
             onPositionDataLoaded={markInitialLoadDone}
