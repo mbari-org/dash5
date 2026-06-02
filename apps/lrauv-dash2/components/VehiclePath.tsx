@@ -257,14 +257,6 @@ const VehiclePath: React.FC<VehiclePathProps> = ({
     return { hours, minutes, timeSinceFix }
   }
 
-  const [tooltipVisible, setTooltipVisible] = useState(false)
-  const handleTTVisible = () => {
-    setTooltipVisible(true)
-  }
-  const handleTTHidden = () => {
-    setTooltipVisible(false)
-  }
-
   // route
   const route = useMemo(
     () =>
@@ -515,45 +507,32 @@ const VehiclePath: React.FC<VehiclePathProps> = ({
           </Circle>
         </>
       )}
-      {/* DEPLOYMENT MAP VEHICLE VIEW */}
-      {indicatorCoord && (
-        <>
-          {/* This Circle is the actual point per GPS fix */}
-          <Circle
-            pathOptions={{ color }}
-            center={{
-              lat: indicatorCoord.latitude,
-              lng: indicatorCoord.longitude,
-            }}
-            fillColor={color}
-            fillOpacity={1}
-            color={color}
-            // Sets the center dot radius of latest fix on hover
-            radius={60}
-            eventHandlers={{
-              mouseover: handleTTVisible,
-              mouseout: handleTTHidden,
-            }}
-          >
-            {tooltipVisible && (
-              <Tooltip direction="right" offset={[10, 0]} opacity={0.9}>
-                <span>
-                  <div className="text-purple text-bold">
-                    {name} <br />
-                  </div>
-                  Latest position: {indicatorCoord.latitude.toFixed(5)},{' '}
-                  {indicatorCoord.longitude.toFixed(5)}
-                  <br />
-                  {indicatorCoord.isoTime.split('T')[0] +
-                    ' ' +
-                    indicatorCoord.isoTime.split('T')[1].split('Z')[0]}
-                  {' - '}
-                  {timeSinceFixDisplay}
-                </span>
-              </Tooltip>
-            )}
-          </Circle>
-        </>
+      {/* Solid dot at the latest GPS fix — always visible, tooltip on hover only */}
+      {latest && (
+        <Circle
+          pathOptions={{ color }}
+          center={{ lat: latest.latitude, lng: latest.longitude }}
+          fillColor={color}
+          fillOpacity={1}
+          color={color}
+          radius={60}
+        >
+          <Tooltip direction="right" offset={[10, 0]} opacity={0.9}>
+            <span>
+              <div className="text-purple text-bold">
+                {name} <br />
+              </div>
+              Latest position: {latest.latitude.toFixed(5)},{' '}
+              {latest.longitude.toFixed(5)}
+              <br />
+              {latest.isoTime.split('T')[0] +
+                ' ' +
+                latest.isoTime.split('T')[1].split('Z')[0]}
+              {' - '}
+              {timeSinceFixDisplay}
+            </span>
+          </Tooltip>
+        </Circle>
       )}
       {/* Crumb trail dots — only shown while the timeline bar is being hovered */}
       {activeRoute &&
