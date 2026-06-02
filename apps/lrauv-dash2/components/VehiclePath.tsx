@@ -173,7 +173,13 @@ const VehiclePath: React.FC<VehiclePathProps> = ({
         (a, b) => getDistance(a, e.latlng) - getDistance(b, e.latlng)
       )[0]
       handleScrub?.(coord?.unixTime)
-      if (coord) setMapHoverCoord([coord.latitude, coord.longitude])
+      if (
+        coord &&
+        (coord.latitude !== mapHoverCoord?.[0] ||
+          coord.longitude !== mapHoverCoord?.[1])
+      ) {
+        setMapHoverCoord([coord.latitude, coord.longitude])
+      }
     },
     [timeout, handleScrub, vehiclePosition?.gpsFixes]
   )
@@ -240,11 +246,11 @@ const VehiclePath: React.FC<VehiclePathProps> = ({
   }, [route, futureRoute])
 
   // DEPLOYMENT MAP — scrubbing-derived values
-  // dimTime drives the track split/dimming and is set only from the timeline
-  // bar. indicatorTime may also be set from map-hover to show the indicator
-  // dot without triggering dimming.
+  // dimTime   → set only from the timeline bar → drives track split/dimming
+  // indicatorTime → set from timeline bar OR map hover → drives indicator dot
   const gpsFixes = vehiclePosition?.gpsFixes ?? null
 
+  // Track-split: which fixes are in the "past" relative to dimTime
   const activePoints = useMemo(
     () =>
       dimTime && dimTime > 0 && gpsFixes
@@ -260,12 +266,23 @@ const VehiclePath: React.FC<VehiclePathProps> = ({
     [activePoints]
   )
 
-  const indicatorCoord = useMemo(() => {
+  // dimCoord: boundary point for the future segment (uses dimTime)
+  const dimCoord = useMemo(() => {
     if (!dimTime || !activePoints?.length) return null
     return activePoints.reduce((latest, fix) =>
       fix.unixTime > latest.unixTime ? fix : latest
     )
   }, [dimTime, activePoints])
+
+  // indicatorCoord: position marker shown from ANY scrub source (uses indicatorTime)
+  const indicatorCoord = useMemo(() => {
+    if (!indicatorTime || !indicatorTime || !gpsFixes?.length) return null
+    const pastFixes = gpsFixes.filter((fix) => fix.unixTime <= indicatorTime)
+    if (!pastFixes.length) return null
+    return pastFixes.reduce((latest, fix) =>
+      fix.unixTime > latest.unixTime ? fix : latest
+    )
+  }, [indicatorTime, gpsFixes])
 
   // Compute the future segment and deduplicate adjacent identical points in
   // one memo so both the dashed Polyline and preview Circles share the same
@@ -275,13 +292,13 @@ const VehiclePath: React.FC<VehiclePathProps> = ({
     const futureFixes = gpsFixes
       .filter((fix) => fix.unixTime >= dimTime)
       .sort((a, b) => a.unixTime - b.unixTime)
-    const raw = [indicatorCoord, ...futureFixes]
+    const raw = [dimCoord, ...futureFixes]
       .filter((g) => g && g.latitude != null && g.longitude != null)
       .map((g) => [g!.latitude, g!.longitude] as [number, number])
     return raw.filter(
       (r, i, arr) => i === 0 || r[0] !== arr[i - 1][0] || r[1] !== arr[i - 1][1]
     )
-  }, [dimTime, gpsFixes, indicatorCoord])
+  }, [dimTime, gpsFixes, dimCoord])
 
   const fitRef = useRef<string | null | undefined>(null)
   const fitPositionsAsString = fitPositions?.flat().join()

@@ -289,12 +289,16 @@ const Vehicle: NextPage = () => {
   const [timelineScrubTime, setTimelineScrubTime] = useState<
     number | null | undefined
   >(null)
+  // Generic scrub — sets indicator position only (depth chart, map hover)
   const handleTimeScrub = (time?: number | null) => {
+    setIndicatorTime(time)
+  }
+  // Timeline bar scrub — sets indicator AND triggers track split/dimming
+  const handleTimelineScrub = (time?: number | null) => {
     setIndicatorTime(time)
     setTimelineScrubTime(time)
   }
-  // Map hover sets indicatorTime (shows indicator dot + timeline position)
-  // but does NOT update timelineScrubTime, so the track does not dim.
+  // Map hover — same as generic scrub (indicator only, no dimming)
   const handleMapScrub = (time?: number | null) => {
     setIndicatorTime(time)
   }
@@ -329,7 +333,7 @@ const Vehicle: NextPage = () => {
         ticks={6}
         ariaLabel="Mission Progress"
         className="min-h-0 bg-secondary-300/60"
-        onScrub={handleTimeScrub}
+        onScrub={handleTimelineScrub}
         indicatorTime={indicatorTime}
       />
       <div className={styles.mapContainer}>
