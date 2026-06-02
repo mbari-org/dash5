@@ -270,7 +270,7 @@ const VehiclePath: React.FC<VehiclePathProps> = ({
     () =>
       vehiclePosition?.gpsFixes?.map(
         (g) => [g.latitude, g.longitude] as [number, number]
-      ),
+      ) ?? [],
     [vehiclePosition?.gpsFixes]
   )
 
@@ -573,16 +573,16 @@ const VehiclePath: React.FC<VehiclePathProps> = ({
       {mapHoverFix && (
         <Circle
           center={{ lat: mapHoverFix.latitude, lng: mapHoverFix.longitude }}
+          interactive={false}
           pathOptions={{
             color,
             fillColor: color,
             fillOpacity: 0.85,
             weight: 2,
-            interactive: false,
           }}
           radius={60}
         >
-          <Tooltip direction="right" offset={[10, 0]} opacity={0.95}>
+          <Tooltip permanent direction="right" offset={[10, 0]} opacity={0.95}>
             <div className="text-xs leading-snug">
               <div className="flex items-center gap-1 font-bold text-black">
                 <span
