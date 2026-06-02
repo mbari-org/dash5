@@ -36,10 +36,16 @@ const MouseCoordinates: React.FC<MouseCoordinatesProps> = ({
   const requestIdRef = useRef(0)
 
   // Clear stale depth immediately when the cursor moves to a new position so
-  // the old value is never shown alongside the new coordinate.
+  // the old value is never shown alongside the new coordinate. The cleanup
+  // bumps the counter on unmount (and before each re-run) so any in-flight
+  // onRequestDepth promise becomes stale and cannot call setDepth after the
+  // component unmounts.
   useEffect(() => {
     requestIdRef.current++
     setDepth(null)
+    return () => {
+      requestIdRef.current++
+    }
   }, [mousePoint])
 
   const formattedCoordinates =
