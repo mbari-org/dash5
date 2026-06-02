@@ -368,7 +368,7 @@ const VehiclePath: React.FC<VehiclePathProps> = ({
   return route?.length ? (
     <>
       <Polyline
-        pathOptions={activeRoute ? { ...lineStyle, opacity: 0.35 } : lineStyle}
+        pathOptions={lineStyle}
         positions={activeRoute ?? route}
         color={color}
         eventHandlers={{
@@ -480,13 +480,13 @@ const VehiclePath: React.FC<VehiclePathProps> = ({
           position={r}
           color={color}
           radius={10}
-          opacity={activeRoute ? 0.35 : 1}
-          fillOpacity={activeRoute ? 0.35 : 1}
+          opacity={1}
+          fillOpacity={1}
         />
       ))}
       {dedupedInactiveRoute && (
         <Polyline
-          pathOptions={{ color, weight: 3, dashArray: '6, 8' }}
+          pathOptions={{ color, weight: 2, opacity: 0.5, dashArray: '4, 6' }}
           positions={dedupedInactiveRoute}
         />
       )}
@@ -502,12 +502,16 @@ const VehiclePath: React.FC<VehiclePathProps> = ({
             }}
             fillColor={color}
             radius={10}
-            fillOpacity={1}
+            fillOpacity={0.5}
             color={color}
-            opacity={1}
+            opacity={0.5}
           />
         ))}
-      {/* This handles the Scrub Timeline route */}
+      {/* Invisible hit targets for map→timeline sync (reverse scrub).
+          These no longer set indicatorTime so hovering the track does not
+          trigger the dimming effect; scrubbing is driven by the timeline bar
+          only. Kept in place so the map can still emit position events via
+          onScrub if needed in future. */}
       {route.map((r, index) => (
         <Circle
           key={`${name}:${
@@ -522,10 +526,6 @@ const VehiclePath: React.FC<VehiclePathProps> = ({
           fillOpacity={0}
           color={color}
           opacity={0}
-          eventHandlers={{
-            mouseover: handleCoord,
-            mouseout: handleMouseOut,
-          }}
         />
       ))}
     </>
