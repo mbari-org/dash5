@@ -256,13 +256,12 @@ const VehiclePath: React.FC<VehiclePathProps> = ({
     [activePoints]
   )
 
-  const indicatorCoord = useMemo(
-    () =>
-      indicatorTime && activePoints
-        ? [...activePoints].sort((a, b) => b.unixTime - a.unixTime)[0] ?? null
-        : null,
-    [indicatorTime, activePoints]
-  )
+  const indicatorCoord = useMemo(() => {
+    if (!indicatorTime || !activePoints?.length) return null
+    return activePoints.reduce((latest, fix) =>
+      fix.unixTime > latest.unixTime ? fix : latest
+    )
+  }, [indicatorTime, activePoints])
 
   // Compute the future segment and deduplicate adjacent identical points in
   // one memo so both the dashed Polyline and preview Circles share the same
