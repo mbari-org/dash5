@@ -236,38 +236,48 @@ const VehiclePath: React.FC<VehiclePathProps> = ({
     return deduped
   }, [route, futureRoute])
 
-  // DEPLOYMENT MAP
-  // activePoints - Deployment Map
-  const activePoints =
-    indicatorTime && indicatorTime > 0
-      ? vehiclePosition?.gpsFixes.filter(
-          (fix) => fix.unixTime <= (indicatorTime ?? 0)
-        )
-      : null
+  // DEPLOYMENT MAP — scrubbing-derived values
+  // Memoize on stable primitives (indicatorTime + gpsFixes reference) so
+  // derived arrays are only recomputed when the data or scrub position changes.
+  const gpsFixes = vehiclePosition?.gpsFixes ?? null
 
-  // activeRoute
-  const activeRoute = activePoints?.map(
-    (g) => [g.latitude, g.longitude] as [number, number]
+  const activePoints = useMemo(
+    () =>
+      indicatorTime && indicatorTime > 0 && gpsFixes
+        ? gpsFixes.filter((fix) => fix.unixTime <= indicatorTime)
+        : null,
+    [indicatorTime, gpsFixes]
   )
 
-  // indicatorCoord - Deployment Map
-  const indicatorCoord = indicatorTime
-    ? activePoints?.sort((a, b) => b.unixTime - a.unixTime)[0]
-    : null
+  const activeRoute = useMemo(
+    () =>
+      activePoints?.map((g) => [g.latitude, g.longitude] as [number, number]) ??
+      null,
+    [activePoints]
+  )
 
-  // inactiveRoute - Deployment Map
-  const inactiveRoute =
-    indicatorTime &&
-    [
-      indicatorCoord,
-      ...(
-        vehiclePosition?.gpsFixes.filter(
-          (fix) => fix.unixTime >= (indicatorTime ?? 0)
-        ) ?? []
-      ).sort((a, b) => a.unixTime - b.unixTime),
-    ]
-      ?.filter((g) => g && g.latitude != null && g.longitude != null)
-      .map((g) => [g?.latitude ?? 0, g?.longitude ?? 0] as [number, number])
+  const indicatorCoord = useMemo(() => {
+    if (!indicatorTime || !activePoints?.length) return null
+    return activePoints.reduce((latest, fix) =>
+      fix.unixTime > latest.unixTime ? fix : latest
+    )
+  }, [indicatorTime, activePoints])
+
+  // Compute the future segment and deduplicate adjacent identical points in
+  // one memo so both the dashed Polyline and preview Circles share the same
+  // stable array reference without redundant work.
+  const dedupedInactiveRoute = useMemo(() => {
+    if (!indicatorTime || !gpsFixes) return null
+    const futureFixes = gpsFixes
+      .filter((fix) => fix.unixTime >= indicatorTime)
+      .sort((a, b) => a.unixTime - b.unixTime)
+    const raw = [indicatorCoord, ...futureFixes]
+      .filter((g) => g && g.latitude != null && g.longitude != null)
+      .map((g) => [g!.latitude, g!.longitude] as [number, number])
+    return raw.filter(
+      (r, i, arr) => i === 0 || r[0] !== arr[i - 1][0] || r[1] !== arr[i - 1][1]
+    )
+  }, [indicatorTime, gpsFixes, indicatorCoord])
 
   const fitRef = useRef<string | null | undefined>(null)
   const fitPositionsAsString = fitPositions?.flat().join()
@@ -358,9 +368,8 @@ const VehiclePath: React.FC<VehiclePathProps> = ({
   return route?.length ? (
     <>
       <Polyline
-        pathOptions={lineStyle}
-        positions={route}
-        // positions={activeRoute ?? route}
+        pathOptions={activeRoute ? { ...lineStyle, opacity: 0.35 } : lineStyle}
+        positions={activeRoute ?? route}
         color={color}
         eventHandlers={{
           mouseover: () => {
@@ -471,16 +480,18 @@ const VehiclePath: React.FC<VehiclePathProps> = ({
           position={r}
           color={color}
           radius={10}
+          opacity={activeRoute ? 0.35 : 1}
+          fillOpacity={activeRoute ? 0.35 : 1}
         />
       ))}
-      {inactiveRoute && (
+      {dedupedInactiveRoute && (
         <Polyline
-          pathOptions={{ color, opacity: 0.35 }}
-          positions={inactiveRoute}
+          pathOptions={{ color, weight: 3, dashArray: '6, 8' }}
+          positions={dedupedInactiveRoute}
         />
       )}
-      {inactiveRoute &&
-        inactiveRoute?.map((r, i) => (
+      {dedupedInactiveRoute &&
+        dedupedInactiveRoute.map((r, i) => (
           <Circle
             key={`${name}:${
               grouped ? 'overview' : 'detail'
@@ -491,9 +502,9 @@ const VehiclePath: React.FC<VehiclePathProps> = ({
             }}
             fillColor={color}
             radius={10}
-            fillOpacity={0.25}
+            fillOpacity={1}
             color={color}
-            opacity={0.25}
+            opacity={1}
           />
         ))}
       {/* This handles the Scrub Timeline route */}
