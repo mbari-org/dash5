@@ -15,7 +15,7 @@ import { formatElapsedTime } from '@mbari/utils'
 import { useVehicleColors } from './VehicleColorsContext'
 
 const getDistance = (a: VPosDetail, b: LatLng) =>
-  distance([a.latitude, a.longitude], [b.lat, b.lng])
+  distance([a.longitude, a.latitude], [b.lng, b.lat])
 
 // VehiclePoint component
 const VehiclePoint: React.FC<{
@@ -46,6 +46,45 @@ const VehiclePoint: React.FC<{
     {children}
   </Circle>
 )
+
+// Memoized hit-circle layer so it never re-renders when VehiclePath state
+// (mapHoverFix, indicatorTime, etc.) changes — prevents React-Leaflet from
+// re-mounting the circles and emitting spurious mouseout/mouseover events.
+const HitCircles = React.memo(
+  ({
+    name,
+    grouped,
+    route,
+    color,
+    onCoord,
+    onMouseOut,
+  }: {
+    name: string
+    grouped?: boolean
+    route: [number, number][]
+    color: string
+    onCoord: LeafletMouseEventHandlerFn
+    onMouseOut: LeafletMouseEventHandlerFn
+  }) => (
+    <>
+      {route.map((r, index) => (
+        <Circle
+          key={`${name}:${
+            grouped ? 'overview' : 'detail'
+          }:touch:${index}:${r.join()}`}
+          center={{ lat: r[0], lng: r[1] }}
+          fillColor={color}
+          radius={200}
+          fillOpacity={0}
+          color={color}
+          opacity={0}
+          eventHandlers={{ mouseover: onCoord, mouseout: onMouseOut }}
+        />
+      ))}
+    </>
+  )
+)
+HitCircles.displayName = 'HitCircles'
 
 // VehiclePathProps interface
 interface VehiclePathProps {
@@ -162,43 +201,41 @@ const VehiclePath: React.FC<VehiclePathProps> = ({
   }, [vehiclePosition?.gpsFixes, onPositionDataLoaded])
 
   const timeout = useRef<ReturnType<typeof setTimeout> | null>(null)
-  const [mapHoverCoord, setMapHoverCoord] = useState<[number, number] | null>(
-    null
-  )
-  // Track the last hovered fix by unixTime to avoid stale-closure comparisons
-  // and skip setMapHoverCoord when the nearest fix hasn't changed.
+  const [mapHoverFix, setMapHoverFix] = useState<VPosDetail | null>(null)
   const lastHoveredFixTimeRef = useRef<number | null>(null)
+  // Refs keep handleCoord/handleMouseOut deps-free so they never change
+  // reference — preventing HitCircles from re-rendering on every poll/render.
+  const gpsFixesRef = useRef(vehiclePosition?.gpsFixes)
+  const handleScrubRef = useRef(handleScrub)
+  gpsFixesRef.current = vehiclePosition?.gpsFixes
+  handleScrubRef.current = handleScrub
 
-  const handleCoord: LeafletMouseEventHandlerFn = useCallback(
-    (e) => {
-      if (timeout.current) clearTimeout(timeout.current)
-      // O(n) nearest-fix lookup via reduce instead of clone+sort
-      const coord = (vehiclePosition?.gpsFixes ?? []).reduce<VPosDetail | null>(
-        (nearest, fix) =>
-          nearest === null ||
-          getDistance(fix, e.latlng) < getDistance(nearest, e.latlng)
-            ? fix
-            : nearest,
-        null
-      )
-      handleScrub?.(coord?.unixTime)
-      if (coord && coord.unixTime !== lastHoveredFixTimeRef.current) {
-        lastHoveredFixTimeRef.current = coord.unixTime
-        setMapHoverCoord([coord.latitude, coord.longitude])
+  const handleCoord: LeafletMouseEventHandlerFn = useCallback((e) => {
+    if (timeout.current) clearTimeout(timeout.current)
+    let coord: VPosDetail | null = null
+    let bestDist = Infinity
+    for (const fix of gpsFixesRef.current ?? []) {
+      const d = getDistance(fix, e.latlng)
+      if (d < bestDist) {
+        bestDist = d
+        coord = fix
       }
-    },
-    [timeout, handleScrub, vehiclePosition?.gpsFixes]
-  )
+    }
+    if (coord && coord.unixTime !== lastHoveredFixTimeRef.current) {
+      lastHoveredFixTimeRef.current = coord.unixTime
+      handleScrubRef.current?.(coord.unixTime)
+      setMapHoverFix(coord)
+    }
+  }, []) // stable forever — reads live values via refs
 
   const handleMouseOut: LeafletMouseEventHandlerFn = useCallback(() => {
     if (timeout.current) clearTimeout(timeout.current)
     timeout.current = setTimeout(() => {
-      handleScrub?.(null)
-      setMapHoverCoord(null)
-      // Reset so hovering the same fix again after mouseout re-shows the dot
+      handleScrubRef.current?.(null)
+      setMapHoverFix(null)
       lastHoveredFixTimeRef.current = null
     }, 1000)
-  }, [timeout, handleScrub])
+  }, []) // stable forever — reads live values via refs
 
   // Clear pending timeout on unmount to prevent state updates after removal
   useEffect(() => {
@@ -221,17 +258,13 @@ const VehiclePath: React.FC<VehiclePathProps> = ({
     return { hours, minutes, timeSinceFix }
   }
 
-  const [tooltipVisible, setTooltipVisible] = useState(false)
-  const handleTTVisible = () => {
-    setTooltipVisible(true)
-  }
-  const handleTTHidden = () => {
-    setTooltipVisible(false)
-  }
-
   // route
-  const route = vehiclePosition?.gpsFixes?.map(
-    (g) => [g.latitude, g.longitude] as [number, number]
+  const route = useMemo(
+    () =>
+      vehiclePosition?.gpsFixes?.map(
+        (g) => [g.latitude, g.longitude] as [number, number]
+      ) ?? [],
+    [vehiclePosition?.gpsFixes]
   )
 
   const futureRoute = useMemo(() => {
@@ -475,45 +508,33 @@ const VehiclePath: React.FC<VehiclePathProps> = ({
           </Circle>
         </>
       )}
-      {/* DEPLOYMENT MAP VEHICLE VIEW */}
-      {indicatorCoord && (
-        <>
-          {/* This Circle is the actual point per GPS fix */}
-          <Circle
-            pathOptions={{ color }}
-            center={{
-              lat: indicatorCoord.latitude,
-              lng: indicatorCoord.longitude,
-            }}
-            fillColor={color}
-            fillOpacity={1}
-            color={color}
-            // Sets the center dot radius of latest fix on hover
-            radius={60}
-            eventHandlers={{
-              mouseover: handleTTVisible,
-              mouseout: handleTTHidden,
-            }}
-          >
-            {tooltipVisible && (
-              <Tooltip direction="right" offset={[10, 0]} opacity={0.9}>
-                <span>
-                  <div className="text-purple text-bold">
-                    {name} <br />
-                  </div>
-                  Latest position: {indicatorCoord.latitude.toFixed(5)},{' '}
-                  {indicatorCoord.longitude.toFixed(5)}
-                  <br />
-                  {indicatorCoord.isoTime.split('T')[0] +
-                    ' ' +
-                    indicatorCoord.isoTime.split('T')[1].split('Z')[0]}
-                  {' - '}
-                  {timeSinceFixDisplay}
-                </span>
-              </Tooltip>
-            )}
-          </Circle>
-        </>
+      {/* Solid dot at the latest GPS fix — always visible, tooltip on hover only */}
+      {latest && (
+        <Circle
+          pathOptions={{ color }}
+          center={{ lat: latest.latitude, lng: latest.longitude }}
+          fillColor={color}
+          fillOpacity={1}
+          color={color}
+          radius={60}
+        >
+          <Tooltip direction="right" offset={[10, 0]} opacity={0.9}>
+            <div>
+              <div className="text-purple text-bold">{name}</div>
+              <div>
+                Latest position: {latest.latitude.toFixed(5)},{' '}
+                {latest.longitude.toFixed(5)}
+              </div>
+              <div>
+                {latest.isoTime.split('T')[0] +
+                  ' ' +
+                  latest.isoTime.split('T')[1].split('Z')[0]}
+                {' - '}
+                {timeSinceFixDisplay}
+              </div>
+            </div>
+          </Tooltip>
+        </Circle>
       )}
       {/* Crumb trail dots — only shown while the timeline bar is being hovered */}
       {activeRoute &&
@@ -530,9 +551,10 @@ const VehiclePath: React.FC<VehiclePathProps> = ({
           />
         ))}
       {/* Hover highlight — grows at the nearest fix when hovering the map track */}
-      {mapHoverCoord && (
+      {mapHoverFix && (
         <Circle
-          center={{ lat: mapHoverCoord[0], lng: mapHoverCoord[1] }}
+          center={{ lat: mapHoverFix.latitude, lng: mapHoverFix.longitude }}
+          interactive={false}
           pathOptions={{
             color,
             fillColor: color,
@@ -540,7 +562,32 @@ const VehiclePath: React.FC<VehiclePathProps> = ({
             weight: 2,
           }}
           radius={60}
-        />
+        >
+          <Tooltip permanent direction="right" offset={[10, 0]} opacity={0.95}>
+            <div className="text-xs leading-snug">
+              <div className="flex items-center gap-1 font-bold text-black">
+                <span
+                  style={{
+                    background: color,
+                    borderRadius: '50%',
+                    width: 8,
+                    height: 8,
+                    display: 'inline-block',
+                    flexShrink: 0,
+                  }}
+                />
+                {name}
+              </div>
+              <div className="text-gray-700 mt-0.5">
+                {mapHoverFix.latitude.toFixed(5)},{' '}
+                {mapHoverFix.longitude.toFixed(5)}
+              </div>
+              <div className="text-gray-600">
+                {mapHoverFix.isoTime.replace('T', ' ').replace('Z', ' UTC')}
+              </div>
+            </div>
+          </Tooltip>
+        </Circle>
       )}
       {dedupedInactiveRoute && (
         <Polyline
@@ -565,25 +612,16 @@ const VehiclePath: React.FC<VehiclePathProps> = ({
             opacity={0.5}
           />
         ))}
-      {/* Invisible hit targets — map hover syncs the timeline indicator
-          position (indicatorTime) without triggering track dimming (dimTime). */}
-      {route.map((r, index) => (
-        <Circle
-          key={`${name}:${
-            grouped ? 'overview' : 'detail'
-          }:touch:${index}:${r.join()}`}
-          center={{ lat: r[0], lng: r[1] }}
-          fillColor={color}
-          radius={200}
-          fillOpacity={0}
-          color={color}
-          opacity={0}
-          eventHandlers={{
-            mouseover: handleCoord,
-            mouseout: handleMouseOut,
-          }}
-        />
-      ))}
+      {/* Memoized hit targets — isolated from VehiclePath re-renders to
+          prevent spurious mouseout/mouseover events causing tooltip flicker. */}
+      <HitCircles
+        name={name}
+        grouped={grouped}
+        route={route}
+        color={color}
+        onCoord={handleCoord}
+        onMouseOut={handleMouseOut}
+      />
     </>
   ) : null
 }
