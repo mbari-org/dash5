@@ -8,8 +8,8 @@ import {
 import { Polyline, useMap, Circle, Tooltip } from 'react-leaflet'
 import { LatLng, LeafletMouseEventHandlerFn } from 'leaflet'
 import { useRouter } from 'next/router'
-import { useSharedPath } from './SharedPathContextProvider'
 import { distance } from '@turf/turf'
+import { useSharedPath } from './SharedPathContextProvider'
 import { parseISO, getTime } from 'date-fns'
 import { formatElapsedTime } from '@mbari/utils'
 import { useVehicleColors } from './VehicleColorsContext'
@@ -54,6 +54,9 @@ interface VehiclePathProps {
   from?: number
   to?: number
   indicatorTime?: number | null
+  /** Time used exclusively for track split/dimming — set only from timeline
+   *  bar hover so map-hover scrubbing shows the indicator without dimming. */
+  dimTime?: number | null
   onScrub?: (millis?: number | null) => void
   onGPSFix?: (gps: VPosDetail) => void
   onPositionDataLoaded?: () => void
@@ -67,6 +70,7 @@ const VehiclePath: React.FC<VehiclePathProps> = ({
   to,
   from,
   indicatorTime,
+  dimTime,
   onScrub: handleScrub,
   onGPSFix: handleGPSFix,
   onPositionDataLoaded,
@@ -158,30 +162,50 @@ const VehiclePath: React.FC<VehiclePathProps> = ({
   }, [vehiclePosition?.gpsFixes, onPositionDataLoaded])
 
   const timeout = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const [mapHoverCoord, setMapHoverCoord] = useState<[number, number] | null>(
+    null
+  )
+  // Track the last hovered fix by unixTime to avoid stale-closure comparisons
+  // and skip setMapHoverCoord when the nearest fix hasn't changed.
+  const lastHoveredFixTimeRef = useRef<number | null>(null)
 
-  // handleCoordinates
   const handleCoord: LeafletMouseEventHandlerFn = useCallback(
     (e) => {
-      if (timeout.current) {
-        clearTimeout(timeout.current)
-      }
-      const coord = [...(vehiclePosition?.gpsFixes ?? [])].sort(
-        (a, b) => getDistance(a, e.latlng) - getDistance(b, e.latlng)
-      )[0]
+      if (timeout.current) clearTimeout(timeout.current)
+      // O(n) nearest-fix lookup via reduce instead of clone+sort
+      const coord = (vehiclePosition?.gpsFixes ?? []).reduce<VPosDetail | null>(
+        (nearest, fix) =>
+          nearest === null ||
+          getDistance(fix, e.latlng) < getDistance(nearest, e.latlng)
+            ? fix
+            : nearest,
+        null
+      )
       handleScrub?.(coord?.unixTime)
+      if (coord && coord.unixTime !== lastHoveredFixTimeRef.current) {
+        lastHoveredFixTimeRef.current = coord.unixTime
+        setMapHoverCoord([coord.latitude, coord.longitude])
+      }
     },
     [timeout, handleScrub, vehiclePosition?.gpsFixes]
   )
 
-  // handleMouseOut
   const handleMouseOut: LeafletMouseEventHandlerFn = useCallback(() => {
-    if (timeout.current) {
-      clearTimeout(timeout.current)
-    }
+    if (timeout.current) clearTimeout(timeout.current)
     timeout.current = setTimeout(() => {
       handleScrub?.(null)
+      setMapHoverCoord(null)
+      // Reset so hovering the same fix again after mouseout re-shows the dot
+      lastHoveredFixTimeRef.current = null
     }, 1000)
   }, [timeout, handleScrub])
+
+  // Clear pending timeout on unmount to prevent state updates after removal
+  useEffect(() => {
+    return () => {
+      if (timeout.current) clearTimeout(timeout.current)
+    }
+  }, [])
 
   // Convert minutes to hours, minutes
   const convertMin2HrMin = (timeDiff: number) => {
@@ -237,17 +261,16 @@ const VehiclePath: React.FC<VehiclePathProps> = ({
   }, [route, futureRoute])
 
   // DEPLOYMENT MAP — scrubbing-derived values
-  // Memoize on stable primitives (indicatorTime + gpsFixes reference) so
-  // derived arrays are only recomputed when the data or scrub position changes.
+  // dimTime   → set only from the timeline bar → drives track split/dimming
+  // indicatorTime → set from timeline bar OR map hover → drives indicator dot
   const gpsFixes = vehiclePosition?.gpsFixes ?? null
 
-  const activePoints = useMemo(
-    () =>
-      indicatorTime && indicatorTime > 0 && gpsFixes
-        ? gpsFixes.filter((fix) => fix.unixTime <= indicatorTime)
-        : null,
-    [indicatorTime, gpsFixes]
-  )
+  // Track-split: which fixes are in the "past" relative to dimTime
+  const activePoints = useMemo(() => {
+    if (!dimTime || dimTime <= 0 || !gpsFixes) return null
+    const points = gpsFixes.filter((fix) => fix.unixTime <= dimTime)
+    return points.length > 0 ? points : null
+  }, [dimTime, gpsFixes])
 
   const activeRoute = useMemo(
     () =>
@@ -256,28 +279,42 @@ const VehiclePath: React.FC<VehiclePathProps> = ({
     [activePoints]
   )
 
-  const indicatorCoord = useMemo(() => {
-    if (!indicatorTime || !activePoints?.length) return null
+  // dimCoord: boundary point for the future segment (uses dimTime)
+  const dimCoord = useMemo(() => {
+    if (!dimTime || !activePoints?.length) return null
     return activePoints.reduce((latest, fix) =>
       fix.unixTime > latest.unixTime ? fix : latest
     )
-  }, [indicatorTime, activePoints])
+  }, [dimTime, activePoints])
+
+  // indicatorCoord: position marker shown from ANY scrub source (uses indicatorTime)
+  const indicatorCoord = useMemo(() => {
+    if (!indicatorTime || !gpsFixes?.length) return null
+    const pastFixes = gpsFixes.filter((fix) => fix.unixTime <= indicatorTime)
+    if (!pastFixes.length) return null
+    return pastFixes.reduce((latest, fix) =>
+      fix.unixTime > latest.unixTime ? fix : latest
+    )
+  }, [indicatorTime, gpsFixes])
 
   // Compute the future segment and deduplicate adjacent identical points in
   // one memo so both the dashed Polyline and preview Circles share the same
   // stable array reference without redundant work.
   const dedupedInactiveRoute = useMemo(() => {
-    if (!indicatorTime || !gpsFixes) return null
+    if (!dimTime || !gpsFixes) return null
     const futureFixes = gpsFixes
-      .filter((fix) => fix.unixTime >= indicatorTime)
+      .filter((fix) => fix.unixTime >= dimTime)
       .sort((a, b) => a.unixTime - b.unixTime)
-    const raw = [indicatorCoord, ...futureFixes]
+    const raw = [dimCoord, ...futureFixes]
       .filter((g) => g && g.latitude != null && g.longitude != null)
       .map((g) => [g!.latitude, g!.longitude] as [number, number])
-    return raw.filter(
+    const deduped = raw.filter(
       (r, i, arr) => i === 0 || r[0] !== arr[i - 1][0] || r[1] !== arr[i - 1][1]
     )
-  }, [indicatorTime, gpsFixes, indicatorCoord])
+    // Leaflet polylines require at least 2 points; a single-point or empty
+    // future segment means there is no future track to render.
+    return deduped.length >= 2 ? deduped : null
+  }, [dimTime, gpsFixes, dimCoord])
 
   const fitRef = useRef<string | null | undefined>(null)
   const fitPositionsAsString = fitPositions?.flat().join()
@@ -367,19 +404,25 @@ const VehiclePath: React.FC<VehiclePathProps> = ({
 
   return route?.length ? (
     <>
-      <Polyline
-        pathOptions={activeRoute ? { ...lineStyle, opacity: 0.35 } : lineStyle}
-        positions={activeRoute ?? route}
-        color={color}
-        eventHandlers={{
-          mouseover: () => {
-            setLineStyle({ color, weight: 5 })
-          },
-          mouseout: () => {
-            setLineStyle({ color, weight: 3 })
-          },
-        }}
-      />
+      {/* When split mode is active (dimTime set) only render the past segment.
+          If there are no past fixes yet (before first GPS fix), render nothing
+          rather than falling back to the full route which would double-draw
+          under the dashed future segment. */}
+      {(!dimTime || activeRoute) && (
+        <Polyline
+          pathOptions={lineStyle}
+          positions={activeRoute ?? route}
+          color={color}
+          eventHandlers={{
+            mouseover: () => {
+              setLineStyle({ color, weight: 5 })
+            },
+            mouseout: () => {
+              setLineStyle({ color, weight: 3 })
+            },
+          }}
+        />
+      )}
       {/* dashed future waypoint trajectory */}
       {futureRoute && (
         <Polyline
@@ -472,21 +515,36 @@ const VehiclePath: React.FC<VehiclePathProps> = ({
           </Circle>
         </>
       )}
-      {(activeRoute ?? route).map((r, i) => (
-        <VehiclePoint
-          key={`${name}:${
-            grouped ? 'overview' : 'detail'
-          }:preview:${i}:${r.join()}`}
-          position={r}
-          color={color}
-          radius={10}
-          opacity={activeRoute ? 0.35 : 1}
-          fillOpacity={activeRoute ? 0.35 : 1}
+      {/* Crumb trail dots — only shown while the timeline bar is being hovered */}
+      {activeRoute &&
+        activeRoute.map((r, i) => (
+          <VehiclePoint
+            key={`${name}:${
+              grouped ? 'overview' : 'detail'
+            }:preview:${i}:${r.join()}`}
+            position={r}
+            color={color}
+            radius={10}
+            opacity={1}
+            fillOpacity={1}
+          />
+        ))}
+      {/* Hover highlight — grows at the nearest fix when hovering the map track */}
+      {mapHoverCoord && (
+        <Circle
+          center={{ lat: mapHoverCoord[0], lng: mapHoverCoord[1] }}
+          pathOptions={{
+            color,
+            fillColor: color,
+            fillOpacity: 0.85,
+            weight: 2,
+          }}
+          radius={60}
         />
-      ))}
+      )}
       {dedupedInactiveRoute && (
         <Polyline
-          pathOptions={{ color, weight: 3, dashArray: '6, 8' }}
+          pathOptions={{ color, weight: 2, opacity: 0.5, dashArray: '4, 6' }}
           positions={dedupedInactiveRoute}
         />
       )}
@@ -502,21 +560,19 @@ const VehiclePath: React.FC<VehiclePathProps> = ({
             }}
             fillColor={color}
             radius={10}
-            fillOpacity={1}
+            fillOpacity={0.5}
             color={color}
-            opacity={1}
+            opacity={0.5}
           />
         ))}
-      {/* This handles the Scrub Timeline route */}
+      {/* Invisible hit targets — map hover syncs the timeline indicator
+          position (indicatorTime) without triggering track dimming (dimTime). */}
       {route.map((r, index) => (
         <Circle
           key={`${name}:${
             grouped ? 'overview' : 'detail'
           }:touch:${index}:${r.join()}`}
-          center={{
-            lat: r[0],
-            lng: r[1],
-          }}
+          center={{ lat: r[0], lng: r[1] }}
           fillColor={color}
           radius={200}
           fillOpacity={0}

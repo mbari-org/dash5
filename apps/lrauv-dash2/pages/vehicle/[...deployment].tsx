@@ -284,7 +284,22 @@ const Vehicle: NextPage = () => {
   const [indicatorTime, setIndicatorTime] = useState<number | null | undefined>(
     null
   )
+  // timelineScrubTime is set only from the timeline bar (not map hover) and
+  // is used exclusively to drive the track split/dimming in VehiclePath.
+  const [timelineScrubTime, setTimelineScrubTime] = useState<
+    number | null | undefined
+  >(null)
+  // Generic scrub — sets indicator position only (depth chart, map hover)
   const handleTimeScrub = (time?: number | null) => {
+    setIndicatorTime(time)
+  }
+  // Timeline bar scrub — sets indicator AND triggers track split/dimming
+  const handleTimelineScrub = (time?: number | null) => {
+    setIndicatorTime(time)
+    setTimelineScrubTime(time)
+  }
+  // Map hover — same as generic scrub (indicator only, no dimming)
+  const handleMapScrub = (time?: number | null) => {
     setIndicatorTime(time)
   }
 
@@ -318,7 +333,7 @@ const Vehicle: NextPage = () => {
         ticks={6}
         ariaLabel="Mission Progress"
         className="min-h-0 bg-secondary-300/60"
-        onScrub={handleTimeScrub}
+        onScrub={handleTimelineScrub}
         indicatorTime={indicatorTime}
       />
       <div className={styles.mapContainer}>
@@ -326,9 +341,10 @@ const Vehicle: NextPage = () => {
           <DeploymentMap
             vehicleName={vehicleName}
             indicatorTime={indicatorTime}
+            dimTime={timelineScrubTime}
             startTime={startTime}
             endTime={endTime}
-            onScrub={handleTimeScrub}
+            onScrub={handleMapScrub}
           />
         )}
         <div className="absolute bottom-0 z-[1001] flex w-full flex-col">
