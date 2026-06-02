@@ -266,13 +266,11 @@ const VehiclePath: React.FC<VehiclePathProps> = ({
   const gpsFixes = vehiclePosition?.gpsFixes ?? null
 
   // Track-split: which fixes are in the "past" relative to dimTime
-  const activePoints = useMemo(
-    () =>
-      dimTime && dimTime > 0 && gpsFixes
-        ? gpsFixes.filter((fix) => fix.unixTime <= dimTime)
-        : null,
-    [dimTime, gpsFixes]
-  )
+  const activePoints = useMemo(() => {
+    if (!dimTime || dimTime <= 0 || !gpsFixes) return null
+    const points = gpsFixes.filter((fix) => fix.unixTime <= dimTime)
+    return points.length > 0 ? points : null
+  }, [dimTime, gpsFixes])
 
   const activeRoute = useMemo(
     () =>
@@ -310,9 +308,12 @@ const VehiclePath: React.FC<VehiclePathProps> = ({
     const raw = [dimCoord, ...futureFixes]
       .filter((g) => g && g.latitude != null && g.longitude != null)
       .map((g) => [g!.latitude, g!.longitude] as [number, number])
-    return raw.filter(
+    const deduped = raw.filter(
       (r, i, arr) => i === 0 || r[0] !== arr[i - 1][0] || r[1] !== arr[i - 1][1]
     )
+    // Leaflet polylines require at least 2 points; a single-point or empty
+    // future segment means there is no future track to render.
+    return deduped.length >= 2 ? deduped : null
   }, [dimTime, gpsFixes, dimCoord])
 
   const fitRef = useRef<string | null | undefined>(null)
