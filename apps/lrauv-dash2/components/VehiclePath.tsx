@@ -15,7 +15,7 @@ import { formatElapsedTime } from '@mbari/utils'
 import { useVehicleColors } from './VehicleColorsContext'
 
 const getDistance = (a: VPosDetail, b: LatLng) =>
-  distance([a.latitude, a.longitude], [b.lat, b.lng])
+  distance([a.longitude, a.latitude], [b.lng, b.lat])
 
 // VehiclePoint component
 const VehiclePoint: React.FC<{
@@ -519,19 +519,20 @@ const VehiclePath: React.FC<VehiclePathProps> = ({
           radius={60}
         >
           <Tooltip direction="right" offset={[10, 0]} opacity={0.9}>
-            <span>
-              <div className="text-purple text-bold">
-                {name} <br />
+            <div>
+              <div className="text-purple text-bold">{name}</div>
+              <div>
+                Latest position: {latest.latitude.toFixed(5)},{' '}
+                {latest.longitude.toFixed(5)}
               </div>
-              Latest position: {latest.latitude.toFixed(5)},{' '}
-              {latest.longitude.toFixed(5)}
-              <br />
-              {latest.isoTime.split('T')[0] +
-                ' ' +
-                latest.isoTime.split('T')[1].split('Z')[0]}
-              {' - '}
-              {timeSinceFixDisplay}
-            </span>
+              <div>
+                {latest.isoTime.split('T')[0] +
+                  ' ' +
+                  latest.isoTime.split('T')[1].split('Z')[0]}
+                {' - '}
+                {timeSinceFixDisplay}
+              </div>
+            </div>
           </Tooltip>
         </Circle>
       )}
