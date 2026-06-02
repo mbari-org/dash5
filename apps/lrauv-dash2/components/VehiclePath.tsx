@@ -236,51 +236,49 @@ const VehiclePath: React.FC<VehiclePathProps> = ({
     return deduped
   }, [route, futureRoute])
 
-  // DEPLOYMENT MAP
-  // activePoints - Deployment Map
-  const activePoints =
-    indicatorTime && indicatorTime > 0
-      ? vehiclePosition?.gpsFixes.filter(
-          (fix) => fix.unixTime <= (indicatorTime ?? 0)
-        )
-      : null
+  // DEPLOYMENT MAP — scrubbing-derived values
+  // Memoize on stable primitives (indicatorTime + gpsFixes reference) so
+  // derived arrays are only recomputed when the data or scrub position changes.
+  const gpsFixes = vehiclePosition?.gpsFixes ?? null
 
-  // activeRoute
-  const activeRoute = activePoints?.map(
-    (g) => [g.latitude, g.longitude] as [number, number]
-  )
-
-  // indicatorCoord - Deployment Map
-  const indicatorCoord = indicatorTime
-    ? activePoints?.sort((a, b) => b.unixTime - a.unixTime)[0]
-    : null
-
-  // inactiveRoute - Deployment Map
-  const inactiveRoute =
-    indicatorTime &&
-    [
-      indicatorCoord,
-      ...(
-        vehiclePosition?.gpsFixes.filter(
-          (fix) => fix.unixTime >= (indicatorTime ?? 0)
-        ) ?? []
-      ).sort((a, b) => a.unixTime - b.unixTime),
-    ]
-      ?.filter((g) => g && g.latitude != null && g.longitude != null)
-      .map((g) => [g?.latitude ?? 0, g?.longitude ?? 0] as [number, number])
-
-  // Deduplicate adjacent identical points once so both the Polyline and
-  // Circle renders share the same filtered array without recomputing it.
-  const dedupedInactiveRoute = useMemo(
+  const activePoints = useMemo(
     () =>
-      inactiveRoute
-        ? inactiveRoute.filter(
-            (r, i, arr) =>
-              i === 0 || r[0] !== arr[i - 1][0] || r[1] !== arr[i - 1][1]
-          )
+      indicatorTime && indicatorTime > 0 && gpsFixes
+        ? gpsFixes.filter((fix) => fix.unixTime <= indicatorTime)
         : null,
-    [inactiveRoute]
+    [indicatorTime, gpsFixes]
   )
+
+  const activeRoute = useMemo(
+    () =>
+      activePoints?.map((g) => [g.latitude, g.longitude] as [number, number]) ??
+      null,
+    [activePoints]
+  )
+
+  const indicatorCoord = useMemo(
+    () =>
+      indicatorTime && activePoints
+        ? [...activePoints].sort((a, b) => b.unixTime - a.unixTime)[0] ?? null
+        : null,
+    [indicatorTime, activePoints]
+  )
+
+  // Compute the future segment and deduplicate adjacent identical points in
+  // one memo so both the dashed Polyline and preview Circles share the same
+  // stable array reference without redundant work.
+  const dedupedInactiveRoute = useMemo(() => {
+    if (!indicatorTime || !gpsFixes) return null
+    const futureFixes = gpsFixes
+      .filter((fix) => fix.unixTime >= indicatorTime)
+      .sort((a, b) => a.unixTime - b.unixTime)
+    const raw = [indicatorCoord, ...futureFixes]
+      .filter((g) => g && g.latitude != null && g.longitude != null)
+      .map((g) => [g!.latitude, g!.longitude] as [number, number])
+    return raw.filter(
+      (r, i, arr) => i === 0 || r[0] !== arr[i - 1][0] || r[1] !== arr[i - 1][1]
+    )
+  }, [indicatorTime, gpsFixes, indicatorCoord])
 
   const fitRef = useRef<string | null | undefined>(null)
   const fitPositionsAsString = fitPositions?.flat().join()
