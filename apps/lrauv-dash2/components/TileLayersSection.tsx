@@ -6,7 +6,47 @@ interface TileLayerItem {
   name: string
   urlTemplate?: string
   wms?: boolean
+  legendurl?: string
   options?: Record<string, unknown>
+}
+
+const getLegendUrl = (tile: TileLayerItem): string | undefined => {
+  const trimmedLegendUrl = tile.legendurl?.trim()
+  if (trimmedLegendUrl) return trimmedLegendUrl
+  const urlTemplate = tile.urlTemplate?.trim()
+  if (tile.wms && urlTemplate) {
+    const base = urlTemplate.replace(/\?$/, '')
+    const layers = String(tile.options?.layers ?? '')
+    if (!layers.trim()) return undefined
+    const version = String(tile.options?.version ?? '1.1.1')
+    const sep = base.includes('?') ? '&' : '?'
+    return (
+      `${base}${sep}SERVICE=WMS&REQUEST=GetLegendGraphic` +
+      `&VERSION=${encodeURIComponent(version)}` +
+      `&FORMAT=image%2Fpng` +
+      `&LAYER=${encodeURIComponent(layers)}`
+    )
+  }
+  return undefined
+}
+
+const TileLegendPopup: React.FC<{ tile: TileLayerItem }> = ({ tile }) => {
+  const url = getLegendUrl(tile)
+  if (!url) return null
+  return (
+    <div className="max-w-xs rounded bg-white p-2 shadow-lg">
+      <p className="mb-1 text-xs font-semibold text-gray-700">{tile.name}</p>
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      <img
+        src={url}
+        alt={`${tile.name} legend`}
+        className="max-w-full"
+        onError={(e) => {
+          ;(e.currentTarget as HTMLImageElement).style.display = 'none'
+        }}
+      />
+    </div>
+  )
 }
 
 interface TileLayersSectionProps {
@@ -75,6 +115,7 @@ export const TileLayersSection: React.FC<TileLayersSectionProps> = ({
           : tile.wms && !String(tile.options?.layers ?? '').trim()
           ? 'WMS layer has no layers configured'
           : undefined
+        const legendUrl = getLegendUrl(tile)
         return (
           <TreeItem
             key={`tile-${tile.name}`}
@@ -93,6 +134,11 @@ export const TileLayersSection: React.FC<TileLayersSectionProps> = ({
             }
             disabled={!hasValidUrl}
             disabledTitle={disabledTitle}
+            legendContent={
+              legendUrl !== undefined ? (
+                <TileLegendPopup tile={tile} />
+              ) : undefined
+            }
           />
         )
       })}

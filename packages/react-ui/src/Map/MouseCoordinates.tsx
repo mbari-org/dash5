@@ -1,10 +1,14 @@
 // jshint esversion:6
-import React, { useState, useEffect, useCallback } from 'react'
+import React, {
+  useState,
+  useEffect,
+  useLayoutEffect,
+  useCallback,
+  useRef,
+} from 'react'
 import { useMapEvents } from 'react-leaflet'
 import 'leaflet/dist/leaflet.css'
 import { useDebouncedEffect } from '@mbari/utils'
-import { toast } from 'react-hot-toast'
-
 const divStyle = {
   color: 'darkblue',
   fontFamily: 'monospace, serif',
@@ -33,6 +37,20 @@ const MouseCoordinates: React.FC<MouseCoordinatesProps> = ({
   const [depth, setDepth] = useState(
     null as null | { depth: number | null; coordinate: string }
   )
+  const requestIdRef = useRef(0)
+
+  // useLayoutEffect runs synchronously after DOM mutations but before paint,
+  // preventing the one-frame flicker where new coordinates appear alongside
+  // the previous depth value. The cleanup bumps the counter on unmount (and
+  // before each re-run) so any in-flight onRequestDepth promise becomes stale
+  // and cannot call setDepth after the component unmounts.
+  useLayoutEffect(() => {
+    requestIdRef.current++
+    setDepth((prev) => (prev !== null ? null : prev))
+    return () => {
+      requestIdRef.current++
+    }
+  }, [mousePoint])
 
   const formattedCoordinates =
     mousePoint === null
@@ -50,10 +68,22 @@ const MouseCoordinates: React.FC<MouseCoordinatesProps> = ({
     //   setDepth({ depth: Math.random() * 100, coordinate: formattedCoordinates })
     //   return
     // }
-    if (mousePoint?.lat && mousePoint.lng) {
-      onRequestDepth?.(mousePoint?.lat, mousePoint?.lng).then((depth) =>
-        setDepth({ depth, coordinate: formattedCoordinates })
-      )
+    if (mousePoint != null && onRequestDepth) {
+      const id = ++requestIdRef.current
+      onRequestDepth(mousePoint.lat, mousePoint.lng)
+        .then((depth) => {
+          if (id === requestIdRef.current) {
+            setDepth({ depth, coordinate: formattedCoordinates })
+          }
+        })
+        .catch(() => {
+          // Elevation API errors (e.g. MapsServerError UNKNOWN_ERROR) are
+          // handled upstream; clear stale depth so the previous coordinate's
+          // value is not shown for the new position.
+          if (id === requestIdRef.current) {
+            setDepth(null)
+          }
+        })
     }
   }, [mousePoint, onRequestDepth, formattedCoordinates])
 

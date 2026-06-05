@@ -5,6 +5,8 @@ import { config } from '@fortawesome/fontawesome-svg-core'
 import '@fortawesome/fontawesome-svg-core/styles.css'
 import 'leaflet/dist/leaflet.css'
 import { AppProps } from 'next/app'
+import { useEffect } from 'react'
+import { createLogger } from '@mbari/utils'
 import { QueryClientProvider, QueryClient } from 'react-query'
 import { TethysApiProvider } from '@mbari/api-client'
 import { UIProvider } from '@mbari/react-ui'
@@ -21,9 +23,33 @@ import '../styles/docs.css'
 // prevent font awesome from auto-adding styles.
 config.autoAddCss = false
 
+const logger = createLogger('App')
+
 const queryClient = new QueryClient()
 
 function MyApp({ Component, pageProps }: AppProps) {
+  useEffect(() => {
+    // Fix Leaflet's default marker icon paths broken by webpack/Next.js bundling.
+    // Must run client-side only — Leaflet references `window` at import time.
+    // Images are copied to /public so they're served at the root.
+    import('leaflet')
+      .then((L) => {
+        const leaflet = L.default ?? L
+        delete (leaflet.Icon.Default.prototype as any)._getIconUrl
+        leaflet.Icon.Default.mergeOptions({
+          iconUrl: '/marker-icon.png',
+          iconRetinaUrl: '/marker-icon-2x.png',
+          shadowUrl: '/marker-shadow.png',
+        })
+      })
+      .catch((err) => {
+        logger.debug(
+          'Leaflet marker icon setup failed — default markers may be missing:',
+          err
+        )
+      })
+  }, [])
+
   const { sessionToken, setSessionToken } = useSessionToken(
     'TETHYS_SESSION_TOKEN'
   )

@@ -8,6 +8,7 @@ import {
   faStar,
   faArrowsToCircle,
   faCircle,
+  faCircleInfo,
 } from '@fortawesome/free-solid-svg-icons'
 
 export interface TreeItemProps {
@@ -27,6 +28,7 @@ export interface TreeItemProps {
   onMouseLeaveStar?: () => void
   onCenterClick?: () => void
   centerLabel?: string
+  legendContent?: React.ReactNode
 }
 
 const CustomCircleIcon = () => (
@@ -60,6 +62,7 @@ export const TreeItem: React.FC<TreeItemProps> = ({
   onMouseLeaveStar,
   onCenterClick,
   centerLabel = 'Center map on this item',
+  legendContent,
 }) => {
   const hasChildren = React.Children.count(children) > 0
 
@@ -205,6 +208,45 @@ export const TreeItem: React.FC<TreeItemProps> = ({
                 <FontAwesomeIcon
                   icon={faArrowsToCircle}
                   style={{ color: '#6b7280', fontSize: '14.5px' }}
+                />
+              </button>
+            </Tippy>
+          )}
+          {legendContent != null && (
+            <Tippy
+              content={legendContent}
+              placement="right"
+              appendTo={() => document.body}
+              interactive
+              trigger="mouseenter focus"
+              delay={[200, 0]}
+            >
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.preventDefault()
+                  e.stopPropagation()
+                }}
+                className="ml-2 focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-blue-500"
+                aria-label="Show layer legend"
+                style={{
+                  width: '20px',
+                  height: '20px',
+                  flexShrink: 0,
+                  borderRadius: '50%',
+                  background: '#fff',
+                  border: 0,
+                  padding: 0,
+                  boxShadow: '0 1px 3px rgba(0,0,0,0.35)',
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  cursor: 'default',
+                }}
+              >
+                <FontAwesomeIcon
+                  icon={faCircleInfo}
+                  style={{ color: '#0ea5e9', fontSize: '13px' }}
                 />
               </button>
             </Tippy>
