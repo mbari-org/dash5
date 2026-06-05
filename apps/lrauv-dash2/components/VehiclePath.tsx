@@ -536,6 +536,24 @@ const VehiclePath: React.FC<VehiclePathProps> = ({
           </Tooltip>
         </Circle>
       )}
+      {/* Scrub indicator dot — shown for any scrub source (depth chart, timeline)
+          unless the map-hover highlight is already visible at that position */}
+      {indicatorCoord && mapHoverFix?.unixTime !== indicatorCoord.unixTime && (
+        <Circle
+          center={{
+            lat: indicatorCoord.latitude,
+            lng: indicatorCoord.longitude,
+          }}
+          interactive={false}
+          pathOptions={{
+            color,
+            fillColor: color,
+            fillOpacity: 0.85,
+            weight: 2,
+          }}
+          radius={40}
+        />
+      )}
       {/* Crumb trail dots — only shown while the timeline bar is being hovered */}
       {activeRoute &&
         activeRoute.map((r, i) => (

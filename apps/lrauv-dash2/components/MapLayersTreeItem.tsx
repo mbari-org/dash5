@@ -212,7 +212,7 @@ export const TreeItem: React.FC<TreeItemProps> = ({
               </button>
             </Tippy>
           )}
-          {legendContent !== undefined && (
+          {legendContent != null && (
             <Tippy
               content={legendContent}
               placement="right"
