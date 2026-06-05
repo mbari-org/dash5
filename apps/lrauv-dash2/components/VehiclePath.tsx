@@ -538,7 +538,7 @@ const VehiclePath: React.FC<VehiclePathProps> = ({
       )}
       {/* Scrub indicator dot — shown for any scrub source (depth chart, timeline)
           unless the map-hover highlight is already visible at that position */}
-      {indicatorCoord && !mapHoverFix && (
+      {indicatorCoord && mapHoverFix?.unixTime !== indicatorCoord.unixTime && (
         <Circle
           center={{
             lat: indicatorCoord.latitude,
