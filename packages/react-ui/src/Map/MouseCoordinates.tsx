@@ -48,7 +48,7 @@ const MouseCoordinates: React.FC<MouseCoordinatesProps> = ({
   // and cannot call setDepth after the component unmounts.
   useLayoutEffect(() => {
     requestIdRef.current++
-    setDepth(null)
+    setDepth((prev) => (prev !== null ? null : prev))
     return () => {
       requestIdRef.current++
     }
