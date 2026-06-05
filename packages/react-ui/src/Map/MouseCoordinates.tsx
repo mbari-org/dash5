@@ -9,8 +9,6 @@ import React, {
 import { useMapEvents } from 'react-leaflet'
 import 'leaflet/dist/leaflet.css'
 import { useDebouncedEffect } from '@mbari/utils'
-import { toast } from 'react-hot-toast'
-
 const divStyle = {
   color: 'darkblue',
   fontFamily: 'monospace, serif',
