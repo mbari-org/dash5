@@ -297,7 +297,9 @@ const MissionModal: React.FC<MissionModalProps> = ({
             onClose()
           },
           onError: (error) => {
-            toast.error(`Error sending command: ${error}`)
+            const message =
+              error instanceof Error ? error.message : String(error)
+            toast.error(`Error sending command: ${message}`)
           },
         }
       )
