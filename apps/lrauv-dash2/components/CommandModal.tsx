@@ -63,7 +63,8 @@ export const CommandModal: React.FC<CommandModalProps> = ({
   }
 
   const onCommandError = (error: unknown) => {
-    toast.error(`Error sending command: ${error}`)
+    const message = error instanceof Error ? error.message : String(error)
+    toast.error(`Error sending command: ${message}`)
   }
 
   const sendCommand = (params: CreateCommandParams) => {
