@@ -61,21 +61,8 @@ const MissionModal: React.FC<MissionModalProps> = ({
   const { data: alternativeAddresses } = useSbdOutgoingAlternativeAddresses({})
   const { data: unitsData } = useUnits()
 
-  const {
-    mutate: createCommand,
-    isLoading: sendingCommand,
-    isSuccess: commandSent,
-    isError: commandError,
-  } = useCreateCommand()
-
-  useEffect(() => {
-    if (commandSent) {
-      toast.success('Command sent')
-      onClose()
-    } else if (commandError) {
-      toast.error(`Error sending command: ${commandError}`)
-    }
-  }, [commandSent, commandError, onClose])
+  const { mutate: createCommand, isLoading: sendingCommand } =
+    useCreateCommand()
 
   useEffect(() => {
     if (drawerOpen) {
@@ -292,17 +279,28 @@ const MissionModal: React.FC<MissionModalProps> = ({
     setPreviewText(previewSbd)
 
     if (!preview) {
-      createCommand({
-        vehicle: confirmedVehicle?.toLowerCase() ?? '',
-        path: missionPathForCommand,
-        commandNote: notes ?? '',
-        runCommand: 'y',
-        schedDate,
-        destinationAddress: alternateAddress ?? undefined,
-        commandText: formattedCommandText ?? '',
-        via: commType,
-        timeout,
-      })
+      createCommand(
+        {
+          vehicle: confirmedVehicle?.toLowerCase() ?? '',
+          path: missionPathForCommand,
+          commandNote: notes ?? '',
+          runCommand: 'y',
+          schedDate,
+          destinationAddress: alternateAddress ?? undefined,
+          commandText: formattedCommandText ?? '',
+          via: commType,
+          timeout,
+        },
+        {
+          onSuccess: () => {
+            toast.success('Command sent')
+            onClose()
+          },
+          onError: (error) => {
+            toast.error(`Error sending command: ${error}`)
+          },
+        }
+      )
     }
   }
 
