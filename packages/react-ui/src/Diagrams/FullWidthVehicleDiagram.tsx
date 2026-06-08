@@ -28,6 +28,7 @@ import { Leak } from './VehicleAssets/Leak'
 
 export interface FullWidthVehicleDiagramProps extends VehicleProps {
   onBatteryClick?: BatteryProps['onClick']
+  sparklineContent?: React.ReactNode
 }
 
 export const FullWidthVehicleDiagram: React.FC<
@@ -109,6 +110,7 @@ export const FullWidthVehicleDiagram: React.FC<
   textLogTime,
   textLogAgo,
   colorArrow,
+  sparklineContent,
   textArriveLabel = 'Arrive Station',
   textArriveStation,
   textCurrentDist,
@@ -416,6 +418,11 @@ export const FullWidthVehicleDiagram: React.FC<
           )}
         </g>
       </svg>
+      {!isDocked && sparklineContent && (
+        <div className="absolute" style={{ top: 244, left: 10 }}>
+          {sparklineContent}
+        </div>
+      )}
     </div>
   )
 }
