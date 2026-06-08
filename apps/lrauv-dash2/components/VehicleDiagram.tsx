@@ -1,5 +1,6 @@
-import { useVehicleInfo, GetVehicleInfoResponse } from '@mbari/api-client'
+import { useVehicleInfo, GetVehicleInfoResponse, useDepthSparkline } from '@mbari/api-client'
 import React from 'react'
+import dynamic from 'next/dynamic'
 import axios from 'axios'
 import {
   FullWidthVehicleDiagram,
@@ -10,6 +11,11 @@ import { faTriangleExclamation } from '@fortawesome/free-solid-svg-icons'
 import clsx from 'clsx'
 import { DateTime } from 'luxon'
 import { decodeHtmlEntities, formatCompactDuration } from '@mbari/utils'
+
+const DepthSparkline = dynamic(
+  () => import('@mbari/react-ui/dist/Charts/DepthSparkline'),
+  { ssr: false }
+)
 
 const VehicleDiagram: React.FC<{
   name: string
@@ -45,6 +51,11 @@ const VehicleDiagram: React.FC<{
   )
 
   const now = DateTime.now()
+
+  const { data: sparklineData } = useDepthSparkline(
+    { vehicle: name },
+    { enabled: !!name }
+  )
 
   const vehicle =
     vehicleInfo?.not_found || !vehicleInfo
@@ -191,6 +202,19 @@ const VehicleDiagram: React.FC<{
         colorDuration={vehicle?.color_duration}
         colorOt={vehicle?.color_ot}
         onBatteryClick={handleBatteryClick}
+        sparklineContent={
+          sparklineData && sparklineData.depthTimes.length > 0 ? (
+            <DepthSparkline
+              depthTimes={sparklineData.depthTimes}
+              depthValues={sparklineData.depthValues}
+              celTimes={sparklineData.celTimes}
+              satTimes={sparklineData.satTimes}
+              gpsTimes={sparklineData.gpsTimes}
+              argoTimes={sparklineData.argoTimes}
+              padded={sparklineData.padded}
+            />
+          ) : undefined
+        }
       />
     </div>
   )
