@@ -188,7 +188,13 @@ const VehicleDiagram: React.FC<{
         colorMissionDefault={vehicle?.color_missiondefault}
         textVolts={vehicle?.text_volts}
         colorVolts={vehicle?.color_volts}
-        status={missionText.indexOf('PLUGGED') >= 0 ? 'pluggedIn' : 'onMission'}
+        status={
+          missionText.indexOf('PLUGGED') >= 0
+            ? 'pluggedIn'
+            : missionText.indexOf('RECOVERED') >= 0
+            ? 'recovered'
+            : 'onMission'
+        }
         colorLeak={vehicle?.color_leak}
         textLeakAgo={vehicle?.text_leakago}
         textLeak={vehicle?.text_leak}
