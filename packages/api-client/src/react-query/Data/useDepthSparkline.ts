@@ -24,7 +24,10 @@ export const useDepthSparkline = (
 
   // Keep a stable query key per vehicle so React Query re-uses the cache entry
   // across re-renders. The rolling 8-hour window is computed fresh inside each
-  // queryFn so the chart never drifts even if the page stays open for hours.
+  // queryFn so the chart stays current as long as refetchInterval triggers.
+  // Default interval is 2 minutes; callers can override via options.
+  const REFETCH_INTERVAL = 2 * 60 * 1000
+
   const depthQuery = useQuery(
     ['depthSparkline', 'depth', vehicle],
     () =>
@@ -33,7 +36,8 @@ export const useDepthSparkline = (
         { instance: axiosInstance }
       ),
     {
-      staleTime: 2 * 60 * 1000,
+      staleTime: REFETCH_INTERVAL,
+      refetchInterval: REFETCH_INTERVAL,
       ...options,
       enabled: !!vehicle && options?.enabled !== false,
     }
@@ -52,7 +56,8 @@ export const useDepthSparkline = (
         { instance: axiosInstance }
       ),
     {
-      staleTime: 2 * 60 * 1000,
+      staleTime: REFETCH_INTERVAL,
+      refetchInterval: REFETCH_INTERVAL,
       ...options,
       enabled: !!vehicle && options?.enabled !== false,
     }

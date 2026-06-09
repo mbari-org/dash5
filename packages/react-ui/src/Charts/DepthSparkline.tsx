@@ -100,15 +100,24 @@ const DepthSparkline: React.FC<DepthSparklineProps> = ({
   const tickAreaHeight = tickRowGap * 4 + tickRowHeight + 2
 
   const chart = useMemo(() => {
-    if (!depthTimes.length || !depthValues.length) return null
+    // Clamp to the shorter array to guard against mismatched lengths from callers.
+    const safeLen = Math.min(depthTimes.length, depthValues.length)
+    if (safeLen === 0) return null
 
-    const depthScale = chooseDepthScale(Math.max(...depthValues))
+    const safeTimes = depthTimes.slice(0, safeLen)
+    const safeValues = depthValues.slice(0, safeLen)
+
+    const depthScale = chooseDepthScale(Math.max(...safeValues))
     const ydiv = depthScale / h
 
+    // Treat as padded only when there are enough trailing points (≥3+1 real point).
+    const isPadded = padded && safeLen >= 4
+
     // Split padded tail (last 3 points) from real data
-    const realTimes = padded ? depthTimes.slice(0, -3) : depthTimes
-    const realValues = padded ? depthValues.slice(0, -3) : depthValues
-    const padTimes = padded ? depthTimes.slice(-3) : []
+    const realTimes = isPadded ? safeTimes.slice(0, -3) : safeTimes
+    const realValues = isPadded ? safeValues.slice(0, -3) : safeValues
+    const padTimes = isPadded ? safeTimes.slice(-3) : []
+    const padValues = isPadded ? safeValues.slice(-3) : []
 
     // Anchor the x-axis to nowMin so depth and comms share the same time origin.
     // Using xmax (last depth point) would shift the whole depth history left
@@ -118,11 +127,9 @@ const DepthSparkline: React.FC<DepthSparklineProps> = ({
       y: y0 + Math.min(val / ydiv, h),
     })
 
-    const allPts = depthTimes.map((t, i) => toXY(t, depthValues[i]))
+    const allPts = safeTimes.map((t, i) => toXY(t, safeValues[i]))
     const realPts = realTimes.map((t, i) => toXY(t, realValues[i]))
-    const padPts = padTimes.map((t, i) =>
-      toXY(t, padded ? depthValues[depthValues.length - 3 + i] : 0)
-    )
+    const padPts = padTimes.map((t, i) => toXY(t, padValues[i]))
 
     // Real-data polygon closes at the last confirmed point's x (not boxRight)
     const realClose = realPts.length ? realPts[realPts.length - 1].x : boxRight
@@ -144,7 +151,7 @@ const DepthSparkline: React.FC<DepthSparklineProps> = ({
 
     // Padded (vehicle submerged, data not yet confirmed) — filled gray polygon
     let padPolyStr: string | null = null
-    if (padded && padPts.length >= 1 && realPts.length >= 1) {
+    if (isPadded && padPts.length >= 1 && realPts.length >= 1) {
       const lastReal = realPts[realPts.length - 1]
       const lastPad = padPts[padPts.length - 1]
       const padPolyPts = [
@@ -227,6 +234,7 @@ const DepthSparkline: React.FC<DepthSparklineProps> = ({
       timeLabel,
       agoLabel,
       isStale,
+      isPadded,
       realPts,
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -258,6 +266,7 @@ const DepthSparkline: React.FC<DepthSparklineProps> = ({
     timeLabel,
     agoLabel,
     isStale,
+    isPadded,
   } = chart
 
   // SVG viewBox: x0=0, top accounting for tick rows, full width + right labels
@@ -272,6 +281,7 @@ const DepthSparkline: React.FC<DepthSparklineProps> = ({
       height={responsive ? undefined : viewBoxH}
       className={clsx('depth-sparkline', className)}
       style={responsive ? { width: '100%', height: '100%', ...style } : style}
+      role="img"
       aria-label="depth and comms history sparkline"
     >
       {/* Background box — rendered first so the border sits on top */}
@@ -402,7 +412,7 @@ const DepthSparkline: React.FC<DepthSparklineProps> = ({
         cx={x0 + w + 23}
         cy={y0 + 7}
         r={2}
-        fill={padded && isStale ? '#f97316' : '#22c55e'}
+        fill={isPadded && isStale ? '#f97316' : '#22c55e'}
       />
       <text x={x0 + w + 2} y={y0 + 16} fontSize={6} fill="#6b7280">
         {agoLabel}
