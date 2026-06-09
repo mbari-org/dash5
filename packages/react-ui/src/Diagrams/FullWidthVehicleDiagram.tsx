@@ -167,6 +167,8 @@ export const FullWidthVehicleDiagram: React.FC<
   const sparklineH = Math.round(SPARKLINE_BASE_H * normalizedVehicleScale)
 
   // Position locked at { x: 306, y: 0 } — fine-tuned by dragging, then fixed.
+  // Note: only sparklineW/sparklineH scale with normalizedVehicleScale when the
+  // container narrows; the overlay position itself does not scale or reflow.
   const sparklinePos = { x: 306, y: 0 }
 
   const containerH = containerSize?.height ?? 0
