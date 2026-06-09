@@ -149,8 +149,8 @@ export const FullWidthVehicleDiagram: React.FC<
   // Sparkline base dimensions — correct size when the vehicle is height-bound (wide container)
   const SPARKLINE_BASE_W = 503 // 529 × 0.95
   const SPARKLINE_BASE_H = 126 // 133 × 0.95
-  // Vertical offset from letterboxTop in px — i.e. distance above the vehicle body's
-  // top edge. Negative = above. Calibrated by dragging; logged to console on drop.
+  // Vertical offset above the container top at full scale. Scaled by effectiveScale
+  // so the sparkline tracks the vehicle body as the container narrows.
   const SPARKLINE_BASE_Y = -12
 
   // Vehicle SVG viewBox dimensions
@@ -178,8 +178,10 @@ export const FullWidthVehicleDiagram: React.FC<
   //   s = (cW − 2·MARGIN) / ((1 − 2·sparklineFrac) · cH · AR)
   const VB_MIN_X = 120
   const VB_MIN_Y = 155
-  const SPARKLINE_SVG_ANC_X = 53 // calibrated by dragging; update via console log
-  // Action-button SVG anchor — calibrated via drag on 2026-06-09
+  // Sparkline left-edge anchor in vehicle SVG viewBox coordinates (x=53 is left of VB_MIN_X=120,
+  // placing the sparkline in the horizontal letterbox to the left of the vehicle body).
+  const SPARKLINE_SVG_ANC_X = 53
+  // Action-button SVG anchor in vehicle viewBox coordinates — calibrated 2026-06-09.
   const BTN_SVG_ANC_X = 64
   const BTN_SVG_ANC_Y = 245
   const vehicleAR = VB_W / VB_H // ≈ 3.034
@@ -504,13 +506,13 @@ export const FullWidthVehicleDiagram: React.FC<
         </g>
       </svg>
 
-      {/* Sparkline overlay */}
+      {/* Sparkline overlay — pointer-events-none so underlying vehicle SVG stays interactive */}
       {!isDocked && sparklineContent && (
         <div
-          className="absolute z-20"
+          className="absolute z-20 pointer-events-none"
           style={{
             left: sparklinePosLeft,
-            top: SPARKLINE_BASE_Y,
+            top: Math.round(SPARKLINE_BASE_Y * effectiveScale),
             width: sparklineW,
             height: sparklineH,
           }}
@@ -519,8 +521,9 @@ export const FullWidthVehicleDiagram: React.FC<
         </div>
       )}
 
-      {/* Action button — anchored in vehicle SVG coordinates, scales with vehicle */}
-      {actionButton && vehicleRenderW > 0 && (
+      {/* Action button — anchored in vehicle SVG coordinates, scales with vehicle.
+          Hidden when docked to match sparkline behaviour. */}
+      {!isDocked && actionButton && vehicleRenderW > 0 && (
         <div className="absolute z-30" style={{ left: btnLeft, top: btnTop }}>
           {actionButton}
         </div>

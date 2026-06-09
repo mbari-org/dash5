@@ -108,7 +108,8 @@ const VehicleDiagram: React.FC<{
       />
     ) : undefined
 
-  const okeanidsUrl = `https://okeanids.mbari.org/widget/auv_${name}.svg?dummy=${Date.now()}`
+  // No cache-busting timestamp — opening in a new tab always fetches fresh from the server.
+  const okeanidsUrl = `https://okeanids.mbari.org/widget/auv_${name}.svg`
 
   const sharedDiagramProps: FullWidthVehicleDiagramProps = {
     textAmpAgo: vehicle?.text_ampago,
@@ -218,7 +219,7 @@ const VehicleDiagram: React.FC<{
     colorOt: vehicle?.color_ot,
     onBatteryClick: handleBatteryClick,
     sparklineContent,
-    actionButton: (
+    actionButton: isDocked ? undefined : (
       <a
         href={okeanidsUrl}
         target="_blank"
