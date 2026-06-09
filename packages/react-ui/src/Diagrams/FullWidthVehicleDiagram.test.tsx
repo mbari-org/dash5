@@ -220,7 +220,7 @@ test('should hide Argos fill when no color from server (st18)', async () => {
   expect(screen.getByTestId('argos-battery fill')).toHaveClass('st18')
 })
 
-test('should display volt threshold text with colorVoltThresh class when not docked', async () => {
+test('should display volt threshold text in neutral color when not docked', async () => {
   render(
     <FullWidthVehicleDiagram
       {...props}
@@ -228,7 +228,10 @@ test('should display volt threshold text with colorVoltThresh class when not doc
       colorVoltThresh="st31"
     />
   )
-  expect(screen.getByLabelText('text_voltthresh')).toHaveClass('st31')
+  // colorVoltThresh is intentionally ignored — threshold labels always render
+  // in neutral gray (st12) regardless of alarm state, matching Dash4 behavior.
+  expect(screen.getByLabelText('text_voltthresh')).toHaveClass('st12')
+  expect(screen.getByLabelText('text_voltthresh')).not.toHaveClass('st31')
   expect(screen.getByLabelText('text_voltthresh')).toHaveTextContent('13.5')
 })
 
