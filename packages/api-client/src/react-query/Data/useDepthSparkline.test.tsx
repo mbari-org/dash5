@@ -8,16 +8,18 @@ import { MockProviders } from '../queryTestHelpers'
 import { useDepthSparkline } from './useDepthSparkline'
 
 // Fixed "now" keeps timestamps deterministic.
+// We only mock Date.now() rather than using fake timers to avoid interfering
+// with MSW and React Query's internal async scheduling.
 const NOW_MS = 1_700_000_000_000
 const NOW_MIN = Math.floor(NOW_MS / 60000)
 const EIGHT_HOURS_MS = 8 * 60 * 60 * 1000
 
+let dateNowSpy: jest.SpyInstance
 beforeAll(() => {
-  jest.useFakeTimers()
-  jest.setSystemTime(NOW_MS)
+  dateNowSpy = jest.spyOn(Date, 'now').mockReturnValue(NOW_MS)
 })
 afterAll(() => {
-  jest.useRealTimers()
+  dateNowSpy.mockRestore()
 })
 
 // Depth data — last point is 2 min ago, well within the 4-min padding threshold.
