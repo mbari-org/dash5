@@ -62,11 +62,15 @@ const VehicleDiagram: React.FC<{
       ? undefined
       : (vehicleInfo as GetVehicleInfoResponse)
 
-  // The sparkline is only shown when the vehicle is on-mission (not plugged in).
-  // Gate on !!vehicle (not just !!name) so we don't start polling before
-  // vehicleInfo has loaded — docked vehicles would otherwise fire depth/comms
-  // requests on the first render before we know the mission state.
-  const isDocked = (vehicle?.text_mission?.indexOf('PLUGGED') ?? -1) >= 0
+  // Derive mission text once for both the isDocked check and the status prop.
+  const missionText = vehicle?.text_mission ?? ''
+
+  // The sparkline is only shown for on-mission vehicles. Gate on !!vehicle so
+  // we don't start polling before vehicleInfo has loaded, and suppress polling
+  // for both plugged-in and recovered vehicles — FullWidthVehicleDiagram never
+  // renders the sparkline overlay in either of those states.
+  const isDocked =
+    missionText.indexOf('PLUGGED') >= 0 || missionText.indexOf('RECOVERED') >= 0
   const { data: sparklineData } = useDepthSparkline(
     { vehicle: name },
     { enabled: !!vehicle && !isDocked }
@@ -184,11 +188,7 @@ const VehicleDiagram: React.FC<{
         colorMissionDefault={vehicle?.color_missiondefault}
         textVolts={vehicle?.text_volts}
         colorVolts={vehicle?.color_volts}
-        status={
-          (vehicle?.text_mission?.indexOf('PLUGGED') ?? -1) >= 0
-            ? 'pluggedIn'
-            : 'onMission'
-        }
+        status={missionText.indexOf('PLUGGED') >= 0 ? 'pluggedIn' : 'onMission'}
         colorLeak={vehicle?.color_leak}
         textLeakAgo={vehicle?.text_leakago}
         textLeak={vehicle?.text_leak}
