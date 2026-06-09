@@ -4,12 +4,15 @@ import { useTethysApiContext } from '@mbari/api-client'
 import { AsyncSubmitHandler } from '@sumocreations/forms'
 import { LoginModal, LoginFormValues } from '@mbari/react-ui'
 import useGlobalModalId from '../lib/useGlobalModalId'
+import { useMbariAuth } from '../lib/useMbariAuth'
 
 export const UserLogin: React.FC<{ onClose?: () => void }> = ({
   onClose: handleClose,
 }) => {
   const { setGlobalModalId } = useGlobalModalId()
   const { login, loading, error } = useTethysApiContext()
+  const { login: msalLogin, isAuthenticated: isMsalAuthenticated } =
+    useMbariAuth()
 
   const handleSubmit: AsyncSubmitHandler<LoginFormValues> = async (values) => {
     await login(values.email, values.password)
@@ -33,6 +36,9 @@ export const UserLogin: React.FC<{ onClose?: () => void }> = ({
       loading={loading}
       onClose={handleClose}
       open
+      // SSO entry point — only shown when the user has no active MSAL session.
+      ssoLabel={isMsalAuthenticated ? undefined : 'Sign in with MBARI SSO'}
+      onSsoClick={isMsalAuthenticated ? undefined : () => msalLogin()}
     />
   )
 }
