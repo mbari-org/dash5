@@ -65,8 +65,10 @@ export const useDepthSparkline = (
 
   const nowMs = Date.now()
   const windowStart = nowMs - EIGHT_HOURS_MS
-  const nowMin = nowMs / 1000 / 60
-  const windowStartMin = windowStart / 1000 / 60
+  // Floor to whole minutes — DepthSparkline buckets "now" to the nearest minute,
+  // so using a fractional value here would place padded tail points past boxRight.
+  const nowMin = Math.floor(nowMs / 1000 / 60)
+  const windowStartMin = Math.floor(windowStart / 1000 / 60)
 
   // Clamp depth data to the rolling 8-hour window and keep times/values aligned.
   // The API is asked for the same window on each refetch, but cached data can lag

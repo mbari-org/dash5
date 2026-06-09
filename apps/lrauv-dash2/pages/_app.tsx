@@ -6,6 +6,7 @@ import '@fortawesome/fontawesome-svg-core/styles.css'
 import 'leaflet/dist/leaflet.css'
 import { AppProps } from 'next/app'
 import { useEffect, useState } from 'react'
+import Head from 'next/head'
 import { createLogger } from '@mbari/utils'
 import { QueryClientProvider, QueryClient } from 'react-query'
 import { TethysApiProvider } from '@mbari/api-client'
@@ -120,7 +121,16 @@ function MyApp(props: AppProps) {
   const [mounted, setMounted] = useState(false)
   useEffect(() => setMounted(true), [])
 
-  if (!mounted || !msalInstance) return null
+  if (!mounted || !msalInstance) {
+    // Return a minimal shell so <Head> content (page title, meta) is present in
+    // the static HTML and during the brief pre-hydration window.
+    return (
+      <Head>
+        <title>LRAUV Dashboard</title>
+        <meta name="viewport" content="width=device-width, initial-scale=1" />
+      </Head>
+    )
+  }
 
   return (
     <MsalProvider instance={msalInstance}>

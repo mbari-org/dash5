@@ -180,9 +180,12 @@ export const FullWidthVehicleDiagram: React.FC<
         if (
           parsed &&
           typeof parsed.x === 'number' &&
-          typeof parsed.y === 'number'
+          typeof parsed.y === 'number' &&
+          isFinite(parsed.x) &&
+          isFinite(parsed.y)
         ) {
-          setSparklinePos(parsed)
+          // Extract only the expected keys so no extra properties bleed into state.
+          setSparklinePos({ x: parsed.x, y: parsed.y })
         }
       }
     } catch {}
