@@ -6,15 +6,13 @@ import { Configuration, LogLevel } from '@azure/msal-browser'
 const TENANT_ID = '16ac1ee8-602c-4ca1-944d-3a84bcb35575'
 
 // IMPORTANT: The redirect URIs registered in the Entra ID app registration
-// are currently set for server-side callback handlers. Since this app is a
-// static export served by nginx, the registered redirect URIs must be updated
-// to point to the static app root:
-//   https://sinkerdev.shore.mbari.org/sinker/
-//   https://sinker.shore.mbari.org/sinker/
+// must point to the static app root for each environment:
+//   https://dash5.mbari.org/          (production)
+//   https://<dash5-staging-url>/      (staging — confirm with ops and register in Entra ID)
 //
 // Set NEXT_PUBLIC_MSAL_REDIRECT_URI in .env.local to match the deployment.
-// This app is served under a subpath (e.g. /sinker/), so the origin root is
-// NOT a valid redirect URI — always set the env var explicitly in each env.
+// Dash5 is served at the root path (/), so window.location.origin + '/' is a
+// valid fallback for local dev — but always set the env var explicitly in CI/CD.
 const redirectUri = (() => {
   if (typeof window === 'undefined') return '/' // prerender/SSR — never used
   const configured = process.env.NEXT_PUBLIC_MSAL_REDIRECT_URI
@@ -28,10 +26,9 @@ const redirectUri = (() => {
         'Set NEXT_PUBLIC_MSAL_REDIRECT_URI in .env.local to the full redirect URI ' +
         '(e.g. https://sinker.shore.mbari.org/sinker/).'
     )
-    // Use current href as a best-effort fallback so MSAL can at least
-    // initialise without throwing; the redirect will still fail if the URI
-    // is not registered in Entra ID.
-    return window.location.href
+    // Dash5 is served at the root path, so origin + '/' is a reasonable
+    // local-dev fallback — but the env var must be set for deployed environments.
+    return window.location.origin + '/'
   }
   return configured
 })()
