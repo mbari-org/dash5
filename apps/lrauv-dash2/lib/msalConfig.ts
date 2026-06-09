@@ -8,7 +8,7 @@ const TENANT_ID = '16ac1ee8-602c-4ca1-944d-3a84bcb35575'
 // IMPORTANT: The redirect URIs registered in the Entra ID app registration
 // must point to the static app root for each environment:
 //   https://dash5.mbari.org/          (production)
-//   https://<dash5-staging-url>/      (staging — confirm with ops and register in Entra ID)
+//   https://dash5-staging.mbari.org/  (staging)
 //
 // Set NEXT_PUBLIC_MSAL_REDIRECT_URI in .env.local to match the deployment.
 // Dash5 is served at the root path (/), so window.location.origin + '/' is a
