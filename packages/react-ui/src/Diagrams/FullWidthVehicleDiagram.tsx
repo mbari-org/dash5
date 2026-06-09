@@ -203,8 +203,12 @@ export const FullWidthVehicleDiagram: React.FC<
   const sparklineW = Math.round(SPARKLINE_BASE_W * effectiveScale)
   const sparklineH = Math.round(SPARKLINE_BASE_H * effectiveScale)
 
+  // Guard on both dimensions: ResizeObserver can transiently report cW=0 while
+  // cH is already non-zero, which would produce a large negative left offset.
   const sparklinePosLeft =
-    cH > 0 ? Math.round(vehicleOffsetLeft + sparklineFrac * vehicleRenderW) : 0
+    cW > 0 && cH > 0
+      ? Math.round(vehicleOffsetLeft + sparklineFrac * vehicleRenderW)
+      : 0
 
   // Button position: same SVG-coordinate transform as the vehicle, so it
   // moves and scales in lockstep with the vehicle body and sparkline.
@@ -522,8 +526,8 @@ export const FullWidthVehicleDiagram: React.FC<
       )}
 
       {/* Action button — anchored in vehicle SVG coordinates, scales with vehicle.
-          Hidden when docked to match sparkline behaviour. */}
-      {!isDocked && actionButton && vehicleRenderW > 0 && (
+          Hidden when docked or before both container dimensions are known. */}
+      {!isDocked && actionButton && cW > 0 && cH > 0 && vehicleRenderW > 0 && (
         <div className="absolute z-30" style={{ left: btnLeft, top: btnTop }}>
           {actionButton}
         </div>

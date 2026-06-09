@@ -18,6 +18,7 @@ import {
 import clsx from 'clsx'
 import { DateTime } from 'luxon'
 import { decodeHtmlEntities, formatCompactDuration } from '@mbari/utils'
+import { useTethysApiContext } from 'api-client'
 
 const DepthSparkline = dynamic(
   () =>
@@ -94,6 +95,8 @@ const VehicleDiagram: React.FC<{
 
   const formattedNextComm = nextCommsText ?? vehicle?.text_nextcomm
 
+  const { siteConfig } = useTethysApiContext()
+
   const sparklineContent =
     sparklineData && sparklineData.depthTimes.length > 0 ? (
       <DepthSparkline
@@ -108,8 +111,18 @@ const VehicleDiagram: React.FC<{
       />
     ) : undefined
 
-  // No cache-busting timestamp — opening in a new tab always fetches fresh from the server.
-  const okeanidsUrl = `https://okeanids.mbari.org/widget/auv_${name}.svg`
+  // Prefer the URL pattern from siteConfig so staging/dev deployments work without
+  // hardcoding the production host. Fall back to the known production URL.
+  const OKEANIDS_FALLBACK = `https://okeanids.mbari.org/widget/auv_${encodeURIComponent(
+    name
+  )}.svg`
+  const okeanidsUrl = siteConfig?.appConfig.external.statusWidgets
+    .lrauvStatusWidgetUrlPattern
+    ? siteConfig.appConfig.external.statusWidgets.lrauvStatusWidgetUrlPattern.replace(
+        '<vehicleName>',
+        encodeURIComponent(name)
+      )
+    : OKEANIDS_FALLBACK
 
   const sharedDiagramProps: FullWidthVehicleDiagramProps = {
     textAmpAgo: vehicle?.text_ampago,
