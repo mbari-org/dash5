@@ -1,4 +1,4 @@
-import React, { useRef, useState, useEffect } from 'react'
+import React, { useRef } from 'react'
 import clsx from 'clsx'
 import { DropWeightIndicator } from './VehicleAssets/DropWeightIndicator'
 import { DvlIndicator } from './VehicleAssets/DvlIndicator'
@@ -167,7 +167,7 @@ export const FullWidthVehicleDiagram: React.FC<
   const sparklineH = Math.round(SPARKLINE_BASE_H * normalizedVehicleScale)
 
   // Position locked at { x: 306, y: 0 } — fine-tuned by dragging, then fixed.
-  const sparklinePos = { x: 306, y: -5 }
+  const sparklinePos = { x: 306, y: 0 }
 
   const containerH = containerSize?.height ?? 0
   const containerW = containerSize?.width ?? 0
