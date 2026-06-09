@@ -29,10 +29,6 @@ import { Leak } from './VehicleAssets/Leak'
 export interface FullWidthVehicleDiagramProps extends VehicleProps {
   onBatteryClick?: BatteryProps['onClick']
   sparklineContent?: React.ReactNode
-  /** @deprecated Accepted for backwards compatibility but ignored — threshold text always renders in neutral gray. */
-  colorVoltThresh?: string
-  /** @deprecated Accepted for backwards compatibility but ignored — threshold text always renders in neutral gray. */
-  colorAmpThresh?: string
 }
 
 export const FullWidthVehicleDiagram: React.FC<

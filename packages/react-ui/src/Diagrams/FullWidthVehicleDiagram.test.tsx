@@ -227,6 +227,13 @@ test('should display volt threshold text in neutral color when not docked', asyn
   expect(screen.getByLabelText('text_voltthresh')).toHaveTextContent('13.5')
 })
 
+test('should display amp threshold text in neutral color when not docked', async () => {
+  render(<FullWidthVehicleDiagram {...props} textAmpThresh="50" />)
+  // Threshold labels always render in neutral gray (st12), matching Dash4 behavior.
+  expect(screen.getByLabelText('text_ampthresh')).toHaveClass('st12')
+  expect(screen.getByLabelText('text_ampthresh')).toHaveTextContent('50')
+})
+
 test('should hide volt threshold text when docked', async () => {
   render(
     <FullWidthVehicleDiagram
