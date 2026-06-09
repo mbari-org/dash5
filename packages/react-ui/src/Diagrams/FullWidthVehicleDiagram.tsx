@@ -221,9 +221,7 @@ export const FullWidthVehicleDiagram: React.FC<
         y="0px"
         height="100%"
         width="100%"
-        viewBox={`0 0 ${containerSize?.width ?? 0} ${
-          containerSize.height ?? 0
-        }`}
+        viewBox={`0 0 ${containerW} ${containerH}`}
         xmlSpace="preserve"
         style={{ transform: `translateY(${VEHICLE_TOP_OFFSET}px)` }}
       >
@@ -231,10 +229,10 @@ export const FullWidthVehicleDiagram: React.FC<
           <rect
             data-testid="dirtbox"
             x="0"
-            y={containerSize?.height - containerSize?.height * 0.4}
+            y={containerH - containerH * 0.4}
             className={colorDirtbox}
-            width={containerSize?.width}
-            height={containerSize?.height * 0.4}
+            width={containerW}
+            height={containerH * 0.4}
           />
         ) : (
           <path
