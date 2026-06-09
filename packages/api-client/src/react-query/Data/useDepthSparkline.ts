@@ -58,31 +58,47 @@ export const useDepthSparkline = (
     }
   )
 
-  const rawDepthTimes = depthQuery.data?.times ?? []
-  const rawDepthValues = depthQuery.data?.values ?? []
+  const nowMs = Date.now()
+  const windowStart = nowMs - EIGHT_HOURS_MS
+  const nowMin = nowMs / 1000 / 60
+  const windowStartMin = windowStart / 1000 / 60
 
-  // Convert ms to minutes for the sparkline (matching auvstatus.py convention)
-  const depthTimesMin = rawDepthTimes.map((t) => t / 1000 / 60)
-  const nowMin = Date.now() / 1000 / 60
+  // Clamp depth data to the rolling 8-hour window and keep times/values aligned.
+  // The API is asked for the same window on each refetch, but cached data can lag
+  // by up to staleTime (2 min) so we trim defensively here as well.
+  const rawTimes = depthQuery.data?.times ?? []
+  const rawValues = depthQuery.data?.values ?? []
+  const safeLen = Math.min(rawTimes.length, rawValues.length)
+  const depthTimesMin: number[] = []
+  const clampedValues: number[] = []
+  for (let i = 0; i < safeLen; i++) {
+    const tMin = rawTimes[i] / 1000 / 60
+    if (tMin >= windowStartMin) {
+      depthTimesMin.push(tMin)
+      clampedValues.push(rawValues[i])
+    }
+  }
 
   // Detect stale data gap >4 minutes and append a fake pad point (matching auvstatus.py)
   let depthTimes = depthTimesMin
-  let depthValues = rawDepthValues
+  let depthValues = clampedValues
   let padded = false
   if (depthTimesMin.length > 0 && nowMin - Math.max(...depthTimesMin) > 4) {
     const lastT = Math.max(...depthTimesMin)
     depthTimes = [...depthTimesMin, lastT, lastT + 2, nowMin]
-    depthValues = [...rawDepthValues, 1, 10, 10]
+    depthValues = [...clampedValues, 1, 10, 10]
     padded = true
   }
 
-  // Separate comms events by type and state (matching auvstatus.py extractCommHistory)
+  // Separate comms events by type and state (matching auvstatus.py extractCommHistory).
+  // Clamp to the rolling 8-hour window so stale cached entries don't plot outside range.
   const celTimes: number[] = []
   const satTimes: number[] = []
   const gpsTimes: number[] = []
   const argoTimes: number[] = []
 
   for (const event of commsQuery.data ?? []) {
+    if (event.unixTime < windowStart) continue
     if (event.eventType === 'sbdReceive') {
       if (event.state === 2) {
         celTimes.push(event.unixTime)

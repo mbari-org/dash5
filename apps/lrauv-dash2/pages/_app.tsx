@@ -41,20 +41,25 @@ const msalInstance =
  * after the provider is mounted in the tree.
  */
 function AppWithAuth({ Component, pageProps }: AppProps) {
-  const { getIdToken, isAuthenticated } = useMbariAuth()
+  const { getIdToken, isAuthenticated, isLoading } = useMbariAuth()
   const { sessionToken, setSessionToken } = useSessionToken(
     'TETHYS_SESSION_TOKEN'
   )
 
-  // When the MSAL session is live, acquire the ID token silently and store it
-  // as the TethysDash session token. TethysDash on sinkerdev must be configured
-  // to accept Microsoft Entra ID JWTs as Bearer tokens for this to work.
+  // Sync the MSAL session state with the TethysDash session token:
+  // - Authenticated: silently acquire the ID token and store it.
+  // - Unauthenticated (and MSAL has finished initializing): clear any stale token
+  //   so API calls don't continue with an expired credential after logout.
   useEffect(() => {
-    if (!isAuthenticated) return
-    getIdToken().then((token) => {
-      if (token) setSessionToken(token)
-    })
-  }, [isAuthenticated, getIdToken, setSessionToken])
+    if (isLoading) return
+    if (isAuthenticated) {
+      getIdToken().then((token) => {
+        if (token) setSessionToken(token)
+      })
+    } else {
+      setSessionToken('')
+    }
+  }, [isAuthenticated, isLoading, getIdToken, setSessionToken])
 
   const handleSessionEnd = () => setSessionToken('')
 
