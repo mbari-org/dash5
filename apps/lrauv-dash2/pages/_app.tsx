@@ -5,7 +5,7 @@ import { config } from '@fortawesome/fontawesome-svg-core'
 import '@fortawesome/fontawesome-svg-core/styles.css'
 import 'leaflet/dist/leaflet.css'
 import { AppProps } from 'next/app'
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import { createLogger } from '@mbari/utils'
 import { QueryClientProvider, QueryClient } from 'react-query'
 import { TethysApiProvider } from '@mbari/api-client'
@@ -112,11 +112,14 @@ function AppWithAuth({ Component, pageProps }: AppProps) {
 }
 
 function MyApp(props: AppProps) {
-  if (!msalInstance) {
-    // During static prerender (Node env) there is no browser MSAL instance.
-    // The real interactive shell is always in the browser where msalInstance exists.
-    return null
-  }
+  // Defer rendering until after hydration so the client's initial render
+  // matches the server's (both return null), avoiding a React hydration mismatch.
+  // MSAL is browser-only; there is no meaningful shell to render without it.
+  const [mounted, setMounted] = useState(false)
+  useEffect(() => setMounted(true), [])
+
+  if (!mounted || !msalInstance) return null
+
   return (
     <MsalProvider instance={msalInstance}>
       <AppWithAuth {...props} />

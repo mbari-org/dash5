@@ -110,11 +110,11 @@ const DepthSparkline: React.FC<DepthSparklineProps> = ({
     const realValues = padded ? depthValues.slice(0, -3) : depthValues
     const padTimes = padded ? depthTimes.slice(-3) : []
 
-    const xmax = Math.max(...depthTimes)
-
-    // Map all points to pixel coords
+    // Anchor the x-axis to nowMin so depth and comms share the same time origin.
+    // Using xmax (last depth point) would shift the whole depth history left
+    // whenever depth data lags behind wall-clock time, misaligning it with comms ticks.
     const toXY = (tMin: number, val: number) => ({
-      x: boxRight - (xmax - tMin) / xdiv,
+      x: boxRight - (nowMin - tMin) / xdiv,
       y: y0 + Math.min(val / ydiv, h),
     })
 
@@ -274,6 +274,9 @@ const DepthSparkline: React.FC<DepthSparklineProps> = ({
       style={responsive ? { width: '100%', height: '100%', ...style } : style}
       aria-label="depth and comms history sparkline"
     >
+      {/* Background box — rendered first so the border sits on top */}
+      <rect x={x0} y={y0} width={w} height={h} fill="#ffffff" />
+
       {/* Border around depth chart box only */}
       <rect
         x={x0}
@@ -284,9 +287,6 @@ const DepthSparkline: React.FC<DepthSparklineProps> = ({
         stroke="#9ca3af"
         strokeWidth={0.5}
       />
-
-      {/* Background box */}
-      <rect x={x0} y={y0} width={w} height={h} fill="#ffffff" />
 
       {/* Grid lines */}
       {grids.map((g, i) => (
