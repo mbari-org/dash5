@@ -42,29 +42,30 @@ const msalInstance =
  * after the provider is mounted in the tree.
  */
 function AppWithAuth({ Component, pageProps }: AppProps) {
-  const { getIdToken, isAuthenticated, isLoading } = useMbariAuth()
+  const { getIdToken, isAuthenticated, isLoading, logout } = useMbariAuth()
   const { sessionToken, setSessionToken } = useSessionToken(
     'TETHYS_SESSION_TOKEN'
   )
 
-  // Sync the MSAL session state with the TethysDash session token:
-  // - Authenticated: silently acquire the ID token and store it.
-  // - Unauthenticated (and MSAL has finished initializing): clear any stale token
-  //   so API calls don't continue with an expired credential after logout.
+  // Only sync the cookie when MSAL has an active session — do NOT touch the
+  // cookie when !isAuthenticated, because that would clear a valid non-MSAL
+  // (username/password) session that was already in the cookie on page load.
   useEffect(() => {
-    if (isLoading) return
-    if (isAuthenticated) {
-      getIdToken().then((token) => {
-        // Clear on silent-acquisition failure so a stale credential isn't reused.
-        if (token) setSessionToken(token)
-        else setSessionToken('')
-      })
-    } else {
-      setSessionToken('')
-    }
+    if (isLoading || !isAuthenticated) return
+    getIdToken().then((token) => {
+      // Clear on silent-acquisition failure so a stale MSAL credential isn't reused.
+      if (token) setSessionToken(token)
+      else setSessionToken('')
+    })
   }, [isAuthenticated, isLoading, getIdToken, setSessionToken])
 
-  const handleSessionEnd = () => setSessionToken('')
+  // Called by TethysApiProvider when the server returns 401 (or the user
+  // triggers logout from the UI). Clears both the cookie and the MSAL session
+  // so the effect above cannot immediately repopulate the cookie.
+  const handleSessionEnd = () => {
+    setSessionToken('')
+    if (isAuthenticated) logout()
+  }
 
   useEffect(() => {
     // Fix Leaflet's default marker icon paths broken by webpack/Next.js bundling.
