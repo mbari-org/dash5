@@ -2,16 +2,17 @@ import React, { useMemo } from 'react'
 import clsx from 'clsx'
 
 export interface DepthSparklineProps {
-  depthTimes: number[]   // minutes since epoch
-  depthValues: number[]  // meters
-  celTimes: number[]     // ms epoch — cell comms
-  satTimes: number[]     // ms epoch — sat comms
-  gpsTimes: number[]     // ms epoch — GPS fixes
-  argoTimes: number[]    // ms epoch — Argo receives
-  padded?: boolean       // true when trailing points are faked
-  width?: number         // SVG box width (default 120)
-  height?: number        // SVG box height (default 20)
+  depthTimes: number[] // minutes since epoch
+  depthValues: number[] // meters
+  celTimes: number[] // ms epoch — cell comms
+  satTimes: number[] // ms epoch — sat comms
+  gpsTimes: number[] // ms epoch — GPS fixes
+  argoTimes: number[] // ms epoch — Argo receives
+  padded?: boolean // true when trailing points are faked
+  width?: number // SVG box width (default 120)
+  height?: number // SVG box height (default 20)
   windowMinutes?: number // time window to show (default 480 = 8h)
+  responsive?: boolean // when true, fills container (no explicit width/height on SVG element)
   className?: string
   style?: React.CSSProperties
 }
@@ -37,19 +38,17 @@ function decimateTimes(
 ): number[] {
   if (!timesMs.length) return []
   const offset = 0.25
-  const xplist = timesMs.map((t) => boxRight - (nowMin - (t / 1000) / 60) / xdiv)
+  const xplist = timesMs.map((t) => boxRight - (nowMin - t / 1000 / 60) / xdiv)
   const decimated = new Set(
     xplist.map((x) => Math.floor((x - offset) / resolution) * resolution)
   )
   return Array.from(decimated)
 }
 
-// Format ms offset as "HH:MM"
-function fmtHoursMin(ms: number): string {
-  const totalMin = Math.round(Math.abs(ms) / 60000)
-  const h = Math.floor(totalMin / 60)
-  const m = totalMin % 60
-  return `${h}:${m.toString().padStart(2, '0')}`
+// Format ms-epoch timestamp as wall-clock "H:MM"
+function fmtWallClock(ms: number): string {
+  const d = new Date(ms)
+  return `${d.getHours()}:${d.getMinutes().toString().padStart(2, '0')}`
 }
 
 // Format ms offset as "Xm ago" / "Xh ago"
@@ -71,6 +70,7 @@ const DepthSparkline: React.FC<DepthSparklineProps> = ({
   width: w = 120,
   height: h = 20,
   windowMinutes = 480,
+  responsive = false,
   className,
   style,
 }) => {
@@ -81,18 +81,21 @@ const DepthSparkline: React.FC<DepthSparklineProps> = ({
   const y0 = 0
   const boxRight = x0 + w
 
-  const xdiv = windowMinutes / w  // minutes per pixel
+  const xdiv = windowMinutes / w // minutes per pixel
 
-  const svgWidth = w + 42   // extra right margin for legend/labels
-  const svgHeight = h + 20  // extra bottom margin for axis labels + top for tick rows
+  const svgWidth = w + 66 // extra right margin for single-row legend + time/ago
+  const svgHeight = h + 20 // extra bottom margin for axis labels + top for tick rows
 
   // Rows of comms ticks sit above the depth box
   const tickRowHeight = 1.5
   const tickRowGap = 2
-  const tickRows: Record<string, { times: number[]; color: string; y: number }> = {
-    cel:  { times: celTimes,  color: '#22c55e', y: y0 - tickRowGap },
-    sat:  { times: satTimes,  color: '#f97316', y: y0 - tickRowGap * 2 },
-    gps:  { times: gpsTimes,  color: '#a855f7', y: y0 - tickRowGap * 3 },
+  const tickRows: Record<
+    string,
+    { times: number[]; color: string; y: number }
+  > = {
+    cel: { times: celTimes, color: '#22c55e', y: y0 - tickRowGap },
+    sat: { times: satTimes, color: '#f97316', y: y0 - tickRowGap * 2 },
+    gps: { times: gpsTimes, color: '#a855f7', y: y0 - tickRowGap * 3 },
     argo: { times: argoTimes, color: '#3b82f6', y: y0 - tickRowGap * 4 },
   }
   const tickAreaHeight = tickRowGap * 4 + tickRowHeight + 2
@@ -118,27 +121,42 @@ const DepthSparkline: React.FC<DepthSparklineProps> = ({
 
     const allPts = depthTimes.map((t, i) => toXY(t, depthValues[i]))
     const realPts = realTimes.map((t, i) => toXY(t, realValues[i]))
-    const padPts  = padTimes.map((t, i) => toXY(t, padded ? depthValues[depthValues.length - 3 + i] : 0))
+    const padPts = padTimes.map((t, i) =>
+      toXY(t, padded ? depthValues[depthValues.length - 3 + i] : 0)
+    )
 
-    // Polygon: close at top-left and top-right
+    // Real-data polygon closes at the last confirmed point's x (not boxRight)
+    const realClose = realPts.length ? realPts[realPts.length - 1].x : boxRight
     const polyPts = [
       { x: allPts[0].x, y: y0 },
-      ...allPts,
-      { x: boxRight, y: y0 },
+      ...realPts,
+      { x: realClose, y: y0 },
     ]
-    const polyStr = polyPts.map((p) => `${p.x.toFixed(3)},${p.y.toFixed(3)}`).join(' ')
+    const polyStr = polyPts
+      .map((p) => `${p.x.toFixed(3)},${p.y.toFixed(3)}`)
+      .join(' ')
 
     // Freshness: stale if last real data is >1.25h old (rough threshold like auvstatus.py)
     const lastRealMs = Math.max(...realTimes) * 60 * 1000
     const ageHours = (nowMs - lastRealMs) / 3600000
     const isStale = ageHours > 1.25
-    const polyColor = isStale ? '#f97316' : '#60a5fa'  // orange : blue
-    const padColor  = isStale ? '#f97316' : '#93c5fd'
+    const polyColor = '#60a5fa' // confirmed historical data always blue
+    const padFill = isStale ? '#f97316' : '#9ca3af' // still-submerged: orange if long dive, gray otherwise
 
-    // Pad polyline (the faked trailing segment shown in a lighter/different shade)
+    // Padded (vehicle submerged, data not yet confirmed) — filled gray polygon
     let padPolyStr: string | null = null
-    if (padded && padPts.length >= 2) {
-      padPolyStr = padPts.map((p) => `${p.x.toFixed(3)},${p.y.toFixed(3)}`).join(' ')
+    if (padded && padPts.length >= 1 && realPts.length >= 1) {
+      const lastReal = realPts[realPts.length - 1]
+      const lastPad = padPts[padPts.length - 1]
+      const padPolyPts = [
+        { x: lastReal.x, y: y0 },
+        lastReal,
+        ...padPts,
+        { x: lastPad.x, y: y0 },
+      ]
+      padPolyStr = padPolyPts
+        .map((p) => `${p.x.toFixed(3)},${p.y.toFixed(3)}`)
+        .join(' ')
     }
 
     // Grid lines
@@ -148,11 +166,28 @@ const DepthSparkline: React.FC<DepthSparklineProps> = ({
     ])
     const minorGridFracs = [0.125, 0.375, 0.625, 0.875]
 
-    // Axis time labels: show hours remaining at 75/50/25/0% of window
+    // Axis time labels: show hours remaining at 0/25/50/75% of window
     const axisLabels = [
-      { frac: 0.25, label: `${((1 - 0.25) * windowMinutes / 60).toFixed(0)}h` },
-      { frac: 0.50, label: `${((1 - 0.50) * windowMinutes / 60).toFixed(0)}h` },
-      { frac: 0.75, label: `${((1 - 0.75) * windowMinutes / 60).toFixed(0)}h` },
+      {
+        frac: 0,
+        label: `${(windowMinutes / 60).toFixed(0)}h`,
+        anchor: 'start' as const,
+      },
+      {
+        frac: 0.25,
+        label: `${(((1 - 0.25) * windowMinutes) / 60).toFixed(0)}h`,
+        anchor: 'middle' as const,
+      },
+      {
+        frac: 0.5,
+        label: `${(((1 - 0.5) * windowMinutes) / 60).toFixed(0)}h`,
+        anchor: 'middle' as const,
+      },
+      {
+        frac: 0.75,
+        label: `${(((1 - 0.75) * windowMinutes) / 60).toFixed(0)}h`,
+        anchor: 'middle' as const,
+      },
     ]
 
     // Comms ticks — decimated to 2-pixel resolution
@@ -177,14 +212,14 @@ const DepthSparkline: React.FC<DepthSparklineProps> = ({
 
     // Last-data timestamp display
     const lastDataMs = Math.max(...realTimes) * 60 * 1000
-    const timeLabel = fmtHoursMin(lastDataMs)
+    const timeLabel = fmtWallClock(lastDataMs)
     const agoLabel = fmtAgo(lastDataMs - nowMs)
 
     return {
       polyStr,
       padPolyStr,
       polyColor,
-      padColor,
+      padFill,
       grids,
       minorGridFracs,
       axisLabels,
@@ -195,8 +230,19 @@ const DepthSparkline: React.FC<DepthSparklineProps> = ({
       isStale,
       realPts,
     }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [depthTimes, depthValues, celTimes, satTimes, gpsTimes, argoTimes, padded, w, h, windowMinutes])
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [
+    depthTimes,
+    depthValues,
+    celTimes,
+    satTimes,
+    gpsTimes,
+    argoTimes,
+    padded,
+    w,
+    h,
+    windowMinutes,
+  ])
 
   if (!chart) return null
 
@@ -204,7 +250,7 @@ const DepthSparkline: React.FC<DepthSparklineProps> = ({
     polyStr,
     padPolyStr,
     polyColor,
-    padColor,
+    padFill,
     grids,
     minorGridFracs,
     axisLabels,
@@ -217,95 +263,151 @@ const DepthSparkline: React.FC<DepthSparklineProps> = ({
 
   // SVG viewBox: x0=0, top accounting for tick rows, full width + right labels
   const viewBoxTop = y0 - tickAreaHeight - 2
-  const viewBoxH = h + tickAreaHeight + 14  // +14 for axis labels below
+  const viewBoxH = h + tickAreaHeight + 14 // +14 for axis labels below
 
   return (
     <svg
       xmlns="http://www.w3.org/2000/svg"
       viewBox={`${x0 - 1} ${viewBoxTop} ${svgWidth} ${viewBoxH}`}
-      width={svgWidth}
-      height={viewBoxH}
+      width={responsive ? undefined : svgWidth}
+      height={responsive ? undefined : viewBoxH}
       className={clsx('depth-sparkline', className)}
-      style={style}
+      style={responsive ? { width: '100%', height: '100%', ...style } : style}
       aria-label="depth and comms history sparkline"
     >
+      {/* Border around depth chart box only */}
+      <rect
+        x={x0}
+        y={y0}
+        width={w}
+        height={h}
+        fill="none"
+        stroke="#9ca3af"
+        strokeWidth={0.5}
+      />
+
       {/* Background box */}
-      <rect x={x0} y={y0} width={w} height={h} fill="#d1d5db" />
+      <rect x={x0} y={y0} width={w} height={h} fill="#ffffff" />
 
       {/* Grid lines */}
       {grids.map((g, i) => (
         <line
           key={`grid-${i}`}
-          x1={g.x1} y1={g.y1} x2={g.x2} y2={g.y2}
-          stroke="#9ca3af" strokeWidth={0.3}
+          x1={g.x1}
+          y1={g.y1}
+          x2={g.x2}
+          y2={g.y2}
+          stroke="#9ca3af"
+          strokeWidth={0.3}
         />
       ))}
       {minorGridFracs.map((frac) => (
         <line
           key={`mgrid-v-${frac}`}
-          x1={x0 + w * frac} y1={y0}
-          x2={x0 + w * frac} y2={y0 + h}
-          stroke="#9ca3af" strokeWidth={0.15}
+          x1={x0 + w * frac}
+          y1={y0}
+          x2={x0 + w * frac}
+          y2={y0 + h}
+          stroke="#9ca3af"
+          strokeWidth={0.15}
         />
       ))}
 
       {/* Depth filled polygon */}
-      <polygon points={polyStr} fill={polyColor} fillOpacity={0.85} stroke="none" />
+      <polygon
+        points={polyStr}
+        fill={polyColor}
+        fillOpacity={0.85}
+        stroke="none"
+      />
 
-      {/* Pad/extrapolated trailing segment */}
+      {/* Padded/submerged segment — gray normally, orange if dive >1.25h */}
       {padPolyStr && (
-        <polyline
+        <polygon
           points={padPolyStr}
-          fill="none"
-          stroke={padColor}
-          strokeWidth={0.8}
-          strokeDasharray="2 1"
+          fill={padFill}
+          fillOpacity={0.85}
+          stroke="none"
         />
       )}
 
       {/* Comms + GPS tick marks */}
       {tickElems}
 
-      {/* Legend (to the right of the chart) */}
-      <rect x={x0 + w + 4}  y={y0 - tickRowGap * 4} width={2} height={tickRowHeight} fill="#a855f7" />
-      <text x={x0 + w + 7}  y={y0 - tickRowGap * 3 - 0.5} fontSize={3.5} fill="#374151">gps</text>
-      <rect x={x0 + w + 18} y={y0 - tickRowGap * 4} width={2} height={tickRowHeight} fill="#3b82f6" />
-      <text x={x0 + w + 21} y={y0 - tickRowGap * 3 - 0.5} fontSize={3.5} fill="#374151">argo</text>
-      <rect x={x0 + w + 4}  y={y0 - tickRowGap * 2} width={2} height={tickRowHeight} fill="#22c55e" />
-      <text x={x0 + w + 7}  y={y0 - tickRowGap - 0.5} fontSize={3.5} fill="#374151">cell</text>
-      <rect x={x0 + w + 18} y={y0 - tickRowGap * 2} width={2} height={tickRowHeight} fill="#f97316" />
-      <text x={x0 + w + 21} y={y0 - tickRowGap - 0.5} fontSize={3.5} fill="#374151">sat</text>
+      {/* Legend — dot flush against label, both vertically centered on the same baseline */}
+      <circle cx={x0 + w + 3} cy={y0} r={1.5} fill="#3b82f6" />
+      <text
+        x={x0 + w + 5}
+        y={y0}
+        fontSize={5}
+        fill="#374151"
+        dominantBaseline="central"
+      >
+        argo
+      </text>
+      <circle cx={x0 + w + 20} cy={y0} r={1.5} fill="#a855f7" />
+      <text
+        x={x0 + w + 22}
+        y={y0}
+        fontSize={5}
+        fill="#374151"
+        dominantBaseline="central"
+      >
+        gps
+      </text>
+      <circle cx={x0 + w + 37} cy={y0} r={1.5} fill="#f97316" />
+      <text
+        x={x0 + w + 39}
+        y={y0}
+        fontSize={5}
+        fill="#374151"
+        dominantBaseline="central"
+      >
+        sat
+      </text>
+      <circle cx={x0 + w + 53} cy={y0} r={1.5} fill="#22c55e" />
+      <text
+        x={x0 + w + 55}
+        y={y0}
+        fontSize={5}
+        fill="#374151"
+        dominantBaseline="central"
+      >
+        cell
+      </text>
 
       {/* Axis time labels below the box */}
-      {axisLabels.map(({ frac, label }) => (
+      {axisLabels.map(({ frac, label, anchor }) => (
         <text
           key={`ax-${frac}`}
-          x={x0 - 2 + w * frac}
+          x={x0 + w * frac + (frac === 0 ? 1 : -2)}
           y={y0 + h + 5}
-          fontSize={3.5}
+          fontSize={6}
           fill="#6b7280"
-          textAnchor="middle"
+          textAnchor={anchor}
         >
           {label}
         </text>
       ))}
 
       {/* Max depth label (bottom-left inside box) */}
-      <text x={x0 + 1} y={y0 + h - 1} fontSize={3.5} fill="#374151">
+      <text x={x0 + 1} y={y0 + h - 1} fontSize={6} fill="#374151">
         {depthScale}m
       </text>
 
-      {/* Freshness dot */}
+      {/* Last data time with freshness dot inline, then age — just below the legend */}
+      <text x={x0 + w + 2} y={y0 + 10} fontSize={6} fill="#374151">
+        {timeLabel}
+      </text>
       <circle
-        cx={x0 + w + 2}
-        cy={y0 + 3}
+        cx={x0 + w + 23}
+        cy={y0 + 7}
         r={2}
-        fill={isStale ? '#9ca3af' : '#22c55e'}
+        fill={padded && isStale ? '#f97316' : '#22c55e'}
       />
-
-      {/* Last data time + age (right of box, below freshness dot) */}
-      <text x={x0 + w + 2} y={y0 + 8} fontSize={3.5} fill="#374151">{timeLabel}</text>
-      <text x={x0 + w + 2} y={y0 + 13} fontSize={3.5} fill="#6b7280">{agoLabel}</text>
+      <text x={x0 + w + 2} y={y0 + 16} fontSize={6} fill="#6b7280">
+        {agoLabel}
+      </text>
     </svg>
   )
 }

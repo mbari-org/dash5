@@ -1,4 +1,8 @@
-import { useVehicleInfo, GetVehicleInfoResponse, useDepthSparkline } from '@mbari/api-client'
+import {
+  useVehicleInfo,
+  GetVehicleInfoResponse,
+  useDepthSparkline,
+} from '@mbari/api-client'
 import React from 'react'
 import dynamic from 'next/dynamic'
 import axios from 'axios'
@@ -13,7 +17,8 @@ import { DateTime } from 'luxon'
 import { decodeHtmlEntities, formatCompactDuration } from '@mbari/utils'
 
 const DepthSparkline = dynamic(
-  () => import('@mbari/react-ui/dist/Charts/DepthSparkline'),
+  () =>
+    import('@mbari/react-ui').then((mod) => ({ default: mod.DepthSparkline })),
   { ssr: false }
 )
 
@@ -212,6 +217,7 @@ const VehicleDiagram: React.FC<{
               gpsTimes={sparklineData.gpsTimes}
               argoTimes={sparklineData.argoTimes}
               padded={sparklineData.padded}
+              responsive
             />
           ) : undefined
         }

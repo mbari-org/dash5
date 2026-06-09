@@ -1,0 +1,51 @@
+import { Configuration, LogLevel } from '@azure/msal-browser'
+
+// MBARI tenant (Microsoft Entra ID)
+// Well-known OIDC config:
+// https://login.microsoftonline.com/16ac1ee8-602c-4ca1-944d-3a84bcb35575/v2.0/.well-known/openid-configuration
+const TENANT_ID = '16ac1ee8-602c-4ca1-944d-3a84bcb35575'
+
+// IMPORTANT: The redirect URI registered with Andrew was:
+//   https://sinkerdev.shore.mbari.org/sinker/api/auth/callback/mbari
+//   https://sinker.shore.mbari.org/sinker/api/auth/callback/mbari
+//
+// This app is a static export served by nginx — there is no server-side
+// callback handler. Ask Andrew to UPDATE the registered redirect URIs to:
+//   https://sinkerdev.shore.mbari.org/sinker/
+//   https://sinker.shore.mbari.org/sinker/
+//
+// Set NEXT_PUBLIC_MSAL_REDIRECT_URI in .env.local to match the deployment.
+const redirectUri =
+  (typeof window !== 'undefined' &&
+    process.env.NEXT_PUBLIC_MSAL_REDIRECT_URI) ||
+  (typeof window !== 'undefined' ? window.location.origin + '/' : '/')
+
+export const msalConfig: Configuration = {
+  auth: {
+    clientId:
+      process.env.NEXT_PUBLIC_MSAL_CLIENT_ID ??
+      '2f3b2230-be51-46c5-bac0-2e887bfea35c',
+    authority: `https://login.microsoftonline.com/${TENANT_ID}`,
+    redirectUri,
+    postLogoutRedirectUri: redirectUri,
+  },
+  cache: {
+    cacheLocation: 'localStorage',
+  },
+  system: {
+    loggerOptions: {
+      loggerCallback: (level, message, containsPii) => {
+        if (containsPii || process.env.NODE_ENV === 'production') return
+        if (level === LogLevel.Error) console.error('[MSAL]', message)
+        if (level === LogLevel.Warning) console.warn('[MSAL]', message)
+      },
+    },
+  },
+}
+
+// Scopes for the Microsoft ID token.
+// Roles (operator / read-only) are embedded in the ID token by Entra ID
+// without needing an extra scope — they are part of the app registration.
+export const loginRequest = {
+  scopes: ['openid', 'profile', 'email'],
+}

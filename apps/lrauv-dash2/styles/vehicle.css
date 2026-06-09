@@ -163,3 +163,19 @@
 	.stleak1 {
     fill: #92c19b;
   }
+
+  /* Docking station indicators — exact values from Dash4 SVG stylesheet */
+  .semitrans {
+    fill: #AAAAAA;
+    fill-opacity: 0.667;
+    stroke: #AAAAAA;
+    stroke-opacity: 0.667;
+  }
+
+  .semitransline {
+    fill: #AAAAAA;
+    fill-opacity: 0.667;
+    stroke: #AAAAAA;
+    stroke-opacity: 0.667;
+    stroke-width: 4.5;
+  }

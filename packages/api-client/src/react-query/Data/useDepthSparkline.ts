@@ -1,4 +1,5 @@
 import { useQuery } from 'react-query'
+import { useRef } from 'react'
 import { getDepthData } from '../../axios/Data/getDepthData'
 import { getEvents, EventType } from '../../axios'
 import { useTethysApiContext } from '../TethysApiProvider'
@@ -7,13 +8,13 @@ import { SupportedQueryOptions } from '../types'
 const EIGHT_HOURS_MS = 8 * 60 * 60 * 1000
 
 export interface DepthSparklineData {
-  depthTimes: number[]   // minutes since epoch
-  depthValues: number[]  // meters
-  celTimes: number[]     // ms epoch — cell comms (sbdReceive state === 2)
-  satTimes: number[]     // ms epoch — sat comms (sbdReceive state === 0)
-  gpsTimes: number[]     // ms epoch — GPS fixes
-  argoTimes: number[]    // ms epoch — Argo receives
-  padded: boolean        // true when last depth point is >4 min old (extrapolated)
+  depthTimes: number[] // minutes since epoch
+  depthValues: number[] // meters
+  celTimes: number[] // ms epoch — cell comms (sbdReceive state === 2)
+  satTimes: number[] // ms epoch — sat comms (sbdReceive state === 0)
+  gpsTimes: number[] // ms epoch — GPS fixes
+  argoTimes: number[] // ms epoch — Argo receives
+  padded: boolean // true when last depth point is >4 min old (extrapolated)
 }
 
 export const useDepthSparkline = (
@@ -21,7 +22,11 @@ export const useDepthSparkline = (
   options?: SupportedQueryOptions
 ) => {
   const { axiosInstance } = useTethysApiContext()
-  const from = Date.now() - EIGHT_HOURS_MS
+  // Stable reference so the React Query key doesn't change on every re-render
+  // (which would create a new cache entry each time data arrives and prevent
+  // the sparkline from ever displaying).
+  const fromRef = useRef(Date.now() - EIGHT_HOURS_MS)
+  const from = fromRef.current
 
   const depthQuery = useQuery(
     ['depthSparkline', 'depth', vehicle, from],
@@ -41,6 +46,7 @@ export const useDepthSparkline = (
           vehicles: [vehicle],
           eventTypes: ['sbdReceive', 'gpsFix', 'argoReceive'] as EventType[],
           from,
+          limit: 10000, // high limit — comms events over 8h rarely exceed this
         },
         { instance: axiosInstance }
       ),
@@ -55,7 +61,7 @@ export const useDepthSparkline = (
   const rawDepthValues = depthQuery.data?.values ?? []
 
   // Convert ms to minutes for the sparkline (matching auvstatus.py convention)
-  const depthTimesMin = rawDepthTimes.map((t) => (t / 1000) / 60)
+  const depthTimesMin = rawDepthTimes.map((t) => t / 1000 / 60)
   const nowMin = Date.now() / 1000 / 60
 
   // Detect stale data gap >4 minutes and append a fake pad point (matching auvstatus.py)

@@ -17,6 +17,10 @@ import { CookiesProvider } from 'react-cookie'
 import useSessionToken from '../lib/useSessionToken'
 import { GoogleMapsProvider } from '../components/GoogleMapsProvider'
 import { VehicleColorsProvider } from '../components/VehicleColorsContext'
+import { PublicClientApplication } from '@azure/msal-browser'
+import { MsalProvider } from '@azure/msal-react'
+import { msalConfig } from '../lib/msalConfig'
+import { useMbariAuth } from '../lib/useMbariAuth'
 import '../styles/vehicle.css'
 import '../styles/docs.css'
 
@@ -27,7 +31,31 @@ const logger = createLogger('App')
 
 const queryClient = new QueryClient()
 
-function MyApp({ Component, pageProps }: AppProps) {
+// Created once at module level — MsalProvider handles async initialization.
+const msalInstance = new PublicClientApplication(msalConfig)
+
+/**
+ * Inner component so useMbariAuth (which requires MsalProvider) can be called
+ * after the provider is mounted in the tree.
+ */
+function AppWithAuth({ Component, pageProps }: AppProps) {
+  const { getIdToken, isAuthenticated } = useMbariAuth()
+  const { sessionToken, setSessionToken } = useSessionToken(
+    'TETHYS_SESSION_TOKEN'
+  )
+
+  // When the MSAL session is live, acquire the ID token silently and store it
+  // as the TethysDash session token. TethysDash on sinkerdev must be configured
+  // to accept Microsoft Entra ID JWTs as Bearer tokens for this to work.
+  useEffect(() => {
+    if (!isAuthenticated) return
+    getIdToken().then((token) => {
+      if (token) setSessionToken(token)
+    })
+  }, [isAuthenticated, getIdToken, setSessionToken])
+
+  const handleSessionEnd = () => setSessionToken('')
+
   useEffect(() => {
     // Fix Leaflet's default marker icon paths broken by webpack/Next.js bundling.
     // Must run client-side only — Leaflet references `window` at import time.
@@ -50,10 +78,6 @@ function MyApp({ Component, pageProps }: AppProps) {
       })
   }, [])
 
-  const { sessionToken, setSessionToken } = useSessionToken(
-    'TETHYS_SESSION_TOKEN'
-  )
-  const handleSessionEnd = () => setSessionToken('')
   return (
     <QueryClientProvider client={queryClient}>
       <CookiesProvider defaultSetOptions={{ path: '/' }}>
@@ -77,6 +101,14 @@ function MyApp({ Component, pageProps }: AppProps) {
       <Toaster />
       <ReactQueryDevtools initialIsOpen={false} />
     </QueryClientProvider>
+  )
+}
+
+function MyApp(props: AppProps) {
+  return (
+    <MsalProvider instance={msalInstance}>
+      <AppWithAuth {...props} />
+    </MsalProvider>
   )
 }
 
