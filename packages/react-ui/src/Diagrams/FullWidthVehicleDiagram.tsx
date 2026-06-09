@@ -191,10 +191,12 @@ export const FullWidthVehicleDiagram: React.FC<
     } catch {}
   }, [storageKey])
 
-  const waveHeight = containerSize?.height * 0.8
-  const waveOffset = containerSize?.height * 0.2
-  const waveWidth = containerSize.width
-  const numberOfWaves = Math.floor(containerSize.width / 100)
+  const containerH = containerSize?.height ?? 0
+  const containerW = containerSize?.width ?? 0
+  const waveHeight = containerH * 0.8
+  const waveOffset = containerH * 0.2
+  const waveWidth = containerW
+  const numberOfWaves = Math.max(1, Math.floor(containerW / 100))
   const wavePath = `M0,${waveOffset} ${new Array(numberOfWaves)
     .fill(null)
     .reduce((a, _, i) => {
