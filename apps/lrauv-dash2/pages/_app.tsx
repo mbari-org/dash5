@@ -28,6 +28,14 @@ const logger = createLogger('App')
 const queryClient = new QueryClient()
 
 function MyApp({ Component, pageProps }: AppProps) {
+  const { sessionToken, setSessionToken } = useSessionToken(
+    'TETHYS_SESSION_TOKEN'
+  )
+
+  const handleSessionEnd = () => {
+    setSessionToken('')
+  }
+
   useEffect(() => {
     // Fix Leaflet's default marker icon paths broken by webpack/Next.js bundling.
     // Must run client-side only — Leaflet references `window` at import time.
@@ -50,10 +58,6 @@ function MyApp({ Component, pageProps }: AppProps) {
       })
   }, [])
 
-  const { sessionToken, setSessionToken } = useSessionToken(
-    'TETHYS_SESSION_TOKEN'
-  )
-  const handleSessionEnd = () => setSessionToken('')
   return (
     <QueryClientProvider client={queryClient}>
       <CookiesProvider defaultSetOptions={{ path: '/' }}>

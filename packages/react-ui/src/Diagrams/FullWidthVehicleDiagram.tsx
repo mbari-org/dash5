@@ -1,4 +1,4 @@
-import React, { useRef } from 'react'
+import React, { useRef, useState, useEffect } from 'react'
 import clsx from 'clsx'
 import { DropWeightIndicator } from './VehicleAssets/DropWeightIndicator'
 import { DvlIndicator } from './VehicleAssets/DvlIndicator'
@@ -28,6 +28,7 @@ import { Leak } from './VehicleAssets/Leak'
 
 export interface FullWidthVehicleDiagramProps extends VehicleProps {
   onBatteryClick?: BatteryProps['onClick']
+  sparklineContent?: React.ReactNode
 }
 
 export const FullWidthVehicleDiagram: React.FC<
@@ -109,6 +110,7 @@ export const FullWidthVehicleDiagram: React.FC<
   textLogTime,
   textLogAgo,
   colorArrow,
+  sparklineContent,
   textArriveLabel = 'Arrive Station',
   textArriveStation,
   textCurrentDist,
@@ -141,10 +143,69 @@ export const FullWidthVehicleDiagram: React.FC<
 
   const isDocked = status === 'pluggedIn' || status === 'recovered'
 
-  const waveHeight = containerSize?.height * 0.8
-  const waveOffset = containerSize?.height * 0.2
-  const waveWidth = containerSize.width
-  const numberOfWaves = Math.floor(containerSize.width / 100)
+  // px to push vehicle + waves down, creating white space at top
+  const VEHICLE_TOP_OFFSET = 20
+
+  // Sparkline base dimensions — correct size when the vehicle is height-bound (wide container)
+  const SPARKLINE_BASE_W = 384 // 480 × 0.8
+  const SPARKLINE_BASE_H = 96 // 120 × 0.8
+
+  // Vehicle SVG viewBox dimensions
+  const VB_W = 534
+  const VB_H = 176
+
+  const cW = containerSize?.width ?? 0
+  const cH = containerSize?.height ?? 0
+
+  // normalizedVehicleScale = 1 when the container is wide enough that the vehicle is
+  // height-bound (no horizontal squeeze). Drops below 1 only when the container narrows
+  // enough that the vehicle SVG itself starts to shrink — the sparkline follows exactly.
+  const normalizedVehicleScale =
+    cW > 0 && cH > 0 ? Math.min(1, (cW * VB_H) / (VB_W * cH)) : 1
+
+  const sparklineW = Math.round(SPARKLINE_BASE_W * normalizedVehicleScale)
+  const sparklineH = Math.round(SPARKLINE_BASE_H * normalizedVehicleScale)
+
+  // Position locked — loaded once from localStorage (the final dragged position).
+  // Drag removed; position will not change at runtime.
+  // y must be non-negative so overflow-hidden on the container never clips the top.
+  const DEFAULT_POS = { x: 10, y: 2 }
+  // v4: resets any previously saved negative-y positions from v3.
+  const storageKey = `sparkline-pos-v4-${textVehicle ?? 'default'}`
+  const [sparklinePos, setSparklinePos] = useState(DEFAULT_POS)
+
+  useEffect(() => {
+    try {
+      const saved = localStorage.getItem(storageKey)
+      if (saved) {
+        const parsed = JSON.parse(saved)
+        if (
+          parsed &&
+          typeof parsed.x === 'number' &&
+          typeof parsed.y === 'number' &&
+          isFinite(parsed.x) &&
+          isFinite(parsed.y)
+        ) {
+          // Clamp to non-negative so overflow-hidden never clips the overlay,
+          // even if an old saved value was negative.
+          setSparklinePos({
+            x: Math.max(0, parsed.x),
+            y: Math.max(0, parsed.y),
+          })
+        }
+      }
+    } catch (_e) {
+      // localStorage may be unavailable (e.g. private browsing) or contain
+      // unparseable data — silently fall back to the default position.
+    }
+  }, [storageKey])
+
+  const containerH = containerSize?.height ?? 0
+  const containerW = containerSize?.width ?? 0
+  const waveHeight = containerH * 0.8
+  const waveOffset = containerH * 0.2
+  const waveWidth = containerW
+  const numberOfWaves = Math.max(1, Math.floor(containerW / 100))
   const wavePath = `M0,${waveOffset} ${new Array(numberOfWaves)
     .fill(null)
     .reduce((a, _, i) => {
@@ -169,19 +230,18 @@ export const FullWidthVehicleDiagram: React.FC<
         y="0px"
         height="100%"
         width="100%"
-        viewBox={`0 0 ${containerSize?.width ?? 0} ${
-          containerSize.height ?? 0
-        }`}
+        viewBox={`0 0 ${containerW} ${containerH}`}
         xmlSpace="preserve"
+        style={{ transform: `translateY(${VEHICLE_TOP_OFFSET}px)` }}
       >
         {isDocked ? (
           <rect
             data-testid="dirtbox"
             x="0"
-            y={containerSize?.height - containerSize?.height * 0.4}
+            y={containerH - containerH * 0.4}
             className={colorDirtbox}
-            width={containerSize?.width}
-            height={containerSize?.height * 0.4}
+            width={containerW}
+            height={containerH * 0.4}
           />
         ) : (
           <path
@@ -204,6 +264,7 @@ export const FullWidthVehicleDiagram: React.FC<
         preserveAspectRatio="xMidYMid meet"
         xmlSpace="preserve"
         className="absolute inset-0 z-10 h-full w-full"
+        style={{ transform: `translateY(${VEHICLE_TOP_OFFSET}px)` }}
       >
         <g>
           <ChargingCable
@@ -416,6 +477,21 @@ export const FullWidthVehicleDiagram: React.FC<
           )}
         </g>
       </svg>
+
+      {/* Sparkline overlay — fixed position, scales with vehicle when container narrows */}
+      {!isDocked && sparklineContent && (
+        <div
+          className="absolute z-20 select-none pointer-events-none"
+          style={{
+            left: sparklinePos.x,
+            top: sparklinePos.y,
+            width: sparklineW,
+            height: sparklineH,
+          }}
+        >
+          {sparklineContent}
+        </div>
+      )}
     </div>
   )
 }

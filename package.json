@@ -11,7 +11,7 @@
     "apps/*"
   ],
   "engines": {
-    "node": "18.x.x",
+    "node": "20.x.x",
     "yarn": "1.22.x"
   },
   "scripts": {
@@ -57,7 +57,7 @@
     "turbo": "^2.4.4"
   },
   "volta": {
-    "node": "18.19.0",
+    "node": "20.19.0",
     "yarn": "1.22.19"
   },
   "dependencies": {

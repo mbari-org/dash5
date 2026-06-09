@@ -1,5 +1,10 @@
-import { useVehicleInfo, GetVehicleInfoResponse } from '@mbari/api-client'
+import {
+  useVehicleInfo,
+  GetVehicleInfoResponse,
+  useDepthSparkline,
+} from '@mbari/api-client'
 import React from 'react'
+import dynamic from 'next/dynamic'
 import axios from 'axios'
 import {
   FullWidthVehicleDiagram,
@@ -10,6 +15,12 @@ import { faTriangleExclamation } from '@fortawesome/free-solid-svg-icons'
 import clsx from 'clsx'
 import { DateTime } from 'luxon'
 import { decodeHtmlEntities, formatCompactDuration } from '@mbari/utils'
+
+const DepthSparkline = dynamic(
+  () =>
+    import('@mbari/react-ui').then((mod) => ({ default: mod.DepthSparkline })),
+  { ssr: false }
+)
 
 const VehicleDiagram: React.FC<{
   name: string
@@ -50,6 +61,20 @@ const VehicleDiagram: React.FC<{
     vehicleInfo?.not_found || !vehicleInfo
       ? undefined
       : (vehicleInfo as GetVehicleInfoResponse)
+
+  // Derive mission text once for both the isDocked check and the status prop.
+  const missionText = vehicle?.text_mission ?? ''
+
+  // The sparkline is only shown for on-mission vehicles. Gate on !!vehicle so
+  // we don't start polling before vehicleInfo has loaded, and suppress polling
+  // for both plugged-in and recovered vehicles — FullWidthVehicleDiagram never
+  // renders the sparkline overlay in either of those states.
+  const isDocked =
+    missionText.indexOf('PLUGGED') >= 0 || missionText.indexOf('RECOVERED') >= 0
+  const { data: sparklineData } = useDepthSparkline(
+    { vehicle: name },
+    { enabled: !!vehicle && !isDocked }
+  )
 
   const formattedCellTime = lastCellCommsDT
     ? lastCellCommsDT.toFormat('HH:mm')
@@ -164,8 +189,10 @@ const VehicleDiagram: React.FC<{
         textVolts={vehicle?.text_volts}
         colorVolts={vehicle?.color_volts}
         status={
-          (vehicle?.text_mission?.indexOf('PLUGGED') ?? -1) >= 0
+          missionText.indexOf('PLUGGED') >= 0
             ? 'pluggedIn'
+            : missionText.indexOf('RECOVERED') >= 0
+            ? 'recovered'
             : 'onMission'
         }
         colorLeak={vehicle?.color_leak}
@@ -191,6 +218,20 @@ const VehicleDiagram: React.FC<{
         colorDuration={vehicle?.color_duration}
         colorOt={vehicle?.color_ot}
         onBatteryClick={handleBatteryClick}
+        sparklineContent={
+          sparklineData && sparklineData.depthTimes.length > 0 ? (
+            <DepthSparkline
+              depthTimes={sparklineData.depthTimes}
+              depthValues={sparklineData.depthValues}
+              celTimes={sparklineData.celTimes}
+              satTimes={sparklineData.satTimes}
+              gpsTimes={sparklineData.gpsTimes}
+              argoTimes={sparklineData.argoTimes}
+              padded={sparklineData.padded}
+              responsive
+            />
+          ) : undefined
+        }
       />
     </div>
   )
