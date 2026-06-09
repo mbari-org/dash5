@@ -57,6 +57,11 @@ const VehicleDiagram: React.FC<{
 
   const now = DateTime.now()
 
+  const vehicle =
+    vehicleInfo?.not_found || !vehicleInfo
+      ? undefined
+      : (vehicleInfo as GetVehicleInfoResponse)
+
   // The sparkline is only shown when the vehicle is on-mission (not plugged in).
   // Skip polling entirely when docked to avoid unnecessary API requests every 2 min.
   const isDocked = (vehicle?.text_mission?.indexOf('PLUGGED') ?? -1) >= 0
@@ -64,11 +69,6 @@ const VehicleDiagram: React.FC<{
     { vehicle: name },
     { enabled: !!name && !isDocked }
   )
-
-  const vehicle =
-    vehicleInfo?.not_found || !vehicleInfo
-      ? undefined
-      : (vehicleInfo as GetVehicleInfoResponse)
 
   const formattedCellTime = lastCellCommsDT
     ? lastCellCommsDT.toFormat('HH:mm')
