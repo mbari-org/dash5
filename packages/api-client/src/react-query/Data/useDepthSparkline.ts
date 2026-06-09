@@ -67,16 +67,20 @@ export const useDepthSparkline = (
   // Drive nowMinBucket from a 60s interval so the padded tail's final point
   // stays aligned with DepthSparkline's own nowBucket and doesn't drift for
   // up to 2 minutes waiting for the next React Query refetch.
+  // Gate on the same enabled condition as the queries so we don't fire a
+  // state update every minute when the hook is intentionally disabled.
+  const isEnabled = !!vehicle && options?.enabled !== false
   const [nowMinBucket, setNowMinBucket] = useState(() =>
     Math.floor(Date.now() / 60000)
   )
   useEffect(() => {
+    if (!isEnabled) return
     const id = setInterval(
       () => setNowMinBucket(Math.floor(Date.now() / 60000)),
       60000
     )
     return () => clearInterval(id)
-  }, [])
+  }, [isEnabled])
 
   // Memoize all data-shaping so the potentially large loops (up to 10 000 comms
   // events) only run when the underlying query data or the minute bucket changes,
