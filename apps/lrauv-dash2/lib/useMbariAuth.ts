@@ -16,7 +16,11 @@ export interface MbariAccount {
 export const useMbariAuth = () => {
   const { instance, accounts, inProgress } = useMsal()
   const isAuthenticated = useIsAuthenticated()
-  const account = useAccount(accounts[0] ?? null)
+  // Prefer the MSAL active account when set; fall back to the first cached
+  // account so we always operate on the correct identity when multiple
+  // accounts are present in the MSAL cache.
+  const activeAccount = instance.getActiveAccount() ?? accounts[0] ?? null
+  const account = useAccount(activeAccount)
 
   const roles: string[] =
     (account?.idTokenClaims as { roles?: string[] } | null)?.roles ?? []

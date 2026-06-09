@@ -19,12 +19,21 @@ const redirectUri = (() => {
   if (typeof window === 'undefined') return '/' // prerender/SSR — never used
   const configured = process.env.NEXT_PUBLIC_MSAL_REDIRECT_URI
   if (!configured) {
+    // This app is served under a subpath (e.g. /sinker/), so the origin root
+    // is NOT a valid redirect URI. Fail fast with a clear message rather than
+    // silently falling back to window.location.origin which will break SSO.
     console.error(
       '[MSAL] NEXT_PUBLIC_MSAL_REDIRECT_URI is not set. ' +
-        'SSO will fail unless this matches the registered redirect URI in Entra ID.'
+        'SSO will fail unless this matches the registered redirect URI in Entra ID. ' +
+        'Set NEXT_PUBLIC_MSAL_REDIRECT_URI in .env.local to the full redirect URI ' +
+        '(e.g. https://sinker.shore.mbari.org/sinker/).'
     )
+    // Use current href as a best-effort fallback so MSAL can at least
+    // initialise without throwing; the redirect will still fail if the URI
+    // is not registered in Entra ID.
+    return window.location.href
   }
-  return configured ?? window.location.origin + '/'
+  return configured
 })()
 
 export const msalConfig: Configuration = {

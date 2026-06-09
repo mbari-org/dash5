@@ -36,9 +36,15 @@ export const UserLogin: React.FC<{ onClose?: () => void }> = ({
       loading={loading}
       onClose={handleClose}
       open
-      // SSO entry point — only shown when the user has no active MSAL session.
-      ssoLabel={isMsalAuthenticated ? undefined : 'Sign in with MBARI SSO'}
-      onSsoClick={isMsalAuthenticated ? undefined : () => msalLogin()}
+      // Always show the SSO button so users can re-authenticate if the cached
+      // MSAL session has a token acquisition failure (interaction required,
+      // redirect URI mismatch, etc.) without needing to clear site data.
+      ssoLabel={
+        isMsalAuthenticated
+          ? 'Re-authenticate with MBARI SSO'
+          : 'Sign in with MBARI SSO'
+      }
+      onSsoClick={() => msalLogin()}
     />
   )
 }
