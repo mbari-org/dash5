@@ -110,10 +110,10 @@ export interface VehicleProps {
   colorCam2?: string
   textCameraAgo?: string
   textCtdStatus?: string
-  /** @deprecated Threshold text always renders in neutral gray — this prop is accepted but ignored. */
+  /** @deprecated Accepted for API compatibility but ignored. When shown (not docked), threshold text always uses neutral gray (st12) regardless of this value. */
   colorVoltThresh?: string
   textVoltThresh?: string
-  /** @deprecated Threshold text always renders in neutral gray — this prop is accepted but ignored. */
+  /** @deprecated Accepted for API compatibility but ignored. When shown (not docked), threshold text always uses neutral gray (st12) regardless of this value. */
   colorAmpThresh?: string
   textAmpThresh?: string
   textBatteryDuration?: number | string
