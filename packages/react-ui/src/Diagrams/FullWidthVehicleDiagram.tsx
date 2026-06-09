@@ -475,7 +475,7 @@ export const FullWidthVehicleDiagram: React.FC<
       {/* Sparkline overlay — fixed position, scales with vehicle when container narrows */}
       {!isDocked && sparklineContent && (
         <div
-          className="absolute z-20 select-none"
+          className="absolute z-20 select-none pointer-events-none"
           style={{
             left: sparklinePos.x,
             top: sparklinePos.y,

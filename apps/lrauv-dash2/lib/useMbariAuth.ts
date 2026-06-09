@@ -34,14 +34,18 @@ export const useMbariAuth = () => {
     : null
 
   const login = useCallback(() => {
+    // Guard against interaction_in_progress — MSAL throws if a redirect is
+    // already in flight (e.g. user double-clicks the SSO button).
+    if (inProgress !== InteractionStatus.None) return
     instance.loginRedirect(loginRequest).catch(console.error)
-  }, [instance])
+  }, [instance, inProgress])
 
   const logout = useCallback(() => {
+    if (inProgress !== InteractionStatus.None) return
     instance
       .logoutRedirect({ account: account ?? undefined })
       .catch(console.error)
-  }, [instance, account])
+  }, [instance, account, inProgress])
 
   /**
    * Silently acquire the current ID token. Returns null if no account is
