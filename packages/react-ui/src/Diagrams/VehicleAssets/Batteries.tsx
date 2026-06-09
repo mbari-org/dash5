@@ -16,9 +16,7 @@ export interface BatteryProps {
   textAmpAgo?: VehicleProps['textAmpAgo']
   colorVolts?: VehicleProps['colorVolts']
   colorAmps?: VehicleProps['colorAmps']
-  colorVoltThresh?: VehicleProps['colorVoltThresh']
   textVoltThresh?: VehicleProps['textVoltThresh']
-  colorAmpThresh?: VehicleProps['colorAmpThresh']
   textAmpThresh?: VehicleProps['textAmpThresh']
   textBatteryDuration?: VehicleProps['textBatteryDuration']
   textBatteryUnits?: VehicleProps['textBatteryUnits']
@@ -43,9 +41,7 @@ export const Batteries: React.FC<BatteryProps> = ({
   textAmpAgo,
   colorVolts,
   colorAmps,
-  colorVoltThresh,
   textVoltThresh,
-  colorAmpThresh,
   textAmpThresh,
   textBatteryDuration,
   textBatteryUnits,
@@ -179,7 +175,7 @@ export const Batteries: React.FC<BatteryProps> = ({
         <text
           aria-label="text_voltthresh"
           transform="matrix(1 0 0 1 293.5 258.0)"
-          className={clsx('st9', isDocked ? 'st18' : colorVoltThresh ?? 'st12')}
+          className={clsx('st9', isDocked ? 'st18' : 'st12')}
           style={{ fontSize: '7px' }}
         >
           {textVoltThresh}
@@ -198,7 +194,7 @@ export const Batteries: React.FC<BatteryProps> = ({
         <text
           aria-label="text_ampthresh"
           transform="matrix(1 0 0 1 295.5 270.0)"
-          className={clsx('st9', isDocked ? 'st18' : colorAmpThresh ?? 'st12')}
+          className={clsx('st9', isDocked ? 'st18' : 'st12')}
           style={{ fontSize: '7px' }}
         >
           {textAmpThresh}

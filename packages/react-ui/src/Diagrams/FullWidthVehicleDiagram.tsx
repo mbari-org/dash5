@@ -124,9 +124,7 @@ export const FullWidthVehicleDiagram: React.FC<
   colorCameraLens,
   colorCam1,
   colorCam2,
-  colorVoltThresh,
   textVoltThresh,
-  colorAmpThresh,
   textAmpThresh,
   textBatteryDuration,
   textBatteryUnits,
@@ -291,9 +289,7 @@ export const FullWidthVehicleDiagram: React.FC<
             textAmpAgo={textAmpAgo}
             colorVolts={colorVolts}
             colorAmps={colorAmps}
-            colorVoltThresh={colorVoltThresh}
             textVoltThresh={textVoltThresh}
-            colorAmpThresh={colorAmpThresh}
             textAmpThresh={textAmpThresh}
             textBatteryDuration={textBatteryDuration}
             textBatteryUnits={textBatteryUnits}

@@ -220,7 +220,8 @@ test('should hide Argos fill when no color from server (st18)', async () => {
   expect(screen.getByTestId('argos-battery fill')).toHaveClass('st18')
 })
 
-test('should display volt threshold text with colorVoltThresh class when not docked', async () => {
+test('should display volt threshold text in neutral color when not docked', async () => {
+  // Pass the alarm color (st31) to prove the component ignores it and stays neutral.
   render(
     <FullWidthVehicleDiagram
       {...props}
@@ -228,8 +229,23 @@ test('should display volt threshold text with colorVoltThresh class when not doc
       colorVoltThresh="st31"
     />
   )
-  expect(screen.getByLabelText('text_voltthresh')).toHaveClass('st31')
+  expect(screen.getByLabelText('text_voltthresh')).toHaveClass('st12')
+  expect(screen.getByLabelText('text_voltthresh')).not.toHaveClass('st31')
   expect(screen.getByLabelText('text_voltthresh')).toHaveTextContent('13.5')
+})
+
+test('should display amp threshold text in neutral color when not docked', async () => {
+  // Pass the alarm color (st31) to prove the component ignores it and stays neutral.
+  render(
+    <FullWidthVehicleDiagram
+      {...props}
+      textAmpThresh="50"
+      colorAmpThresh="st31"
+    />
+  )
+  expect(screen.getByLabelText('text_ampthresh')).toHaveClass('st12')
+  expect(screen.getByLabelText('text_ampthresh')).not.toHaveClass('st31')
+  expect(screen.getByLabelText('text_ampthresh')).toHaveTextContent('50')
 })
 
 test('should hide volt threshold text when docked', async () => {
@@ -238,7 +254,6 @@ test('should hide volt threshold text when docked', async () => {
       {...props}
       status="pluggedIn"
       textVoltThresh="13.5"
-      colorVoltThresh="st31"
     />
   )
   expect(screen.getByLabelText('text_voltthresh')).toHaveClass('st18')
