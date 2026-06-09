@@ -1,4 +1,4 @@
-import React, { useRef, useState } from 'react'
+import React, { useRef } from 'react'
 import clsx from 'clsx'
 import { DropWeightIndicator } from './VehicleAssets/DropWeightIndicator'
 import { DvlIndicator } from './VehicleAssets/DvlIndicator'
@@ -29,6 +29,7 @@ import { Leak } from './VehicleAssets/Leak'
 export interface FullWidthVehicleDiagramProps extends VehicleProps {
   onBatteryClick?: BatteryProps['onClick']
   sparklineContent?: React.ReactNode
+  actionButton?: React.ReactNode
 }
 
 export const FullWidthVehicleDiagram: React.FC<
@@ -135,21 +136,10 @@ export const FullWidthVehicleDiagram: React.FC<
   svgCurrent,
   colorDuration,
   onBatteryClick: handleBatteryClick,
+  actionButton,
 }) => {
   const containerRef = useRef<HTMLDivElement | null>(null)
   const { size: containerSize } = useResizeObserver({ element: containerRef })
-
-  // Drag state for the sparkline overlay. dragDelta accumulates pixel offsets
-  // from the computed position so the user can fine-tune placement visually.
-  // On mouseup the SVG anchor x is logged to the console so the constant can
-  // be updated permanently.
-  const [dragDelta, setDragDelta] = useState({ x: 0, y: 0 })
-  const dragOrigin = useRef<{
-    mouseX: number
-    mouseY: number
-    deltaX: number
-    deltaY: number
-  } | null>(null)
 
   const isDocked = status === 'pluggedIn' || status === 'recovered'
 
@@ -187,7 +177,11 @@ export const FullWidthVehicleDiagram: React.FC<
   // Setting sparklinePosLeft = SPARKLINE_MARGIN and solving:
   //   s = (cW − 2·MARGIN) / ((1 − 2·sparklineFrac) · cH · AR)
   const VB_MIN_X = 120
+  const VB_MIN_Y = 155
   const SPARKLINE_SVG_ANC_X = 53 // calibrated by dragging; update via console log
+  // Action-button SVG anchor — calibrated via drag on 2026-06-09
+  const BTN_SVG_ANC_X = 64
+  const BTN_SVG_ANC_Y = 245
   const vehicleAR = VB_W / VB_H // ≈ 3.034
   const sparklineFrac = (SPARKLINE_SVG_ANC_X - VB_MIN_X) / VB_W // ≈ −0.1254
   const SPARKLINE_MARGIN = 4 // min px of clear space at left of sparkline
@@ -210,60 +204,22 @@ export const FullWidthVehicleDiagram: React.FC<
   const sparklinePosLeft =
     cH > 0 ? Math.round(vehicleOffsetLeft + sparklineFrac * vehicleRenderW) : 0
 
-  // Vehicle is pinned to top=0 + translateY(VEHICLE_TOP_OFFSET) — no vertical
-  // letterbox drift — so SPARKLINE_BASE_Y is a fixed offset from the container top.
-  const sparklinePos = {
-    x: sparklinePosLeft + dragDelta.x,
-    y: SPARKLINE_BASE_Y + dragDelta.y,
-  }
-
-  const handleSparklineMouseDown = (e: React.MouseEvent) => {
-    e.preventDefault()
-    dragOrigin.current = {
-      mouseX: e.clientX,
-      mouseY: e.clientY,
-      deltaX: dragDelta.x,
-      deltaY: dragDelta.y,
-    }
-
-    const onMove = (ev: MouseEvent) => {
-      if (!dragOrigin.current) return
-      setDragDelta({
-        x: dragOrigin.current.deltaX + ev.clientX - dragOrigin.current.mouseX,
-        y: dragOrigin.current.deltaY + ev.clientY - dragOrigin.current.mouseY,
-      })
-    }
-
-    const onUp = (ev: MouseEvent) => {
-      if (!dragOrigin.current) return
-      const finalDomX =
-        sparklinePosLeft +
-        dragOrigin.current.deltaX +
-        ev.clientX -
-        dragOrigin.current.mouseX
-      const finalDomY =
-        SPARKLINE_BASE_Y +
-        dragOrigin.current.deltaY +
-        ev.clientY -
-        dragOrigin.current.mouseY
-      const finalSvgX =
-        vehicleRenderW > 0
-          ? VB_MIN_X + ((finalDomX - vehicleOffsetLeft) / vehicleRenderW) * VB_W
-          : SPARKLINE_SVG_ANC_X
-      // eslint-disable-next-line no-console
-      console.log(
-        `[DepthSparkline] → SPARKLINE_SVG_ANC_X = ${Math.round(
-          finalSvgX
-        )},  SPARKLINE_BASE_Y = ${Math.round(finalDomY)}`
-      )
-      dragOrigin.current = null
-      window.removeEventListener('mousemove', onMove)
-      window.removeEventListener('mouseup', onUp)
-    }
-
-    window.addEventListener('mousemove', onMove)
-    window.addEventListener('mouseup', onUp)
-  }
+  // Button position: same SVG-coordinate transform as the vehicle, so it
+  // moves and scales in lockstep with the vehicle body and sparkline.
+  const btnLeft =
+    vehicleRenderW > 0
+      ? Math.round(
+          vehicleOffsetLeft +
+            ((BTN_SVG_ANC_X - VB_MIN_X) / VB_W) * vehicleRenderW
+        )
+      : 0
+  const btnTop =
+    vehicleRenderH > 0
+      ? Math.round(
+          VEHICLE_TOP_OFFSET +
+            ((BTN_SVG_ANC_Y - VB_MIN_Y) / VB_H) * vehicleRenderH
+        )
+      : 0
 
   const containerH = containerSize?.height ?? 0
   const containerW = containerSize?.width ?? 0
@@ -548,19 +504,25 @@ export const FullWidthVehicleDiagram: React.FC<
         </g>
       </svg>
 
-      {/* Sparkline overlay — draggable for calibration; drop logs SPARKLINE_SVG_ANC_X to console */}
+      {/* Sparkline overlay */}
       {!isDocked && sparklineContent && (
         <div
-          className="absolute z-20 select-none cursor-grab active:cursor-grabbing"
+          className="absolute z-20"
           style={{
-            left: sparklinePos.x,
-            top: sparklinePos.y,
+            left: sparklinePosLeft,
+            top: SPARKLINE_BASE_Y,
             width: sparklineW,
             height: sparklineH,
           }}
-          onMouseDown={handleSparklineMouseDown}
         >
           {sparklineContent}
+        </div>
+      )}
+
+      {/* Action button — anchored in vehicle SVG coordinates, scales with vehicle */}
+      {actionButton && vehicleRenderW > 0 && (
+        <div className="absolute z-30" style={{ left: btnLeft, top: btnTop }}>
+          {actionButton}
         </div>
       )}
     </div>
