@@ -63,11 +63,13 @@ const VehicleDiagram: React.FC<{
       : (vehicleInfo as GetVehicleInfoResponse)
 
   // The sparkline is only shown when the vehicle is on-mission (not plugged in).
-  // Skip polling entirely when docked to avoid unnecessary API requests every 2 min.
+  // Gate on !!vehicle (not just !!name) so we don't start polling before
+  // vehicleInfo has loaded — docked vehicles would otherwise fire depth/comms
+  // requests on the first render before we know the mission state.
   const isDocked = (vehicle?.text_mission?.indexOf('PLUGGED') ?? -1) >= 0
   const { data: sparklineData } = useDepthSparkline(
     { vehicle: name },
-    { enabled: !!name && !isDocked }
+    { enabled: !!vehicle && !isDocked }
   )
 
   const formattedCellTime = lastCellCommsDT

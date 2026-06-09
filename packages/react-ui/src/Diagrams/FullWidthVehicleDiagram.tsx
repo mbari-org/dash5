@@ -168,8 +168,10 @@ export const FullWidthVehicleDiagram: React.FC<
 
   // Position locked — loaded once from localStorage (the final dragged position).
   // Drag removed; position will not change at runtime.
-  const DEFAULT_POS = { x: 10, y: -10 }
-  const storageKey = `sparkline-pos-v3-${textVehicle ?? 'default'}`
+  // y must be non-negative so overflow-hidden on the container never clips the top.
+  const DEFAULT_POS = { x: 10, y: 2 }
+  // v4: resets any previously saved negative-y positions from v3.
+  const storageKey = `sparkline-pos-v4-${textVehicle ?? 'default'}`
   const [sparklinePos, setSparklinePos] = useState(DEFAULT_POS)
 
   useEffect(() => {
@@ -184,8 +186,12 @@ export const FullWidthVehicleDiagram: React.FC<
           isFinite(parsed.x) &&
           isFinite(parsed.y)
         ) {
-          // Extract only the expected keys so no extra properties bleed into state.
-          setSparklinePos({ x: parsed.x, y: parsed.y })
+          // Clamp to non-negative so overflow-hidden never clips the overlay,
+          // even if an old saved value was negative.
+          setSparklinePos({
+            x: Math.max(0, parsed.x),
+            y: Math.max(0, parsed.y),
+          })
         }
       }
     } catch (_e) {
