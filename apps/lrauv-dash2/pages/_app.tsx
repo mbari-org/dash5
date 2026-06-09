@@ -54,7 +54,9 @@ function AppWithAuth({ Component, pageProps }: AppProps) {
     if (isLoading) return
     if (isAuthenticated) {
       getIdToken().then((token) => {
+        // Clear on silent-acquisition failure so a stale credential isn't reused.
         if (token) setSessionToken(token)
+        else setSessionToken('')
       })
     } else {
       setSessionToken('')

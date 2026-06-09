@@ -188,9 +188,6 @@ export const FullWidthVehicleDiagram: React.FC<
     } catch {}
   }, [storageKey])
 
-  // // --- Drag removed — position is final ---
-  // const handleSparklineMouseDown = (e: React.MouseEvent) => { ... }
-
   const waveHeight = containerSize?.height * 0.8
   const waveOffset = containerSize?.height * 0.2
   const waveWidth = containerSize.width
