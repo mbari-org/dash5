@@ -300,19 +300,8 @@ const DepthSparkline: React.FC<DepthSparklineProps> = ({
       role="img"
       aria-label="depth and comms history sparkline"
     >
-      {/* Background box — rendered first so the border sits on top */}
+      {/* Background box — rendered before everything so it doesn't cover chart content */}
       <rect x={x0} y={y0} width={w} height={h} fill="#ffffff" />
-
-      {/* Border around depth chart box only */}
-      <rect
-        x={x0}
-        y={y0}
-        width={w}
-        height={h}
-        fill="none"
-        stroke="#9ca3af"
-        strokeWidth={0.5}
-      />
 
       {/* Grid lines */}
       {grids.map((g, i) => (
@@ -433,6 +422,17 @@ const DepthSparkline: React.FC<DepthSparklineProps> = ({
       <text x={x0 + w + 2} y={y0 + 16} fontSize={6} fill="#6b7280">
         {agoLabel}
       </text>
+
+      {/* Border rendered last so it sits on top of grid lines and polygons */}
+      <rect
+        x={x0}
+        y={y0}
+        width={w}
+        height={h}
+        fill="none"
+        stroke="#9ca3af"
+        strokeWidth={0.5}
+      />
     </svg>
   )
 }
