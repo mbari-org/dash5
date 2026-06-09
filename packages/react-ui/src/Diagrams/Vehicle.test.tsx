@@ -190,27 +190,22 @@ test('should hide Argos fill when no color from server (st18)', async () => {
   expect(screen.getByTestId('argos-battery fill')).toHaveClass('st18')
 })
 
-test('should display volt threshold text with colorVoltThresh class when not docked', async () => {
-  render(<Vehicle {...props} textVoltThresh="13.5" colorVoltThresh="st31" />)
-  expect(screen.getByLabelText('text_voltthresh')).toHaveClass('st31')
+test('should display volt threshold text in neutral color when not docked', async () => {
+  render(<Vehicle {...props} textVoltThresh="13.5" />)
+  // Threshold labels always render in neutral gray (st12) matching Dash4 behavior.
+  expect(screen.getByLabelText('text_voltthresh')).toHaveClass('st12')
   expect(screen.getByLabelText('text_voltthresh')).toHaveTextContent('13.5')
 })
 
 test('should hide volt threshold text when docked', async () => {
-  render(
-    <Vehicle
-      {...props}
-      status="pluggedIn"
-      textVoltThresh="13.5"
-      colorVoltThresh="st31"
-    />
-  )
+  render(<Vehicle {...props} status="pluggedIn" textVoltThresh="13.5" />)
   expect(screen.getByLabelText('text_voltthresh')).toHaveClass('st18')
 })
 
-test('should display amp threshold text with colorAmpThresh class when not docked', async () => {
-  render(<Vehicle {...props} textAmpThresh="50" colorAmpThresh="st31" />)
-  expect(screen.getByLabelText('text_ampthresh')).toHaveClass('st31')
+test('should display amp threshold text in neutral color when not docked', async () => {
+  render(<Vehicle {...props} textAmpThresh="50" />)
+  // Threshold labels always render in neutral gray (st12) matching Dash4 behavior.
+  expect(screen.getByLabelText('text_ampthresh')).toHaveClass('st12')
   expect(screen.getByLabelText('text_ampthresh')).toHaveTextContent('50')
 })
 

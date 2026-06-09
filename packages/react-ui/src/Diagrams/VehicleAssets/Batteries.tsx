@@ -16,9 +16,7 @@ export interface BatteryProps {
   textAmpAgo?: VehicleProps['textAmpAgo']
   colorVolts?: VehicleProps['colorVolts']
   colorAmps?: VehicleProps['colorAmps']
-  colorVoltThresh?: VehicleProps['colorVoltThresh']
   textVoltThresh?: VehicleProps['textVoltThresh']
-  colorAmpThresh?: VehicleProps['colorAmpThresh']
   textAmpThresh?: VehicleProps['textAmpThresh']
   textBatteryDuration?: VehicleProps['textBatteryDuration']
   textBatteryUnits?: VehicleProps['textBatteryUnits']
@@ -43,9 +41,7 @@ export const Batteries: React.FC<BatteryProps> = ({
   textAmpAgo,
   colorVolts,
   colorAmps,
-  colorVoltThresh,
   textVoltThresh,
-  colorAmpThresh,
   textAmpThresh,
   textBatteryDuration,
   textBatteryUnits,

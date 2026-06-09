@@ -221,17 +221,9 @@ test('should hide Argos fill when no color from server (st18)', async () => {
 })
 
 test('should display volt threshold text in neutral color when not docked', async () => {
-  render(
-    <FullWidthVehicleDiagram
-      {...props}
-      textVoltThresh="13.5"
-      colorVoltThresh="st31"
-    />
-  )
-  // colorVoltThresh is intentionally ignored — threshold labels always render
-  // in neutral gray (st12) regardless of alarm state, matching Dash4 behavior.
+  render(<FullWidthVehicleDiagram {...props} textVoltThresh="13.5" />)
+  // Threshold labels always render in neutral gray (st12), matching Dash4 behavior.
   expect(screen.getByLabelText('text_voltthresh')).toHaveClass('st12')
-  expect(screen.getByLabelText('text_voltthresh')).not.toHaveClass('st31')
   expect(screen.getByLabelText('text_voltthresh')).toHaveTextContent('13.5')
 })
 
@@ -241,7 +233,6 @@ test('should hide volt threshold text when docked', async () => {
       {...props}
       status="pluggedIn"
       textVoltThresh="13.5"
-      colorVoltThresh="st31"
     />
   )
   expect(screen.getByLabelText('text_voltthresh')).toHaveClass('st18')

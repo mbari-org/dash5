@@ -110,9 +110,7 @@ export interface VehicleProps {
   colorCam2?: string
   textCameraAgo?: string
   textCtdStatus?: string
-  colorVoltThresh?: string
   textVoltThresh?: string
-  colorAmpThresh?: string
   textAmpThresh?: string
   textBatteryDuration?: number | string
   textBatteryUnits?: string
@@ -215,9 +213,7 @@ export const Vehicle: React.FC<VehicleProps> = ({
   colorCameraLens,
   colorCam1,
   colorCam2,
-  colorVoltThresh,
   textVoltThresh,
-  colorAmpThresh,
   textAmpThresh,
   textBatteryDuration,
   textBatteryUnits,
@@ -329,9 +325,7 @@ export const Vehicle: React.FC<VehicleProps> = ({
           textAmpAgo={textAmpAgo}
           colorVolts={colorVolts}
           colorAmps={colorAmps}
-          colorVoltThresh={colorVoltThresh}
           textVoltThresh={textVoltThresh}
-          colorAmpThresh={colorAmpThresh}
           textAmpThresh={textAmpThresh}
           textBatteryDuration={textBatteryDuration}
           textBatteryUnits={textBatteryUnits}
