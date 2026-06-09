@@ -1,4 +1,4 @@
-import React, { useMemo } from 'react'
+import React, { useMemo, useState, useEffect } from 'react'
 import clsx from 'clsx'
 
 export interface DepthSparklineProps {
@@ -74,8 +74,22 @@ const DepthSparkline: React.FC<DepthSparklineProps> = ({
   className,
   style,
 }) => {
-  const nowMs = Date.now()
-  const nowMin = nowMs / 1000 / 60
+  // Bucket to the nearest minute so the memo recomputes at most once per minute
+  // even when depth/comms props are stable — keeps staleness coloring and "ago"
+  // labels current. The interval is cleaned up when the component unmounts.
+  const [nowBucket, setNowBucket] = useState(() =>
+    Math.floor(Date.now() / 60000)
+  )
+  useEffect(() => {
+    const id = setInterval(
+      () => setNowBucket(Math.floor(Date.now() / 60000)),
+      60000
+    )
+    return () => clearInterval(id)
+  }, [])
+
+  const nowMs = nowBucket * 60000
+  const nowMin = nowBucket // minutes since epoch (same unit as depthTimes)
 
   const x0 = 0
   const y0 = 0
@@ -237,7 +251,6 @@ const DepthSparkline: React.FC<DepthSparklineProps> = ({
       isPadded,
       realPts,
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [
     depthTimes,
     depthValues,
@@ -249,6 +262,9 @@ const DepthSparkline: React.FC<DepthSparklineProps> = ({
     w,
     h,
     windowMinutes,
+    nowBucket,
+    nowMs,
+    nowMin,
   ])
 
   if (!chart) return null
