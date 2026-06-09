@@ -188,7 +188,10 @@ export const FullWidthVehicleDiagram: React.FC<
           setSparklinePos({ x: parsed.x, y: parsed.y })
         }
       }
-    } catch {}
+    } catch (_e) {
+      // localStorage may be unavailable (e.g. private browsing) or contain
+      // unparseable data — silently fall back to the default position.
+    }
   }, [storageKey])
 
   const containerH = containerSize?.height ?? 0
