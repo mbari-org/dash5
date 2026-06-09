@@ -99,7 +99,7 @@ const DepthSparkline: React.FC<DepthSparklineProps> = ({
 
   const xdiv = windowMinutes / w // minutes per pixel
 
-  const svgWidth = w + 66 // extra right margin for single-row legend + time/ago
+  const svgWidth = w + 68 // right margin: comms legend row + combined time·dot·ago row
 
   // Rows of comms ticks sit above the depth box
   const tickRowHeight = 1.5
@@ -411,7 +411,7 @@ const DepthSparkline: React.FC<DepthSparklineProps> = ({
         {depthScale}m
       </text>
 
-      {/* Last data time with freshness dot inline, then age — just below the legend */}
+      {/* Last data: time · freshness dot · age — all on one line */}
       <text x={x0 + w + 2} y={y0 + 10} fontSize={6} fill="#374151">
         {timeLabel}
       </text>
@@ -421,8 +421,8 @@ const DepthSparkline: React.FC<DepthSparklineProps> = ({
         r={2}
         fill={isPadded && isStale ? '#f97316' : '#22c55e'}
       />
-      <text x={x0 + w + 2} y={y0 + 16} fontSize={6} fill="#6b7280">
-        {agoLabel}
+      <text x={x0 + w + 27} y={y0 + 10} fontSize={5} fill="#6b7280">
+        ({agoLabel})
       </text>
 
       {/* Border rendered last so it sits on top of grid lines and polygons */}
