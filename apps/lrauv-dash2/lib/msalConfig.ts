@@ -33,11 +33,12 @@ const redirectUri = (() => {
   return configured
 })()
 
+// NOTE: NEXT_PUBLIC_MSAL_CLIENT_ID must be set to the Client ID from a Dash5-specific
+// Entra ID app registration. The sinkerdev registration is a separate project and
+// must not be used here. There is no valid hardcoded fallback.
 export const msalConfig: Configuration = {
   auth: {
-    clientId:
-      process.env.NEXT_PUBLIC_MSAL_CLIENT_ID ??
-      '2f3b2230-be51-46c5-bac0-2e887bfea35c',
+    clientId: process.env.NEXT_PUBLIC_MSAL_CLIENT_ID ?? '',
     authority: `https://login.microsoftonline.com/${TENANT_ID}`,
     redirectUri,
     postLogoutRedirectUri: redirectUri,
