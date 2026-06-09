@@ -192,7 +192,9 @@ export const FullWidthVehicleDiagram: React.FC<
     cH > 0 && cW > 0
       ? (cW - 2 * SPARKLINE_MARGIN) / ((1 - 2 * sparklineFrac) * cH * vehicleAR)
       : 1
-  const effectiveScale = Math.min(1, Math.max(0.1, sparklineDrivenScale))
+  // Lower bound is 0 (not 0.1) so the widget can shrink fully in very narrow
+  // panes rather than forcing a minimum size that overflows the container.
+  const effectiveScale = Math.min(1, Math.max(0, sparklineDrivenScale))
 
   // Vehicle explicit render dimensions — these replace h-full w-full on the SVG
   const vehicleRenderW = Math.round(effectiveScale * cH * vehicleAR)

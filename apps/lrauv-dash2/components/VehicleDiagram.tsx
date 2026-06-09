@@ -112,17 +112,17 @@ const VehicleDiagram: React.FC<{
     ) : undefined
 
   // Prefer the URL pattern from siteConfig so staging/dev deployments work without
-  // hardcoding the production host. Fall back to the known production URL.
+  // hardcoding the production host. Use a case-insensitive regex so the pattern
+  // works regardless of server config casing (<vehicleName> or <VehicleName>).
+  // Fall back to the known production URL.
   const OKEANIDS_FALLBACK = `https://okeanids.mbari.org/widget/auv_${encodeURIComponent(
     name
   )}.svg`
-  const okeanidsUrl = siteConfig?.appConfig.external.statusWidgets
-    .lrauvStatusWidgetUrlPattern
-    ? siteConfig.appConfig.external.statusWidgets.lrauvStatusWidgetUrlPattern.replace(
-        '<vehicleName>',
-        encodeURIComponent(name)
-      )
-    : OKEANIDS_FALLBACK
+  const okeanidsUrl =
+    siteConfig?.appConfig?.external?.statusWidgets?.lrauvStatusWidgetUrlPattern?.replace(
+      /<vehicleName>/gi,
+      encodeURIComponent(name)
+    ) ?? OKEANIDS_FALLBACK
 
   const sharedDiagramProps: FullWidthVehicleDiagramProps = {
     textAmpAgo: vehicle?.text_ampago,
