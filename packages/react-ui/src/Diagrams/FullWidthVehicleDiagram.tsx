@@ -166,39 +166,8 @@ export const FullWidthVehicleDiagram: React.FC<
   const sparklineW = Math.round(SPARKLINE_BASE_W * normalizedVehicleScale)
   const sparklineH = Math.round(SPARKLINE_BASE_H * normalizedVehicleScale)
 
-  // Position locked — loaded once from localStorage (the final dragged position).
-  // Drag removed; position will not change at runtime.
-  // y must be non-negative so overflow-hidden on the container never clips the top.
-  const DEFAULT_POS = { x: 10, y: 2 }
-  // v4: resets any previously saved negative-y positions from v3.
-  const storageKey = `sparkline-pos-v4-${textVehicle ?? 'default'}`
-  const [sparklinePos, setSparklinePos] = useState(DEFAULT_POS)
-
-  useEffect(() => {
-    try {
-      const saved = localStorage.getItem(storageKey)
-      if (saved) {
-        const parsed = JSON.parse(saved)
-        if (
-          parsed &&
-          typeof parsed.x === 'number' &&
-          typeof parsed.y === 'number' &&
-          isFinite(parsed.x) &&
-          isFinite(parsed.y)
-        ) {
-          // Clamp to non-negative so overflow-hidden never clips the overlay,
-          // even if an old saved value was negative.
-          setSparklinePos({
-            x: Math.max(0, parsed.x),
-            y: Math.max(0, parsed.y),
-          })
-        }
-      }
-    } catch (_e) {
-      // localStorage may be unavailable (e.g. private browsing) or contain
-      // unparseable data — silently fall back to the default position.
-    }
-  }, [storageKey])
+  // Position locked at { x: 306, y: 0 } — fine-tuned by dragging, then fixed.
+  const sparklinePos = { x: 306, y: -5 }
 
   const containerH = containerSize?.height ?? 0
   const containerW = containerSize?.width ?? 0
@@ -478,7 +447,7 @@ export const FullWidthVehicleDiagram: React.FC<
         </g>
       </svg>
 
-      {/* Sparkline overlay — fixed position, scales with vehicle when container narrows */}
+      {/* Sparkline overlay — position locked at { x: 306, y: 0 } */}
       {!isDocked && sparklineContent && (
         <div
           className="absolute z-20 select-none pointer-events-none"
