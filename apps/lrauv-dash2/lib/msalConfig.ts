@@ -5,12 +5,10 @@ import { Configuration, LogLevel } from '@azure/msal-browser'
 // https://login.microsoftonline.com/16ac1ee8-602c-4ca1-944d-3a84bcb35575/v2.0/.well-known/openid-configuration
 const TENANT_ID = '16ac1ee8-602c-4ca1-944d-3a84bcb35575'
 
-// IMPORTANT: The redirect URI registered with Andrew was:
-//   https://sinkerdev.shore.mbari.org/sinker/api/auth/callback/mbari
-//   https://sinker.shore.mbari.org/sinker/api/auth/callback/mbari
-//
-// This app is a static export served by nginx — there is no server-side
-// callback handler. Ask Andrew to UPDATE the registered redirect URIs to:
+// IMPORTANT: The redirect URIs registered in the Entra ID app registration
+// are currently set for server-side callback handlers. Since this app is a
+// static export served by nginx, the registered redirect URIs must be updated
+// to point to the static app root:
 //   https://sinkerdev.shore.mbari.org/sinker/
 //   https://sinker.shore.mbari.org/sinker/
 //
@@ -30,7 +28,8 @@ export const msalConfig: Configuration = {
     postLogoutRedirectUri: redirectUri,
   },
   cache: {
-    cacheLocation: 'localStorage',
+    // sessionStorage limits token lifetime to the tab session, reducing XSS exposure.
+    cacheLocation: 'sessionStorage',
   },
   system: {
     loggerOptions: {

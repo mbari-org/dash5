@@ -84,7 +84,6 @@ const DepthSparkline: React.FC<DepthSparklineProps> = ({
   const xdiv = windowMinutes / w // minutes per pixel
 
   const svgWidth = w + 66 // extra right margin for single-row legend + time/ago
-  const svgHeight = h + 20 // extra bottom margin for axis labels + top for tick rows
 
   // Rows of comms ticks sit above the depth box
   const tickRowHeight = 1.5

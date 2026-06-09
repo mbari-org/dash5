@@ -31,8 +31,10 @@ const logger = createLogger('App')
 
 const queryClient = new QueryClient()
 
-// Created once at module level — MsalProvider handles async initialization.
-const msalInstance = new PublicClientApplication(msalConfig)
+// Guard against Node prerender environment — @azure/msal-browser v5 supports
+// SSR, but we only need a real instance in the browser where window exists.
+const msalInstance =
+  typeof window !== 'undefined' ? new PublicClientApplication(msalConfig) : null
 
 /**
  * Inner component so useMbariAuth (which requires MsalProvider) can be called
@@ -105,6 +107,11 @@ function AppWithAuth({ Component, pageProps }: AppProps) {
 }
 
 function MyApp(props: AppProps) {
+  if (!msalInstance) {
+    // During static prerender (Node env) there is no browser MSAL instance.
+    // The real interactive shell is always in the browser where msalInstance exists.
+    return null
+  }
   return (
     <MsalProvider instance={msalInstance}>
       <AppWithAuth {...props} />

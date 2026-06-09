@@ -177,7 +177,13 @@ export const FullWidthVehicleDiagram: React.FC<
       const saved = localStorage.getItem(storageKey)
       if (saved) {
         const parsed = JSON.parse(saved)
-        setSparklinePos(parsed)
+        if (
+          parsed &&
+          typeof parsed.x === 'number' &&
+          typeof parsed.y === 'number'
+        ) {
+          setSparklinePos(parsed)
+        }
       }
     } catch {}
   }, [storageKey])

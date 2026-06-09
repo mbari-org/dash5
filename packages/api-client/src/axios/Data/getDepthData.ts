@@ -22,9 +22,11 @@ export const getDepthData = async (
     console.debug(`GET ${url}`)
   }
 
-  const response = await instance.get(
-    `${url}?vehicle=${vehicle}&maxlen=${maxlen}&from=${from}`,
-    config
-  )
+  const params = new URLSearchParams({
+    vehicle,
+    maxlen: String(maxlen),
+    from: String(from),
+  })
+  const response = await instance.get(`${url}?${params.toString()}`, config)
   return response.data as GetDepthDataResponse
 }

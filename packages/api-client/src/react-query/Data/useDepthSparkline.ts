@@ -1,5 +1,4 @@
 import { useQuery } from 'react-query'
-import { useRef } from 'react'
 import { getDepthData } from '../../axios/Data/getDepthData'
 import { getEvents, EventType } from '../../axios'
 import { useTethysApiContext } from '../TethysApiProvider'
@@ -22,15 +21,17 @@ export const useDepthSparkline = (
   options?: SupportedQueryOptions
 ) => {
   const { axiosInstance } = useTethysApiContext()
-  // Stable reference so the React Query key doesn't change on every re-render
-  // (which would create a new cache entry each time data arrives and prevent
-  // the sparkline from ever displaying).
-  const fromRef = useRef(Date.now() - EIGHT_HOURS_MS)
-  const from = fromRef.current
 
+  // Keep a stable query key per vehicle so React Query re-uses the cache entry
+  // across re-renders. The rolling 8-hour window is computed fresh inside each
+  // queryFn so the chart never drifts even if the page stays open for hours.
   const depthQuery = useQuery(
-    ['depthSparkline', 'depth', vehicle, from],
-    () => getDepthData({ vehicle, from }, { instance: axiosInstance }),
+    ['depthSparkline', 'depth', vehicle],
+    () =>
+      getDepthData(
+        { vehicle, from: Date.now() - EIGHT_HOURS_MS },
+        { instance: axiosInstance }
+      ),
     {
       staleTime: 2 * 60 * 1000,
       ...options,
@@ -39,13 +40,13 @@ export const useDepthSparkline = (
   )
 
   const commsQuery = useQuery(
-    ['depthSparkline', 'comms', vehicle, from],
+    ['depthSparkline', 'comms', vehicle],
     () =>
       getEvents(
         {
           vehicles: [vehicle],
           eventTypes: ['sbdReceive', 'gpsFix', 'argoReceive'] as EventType[],
-          from,
+          from: Date.now() - EIGHT_HOURS_MS,
           limit: 10000, // high limit — comms events over 8h rarely exceed this
         },
         { instance: axiosInstance }
