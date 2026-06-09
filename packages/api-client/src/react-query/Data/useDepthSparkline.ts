@@ -86,7 +86,9 @@ export const useDepthSparkline = (
     }
   }
 
-  // Detect stale data gap >4 minutes and append a fake pad point (matching auvstatus.py)
+  // Detect stale data gap >4 minutes and append three pad points (lastT, lastT+2, nowMin)
+  // to extrapolate the vehicle's continued dive — matching auvstatus.py padding logic.
+  // DepthSparkline expects exactly 3 trailing pad points when isPadded is true.
   let depthTimes = depthTimesMin
   let depthValues = clampedValues
   let padded = false

@@ -115,9 +115,11 @@ function AppWithAuth({ Component, pageProps }: AppProps) {
 }
 
 function MyApp(props: AppProps) {
-  // Defer rendering until after hydration so the client's initial render
-  // matches the server's (both return null), avoiding a React hydration mismatch.
-  // MSAL is browser-only; there is no meaningful shell to render without it.
+  // Defer full rendering until after hydration to avoid a React hydration mismatch:
+  // the static prerender and the client's first render both return the same minimal
+  // <Head> shell (title + viewport meta). Once useEffect fires, the full MSAL-wrapped
+  // app replaces it. MSAL is browser-only so there is no meaningful content to render
+  // server-side.
   const [mounted, setMounted] = useState(false)
   useEffect(() => setMounted(true), [])
 

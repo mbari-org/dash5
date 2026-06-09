@@ -13,10 +13,19 @@ const TENANT_ID = '16ac1ee8-602c-4ca1-944d-3a84bcb35575'
 //   https://sinker.shore.mbari.org/sinker/
 //
 // Set NEXT_PUBLIC_MSAL_REDIRECT_URI in .env.local to match the deployment.
-const redirectUri =
-  (typeof window !== 'undefined' &&
-    process.env.NEXT_PUBLIC_MSAL_REDIRECT_URI) ||
-  (typeof window !== 'undefined' ? window.location.origin + '/' : '/')
+// This app is served under a subpath (e.g. /sinker/), so the origin root is
+// NOT a valid redirect URI — always set the env var explicitly in each env.
+const redirectUri = (() => {
+  if (typeof window === 'undefined') return '/' // prerender/SSR — never used
+  const configured = process.env.NEXT_PUBLIC_MSAL_REDIRECT_URI
+  if (!configured) {
+    console.error(
+      '[MSAL] NEXT_PUBLIC_MSAL_REDIRECT_URI is not set. ' +
+        'SSO will fail unless this matches the registered redirect URI in Entra ID.'
+    )
+  }
+  return configured ?? window.location.origin + '/'
+})()
 
 export const msalConfig: Configuration = {
   auth: {
