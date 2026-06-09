@@ -51,11 +51,13 @@ function fmtWallClock(ms: number): string {
   return `${d.getHours()}:${d.getMinutes().toString().padStart(2, '0')}`
 }
 
-// Format ms offset as "Xm ago" / "Xh ago"
+// Format ms offset as "Xm ago" / "Xh ago".
+// Clamp to 0 so future timestamps (clock skew) never display as "X ago".
 function fmtAgo(deltaMs: number): string {
-  const absMin = Math.round(Math.abs(deltaMs) / 60000)
+  const clamped = Math.max(0, -deltaMs) // deltaMs = lastDataMs - nowMs, so negative = past
+  const absMin = Math.round(clamped / 60000)
   if (absMin < 60) return `${absMin}m ago`
-  const h = (Math.abs(deltaMs) / 3600000).toFixed(1)
+  const h = (clamped / 3600000).toFixed(1)
   return `${h}h ago`
 }
 
