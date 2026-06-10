@@ -311,9 +311,13 @@ describe('formatEvent', () => {
 
     it('the path link opens in a new tab', () => {
       const { container } = render(formatEvent(event, DASH_URL))
-      const link = container.querySelector('a') as HTMLAnchorElement
-      expect(link).toHaveAttribute('target', '_blank')
-      expect(link).toHaveAttribute('rel', 'noopener noreferrer')
+      const links = container.querySelectorAll('a')
+      const dirLink = Array.from(links).find(
+        (a) => a.textContent === LOG_PATH
+      ) as HTMLAnchorElement
+      expect(dirLink).toBeDefined()
+      expect(dirLink).toHaveAttribute('target', '_blank')
+      expect(dirLink).toHaveAttribute('rel', 'noopener noreferrer')
     })
   })
 
