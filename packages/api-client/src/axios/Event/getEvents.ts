@@ -71,10 +71,20 @@ export const getEvents = async (
     console.debug(`GET ${url}`)
   }
 
+  // TethysDash returns 400 for from values at or near epoch (0, 1, etc.).
+  // Values ≤ 1000 ms are sentinel "all history" markers from callers, not real
+  // timestamps. Omit from entirely in those cases so TethysDash returns
+  // results from the beginning of its records.
+  const fromParam =
+    params.from != null && params.from > 1000
+      ? params.from.toString()
+      : undefined
+
   const response = await instance.get(
     `${url}?${new URLSearchParams(
       filterBlankAttributes({
         ...params,
+        from: fromParam,
         vehicles: params.vehicles.join(','),
         eventTypes: params.eventTypes?.join(','),
         limit: params.limit?.toString(),
