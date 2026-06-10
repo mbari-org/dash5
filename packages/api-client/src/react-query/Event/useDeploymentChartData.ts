@@ -139,5 +139,11 @@ export const useDeploymentChartData = (
   const data: ChartData[] | undefined =
     resolvedData.length > 0 ? resolvedData : undefined
 
-  return { data, isLoading, isFetching, isError }
+  const error =
+    eventsQuery.error ??
+    namesQuery.error ??
+    variableQueries.find((q) => q.error)?.error ??
+    null
+
+  return { data, isLoading, isFetching, isError, error }
 }
