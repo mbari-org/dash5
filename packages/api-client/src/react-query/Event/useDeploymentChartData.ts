@@ -106,12 +106,14 @@ export const useDeploymentChartData = (
 
   const variableNames = namesQuery.data ?? []
 
-  // Scale maxlen with the window duration so longer windows return enough
-  // points to cover the full span. Depth is sampled every few seconds, so
-  // 2000 points at that rate only covers a few hours.
+  // For short windows (≤ 4 days) cap at 2000 points to keep requests fast.
+  // For longer windows omit maxlen entirely so TethysDash returns all available
+  // data — TethysDash returns the most recent N samples when maxlen is set, so
+  // capping a long window truncates to only recent data (e.g. depth sampled
+  // every 5s fills 2000 points in ~3 hours). Results are decimated below.
   const windowMs = (to ?? Date.now()) - from
   const windowDays = windowMs / (24 * 60 * 60 * 1000)
-  const maxlen = windowDays <= 4 ? 2000 : windowDays <= 14 ? 5000 : 10000
+  const maxlen = windowDays <= 4 ? 2000 : undefined
 
   // Step 3 — fetch each variable over the full requested time range in parallel
   const variableQueries = useQueries(
@@ -148,9 +150,21 @@ export const useDeploymentChartData = (
   // charts progressively. `null` means the variable had no data in the window
   // (404 from TethysDash) — filter those out silently rather than treating as
   // an error, since other variables in the same window may still have data.
+  // For long windows we omit maxlen so TethysDash returns all data; decimate
+  // client-side to a target of 5000 points to keep charts responsive.
+  const TARGET_POINTS = 5000
   const resolvedData: ChartData[] = variableQueries
     .map((q) => q.data)
     .filter((d): d is ChartData => d != null && d !== null)
+    .map((d) => {
+      if (d.values.length <= TARGET_POINTS) return d
+      const stride = Math.ceil(d.values.length / TARGET_POINTS)
+      return {
+        ...d,
+        values: d.values.filter((_, i) => i % stride === 0),
+        times: d.times.filter((_, i) => i % stride === 0),
+      }
+    })
 
   // Show the full loading overlay only until we have at least one chart to
   // display. Once data starts arriving, `isFetching` tracks the remainder.
