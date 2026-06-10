@@ -178,17 +178,22 @@ const LogsSection: React.FC<LogsSectionProps> = ({
   // initial mount and param changes, but does not poll on an interval or
   // refetch on window focus / reconnect while inactive.
   const deploymentResponse = useInfiniteEvents(deploymentParams, {
-    enabled: hasSelection,
+    // Guard against firing before the deployment start time has loaded (from=0)
+    enabled: hasSelection && from > 0,
     refetchInterval: hasSelection && deploymentLogsOnly ? 30_000 : false,
     refetchOnWindowFocus: deploymentLogsOnly,
     refetchOnReconnect: deploymentLogsOnly,
   })
 
+  // TethysDash rejects from=0; use a far-past epoch that covers all MBARI
+  // vehicle history instead of literal zero.
+  const ALL_LOGS_FROM = new Date('2000-01-01').getTime()
+
   const allLogsParams = useMemo(
     () => ({
       vehicles: [vehicleName],
       eventTypes,
-      from: 0,
+      from: ALL_LOGS_FROM,
       limit: 500,
     }),
     [vehicleName, eventTypes]
