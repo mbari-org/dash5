@@ -88,9 +88,9 @@ type TimeWindow = 'latest' | '24h' | '3d' | '7d' | 'deployment'
 
 const TIME_WINDOW_OPTIONS: { id: TimeWindow; name: string }[] = [
   { id: 'latest', name: 'Latest Dive' },
-  { id: '24h', name: '24 h' },
-  { id: '3d', name: '3 d' },
-  { id: '7d', name: '7 d' },
+  { id: '24h', name: '24 Hours' },
+  { id: '3d', name: '3 Days' },
+  { id: '7d', name: '7 Days' },
   { id: 'deployment', name: 'Full Deployment' },
 ]
 
