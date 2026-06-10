@@ -236,6 +236,12 @@ const ScienceDataSection: React.FC<{
               )}
             </div>
           )}
+          {!isLoading && !isError && !charts?.length && (
+            <p className="m-4 text-sm text-stone-500">
+              No chart data available for this time window. Try a wider range or
+              check back after the vehicle surfaces.
+            </p>
+          )}
           <AccordionCells
             cellAtIndex={cellAtIndex}
             count={charts?.length}
