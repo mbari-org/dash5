@@ -225,7 +225,7 @@ const ScienceDataSection: React.FC<{
           <AccordionCells
             cellAtIndex={cellAtIndex}
             count={charts?.length}
-            loading={isLoading || isFetching}
+            loading={isLoading}
           />
         </div>
         <div className="absolute inset-x-0 bottom-0 z-10 h-2 bg-gradient-to-t from-stone-400/20" />
