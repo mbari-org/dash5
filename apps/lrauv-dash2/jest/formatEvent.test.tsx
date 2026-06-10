@@ -272,6 +272,73 @@ describe('formatEvent', () => {
     })
   })
 
+  describe('dataProcessed URL', () => {
+    const event: GetEventsResponse = {
+      ...baseEvent,
+      eventType: 'dataProcessed',
+      path: '2022/202207/20220712T221014',
+    } as GetEventsResponse
+
+    it('includes /data/ in the href', () => {
+      const { container } = render(formatEvent(event, DASH_URL))
+      const link = container.querySelector('a') as HTMLAnchorElement
+      expect(link.href).toContain('/data/triton/realtime/sbdlogs/')
+    })
+
+    it('does not omit /data/ (old bug produced .../TethysDash/triton/... without /data/)', () => {
+      const { container } = render(formatEvent(event, DASH_URL))
+      const link = container.querySelector('a') as HTMLAnchorElement
+      // Old URL was: ${dashUrl}/triton/realtime/... (no /data/ after the base)
+      expect(link.href).not.toContain(`${DASH_URL}/triton/`)
+    })
+  })
+
+  describe('logPath event', () => {
+    const LOG_PATH = '2022/202207/20220712T221014'
+    const event: GetEventsResponse = {
+      ...baseEvent,
+      eventType: 'logPath',
+      path: LOG_PATH,
+    } as GetEventsResponse
+
+    it('includes /data/ in the directory href', () => {
+      const { container } = render(formatEvent(event, DASH_URL))
+      const links = container.querySelectorAll('a')
+      const dirLink = Array.from(links).find((a) => a.textContent === LOG_PATH)
+      expect(dirLink).toBeDefined()
+      expect(dirLink!.href).toContain('/data/triton/realtime/sbdlogs/')
+    })
+
+    it('the path link opens in a new tab', () => {
+      const { container } = render(formatEvent(event, DASH_URL))
+      const links = container.querySelectorAll('a')
+      const dirLink = Array.from(links).find(
+        (a) => a.textContent === LOG_PATH
+      ) as HTMLAnchorElement
+      expect(dirLink).toBeDefined()
+      expect(dirLink).toHaveAttribute('target', '_blank')
+      expect(dirLink).toHaveAttribute('rel', 'noopener noreferrer')
+    })
+  })
+
+  describe('sbdReceive URL with path', () => {
+    const event: GetEventsResponse = {
+      ...baseEvent,
+      eventType: 'sbdReceive',
+      state: 2,
+      dataLen: 840,
+      path: '2022/202207/20220712T221014/Express0196.lzma',
+      momsn: 1234 as unknown as string,
+    } as GetEventsResponse
+
+    it('includes /data/ in the file href', () => {
+      const { container } = render(formatEvent(event, DASH_URL))
+      const link = container.querySelector('a') as HTMLAnchorElement
+      expect(link).toBeInTheDocument()
+      expect(link.href).toContain('/data/triton/realtime/sbdlogs/')
+    })
+  })
+
   describe('command event with newline in data', () => {
     const event: GetEventsResponse = {
       ...baseEvent,
