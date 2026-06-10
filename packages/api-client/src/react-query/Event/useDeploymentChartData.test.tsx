@@ -218,6 +218,30 @@ describe('useDeploymentChartData', () => {
     )
   })
 
+  it('omits variables that return 404 (no data in window) instead of showing error', async () => {
+    server.use(
+      rest.get(/\/data\/depth/, (_req, res, ctx) => res(ctx.status(404))),
+      rest.get(/\/data\/temperature/, (_req, res, ctx) =>
+        res(ctx.status(200), ctx.json(mockVariableTemp))
+      )
+    )
+
+    render(
+      <MockProviders queryClient={makeQueryClient()}>
+        <MockConsumer />
+      </MockProviders>
+    )
+
+    await waitFor(
+      () => expect(screen.getByTestId('count')).toBeInTheDocument(),
+      { timeout: 5000 }
+    )
+    // depth returned 404 — only temperature should appear
+    expect(screen.getByTestId('count')).toHaveTextContent('1')
+    expect(screen.getByTestId('first-name')).toHaveTextContent('temperature')
+    expect(screen.queryByTestId('error')).not.toBeInTheDocument()
+  })
+
   it('passes from and to as query params to per-variable requests', async () => {
     const from = VALID_FROM
     const to = VALID_FROM + 86_400_000 // +24 hours

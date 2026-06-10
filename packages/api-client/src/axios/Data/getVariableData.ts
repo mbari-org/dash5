@@ -1,3 +1,4 @@
+import axios from 'axios'
 import { getInstance } from '../getInstance'
 import { RequestConfig } from '../types'
 
@@ -35,6 +36,16 @@ export const getVariableData = async (
     params.set('to', String(to))
   }
 
-  const response = await instance.get(`${url}?${params.toString()}`, config)
-  return response.data as GetVariableDataResponse
+  try {
+    const response = await instance.get(`${url}?${params.toString()}`, config)
+    return response.data as GetVariableDataResponse
+  } catch (err) {
+    // TethysDash returns 404 when a variable has no data in the requested
+    // time range. Treat this as "no data" rather than a hard error so the
+    // chart is simply omitted rather than causing the entire section to fail.
+    if (axios.isAxiosError(err) && err.response?.status === 404) {
+      return null
+    }
+    throw err
+  }
 }

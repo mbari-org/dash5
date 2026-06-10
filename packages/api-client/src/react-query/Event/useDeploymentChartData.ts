@@ -126,10 +126,12 @@ export const useDeploymentChartData = (
   )
 
   // Collect whichever variable queries have already resolved so we can render
-  // charts progressively rather than waiting for every variable to finish.
+  // charts progressively. `null` means the variable had no data in the window
+  // (404 from TethysDash) — filter those out silently rather than treating as
+  // an error, since other variables in the same window may still have data.
   const resolvedData: ChartData[] = variableQueries
     .map((q) => q.data)
-    .filter((d): d is ChartData => d != null)
+    .filter((d): d is ChartData => d != null && d !== null)
 
   // Show the full loading overlay only until we have at least one chart to
   // display. Once data starts arriving, `isFetching` tracks the remainder.
