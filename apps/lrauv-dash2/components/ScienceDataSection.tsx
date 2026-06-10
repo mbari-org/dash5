@@ -119,7 +119,14 @@ const ScienceDataSection: React.FC<{
   const [category, setCategory] = useState<string | null>('vehicle')
 
   const isExtended = timeWindow !== 'latest'
-  const extendedFrom = getWindowFrom(timeWindow, from)
+  // Memoize so the query key stays stable across re-renders. Without this,
+  // DateTime.utc() returns a new millisecond value on every render, which
+  // changes the query key and causes React Query to treat each render as a
+  // brand-new query — keeping isLoading permanently true.
+  const extendedFrom = useMemo(
+    () => getWindowFrom(timeWindow, from),
+    [timeWindow, from]
+  )
 
   const latestQuery = useChartData(
     { vehicle: vehicleName, from, to },
