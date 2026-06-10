@@ -142,7 +142,7 @@ const ScienceDataSection: React.FC<{
   )
 
   const deploymentQuery = useDeploymentChartData(
-    { vehicle: vehicleName, from: extendedFrom, to },
+    { vehicle: vehicleName, deploymentFrom: from, from: extendedFrom, to },
     { enabled: isExtended }
   )
 

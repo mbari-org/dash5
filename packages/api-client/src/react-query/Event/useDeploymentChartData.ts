@@ -11,34 +11,42 @@ import { ChartData } from './useChartData'
  * aggregates across dataProcessed events — unlike useChartData which loads
  * only the single most-recent chartData2.json file.
  *
- * The variable list is derived from the latest dataProcessed session so we
- * know which channels to request. Each variable is then fetched in parallel
- * over the broader time range.
+ * `deploymentFrom` is the deployment start time used to look up the variable
+ * name list. It must span the full deployment so we always find a dataProcessed
+ * event even when the vehicle is mid-dive and hasn't processed data within the
+ * user-selected window (e.g. "24 Hours" during a long dive).
+ *
+ * `from` / `to` control only the time range of the actual data fetch.
  */
 export const useDeploymentChartData = (
   {
     vehicle,
+    deploymentFrom,
     from,
     to,
   }: {
     vehicle: string
-    from: number // milliseconds since epoch — start of the desired window
-    to?: number // milliseconds since epoch — end of the desired window
+    deploymentFrom: number // deployment start — used to find the variable list
+    from: number // milliseconds since epoch — start of the desired data window
+    to?: number // milliseconds since epoch — end of the desired data window
   },
   options?: SupportedQueryOptions
 ) => {
   const { axiosInstance, siteConfig } = useTethysApiContext()
 
-  // Step 1 — find the latest dataProcessed event to get the variable name list
+  // Step 1 — find the latest dataProcessed event to get the variable name list.
+  // Always search from the deployment start (not the selected window) so short
+  // windows like "24 Hours" still resolve variable names when the vehicle hasn't
+  // processed data recently (e.g. it is currently mid-dive).
   const eventsParams = {
     vehicles: [vehicle],
     eventTypes: ['dataProcessed'] as EventType[],
     limit: 2,
-    from,
+    from: deploymentFrom,
     ...(to != null ? { to } : {}),
   }
   const eventsQuery = useQuery(
-    ['deployment-chart', 'events', eventsParams],
+    ['deployment-chart', 'events', vehicle, deploymentFrom, to],
     () => getEvents(eventsParams, { instance: axiosInstance }),
     {
       staleTime: 5 * 60 * 1000,
@@ -48,7 +56,7 @@ export const useDeploymentChartData = (
       // not yet loaded). TethysDash returns 400 for from=0 or near-epoch values.
       enabled:
         !!axiosInstance &&
-        from > 1_000_000_000_000 &&
+        deploymentFrom > 1_000_000_000_000 &&
         (options?.enabled ?? true),
     }
   )

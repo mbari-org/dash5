@@ -125,11 +125,12 @@ const makeQueryClient = () =>
 const VALID_FROM = 1747000000000 // ~ 2025-05-12 — well above the 1e12 guard
 
 const MockConsumer: React.FC<{
+  deploymentFrom?: number
   from?: number
   options?: { enabled?: boolean }
-}> = ({ from = VALID_FROM, options }) => {
+}> = ({ deploymentFrom = VALID_FROM, from = VALID_FROM, options }) => {
   const { data, isLoading, isError } = useDeploymentChartData(
-    { vehicle: 'ahi', from },
+    { vehicle: 'ahi', deploymentFrom, from },
     options
   )
 
@@ -187,8 +188,8 @@ describe('useDeploymentChartData', () => {
 
     render(
       <MockProviders queryClient={makeQueryClient()}>
-        // from=1 simulates an unloaded deployment start time
-        <MockConsumer from={1} />
+        {/* deploymentFrom=1 simulates an unloaded deployment start time */}
+        <MockConsumer deploymentFrom={1} from={1} />
       </MockProviders>
     )
 
@@ -224,6 +225,7 @@ describe('useDeploymentChartData', () => {
     const MockConsumerWithTo: React.FC = () => {
       const { data, isLoading, isError } = useDeploymentChartData({
         vehicle: 'ahi',
+        deploymentFrom: VALID_FROM,
         from,
         to,
       })
