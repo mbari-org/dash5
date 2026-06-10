@@ -101,7 +101,8 @@ const formatEvent = (
   const text = event.text ? event.text.split('\n') : ''
   const mtmsn = event.mtmsn ? event.mtmsn : ''
   const momsn = event.momsn ? event.momsn : ''
-  const url = `${dashUrl}/${event.vehicleName}/realtime/sbdlogs/${path}`
+  // /data/ segment is required — matches the pattern used by RealTimeLogs and useChartData
+  const url = `${dashUrl}/data/${event.vehicleName}/realtime/sbdlogs/${path}`
   const startedMission =
     eventType === 'logImportant' && event.text?.startsWith('Started mission ')
   const defaultMission =
@@ -254,7 +255,16 @@ const formatEvent = (
         </p>
       )
 
-    case 'logPath':
+    case 'logPath': {
+      const shoreLogUrl = `${url}/shore.log`
+      const kmlUrl = `${url}/${event.vehicleName}.kml`
+      const pathParts = path.split('/')
+      const parentUrl =
+        pathParts.length > 1
+          ? `${dashUrl}/data/${event.vehicleName}/realtime/sbdlogs/${pathParts
+              .slice(0, -1)
+              .join('/')}/`
+          : `${dashUrl}/data/${event.vehicleName}/realtime/sbdlogs/`
       return (
         <p className="flex flex-col">
           New data path{' '}
@@ -266,8 +276,38 @@ const formatEvent = (
           >
             {path}
           </a>
+          <span className="mt-1 flex flex-wrap gap-3 text-xs">
+            <a
+              href={shoreLogUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-primary-600 hover:underline"
+              aria-label="shore log"
+            >
+              shore.log
+            </a>
+            <a
+              href={kmlUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-primary-600 hover:underline"
+              aria-label="kml track"
+            >
+              .kml
+            </a>
+            <a
+              href={parentUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-primary-600 hover:underline"
+              aria-label="parent directory"
+            >
+              Parent Directory
+            </a>
+          </span>
         </p>
       )
+    }
 
     case 'launch':
     case 'recover':
