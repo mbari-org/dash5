@@ -149,7 +149,6 @@ const ScienceDataSection: React.FC<{
   const {
     data: chartData,
     isLoading,
-    isFetching,
     isError,
     error,
   } = isExtended ? deploymentQuery : latestQuery

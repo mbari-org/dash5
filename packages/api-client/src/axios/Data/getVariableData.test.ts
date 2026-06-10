@@ -83,7 +83,21 @@ describe('getVariableData', () => {
     expect(lastRequest?.url.searchParams.get('maxlen')).toBe('500')
   })
 
-  it('throws on a non-200 response', async () => {
+  it('returns null on a 404 (variable has no data in the time window)', async () => {
+    server.use(
+      rest.get('/data/:variableName', (_req, res, ctx) =>
+        res.once(ctx.status(404))
+      )
+    )
+    const result = await getVariableData({
+      vehicle: 'brizo',
+      variableName: 'depth',
+      from: 1_780_000_000_000,
+    })
+    expect(result).toBeNull()
+  })
+
+  it('throws on a non-200, non-404 response', async () => {
     server.use(
       rest.get('/data/:variableName', (_req, res, ctx) =>
         res.once(ctx.status(500))

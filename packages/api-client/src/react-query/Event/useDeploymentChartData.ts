@@ -80,12 +80,18 @@ export const useDeploymentChartData = (
         // chartData2.json sometimes contains trailing-decimal floats (e.g. "1.")
         // that are invalid JSON. Try once more after patching them.
         const sanitized = raw.replace(/(\d\.)(?=\D|$)/g, (m) => m + '0')
-        parsed = JSON.parse(sanitized) // throws if still invalid — surfaces as isError
+        try {
+          parsed = JSON.parse(sanitized)
+        } catch {
+          throw new Error(
+            `chartData2.json for ${vehicle} (${path}) could not be parsed — the file may be truncated or malformed on the TethysDash server.`
+          )
+        }
       }
       const chartData = (parsed as { chartData?: unknown })?.chartData
       if (!Array.isArray(chartData)) {
         throw new Error(
-          'chartData2.json did not contain a valid chartData array'
+          `chartData2.json for ${vehicle} (${path}) returned invalid data — please ask a TethysDash administrator to reprocess this dataset.`
         )
       }
       return (chartData as ChartData[]).map((d) => d.name)
