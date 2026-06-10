@@ -106,6 +106,13 @@ export const useDeploymentChartData = (
 
   const variableNames = namesQuery.data ?? []
 
+  // Scale maxlen with the window duration so longer windows return enough
+  // points to cover the full span. Depth is sampled every few seconds, so
+  // 2000 points at that rate only covers a few hours.
+  const windowMs = (to ?? Date.now()) - from
+  const windowDays = windowMs / (24 * 60 * 60 * 1000)
+  const maxlen = windowDays <= 4 ? 2000 : windowDays <= 14 ? 5000 : 10000
+
   // Step 3 — fetch each variable over the full requested time range in parallel
   const variableQueries = useQueries(
     variableNames.map((variableName) => ({
@@ -119,7 +126,13 @@ export const useDeploymentChartData = (
       ],
       queryFn: () =>
         getVariableData(
-          { vehicle, variableName, from, ...(to != null ? { to } : {}) },
+          {
+            vehicle,
+            variableName,
+            from,
+            maxlen,
+            ...(to != null ? { to } : {}),
+          },
           { instance: axiosInstance }
         ),
       staleTime: 5 * 60 * 1000,
