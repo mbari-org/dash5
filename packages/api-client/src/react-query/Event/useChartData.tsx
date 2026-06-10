@@ -44,28 +44,11 @@ export const useChartData = (
 
   const path = events?.data?.[0]?.path
 
-  // siteConfig.tethysdash may point to the production server (unreachable in
-  // dev). When the axiosInstance proxy origin differs from tethysdash's origin,
-  // replace it so the request routes through the local proxy instead of
-  // hitting the production server directly.
-  const tethysdash = siteConfig?.appConfig?.external?.tethysdash
-  const chartDataBase = (() => {
-    const baseURL = axiosInstance?.defaults?.baseURL
-    if (!tethysdash || !baseURL) return tethysdash
-    try {
-      const proxyOrigin = new URL(baseURL).origin
-      const { pathname } = new URL(tethysdash)
-      return `${proxyOrigin}${pathname}`
-    } catch {
-      return tethysdash
-    }
-  })()
-
   const query = useQuery(
     ['event', 'events', vehicle, 'realtime/sbdlogs', path],
     async () => {
       const result = await axiosInstance?.get(
-        `${chartDataBase}/data/${vehicle}/realtime/sbdlogs/${path}/chartData2.json`,
+        `${siteConfig?.appConfig?.external?.tethysdash}/data/${vehicle}/realtime/sbdlogs/${path}/chartData2.json`,
         // Fetch as raw text so we can sanitize malformed numbers before parsing.
         { responseType: 'text', transformResponse: (data) => data }
       )
@@ -101,7 +84,7 @@ export const useChartData = (
       ...options,
       enabled:
         !!axiosInstance &&
-        !!chartDataBase &&
+        !!siteConfig?.appConfig?.external?.tethysdash &&
         !!path &&
         (options?.enabled ?? true),
     }
