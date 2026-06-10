@@ -20,7 +20,7 @@ export const getVariableData = async (
   { vehicle, variableName, from, to, maxlen = 2000 }: GetVariableDataParams,
   { debug, instance = getInstance(), ...config }: RequestConfig = {}
 ) => {
-  const url = `/api/data/${encodeURIComponent(variableName)}`
+  const url = `/data/${encodeURIComponent(variableName)}`
 
   if (debug) {
     console.debug(`GET ${url}`)

@@ -42,7 +42,7 @@ export const useDeploymentChartData = (
     () => getEvents(eventsParams, { instance: axiosInstance }),
     {
       staleTime: 5 * 60 * 1000,
-      retry: 5,
+      retry: 1,
       ...options,
       // Guard against firing with an invalid from timestamp (e.g. deployment
       // not yet loaded). TethysDash returns 400 for from=0 or near-epoch values.
