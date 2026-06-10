@@ -289,7 +289,7 @@ describe('formatEvent', () => {
       const { container } = render(formatEvent(event, DASH_URL))
       const link = container.querySelector('a') as HTMLAnchorElement
       // Old URL was: ${dashUrl}/triton/realtime/... (no /data/ after the base)
-      expect(link.href).not.toMatch(new RegExp(`${DASH_URL}/triton/`))
+      expect(link.href).not.toContain(`${DASH_URL}/triton/`)
     })
   })
 
