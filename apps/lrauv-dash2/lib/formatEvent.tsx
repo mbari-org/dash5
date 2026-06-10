@@ -255,16 +255,7 @@ const formatEvent = (
         </p>
       )
 
-    case 'logPath': {
-      const shoreLogUrl = `${url}/shore.log`
-      const kmlUrl = `${url}/shore.kml`
-      const pathParts = path.split('/')
-      const parentUrl =
-        pathParts.length > 1
-          ? `${dashUrl}/data/${event.vehicleName}/realtime/sbdlogs/${pathParts
-              .slice(0, -1)
-              .join('/')}/`
-          : `${dashUrl}/data/${event.vehicleName}/realtime/sbdlogs/`
+    case 'logPath':
       return (
         <p className="flex flex-col">
           New data path{' '}
@@ -276,38 +267,17 @@ const formatEvent = (
           >
             {path}
           </a>
-          <span className="mt-1 flex flex-wrap gap-3 text-xs">
-            <a
-              href={shoreLogUrl}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="text-primary-600 hover:underline"
-              aria-label="shore log"
-            >
-              shore.log
-            </a>
-            <a
-              href={kmlUrl}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="text-primary-600 hover:underline"
-              aria-label="kml track"
-            >
-              .kml
-            </a>
-            <a
-              href={parentUrl}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="text-primary-600 hover:underline"
-              aria-label="parent directory"
-            >
-              Parent Directory
-            </a>
-          </span>
+          <a
+            href={`${url}/`}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="mt-1 self-start rounded bg-teal-500 px-2 py-0.5 text-xs font-semibold text-white hover:bg-teal-400"
+            aria-label="view all data for this log session"
+          >
+            Data
+          </a>
         </p>
       )
-    }
 
     case 'launch':
     case 'recover':
