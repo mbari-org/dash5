@@ -69,11 +69,17 @@ export const useDeploymentChartData = (
       try {
         parsed = JSON.parse(raw)
       } catch {
+        // chartData2.json sometimes contains trailing-decimal floats (e.g. "1.")
+        // that are invalid JSON. Try once more after patching them.
         const sanitized = raw.replace(/(\d\.)(?=\D|$)/g, (m) => m + '0')
-        parsed = JSON.parse(sanitized)
+        parsed = JSON.parse(sanitized) // throws if still invalid — surfaces as isError
       }
       const chartData = (parsed as { chartData?: unknown })?.chartData
-      if (!Array.isArray(chartData)) return [] as string[]
+      if (!Array.isArray(chartData)) {
+        throw new Error(
+          'chartData2.json did not contain a valid chartData array'
+        )
+      }
       return (chartData as ChartData[]).map((d) => d.name)
     },
     {
@@ -103,6 +109,7 @@ export const useDeploymentChartData = (
           { instance: axiosInstance }
         ),
       staleTime: 5 * 60 * 1000,
+      ...options,
       enabled:
         !!axiosInstance &&
         variableNames.length > 0 &&

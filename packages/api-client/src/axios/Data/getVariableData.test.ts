@@ -12,7 +12,7 @@ const mockResponse: GetVariableDataResponse = {
 let lastRequest: { url: URL } | null = null
 
 const server = setupServer(
-  rest.get('/api/data/:variableName', (req, res, ctx) => {
+  rest.get('/data/:variableName', (req, res, ctx) => {
     lastRequest = { url: req.url }
     return res(ctx.status(200), ctx.json(mockResponse))
   })
@@ -85,7 +85,7 @@ describe('getVariableData', () => {
 
   it('throws on a non-200 response', async () => {
     server.use(
-      rest.get('/api/data/:variableName', (_req, res, ctx) =>
+      rest.get('/data/:variableName', (_req, res, ctx) =>
         res.once(ctx.status(500))
       )
     )

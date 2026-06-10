@@ -87,6 +87,8 @@ const mockInfoResponse = {
   },
 }
 
+let lastVariableRequest: { url: URL } | null = null
+
 const server = setupServer(
   rest.get('/info', (_req, res, ctx) =>
     res(ctx.status(200), ctx.json(mockInfoResponse))
@@ -97,15 +99,19 @@ const server = setupServer(
   rest.get(/chartData2\.json$/, (_req, res, ctx) =>
     res(ctx.status(200), ctx.json({ chartData: mockChartData }))
   ),
-  rest.get(/\/api\/data\/depth/, (_req, res, ctx) =>
-    res(ctx.status(200), ctx.json(mockVariableDepth))
-  ),
-  rest.get(/\/api\/data\/temperature/, (_req, res, ctx) =>
+  rest.get(/\/data\/depth/, (req, res, ctx) => {
+    lastVariableRequest = { url: req.url }
+    return res(ctx.status(200), ctx.json(mockVariableDepth))
+  }),
+  rest.get(/\/data\/temperature/, (_req, res, ctx) =>
     res(ctx.status(200), ctx.json(mockVariableTemp))
   )
 )
 
 beforeAll(() => server.listen())
+beforeEach(() => {
+  lastVariableRequest = null
+})
 afterEach(() => server.resetHandlers())
 afterAll(() => server.close())
 
@@ -190,5 +196,55 @@ describe('useDeploymentChartData', () => {
     expect(screen.getByText('No data')).toBeInTheDocument()
     await new Promise((r) => setTimeout(r, 200))
     expect(eventsCallCount).toBe(0)
+  })
+
+  it('surfaces isError when chartData2.json contains invalid data', async () => {
+    server.use(
+      rest.get(/chartData2\.json$/, (_req, res, ctx) =>
+        res(ctx.status(200), ctx.json({ chartData: 'not-an-array' }))
+      )
+    )
+
+    render(
+      <MockProviders queryClient={makeQueryClient()}>
+        <MockConsumer />
+      </MockProviders>
+    )
+
+    await waitFor(
+      () => expect(screen.getByTestId('error')).toBeInTheDocument(),
+      { timeout: 5000 }
+    )
+  })
+
+  it('passes from and to as query params to per-variable requests', async () => {
+    const from = VALID_FROM
+    const to = VALID_FROM + 86_400_000 // +24 hours
+
+    const MockConsumerWithTo: React.FC = () => {
+      const { data, isLoading, isError } = useDeploymentChartData({
+        vehicle: 'ahi',
+        from,
+        to,
+      })
+      if (isLoading) return <div>Loading...</div>
+      if (isError) return <div data-testid="error">Error</div>
+      if (!data) return <div>No data</div>
+      return <div data-testid="count">{data.length}</div>
+    }
+
+    render(
+      <MockProviders queryClient={makeQueryClient()}>
+        <MockConsumerWithTo />
+      </MockProviders>
+    )
+
+    await waitFor(
+      () => expect(screen.getByTestId('count')).toBeInTheDocument(),
+      { timeout: 5000 }
+    )
+
+    expect(lastVariableRequest?.url.searchParams.get('from')).toBe(String(from))
+    expect(lastVariableRequest?.url.searchParams.get('to')).toBe(String(to))
   })
 })

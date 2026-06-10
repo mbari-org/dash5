@@ -94,14 +94,22 @@ const TIME_WINDOW_OPTIONS: { id: TimeWindow; name: string }[] = [
   { id: 'deployment', name: 'Full Deployment' },
 ]
 
-const getWindowFrom = (window: TimeWindow, deploymentFrom: number): number => {
+const getWindowFrom = (
+  window: TimeWindow,
+  deploymentFrom: number,
+  deploymentTo?: number
+): number => {
+  // For ended deployments `deploymentTo` is in the past, so relative windows
+  // (24h/3d/7d) must be computed from the end of the deployment, not from now.
+  // Clamp the result so it is never earlier than the deployment start.
+  const anchor = deploymentTo ?? DateTime.utc().toMillis()
   switch (window) {
     case '24h':
-      return DateTime.utc().minus({ hours: 24 }).toMillis()
+      return Math.max(deploymentFrom, anchor - 24 * 60 * 60 * 1000)
     case '3d':
-      return DateTime.utc().minus({ days: 3 }).toMillis()
+      return Math.max(deploymentFrom, anchor - 3 * 24 * 60 * 60 * 1000)
     case '7d':
-      return DateTime.utc().minus({ days: 7 }).toMillis()
+      return Math.max(deploymentFrom, anchor - 7 * 24 * 60 * 60 * 1000)
     case 'deployment':
       return deploymentFrom
     default:
@@ -124,8 +132,8 @@ const ScienceDataSection: React.FC<{
   // changes the query key and causes React Query to treat each render as a
   // brand-new query — keeping isLoading permanently true.
   const extendedFrom = useMemo(
-    () => getWindowFrom(timeWindow, from),
-    [timeWindow, from]
+    () => getWindowFrom(timeWindow, from, to),
+    [timeWindow, from, to]
   )
 
   const latestQuery = useChartData(
