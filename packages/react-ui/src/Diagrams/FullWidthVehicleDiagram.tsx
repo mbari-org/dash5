@@ -29,6 +29,7 @@ import { Leak } from './VehicleAssets/Leak'
 export interface FullWidthVehicleDiagramProps extends VehicleProps {
   onBatteryClick?: BatteryProps['onClick']
   sparklineContent?: React.ReactNode
+  actionButton?: React.ReactNode
 }
 
 export const FullWidthVehicleDiagram: React.FC<
@@ -135,6 +136,7 @@ export const FullWidthVehicleDiagram: React.FC<
   svgCurrent,
   colorDuration,
   onBatteryClick: handleBatteryClick,
+  actionButton,
 }) => {
   const containerRef = useRef<HTMLDivElement | null>(null)
   const { size: containerSize } = useResizeObserver({ element: containerRef })
@@ -145,8 +147,14 @@ export const FullWidthVehicleDiagram: React.FC<
   const VEHICLE_TOP_OFFSET = 20
 
   // Sparkline base dimensions — correct size when the vehicle is height-bound (wide container)
-  const SPARKLINE_BASE_W = 384 // 480 × 0.8
-  const SPARKLINE_BASE_H = 96 // 120 × 0.8
+  const SPARKLINE_BASE_W = 503 // 529 × 0.95
+  const SPARKLINE_BASE_H = 126 // 133 × 0.95
+  // Vertical offset at full scale. Negative = the sparkline div extends above the
+  // container's overflow-hidden boundary, intentionally clipping the comms tick rows
+  // (supplementary decoration). The depth chart (primary content) starts at y=0 inside
+  // the SVG and remains fully visible. Scaled by effectiveScale so the overlay tracks
+  // the vehicle body as the container narrows.
+  const SPARKLINE_BASE_Y = -12
 
   // Vehicle SVG viewBox dimensions
   const VB_W = 534
@@ -155,19 +163,74 @@ export const FullWidthVehicleDiagram: React.FC<
   const cW = containerSize?.width ?? 0
   const cH = containerSize?.height ?? 0
 
-  // normalizedVehicleScale = 1 when the container is wide enough that the vehicle is
-  // height-bound (no horizontal squeeze). Drops below 1 only when the container narrows
-  // enough that the vehicle SVG itself starts to shrink — the sparkline follows exactly.
-  const normalizedVehicleScale =
-    cW > 0 && cH > 0 ? Math.min(1, (cW * VB_H) / (VB_W * cH)) : 1
+  // --- Unified scaling: vehicle + sparkline shrink together ---
+  //
+  // The sparkline anchor (SPARKLINE_SVG_ANC_X = 53) is LEFT of the viewBox
+  // origin (VB_MIN_X = 120), so the sparkline occupies the horizontal letterbox.
+  // The letterbox only exists while the vehicle is height-bound. As the container
+  // narrows the letterbox shrinks and the sparkline hits the left edge ~250 px
+  // BEFORE the vehicle's own aspect-ratio constraint would start scaling.
+  //
+  // We derive effectiveScale from the sparkline-edge constraint so both items
+  // start shrinking at the same moment. The vehicle SVG is then given explicit
+  // pixel dimensions (not h-full w-full) so it truly follows effectiveScale.
+  //
+  // At scale s (vehicle rendered at s·cH·vehicleAR, horizontally centred):
+  //   sparklinePosLeft = (cW − s·cH·AR)/2  +  sparklineFrac·s·cH·AR
+  // Setting sparklinePosLeft = SPARKLINE_MARGIN and solving:
+  //   s = (cW − 2·MARGIN) / ((1 − 2·sparklineFrac) · cH · AR)
+  const VB_MIN_X = 120
+  const VB_MIN_Y = 155
+  // Sparkline left-edge anchor in vehicle SVG viewBox coordinates (x=53 is left of VB_MIN_X=120,
+  // placing the sparkline in the horizontal letterbox to the left of the vehicle body).
+  const SPARKLINE_SVG_ANC_X = 53
+  // Action-button SVG anchor in vehicle viewBox coordinates — calibrated 2026-06-09.
+  const BTN_SVG_ANC_X = 64
+  const BTN_SVG_ANC_Y = 245
+  const vehicleAR = VB_W / VB_H // ≈ 3.034
+  const sparklineFrac = (SPARKLINE_SVG_ANC_X - VB_MIN_X) / VB_W // ≈ −0.1254
+  const SPARKLINE_MARGIN = 4 // min px of clear space at left of sparkline
 
-  const sparklineW = Math.round(SPARKLINE_BASE_W * normalizedVehicleScale)
-  const sparklineH = Math.round(SPARKLINE_BASE_H * normalizedVehicleScale)
+  const sparklineDrivenScale =
+    cH > 0 && cW > 0
+      ? (cW - 2 * SPARKLINE_MARGIN) / ((1 - 2 * sparklineFrac) * cH * vehicleAR)
+      : 1
+  // Lower bound is 0 (not 0.1) so the widget can shrink fully in very narrow
+  // panes rather than forcing a minimum size that overflows the container.
+  const effectiveScale = Math.min(1, Math.max(0, sparklineDrivenScale))
 
-  // Position locked at { x: 306, y: 0 } — fine-tuned by dragging, then fixed.
-  // Note: only sparklineW/sparklineH scale with normalizedVehicleScale when the
-  // container narrows; the overlay position itself does not scale or reflow.
-  const sparklinePos = { x: 306, y: 0 }
+  // Vehicle explicit render dimensions — these replace h-full w-full on the SVG
+  const vehicleRenderW = Math.round(effectiveScale * cH * vehicleAR)
+  const vehicleRenderH = Math.round(effectiveScale * cH)
+  const vehicleOffsetLeft = cW > 0 ? Math.round((cW - vehicleRenderW) / 2) : 0
+
+  // Sparkline size and position both driven by effectiveScale
+  const sparklineW = Math.round(SPARKLINE_BASE_W * effectiveScale)
+  const sparklineH = Math.round(SPARKLINE_BASE_H * effectiveScale)
+
+  // Guard on both dimensions: ResizeObserver can transiently report cW=0 while
+  // cH is already non-zero, which would produce a large negative left offset.
+  const sparklinePosLeft =
+    cW > 0 && cH > 0
+      ? Math.round(vehicleOffsetLeft + sparklineFrac * vehicleRenderW)
+      : 0
+
+  // Button position: same SVG-coordinate transform as the vehicle, so it
+  // moves and scales in lockstep with the vehicle body and sparkline.
+  const btnLeft =
+    vehicleRenderW > 0
+      ? Math.round(
+          vehicleOffsetLeft +
+            ((BTN_SVG_ANC_X - VB_MIN_X) / VB_W) * vehicleRenderW
+        )
+      : 0
+  const btnTop =
+    vehicleRenderH > 0
+      ? Math.round(
+          VEHICLE_TOP_OFFSET +
+            ((BTN_SVG_ANC_Y - VB_MIN_Y) / VB_H) * vehicleRenderH
+        )
+      : 0
 
   const containerH = containerSize?.height ?? 0
   const containerW = containerSize?.width ?? 0
@@ -221,7 +284,8 @@ export const FullWidthVehicleDiagram: React.FC<
         )}
       </svg>
 
-      {/* Vehicle diagram: scales to fill container while preserving aspect ratio */}
+      {/* Vehicle diagram: explicit pixel dimensions from effectiveScale so it
+          shrinks in lockstep with the sparkline when the container narrows */}
       <svg
         xmlns="http://www.w3.org/2000/svg"
         xmlnsXlink="http://www.w3.org/1999/xlink"
@@ -232,8 +296,14 @@ export const FullWidthVehicleDiagram: React.FC<
         viewBox="120 155 534 176"
         preserveAspectRatio="xMidYMid meet"
         xmlSpace="preserve"
-        className="absolute inset-0 z-10 h-full w-full"
-        style={{ transform: `translateY(${VEHICLE_TOP_OFFSET}px)` }}
+        className="absolute z-10"
+        style={{
+          width: vehicleRenderW,
+          height: vehicleRenderH,
+          left: vehicleOffsetLeft,
+          top: 0,
+          transform: `translateY(${VEHICLE_TOP_OFFSET}px)`,
+        }}
       >
         <g>
           <ChargingCable
@@ -445,18 +515,26 @@ export const FullWidthVehicleDiagram: React.FC<
         </g>
       </svg>
 
-      {/* Sparkline overlay — position locked at { x: 306, y: 0 } */}
+      {/* Sparkline overlay — pointer-events-none so underlying vehicle SVG stays interactive */}
       {!isDocked && sparklineContent && (
         <div
-          className="absolute z-20 select-none pointer-events-none"
+          className="absolute z-20 pointer-events-none"
           style={{
-            left: sparklinePos.x,
-            top: sparklinePos.y,
+            left: sparklinePosLeft,
+            top: Math.round(SPARKLINE_BASE_Y * effectiveScale),
             width: sparklineW,
             height: sparklineH,
           }}
         >
           {sparklineContent}
+        </div>
+      )}
+
+      {/* Action button — anchored in vehicle SVG coordinates, scales with vehicle.
+          Hidden when docked or before both container dimensions are known. */}
+      {!isDocked && actionButton && cW > 0 && cH > 0 && vehicleRenderW > 0 && (
+        <div className="absolute z-30" style={{ left: btnLeft, top: btnTop }}>
+          {actionButton}
         </div>
       )}
     </div>

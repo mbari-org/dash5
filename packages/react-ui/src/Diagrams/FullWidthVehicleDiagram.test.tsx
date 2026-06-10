@@ -4,6 +4,13 @@ import '@testing-library/jest-dom'
 import { VehicleProps } from './Vehicle'
 import { FullWidthVehicleDiagram } from './FullWidthVehicleDiagram'
 
+// JSDOM reports zero layout dimensions; return a real size so guards
+// that rely on cW > 0 && cH > 0 don't suppress content in tests.
+jest.mock('@mbari/utils', () => ({
+  ...jest.requireActual('@mbari/utils'),
+  useResizeObserver: () => ({ size: { width: 800, height: 300 } }),
+}))
+
 const props: VehicleProps = {
   textVehicle: 'BRIZO',
   status: 'onMission',
@@ -426,4 +433,49 @@ test('should display next comm text with colorNextCommsText class', async () => 
     />
   )
   expect(screen.queryByLabelText('next comm')).toHaveClass('st31')
+})
+
+test('should render actionButton when provided and vehicle is on mission', async () => {
+  render(
+    <FullWidthVehicleDiagram
+      {...props}
+      status="onMission"
+      actionButton={
+        <a href="https://example.com" aria-label="test action">
+          link
+        </a>
+      }
+    />
+  )
+  expect(screen.queryByLabelText('test action')).toBeInTheDocument()
+})
+
+test('should not render actionButton when vehicle is pluggedIn', async () => {
+  render(
+    <FullWidthVehicleDiagram
+      {...props}
+      status="pluggedIn"
+      actionButton={
+        <a href="https://example.com" aria-label="test action">
+          link
+        </a>
+      }
+    />
+  )
+  expect(screen.queryByLabelText('test action')).not.toBeInTheDocument()
+})
+
+test('should not render actionButton when vehicle is recovered', async () => {
+  render(
+    <FullWidthVehicleDiagram
+      {...props}
+      status="recovered"
+      actionButton={
+        <a href="https://example.com" aria-label="test action">
+          link
+        </a>
+      }
+    />
+  )
+  expect(screen.queryByLabelText('test action')).not.toBeInTheDocument()
 })
