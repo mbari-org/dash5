@@ -192,7 +192,7 @@ const ScienceDataSection: React.FC<{
         />
         <div
           title="Select how far back to display chart data. 'Latest Dive' shows the current log session only; other options pull data across multiple log sessions."
-          className="my-auto"
+          className="my-auto min-w-[10rem]"
         >
           <SelectField
             name="timeWindow"
