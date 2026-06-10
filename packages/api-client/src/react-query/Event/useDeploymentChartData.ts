@@ -44,6 +44,12 @@ export const useDeploymentChartData = (
       staleTime: 5 * 60 * 1000,
       retry: 5,
       ...options,
+      // Guard against firing with an invalid from timestamp (e.g. deployment
+      // not yet loaded). TethysDash returns 400 for from=0 or near-epoch values.
+      enabled:
+        !!axiosInstance &&
+        from > 1_000_000_000_000 &&
+        (options?.enabled ?? true),
     }
   )
 
@@ -104,25 +110,34 @@ export const useDeploymentChartData = (
     }))
   )
 
+  // Collect whichever variable queries have already resolved so we can render
+  // charts progressively rather than waiting for every variable to finish.
+  const resolvedData: ChartData[] = variableQueries
+    .map((q) => q.data)
+    .filter((d): d is ChartData => d != null)
+
+  // Show the full loading overlay only until we have at least one chart to
+  // display. Once data starts arriving, `isFetching` tracks the remainder.
   const isLoading =
     eventsQuery.isLoading ||
     namesQuery.isLoading ||
-    variableQueries.some((q) => q.isLoading)
+    (variableQueries.some((q) => q.isLoading) && resolvedData.length === 0)
 
   const isFetching =
     eventsQuery.isFetching ||
     namesQuery.isFetching ||
-    variableQueries.some((q) => q.isFetching)
+    (variableQueries.some((q) => q.isLoading || q.isFetching) &&
+      resolvedData.length > 0)
 
   const isError =
     eventsQuery.isError ||
     namesQuery.isError ||
     variableQueries.some((q) => q.isError)
 
+  // Return undefined while loading (so the Loading overlay appears), then
+  // partial results as they arrive, growing to the full set.
   const data: ChartData[] | undefined =
-    variableNames.length > 0 && variableQueries.every((q) => q.data != null)
-      ? variableQueries.map((q) => q.data as ChartData)
-      : undefined
+    resolvedData.length > 0 ? resolvedData : undefined
 
   return { data, isLoading, isFetching, isError }
 }
