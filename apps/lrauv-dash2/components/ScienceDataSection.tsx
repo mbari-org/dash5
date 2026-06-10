@@ -84,11 +84,10 @@ export const ScienceCell: React.FC<{
   )
 }
 
-type TimeWindow = 'latest' | '24h' | '3d' | '7d' | 'deployment'
+type TimeWindow = 'latest' | '3d' | '7d' | 'deployment'
 
 const TIME_WINDOW_OPTIONS: { id: TimeWindow; name: string }[] = [
   { id: 'latest', name: 'Latest Dive' },
-  { id: '24h', name: '24 Hours' },
   { id: '3d', name: '3 Days' },
   { id: '7d', name: '7 Days' },
   { id: 'deployment', name: 'Full Deployment' },
@@ -100,12 +99,10 @@ const getWindowFrom = (
   deploymentTo?: number
 ): number => {
   // For ended deployments `deploymentTo` is in the past, so relative windows
-  // (24h/3d/7d) must be computed from the end of the deployment, not from now.
+  // (3d/7d) must be computed from the end of the deployment, not from now.
   // Clamp the result so it is never earlier than the deployment start.
   const anchor = deploymentTo ?? DateTime.utc().toMillis()
   switch (window) {
-    case '24h':
-      return Math.max(deploymentFrom, anchor - 24 * 60 * 60 * 1000)
     case '3d':
       return Math.max(deploymentFrom, anchor - 3 * 24 * 60 * 60 * 1000)
     case '7d':
