@@ -87,11 +87,11 @@ export const ScienceCell: React.FC<{
 type TimeWindow = 'latest' | '24h' | '3d' | '7d' | 'deployment'
 
 const TIME_WINDOW_OPTIONS: { id: TimeWindow; name: string }[] = [
-  { id: 'latest', name: 'Latest' },
+  { id: 'latest', name: 'Latest Dive' },
   { id: '24h', name: '24 h' },
   { id: '3d', name: '3 d' },
   { id: '7d', name: '7 d' },
-  { id: 'deployment', name: 'Deployment' },
+  { id: 'deployment', name: 'Full Deployment' },
 ]
 
 const getWindowFrom = (window: TimeWindow, deploymentFrom: number): number => {
@@ -176,14 +176,18 @@ const ScienceDataSection: React.FC<{
           onSelect={setCategory}
           className="my-auto"
         />
-        <SelectField
-          name="timeWindow"
-          value={timeWindow}
-          options={TIME_WINDOW_OPTIONS}
-          onSelect={(v) => setTimeWindow((v ?? 'latest') as TimeWindow)}
+        <div
+          title="Select how far back to display chart data. 'Latest Dive' shows the current log session only; other options pull data across multiple log sessions."
           className="my-auto"
-          aria-label="Time window"
-        />
+        >
+          <SelectField
+            name="timeWindow"
+            value={timeWindow}
+            options={TIME_WINDOW_OPTIONS}
+            onSelect={(v) => setTimeWindow((v ?? 'latest') as TimeWindow)}
+            aria-label="Chart time window"
+          />
+        </div>
         <button
           className="my-auto ml-auto px-4 py-2 font-bold text-violet-800"
           onClick={handleespSamples}
