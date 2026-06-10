@@ -316,11 +316,11 @@ describe('formatEvent', () => {
       expect(link.getAttribute('href')).toContain('shore.log')
     })
 
-    it('renders a .kml link', () => {
+    it('renders a shore.kml link', () => {
       render(formatEvent(event, DASH_URL))
       const link = screen.getByRole('link', { name: /kml track/i })
       expect(link).toBeInTheDocument()
-      expect(link.getAttribute('href')).toContain('.kml')
+      expect(link.getAttribute('href')).toContain('shore.kml')
     })
 
     it('renders a Parent Directory link pointing to the parent path', () => {

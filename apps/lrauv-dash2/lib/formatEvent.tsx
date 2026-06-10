@@ -257,7 +257,7 @@ const formatEvent = (
 
     case 'logPath': {
       const shoreLogUrl = `${url}/shore.log`
-      const kmlUrl = `${url}/${event.vehicleName}.kml`
+      const kmlUrl = `${url}/shore.kml`
       const pathParts = path.split('/')
       const parentUrl =
         pathParts.length > 1
