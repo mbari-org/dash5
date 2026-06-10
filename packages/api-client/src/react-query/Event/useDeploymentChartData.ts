@@ -54,14 +54,29 @@ export const useDeploymentChartData = (
   )
 
   const path = eventsQuery.data?.[0]?.path
+
+  // siteConfig.tethysdash may point to the production server (unreachable in
+  // dev). When the axiosInstance proxy origin differs from tethysdash's origin,
+  // replace it so the request routes through the local proxy instead.
   const tethysdash = siteConfig?.appConfig?.external?.tethysdash
+  const chartDataBase = (() => {
+    const baseURL = axiosInstance?.defaults?.baseURL
+    if (!tethysdash || !baseURL) return tethysdash
+    try {
+      const proxyOrigin = new URL(baseURL).origin
+      const { pathname } = new URL(tethysdash)
+      return `${proxyOrigin}${pathname}`
+    } catch {
+      return tethysdash
+    }
+  })()
 
   // Step 2 — load the latest chartData2.json just to get the variable names
   const namesQuery = useQuery(
     ['deployment-chart', 'names', vehicle, path],
     async () => {
       const result = await axiosInstance?.get(
-        `${tethysdash}/data/${vehicle}/realtime/sbdlogs/${path}/chartData2.json`,
+        `${chartDataBase}/data/${vehicle}/realtime/sbdlogs/${path}/chartData2.json`,
         { responseType: 'text', transformResponse: (d) => d }
       )
       const raw = (result?.data as string) ?? ''
@@ -80,7 +95,10 @@ export const useDeploymentChartData = (
       staleTime: 5 * 60 * 1000,
       ...options,
       enabled:
-        !!axiosInstance && !!tethysdash && !!path && (options?.enabled ?? true),
+        !!axiosInstance &&
+        !!chartDataBase &&
+        !!path &&
+        (options?.enabled ?? true),
     }
   )
 
