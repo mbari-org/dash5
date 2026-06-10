@@ -3,7 +3,8 @@ import useGlobalModalId from '../lib/useGlobalModalId'
 import dynamic from 'next/dynamic'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { capitalize, humanize, swallow } from '@mbari/utils'
-import { useChartData } from '@mbari/api-client'
+import { useChartData, useDeploymentChartData } from '@mbari/api-client'
+import { DateTime } from 'luxon'
 import clsx from 'clsx'
 
 const LineChart: any = dynamic(
@@ -83,25 +84,60 @@ export const ScienceCell: React.FC<{
   )
 }
 
+type TimeWindow = 'latest' | '24h' | '3d' | '7d' | 'deployment'
+
+const TIME_WINDOW_OPTIONS: { id: TimeWindow; name: string }[] = [
+  { id: 'latest', name: 'Latest' },
+  { id: '24h', name: '24 h' },
+  { id: '3d', name: '3 d' },
+  { id: '7d', name: '7 d' },
+  { id: 'deployment', name: 'Deployment' },
+]
+
+const getWindowFrom = (window: TimeWindow, deploymentFrom: number): number => {
+  switch (window) {
+    case '24h':
+      return DateTime.utc().minus({ hours: 24 }).toMillis()
+    case '3d':
+      return DateTime.utc().minus({ days: 3 }).toMillis()
+    case '7d':
+      return DateTime.utc().minus({ days: 7 }).toMillis()
+    case 'deployment':
+      return deploymentFrom
+    default:
+      return deploymentFrom
+  }
+}
+
 const ScienceDataSection: React.FC<{
   vehicleName: string
-  from: number // milliseconds since epoch
-  to?: number // milliseconds since epoch
+  from: number // milliseconds since epoch — deployment start
+  to?: number // milliseconds since epoch — deployment end
 }> = ({ vehicleName, from, to }) => {
   const { setGlobalModalId } = useGlobalModalId()
+  const [timeWindow, setTimeWindow] = useState<TimeWindow>('latest')
+  const [category, setCategory] = useState<string | null>('vehicle')
+
+  const isExtended = timeWindow !== 'latest'
+  const extendedFrom = getWindowFrom(timeWindow, from)
+
+  const latestQuery = useChartData(
+    { vehicle: vehicleName, from, to },
+    { enabled: !isExtended }
+  )
+
+  const deploymentQuery = useDeploymentChartData(
+    { vehicle: vehicleName, from: extendedFrom, to },
+    { enabled: isExtended }
+  )
+
   const {
     data: chartData,
     isLoading,
     isFetching,
     isError,
     error,
-  } = useChartData({
-    vehicle: vehicleName,
-    from: from,
-    to: to,
-  })
-
-  const [category, setCategory] = useState<string | null>('vehicle')
+  } = isExtended ? deploymentQuery : latestQuery
 
   const charts = chartData?.filter((d) =>
     category === 'vehicle'
@@ -129,7 +165,7 @@ const ScienceDataSection: React.FC<{
 
   return (
     <>
-      <header className="flex p-2">
+      <header className="flex items-center gap-2 p-2">
         <SelectField
           name="category"
           value={category ?? ''}
@@ -139,6 +175,14 @@ const ScienceDataSection: React.FC<{
           ]}
           onSelect={setCategory}
           className="my-auto"
+        />
+        <SelectField
+          name="timeWindow"
+          value={timeWindow}
+          options={TIME_WINDOW_OPTIONS}
+          onSelect={(v) => setTimeWindow((v ?? 'latest') as TimeWindow)}
+          className="my-auto"
+          aria-label="Time window"
         />
         <button
           className="my-auto ml-auto px-4 py-2 font-bold text-violet-800"
