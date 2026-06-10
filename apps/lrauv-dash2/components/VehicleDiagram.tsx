@@ -232,21 +232,22 @@ const VehicleDiagram: React.FC<{
     colorOt: vehicle?.color_ot,
     onBatteryClick: handleBatteryClick,
     sparklineContent,
-    actionButton: isDocked ? undefined : (
-      <a
-        href={okeanidsUrl}
-        target="_blank"
-        rel="noopener noreferrer"
-        title="Open in Okeanids"
-        aria-label="Open in Okeanids"
-        className="flex h-9 w-9 items-center justify-center rounded bg-teal-500 text-white shadow-md transition-colors hover:bg-teal-400"
-      >
-        <FontAwesomeIcon
-          icon={faArrowUpRightFromSquare}
-          className="text-base"
-        />
-      </a>
-    ),
+    actionButton:
+      !vehicle || isDocked ? undefined : (
+        <a
+          href={okeanidsUrl}
+          target="_blank"
+          rel="noopener noreferrer"
+          title="Open in Okeanids"
+          aria-label="Open in Okeanids"
+          className="flex h-9 w-9 items-center justify-center rounded bg-teal-500 text-white shadow-md transition-colors hover:bg-teal-400"
+        >
+          <FontAwesomeIcon
+            icon={faArrowUpRightFromSquare}
+            className="text-base"
+          />
+        </a>
+      ),
   }
 
   return (

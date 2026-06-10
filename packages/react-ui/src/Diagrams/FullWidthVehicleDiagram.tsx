@@ -149,8 +149,11 @@ export const FullWidthVehicleDiagram: React.FC<
   // Sparkline base dimensions — correct size when the vehicle is height-bound (wide container)
   const SPARKLINE_BASE_W = 503 // 529 × 0.95
   const SPARKLINE_BASE_H = 126 // 133 × 0.95
-  // Vertical offset above the container top at full scale. Scaled by effectiveScale
-  // so the sparkline tracks the vehicle body as the container narrows.
+  // Vertical offset at full scale. Negative = the sparkline div extends above the
+  // container's overflow-hidden boundary, intentionally clipping the comms tick rows
+  // (supplementary decoration). The depth chart (primary content) starts at y=0 inside
+  // the SVG and remains fully visible. Scaled by effectiveScale so the overlay tracks
+  // the vehicle body as the container narrows.
   const SPARKLINE_BASE_Y = -12
 
   // Vehicle SVG viewBox dimensions
