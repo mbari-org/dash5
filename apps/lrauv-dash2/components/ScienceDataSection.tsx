@@ -238,8 +238,13 @@ const ScienceDataSection: React.FC<{
           )}
           {!isLoading && !isError && !charts?.length && (
             <p className="m-4 text-sm text-stone-500">
-              No chart data available for this time window. Try a wider range or
-              check back after the vehicle surfaces.
+              {chartData?.length
+                ? `No ${
+                    category ?? 'vehicle'
+                  } data for this time window. Try switching to ${
+                    category === 'vehicle' ? 'Science' : 'Vehicle'
+                  }.`
+                : 'No chart data available for this time window. Try a wider range or check back after the vehicle surfaces.'}
             </p>
           )}
           <AccordionCells
