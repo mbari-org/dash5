@@ -309,21 +309,11 @@ describe('formatEvent', () => {
       expect(dirLink!.href).toContain('/data/triton/realtime/sbdlogs/')
     })
 
-    it('renders a "Data" button linking to the TethysDash data page', () => {
-      render(formatEvent(event, DASH_URL))
-      const btn = screen.getByRole('link', { name: /view all data/i })
-      expect(btn).toBeInTheDocument()
-      expect(btn.textContent).toBe('Data')
-      expect(btn.getAttribute('href')).toBe(
-        `${DASH_URL}/data/triton/realtime/sbdlogs/${LOG_PATH}/`
-      )
-    })
-
-    it('Data button opens in a new tab', () => {
-      render(formatEvent(event, DASH_URL))
-      const btn = screen.getByRole('link', { name: /view all data/i })
-      expect(btn).toHaveAttribute('target', '_blank')
-      expect(btn).toHaveAttribute('rel', 'noopener noreferrer')
+    it('the path link opens in a new tab', () => {
+      const { container } = render(formatEvent(event, DASH_URL))
+      const link = container.querySelector('a') as HTMLAnchorElement
+      expect(link).toHaveAttribute('target', '_blank')
+      expect(link).toHaveAttribute('rel', 'noopener noreferrer')
     })
   })
 

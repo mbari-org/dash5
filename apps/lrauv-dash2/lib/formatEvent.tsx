@@ -267,15 +267,6 @@ const formatEvent = (
           >
             {path}
           </a>
-          <a
-            href={`${url}/`}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="mt-1 self-start rounded bg-teal-500 px-2 py-0.5 text-xs font-semibold text-white hover:bg-teal-400"
-            aria-label="view all data for this log session"
-          >
-            Data
-          </a>
         </p>
       )
 

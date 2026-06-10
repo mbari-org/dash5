@@ -41,6 +41,13 @@ export const RealTimeLogs: React.FC<RealTimeLogsProps> = ({
     return `${base}/data/${vehicleName}/realtime/sbdlogs/${path}/shore.log`
   }, [siteConfig, vehicleName, latestDataProcessed])
 
+  const dataUrl = useMemo(() => {
+    const base = siteConfig?.appConfig.external.tethysdash
+    const path = latestDataProcessed?.[0]?.path
+    if (!base || !vehicleName || !path) return undefined
+    return `${base}/data/${vehicleName}/realtime/sbdlogs/${path}/`
+  }, [siteConfig, vehicleName, latestDataProcessed])
+
   const handleEspClick = () => {
     if (!espUrl) return
     window.open(espUrl, '_blank', 'noopener,noreferrer')
@@ -49,6 +56,11 @@ export const RealTimeLogs: React.FC<RealTimeLogsProps> = ({
   const handleShoreClick = () => {
     if (!shoreUrl) return
     window.open(shoreUrl, '_blank', 'noopener,noreferrer')
+  }
+
+  const handleDataClick = () => {
+    if (!dataUrl) return
+    window.open(dataUrl, '_blank', 'noopener,noreferrer')
   }
 
   return (
@@ -79,6 +91,20 @@ export const RealTimeLogs: React.FC<RealTimeLogsProps> = ({
           <FontAwesomeIcon icon={faExternalLink} className="mr-2" />
         )}
         ESP
+      </Button>
+
+      <Button
+        appearance="secondary"
+        onClick={handleDataClick}
+        disabled={!dataUrl}
+        aria-label="Open all data downloads for this log session in a new browser tab"
+        title="Data — open downloads page in new tab"
+        className="shrink-0 whitespace-nowrap"
+      >
+        {!hideIcons && (
+          <FontAwesomeIcon icon={faExternalLink} className="mr-2" />
+        )}
+        Data
       </Button>
     </>
   )
