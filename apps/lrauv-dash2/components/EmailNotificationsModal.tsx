@@ -71,17 +71,28 @@ const EmailNotificationsModal: React.FC<EmailNotificationsModalProps> = ({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [addressesData, accountEmail, selectedEmail, defaultDest])
 
-  // Default to account email once the list loads. If no default has been stored
-  // in localStorage yet, treat the account email as the implicit default so
-  // the Make Default checkbox shows as checked on first open.
+  // On first open, pre-select the stored default destination (or fall back to
+  // the account email). We do this immediately so the settings panel starts
+  // loading the right data right away.
   useEffect(() => {
-    if (!selectedEmail && accountEmail) {
-      setSelectedEmail(accountEmail)
-    }
-    if (!getDefaultDest() && accountEmail) {
+    if (selectedEmail || !accountEmail) return
+    const storedDefault = getDefaultDest()
+    setSelectedEmail(storedDefault ?? accountEmail)
+    if (!storedDefault) {
+      // Nothing stored yet — treat the account email as the implicit default.
       setDefaultDest(accountEmail)
     }
   }, [accountEmail, selectedEmail])
+
+  // Once the address list loads, verify the selection is still valid.
+  // If the stored default was deleted externally, fall back to account email.
+  useEffect(() => {
+    if (!addressesData || !accountEmail || !selectedEmail) return
+    const validAddresses = Object.keys(addressesData.result)
+    if (!validAddresses.includes(selectedEmail)) {
+      setSelectedEmail(accountEmail)
+    }
+  }, [addressesData, accountEmail, selectedEmail])
 
   const isExtraEmail = selectedEmail !== '' && selectedEmail !== accountEmail
 
@@ -221,6 +232,46 @@ const EmailNotificationsModal: React.FC<EmailNotificationsModalProps> = ({
       return prev
     })
   }, [toUiFilteredRows])
+
+  // True whenever the current notification settings differ from what was last
+  // loaded from the server. Used to gate the Save button so it's only enabled
+  // when there is actually something new to save.
+  const hasChanges = useMemo(() => {
+    if (plainText !== initialPlainText) return true
+    for (const name of vehicleNames) {
+      if (
+        Boolean(vehiclesEnabled[name]) !== Boolean(initialVehiclesEnabled[name])
+      )
+        return true
+    }
+    const initialRows = toUiFilteredRows()
+    if (filteredRows.length !== initialRows.length) return true
+    for (let i = 0; i < filteredRows.length; i += 1) {
+      const a = filteredRows[i]
+      const b = initialRows[i]
+      if (
+        a.eventKindName !== b.eventKindName ||
+        a.textFilter !== b.textFilter ||
+        a.filteringType !== b.filteringType
+      )
+        return true
+      for (const name of vehicleNames) {
+        if (
+          Boolean(a.vehiclesChecked[name]) !== Boolean(b.vehiclesChecked[name])
+        )
+          return true
+      }
+    }
+    return false
+  }, [
+    plainText,
+    initialPlainText,
+    vehiclesEnabled,
+    initialVehiclesEnabled,
+    filteredRows,
+    toUiFilteredRows,
+    vehicleNames,
+  ])
 
   // ── mutations ────────────────────────────────────────────────────────────
   const { mutate: saveSettings, isLoading: isSaving } = useUpdateEmailSettings()
@@ -604,7 +655,7 @@ const EmailNotificationsModal: React.FC<EmailNotificationsModalProps> = ({
       style={{ minWidth: 800 }}
       onConfirm={handleSave}
       confirmButtonText="Save"
-      disableConfirm={isBusy}
+      disableConfirm={isBusy || !hasChanges}
       onCancel={onClose}
       cancelButtonText="Close"
       extraButtons={[
