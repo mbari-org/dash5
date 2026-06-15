@@ -45,6 +45,10 @@ const EmailNotificationsModal: React.FC<EmailNotificationsModalProps> = ({
 
   const [selectedEmail, setSelectedEmail] = useState<string>('')
 
+  // Tracks which specific address the user has stored as their default.
+  // Declared here so allEmails can use it as a dependency for sorting.
+  const [defaultDest, setDefaultDest] = useState<string | null>(getDefaultDest)
+
   const allEmails: string[] = useMemo(() => {
     const base = addressesData?.result
       ? Object.keys(addressesData.result).sort()
@@ -57,13 +61,15 @@ const EmailNotificationsModal: React.FC<EmailNotificationsModalProps> = ({
       selectedEmail && !base.includes(selectedEmail)
         ? [...base, selectedEmail].sort()
         : base
-    // Sort so the stored default address appears first.
-    const storedDefault = getDefaultDest()
-    if (storedDefault && withSelected.includes(storedDefault)) {
-      return [storedDefault, ...withSelected.filter((e) => e !== storedDefault)]
+    // Sort so the default address always appears first in the dropdown.
+    // Uses the `defaultDest` state variable so the list re-sorts immediately
+    // whenever the user clicks "Make default" — no page reload required.
+    if (defaultDest && withSelected.includes(defaultDest)) {
+      return [defaultDest, ...withSelected.filter((e) => e !== defaultDest)]
     }
     return withSelected
-  }, [addressesData, accountEmail, selectedEmail])
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [addressesData, accountEmail, selectedEmail, defaultDest])
 
   // Default to account email once the list loads. If no default has been stored
   // in localStorage yet, treat the account email as the implicit default so
@@ -311,8 +317,6 @@ const EmailNotificationsModal: React.FC<EmailNotificationsModalProps> = ({
     'idle' | 'success' | 'error'
   >('idle')
   const [sendTestMessage, setSendTestMessage] = useState<string>('')
-  // Tracks which specific address is the user's stored default destination.
-  const [defaultDest, setDefaultDest] = useState<string | null>(getDefaultDest)
 
   // Clear test-email feedback whenever the selected address changes so stale
   // success/error messages from a previous address don't linger.
