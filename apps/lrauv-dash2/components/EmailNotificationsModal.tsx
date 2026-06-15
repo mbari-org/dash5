@@ -703,7 +703,7 @@ const EmailNotificationsModal: React.FC<EmailNotificationsModalProps> = ({
         {/* ── Plain text + test send row ── */}
         <section className="flex items-center justify-between pb-4">
           <div className="flex items-center gap-2">
-            {!isPhoneNumber(selectedEmail) && (
+            {!isPhoneNumber(selectedEmail ?? '') && (
               <>
                 <span id="plain-text-label" className="text-sm font-medium">
                   Send emails as plain text
