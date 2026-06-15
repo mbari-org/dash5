@@ -22,6 +22,11 @@ import FilteredNotificationEditModal from './FilteredNotificationEditModal'
 import AddEmailDialog from './AddEmailDialog'
 import EditEmailDialog from './EditEmailDialog'
 import { FilterRowUi, FilteringType } from '../types'
+import {
+  isPhoneNumber,
+  getDefaultDest,
+  saveDefaultDest,
+} from '../lib/notificationDestinations'
 
 export interface EmailNotificationsModalProps {
   onClose?: () => void
@@ -40,6 +45,10 @@ const EmailNotificationsModal: React.FC<EmailNotificationsModalProps> = ({
 
   const [selectedEmail, setSelectedEmail] = useState<string>('')
 
+  // Tracks which specific address the user has stored as their default.
+  // Declared here so allEmails can use it as a dependency for sorting.
+  const [defaultDest, setDefaultDest] = useState<string | null>(getDefaultDest)
+
   const allEmails: string[] = useMemo(() => {
     const base = addressesData?.result
       ? Object.keys(addressesData.result).sort()
@@ -48,18 +57,47 @@ const EmailNotificationsModal: React.FC<EmailNotificationsModalProps> = ({
       : []
     // Keep selectedEmail in the list during a pending refetch so the dropdown
     // never shows a selected address that isn't present in the options.
-    if (selectedEmail && !base.includes(selectedEmail)) {
-      return [...base, selectedEmail].sort()
+    const withSelected =
+      selectedEmail && !base.includes(selectedEmail)
+        ? [...base, selectedEmail].sort()
+        : base
+    // Sort so the default address always appears first in the dropdown.
+    // Uses the `defaultDest` state variable so the list re-sorts immediately
+    // whenever the user clicks "Make default" — no page reload required.
+    if (defaultDest && withSelected.includes(defaultDest)) {
+      return [defaultDest, ...withSelected.filter((e) => e !== defaultDest)]
     }
-    return base
-  }, [addressesData, accountEmail, selectedEmail])
+    return withSelected
+  }, [addressesData, accountEmail, selectedEmail, defaultDest])
 
-  // default to account email once list loads
+  // On first open, pre-select the stored default destination (or fall back to
+  // the account email). We do this immediately so the settings panel starts
+  // loading the right data right away.
+  // Also syncs defaultDest state from localStorage here to handle SSR
+  // hydration: the useState initialiser runs on the server where localStorage
+  // is unavailable (returns null), so the client must correct it on mount.
   useEffect(() => {
-    if (!selectedEmail && accountEmail) {
+    if (selectedEmail || !accountEmail) return
+    const storedDefault = getDefaultDest()
+    setSelectedEmail(storedDefault ?? accountEmail)
+    setDefaultDest(storedDefault ?? accountEmail)
+  }, [accountEmail, selectedEmail])
+
+  // Once the address list loads, verify the selection is still valid.
+  // If the stored default was deleted externally, revert both the selection
+  // and the stored localStorage value to the account email so the stale
+  // address is not re-selected on the next open.
+  useEffect(() => {
+    if (!addressesData || !accountEmail || !selectedEmail) return
+    const validAddresses = Object.keys(addressesData.result)
+    if (!validAddresses.includes(selectedEmail)) {
       setSelectedEmail(accountEmail)
     }
-  }, [accountEmail, selectedEmail])
+    if (defaultDest && !validAddresses.includes(defaultDest)) {
+      saveDefaultDest(accountEmail)
+      setDefaultDest(accountEmail)
+    }
+  }, [addressesData, accountEmail, selectedEmail, defaultDest])
 
   const isExtraEmail = selectedEmail !== '' && selectedEmail !== accountEmail
 
@@ -199,6 +237,46 @@ const EmailNotificationsModal: React.FC<EmailNotificationsModalProps> = ({
       return prev
     })
   }, [toUiFilteredRows])
+
+  // True whenever the current notification settings differ from what was last
+  // loaded from the server. Used to gate the Save button so it's only enabled
+  // when there is actually something new to save.
+  const hasChanges = useMemo(() => {
+    if (plainText !== initialPlainText) return true
+    for (const name of vehicleNames) {
+      if (
+        Boolean(vehiclesEnabled[name]) !== Boolean(initialVehiclesEnabled[name])
+      )
+        return true
+    }
+    const initialRows = toUiFilteredRows()
+    if (filteredRows.length !== initialRows.length) return true
+    for (let i = 0; i < filteredRows.length; i += 1) {
+      const a = filteredRows[i]
+      const b = initialRows[i]
+      if (
+        a.eventKindName !== b.eventKindName ||
+        a.textFilter !== b.textFilter ||
+        a.filteringType !== b.filteringType
+      )
+        return true
+      for (const name of vehicleNames) {
+        if (
+          Boolean(a.vehiclesChecked[name]) !== Boolean(b.vehiclesChecked[name])
+        )
+          return true
+      }
+    }
+    return false
+  }, [
+    plainText,
+    initialPlainText,
+    vehiclesEnabled,
+    initialVehiclesEnabled,
+    filteredRows,
+    toUiFilteredRows,
+    vehicleNames,
+  ])
 
   // ── mutations ────────────────────────────────────────────────────────────
   const { mutate: saveSettings, isLoading: isSaving } = useUpdateEmailSettings()
@@ -406,14 +484,23 @@ const EmailNotificationsModal: React.FC<EmailNotificationsModalProps> = ({
       vehiclesEnabled: vehiclesEnabledArray,
       notifLines,
     }
+    // Phone number destinations don't support plain-text toggling; always
+    // save as 'n' for SMS so the stored value stays consistent with test sends.
+    const effectivePlainText = isPhoneNumber(selectedEmail ?? '')
+      ? 'n'
+      : plainText
+      ? 'y'
+      : 'n'
     saveSettings(
       {
         email: selectedEmail,
-        plainText: plainText ? 'y' : 'n',
+        plainText: effectivePlainText,
         details,
       },
       {
-        onSuccess: () => onClose?.(),
+        onSuccess: () => {
+          toast.success('Notification settings saved.')
+        },
         onError: () => {
           toast.error('Failed to save notification settings. Please try again.')
         },
@@ -428,19 +515,35 @@ const EmailNotificationsModal: React.FC<EmailNotificationsModalProps> = ({
     sendTest(
       {
         email: selectedEmail,
-        plainText: plainText ? 'y' : ('n' as 'y' | 'n'),
+        plainText:
+          isPhoneNumber(selectedEmail ?? '') || !plainText
+            ? ('n' as 'y' | 'n')
+            : 'y',
       },
       {
         onSuccess: (data) => {
+          const isPhone = isPhoneNumber(selectedEmail ?? '')
+          // For phone numbers the backend already returns a full descriptive
+          // string in email_sent (e.g. "test SMS sent to +1…"), so use it
+          // directly to avoid doubling up with our own prefix.
           const msg = data?.email_sent
-            ? `Test email sent to ${data.email_sent}`
+            ? isPhone
+              ? data.email_sent
+              : `Test email sent to ${data.email_sent}`
+            : isPhone
+            ? 'SMS sent'
             : 'Test email sent'
           setSendTestStatus('success')
           setSendTestMessage(msg)
         },
         onError: () => {
           setSendTestStatus('error')
-          setSendTestMessage('Could not send test email. Please try again.')
+          const isPhone = isPhoneNumber(selectedEmail ?? '')
+          setSendTestMessage(
+            isPhone
+              ? 'Could not send test text message. Please try again.'
+              : 'Could not send test email. Please try again.'
+          )
         },
       }
     )
@@ -466,52 +569,70 @@ const EmailNotificationsModal: React.FC<EmailNotificationsModalProps> = ({
   }
 
   // ── extra email address management ───────────────────────────────────────
-  const handleAddEmail = (newEmail: string) => {
+  const handleAddEmail = (newEmail: string, makeDefault?: boolean) => {
     addExtraEmail(
       { email: accountEmail, addExtraEmails: newEmail },
       {
         onSuccess: () => {
           setShowAddEmail(false)
           setSelectedEmail(newEmail)
+          if (makeDefault) {
+            saveDefaultDest(newEmail)
+            setDefaultDest(newEmail)
+          }
         },
         onError: () => {
-          toast.error('Failed to add email address. Please try again.')
+          toast.error('Failed to add destination. Please try again.')
         },
       }
     )
   }
 
   const handleEditSaveAddress = (newEmail: string) => {
+    const oldEmail = selectedEmail
     updateEmailAddress(
       {
         email: accountEmail,
-        extraEmail: selectedEmail,
+        extraEmail: oldEmail,
         newExtraEmail: newEmail,
       },
       {
         onSuccess: () => {
           setShowEditEmail(false)
           setSelectedEmail(newEmail)
+          // If the renamed address was the default, update to the new address.
+          if (oldEmail === defaultDest) {
+            saveDefaultDest(newEmail)
+            setDefaultDest(newEmail)
+          }
         },
         onError: () => {
-          toast.error('Failed to update email address. Please try again.')
+          toast.error('Failed to update destination. Please try again.')
         },
       }
     )
   }
 
   const handleDeleteAddress = () => {
-    if (!confirm(`Remove ${selectedEmail} from your notification addresses?`))
+    if (
+      !confirm(`Remove ${selectedEmail} from your notification destinations?`)
+    )
       return
+    const deletedEmail = selectedEmail
     deleteEmailAddress(
-      { email: accountEmail, extraEmail: selectedEmail },
+      { email: accountEmail, extraEmail: deletedEmail },
       {
         onSuccess: () => {
           setShowEditEmail(false)
           setSelectedEmail(accountEmail)
+          // If the deleted address was the stored default, revert to account email.
+          if (deletedEmail === defaultDest) {
+            saveDefaultDest(accountEmail)
+            setDefaultDest(accountEmail)
+          }
         },
         onError: () => {
-          toast.error('Failed to remove email address. Please try again.')
+          toast.error('Failed to remove destination. Please try again.')
         },
       }
     )
@@ -538,7 +659,7 @@ const EmailNotificationsModal: React.FC<EmailNotificationsModalProps> = ({
 
   return (
     <Modal
-      title={<span className="text-2xl font-bold">Email notifications</span>}
+      title={<span className="text-2xl font-bold">Notifications</span>}
       onClose={onClose}
       open
       grayHeader
@@ -548,7 +669,7 @@ const EmailNotificationsModal: React.FC<EmailNotificationsModalProps> = ({
       style={{ minWidth: 800 }}
       onConfirm={handleSave}
       confirmButtonText="Save"
-      disableConfirm={isBusy}
+      disableConfirm={isBusy || !hasChanges}
       onCancel={onClose}
       cancelButtonText="Close"
       extraButtons={[
@@ -572,7 +693,7 @@ const EmailNotificationsModal: React.FC<EmailNotificationsModalProps> = ({
           <div ref={dropdownRef} className="relative">
             <button
               ref={triggerRef}
-              aria-label="Select notification email address"
+              aria-label="Select notification destination"
               className="flex min-w-[220px] items-center justify-between gap-2 rounded border border-stone-300 bg-white px-3 py-1 text-sm transition-colors hover:border-primary-400 hover:bg-blue-50 active:bg-blue-100 disabled:cursor-not-allowed disabled:opacity-50"
               onClick={() => (dropdownOpen ? closeDropdown() : openDropdown())}
               onKeyDown={handleTriggerKeyDown}
@@ -583,8 +704,10 @@ const EmailNotificationsModal: React.FC<EmailNotificationsModalProps> = ({
             >
               <span className="truncate">
                 {selectedEmail || '—'}
-                {selectedEmail === accountEmail ? (
-                  <span className="ml-1 text-stone-400">(primary)</span>
+                {selectedEmail === defaultDest ? (
+                  <span className="ml-1 text-teal-600 font-medium">
+                    (Default)
+                  </span>
                 ) : null}
               </span>
               <svg
@@ -607,7 +730,7 @@ const EmailNotificationsModal: React.FC<EmailNotificationsModalProps> = ({
                 ref={listboxRef}
                 id="email-selector-listbox"
                 role="listbox"
-                aria-label="Notification email address"
+                aria-label="Notification destination"
                 tabIndex={-1}
                 aria-activedescendant={
                   focusedIdx >= 0 ? `email-option-${focusedIdx}` : undefined
@@ -638,9 +761,9 @@ const EmailNotificationsModal: React.FC<EmailNotificationsModalProps> = ({
                       <span className="mr-1 text-primary-500">›</span>
                     )}
                     {e}
-                    {e === accountEmail && (
-                      <span className="ml-1 text-xs font-normal text-stone-400">
-                        (primary)
+                    {e === defaultDest && (
+                      <span className="ml-1 text-xs font-medium text-teal-600">
+                        (Default)
                       </span>
                     )}
                   </li>
@@ -654,7 +777,7 @@ const EmailNotificationsModal: React.FC<EmailNotificationsModalProps> = ({
           <Tippy
             content={
               isExtraEmail
-                ? 'Edit or delete this address'
+                ? 'Edit or delete this destination'
                 : 'Primary email address cannot be edited here'
             }
             placement="top"
@@ -664,7 +787,7 @@ const EmailNotificationsModal: React.FC<EmailNotificationsModalProps> = ({
                 className="flex h-7 w-7 items-center justify-center rounded-full border border-stone-300 bg-white text-stone-500 transition-colors hover:border-primary-500 hover:bg-blue-100 hover:text-primary-600 active:bg-blue-200 disabled:cursor-not-allowed disabled:opacity-40"
                 onClick={() => isExtraEmail && setShowEditEmail(true)}
                 disabled={isBusy || !isExtraEmail}
-                aria-label="Edit address"
+                aria-label="Edit destination"
               >
                 <FontAwesomeIcon icon={faPencil} className="text-xs" />
               </button>
@@ -672,56 +795,106 @@ const EmailNotificationsModal: React.FC<EmailNotificationsModalProps> = ({
           </Tippy>
 
           {/* Plus — add a new address. Wrapped in <span> so Tippy fires when disabled. */}
-          <Tippy content="Add a notification address" placement="top">
+          <Tippy content="Add a notification destination" placement="top">
             <span className="inline-flex">
               <button
                 className="flex h-7 w-7 items-center justify-center rounded-full border border-stone-300 bg-white text-stone-500 transition-colors hover:border-primary-500 hover:bg-blue-100 hover:text-primary-600 active:bg-blue-200 disabled:cursor-not-allowed disabled:opacity-40"
                 onClick={() => setShowAddEmail(true)}
                 disabled={isBusy}
-                aria-label="Add address"
+                aria-label="Add destination"
               >
                 <FontAwesomeIcon icon={faPlus} className="text-xs" />
               </button>
             </span>
           </Tippy>
+
+          {/* Make Default checkbox — shown for all destinations.
+              Saves the specific address to localStorage immediately on click.
+              stopPropagation prevents the click from bubbling to the modal
+              backdrop overlay. Checked+disabled when this address is already
+              the stored default. */}
+          {(() => {
+            const isAlreadyDefault = selectedEmail === defaultDest
+            const destLabel = isPhoneNumber(selectedEmail ?? '')
+              ? 'phone number'
+              : 'email address'
+            return (
+              <Tippy
+                content={
+                  isAlreadyDefault
+                    ? `This ${destLabel} is already your default`
+                    : `Set this ${destLabel} as your default notification destination`
+                }
+                placement="top"
+              >
+                <label
+                  className="ml-2 flex cursor-pointer items-center gap-1.5 text-xs text-stone-600"
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  <input
+                    type="checkbox"
+                    checked={isAlreadyDefault}
+                    disabled={isAlreadyDefault || isBusy}
+                    onClick={(e) => e.stopPropagation()}
+                    onChange={(e) => {
+                      e.stopPropagation()
+                      if (selectedEmail) {
+                        saveDefaultDest(selectedEmail)
+                        setDefaultDest(selectedEmail)
+                      }
+                    }}
+                    className="accent-teal-600 disabled:cursor-default"
+                  />
+                  Make default
+                </label>
+              </Tippy>
+            )
+          })()}
         </section>
 
-        {/* ── Plain text + test email row ── */}
+        {/* ── Plain text + test send row ── */}
         <section className="flex items-center justify-between pb-4">
           <div className="flex items-center gap-2">
-            <span id="plain-text-label" className="text-sm font-medium">
-              Send emails as plain text
-            </span>
-            {/* Toggle slider */}
-            <button
-              role="switch"
-              aria-labelledby="plain-text-label"
-              aria-checked={plainText}
-              disabled={isDataLoading}
-              onClick={() => setPlainText((v) => !v)}
-              className={`relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-1 disabled:cursor-not-allowed disabled:opacity-50 ${
-                plainText ? 'bg-primary-600' : 'bg-stone-300'
-              }`}
-            >
-              <span className="sr-only">{plainText ? 'On' : 'Off'}</span>
-              <span
-                className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${
-                  plainText ? 'translate-x-5' : 'translate-x-0'
-                }`}
-              />
-            </button>
-            <span
-              className={`text-xs font-semibold ${
-                plainText ? 'text-primary-600' : 'text-stone-400'
-              }`}
-            >
-              {plainText ? 'On' : 'Off'}
-            </span>
+            {!isPhoneNumber(selectedEmail ?? '') && (
+              <>
+                <span id="plain-text-label" className="text-sm font-medium">
+                  Send emails as plain text
+                </span>
+                {/* Toggle slider */}
+                <button
+                  role="switch"
+                  aria-labelledby="plain-text-label"
+                  aria-checked={plainText}
+                  disabled={isDataLoading}
+                  onClick={() => setPlainText((v) => !v)}
+                  className={`relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-1 disabled:cursor-not-allowed disabled:opacity-50 ${
+                    plainText ? 'bg-primary-600' : 'bg-stone-300'
+                  }`}
+                >
+                  <span className="sr-only">{plainText ? 'On' : 'Off'}</span>
+                  <span
+                    className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${
+                      plainText ? 'translate-x-5' : 'translate-x-0'
+                    }`}
+                  />
+                </button>
+                <span
+                  className={`text-xs font-semibold ${
+                    plainText ? 'text-primary-600' : 'text-stone-400'
+                  }`}
+                >
+                  {plainText ? 'On' : 'Off'}
+                </span>
+              </>
+            )}
           </div>
           <div className="flex items-center gap-2">
             {sendTestStatus === 'success' && (
               <span className="text-sm text-green-600">
-                {sendTestMessage || `Test email sent to ${selectedEmail}`}
+                {sendTestMessage ||
+                  (isPhoneNumber(selectedEmail ?? '')
+                    ? 'SMS sent'
+                    : `Test email sent to ${selectedEmail}`)}
               </span>
             )}
             {sendTestStatus === 'error' && (
@@ -730,7 +903,11 @@ const EmailNotificationsModal: React.FC<EmailNotificationsModalProps> = ({
               </span>
             )}
             <Tippy
-              content={`Send a test email to ${selectedEmail}`}
+              content={
+                isPhoneNumber(selectedEmail ?? '')
+                  ? `Send a test text message to ${selectedEmail}`
+                  : `Send a test email to ${selectedEmail}`
+              }
               placement="top"
             >
               <span>
@@ -739,7 +916,11 @@ const EmailNotificationsModal: React.FC<EmailNotificationsModalProps> = ({
                   onClick={handleSendTest}
                   disabled={isBusy}
                 >
-                  {isTesting ? 'Sending…' : 'Send test email'}
+                  {isTesting
+                    ? 'Sending…'
+                    : isPhoneNumber(selectedEmail ?? '')
+                    ? 'Send test text'
+                    : 'Send test email'}
                 </Button>
               </span>
             </Tippy>
