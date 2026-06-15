@@ -134,15 +134,10 @@ dash5/
 
 ### 1. Build the packages first
 
-The two shared packages behave differently at the webpack level:
-
-- **`@mbari/react-ui`** — `"main"` points to `src/index.ts` and Next.js has `transpilePackages` configured, so source edits are picked up by HMR without a rebuild.
-- **`@mbari/api-client`** — has an `"exports"` field that points webpack to pre-built `dist/` files. Changes here **require a rebuild** before the app reflects them.
-
-As a safe default, build both before starting the dev server for the first time:
+The `react-ui` and `api-client` packages use pre-built `dist/` output — the Next.js app imports the **compiled** files, not the TypeScript sources. You must build them before starting the dev server (and again after any change to those packages).
 
 ```bash
-# From the repo root
+# From the repo root — build both shared packages
 yarn workspace @mbari/react-ui build
 yarn workspace @mbari/api-client build
 ```
@@ -175,11 +170,9 @@ Then open `http://localhost:3000` in your browser.
 
 This is the most important thing to understand about the local dev loop.
 
-**If you only edit files in `apps/lrauv-dash2/`**, Next.js HMR will pick up your changes automatically. No restart needed.
+**If you only edit files in `apps/lrauv-dash2/`**, Next.js hot-module reload (HMR) will pick up your changes automatically. You do not need to restart anything.
 
-**If you edit `packages/react-ui/`**, HMR should also pick up changes automatically because `react-ui` exposes its TypeScript source via `"main"` and Next.js transpiles it directly.
-
-**If you edit `packages/api-client/`**, you **must** rebuild before changes appear. Its `"exports"` field points webpack to pre-built `dist/` files, so the browser will silently serve stale output otherwise — even after a hard refresh.
+**If you edit files in `packages/react-ui/` or `packages/api-client/`**, you **must** rebuild those packages and restart the dev server before your changes appear. The browser will silently serve stale compiled output otherwise — even after a hard refresh.
 
 Full refresh cycle after editing a shared package:
 
@@ -206,35 +199,28 @@ For starter issues (see below), all your edits will be inside `apps/lrauv-dash2/
 ### Unit / component tests (Jest)
 
 ```bash
-# All packages that have Jest tests (react-ui, api-client, utils, lrauv-dash2)
+# All packages
+yarn test
+
+# Single package
 yarn workspace @mbari/react-ui test
-yarn workspace @mbari/api-client test
-yarn workspace @mbari/lrauv-dash2 test:ci
 
-# Single test file in the app
-yarn workspace @mbari/lrauv-dash2 test:ci -- --testPathPattern=notificationDestinations
+# Single test file
+yarn workspace @mbari/lrauv-dash2 test:ci -- --testPathPattern=CommsSection
 ```
-
-> **Note:** `yarn test` at the repo root runs `turbo run test`, which includes Playwright
-> for the app. Use the workspace `test:ci` command above when you only want Jest.
 
 ### End-to-end tests (Playwright)
 
 ```bash
 cd apps/lrauv-dash2
-yarn test         # Playwright is pre-configured with a webServer; no need to start the dev server manually
+yarn test         # runs Playwright tests (requires the dev server to be running)
 ```
 
 ### Linting
 
 ```bash
-# Lint shared packages (react-ui, api-client, utils)
-yarn lint               # lint and auto-fix
-yarn lint:watch         # live lint on save
-
-# Lint the Next.js app separately (root lint does not cover apps/)
-cd apps/lrauv-dash2
-yarn lint
+yarn lint               # lint and auto-fix all packages
+yarn lint:watch         # live lint on save (useful during development)
 ```
 
 ---
