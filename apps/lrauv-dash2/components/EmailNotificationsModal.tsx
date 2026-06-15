@@ -693,7 +693,7 @@ const EmailNotificationsModal: React.FC<EmailNotificationsModalProps> = ({
           <div ref={dropdownRef} className="relative">
             <button
               ref={triggerRef}
-              aria-label="Select notification email address"
+              aria-label="Select notification destination"
               className="flex min-w-[220px] items-center justify-between gap-2 rounded border border-stone-300 bg-white px-3 py-1 text-sm transition-colors hover:border-primary-400 hover:bg-blue-50 active:bg-blue-100 disabled:cursor-not-allowed disabled:opacity-50"
               onClick={() => (dropdownOpen ? closeDropdown() : openDropdown())}
               onKeyDown={handleTriggerKeyDown}
@@ -730,7 +730,7 @@ const EmailNotificationsModal: React.FC<EmailNotificationsModalProps> = ({
                 ref={listboxRef}
                 id="email-selector-listbox"
                 role="listbox"
-                aria-label="Notification email address"
+                aria-label="Notification destination"
                 tabIndex={-1}
                 aria-activedescendant={
                   focusedIdx >= 0 ? `email-option-${focusedIdx}` : undefined
@@ -787,7 +787,7 @@ const EmailNotificationsModal: React.FC<EmailNotificationsModalProps> = ({
                 className="flex h-7 w-7 items-center justify-center rounded-full border border-stone-300 bg-white text-stone-500 transition-colors hover:border-primary-500 hover:bg-blue-100 hover:text-primary-600 active:bg-blue-200 disabled:cursor-not-allowed disabled:opacity-40"
                 onClick={() => isExtraEmail && setShowEditEmail(true)}
                 disabled={isBusy || !isExtraEmail}
-                aria-label="Edit address"
+                aria-label="Edit destination"
               >
                 <FontAwesomeIcon icon={faPencil} className="text-xs" />
               </button>
