@@ -44,12 +44,12 @@ describe('getVariableData', () => {
     expect(lastRequest?.url.pathname).toContain('some%20variable')
   })
 
-  it('passes vehicle, from, and default maxlen as query params', async () => {
+  it('passes vehicle and from as query params, and omits maxlen by default', async () => {
     const from = 1_780_000_000_000
     await getVariableData({ vehicle: 'brizo', variableName: 'depth', from })
     expect(lastRequest?.url.searchParams.get('vehicle')).toBe('brizo')
     expect(lastRequest?.url.searchParams.get('from')).toBe(String(from))
-    expect(lastRequest?.url.searchParams.get('maxlen')).toBe('2000')
+    expect(lastRequest?.url.searchParams.get('maxlen')).toBeNull()
   })
 
   it('passes to when provided', async () => {
