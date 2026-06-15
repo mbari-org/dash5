@@ -538,7 +538,7 @@ const EmailNotificationsModal: React.FC<EmailNotificationsModalProps> = ({
 
   return (
     <Modal
-      title={<span className="text-2xl font-bold">Email notifications</span>}
+      title={<span className="text-2xl font-bold">Notifications</span>}
       onClose={onClose}
       open
       grayHeader
@@ -654,7 +654,7 @@ const EmailNotificationsModal: React.FC<EmailNotificationsModalProps> = ({
           <Tippy
             content={
               isExtraEmail
-                ? 'Edit or delete this address'
+                ? 'Edit or delete this destination'
                 : 'Primary email address cannot be edited here'
             }
             placement="top"
@@ -672,7 +672,7 @@ const EmailNotificationsModal: React.FC<EmailNotificationsModalProps> = ({
           </Tippy>
 
           {/* Plus — add a new address. Wrapped in <span> so Tippy fires when disabled. */}
-          <Tippy content="Add a notification address" placement="top">
+          <Tippy content="Add a notification destination" placement="top">
             <span className="inline-flex">
               <button
                 className="flex h-7 w-7 items-center justify-center rounded-full border border-stone-300 bg-white text-stone-500 transition-colors hover:border-primary-500 hover:bg-blue-100 hover:text-primary-600 active:bg-blue-200 disabled:cursor-not-allowed disabled:opacity-40"
