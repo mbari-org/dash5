@@ -134,10 +134,15 @@ dash5/
 
 ### 1. Build the packages first
 
-The `react-ui` and `api-client` packages use pre-built `dist/` output — the Next.js app imports the **compiled** files, not the TypeScript sources. You must build them before starting the dev server (and again after any change to those packages).
+The two shared packages behave differently at the webpack level:
+
+- **`@mbari/react-ui`** — `"main"` points to `src/index.ts` and Next.js has `transpilePackages` configured, so source edits are picked up by HMR without a rebuild.
+- **`@mbari/api-client`** — has an `"exports"` field that points webpack to pre-built `dist/` files. Changes here **require a rebuild** before the app reflects them.
+
+As a safe default, build both before starting the dev server for the first time:
 
 ```bash
-# From the repo root — build both shared packages
+# From the repo root
 yarn workspace @mbari/react-ui build
 yarn workspace @mbari/api-client build
 ```
@@ -170,9 +175,11 @@ Then open `http://localhost:3000` in your browser.
 
 This is the most important thing to understand about the local dev loop.
 
-**If you only edit files in `apps/lrauv-dash2/`**, Next.js hot-module reload (HMR) will pick up your changes automatically. You do not need to restart anything.
+**If you only edit files in `apps/lrauv-dash2/`**, Next.js HMR will pick up your changes automatically. No restart needed.
 
-**If you edit files in `packages/react-ui/` or `packages/api-client/`**, you **must** rebuild those packages and restart the dev server before your changes appear. The browser will silently serve stale compiled output otherwise — even after a hard refresh.
+**If you edit `packages/react-ui/`**, HMR should also pick up changes automatically because `react-ui` exposes its TypeScript source via `"main"` and Next.js transpiles it directly.
+
+**If you edit `packages/api-client/`**, you **must** rebuild before changes appear. Its `"exports"` field points webpack to pre-built `dist/` files, so the browser will silently serve stale output otherwise — even after a hard refresh.
 
 Full refresh cycle after editing a shared package:
 

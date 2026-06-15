@@ -36,7 +36,12 @@ const EditEmailDialog: React.FC<EditEmailDialogProps> = ({
 
   const trimmed = value.trim()
   const normalized = destType === 'phone' ? normalizePhone(trimmed) : trimmed
-  const isUnchanged = normalized.toLowerCase() === currentEmail.toLowerCase()
+  // Normalize currentEmail the same way so a pre-formatted phone like
+  // "+1 555 123 4567" correctly compares equal to its stored value.
+  const normalizedCurrent =
+    initialType === 'phone' ? normalizePhone(currentEmail) : currentEmail
+  const isUnchanged =
+    normalized.toLowerCase() === normalizedCurrent.toLowerCase()
   const isDuplicate =
     !isUnchanged &&
     existingEmails
