@@ -1,5 +1,26 @@
 export type DestinationType = 'email' | 'phone'
 
+const DEST_TYPE_KEY = 'notification:defaultDestType'
+
+export const getDefaultDestType = (): DestinationType => {
+  try {
+    const stored =
+      typeof window !== 'undefined' ? localStorage.getItem(DEST_TYPE_KEY) : null
+    if (stored === 'email' || stored === 'phone') return stored
+  } catch {
+    // localStorage unavailable (SSR, private browsing)
+  }
+  return 'email'
+}
+
+export const saveDefaultDestType = (type: DestinationType) => {
+  try {
+    localStorage.setItem(DEST_TYPE_KEY, type)
+  } catch {
+    // ignore storage failures
+  }
+}
+
 export const isValidEmail = (value: string) =>
   /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value.trim())
 

@@ -6,6 +6,8 @@ import {
   isValidPhone,
   normalizePhone,
   SMS_CONSENT,
+  getDefaultDestType,
+  saveDefaultDestType,
 } from '../lib/notificationDestinations'
 
 interface AddEmailDialogProps {
@@ -21,7 +23,8 @@ const AddEmailDialog: React.FC<AddEmailDialogProps> = ({
   onAdd,
   isAdding,
 }) => {
-  const [destType, setDestType] = useState<DestinationType>('email')
+  const [destType, setDestType] = useState<DestinationType>(getDefaultDestType)
+  const [makeDefault, setMakeDefault] = useState(false)
   const [value, setValue] = useState('')
 
   const trimmed = value.trim()
@@ -45,7 +48,9 @@ const AddEmailDialog: React.FC<AddEmailDialogProps> = ({
     : null
 
   const handleConfirm = () => {
-    if (isValid) onAdd(destType === 'phone' ? normalized : trimmed)
+    if (!isValid) return
+    if (makeDefault) saveDefaultDestType(destType)
+    onAdd(destType === 'phone' ? normalized : trimmed)
   }
 
   return (
@@ -64,29 +69,42 @@ const AddEmailDialog: React.FC<AddEmailDialogProps> = ({
       style={{ minWidth: 420 }}
     >
       <article className="flex flex-col gap-4 pb-2">
-        <fieldset className="flex gap-6">
-          <legend className="mb-2 text-sm text-stone-600">
+        <fieldset className="flex flex-col gap-2">
+          <legend className="mb-1 text-sm text-stone-600">
             Destination type:
           </legend>
-          {(['email', 'phone'] as DestinationType[]).map((type) => (
-            <label
-              key={type}
-              className="flex cursor-pointer items-center gap-2 text-sm"
-            >
-              <input
-                type="radio"
-                name="dest-type"
-                value={type}
-                checked={destType === type}
-                onChange={() => {
-                  setDestType(type)
-                  setValue('')
-                }}
-                className="accent-teal-600"
-              />
-              {type === 'email' ? 'Email address' : 'Phone number'}
-            </label>
-          ))}
+          <div className="flex gap-6">
+            {(['email', 'phone'] as DestinationType[]).map((type) => (
+              <label
+                key={type}
+                className="flex cursor-pointer items-center gap-2 text-sm"
+              >
+                <input
+                  type="radio"
+                  name="dest-type"
+                  value={type}
+                  checked={destType === type}
+                  onChange={() => {
+                    setDestType(type)
+                    setValue('')
+                    setMakeDefault(false)
+                  }}
+                  className="accent-teal-600"
+                />
+                {type === 'email' ? 'Email address' : 'Phone number'}
+              </label>
+            ))}
+          </div>
+          <label className="flex cursor-pointer items-center gap-2 text-xs text-stone-500">
+            <input
+              type="checkbox"
+              checked={makeDefault}
+              onChange={(e) => setMakeDefault(e.target.checked)}
+              className="accent-teal-600"
+            />
+            Make {destType === 'email' ? 'email' : 'phone number'} my default
+            destination type
+          </label>
         </fieldset>
 
         <div className="flex flex-col gap-1">

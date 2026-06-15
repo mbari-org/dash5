@@ -3,6 +3,8 @@ import {
   normalizePhone,
   isValidPhone,
   isPhoneNumber,
+  getDefaultDestType,
+  saveDefaultDestType,
 } from './notificationDestinations'
 
 describe('isValidEmail', () => {
@@ -88,6 +90,30 @@ describe('isValidPhone', () => {
 
   it('trims surrounding whitespace before validating', () => {
     expect(isValidPhone('  +15551234567  ')).toBe(true)
+  })
+})
+
+describe('getDefaultDestType / saveDefaultDestType', () => {
+  beforeEach(() => localStorage.clear())
+
+  it('returns "email" when nothing is stored', () => {
+    expect(getDefaultDestType()).toBe('email')
+  })
+
+  it('returns the stored type after saving "phone"', () => {
+    saveDefaultDestType('phone')
+    expect(getDefaultDestType()).toBe('phone')
+  })
+
+  it('returns the stored type after saving "email"', () => {
+    saveDefaultDestType('phone')
+    saveDefaultDestType('email')
+    expect(getDefaultDestType()).toBe('email')
+  })
+
+  it('falls back to "email" when an unknown value is in storage', () => {
+    localStorage.setItem('notification:defaultDestType', 'fax')
+    expect(getDefaultDestType()).toBe('email')
   })
 })
 
