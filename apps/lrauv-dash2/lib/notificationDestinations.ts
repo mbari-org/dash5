@@ -10,7 +10,7 @@ export const normalizePhone = (value: string) => value.replace(/[\s\-().]/g, '')
 export const isValidPhone = (value: string) =>
   /^\+[1-9]\d{6,14}$/.test(normalizePhone(value.trim()))
 
-export const isPhoneNumber = (value: string) => value.trim().startsWith('+')
+export const isPhoneNumber = (value: string) => isValidPhone(value)
 
 export const SMS_CONSENT =
   'By adding a phone number you opt in to SMS alerts for the vehicles you select. Message & data rates may apply. Opt out anytime by removing the number here, or reply STOP. Replying STOP stops messages but does not remove the number from TethysDash.'
