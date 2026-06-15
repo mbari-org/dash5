@@ -707,29 +707,37 @@ const EmailNotificationsModal: React.FC<EmailNotificationsModalProps> = ({
             </span>
           </Tippy>
 
-          {/* Make Default checkbox — shown for extra destinations only */}
-          {isExtraEmail &&
-            (() => {
-              const selType = isPhoneNumber(selectedEmail ?? '')
-                ? 'phone'
-                : 'email'
-              const isAlreadyDefault = defaultDestType === selType
-              return (
-                <label className="ml-2 flex cursor-pointer items-center gap-1.5 text-xs text-stone-600">
-                  <input
-                    type="checkbox"
-                    checked={isAlreadyDefault}
-                    disabled={isAlreadyDefault || isBusy}
-                    onChange={() => {
-                      saveDefaultDestType(selType)
-                      setDefaultDestType(selType)
-                    }}
-                    className="accent-teal-600 disabled:cursor-default"
-                  />
-                  Make default
-                </label>
-              )
-            })()}
+          {/* Make Default checkbox — shown for extra destinations only.
+              stopPropagation on the label prevents the click from bubbling
+              to the modal overlay and accidentally closing the modal. */}
+          {isExtraEmail && (
+            <label
+              className="ml-2 flex cursor-pointer items-center gap-1.5 text-xs text-stone-600"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <input
+                type="checkbox"
+                checked={
+                  defaultDestType ===
+                  (isPhoneNumber(selectedEmail ?? '') ? 'phone' : 'email')
+                }
+                disabled={
+                  defaultDestType ===
+                    (isPhoneNumber(selectedEmail ?? '') ? 'phone' : 'email') ||
+                  isBusy
+                }
+                onChange={() => {
+                  const selType = isPhoneNumber(selectedEmail ?? '')
+                    ? 'phone'
+                    : 'email'
+                  saveDefaultDestType(selType)
+                  setDefaultDestType(selType)
+                }}
+                className="accent-teal-600 disabled:cursor-default"
+              />
+              Make default
+            </label>
+          )}
         </section>
 
         {/* ── Plain text + test send row ── */}
