@@ -134,17 +134,18 @@ dash5/
 
 ### 1. Build the packages first
 
-The two shared packages behave differently at the webpack level:
+The three shared packages have different rebuild behavior:
 
-- **`@mbari/react-ui`** — `"main"` points to `src/index.ts` and Next.js has `transpilePackages` configured, so source edits are picked up by HMR without a rebuild.
-- **`@mbari/api-client`** — has an `"exports"` field that points webpack to pre-built `dist/` files. Changes here **require a rebuild** before the app reflects them.
+- **`@mbari/react-ui`** — `main` points to `src/index.ts` and Next.js has `transpilePackages` configured, so TypeScript edits are picked up by HMR without a rebuild. However, if you change styles, you will need to rebuild to regenerate `dist/mbari-ui.css`.
+- **`@mbari/api-client`** and **`@mbari/utils`** — both have an `exports` field that directs webpack to pre-built `dist/` files. Any change to either **requires a rebuild** before the app reflects it.
 
-As a safe default, build both before starting the dev server for the first time:
+As a safe default, build all three before starting the dev server for the first time:
 
 ```bash
 # From the repo root
 yarn workspace @mbari/react-ui build
 yarn workspace @mbari/api-client build
+yarn workspace @mbari/utils build
 ```
 
 ### 2. Start the dev server
@@ -175,29 +176,27 @@ Then open `http://localhost:3000` in your browser.
 
 This is the most important thing to understand about the local dev loop.
 
-**If you only edit files in `apps/lrauv-dash2/`**, Next.js HMR will pick up your changes automatically. No restart needed.
+**Editing `apps/lrauv-dash2/`** — HMR picks up changes automatically. No restart needed.
 
-**If you edit `packages/react-ui/`**, HMR should also pick up changes automatically because `react-ui` exposes its TypeScript source via `"main"` and Next.js transpiles it directly.
-
-**If you edit `packages/api-client/`**, you **must** rebuild before changes appear. Its `"exports"` field points webpack to pre-built `dist/` files, so the browser will silently serve stale output otherwise — even after a hard refresh.
-
-Full refresh cycle after editing a shared package:
+**Editing TypeScript/TSX in `packages/react-ui/`** — HMR picks these up too, because the package is compiled in-place by Next.js via `transpilePackages`. No rebuild needed for TS/TSX changes. Exception: if you change styles, rebuild to regenerate the CSS:
 
 ```bash
-# From the repo root:
 yarn workspace @mbari/react-ui build
-yarn workspace @mbari/api-client build
+```
 
-# Free the dev server ports
+**Editing anything in `packages/api-client/` or `packages/utils/`** — always requires a rebuild, because webpack resolves both through pre-built `dist/` files. The dev server's watch config will usually pick up the rebuilt output via HMR without a full restart; only restart if changes aren't reflected after a rebuild:
+
+```bash
+# From the repo root (rebuild whichever package you changed):
+yarn workspace @mbari/api-client build
+yarn workspace @mbari/utils build
+
+# If the dev server doesn't pick up the changes, restart it:
 lsof -ti :3000 | xargs kill -9 2>/dev/null
 lsof -ti :3002 | xargs kill -9 2>/dev/null
-
-# Clear Next.js cache and restart
 rm -rf apps/lrauv-dash2/.next
 cd apps/lrauv-dash2 && yarn dev
 ```
-
-For starter issues (see below), all your edits will be inside `apps/lrauv-dash2/`, so you will mostly benefit from HMR and won't need the full cycle.
 
 ---
 
@@ -206,35 +205,36 @@ For starter issues (see below), all your edits will be inside `apps/lrauv-dash2/
 ### Unit / component tests (Jest)
 
 ```bash
-# All packages that have Jest tests (react-ui, api-client, utils, lrauv-dash2)
+# Individual shared packages
 yarn workspace @mbari/react-ui test
 yarn workspace @mbari/api-client test
+yarn workspace @mbari/utils test
+
+# App unit tests (Jest, not Playwright)
 yarn workspace @mbari/lrauv-dash2 test:ci
 
 # Single test file in the app
-yarn workspace @mbari/lrauv-dash2 test:ci -- --testPathPattern=notificationDestinations
+yarn workspace @mbari/lrauv-dash2 test:ci -- --testPathPattern=CommsSection
 ```
 
-> **Note:** `yarn test` at the repo root runs `turbo run test`, which includes Playwright
-> for the app. Use the workspace `test:ci` command above when you only want Jest.
+> **Note:** `yarn test` at the repo root runs `turbo run test`, which triggers each workspace's `test` script — including Playwright for the app. Use the `test:ci` script above when you only want Jest.
 
 ### End-to-end tests (Playwright)
 
 ```bash
 cd apps/lrauv-dash2
-yarn test         # Playwright is pre-configured with a webServer; no need to start the dev server manually
+yarn test   # Playwright starts the dev server automatically; reuses it if already running
 ```
 
 ### Linting
 
 ```bash
-# Lint shared packages (react-ui, api-client, utils)
-yarn lint               # lint and auto-fix
-yarn lint:watch         # live lint on save
-
-# Lint the Next.js app separately (root lint does not cover apps/)
-cd apps/lrauv-dash2
+# Lint and auto-fix shared packages (packages/*/src/)
 yarn lint
+yarn lint:watch   # live, on save
+
+# Lint the Next.js app
+yarn workspace @mbari/lrauv-dash2 lint
 ```
 
 ---
