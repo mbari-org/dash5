@@ -40,7 +40,7 @@ const EditEmailDialog: React.FC<EditEmailDialogProps> = ({
   const isDuplicate =
     !isUnchanged &&
     existingEmails
-      .map((e) => e.toLowerCase())
+      .map((e) => (destType === 'phone' ? normalizePhone(e) : e).toLowerCase())
       .includes(normalized.toLowerCase())
 
   const isValueValid =

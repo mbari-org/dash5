@@ -70,11 +70,11 @@ describe('isValidPhone', () => {
     expect(isValidPhone('+05551234567')).toBe(false)
   })
 
-  it('rejects a number that is too short (fewer than 7 digits after country code)', () => {
+  it('rejects a number that is too short (fewer than 7 digits total after +)', () => {
     expect(isValidPhone('+1123')).toBe(false)
   })
 
-  it('rejects a number that is too long (more than 15 digits total)', () => {
+  it('rejects a number that is too long (more than 15 digits total after +)', () => {
     expect(isValidPhone('+1234567890123456')).toBe(false)
   })
 

@@ -27,7 +27,7 @@ const AddEmailDialog: React.FC<AddEmailDialogProps> = ({
   const trimmed = value.trim()
   const normalized = destType === 'phone' ? normalizePhone(trimmed) : trimmed
   const isDuplicate = existingEmails
-    .map((e) => e.toLowerCase())
+    .map((e) => (destType === 'phone' ? normalizePhone(e) : e).toLowerCase())
     .includes(normalized.toLowerCase())
 
   const isValueValid =

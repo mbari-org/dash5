@@ -429,7 +429,10 @@ const EmailNotificationsModal: React.FC<EmailNotificationsModalProps> = ({
     sendTest(
       {
         email: selectedEmail,
-        plainText: plainText ? 'y' : ('n' as 'y' | 'n'),
+        plainText:
+          isPhoneNumber(selectedEmail ?? '') || !plainText
+            ? ('n' as 'y' | 'n')
+            : 'y',
       },
       {
         onSuccess: (data) => {
