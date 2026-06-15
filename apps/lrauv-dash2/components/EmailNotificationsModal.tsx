@@ -22,7 +22,11 @@ import FilteredNotificationEditModal from './FilteredNotificationEditModal'
 import AddEmailDialog from './AddEmailDialog'
 import EditEmailDialog from './EditEmailDialog'
 import { FilterRowUi, FilteringType } from '../types'
-import { isPhoneNumber } from '../lib/notificationDestinations'
+import {
+  isPhoneNumber,
+  getDefaultDestType,
+  saveDefaultDestType,
+} from '../lib/notificationDestinations'
 
 export interface EmailNotificationsModalProps {
   onClose?: () => void
@@ -296,6 +300,7 @@ const EmailNotificationsModal: React.FC<EmailNotificationsModalProps> = ({
     'idle' | 'success' | 'error'
   >('idle')
   const [sendTestMessage, setSendTestMessage] = useState<string>('')
+  const [defaultDestType, setDefaultDestType] = useState(getDefaultDestType)
 
   // Clear test-email feedback whenever the selected address changes so stale
   // success/error messages from a previous address don't linger.
@@ -702,6 +707,36 @@ const EmailNotificationsModal: React.FC<EmailNotificationsModalProps> = ({
             </span>
           </Tippy>
         </section>
+
+        {/* ── Make default row — only for extra destinations ── */}
+        {isExtraEmail && (
+          <section className="flex items-center gap-2 pb-3">
+            {(() => {
+              const selType = isPhoneNumber(selectedEmail ?? '')
+                ? 'phone'
+                : 'email'
+              const isAlreadyDefault = defaultDestType === selType
+              return isAlreadyDefault ? (
+                <span className="text-xs text-stone-400">
+                  {selType === 'phone' ? 'Phone number' : 'Email address'} is
+                  your default destination type
+                </span>
+              ) : (
+                <button
+                  className="text-xs text-teal-700 underline underline-offset-2 hover:text-teal-900 disabled:cursor-not-allowed disabled:opacity-50"
+                  disabled={isBusy}
+                  onClick={() => {
+                    saveDefaultDestType(selType)
+                    setDefaultDestType(selType)
+                  }}
+                >
+                  Make {selType === 'phone' ? 'phone number' : 'email address'}{' '}
+                  my default destination type
+                </button>
+              )
+            })()}
+          </section>
+        )}
 
         {/* ── Plain text + test send row ── */}
         <section className="flex items-center justify-between pb-4">
