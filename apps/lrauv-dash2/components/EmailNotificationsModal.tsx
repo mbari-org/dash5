@@ -73,14 +73,14 @@ const EmailNotificationsModal: React.FC<EmailNotificationsModalProps> = ({
   // On first open, pre-select the stored default destination (or fall back to
   // the account email). We do this immediately so the settings panel starts
   // loading the right data right away.
+  // Also syncs defaultDest state from localStorage here to handle SSR
+  // hydration: the useState initialiser runs on the server where localStorage
+  // is unavailable (returns null), so the client must correct it on mount.
   useEffect(() => {
     if (selectedEmail || !accountEmail) return
     const storedDefault = getDefaultDest()
     setSelectedEmail(storedDefault ?? accountEmail)
-    if (!storedDefault) {
-      // Nothing stored yet — treat the account email as the implicit default.
-      setDefaultDest(accountEmail)
-    }
+    setDefaultDest(storedDefault ?? accountEmail)
   }, [accountEmail, selectedEmail])
 
   // Once the address list loads, verify the selection is still valid.

@@ -199,28 +199,35 @@ For starter issues (see below), all your edits will be inside `apps/lrauv-dash2/
 ### Unit / component tests (Jest)
 
 ```bash
-# All packages
-yarn test
-
-# Single package
+# All packages that have Jest tests (react-ui, api-client, utils, lrauv-dash2)
 yarn workspace @mbari/react-ui test
+yarn workspace @mbari/api-client test
+yarn workspace @mbari/lrauv-dash2 test:ci
 
-# Single test file
-yarn workspace @mbari/lrauv-dash2 test:ci -- --testPathPattern=CommsSection
+# Single test file in the app
+yarn workspace @mbari/lrauv-dash2 test:ci -- --testPathPattern=notificationDestinations
 ```
+
+> **Note:** `yarn test` at the repo root runs `turbo run test`, which includes Playwright
+> for the app. Use the workspace `test:ci` command above when you only want Jest.
 
 ### End-to-end tests (Playwright)
 
 ```bash
 cd apps/lrauv-dash2
-yarn test         # runs Playwright tests (requires the dev server to be running)
+yarn test         # Playwright is pre-configured with a webServer; no need to start the dev server manually
 ```
 
 ### Linting
 
 ```bash
-yarn lint               # lint and auto-fix all packages
-yarn lint:watch         # live lint on save (useful during development)
+# Lint shared packages (react-ui, api-client, utils)
+yarn lint               # lint and auto-fix
+yarn lint:watch         # live lint on save
+
+# Lint the Next.js app separately (root lint does not cover apps/)
+cd apps/lrauv-dash2
+yarn lint
 ```
 
 ---
