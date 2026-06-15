@@ -24,8 +24,8 @@ import EditEmailDialog from './EditEmailDialog'
 import { FilterRowUi, FilteringType } from '../types'
 import {
   isPhoneNumber,
-  getDefaultDestType,
-  saveDefaultDestType,
+  getDefaultDest,
+  saveDefaultDest,
 } from '../lib/notificationDestinations'
 
 export interface EmailNotificationsModalProps {
@@ -53,16 +53,27 @@ const EmailNotificationsModal: React.FC<EmailNotificationsModalProps> = ({
       : []
     // Keep selectedEmail in the list during a pending refetch so the dropdown
     // never shows a selected address that isn't present in the options.
-    if (selectedEmail && !base.includes(selectedEmail)) {
-      return [...base, selectedEmail].sort()
+    const withSelected =
+      selectedEmail && !base.includes(selectedEmail)
+        ? [...base, selectedEmail].sort()
+        : base
+    // Sort so the stored default address appears first.
+    const storedDefault = getDefaultDest()
+    if (storedDefault && withSelected.includes(storedDefault)) {
+      return [storedDefault, ...withSelected.filter((e) => e !== storedDefault)]
     }
-    return base
+    return withSelected
   }, [addressesData, accountEmail, selectedEmail])
 
-  // default to account email once list loads
+  // Default to account email once the list loads. If no default has been stored
+  // in localStorage yet, treat the account email as the implicit default so
+  // the Make Default checkbox shows as checked on first open.
   useEffect(() => {
     if (!selectedEmail && accountEmail) {
       setSelectedEmail(accountEmail)
+    }
+    if (!getDefaultDest() && accountEmail) {
+      setDefaultDest(accountEmail)
     }
   }, [accountEmail, selectedEmail])
 
@@ -300,7 +311,8 @@ const EmailNotificationsModal: React.FC<EmailNotificationsModalProps> = ({
     'idle' | 'success' | 'error'
   >('idle')
   const [sendTestMessage, setSendTestMessage] = useState<string>('')
-  const [defaultDestType, setDefaultDestType] = useState(getDefaultDestType)
+  // Tracks which specific address is the user's stored default destination.
+  const [defaultDest, setDefaultDest] = useState<string | null>(getDefaultDest)
 
   // Clear test-email feedback whenever the selected address changes so stale
   // success/error messages from a previous address don't linger.
@@ -419,7 +431,9 @@ const EmailNotificationsModal: React.FC<EmailNotificationsModalProps> = ({
         details,
       },
       {
-        onSuccess: () => onClose?.(),
+        onSuccess: () => {
+          toast.success('Notification settings saved.')
+        },
         onError: () => {
           toast.error('Failed to save notification settings. Please try again.')
         },
@@ -488,13 +502,17 @@ const EmailNotificationsModal: React.FC<EmailNotificationsModalProps> = ({
   }
 
   // ── extra email address management ───────────────────────────────────────
-  const handleAddEmail = (newEmail: string) => {
+  const handleAddEmail = (newEmail: string, makeDefault?: boolean) => {
     addExtraEmail(
       { email: accountEmail, addExtraEmails: newEmail },
       {
         onSuccess: () => {
           setShowAddEmail(false)
           setSelectedEmail(newEmail)
+          if (makeDefault) {
+            saveDefaultDest(newEmail)
+            setDefaultDest(newEmail)
+          }
         },
         onError: () => {
           toast.error('Failed to add email address. Please try again.')
@@ -504,16 +522,22 @@ const EmailNotificationsModal: React.FC<EmailNotificationsModalProps> = ({
   }
 
   const handleEditSaveAddress = (newEmail: string) => {
+    const oldEmail = selectedEmail
     updateEmailAddress(
       {
         email: accountEmail,
-        extraEmail: selectedEmail,
+        extraEmail: oldEmail,
         newExtraEmail: newEmail,
       },
       {
         onSuccess: () => {
           setShowEditEmail(false)
           setSelectedEmail(newEmail)
+          // If the renamed address was the default, update to the new address.
+          if (oldEmail === defaultDest) {
+            saveDefaultDest(newEmail)
+            setDefaultDest(newEmail)
+          }
         },
         onError: () => {
           toast.error('Failed to update email address. Please try again.')
@@ -525,12 +549,18 @@ const EmailNotificationsModal: React.FC<EmailNotificationsModalProps> = ({
   const handleDeleteAddress = () => {
     if (!confirm(`Remove ${selectedEmail} from your notification addresses?`))
       return
+    const deletedEmail = selectedEmail
     deleteEmailAddress(
-      { email: accountEmail, extraEmail: selectedEmail },
+      { email: accountEmail, extraEmail: deletedEmail },
       {
         onSuccess: () => {
           setShowEditEmail(false)
           setSelectedEmail(accountEmail)
+          // If the deleted address was the stored default, revert to account email.
+          if (deletedEmail === defaultDest) {
+            saveDefaultDest(accountEmail)
+            setDefaultDest(accountEmail)
+          }
         },
         onError: () => {
           toast.error('Failed to remove email address. Please try again.')
@@ -605,8 +635,10 @@ const EmailNotificationsModal: React.FC<EmailNotificationsModalProps> = ({
             >
               <span className="truncate">
                 {selectedEmail || '—'}
-                {selectedEmail === accountEmail ? (
-                  <span className="ml-1 text-stone-400">(primary)</span>
+                {selectedEmail === defaultDest ? (
+                  <span className="ml-1 text-teal-600 font-medium">
+                    (Default)
+                  </span>
                 ) : null}
               </span>
               <svg
@@ -660,9 +692,9 @@ const EmailNotificationsModal: React.FC<EmailNotificationsModalProps> = ({
                       <span className="mr-1 text-primary-500">›</span>
                     )}
                     {e}
-                    {e === accountEmail && (
-                      <span className="ml-1 text-xs font-normal text-stone-400">
-                        (primary)
+                    {e === defaultDest && (
+                      <span className="ml-1 text-xs font-medium text-teal-600">
+                        (Default)
                       </span>
                     )}
                   </li>
@@ -708,24 +740,21 @@ const EmailNotificationsModal: React.FC<EmailNotificationsModalProps> = ({
           </Tippy>
 
           {/* Make Default checkbox — shown for all destinations.
-              Saves to localStorage immediately on click (no Save button needed).
+              Saves the specific address to localStorage immediately on click.
               stopPropagation prevents the click from bubbling to the modal
-              backdrop overlay. Checked+disabled when already the default. */}
+              backdrop overlay. Checked+disabled when this address is already
+              the stored default. */}
           {(() => {
-            const selType = isPhoneNumber(selectedEmail ?? '')
-              ? 'phone'
-              : 'email'
-            const isAlreadyDefault = defaultDestType === selType
+            const isAlreadyDefault = selectedEmail === defaultDest
+            const destLabel = isPhoneNumber(selectedEmail ?? '')
+              ? 'phone number'
+              : 'email address'
             return (
               <Tippy
                 content={
                   isAlreadyDefault
-                    ? `${
-                        selType === 'phone' ? 'Phone number' : 'Email'
-                      } is already your default — no action needed`
-                    : `Click to save ${
-                        selType === 'phone' ? 'phone number' : 'email'
-                      } as your default destination type`
+                    ? `This ${destLabel} is already your default`
+                    : `Set this ${destLabel} as your default notification destination`
                 }
                 placement="top"
               >
@@ -740,8 +769,10 @@ const EmailNotificationsModal: React.FC<EmailNotificationsModalProps> = ({
                     onClick={(e) => e.stopPropagation()}
                     onChange={(e) => {
                       e.stopPropagation()
-                      saveDefaultDestType(selType)
-                      setDefaultDestType(selType)
+                      if (selectedEmail) {
+                        saveDefaultDest(selectedEmail)
+                        setDefaultDest(selectedEmail)
+                      }
                     }}
                     className="accent-teal-600 disabled:cursor-default"
                   />

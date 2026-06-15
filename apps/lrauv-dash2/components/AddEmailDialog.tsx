@@ -7,13 +7,12 @@ import {
   normalizePhone,
   SMS_CONSENT,
   getDefaultDestType,
-  saveDefaultDestType,
 } from '../lib/notificationDestinations'
 
 interface AddEmailDialogProps {
   existingEmails: string[]
   onClose: () => void
-  onAdd: (email: string) => void
+  onAdd: (email: string, makeDefault?: boolean) => void
   isAdding?: boolean
 }
 
@@ -49,8 +48,7 @@ const AddEmailDialog: React.FC<AddEmailDialogProps> = ({
 
   const handleConfirm = () => {
     if (!isValid) return
-    if (makeDefault) saveDefaultDestType(destType)
-    onAdd(destType === 'phone' ? normalized : trimmed)
+    onAdd(destType === 'phone' ? normalized : trimmed, makeDefault)
   }
 
   return (
@@ -102,8 +100,7 @@ const AddEmailDialog: React.FC<AddEmailDialogProps> = ({
               onChange={(e) => setMakeDefault(e.target.checked)}
               className="accent-teal-600"
             />
-            Make {destType === 'email' ? 'email' : 'phone number'} my default
-            destination type
+            Make this my default notification destination
           </label>
         </fieldset>
 

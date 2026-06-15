@@ -3,8 +3,9 @@ import {
   normalizePhone,
   isValidPhone,
   isPhoneNumber,
+  getDefaultDest,
+  saveDefaultDest,
   getDefaultDestType,
-  saveDefaultDestType,
 } from './notificationDestinations'
 
 describe('isValidEmail', () => {
@@ -93,27 +94,45 @@ describe('isValidPhone', () => {
   })
 })
 
-describe('getDefaultDestType / saveDefaultDestType', () => {
+describe('getDefaultDest / saveDefaultDest', () => {
+  beforeEach(() => localStorage.clear())
+
+  it('returns null when nothing is stored', () => {
+    expect(getDefaultDest()).toBeNull()
+  })
+
+  it('returns the address after saving an email', () => {
+    saveDefaultDest('alerts@example.com')
+    expect(getDefaultDest()).toBe('alerts@example.com')
+  })
+
+  it('returns the address after saving a phone number', () => {
+    saveDefaultDest('+15551234567')
+    expect(getDefaultDest()).toBe('+15551234567')
+  })
+
+  it('overwrites a previous default when saved again', () => {
+    saveDefaultDest('first@example.com')
+    saveDefaultDest('second@example.com')
+    expect(getDefaultDest()).toBe('second@example.com')
+  })
+})
+
+describe('getDefaultDestType', () => {
   beforeEach(() => localStorage.clear())
 
   it('returns "email" when nothing is stored', () => {
     expect(getDefaultDestType()).toBe('email')
   })
 
-  it('returns the stored type after saving "phone"', () => {
-    saveDefaultDestType('phone')
+  it('returns "email" when a stored address is an email', () => {
+    saveDefaultDest('alerts@example.com')
+    expect(getDefaultDestType()).toBe('email')
+  })
+
+  it('returns "phone" when a stored address is a valid phone number', () => {
+    saveDefaultDest('+15551234567')
     expect(getDefaultDestType()).toBe('phone')
-  })
-
-  it('returns the stored type after saving "email"', () => {
-    saveDefaultDestType('phone')
-    saveDefaultDestType('email')
-    expect(getDefaultDestType()).toBe('email')
-  })
-
-  it('falls back to "email" when an unknown value is in storage', () => {
-    localStorage.setItem('notification:defaultDestType', 'fax')
-    expect(getDefaultDestType()).toBe('email')
   })
 })
 

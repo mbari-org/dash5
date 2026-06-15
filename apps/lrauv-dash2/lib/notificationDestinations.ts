@@ -1,24 +1,36 @@
 export type DestinationType = 'email' | 'phone'
 
-const DEST_TYPE_KEY = 'notification:defaultDestType'
+// Stores the specific destination address the user has chosen as their
+// default (e.g. '+15551234567' or 'alerts@example.com').
+const DEST_KEY = 'notification:defaultDest'
 
-export const getDefaultDestType = (): DestinationType => {
+/** Returns the stored default destination address, or null if none is set. */
+export const getDefaultDest = (): string | null => {
   try {
-    const stored =
-      typeof window !== 'undefined' ? localStorage.getItem(DEST_TYPE_KEY) : null
-    if (stored === 'email' || stored === 'phone') return stored
+    return typeof window !== 'undefined' ? localStorage.getItem(DEST_KEY) : null
   } catch {
     // localStorage unavailable (SSR, private browsing)
+    return null
   }
-  return 'email'
 }
 
-export const saveDefaultDestType = (type: DestinationType) => {
+/** Saves the given address as the user's default notification destination. */
+export const saveDefaultDest = (address: string) => {
   try {
-    localStorage.setItem(DEST_TYPE_KEY, type)
+    localStorage.setItem(DEST_KEY, address)
   } catch {
     // ignore storage failures
   }
+}
+
+/**
+ * Returns the DestinationType of the stored default destination.
+ * Used to pre-select the radio in AddEmailDialog.
+ * Falls back to 'email' when nothing is stored.
+ */
+export const getDefaultDestType = (): DestinationType => {
+  const dest = getDefaultDest()
+  return dest && isPhoneNumber(dest) ? 'phone' : 'email'
 }
 
 export const isValidEmail = (value: string) =>
