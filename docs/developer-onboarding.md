@@ -134,10 +134,10 @@ dash5/
 
 ### 1. Build the packages first
 
-The two shared packages behave differently:
+The three shared packages have different rebuild behavior:
 
 - **`@mbari/react-ui`** — `main` points to `src/index.ts` and Next.js has `transpilePackages` configured, so TypeScript edits are picked up by HMR without a rebuild. However, if you change styles, you will need to rebuild to regenerate `dist/mbari-ui.css`.
-- **`@mbari/api-client`** — has an `exports` field that directs webpack to pre-built `dist/` files. Any change here **requires a rebuild** before the app reflects it.
+- **`@mbari/api-client`** and **`@mbari/utils`** — both have an `exports` field that directs webpack to pre-built `dist/` files. Any change to either **requires a rebuild** before the app reflects it.
 
 As a safe default, build both before starting the dev server for the first time:
 
@@ -183,11 +183,12 @@ This is the most important thing to understand about the local dev loop.
 yarn workspace @mbari/react-ui build
 ```
 
-**Editing anything in `packages/api-client/`** — always requires a rebuild, because webpack resolves it through pre-built `dist/` files. The dev server's watch config will usually pick up the rebuilt output via HMR without a full restart; only restart if changes aren't reflected after a rebuild:
+**Editing anything in `packages/api-client/` or `packages/utils/`** — always requires a rebuild, because webpack resolves both through pre-built `dist/` files. The dev server's watch config will usually pick up the rebuilt output via HMR without a full restart; only restart if changes aren't reflected after a rebuild:
 
 ```bash
-# From the repo root:
+# From the repo root (rebuild whichever package you changed):
 yarn workspace @mbari/api-client build
+yarn workspace @mbari/utils build
 
 # If the dev server doesn't pick up the changes, restart it:
 lsof -ti :3000 | xargs kill -9 2>/dev/null
