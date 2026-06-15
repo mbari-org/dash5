@@ -1,5 +1,12 @@
 import React, { useState } from 'react'
 import { Modal } from '@mbari/react-ui'
+import {
+  DestinationType,
+  isValidEmail,
+  isValidPhone,
+  normalizePhone,
+  SMS_CONSENT,
+} from '../lib/notificationDestinations'
 
 interface AddEmailDialogProps {
   existingEmails: string[]
@@ -7,20 +14,6 @@ interface AddEmailDialogProps {
   onAdd: (email: string) => void
   isAdding?: boolean
 }
-
-type DestinationType = 'email' | 'phone'
-
-const isValidEmail = (value: string) =>
-  /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value.trim())
-
-// Accepts E.164-style international numbers after stripping spaces/dashes,
-// e.g. "+1 555 123 4567" → "+15551234567"
-const normalizePhone = (value: string) => value.replace(/[\s\-().]/g, '')
-const isValidPhone = (value: string) =>
-  /^\+[1-9]\d{6,14}$/.test(normalizePhone(value.trim()))
-
-const SMS_CONSENT =
-  'By adding a phone number you opt in to SMS alerts for the vehicles you select. Message & data rates may apply. Opt out anytime by removing the number here, or reply STOP. Replying STOP stops messages but does not remove the number from TethysDash.'
 
 const AddEmailDialog: React.FC<AddEmailDialogProps> = ({
   existingEmails,
@@ -73,7 +66,7 @@ const AddEmailDialog: React.FC<AddEmailDialogProps> = ({
       <article className="flex flex-col gap-4 pb-2">
         <fieldset className="flex gap-6">
           <legend className="mb-2 text-sm text-stone-600">
-            Change this to:
+            Destination type:
           </legend>
           {(['email', 'phone'] as DestinationType[]).map((type) => (
             <label

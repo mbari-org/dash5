@@ -1,5 +1,13 @@
 import React, { useState } from 'react'
 import { Modal } from '@mbari/react-ui'
+import {
+  DestinationType,
+  isValidEmail,
+  isValidPhone,
+  isPhoneNumber,
+  normalizePhone,
+  SMS_CONSENT,
+} from '../lib/notificationDestinations'
 
 interface EditEmailDialogProps {
   currentEmail: string
@@ -10,20 +18,6 @@ interface EditEmailDialogProps {
   isSaving?: boolean
   isDeleting?: boolean
 }
-
-type DestinationType = 'email' | 'phone'
-
-const isValidEmail = (value: string) =>
-  /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value.trim())
-
-const normalizePhone = (value: string) => value.replace(/[\s\-().]/g, '')
-const isValidPhone = (value: string) =>
-  /^\+[1-9]\d{6,14}$/.test(normalizePhone(value.trim()))
-
-const isPhoneNumber = (value: string) => value.trim().startsWith('+')
-
-const SMS_CONSENT =
-  'By adding a phone number you opt in to SMS alerts for the vehicles you select. Message & data rates may apply. Opt out anytime by removing the number here, or reply STOP. Replying STOP stops messages but does not remove the number from TethysDash.'
 
 const EditEmailDialog: React.FC<EditEmailDialogProps> = ({
   currentEmail,
