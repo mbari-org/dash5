@@ -707,37 +707,47 @@ const EmailNotificationsModal: React.FC<EmailNotificationsModalProps> = ({
             </span>
           </Tippy>
 
-          {/* Make Default checkbox — shown for extra destinations only.
-              stopPropagation on the label prevents the click from bubbling
-              to the modal overlay and accidentally closing the modal. */}
-          {isExtraEmail && (
-            <label
-              className="ml-2 flex cursor-pointer items-center gap-1.5 text-xs text-stone-600"
-              onClick={(e) => e.stopPropagation()}
-            >
-              <input
-                type="checkbox"
-                checked={
-                  defaultDestType ===
-                  (isPhoneNumber(selectedEmail ?? '') ? 'phone' : 'email')
+          {/* Make Default checkbox — shown for all destinations.
+              Saves to localStorage immediately on click (no Save button needed).
+              stopPropagation prevents the click from bubbling to the modal
+              backdrop overlay. Checked+disabled when already the default. */}
+          {(() => {
+            const selType = isPhoneNumber(selectedEmail ?? '')
+              ? 'phone'
+              : 'email'
+            const isAlreadyDefault = defaultDestType === selType
+            return (
+              <Tippy
+                content={
+                  isAlreadyDefault
+                    ? `${
+                        selType === 'phone' ? 'Phone number' : 'Email'
+                      } is already your default — no action needed`
+                    : `Click to save ${
+                        selType === 'phone' ? 'phone number' : 'email'
+                      } as your default destination type`
                 }
-                disabled={
-                  defaultDestType ===
-                    (isPhoneNumber(selectedEmail ?? '') ? 'phone' : 'email') ||
-                  isBusy
-                }
-                onChange={() => {
-                  const selType = isPhoneNumber(selectedEmail ?? '')
-                    ? 'phone'
-                    : 'email'
-                  saveDefaultDestType(selType)
-                  setDefaultDestType(selType)
-                }}
-                className="accent-teal-600 disabled:cursor-default"
-              />
-              Make default
-            </label>
-          )}
+                placement="top"
+              >
+                <label
+                  className="ml-2 flex cursor-pointer items-center gap-1.5 text-xs text-stone-600"
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  <input
+                    type="checkbox"
+                    checked={isAlreadyDefault}
+                    disabled={isAlreadyDefault || isBusy}
+                    onChange={() => {
+                      saveDefaultDestType(selType)
+                      setDefaultDestType(selType)
+                    }}
+                    className="accent-teal-600 disabled:cursor-default"
+                  />
+                  Make default
+                </label>
+              </Tippy>
+            )
+          })()}
         </section>
 
         {/* ── Plain text + test send row ── */}
