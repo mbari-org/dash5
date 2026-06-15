@@ -84,14 +84,20 @@ const EmailNotificationsModal: React.FC<EmailNotificationsModalProps> = ({
   }, [accountEmail, selectedEmail])
 
   // Once the address list loads, verify the selection is still valid.
-  // If the stored default was deleted externally, fall back to account email.
+  // If the stored default was deleted externally, revert both the selection
+  // and the stored localStorage value to the account email so the stale
+  // address is not re-selected on the next open.
   useEffect(() => {
     if (!addressesData || !accountEmail || !selectedEmail) return
     const validAddresses = Object.keys(addressesData.result)
     if (!validAddresses.includes(selectedEmail)) {
       setSelectedEmail(accountEmail)
     }
-  }, [addressesData, accountEmail, selectedEmail])
+    if (defaultDest && !validAddresses.includes(defaultDest)) {
+      saveDefaultDest(accountEmail)
+      setDefaultDest(accountEmail)
+    }
+  }, [addressesData, accountEmail, selectedEmail, defaultDest])
 
   const isExtraEmail = selectedEmail !== '' && selectedEmail !== accountEmail
 
