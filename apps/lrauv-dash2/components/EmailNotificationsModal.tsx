@@ -706,37 +706,31 @@ const EmailNotificationsModal: React.FC<EmailNotificationsModalProps> = ({
               </button>
             </span>
           </Tippy>
-        </section>
 
-        {/* ── Make default row — only for extra destinations ── */}
-        {isExtraEmail && (
-          <section className="flex items-center gap-2 pb-3">
-            {(() => {
+          {/* Make Default checkbox — shown for extra destinations only */}
+          {isExtraEmail &&
+            (() => {
               const selType = isPhoneNumber(selectedEmail ?? '')
                 ? 'phone'
                 : 'email'
               const isAlreadyDefault = defaultDestType === selType
-              return isAlreadyDefault ? (
-                <span className="text-xs text-stone-400">
-                  {selType === 'phone' ? 'Phone number' : 'Email address'} is
-                  your default destination type
-                </span>
-              ) : (
-                <button
-                  className="text-xs text-teal-700 underline underline-offset-2 hover:text-teal-900 disabled:cursor-not-allowed disabled:opacity-50"
-                  disabled={isBusy}
-                  onClick={() => {
-                    saveDefaultDestType(selType)
-                    setDefaultDestType(selType)
-                  }}
-                >
-                  Make {selType === 'phone' ? 'phone number' : 'email address'}{' '}
-                  my default destination type
-                </button>
+              return (
+                <label className="ml-2 flex cursor-pointer items-center gap-1.5 text-xs text-stone-600">
+                  <input
+                    type="checkbox"
+                    checked={isAlreadyDefault}
+                    disabled={isAlreadyDefault || isBusy}
+                    onChange={() => {
+                      saveDefaultDestType(selType)
+                      setDefaultDestType(selType)
+                    }}
+                    className="accent-teal-600 disabled:cursor-default"
+                  />
+                  Make default
+                </label>
               )
             })()}
-          </section>
-        )}
+        </section>
 
         {/* ── Plain text + test send row ── */}
         <section className="flex items-center justify-between pb-4">
