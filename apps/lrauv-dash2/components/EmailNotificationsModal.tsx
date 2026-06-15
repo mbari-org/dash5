@@ -737,7 +737,9 @@ const EmailNotificationsModal: React.FC<EmailNotificationsModalProps> = ({
                     type="checkbox"
                     checked={isAlreadyDefault}
                     disabled={isAlreadyDefault || isBusy}
-                    onChange={() => {
+                    onClick={(e) => e.stopPropagation()}
+                    onChange={(e) => {
+                      e.stopPropagation()
                       saveDefaultDestType(selType)
                       setDefaultDestType(selType)
                     }}
