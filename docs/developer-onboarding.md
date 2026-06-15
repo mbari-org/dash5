@@ -139,12 +139,13 @@ The three shared packages have different rebuild behavior:
 - **`@mbari/react-ui`** — `main` points to `src/index.ts` and Next.js has `transpilePackages` configured, so TypeScript edits are picked up by HMR without a rebuild. However, if you change styles, you will need to rebuild to regenerate `dist/mbari-ui.css`.
 - **`@mbari/api-client`** and **`@mbari/utils`** — both have an `exports` field that directs webpack to pre-built `dist/` files. Any change to either **requires a rebuild** before the app reflects it.
 
-As a safe default, build both before starting the dev server for the first time:
+As a safe default, build all three before starting the dev server for the first time:
 
 ```bash
 # From the repo root
 yarn workspace @mbari/react-ui build
 yarn workspace @mbari/api-client build
+yarn workspace @mbari/utils build
 ```
 
 ### 2. Start the dev server
@@ -207,6 +208,7 @@ cd apps/lrauv-dash2 && yarn dev
 # Individual shared packages
 yarn workspace @mbari/react-ui test
 yarn workspace @mbari/api-client test
+yarn workspace @mbari/utils test
 
 # App unit tests (Jest, not Playwright)
 yarn workspace @mbari/lrauv-dash2 test:ci
