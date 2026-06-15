@@ -183,17 +183,15 @@ This is the most important thing to understand about the local dev loop.
 yarn workspace @mbari/react-ui build
 ```
 
-**Editing anything in `packages/api-client/`** — always requires a full rebuild and dev server restart, because webpack resolves it through pre-built `dist/` files:
+**Editing anything in `packages/api-client/`** — always requires a rebuild, because webpack resolves it through pre-built `dist/` files. The dev server's watch config will usually pick up the rebuilt output via HMR without a full restart; only restart if changes aren't reflected after a rebuild:
 
 ```bash
 # From the repo root:
 yarn workspace @mbari/api-client build
 
-# Free the dev server ports
+# If the dev server doesn't pick up the changes, restart it:
 lsof -ti :3000 | xargs kill -9 2>/dev/null
 lsof -ti :3002 | xargs kill -9 2>/dev/null
-
-# Clear Next.js cache and restart
 rm -rf apps/lrauv-dash2/.next
 cd apps/lrauv-dash2 && yarn dev
 ```
@@ -205,7 +203,7 @@ cd apps/lrauv-dash2 && yarn dev
 ### Unit / component tests (Jest)
 
 ```bash
-# Single shared package
+# Individual shared packages
 yarn workspace @mbari/react-ui test
 yarn workspace @mbari/api-client test
 
