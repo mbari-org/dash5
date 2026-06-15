@@ -700,37 +700,41 @@ const EmailNotificationsModal: React.FC<EmailNotificationsModalProps> = ({
           </Tippy>
         </section>
 
-        {/* ── Plain text + test email row ── */}
+        {/* ── Plain text + test send row ── */}
         <section className="flex items-center justify-between pb-4">
           <div className="flex items-center gap-2">
-            <span id="plain-text-label" className="text-sm font-medium">
-              Send emails as plain text
-            </span>
-            {/* Toggle slider */}
-            <button
-              role="switch"
-              aria-labelledby="plain-text-label"
-              aria-checked={plainText}
-              disabled={isDataLoading}
-              onClick={() => setPlainText((v) => !v)}
-              className={`relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-1 disabled:cursor-not-allowed disabled:opacity-50 ${
-                plainText ? 'bg-primary-600' : 'bg-stone-300'
-              }`}
-            >
-              <span className="sr-only">{plainText ? 'On' : 'Off'}</span>
-              <span
-                className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${
-                  plainText ? 'translate-x-5' : 'translate-x-0'
-                }`}
-              />
-            </button>
-            <span
-              className={`text-xs font-semibold ${
-                plainText ? 'text-primary-600' : 'text-stone-400'
-              }`}
-            >
-              {plainText ? 'On' : 'Off'}
-            </span>
+            {!isPhoneNumber(selectedEmail) && (
+              <>
+                <span id="plain-text-label" className="text-sm font-medium">
+                  Send emails as plain text
+                </span>
+                {/* Toggle slider */}
+                <button
+                  role="switch"
+                  aria-labelledby="plain-text-label"
+                  aria-checked={plainText}
+                  disabled={isDataLoading}
+                  onClick={() => setPlainText((v) => !v)}
+                  className={`relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-1 disabled:cursor-not-allowed disabled:opacity-50 ${
+                    plainText ? 'bg-primary-600' : 'bg-stone-300'
+                  }`}
+                >
+                  <span className="sr-only">{plainText ? 'On' : 'Off'}</span>
+                  <span
+                    className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${
+                      plainText ? 'translate-x-5' : 'translate-x-0'
+                    }`}
+                  />
+                </button>
+                <span
+                  className={`text-xs font-semibold ${
+                    plainText ? 'text-primary-600' : 'text-stone-400'
+                  }`}
+                >
+                  {plainText ? 'On' : 'Off'}
+                </span>
+              </>
+            )}
           </div>
           <div className="flex items-center gap-2">
             {sendTestStatus === 'success' && (
