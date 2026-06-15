@@ -434,12 +434,15 @@ const EmailNotificationsModal: React.FC<EmailNotificationsModalProps> = ({
       {
         onSuccess: (data) => {
           const isPhone = isPhoneNumber(selectedEmail ?? '')
+          // For phone numbers the backend already returns a full descriptive
+          // string in email_sent (e.g. "test SMS sent to +1…"), so use it
+          // directly to avoid doubling up with our own prefix.
           const msg = data?.email_sent
             ? isPhone
-              ? `Test text message sent to ${data.email_sent}`
+              ? data.email_sent
               : `Test email sent to ${data.email_sent}`
             : isPhone
-            ? 'Test text message sent'
+            ? 'SMS sent'
             : 'Test email sent'
           setSendTestStatus('success')
           setSendTestMessage(msg)
@@ -734,7 +737,7 @@ const EmailNotificationsModal: React.FC<EmailNotificationsModalProps> = ({
               <span className="text-sm text-green-600">
                 {sendTestMessage ||
                   (isPhoneNumber(selectedEmail ?? '')
-                    ? `Test text message sent to ${selectedEmail}`
+                    ? 'SMS sent'
                     : `Test email sent to ${selectedEmail}`)}
               </span>
             )}
