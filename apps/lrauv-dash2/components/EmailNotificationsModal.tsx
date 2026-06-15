@@ -68,7 +68,6 @@ const EmailNotificationsModal: React.FC<EmailNotificationsModalProps> = ({
       return [defaultDest, ...withSelected.filter((e) => e !== defaultDest)]
     }
     return withSelected
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [addressesData, accountEmail, selectedEmail, defaultDest])
 
   // On first open, pre-select the stored default destination (or fall back to
@@ -479,10 +478,17 @@ const EmailNotificationsModal: React.FC<EmailNotificationsModalProps> = ({
       vehiclesEnabled: vehiclesEnabledArray,
       notifLines,
     }
+    // Phone number destinations don't support plain-text toggling; always
+    // save as 'n' for SMS so the stored value stays consistent with test sends.
+    const effectivePlainText = isPhoneNumber(selectedEmail ?? '')
+      ? 'n'
+      : plainText
+      ? 'y'
+      : 'n'
     saveSettings(
       {
         email: selectedEmail,
-        plainText: plainText ? 'y' : 'n',
+        plainText: effectivePlainText,
         details,
       },
       {
@@ -570,7 +576,7 @@ const EmailNotificationsModal: React.FC<EmailNotificationsModalProps> = ({
           }
         },
         onError: () => {
-          toast.error('Failed to add email address. Please try again.')
+          toast.error('Failed to add destination. Please try again.')
         },
       }
     )
@@ -595,14 +601,16 @@ const EmailNotificationsModal: React.FC<EmailNotificationsModalProps> = ({
           }
         },
         onError: () => {
-          toast.error('Failed to update email address. Please try again.')
+          toast.error('Failed to update destination. Please try again.')
         },
       }
     )
   }
 
   const handleDeleteAddress = () => {
-    if (!confirm(`Remove ${selectedEmail} from your notification addresses?`))
+    if (
+      !confirm(`Remove ${selectedEmail} from your notification destinations?`)
+    )
       return
     const deletedEmail = selectedEmail
     deleteEmailAddress(
@@ -618,7 +626,7 @@ const EmailNotificationsModal: React.FC<EmailNotificationsModalProps> = ({
           }
         },
         onError: () => {
-          toast.error('Failed to remove email address. Please try again.')
+          toast.error('Failed to remove destination. Please try again.')
         },
       }
     )
@@ -787,7 +795,7 @@ const EmailNotificationsModal: React.FC<EmailNotificationsModalProps> = ({
                 className="flex h-7 w-7 items-center justify-center rounded-full border border-stone-300 bg-white text-stone-500 transition-colors hover:border-primary-500 hover:bg-blue-100 hover:text-primary-600 active:bg-blue-200 disabled:cursor-not-allowed disabled:opacity-40"
                 onClick={() => setShowAddEmail(true)}
                 disabled={isBusy}
-                aria-label="Add address"
+                aria-label="Add destination"
               >
                 <FontAwesomeIcon icon={faPlus} className="text-xs" />
               </button>

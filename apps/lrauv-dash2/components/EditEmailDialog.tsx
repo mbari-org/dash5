@@ -81,7 +81,7 @@ const EditEmailDialog: React.FC<EditEmailDialogProps> = ({
         {
           buttonText: isDeleting
             ? 'Deleting…'
-            : destType === 'phone'
+            : initialType === 'phone'
             ? 'Delete phone number'
             : 'Delete address',
           appearance: 'destructive' as const,
