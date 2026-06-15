@@ -22,6 +22,7 @@ import FilteredNotificationEditModal from './FilteredNotificationEditModal'
 import AddEmailDialog from './AddEmailDialog'
 import EditEmailDialog from './EditEmailDialog'
 import { FilterRowUi, FilteringType } from '../types'
+import { isPhoneNumber } from '../lib/notificationDestinations'
 
 export interface EmailNotificationsModalProps {
   onClose?: () => void
@@ -432,15 +433,25 @@ const EmailNotificationsModal: React.FC<EmailNotificationsModalProps> = ({
       },
       {
         onSuccess: (data) => {
+          const isPhone = isPhoneNumber(selectedEmail ?? '')
           const msg = data?.email_sent
-            ? `Test email sent to ${data.email_sent}`
+            ? isPhone
+              ? `Test text message sent to ${data.email_sent}`
+              : `Test email sent to ${data.email_sent}`
+            : isPhone
+            ? 'Test text message sent'
             : 'Test email sent'
           setSendTestStatus('success')
           setSendTestMessage(msg)
         },
         onError: () => {
           setSendTestStatus('error')
-          setSendTestMessage('Could not send test email. Please try again.')
+          const isPhone = isPhoneNumber(selectedEmail ?? '')
+          setSendTestMessage(
+            isPhone
+              ? 'Could not send test text message. Please try again.'
+              : 'Could not send test email. Please try again.'
+          )
         },
       }
     )
@@ -721,7 +732,10 @@ const EmailNotificationsModal: React.FC<EmailNotificationsModalProps> = ({
           <div className="flex items-center gap-2">
             {sendTestStatus === 'success' && (
               <span className="text-sm text-green-600">
-                {sendTestMessage || `Test email sent to ${selectedEmail}`}
+                {sendTestMessage ||
+                  (isPhoneNumber(selectedEmail ?? '')
+                    ? `Test text message sent to ${selectedEmail}`
+                    : `Test email sent to ${selectedEmail}`)}
               </span>
             )}
             {sendTestStatus === 'error' && (
@@ -730,7 +744,11 @@ const EmailNotificationsModal: React.FC<EmailNotificationsModalProps> = ({
               </span>
             )}
             <Tippy
-              content={`Send a test email to ${selectedEmail}`}
+              content={
+                isPhoneNumber(selectedEmail ?? '')
+                  ? `Send a test text message to ${selectedEmail}`
+                  : `Send a test email to ${selectedEmail}`
+              }
               placement="top"
             >
               <span>
@@ -739,7 +757,11 @@ const EmailNotificationsModal: React.FC<EmailNotificationsModalProps> = ({
                   onClick={handleSendTest}
                   disabled={isBusy}
                 >
-                  {isTesting ? 'Sending…' : 'Send test email'}
+                  {isTesting
+                    ? 'Sending…'
+                    : isPhoneNumber(selectedEmail ?? '')
+                    ? 'Send test text'
+                    : 'Send test email'}
                 </Button>
               </span>
             </Tippy>
