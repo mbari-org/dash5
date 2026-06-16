@@ -27,6 +27,6 @@ export const createUser = async (
     console.debug(`POST ${url}`)
   }
 
-  const response = await instance.post(url, { data: params }, config)
+  const response = await instance.post(url, params, config)
   return response.data.result as CreateUserResponse
 }
