@@ -110,8 +110,10 @@ export interface VehicleProps {
   colorCam2?: string
   textCameraAgo?: string
   textCtdStatus?: string
+  /** @deprecated Accepted for API compatibility but ignored. When shown (not docked), threshold text always uses neutral gray (st12) regardless of this value. */
   colorVoltThresh?: string
   textVoltThresh?: string
+  /** @deprecated Accepted for API compatibility but ignored. When shown (not docked), threshold text always uses neutral gray (st12) regardless of this value. */
   colorAmpThresh?: string
   textAmpThresh?: string
   textBatteryDuration?: number | string
@@ -215,9 +217,7 @@ export const Vehicle: React.FC<VehicleProps> = ({
   colorCameraLens,
   colorCam1,
   colorCam2,
-  colorVoltThresh,
   textVoltThresh,
-  colorAmpThresh,
   textAmpThresh,
   textBatteryDuration,
   textBatteryUnits,
@@ -329,9 +329,7 @@ export const Vehicle: React.FC<VehicleProps> = ({
           textAmpAgo={textAmpAgo}
           colorVolts={colorVolts}
           colorAmps={colorAmps}
-          colorVoltThresh={colorVoltThresh}
           textVoltThresh={textVoltThresh}
-          colorAmpThresh={colorAmpThresh}
           textAmpThresh={textAmpThresh}
           textBatteryDuration={textBatteryDuration}
           textBatteryUnits={textBatteryUnits}

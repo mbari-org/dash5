@@ -20,12 +20,18 @@ export interface LoginModalProps extends ModalPropsWithoutTitle {
   onSubmit: AsyncSubmitHandler<LoginFormValues>
   onForgotPass: () => void
   onCreateAcct: () => void
+  /** Optional SSO button label. When provided, renders a secondary sign-in button. */
+  ssoLabel?: string
+  /** Called when the user clicks the SSO button. */
+  onSsoClick?: () => void
 }
 
 export const LoginModal: React.FC<LoginModalProps> = ({
   onSubmit,
   onForgotPass,
   onCreateAcct,
+  ssoLabel,
+  onSsoClick,
   ...modalProps
 }) => {
   return (
@@ -43,6 +49,17 @@ export const LoginModal: React.FC<LoginModalProps> = ({
         >
           Forgot password?
         </button>
+        {ssoLabel && onSsoClick && (
+          <div className={styles.createContainer}>
+            <button
+              className={clsx(styles.createBtn, styles.lightSans)}
+              onClick={swallow(onSsoClick)}
+              type="button"
+            >
+              {ssoLabel}
+            </button>
+          </div>
+        )}
         <div className={styles.createContainer}>
           <span className={clsx(styles.noAcctText, styles.lightSans)}>
             Don&apos;t have an account?

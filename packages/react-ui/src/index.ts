@@ -22,3 +22,5 @@ export type {
 } from './Map/MapDepthDisplay'
 export { RefreshButton } from './Map/RefreshButton'
 export type { RefreshButtonProps } from './Map/RefreshButton'
+export { default as DepthSparkline } from './Charts/DepthSparkline'
+export type { DepthSparklineProps } from './Charts/DepthSparkline'

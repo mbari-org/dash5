@@ -101,7 +101,8 @@ const formatEvent = (
   const text = event.text ? event.text.split('\n') : ''
   const mtmsn = event.mtmsn ? event.mtmsn : ''
   const momsn = event.momsn ? event.momsn : ''
-  const url = `${dashUrl}/${event.vehicleName}/realtime/sbdlogs/${path}`
+  // /data/ segment is required — matches the pattern used by RealTimeLogs and useChartData
+  const url = `${dashUrl}/data/${event.vehicleName}/realtime/sbdlogs/${path}`
   const startedMission =
     eventType === 'logImportant' && event.text?.startsWith('Started mission ')
   const defaultMission =

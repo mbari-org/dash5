@@ -4,6 +4,13 @@ import '@testing-library/jest-dom'
 import { VehicleProps } from './Vehicle'
 import { FullWidthVehicleDiagram } from './FullWidthVehicleDiagram'
 
+// JSDOM reports zero layout dimensions; return a real size so guards
+// that rely on cW > 0 && cH > 0 don't suppress content in tests.
+jest.mock('@mbari/utils', () => ({
+  ...jest.requireActual('@mbari/utils'),
+  useResizeObserver: () => ({ size: { width: 800, height: 300 } }),
+}))
+
 const props: VehicleProps = {
   textVehicle: 'BRIZO',
   status: 'onMission',
@@ -220,7 +227,8 @@ test('should hide Argos fill when no color from server (st18)', async () => {
   expect(screen.getByTestId('argos-battery fill')).toHaveClass('st18')
 })
 
-test('should display volt threshold text with colorVoltThresh class when not docked', async () => {
+test('should display volt threshold text in neutral color when not docked', async () => {
+  // Pass the alarm color (st31) to prove the component ignores it and stays neutral.
   render(
     <FullWidthVehicleDiagram
       {...props}
@@ -228,8 +236,23 @@ test('should display volt threshold text with colorVoltThresh class when not doc
       colorVoltThresh="st31"
     />
   )
-  expect(screen.getByLabelText('text_voltthresh')).toHaveClass('st31')
+  expect(screen.getByLabelText('text_voltthresh')).toHaveClass('st12')
+  expect(screen.getByLabelText('text_voltthresh')).not.toHaveClass('st31')
   expect(screen.getByLabelText('text_voltthresh')).toHaveTextContent('13.5')
+})
+
+test('should display amp threshold text in neutral color when not docked', async () => {
+  // Pass the alarm color (st31) to prove the component ignores it and stays neutral.
+  render(
+    <FullWidthVehicleDiagram
+      {...props}
+      textAmpThresh="50"
+      colorAmpThresh="st31"
+    />
+  )
+  expect(screen.getByLabelText('text_ampthresh')).toHaveClass('st12')
+  expect(screen.getByLabelText('text_ampthresh')).not.toHaveClass('st31')
+  expect(screen.getByLabelText('text_ampthresh')).toHaveTextContent('50')
 })
 
 test('should hide volt threshold text when docked', async () => {
@@ -238,7 +261,6 @@ test('should hide volt threshold text when docked', async () => {
       {...props}
       status="pluggedIn"
       textVoltThresh="13.5"
-      colorVoltThresh="st31"
     />
   )
   expect(screen.getByLabelText('text_voltthresh')).toHaveClass('st18')
@@ -411,4 +433,49 @@ test('should display next comm text with colorNextCommsText class', async () => 
     />
   )
   expect(screen.queryByLabelText('next comm')).toHaveClass('st31')
+})
+
+test('should render actionButton when provided and vehicle is on mission', async () => {
+  render(
+    <FullWidthVehicleDiagram
+      {...props}
+      status="onMission"
+      actionButton={
+        <a href="https://example.com" aria-label="test action">
+          link
+        </a>
+      }
+    />
+  )
+  expect(screen.queryByLabelText('test action')).toBeInTheDocument()
+})
+
+test('should not render actionButton when vehicle is pluggedIn', async () => {
+  render(
+    <FullWidthVehicleDiagram
+      {...props}
+      status="pluggedIn"
+      actionButton={
+        <a href="https://example.com" aria-label="test action">
+          link
+        </a>
+      }
+    />
+  )
+  expect(screen.queryByLabelText('test action')).not.toBeInTheDocument()
+})
+
+test('should not render actionButton when vehicle is recovered', async () => {
+  render(
+    <FullWidthVehicleDiagram
+      {...props}
+      status="recovered"
+      actionButton={
+        <a href="https://example.com" aria-label="test action">
+          link
+        </a>
+      }
+    />
+  )
+  expect(screen.queryByLabelText('test action')).not.toBeInTheDocument()
 })

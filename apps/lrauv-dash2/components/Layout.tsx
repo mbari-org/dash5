@@ -140,7 +140,7 @@ const Layout: React.FC<{ children?: React.ReactNode }> = ({ children }) => {
                   onDismiss={dismissDropdown}
                   options={[
                     {
-                      label: 'Email notifications',
+                      label: 'Notifications',
                       onSelect: () => {
                         setGlobalModalId({ id: 'emailNotifications' })
                         dismissDropdown()
