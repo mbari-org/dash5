@@ -50,15 +50,11 @@ describe('createUser', () => {
 
   it('should throw when unsuccessful', async () => {
     server.use(
-      rest.get('/user', (_req, res, ctx) => {
+      rest.post('/user', (_req, res, ctx) => {
         return res.once(ctx.status(500))
       })
     )
 
-    try {
-      await createUser(params)
-    } catch (error) {
-      expect(error).toBeDefined()
-    }
+    await expect(createUser(params)).rejects.toBeDefined()
   })
 })
