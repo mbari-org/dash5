@@ -3,7 +3,7 @@ import { ScienceCell } from './ScienceDataSection'
 import { capitalize } from '@mbari/utils'
 import useCurrentDeployment from '../lib/useCurrentDeployment'
 import { useChartData, useEvents, EventType } from '@mbari/api-client'
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useEffect } from 'react'
 import { DateTime } from 'luxon'
 
 export interface ChartsModalProps {
@@ -37,11 +37,20 @@ export const ChartsModal: React.FC<ChartsModalProps> = ({
 
   const [selectedLogsetId, setSelectedLogsetId] = useState<string | null>(null)
 
+  useEffect(() => {
+    if (!selectedLogsetId && logPathEvents?.length) {
+      setSelectedLogsetId(String(logPathEvents[0].eventId))
+    }
+  }, [logPathEvents, selectedLogsetId])
+
   const logsetOptions = useMemo(() => {
     if (!logPathEvents?.length) return []
     return logPathEvents.map((e) => ({
       id: String(e.eventId),
-      name: DateTime.fromMillis(e.unixTime).toFormat('MMM d, yyyy HH:mm'),
+      name:
+        DateTime.fromMillis(e.unixTime, { zone: 'utc' }).toFormat(
+          'MMM d, yyyy HH:mm'
+        ) + ' UTC',
     }))
   }, [logPathEvents])
 
@@ -58,6 +67,7 @@ export const ChartsModal: React.FC<ChartsModalProps> = ({
     const idx = logPathEvents.findIndex(
       (e) => String(e.eventId) === selectedLogsetId
     )
+    // List is descending (newest first), so idx-1 is the next newer logset.
     const next = idx >= 0 ? logPathEvents[idx - 1] : undefined
     return next ? next.unixTime : deploymentEndTime
   }, [selectedLogsetId, logPathEvents, deploymentEndTime])
@@ -87,11 +97,11 @@ export const ChartsModal: React.FC<ChartsModalProps> = ({
         {logsetOptions.length > 0 && (
           <SelectField
             name="logset"
-            value={selectedLogsetId ?? logsetOptions[0]?.id ?? ''}
+            placeholder="Logset"
+            value={selectedLogsetId ?? ''}
             options={logsetOptions}
             onSelect={setSelectedLogsetId}
             className="mb-2 w-full"
-            label="Logset"
           />
         )}
         <SelectField

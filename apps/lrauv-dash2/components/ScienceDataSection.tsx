@@ -104,14 +104,24 @@ const ScienceDataSection: React.FC<{
     { enabled: !!vehicleName, staleTime: 5 * 60 * 1000 }
   )
 
-  // Default to the most recent logset (index 0, descending order).
+  // null until logPath events load; useEffect below sets it to the latest logset.
   const [selectedLogsetId, setSelectedLogsetId] = useState<string | null>(null)
+
+  // Auto-select the latest logset once data loads.
+  useEffect(() => {
+    if (!selectedLogsetId && logPathEvents?.length) {
+      setSelectedLogsetId(String(logPathEvents[0].eventId))
+    }
+  }, [logPathEvents, selectedLogsetId])
 
   const logsetOptions = useMemo(() => {
     if (!logPathEvents?.length) return []
     return logPathEvents.map((e) => ({
       id: String(e.eventId),
-      name: DateTime.fromMillis(e.unixTime).toFormat('MMM d, yyyy HH:mm'),
+      name:
+        DateTime.fromMillis(e.unixTime, { zone: 'utc' }).toFormat(
+          'MMM d, yyyy HH:mm'
+        ) + ' UTC',
     }))
   }, [logPathEvents])
 
@@ -129,7 +139,8 @@ const ScienceDataSection: React.FC<{
     const idx = logPathEvents.findIndex(
       (e) => String(e.eventId) === selectedLogsetId
     )
-    // The logset ends when the next older logset starts (list is descending).
+    // List is descending (newest first), so idx-1 is the next newer logset —
+    // the selected logset ends when that newer one started.
     const next = idx >= 0 ? logPathEvents[idx - 1] : undefined
     return next ? next.unixTime : to
   }, [selectedLogsetId, logPathEvents, to])
@@ -188,11 +199,11 @@ const ScienceDataSection: React.FC<{
         {logsetOptions.length > 0 && (
           <SelectField
             name="logset"
-            value={selectedLogsetId ?? logsetOptions[0]?.id ?? ''}
+            placeholder="Logset"
+            value={selectedLogsetId ?? ''}
             options={logsetOptions}
             onSelect={setSelectedLogsetId}
             className="my-auto"
-            label="Logset"
           />
         )}
         <button
