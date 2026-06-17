@@ -3,7 +3,8 @@ import useGlobalModalId from '../lib/useGlobalModalId'
 import dynamic from 'next/dynamic'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { capitalize, humanize, swallow } from '@mbari/utils'
-import { useChartData } from '@mbari/api-client'
+import { useChartData, useEvents, EventType } from '@mbari/api-client'
+import { DateTime } from 'luxon'
 import clsx from 'clsx'
 
 const LineChart: any = dynamic(
@@ -89,6 +90,50 @@ const ScienceDataSection: React.FC<{
   to?: number // milliseconds since epoch
 }> = ({ vehicleName, from, to }) => {
   const { setGlobalModalId } = useGlobalModalId()
+
+  // Fetch logPath events within this deployment to populate the logset picker.
+  const { data: logPathEvents } = useEvents(
+    {
+      vehicles: [vehicleName],
+      eventTypes: ['logPath'] as EventType[],
+      from,
+      to,
+      limit: 200,
+      ascending: 'n',
+    },
+    { enabled: !!vehicleName, staleTime: 5 * 60 * 1000 }
+  )
+
+  // Default to the most recent logset (index 0, descending order).
+  const [selectedLogsetId, setSelectedLogsetId] = useState<string | null>(null)
+
+  const logsetOptions = useMemo(() => {
+    if (!logPathEvents?.length) return []
+    return logPathEvents.map((e) => ({
+      id: String(e.eventId),
+      name: DateTime.fromMillis(e.unixTime).toFormat('MMM d, yyyy HH:mm'),
+    }))
+  }, [logPathEvents])
+
+  // Resolve selected logset time window. Default to full deployment window.
+  const resolvedFrom = useMemo(() => {
+    if (!selectedLogsetId || !logPathEvents?.length) return from
+    const idx = logPathEvents.findIndex(
+      (e) => String(e.eventId) === selectedLogsetId
+    )
+    return idx >= 0 ? logPathEvents[idx].unixTime : from
+  }, [selectedLogsetId, logPathEvents, from])
+
+  const resolvedTo = useMemo(() => {
+    if (!selectedLogsetId || !logPathEvents?.length) return to
+    const idx = logPathEvents.findIndex(
+      (e) => String(e.eventId) === selectedLogsetId
+    )
+    // The logset ends when the next older logset starts (list is descending).
+    const next = idx >= 0 ? logPathEvents[idx - 1] : undefined
+    return next ? next.unixTime : to
+  }, [selectedLogsetId, logPathEvents, to])
+
   const {
     data: chartData,
     isLoading,
@@ -97,8 +142,8 @@ const ScienceDataSection: React.FC<{
     error,
   } = useChartData({
     vehicle: vehicleName,
-    from: from,
-    to: to,
+    from: resolvedFrom,
+    to: resolvedTo,
   })
 
   const [category, setCategory] = useState<string | null>('vehicle')
@@ -129,7 +174,7 @@ const ScienceDataSection: React.FC<{
 
   return (
     <>
-      <header className="flex p-2">
+      <header className="flex flex-wrap gap-2 p-2">
         <SelectField
           name="category"
           value={category ?? ''}
@@ -140,6 +185,16 @@ const ScienceDataSection: React.FC<{
           onSelect={setCategory}
           className="my-auto"
         />
+        {logsetOptions.length > 0 && (
+          <SelectField
+            name="logset"
+            value={selectedLogsetId ?? logsetOptions[0]?.id ?? ''}
+            options={logsetOptions}
+            onSelect={setSelectedLogsetId}
+            className="my-auto"
+            label="Logset"
+          />
+        )}
         <button
           className="my-auto ml-auto px-4 py-2 font-bold text-violet-800"
           onClick={handleespSamples}
