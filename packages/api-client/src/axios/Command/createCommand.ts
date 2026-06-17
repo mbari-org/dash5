@@ -4,7 +4,6 @@ import { RequestConfig } from '../types'
 
 export interface CreateCommandParams {
   vehicle: string
-  path?: string
   commandText: string
   commandNote: string
   runCommand?: string
