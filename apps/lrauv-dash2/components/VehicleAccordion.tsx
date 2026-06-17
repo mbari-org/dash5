@@ -76,7 +76,6 @@ const VehicleAccordion: React.FC<VehicleAccordionProps> = ({
     {
       vehicles: [vehicleName],
       eventTypes: ['note'] as EventType[],
-      noteMatches: 'Timeout while waiting',
       from: 1,
       limit: 500,
     },

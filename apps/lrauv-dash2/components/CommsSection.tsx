@@ -49,7 +49,6 @@ const CommsSection: React.FC<CommsSectionProps> = ({
     {
       vehicles: [vehicleName],
       eventTypes: ['note'] as EventType[],
-      noteMatches: 'Timeout while waiting',
       from: 1,
       limit: 500,
     },
