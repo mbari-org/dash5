@@ -4,7 +4,6 @@ import { createCommand, CreateCommandParams } from './createCommand'
 
 let params: CreateCommandParams = {
   vehicle: 'example',
-  path: 'example',
   commandText: 'example',
   commandNote: 'example',
   runCommand: 'example',
