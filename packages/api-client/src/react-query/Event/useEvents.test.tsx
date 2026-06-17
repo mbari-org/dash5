@@ -92,7 +92,6 @@ const MockVehiclePosition: React.FC<{ from?: number }> = ({
     to: 1740767743191,
     eventTypes: ['note'],
     limit: 1000,
-    noteMatches: '',
   })
 
   // For test debugging
@@ -185,7 +184,6 @@ describe('useEvents', () => {
         to: undefined,
         eventTypes: ['note' as EventType],
         limit: 1000,
-        noteMatches: '',
       }
 
       // Initial fetch
