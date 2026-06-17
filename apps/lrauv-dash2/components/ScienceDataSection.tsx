@@ -1,4 +1,9 @@
-import { SelectField, AbsoluteOverlay, AccordionCells } from '@mbari/react-ui'
+import {
+  SelectField,
+  AbsoluteOverlay,
+  AccordionCells,
+  ToolTip,
+} from '@mbari/react-ui'
 import useGlobalModalId from '../lib/useGlobalModalId'
 import dynamic from 'next/dynamic'
 import { useEffect, useMemo, useRef, useState } from 'react'
@@ -158,6 +163,7 @@ const ScienceDataSection: React.FC<{
   })
 
   const [category, setCategory] = useState<string | null>('vehicle')
+  const [logsetTooltip, setLogsetTooltip] = useState(false)
 
   const charts = chartData?.filter((d) =>
     category === 'vehicle'
@@ -197,14 +203,24 @@ const ScienceDataSection: React.FC<{
           className="my-auto"
         />
         {logsetOptions.length > 0 && (
-          <SelectField
-            name="logset"
-            placeholder="Logset"
-            value={selectedLogsetId ?? ''}
-            options={logsetOptions}
-            onSelect={setSelectedLogsetId}
-            className="my-auto"
-          />
+          <div
+            className="relative my-auto"
+            onMouseEnter={() => setLogsetTooltip(true)}
+            onMouseLeave={() => setLogsetTooltip(false)}
+          >
+            <SelectField
+              name="logset"
+              placeholder="Logset"
+              value={selectedLogsetId ?? ''}
+              options={logsetOptions}
+              onSelect={setSelectedLogsetId}
+            />
+            <ToolTip
+              label="Select a logset to scope the charts to that time window"
+              direction="below"
+              active={logsetTooltip}
+            />
+          </div>
         )}
         <button
           className="my-auto ml-auto px-4 py-2 font-bold text-violet-800"

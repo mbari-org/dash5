@@ -1,4 +1,4 @@
-import { Modal, SelectField } from '@mbari/react-ui'
+import { Modal, SelectField, ToolTip } from '@mbari/react-ui'
 import { ScienceCell } from './ScienceDataSection'
 import { capitalize } from '@mbari/utils'
 import useCurrentDeployment from '../lib/useCurrentDeployment'
@@ -36,6 +36,7 @@ export const ChartsModal: React.FC<ChartsModalProps> = ({
   )
 
   const [selectedLogsetId, setSelectedLogsetId] = useState<string | null>(null)
+  const [logsetTooltip, setLogsetTooltip] = useState(false)
 
   useEffect(() => {
     if (!selectedLogsetId && logPathEvents?.length) {
@@ -95,14 +96,25 @@ export const ChartsModal: React.FC<ChartsModalProps> = ({
     >
       <div className="flex gap-2">
         {logsetOptions.length > 0 && (
-          <SelectField
-            name="logset"
-            placeholder="Logset"
-            value={selectedLogsetId ?? ''}
-            options={logsetOptions}
-            onSelect={setSelectedLogsetId}
-            className="mb-2 w-full"
-          />
+          <div
+            className="relative mb-2 w-full"
+            onMouseEnter={() => setLogsetTooltip(true)}
+            onMouseLeave={() => setLogsetTooltip(false)}
+          >
+            <SelectField
+              name="logset"
+              placeholder="Logset"
+              value={selectedLogsetId ?? ''}
+              options={logsetOptions}
+              onSelect={setSelectedLogsetId}
+              className="w-full"
+            />
+            <ToolTip
+              label="Select a logset to scope the charts to that time window"
+              direction="below"
+              active={logsetTooltip}
+            />
+          </div>
         )}
         <SelectField
           name="Chart"
