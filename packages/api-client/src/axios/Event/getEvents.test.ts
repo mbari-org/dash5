@@ -8,7 +8,6 @@ let params: GetEventsParams = {
   to: 1656436678089,
   eventTypes: ['note', 'gpsFix'],
   limit: 1,
-  noteMatches: 'example',
 }
 
 export const mockResponse = {

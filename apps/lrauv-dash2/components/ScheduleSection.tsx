@@ -271,7 +271,6 @@ export const ScheduleSection: React.FC<ScheduleSectionProps> = ({
     {
       vehicles: [vehicleName],
       eventTypes: ['note'] as EventType[],
-      noteMatches: 'Cancelled request',
       from: 0,
       limit: 500,
     },
@@ -297,7 +296,6 @@ export const ScheduleSection: React.FC<ScheduleSectionProps> = ({
     {
       vehicles: [vehicleName],
       eventTypes: ['note'] as EventType[],
-      noteMatches: 'Timeout while waiting',
       from: 1, // non-zero so useEvents recursive backfill fetches all history
       limit: 500,
     },

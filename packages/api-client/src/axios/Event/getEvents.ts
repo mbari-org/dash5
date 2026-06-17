@@ -35,7 +35,6 @@ export interface GetEventsParams {
   to?: number // milliseconds since epoch
   eventTypes?: EventType[]
   limit?: number
-  noteMatches?: string
   ascending?: 'y' | 'n'
 }
 
