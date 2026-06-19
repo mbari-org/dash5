@@ -1,9 +1,9 @@
-import { Modal, SelectField } from '@mbari/react-ui'
+import { Modal, SelectField, ToolTip } from '@mbari/react-ui'
 import { ScienceCell } from './ScienceDataSection'
 import { capitalize } from '@mbari/utils'
 import useCurrentDeployment from '../lib/useCurrentDeployment'
-import { useChartData } from '@mbari/api-client'
-import { useState } from 'react'
+import { useChartData, useEvents, EventType } from '@mbari/api-client'
+import { useState, useMemo, useEffect } from 'react'
 import { DateTime } from 'luxon'
 
 export interface ChartsModalProps {
@@ -23,10 +23,60 @@ export const ChartsModal: React.FC<ChartsModalProps> = ({
   const deploymentStartTime = deployment?.startEvent?.unixTime ?? 0
   const deploymentEndTime = deployment?.endEvent?.unixTime
 
+  const { data: logPathEvents } = useEvents(
+    {
+      vehicles: [vehicleName],
+      eventTypes: ['logPath'] as EventType[],
+      from: deploymentStartTime,
+      to: deploymentEndTime,
+      limit: 200,
+      ascending: 'n',
+    },
+    { enabled: !!vehicleName, staleTime: 5 * 60 * 1000 }
+  )
+
+  const [selectedLogsetId, setSelectedLogsetId] = useState<string | null>(null)
+  const [logsetTooltip, setLogsetTooltip] = useState(false)
+
+  useEffect(() => {
+    if (!selectedLogsetId && logPathEvents?.length) {
+      setSelectedLogsetId(String(logPathEvents[0].eventId))
+    }
+  }, [logPathEvents, selectedLogsetId])
+
+  const logsetOptions = useMemo(() => {
+    if (!logPathEvents?.length) return []
+    return logPathEvents.map((e) => ({
+      id: String(e.eventId),
+      name:
+        DateTime.fromMillis(e.unixTime, { zone: 'utc' }).toFormat(
+          'MMM d, yyyy HH:mm'
+        ) + ' UTC',
+    }))
+  }, [logPathEvents])
+
+  const resolvedFrom = useMemo(() => {
+    if (!selectedLogsetId || !logPathEvents?.length) return deploymentStartTime
+    const idx = logPathEvents.findIndex(
+      (e) => String(e.eventId) === selectedLogsetId
+    )
+    return idx >= 0 ? logPathEvents[idx].unixTime : deploymentStartTime
+  }, [selectedLogsetId, logPathEvents, deploymentStartTime])
+
+  const resolvedTo = useMemo(() => {
+    if (!selectedLogsetId || !logPathEvents?.length) return deploymentEndTime
+    const idx = logPathEvents.findIndex(
+      (e) => String(e.eventId) === selectedLogsetId
+    )
+    // List is descending (newest first), so idx-1 is the next newer logset.
+    const next = idx >= 0 ? logPathEvents[idx - 1] : undefined
+    return next ? next.unixTime : deploymentEndTime
+  }, [selectedLogsetId, logPathEvents, deploymentEndTime])
+
   const { data: chartData } = useChartData({
     vehicle: vehicleName,
-    from: deploymentStartTime,
-    to: deploymentEndTime ? deploymentEndTime : undefined,
+    from: resolvedFrom,
+    to: resolvedTo,
   })
   const [chart, setChart] = useState<string | null>(null)
   const data = chartData?.find((c) => c.name === chart)
@@ -44,7 +94,28 @@ export const ChartsModal: React.FC<ChartsModalProps> = ({
       maximized
       open
     >
-      <div className="flex">
+      <div className="flex gap-2">
+        {logsetOptions.length > 0 && (
+          <div
+            className="relative mb-2 w-full"
+            onMouseEnter={() => setLogsetTooltip(true)}
+            onMouseLeave={() => setLogsetTooltip(false)}
+          >
+            <SelectField
+              name="logset"
+              placeholder="Logset"
+              value={selectedLogsetId ?? ''}
+              options={logsetOptions}
+              onSelect={setSelectedLogsetId}
+              className="w-full"
+            />
+            <ToolTip
+              label="Select a logset to scope the charts to that time window"
+              direction="below"
+              active={logsetTooltip}
+            />
+          </div>
+        )}
         <SelectField
           name="Chart"
           value={chart ?? ''}

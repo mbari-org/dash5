@@ -1,9 +1,19 @@
-import { SelectField, AbsoluteOverlay, AccordionCells } from '@mbari/react-ui'
+import {
+  SelectField,
+  AbsoluteOverlay,
+  AccordionCells,
+  ToolTip,
+} from '@mbari/react-ui'
 import useGlobalModalId from '../lib/useGlobalModalId'
 import dynamic from 'next/dynamic'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { capitalize, humanize, swallow } from '@mbari/utils'
-import { useChartData, useDeploymentChartData } from '@mbari/api-client'
+import {
+  useChartData,
+  useDeploymentChartData,
+  useEvents,
+  EventType,
+} from '@mbari/api-client'
 import { DateTime } from 'luxon'
 import clsx from 'clsx'
 
@@ -122,8 +132,63 @@ const ScienceDataSection: React.FC<{
   const { setGlobalModalId } = useGlobalModalId()
   const [timeWindow, setTimeWindow] = useState<TimeWindow>('latest')
   const [category, setCategory] = useState<string | null>('vehicle')
+  const [logsetTooltip, setLogsetTooltip] = useState(false)
 
   const isExtended = timeWindow !== 'latest'
+
+  // Fetch logPath events to populate the logset picker (only in 'latest' mode).
+  const { data: logPathEvents } = useEvents(
+    {
+      vehicles: [vehicleName],
+      eventTypes: ['logPath'] as EventType[],
+      from,
+      to,
+      limit: 200,
+      ascending: 'n',
+    },
+    { enabled: !!vehicleName && !isExtended, staleTime: 5 * 60 * 1000 }
+  )
+
+  // null until logPath events load; auto-select the latest logset once available.
+  const [selectedLogsetId, setSelectedLogsetId] = useState<string | null>(null)
+
+  useEffect(() => {
+    if (!selectedLogsetId && logPathEvents?.length) {
+      setSelectedLogsetId(String(logPathEvents[0].eventId))
+    }
+  }, [logPathEvents, selectedLogsetId])
+
+  const logsetOptions = useMemo(() => {
+    if (!logPathEvents?.length) return []
+    return logPathEvents.map((e) => ({
+      id: String(e.eventId),
+      name:
+        DateTime.fromMillis(e.unixTime, { zone: 'utc' }).toFormat(
+          'MMM d, yyyy HH:mm'
+        ) + ' UTC',
+    }))
+  }, [logPathEvents])
+
+  // Resolve time bounds for 'latest' (logset-scoped) mode.
+  const logsetFrom = useMemo(() => {
+    if (!selectedLogsetId || !logPathEvents?.length) return from
+    const idx = logPathEvents.findIndex(
+      (e) => String(e.eventId) === selectedLogsetId
+    )
+    return idx >= 0 ? logPathEvents[idx].unixTime : from
+  }, [selectedLogsetId, logPathEvents, from])
+
+  const logsetTo = useMemo(() => {
+    if (!selectedLogsetId || !logPathEvents?.length) return to
+    const idx = logPathEvents.findIndex(
+      (e) => String(e.eventId) === selectedLogsetId
+    )
+    // List is descending (newest first), so idx-1 is the next newer logset —
+    // the selected logset ends when that newer one started.
+    const next = idx >= 0 ? logPathEvents[idx - 1] : undefined
+    return next ? next.unixTime : to
+  }, [selectedLogsetId, logPathEvents, to])
+
   // Memoize so the query key stays stable across re-renders. Without this,
   // DateTime.utc() returns a new millisecond value on every render, which
   // changes the query key and causes React Query to treat each render as a
@@ -134,7 +199,7 @@ const ScienceDataSection: React.FC<{
   )
 
   const latestQuery = useChartData(
-    { vehicle: vehicleName, from, to },
+    { vehicle: vehicleName, from: logsetFrom, to: logsetTo },
     { enabled: !isExtended }
   )
 
@@ -176,7 +241,7 @@ const ScienceDataSection: React.FC<{
 
   return (
     <>
-      <header className="flex items-center gap-2 p-2">
+      <header className="flex flex-wrap gap-2 p-2">
         <SelectField
           name="category"
           value={category ?? ''}
@@ -199,6 +264,26 @@ const ScienceDataSection: React.FC<{
             aria-label="Chart time window"
           />
         </div>
+        {!isExtended && logsetOptions.length > 0 && (
+          <div
+            className="relative my-auto"
+            onMouseEnter={() => setLogsetTooltip(true)}
+            onMouseLeave={() => setLogsetTooltip(false)}
+          >
+            <SelectField
+              name="logset"
+              placeholder="Logset"
+              value={selectedLogsetId ?? ''}
+              options={logsetOptions}
+              onSelect={setSelectedLogsetId}
+            />
+            <ToolTip
+              label="Select a logset to scope the charts to that time window"
+              direction="below"
+              active={logsetTooltip}
+            />
+          </div>
+        )}
         <button
           className="my-auto ml-auto px-4 py-2 font-bold text-violet-800"
           onClick={handleespSamples}
