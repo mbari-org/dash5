@@ -22,7 +22,7 @@ export interface GetVariableDataResponse {
 export const getVariableData = async (
   { vehicle, variableName, from, to, maxlen, step }: GetVariableDataParams,
   { debug, instance = getInstance(), ...config }: RequestConfig = {}
-) => {
+): Promise<GetVariableDataResponse | null> => {
   const url = `/data/${encodeURIComponent(variableName)}`
 
   if (debug) {

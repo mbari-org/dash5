@@ -114,8 +114,10 @@ const getWindowFrom = (
 ): number => {
   // For ended deployments `deploymentTo` is in the past, so relative windows
   // (3d/7d) must be computed from the end of the deployment, not from now.
-  // Clamp the result so it is never earlier than the deployment start.
-  const anchor = deploymentTo ?? DateTime.utc().toMillis()
+  // Clamp to now so future-padded end times on active deployments don't shift
+  // the window forward and silently drop older data.
+  const now = DateTime.utc().toMillis()
+  const anchor = Math.min(deploymentTo ?? now, now)
   switch (window) {
     case '3d':
       return Math.max(deploymentFrom, anchor - 3 * 24 * 60 * 60 * 1000)
@@ -163,14 +165,20 @@ const ScienceDataSection: React.FC<{
     { enabled: !!vehicleName && !isExtended, staleTime: 5 * 60 * 1000 }
   )
 
-  // null until logPath events load; auto-select the latest logset once available.
-  const [selectedLogsetId, setSelectedLogsetId] = useState<string | null>(null)
+  const [selectedLogsetId, setSelectedLogsetId] = usePersistentState<
+    string | null
+  >('scienceSection.selectedLogsetId', null)
 
+  // Auto-select the latest logset; also reset if the persisted ID is no longer
+  // valid for the current deployment (e.g. navigated to a different deployment).
   useEffect(() => {
-    if (!selectedLogsetId && logPathEvents?.length) {
-      setSelectedLogsetId(String(logPathEvents[0].eventId))
+    if (logPathEvents?.length) {
+      const validIds = new Set(logPathEvents.map((e) => String(e.eventId)))
+      if (!selectedLogsetId || !validIds.has(selectedLogsetId)) {
+        setSelectedLogsetId(String(logPathEvents[0].eventId))
+      }
     }
-  }, [logPathEvents, selectedLogsetId])
+  }, [logPathEvents, selectedLogsetId, setSelectedLogsetId])
 
   const logsetOptions = useMemo(() => {
     if (!logPathEvents?.length) return []
@@ -217,8 +225,18 @@ const ScienceDataSection: React.FC<{
     { enabled: !isExtended }
   )
 
+  // Clamp to to now so future-padded end times on active deployments don't
+  // cause the step to be overestimated and chart data to be under-sampled.
+  const clampedTo =
+    to != null ? Math.min(to, DateTime.utc().toMillis()) : undefined
+
   const deploymentQuery = useDeploymentChartData(
-    { vehicle: vehicleName, deploymentFrom: from, from: extendedFrom, to },
+    {
+      vehicle: vehicleName,
+      deploymentFrom: from,
+      from: extendedFrom,
+      to: clampedTo,
+    },
     { enabled: isExtended }
   )
 
@@ -240,13 +258,14 @@ const ScienceDataSection: React.FC<{
   // individual sensors started recording within that window.
   const sharedXRange = useMemo((): [number, number] | undefined => {
     if (!alignAxes) return undefined
+    // Clamp all end times to now so charts never extend into the future.
     const now = DateTime.utc().toMillis()
     if (!isExtended) {
       // Latest Dive: align to the selected logset's start → end
-      return [logsetFrom, logsetTo ?? now]
+      return [logsetFrom, Math.min(logsetTo ?? now, now)]
     } else {
       // 3d / 7d / Full Deployment: align to the extended window
-      return [extendedFrom, to ?? now]
+      return [extendedFrom, Math.min(to ?? now, now)]
     }
   }, [alignAxes, isExtended, logsetFrom, logsetTo, extendedFrom, to])
 

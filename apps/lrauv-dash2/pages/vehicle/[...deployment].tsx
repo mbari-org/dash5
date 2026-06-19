@@ -348,7 +348,7 @@ const Vehicle: NextPage = () => {
               <DepthSection
                 vehicleName={vehicleName as string}
                 from={startTime}
-                to={endTime ?? undefined}
+                to={isRecovered ? endTime || undefined : undefined}
                 onHover={handleTimeScrub}
               />
             )}
