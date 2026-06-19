@@ -1,12 +1,14 @@
 import { SelectField, ToolTip } from '@mbari/react-ui'
 import {
   useChartData,
-  useDeploymentChartData,
   useEvents,
   EventType,
+  getVariableData,
+  useTethysApiContext,
 } from '@mbari/api-client'
 import dynamic from 'next/dynamic'
 import { useEffect, useMemo, useState } from 'react'
+import { useQuery } from 'react-query'
 import { humanize } from '@mbari/utils'
 import { DateTime } from 'luxon'
 import clsx from 'clsx'
@@ -126,28 +128,42 @@ const DepthSection: React.FC<{
     { enabled: !isExtended }
   )
 
-  // Clamp to to now so future-padded end times on active deployments don't
-  // cause the step to be overestimated and chart data to be under-sampled.
-  const clampedTo =
-    to != null ? Math.min(to, DateTime.utc().toMillis()) : undefined
+  // For extended windows fetch only the depth variable directly — using
+  // useDeploymentChartData would trigger one request per variable in
+  // chartData2.json (potentially dozens), which is wasteful when we only
+  // need depth.
+  const now = DateTime.utc().toMillis()
+  const clampedTo = to != null ? Math.min(to, now) : undefined
+  const windowMs = (clampedTo ?? now) - extendedFrom
+  const step = Math.max(1, Math.round(windowMs / 1000 / 2000))
 
-  const deploymentQuery = useDeploymentChartData(
+  const { axiosInstance } = useTethysApiContext()
+  const depthQuery = useQuery(
+    ['depth-section', vehicleName, extendedFrom, clampedTo, step],
+    () =>
+      getVariableData(
+        {
+          vehicle: vehicleName,
+          variableName: 'depth',
+          from: extendedFrom,
+          to: clampedTo,
+          step,
+        },
+        { instance: axiosInstance ?? undefined }
+      ),
     {
-      vehicle: vehicleName,
-      deploymentFrom: from,
-      from: extendedFrom,
-      to: clampedTo,
-    },
-    { enabled: isExtended }
+      enabled: isExtended && !!axiosInstance && extendedFrom > 0,
+      staleTime: 5 * 60 * 1000,
+    }
   )
 
-  const {
-    data: chartData,
-    isLoading,
-    isError,
-  } = isExtended ? deploymentQuery : latestQuery
+  const latestChartData = latestQuery.data
+  const depthData = isExtended
+    ? depthQuery.data ?? undefined
+    : latestChartData?.find((d) => d.name === 'depth')
 
-  const depthData = chartData?.find((d) => d.name === 'depth')
+  const isLoading = isExtended ? depthQuery.isLoading : latestQuery.isLoading
+  const isError = isExtended ? depthQuery.isError : latestQuery.isError
   const chartAvailable = !!depthData && !isLoading && !isError
 
   return (

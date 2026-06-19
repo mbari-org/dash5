@@ -32,7 +32,10 @@ export const ChartsModal: React.FC<ChartsModalProps> = ({
       limit: 200,
       ascending: 'n',
     },
-    { enabled: !!vehicleName, staleTime: 5 * 60 * 1000 }
+    {
+      enabled: !!vehicleName && deploymentStartTime > 0,
+      staleTime: 5 * 60 * 1000,
+    }
   )
 
   const [selectedLogsetId, setSelectedLogsetId] = useState<string | null>(null)
@@ -73,11 +76,14 @@ export const ChartsModal: React.FC<ChartsModalProps> = ({
     return next ? next.unixTime : deploymentEndTime
   }, [selectedLogsetId, logPathEvents, deploymentEndTime])
 
-  const { data: chartData } = useChartData({
-    vehicle: vehicleName,
-    from: resolvedFrom,
-    to: resolvedTo,
-  })
+  const { data: chartData } = useChartData(
+    {
+      vehicle: vehicleName,
+      from: resolvedFrom,
+      to: resolvedTo,
+    },
+    { enabled: resolvedFrom > 0 }
+  )
   const [chart, setChart] = useState<string | null>(null)
   const data = chartData?.find((c) => c.name === chart)
   return (
