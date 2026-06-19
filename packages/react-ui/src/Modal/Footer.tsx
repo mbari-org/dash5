@@ -9,6 +9,7 @@ export interface FooterProps {
   confirmButtonText?: string | JSX.Element
   cancelButtonText?: string | JSX.Element
   extraButtons?: ExtraButton[]
+  leftExtraButtons?: ExtraButton[]
   form?: string
   onConfirm?: (() => void) | null
   onCancel?: (() => void) | null
@@ -32,6 +33,7 @@ export const Footer: React.FC<FooterProps> = ({
   confirmButtonText = 'Confirm',
   cancelButtonText = 'Cancel',
   extraButtons,
+  leftExtraButtons,
   onCancel: handleCancel,
   onConfirm: handleConfirm,
   disableCancel,
@@ -44,14 +46,14 @@ export const Footer: React.FC<FooterProps> = ({
         {(handleConfirm || form) && (
           <li className={clsx(styles.item, 'ml-auto')}>
             {extraButtons?.length
-              ? extraButtons.map((button, index) => {
+              ? extraButtons.map(({ buttonText, ...button }, index) => {
                   return (
                     <Button
-                      key={`${index}${button.buttonText}`}
+                      key={`${index}${buttonText}`}
                       {...button}
                       className="mr-2 h-full"
                     >
-                      {button.buttonText}
+                      {buttonText}
                     </Button>
                   )
                 })
@@ -68,7 +70,7 @@ export const Footer: React.FC<FooterProps> = ({
           </li>
         )}
         {handleCancel && (
-          <li className={styles.item}>
+          <li className={clsx(styles.item, 'gap-2')}>
             <Button
               appearance="secondary"
               onClick={swallow(handleCancel)}
@@ -76,6 +78,11 @@ export const Footer: React.FC<FooterProps> = ({
             >
               {cancelButtonText}
             </Button>
+            {leftExtraButtons?.map(({ buttonText, ...button }, index) => (
+              <Button key={`left-${index}-${buttonText}`} {...button}>
+                {buttonText}
+              </Button>
+            ))}
           </li>
         )}
       </ol>
