@@ -1,7 +1,11 @@
+import React from 'react'
 import {
   CommandModalView,
   CommandModalViewProps,
   mapValues,
+  OptionSet,
+  L_SEPARATOR,
+  V_SEPARATOR,
 } from '@mbari/react-ui'
 import {
   useCommands,
@@ -100,6 +104,45 @@ export const CommandModal: React.FC<CommandModalProps> = ({
     },
     { enabled: missionPath !== '' }
   )
+
+  const handleAmendCommand = (commandText: string): Record<string, string> => {
+    const params: Record<string, string> = {}
+    // Parse: set <mission>[.:]<element> <value> [<unit>]
+    const setMatch = commandText.match(
+      /^set\s+([a-zA-Z0-9_]+)([.:])([a-zA-Z0-9_.]+)\s+(\S+)(?:\s+(\S+))?/
+    )
+    if (setMatch) {
+      const [, missionName, separator, paramPart, value, unit] = setMatch
+
+      // Find full mission path (e.g. "Science/sci2_circle_hotspot.tl")
+      const fullPath = allMissionPaths.find((p) => {
+        const base = p.split('/').pop()?.replace(/\.tl$/, '')
+        return base === missionName
+      })
+
+      if (fullPath) {
+        // Element: root param or Insert.Param
+        const element = separator === ':' ? paramPart : paramPart
+
+        // Build cumulative option ID matching what CommandDetailTable produces
+        const varTypeTier = `Variable Type${L_SEPARATOR}Mission`
+        const missionTier = `Mission${L_SEPARATOR}${fullPath}`
+        const elementTier = `Element${L_SEPARATOR}${element}`
+        const cumulativeId = [varTypeTier, missionTier, elementTier].join(
+          V_SEPARATOR
+        )
+
+        params['ARG_VARIABLE'] = cumulativeId
+        setVariable(mapValues(cumulativeId))
+      }
+
+      if (value) params['ARG_LIST'] = value
+      // Encode unit with the OptionSet name so the Select dropdown matches correctly
+      if (unit) params['ARG_UNIT'] = `Units${L_SEPARATOR}${unit}`
+    }
+
+    return params
+  }
 
   const handleUpdatedField: CommandModalViewProps['onUpdateField'] = (
     _param,
@@ -215,9 +258,29 @@ export const CommandModal: React.FC<CommandModalProps> = ({
     return slash >= 0 ? path.slice(0, slash) : 'Standard Ops'
   }
 
+  // Extract unique mission base names from recent commands (set/load) for pinning.
+  const recentMissionNames = React.useMemo(() => {
+    const names = new Set<string>()
+    recentCommandsData?.forEach((c) => {
+      const cmd = c?.writtenCommand ?? ''
+      // set missionname.param ... or set missionname:Section.param ...
+      const setMatch = cmd.match(/^set\s+([a-zA-Z0-9_]+)[.:]/)
+      if (setMatch) names.add(setMatch[1])
+      // load path/missionname.tl
+      const loadMatch = cmd.match(/load\s+(?:\S+\/)?([a-zA-Z0-9_]+)\.tl/)
+      if (loadMatch) names.add(loadMatch[1])
+    })
+    return Array.from(names).slice(0, 5)
+  }, [recentCommandsData])
+
   // Single-tier grouped mission picker for ARG_MISSION (e.g. load, run).
   const missionTypeOptions = [
-    { name: 'Mission', options: allMissionPaths, groupBy: missionGroupBy },
+    {
+      name: 'Mission',
+      options: allMissionPaths,
+      groupBy: missionGroupBy,
+      pinnedNames: recentMissionNames,
+    },
   ]
 
   // Flat Element list: root params as 'ParamName', insert params as 'Insert.ParamName'.
@@ -230,7 +293,7 @@ export const CommandModal: React.FC<CommandModalProps> = ({
       ].sort()
     : []
 
-  const variableTypes = [
+  const variableTypes: OptionSet[] = [
     { name: 'Variable Type', options: ['Mission', 'Universal', 'Component'] },
   ]
   switch (variable['Variable Type']) {
@@ -240,6 +303,7 @@ export const CommandModal: React.FC<CommandModalProps> = ({
         name: 'Mission',
         options: allMissionPaths,
         groupBy: missionGroupBy,
+        pinnedNames: recentMissionNames,
       })
       // Tier 3: flat element list built once mission data is loaded
       if (variable.Mission && selectedMissionData) {
@@ -280,6 +344,7 @@ export const CommandModal: React.FC<CommandModalProps> = ({
       variableTypes={variableTypes}
       showAdvanced={!hideAdvanced}
       onToggleAdvanced={() => setHideAdvanced((v) => !v)}
+      onAmendCommand={handleAmendCommand}
       onUpdateField={handleUpdatedField}
       onResetParameters={() =>
         setVariable({

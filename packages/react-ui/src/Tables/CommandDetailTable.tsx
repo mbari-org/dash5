@@ -5,8 +5,8 @@ import { Select, SelectOption, SelectOptionGroup } from '../Fields/Select'
 import { MissionCascader } from '../Fields/MissionCascader'
 import { Input } from '../Fields/Input'
 
-const L_SEPARATOR = '____'
-const V_SEPARATOR = '::::'
+export const L_SEPARATOR = '____'
+export const V_SEPARATOR = '::::'
 
 export type ArgumentType =
   | 'ARG_COMMAND'
@@ -42,6 +42,8 @@ export interface OptionSet {
   options: string[]
   /** When provided, groups options under labelled headings inside a single dropdown. */
   groupBy?: (option: string) => string
+  /** Mission base names (without extension) to pin at the top as "Recently used". */
+  pinnedNames?: string[]
 }
 
 export interface HelpLink {
@@ -65,6 +67,7 @@ export interface ScopedOptionGroup {
   value?: string
   options: SelectOption[]
   groupedOptions?: SelectOptionGroup[]
+  pinnedNames?: string[]
 }
 
 export const explodeValues = (valueString: string) =>
@@ -96,7 +99,7 @@ export const scopedSelectOptions = (
   const values = scopedValues(valueString ?? '')
   const options = optionSets
     .filter((_, i) => i <= values.length)
-    .map(({ name, options, groupBy }, i) => {
+    .map(({ name, options, groupBy, pinnedNames }, i) => {
       const buildId = (option: string) =>
         [i ? values[i - 1] : '', [name, option].join(L_SEPARATOR)]
           .filter((x) => x)
@@ -124,7 +127,13 @@ export const scopedSelectOptions = (
         }))
       }
 
-      return { name, value: values[i], options: flatOptions, groupedOptions }
+      return {
+        name,
+        value: values[i],
+        options: flatOptions,
+        groupedOptions,
+        pinnedNames,
+      }
     })
   return options
 }
@@ -216,7 +225,7 @@ const makeRow = (
         label: selectOptions ? (
           <ul className="flex flex-col">
             {selectOptions?.map(
-              ({ name, value, options, groupedOptions }, i) => (
+              ({ name, value, options, groupedOptions, pinnedNames }, i) => (
                 <li key={name}>
                   {groupedOptions ? (
                     <MissionCascader
@@ -225,6 +234,7 @@ const makeRow = (
                       placeholder={makePlaceholder(name, required)}
                       onSelect={(id) => handleSelect(id || '')}
                       clearable={!required}
+                      pinnedNames={pinnedNames}
                     />
                   ) : (
                     <Select

@@ -9,6 +9,8 @@ export interface MissionCascaderProps {
   placeholder?: string
   onSelect: (id: string | null) => void
   clearable?: boolean
+  /** Mission base names (no extension) to pin at top under "Recently used". */
+  pinnedNames?: string[]
 }
 
 const groupPriority = (label: string) => {
@@ -32,9 +34,27 @@ export const MissionCascader: React.FC<MissionCascaderProps> = ({
   placeholder = 'Select mission',
   onSelect,
   clearable,
+  pinnedNames,
 }) => {
   const sorted = sortedGroups(groups)
   const allOptions = sorted.flatMap((g) => g.options)
+
+  // Build a "Recently used" group from pinned mission names
+  const recentGroup: SelectOptionGroup | null =
+    pinnedNames && pinnedNames.length > 0
+      ? (() => {
+          const pinnedOptions = allOptions.filter((o) =>
+            pinnedNames.some(
+              (n) => o.name === n || o.name.replace(/\.tl$/, '') === n
+            )
+          )
+          return pinnedOptions.length > 0
+            ? { label: 'Recently used', options: pinnedOptions }
+            : null
+        })()
+      : null
+
+  const displayGroups = recentGroup ? [recentGroup, ...sorted] : sorted
   const selectedOption = allOptions.find((o) => o.id === value)
   const selectedGroup = selectedOption
     ? sorted.find((g) => g.options.some((o) => o.id === value))
@@ -231,7 +251,7 @@ export const MissionCascader: React.FC<MissionCascaderProps> = ({
                 )
               ) : (
                 /* Accordion folders */
-                sorted.map((g) => {
+                displayGroups.map((g) => {
                   const isExpanded = expandedFolder === g.label
                   const hasSelected = g.options.some((o) => o.id === value)
                   return (

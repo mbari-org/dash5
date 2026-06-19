@@ -69,6 +69,8 @@ export interface CommandModalViewProps
   vehicles?: string[]
   showAdvanced?: boolean
   onToggleAdvanced?: () => void
+  /** Called when user clicks Amend Command; returns initial selectedParameters to pre-fill. */
+  onAmendCommand?: (commandText: string) => Record<string, string>
 }
 
 export const CommandModalView: React.FC<CommandModalViewProps> = (props) => (
@@ -112,6 +114,7 @@ const CommandModalBody: React.FC<CommandModalViewProps> = ({
   onResetParameters: handleResetParameters,
   showAdvanced,
   onToggleAdvanced: handleToggleAdvanced,
+  onAmendCommand: handleAmendCommandExternal,
   defaultCommand,
 }) => {
   const [selectedCommandId, setSelectedCommandId] =
@@ -231,14 +234,36 @@ const CommandModalBody: React.FC<CommandModalViewProps> = ({
     handleResetParameters?.()
   }
 
-  /* Reset params when command or syntax changes */
+  const handleAmendCommand = () => {
+    const text = commandText ?? selectedCommandName ?? ''
+    const keyword = text.split(/\s+/)[0]?.toLowerCase()
+    const matchingCommand = commands.find(
+      (c) => c.id === keyword || c.name === keyword
+    )
+    if (matchingCommand) {
+      // Parse and store initial params — applied after the reset useEffect fires
+      const initialParams = handleAmendCommandExternal?.(text) ?? {}
+      pendingInitialParams.current = Object.keys(initialParams).length
+        ? initialParams
+        : null
+      // Reset the command name to just the keyword so the Build step header is clean
+      setSelectedCommandName(matchingCommand.name ?? matchingCommand.id)
+      setSelectedCommandId(matchingCommand.id)
+      setUseTemplateStep(true)
+      onSelectCommandId?.(matchingCommand.id)
+    }
+  }
+
+  /* Reset params when command or syntax changes; apply pending amend params if present */
+  const pendingInitialParams = useRef<Record<string, string> | null>(null)
   const lastSyntax = useRef({ selectedSyntax, selectedCommandId })
   useEffect(() => {
     if (
       selectedCommandId !== lastSyntax.current.selectedCommandId ||
       selectedSyntax !== lastSyntax.current.selectedSyntax
     ) {
-      setSelectedParameters({})
+      setSelectedParameters(pendingInitialParams.current ?? {})
+      pendingInitialParams.current = null
       lastSyntax.current = { selectedSyntax, selectedCommandId }
     }
   }, [selectedCommandId, selectedSyntax])
@@ -285,13 +310,21 @@ const CommandModalBody: React.FC<CommandModalViewProps> = ({
       extraButtons={extraButtons()}
       leftExtraButtons={
         currentStep === 1
-          ? [
-              {
-                buttonText: 'Reset',
-                appearance: 'secondary',
-                onClick: handleReset,
-              },
-            ]
+          ? useTemplateStep
+            ? [
+                {
+                  buttonText: 'Reset',
+                  appearance: 'secondary',
+                  onClick: handleReset,
+                },
+              ]
+            : [
+                {
+                  buttonText: 'Amend Command',
+                  appearance: 'secondary',
+                  onClick: handleAmendCommand,
+                },
+              ]
           : []
       }
       extraWideModal
