@@ -1,7 +1,11 @@
+import React, { useState } from 'react'
 import {
   CommandModalView,
   CommandModalViewProps,
   mapValues,
+  OptionSet,
+  L_SEPARATOR,
+  V_SEPARATOR,
 } from '@mbari/react-ui'
 import {
   useCommands,
@@ -20,7 +24,6 @@ import {
 import { makeCommand } from '../lib/makeCommand'
 import { useRouter } from 'next/router'
 import toast from 'react-hot-toast'
-import { useState } from 'react'
 import useGlobalModalId from '../lib/useGlobalModalId'
 
 export interface CommandModalProps {
@@ -40,8 +43,10 @@ export const CommandModal: React.FC<CommandModalProps> = ({
     string | null | undefined
   >(defaultCommand)
 
+  const [hideAdvanced, setHideAdvanced] = useState(false)
+
   const [variable, setVariable] = useState<Record<string, string>>({
-    Variable: '',
+    'Variable Type': '',
     Mission: '',
     Module: '',
     Component: '',
@@ -89,13 +94,62 @@ export const CommandModal: React.FC<CommandModalProps> = ({
   const { data: moduleInfoData } = useModuleInfo()
   const { data: universalData } = useUniversals({})
   const { data: missionData } = useMissionList()
+  // Mission tier now stores the full path (e.g. 'Science/sci2_circle_hotspot.tl')
+  const missionPath = variable.Mission ?? ''
   const { data: selectedMissionData } = useScript(
     {
-      path: variable.Mission,
+      path: missionPath,
       gitRef: missionData?.gitRef ?? 'master',
     },
-    { enabled: (variable.Mission ?? '') !== '' }
+    { enabled: missionPath !== '' }
   )
+
+  const handleAmendCommand = (commandText: string): Record<string, string> => {
+    const params: Record<string, string> = {}
+    // Parse: set <mission>[.:]<element> <rest>
+    // Capture the entire rest-of-line so multi-token values (ARG_LIST) are
+    // preserved. The last space-delimited token is treated as an optional unit.
+    const setMatch = commandText.match(
+      /^set\s+([a-zA-Z0-9_]+)([.:])([a-zA-Z0-9_.]+)\s+(.+)$/
+    )
+    if (setMatch) {
+      const [, missionName, separator, paramPart, rest] = setMatch
+      const lastSpace = rest.lastIndexOf(' ')
+      const value = lastSpace >= 0 ? rest.slice(0, lastSpace) : rest
+      const unit = lastSpace >= 0 ? rest.slice(lastSpace + 1) : undefined
+
+      // Find full mission path (e.g. "Science/sci2_circle_hotspot.tl")
+      const fullPath = allMissionPaths.find((p) => {
+        const base = p
+          .split('/')
+          .pop()
+          ?.replace(/\.(tl|xml|py)$/i, '')
+        return base === missionName
+      })
+
+      if (fullPath) {
+        // Element: root param or Insert.Param
+        const element = separator === ':' ? paramPart : paramPart
+
+        // Build cumulative option ID matching what CommandDetailTable produces
+        const varTypeTier = `Variable Type${L_SEPARATOR}Mission`
+        const missionTier = `Mission${L_SEPARATOR}${fullPath}`
+        const elementTier = `Element${L_SEPARATOR}${element}`
+        const cumulativeId = [varTypeTier, missionTier, elementTier].join(
+          V_SEPARATOR
+        )
+
+        params['ARG_VARIABLE'] = cumulativeId
+        setVariable(mapValues(cumulativeId))
+      }
+
+      if (value) params['ARG_LIST'] = value
+      // Encode unit with the OptionSet name so the Select dropdown matches correctly
+      if (unit) params['ARG_UNIT'] = `Units${L_SEPARATOR}${unit}`
+    }
+
+    return params
+  }
 
   const handleUpdatedField: CommandModalViewProps['onUpdateField'] = (
     _param,
@@ -136,13 +190,19 @@ export const CommandModal: React.FC<CommandModalProps> = ({
   ]
   const moduleNames = makeModuleNames(variable)
 
-  const units = unitsData?.map((u) => u.name) ?? []
+  const units = unitsData?.map((u) => u.abbreviation) ?? []
+
+  // Display aliases: shown in UI but the original keyword is still sent to the vehicle
+  const COMMAND_DISPLAY_ALIASES: Record<string, string> = {
+    failComponent: 'failc',
+  }
 
   const commands =
     commandData?.commands.map((c) => ({
       id: c.keyword,
-      name: c.keyword,
+      name: COMMAND_DISPLAY_ALIASES[c.keyword] ?? c.keyword,
       description: c.description,
+      advanced: c.advanced,
     })) ?? []
 
   const recentCommands =
@@ -196,21 +256,70 @@ export const CommandModal: React.FC<CommandModalProps> = ({
   const decimationTypes = commandData?.decimationTypes ?? []
   const serviceTypes = commandData?.serviceTypes ?? []
 
-  const variableTypes = [
-    { name: 'Variable', options: ['Mission', 'Universal', 'Component'] },
+  // Flat sorted mission paths for both ARG_VARIABLE and ARG_MISSION pickers.
+  const allMissionPaths = (missionData?.list?.map((m) => m.path) ?? []).sort()
+
+  // Groups paths by folder prefix for the grouped dropdown headers.
+  const missionGroupBy = (path: string) => {
+    const slash = path.lastIndexOf('/')
+    return slash >= 0 ? path.slice(0, slash) : 'Standard Ops'
+  }
+
+  // Extract unique mission base names from recent commands (set/load) for pinning.
+  const recentMissionNames = React.useMemo(() => {
+    const names = new Set<string>()
+    recentCommandsData?.forEach((c) => {
+      const cmd = c?.writtenCommand ?? ''
+      // set missionname.param ... or set missionname:Section.param ...
+      const setMatch = cmd.match(/^set\s+([a-zA-Z0-9_]+)[.:]/)
+      if (setMatch) names.add(setMatch[1])
+      // load path/missionname.tl/.xml/.py
+      const loadMatch = cmd.match(
+        /load\s+(?:\S+\/)?([a-zA-Z0-9_]+)\.(tl|xml|py)/i
+      )
+      if (loadMatch) names.add(loadMatch[1])
+    })
+    return Array.from(names).slice(0, 5)
+  }, [recentCommandsData])
+
+  // Single-tier grouped mission picker for ARG_MISSION (e.g. load, run).
+  const missionTypeOptions = [
+    {
+      name: 'Mission',
+      options: allMissionPaths,
+      groupBy: missionGroupBy,
+      pinnedNames: recentMissionNames,
+    },
   ]
-  switch (variable.Variable) {
-    case 'Mission':
+
+  // Flat Element list: root params as 'ParamName', insert params as 'Insert.ParamName'.
+  const elementOptions = selectedMissionData
+    ? [
+        ...(selectedMissionData.scriptArgs ?? []).map((a) => a.name),
+        ...(selectedMissionData.inserts ?? []).flatMap((ins) =>
+          (ins.scriptArgs ?? []).map((a) => `${ins.id}.${a.name}`)
+        ),
+      ].sort()
+    : []
+
+  const variableTypes: OptionSet[] = [
+    { name: 'Variable Type', options: ['Mission', 'Universal', 'Component'] },
+  ]
+  switch (variable['Variable Type']) {
+    case 'Mission': {
+      // Tier 2: grouped mission list — folders as headers, filenames as options
       variableTypes.push({
         name: 'Mission',
-        options: missionData?.list?.map((m) => m.path) ?? [],
+        options: allMissionPaths,
+        groupBy: missionGroupBy,
+        pinnedNames: recentMissionNames,
       })
-      selectedMissionData?.scriptArgs &&
-        variableTypes.push({
-          name: 'Argument',
-          options: selectedMissionData?.scriptArgs.map((a) => a.name) ?? [],
-        })
+      // Tier 3: flat element list built once mission data is loaded
+      if (variable.Mission && selectedMissionData) {
+        variableTypes.push({ name: 'Element', options: elementOptions })
+      }
       break
+    }
     case 'Universal':
       variableTypes.push({
         name: 'Universal',
@@ -221,8 +330,6 @@ export const CommandModal: React.FC<CommandModalProps> = ({
       makeModuleNames(variable).forEach((m) => variableTypes.push(m))
       break
   }
-
-  const missionOptions = missionData?.list?.map((m) => m.path)?.sort() ?? []
 
   return (
     <CommandModalView
@@ -240,16 +347,23 @@ export const CommandModal: React.FC<CommandModalProps> = ({
       syntaxVariations={syntaxVariations ?? []}
       units={[{ name: 'Units', options: units }]}
       universals={[{ name: 'Universal', options: universalData ?? [] }]}
-      missions={[
-        {
-          name: 'Mission',
-          options: missionOptions,
-        },
-      ]}
+      missions={missionTypeOptions}
       decimationTypes={[{ name: 'Decimation Type', options: decimationTypes }]}
       serviceTypes={[{ name: 'Service Type', options: serviceTypes }]}
       variableTypes={variableTypes}
+      showAdvanced={!hideAdvanced}
+      onToggleAdvanced={() => setHideAdvanced((v) => !v)}
+      onAmendCommand={handleAmendCommand}
       onUpdateField={handleUpdatedField}
+      onResetParameters={() =>
+        setVariable({
+          'Variable Type': '',
+          Mission: '',
+          Module: '',
+          Component: '',
+          Element: '',
+        })
+      }
       moduleNames={moduleNames}
       vehicles={vehicles}
       alternativeAddresses={alternativeAddresses ?? []}

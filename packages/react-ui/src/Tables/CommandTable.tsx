@@ -19,6 +19,7 @@ export interface Command {
   name: string
   description?: string
   vehicle?: string
+  advanced?: boolean
 }
 
 export const CommandTable: React.FC<CommandTableProps> = ({

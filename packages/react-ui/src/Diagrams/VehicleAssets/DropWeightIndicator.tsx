@@ -28,7 +28,7 @@ export const DropWeightIndicator: React.FC<DropWeightProps> = ({
       >
         DROP WEIGHT
       </text>
-      <text transform="matrix(1 0 0 1 338 300)" className="st12 st9 st13">
+      <text transform="matrix(1 0 0 1 285 307)" className="st12 st9 st13">
         {textDroptime}
       </text>
     </>
