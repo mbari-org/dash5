@@ -41,9 +41,14 @@ export const ChartsModal: React.FC<ChartsModalProps> = ({
   const [selectedLogsetId, setSelectedLogsetId] = useState<string | null>(null)
   const [logsetTooltip, setLogsetTooltip] = useState(false)
 
+  // Auto-select the latest logset; also reset if the current ID is no longer
+  // valid (e.g. vehicle/deployment changed while the modal stayed open).
   useEffect(() => {
-    if (!selectedLogsetId && logPathEvents?.length) {
-      setSelectedLogsetId(String(logPathEvents[0].eventId))
+    if (logPathEvents?.length) {
+      const validIds = new Set(logPathEvents.map((e) => String(e.eventId)))
+      if (!selectedLogsetId || !validIds.has(selectedLogsetId)) {
+        setSelectedLogsetId(String(logPathEvents[0].eventId))
+      }
     }
   }, [logPathEvents, selectedLogsetId])
 

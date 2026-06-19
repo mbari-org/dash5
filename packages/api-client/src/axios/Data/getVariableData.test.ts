@@ -83,6 +83,39 @@ describe('getVariableData', () => {
     expect(lastRequest?.url.searchParams.get('maxlen')).toBe('500')
   })
 
+  it('passes step as a query param when specified', async () => {
+    await getVariableData({
+      vehicle: 'brizo',
+      variableName: 'depth',
+      from: 1_780_000_000_000,
+      step: 130,
+    })
+    expect(lastRequest?.url.searchParams.get('step')).toBe('130')
+    expect(lastRequest?.url.searchParams.get('maxlen')).toBeNull()
+  })
+
+  it('prefers step over maxlen when both are provided', async () => {
+    await getVariableData({
+      vehicle: 'brizo',
+      variableName: 'depth',
+      from: 1_780_000_000_000,
+      step: 130,
+      maxlen: 500,
+    })
+    expect(lastRequest?.url.searchParams.get('step')).toBe('130')
+    expect(lastRequest?.url.searchParams.get('maxlen')).toBeNull()
+  })
+
+  it('omits both step and maxlen by default', async () => {
+    await getVariableData({
+      vehicle: 'brizo',
+      variableName: 'depth',
+      from: 1_780_000_000_000,
+    })
+    expect(lastRequest?.url.searchParams.get('step')).toBeNull()
+    expect(lastRequest?.url.searchParams.get('maxlen')).toBeNull()
+  })
+
   it('returns null on a 404 (variable has no data in the time window)', async () => {
     server.use(
       rest.get('/data/:variableName', (_req, res, ctx) =>

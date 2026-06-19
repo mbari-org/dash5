@@ -1,4 +1,16 @@
-import { Dispatch, SetStateAction, useLayoutEffect, useState } from 'react'
+import {
+  Dispatch,
+  SetStateAction,
+  useEffect,
+  useLayoutEffect,
+  useState,
+} from 'react'
+
+// In Next.js server environments useLayoutEffect emits a warning.
+// This isomorphic variant uses useLayoutEffect on the client (runs before
+// paint, no visible flash) and useEffect on the server (no-op during SSR).
+const useIsomorphicLayoutEffect =
+  typeof window !== 'undefined' ? useLayoutEffect : useEffect
 
 /**
  * Like useState, but reads/writes to sessionStorage so selections survive
@@ -19,9 +31,9 @@ export function usePersistentState<T>(
 ): [T, Dispatch<SetStateAction<T>>] {
   const [state, setState] = useState<T>(initialValue)
 
-  // Hydrate from sessionStorage after mount (client-only). useLayoutEffect
-  // runs synchronously before the browser paints, so there is no visible flash.
-  useLayoutEffect(() => {
+  // Hydrate from sessionStorage after mount (client-only). Runs synchronously
+  // before the browser paints on the client so there is no visible flash.
+  useIsomorphicLayoutEffect(() => {
     try {
       const stored = sessionStorage.getItem(key)
       if (stored !== null) {
