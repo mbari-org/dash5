@@ -238,7 +238,7 @@ const CommandModalBody: React.FC<CommandModalViewProps> = ({
     const text = commandText ?? selectedCommandName ?? ''
     const keyword = text.split(/\s+/)[0]?.toLowerCase()
     const matchingCommand = commands.find(
-      (c) => c.id === keyword || c.name === keyword
+      (c) => c.id.toLowerCase() === keyword || c.name.toLowerCase() === keyword
     )
     if (matchingCommand) {
       // Parse and store initial params — applied after the reset useEffect fires
