@@ -106,14 +106,15 @@ export const useDeploymentChartData = (
 
   const variableNames = namesQuery.data ?? []
 
-  // For short windows (≤ 4 days) cap at 2000 points to keep requests fast.
-  // For longer windows omit maxlen entirely so TethysDash returns all available
-  // data — TethysDash returns the most recent N samples when maxlen is set, so
-  // capping a long window truncates to only recent data (e.g. depth sampled
-  // every 5s fills 2000 points in ~3 hours). Results are decimated below.
+  // Use the step parameter (TethysDash ≥ 4.99.80) to request evenly distributed
+  // samples across the full window. Unlike maxlen (which returns the most recent
+  // N samples and so truncates older data in long windows), step spreads samples
+  // uniformly so the full time range is always visible.
+  // Target 2000 points per variable; minimum step of 1 second.
+  const TARGET_POINTS = 2000
   const windowMs = (to ?? Date.now()) - from
-  const windowDays = windowMs / (24 * 60 * 60 * 1000)
-  const maxlen = windowDays <= 4 ? 2000 : undefined
+  const windowSeconds = windowMs / 1000
+  const step = Math.max(1, Math.round(windowSeconds / TARGET_POINTS))
 
   // Step 3 — fetch each variable over the full requested time range in parallel
   const variableQueries = useQueries(
@@ -125,6 +126,7 @@ export const useDeploymentChartData = (
         variableName,
         from,
         to,
+        step,
       ],
       queryFn: () =>
         getVariableData(
@@ -132,7 +134,7 @@ export const useDeploymentChartData = (
             vehicle,
             variableName,
             from,
-            maxlen,
+            step,
             ...(to != null ? { to } : {}),
           },
           { instance: axiosInstance }
@@ -150,21 +152,10 @@ export const useDeploymentChartData = (
   // charts progressively. `null` means the variable had no data in the window
   // (404 from TethysDash) — filter those out silently rather than treating as
   // an error, since other variables in the same window may still have data.
-  // For long windows we omit maxlen so TethysDash returns all data; decimate
-  // client-side to a target of 5000 points to keep charts responsive.
-  const TARGET_POINTS = 5000
+  // step-sampled responses are already appropriately decimated by TethysDash.
   const resolvedData: ChartData[] = variableQueries
     .map((q) => q.data)
     .filter((d): d is ChartData => d != null && d !== null)
-    .map((d) => {
-      if (d.values.length <= TARGET_POINTS) return d
-      const stride = Math.ceil(d.values.length / TARGET_POINTS)
-      return {
-        ...d,
-        values: d.values.filter((_, i) => i % stride === 0),
-        times: d.times.filter((_, i) => i % stride === 0),
-      }
-    })
 
   // Show the full loading overlay only until we have at least one chart to
   // display. Once data starts arriving, `isFetching` tracks the remainder.

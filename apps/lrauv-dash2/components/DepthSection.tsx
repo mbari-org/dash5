@@ -1,0 +1,196 @@
+import { SelectField, ToolTip } from '@mbari/react-ui'
+import {
+  useChartData,
+  useDeploymentChartData,
+  useEvents,
+  EventType,
+} from '@mbari/api-client'
+import dynamic from 'next/dynamic'
+import { useEffect, useMemo, useState } from 'react'
+import { humanize } from '@mbari/utils'
+import { DateTime } from 'luxon'
+import clsx from 'clsx'
+import { usePersistentState } from '../lib/usePersistentState'
+
+const LineChart: any = dynamic(
+  () => import('@mbari/react-ui/dist/Charts/LineChart'),
+  { ssr: false }
+)
+
+type TimeWindow = 'latest' | '3d' | '7d' | 'deployment'
+
+const TIME_WINDOW_OPTIONS: { id: TimeWindow; name: string }[] = [
+  { id: 'latest', name: 'Latest Dive' },
+  { id: '3d', name: '3 Days' },
+  { id: '7d', name: '7 Days' },
+  { id: 'deployment', name: 'Full Deployment' },
+]
+
+const getWindowFrom = (
+  window: TimeWindow,
+  deploymentFrom: number,
+  deploymentTo?: number
+): number => {
+  const anchor = deploymentTo ?? DateTime.utc().toMillis()
+  switch (window) {
+    case '3d':
+      return Math.max(deploymentFrom, anchor - 3 * 24 * 60 * 60 * 1000)
+    case '7d':
+      return Math.max(deploymentFrom, anchor - 7 * 24 * 60 * 60 * 1000)
+    case 'deployment':
+      return deploymentFrom
+    default:
+      return deploymentFrom
+  }
+}
+
+const DepthSection: React.FC<{
+  vehicleName: string
+  from: number
+  to?: number
+  onHover?: (millis?: number | null) => void
+}> = ({ vehicleName, from, to, onHover }) => {
+  const [timeWindow, setTimeWindow] = usePersistentState<TimeWindow>(
+    'depthSection.timeWindow',
+    'deployment'
+  )
+  const [logsetTooltip, setLogsetTooltip] = useState(false)
+
+  const isExtended = timeWindow !== 'latest'
+
+  const { data: logPathEvents } = useEvents(
+    {
+      vehicles: [vehicleName],
+      eventTypes: ['logPath'] as EventType[],
+      from,
+      to,
+      limit: 200,
+      ascending: 'n',
+    },
+    { enabled: !!vehicleName && !isExtended, staleTime: 5 * 60 * 1000 }
+  )
+
+  const [selectedLogsetId, setSelectedLogsetId] = useState<string | null>(null)
+
+  useEffect(() => {
+    if (!selectedLogsetId && logPathEvents?.length) {
+      setSelectedLogsetId(String(logPathEvents[0].eventId))
+    }
+  }, [logPathEvents, selectedLogsetId])
+
+  const logsetOptions = useMemo(() => {
+    if (!logPathEvents?.length) return []
+    return logPathEvents.map((e) => ({
+      id: String(e.eventId),
+      name:
+        DateTime.fromMillis(e.unixTime, { zone: 'utc' }).toFormat(
+          'MMM d, yyyy HH:mm'
+        ) + ' UTC',
+    }))
+  }, [logPathEvents])
+
+  const logsetFrom = useMemo(() => {
+    if (!selectedLogsetId || !logPathEvents?.length) return from
+    const idx = logPathEvents.findIndex(
+      (e) => String(e.eventId) === selectedLogsetId
+    )
+    return idx >= 0 ? logPathEvents[idx].unixTime : from
+  }, [selectedLogsetId, logPathEvents, from])
+
+  const logsetTo = useMemo(() => {
+    if (!selectedLogsetId || !logPathEvents?.length) return to
+    const idx = logPathEvents.findIndex(
+      (e) => String(e.eventId) === selectedLogsetId
+    )
+    const next = idx >= 0 ? logPathEvents[idx - 1] : undefined
+    return next ? next.unixTime : to
+  }, [selectedLogsetId, logPathEvents, to])
+
+  const extendedFrom = useMemo(
+    () => getWindowFrom(timeWindow, from, to),
+    [timeWindow, from, to]
+  )
+
+  const latestQuery = useChartData(
+    { vehicle: vehicleName, from: logsetFrom, to: logsetTo },
+    { enabled: !isExtended }
+  )
+
+  const deploymentQuery = useDeploymentChartData(
+    { vehicle: vehicleName, deploymentFrom: from, from: extendedFrom, to },
+    { enabled: isExtended }
+  )
+
+  const {
+    data: chartData,
+    isLoading,
+    isError,
+  } = isExtended ? deploymentQuery : latestQuery
+
+  const depthData = chartData?.find((d) => d.name === 'depth')
+  const chartAvailable = !!depthData && !isLoading && !isError
+
+  return (
+    <div className="flex h-full w-full flex-col overflow-hidden">
+      <header className="flex flex-wrap items-center gap-2 px-4 pt-1">
+        <div
+          title="Select how far back to display depth data. 'Latest Dive' shows the current log session only."
+          className="min-w-[10rem]"
+        >
+          <SelectField
+            name="depthTimeWindow"
+            value={timeWindow}
+            options={TIME_WINDOW_OPTIONS}
+            onSelect={(v) => setTimeWindow((v ?? 'latest') as TimeWindow)}
+            aria-label="Depth chart time window"
+          />
+        </div>
+        {!isExtended && logsetOptions.length > 0 && (
+          <div
+            className="relative"
+            onMouseEnter={() => setLogsetTooltip(true)}
+            onMouseLeave={() => setLogsetTooltip(false)}
+          >
+            <SelectField
+              name="depthLogset"
+              placeholder="Logset"
+              value={selectedLogsetId ?? ''}
+              options={logsetOptions}
+              onSelect={setSelectedLogsetId}
+            />
+            <ToolTip
+              label="Select a logset to scope the depth chart to that dive"
+              direction="below"
+              active={logsetTooltip}
+            />
+          </div>
+        )}
+        {isLoading && (
+          <p className={clsx('text-sm font-medium text-slate-500')}>Loading…</p>
+        )}
+        {isError && (
+          <p className="text-sm font-medium text-red-600">
+            Depth data could not be loaded
+          </p>
+        )}
+      </header>
+      <div className="min-h-0 flex-1 px-4 pb-1">
+        {chartAvailable && (
+          <LineChart
+            name={depthData.name}
+            data={depthData.values?.map((v: number, i: number) => ({
+              value: v,
+              timestamp: depthData.times?.[i],
+            }))}
+            yAxisLabel={`${humanize(depthData.name)} (${depthData.units})`}
+            onHover={onHover}
+            inverted
+            className="h-full w-full"
+          />
+        )}
+      </div>
+    </div>
+  )
+}
+
+export default DepthSection

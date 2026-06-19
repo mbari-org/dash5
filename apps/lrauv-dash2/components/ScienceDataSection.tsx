@@ -8,6 +8,7 @@ import useGlobalModalId from '../lib/useGlobalModalId'
 import dynamic from 'next/dynamic'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { capitalize, humanize, swallow } from '@mbari/utils'
+import { usePersistentState } from '../lib/usePersistentState'
 import {
   useChartData,
   useDeploymentChartData,
@@ -36,6 +37,7 @@ export const ScienceCell: React.FC<{
   timeout?: number
   cellHeightClassname?: string
   chartHeightClassname?: string
+  xAxisRange?: [number, number]
 }> = ({
   color,
   values,
@@ -45,6 +47,7 @@ export const ScienceCell: React.FC<{
   timeout: timeoutms,
   cellHeightClassname = 'h-[340px]',
   chartHeightClassname = 'h-[320px]',
+  xAxisRange,
 }) => {
   const [ready, setReady] = useState(false)
   const timeout = useRef<ReturnType<typeof setTimeout>>(null)
@@ -75,11 +78,12 @@ export const ScienceCell: React.FC<{
         name={metric}
         className="absolute inset-0 w-full"
         inverted={name === 'depth'}
+        xAxisRange={xAxisRange}
       />
     ) : (
       <AbsoluteOverlay />
     )
-  }, [values, times, color, metric, name, ready])
+  }, [values, times, color, metric, name, ready, xAxisRange])
   return (
     <div
       className={clsx(
@@ -130,8 +134,18 @@ const ScienceDataSection: React.FC<{
   to?: number // milliseconds since epoch — deployment end
 }> = ({ vehicleName, from, to }) => {
   const { setGlobalModalId } = useGlobalModalId()
-  const [timeWindow, setTimeWindow] = useState<TimeWindow>('latest')
-  const [category, setCategory] = useState<string | null>('vehicle')
+  const [timeWindow, setTimeWindow] = usePersistentState<TimeWindow>(
+    'scienceSection.timeWindow',
+    'latest'
+  )
+  const [category, setCategory] = usePersistentState<string | null>(
+    'scienceSection.category',
+    'vehicle'
+  )
+  const [alignAxes, setAlignAxes] = usePersistentState<boolean>(
+    'scienceSection.alignAxes',
+    false
+  )
   const [logsetTooltip, setLogsetTooltip] = useState(false)
 
   const isExtended = timeWindow !== 'latest'
@@ -221,6 +235,21 @@ const ScienceDataSection: React.FC<{
       : !vehicleUnits.includes(d.units.toLowerCase())
   )
 
+  // Shared time domain for axis alignment — use the selected window bounds
+  // directly so all charts span the exact same period regardless of when
+  // individual sensors started recording within that window.
+  const sharedXRange = useMemo((): [number, number] | undefined => {
+    if (!alignAxes) return undefined
+    const now = DateTime.utc().toMillis()
+    if (!isExtended) {
+      // Latest Dive: align to the selected logset's start → end
+      return [logsetFrom, logsetTo ?? now]
+    } else {
+      // 3d / 7d / Full Deployment: align to the extended window
+      return [extendedFrom, to ?? now]
+    }
+  }, [alignAxes, isExtended, logsetFrom, logsetTo, extendedFrom, to])
+
   const cellAtIndex = (index: number) => {
     const item = charts?.[index]
     return (
@@ -231,6 +260,7 @@ const ScienceDataSection: React.FC<{
         name={item?.name ?? 'Unknown'}
         values={item?.values}
         times={item?.times}
+        xAxisRange={sharedXRange}
       />
     )
   }
@@ -284,6 +314,22 @@ const ScienceDataSection: React.FC<{
             />
           </div>
         )}
+        <button
+          title={
+            alignAxes
+              ? 'Click to let each chart auto-fit its own time axis'
+              : 'Click to lock all charts to the same time axis for side-by-side comparison'
+          }
+          className={clsx(
+            'my-auto rounded border px-3 py-1.5 text-sm font-medium transition-colors',
+            alignAxes
+              ? 'border-blue-300 bg-blue-50 text-blue-700'
+              : 'border-gray-300 bg-white text-gray-600 hover:bg-gray-50'
+          )}
+          onClick={() => setAlignAxes((v) => !v)}
+        >
+          {alignAxes ? 'Best X-Axes Fit' : 'Align X-Axes'}
+        </button>
         <button
           className="my-auto ml-auto px-4 py-2 font-bold text-violet-800"
           onClick={handleespSamples}

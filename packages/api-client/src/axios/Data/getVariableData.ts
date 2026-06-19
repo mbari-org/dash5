@@ -8,6 +8,8 @@ export interface GetVariableDataParams {
   from: number // milliseconds since epoch
   to?: number // milliseconds since epoch
   maxlen?: number
+  /** Return one sample every N seconds, evenly distributed across the window (TethysDash ≥ 4.99.80) */
+  step?: number
 }
 
 export interface GetVariableDataResponse {
@@ -18,7 +20,7 @@ export interface GetVariableDataResponse {
 }
 
 export const getVariableData = async (
-  { vehicle, variableName, from, to, maxlen }: GetVariableDataParams,
+  { vehicle, variableName, from, to, maxlen, step }: GetVariableDataParams,
   { debug, instance = getInstance(), ...config }: RequestConfig = {}
 ) => {
   const url = `/data/${encodeURIComponent(variableName)}`
@@ -31,10 +33,12 @@ export const getVariableData = async (
     vehicle,
     from: String(from),
   })
-  // Only include maxlen when specified — omitting it lets TethysDash return
-  // all available points, which is needed for long windows where a cap would
-  // truncate to only the most recent N samples.
-  if (maxlen != null) {
+  // Prefer step over maxlen when both are provided: step returns evenly
+  // distributed samples across the full window (TethysDash ≥ 4.99.80),
+  // whereas maxlen returns only the most recent N samples.
+  if (step != null) {
+    params.set('step', String(step))
+  } else if (maxlen != null) {
     params.set('maxlen', String(maxlen))
   }
   if (to != null) {

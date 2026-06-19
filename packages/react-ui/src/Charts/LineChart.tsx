@@ -19,6 +19,8 @@ export interface LineChartProps {
   xAxisLabel?: string
   yAxisLabel?: string
   inverted?: boolean
+  /** When provided, locks the x-axis to this [start, end] range (ms since epoch) */
+  xAxisRange?: [number, number]
   onHover?: (millis?: number | null) => void
 }
 
@@ -31,6 +33,7 @@ const LineChart: React.FC<LineChartProps> = ({
   color = '#17BECF',
   yAxisLabel,
   inverted,
+  xAxisRange,
   onHover: handleHoverFromParent,
 }) => {
   const container = useRef(null)
@@ -85,6 +88,13 @@ const LineChart: React.FC<LineChartProps> = ({
           },
           xaxis: {
             tickangle: 0,
+            ...(xAxisRange && {
+              range: [
+                DateTime.fromMillis(xAxisRange[0]).toISO(),
+                DateTime.fromMillis(xAxisRange[1]).toISO(),
+              ],
+              autorange: false,
+            }),
           },
           yaxis: {
             title: yAxisLabel,
