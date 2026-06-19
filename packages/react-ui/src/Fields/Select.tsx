@@ -8,11 +8,17 @@ export interface SelectOption {
   icon?: IconDefinition
 }
 
+export interface SelectOptionGroup {
+  label: string
+  options: SelectOption[]
+}
+
 export interface SelectProps {
   id?: string
   name: string
   placeholder?: string
   options?: SelectOption[]
+  groupedOptions?: SelectOptionGroup[]
   onChange?: (value: string) => void
   onSelect?: (id: string | null) => void
   value?: string
@@ -28,6 +34,7 @@ export const Select = React.forwardRef<any, SelectProps>(
       name,
       placeholder,
       options = [],
+      groupedOptions,
       onChange: handleOnInputChange,
       onSelect: handleSelect,
       value,
@@ -37,7 +44,10 @@ export const Select = React.forwardRef<any, SelectProps>(
     },
     ref
   ) => {
-    const defaultValue = options.filter((s) => s.id === value)
+    const allFlat = groupedOptions
+      ? groupedOptions.flatMap((g) => g.options)
+      : options
+    const defaultValue = allFlat.filter((s) => s.id === value)
     const handleChange = (s: SelectOption | null) => {
       handleSelect?.(s?.id ?? null)
     }
@@ -45,7 +55,7 @@ export const Select = React.forwardRef<any, SelectProps>(
       <div className="flex h-full w-full flex-grow">
         <ReactSelect
           name={name}
-          options={options}
+          options={(groupedOptions ?? options) as any}
           value={defaultValue}
           defaultValue={defaultValue}
           getOptionLabel={(option: SelectOption) => option.name}
@@ -59,6 +69,14 @@ export const Select = React.forwardRef<any, SelectProps>(
           onChange={handleChange}
           styles={{
             menuPortal: (base) => ({ ...base, zIndex: 9999 }),
+            groupHeading: (base) => ({
+              ...base,
+              fontWeight: 600,
+              fontSize: '0.7rem',
+              textTransform: 'uppercase',
+              color: '#64748b',
+              letterSpacing: '0.05em',
+            }),
             ...(customStyles ?? {}),
           }}
           menuPortalTarget={document.body}

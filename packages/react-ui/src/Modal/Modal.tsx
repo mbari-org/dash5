@@ -114,6 +114,7 @@ export const Modal: React.FC<ModalProps & FooterProps> = ({
   form,
   loading,
   extraButtons,
+  leftExtraButtons,
   maximized,
   className,
   style,
@@ -305,6 +306,7 @@ export const Modal: React.FC<ModalProps & FooterProps> = ({
             disableConfirm={disableConfirm}
             form={form}
             extraButtons={extraButtons}
+            leftExtraButtons={leftExtraButtons}
           />
         )}
       </section>

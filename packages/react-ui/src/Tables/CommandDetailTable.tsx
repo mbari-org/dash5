@@ -1,7 +1,8 @@
 import React from 'react'
 import clsx from 'clsx'
 import { Table } from '../Data/Table'
-import { Select, SelectOption } from '../Fields/Select'
+import { Select, SelectOption, SelectOptionGroup } from '../Fields/Select'
+import { MissionCascader } from '../Fields/MissionCascader'
 import { Input } from '../Fields/Input'
 
 const L_SEPARATOR = '____'
@@ -39,12 +40,20 @@ export interface CommandDetailProps {
 export interface OptionSet {
   name: string
   options: string[]
+  /** When provided, groups options under labelled headings inside a single dropdown. */
+  groupBy?: (option: string) => string
+}
+
+export interface HelpLink {
+  label: string
+  url: string
 }
 
 export interface CommandParameter {
   argType: ArgumentType
   name: string
   description: string
+  helpLinks?: HelpLink[]
   value?: string
   options?: OptionSet[]
   inputType: 'string' | 'boolean' | 'number'
@@ -55,6 +64,7 @@ export interface ScopedOptionGroup {
   name: string
   value?: string
   options: SelectOption[]
+  groupedOptions?: SelectOptionGroup[]
 }
 
 export const explodeValues = (valueString: string) =>
@@ -86,28 +96,58 @@ export const scopedSelectOptions = (
   const values = scopedValues(valueString ?? '')
   const options = optionSets
     .filter((_, i) => i <= values.length)
-    .map(({ name, options }, i) => ({
-      name,
-      value: values[i],
-      options: options.map((option) => ({
-        id: [i ? values[i - 1] : '', [name, option].join(L_SEPARATOR)]
-          .filter((i) => i)
-          .join(V_SEPARATOR),
-        name: option,
-      })),
-    }))
+    .map(({ name, options, groupBy }, i) => {
+      const buildId = (option: string) =>
+        [i ? values[i - 1] : '', [name, option].join(L_SEPARATOR)]
+          .filter((x) => x)
+          .join(V_SEPARATOR)
+
+      const flatOptions: SelectOption[] = options.map((option) => ({
+        id: buildId(option),
+        name: groupBy ? option.split('/').pop() ?? option : option,
+      }))
+
+      let groupedOptions: SelectOptionGroup[] | undefined
+      if (groupBy) {
+        const map = new Map<string, SelectOption[]>()
+        options.forEach((option) => {
+          const label = groupBy(option)
+          if (!map.has(label)) map.set(label, [])
+          map.get(label)!.push({
+            id: buildId(option),
+            name: option.split('/').pop() ?? option,
+          })
+        })
+        groupedOptions = Array.from(map.entries()).map(([label, opts]) => ({
+          label,
+          options: opts,
+        }))
+      }
+
+      return { name, value: values[i], options: flatOptions, groupedOptions }
+    })
   return options
 }
 
-const makePlaceholder = (name: string, required?: boolean) =>
-  `${name} (${required ? 'Required' : 'Optional'})`
+const makePlaceholder = (name: string, required?: boolean) => {
+  const capitalized = name.charAt(0).toUpperCase() + name.slice(1)
+  return `${capitalized} (${required ? 'Required' : 'Optional'})`
+}
 
 const makeRow = (
   command: CommandParameter,
   onSelect: CommandDetailProps['onSelect']
 ) => {
-  const { argType, name, description, value, options, required, inputType } =
-    command
+  const {
+    argType,
+    name,
+    description,
+    helpLinks,
+    value,
+    options,
+    required,
+    inputType,
+  } = command
 
   const handleSelect = (id: string) => {
     onSelect(name, argType, id)
@@ -154,22 +194,51 @@ const makeRow = (
   return {
     cells: [
       { label: name },
-      { label: description },
+      {
+        label: (
+          <span className="flex flex-wrap items-center gap-1">
+            <span>{description}</span>
+            {helpLinks?.map(({ label, url }) => (
+              <a
+                key={url}
+                href={url}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center rounded border border-blue-200 bg-blue-50 px-1.5 py-0.5 text-xs text-blue-600 hover:bg-blue-100 hover:text-blue-800"
+              >
+                {label}
+              </a>
+            ))}
+          </span>
+        ),
+      },
       {
         label: selectOptions ? (
           <ul className="flex flex-col">
-            {selectOptions?.map(({ name, value, options }, i) => (
-              <li key={name}>
-                <Select
-                  name={name}
-                  options={options}
-                  value={value}
-                  placeholder={makePlaceholder(name, required)}
-                  onSelect={(id) => handleSelect(id || '')}
-                  clearable={!required}
-                />
-              </li>
-            ))}
+            {selectOptions?.map(
+              ({ name, value, options, groupedOptions }, i) => (
+                <li key={name}>
+                  {groupedOptions ? (
+                    <MissionCascader
+                      groups={groupedOptions}
+                      value={value}
+                      placeholder={makePlaceholder(name, required)}
+                      onSelect={(id) => handleSelect(id || '')}
+                      clearable={!required}
+                    />
+                  ) : (
+                    <Select
+                      name={name}
+                      options={options}
+                      value={value}
+                      placeholder={makePlaceholder(name, required)}
+                      onSelect={(id) => handleSelect(id || '')}
+                      clearable={!required}
+                    />
+                  )}
+                </li>
+              )
+            )}
           </ul>
         ) : (
           <section className="flex h-full w-full items-center">{input}</section>

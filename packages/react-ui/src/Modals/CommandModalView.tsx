@@ -63,9 +63,12 @@ export interface CommandModalViewProps
   variableTypes?: OptionSet[]
   universals?: OptionSet[]
   onUpdateField?: CommandDetailProps['onSelect']
+  onResetParameters?: () => void
   onSelectModule?: (module: string) => void
   onSelectOutputUri?: (outputUri: string) => void
   vehicles?: string[]
+  showAdvanced?: boolean
+  onToggleAdvanced?: () => void
 }
 
 export const CommandModalView: React.FC<CommandModalViewProps> = (props) => (
@@ -106,6 +109,9 @@ const CommandModalBody: React.FC<CommandModalViewProps> = ({
   universals,
   decimationTypes,
   onUpdateField: handleUpdatedField,
+  onResetParameters: handleResetParameters,
+  showAdvanced,
+  onToggleAdvanced: handleToggleAdvanced,
   defaultCommand,
 }) => {
   const [selectedCommandId, setSelectedCommandId] =
@@ -220,6 +226,11 @@ const CommandModalBody: React.FC<CommandModalViewProps> = ({
       handleUpdatedField?.(param, argType, value)
     }
 
+  const handleReset = () => {
+    setSelectedParameters({})
+    handleResetParameters?.()
+  }
+
   /* Reset params when command or syntax changes */
   const lastSyntax = useRef({ selectedSyntax, selectedCommandId })
   useEffect(() => {
@@ -272,6 +283,17 @@ const CommandModalBody: React.FC<CommandModalViewProps> = ({
       onCancel={onCancel}
       confirmButtonText={confirmButtonText}
       extraButtons={extraButtons()}
+      leftExtraButtons={
+        currentStep === 1
+          ? [
+              {
+                buttonText: 'Reset',
+                appearance: 'secondary',
+                onClick: handleReset,
+              },
+            ]
+          : []
+      }
       extraWideModal
       bodyOverflowHidden
       snapTo="top-right"
@@ -286,6 +308,8 @@ const CommandModalBody: React.FC<CommandModalViewProps> = ({
           onSelectCommandId={handleSelectCommandId}
           onMoreInfo={handleMoreInfo}
           vehicleName={vehicleName}
+          showAdvanced={showAdvanced}
+          onToggleAdvanced={handleToggleAdvanced}
         />
       )}
 
@@ -312,6 +336,7 @@ const CommandModalBody: React.FC<CommandModalViewProps> = ({
               },
             ]}
             onCommandTextChange={setCommandText}
+            onReset={handleReset}
           />
         ) : (
           <BuildFreeformCommandStep

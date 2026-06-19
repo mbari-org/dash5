@@ -33,8 +33,8 @@ const argumentAsParameter = (
     case 'ARG_FLOAT':
       return {
         argType: arg.argType,
-        name: 'float',
-        description: 'A floating point value',
+        name: 'variable value to set',
+        description: 'A numeric value (e.g. 1.5)',
         inputType: 'number',
         required: arg.required === 'REQUIRED',
         value,
@@ -52,8 +52,8 @@ const argumentAsParameter = (
     case 'ARG_INT':
       return {
         argType: arg.argType,
-        name: arg?.altName ?? 'int',
-        description: 'An integer value',
+        name: arg?.altName ?? 'integer',
+        description: 'A whole number (e.g. 5)',
         inputType: 'number',
         value,
       }
@@ -61,7 +61,7 @@ const argumentAsParameter = (
       return {
         argType: arg.argType,
         name: 'seconds',
-        description: 'A value in seconds.',
+        description: 'Time in seconds (e.g. 300)',
         inputType: 'number',
         required: arg.required === 'REQUIRED',
         value,
@@ -141,8 +141,8 @@ const argumentAsParameter = (
     case 'ARG_UNIT':
       return {
         argType: arg.argType,
-        name: 'unit',
-        description: 'A unit name',
+        name: 'variable unit',
+        description: 'Unit for the value (e.g. count, meters, degrees)',
         inputType: 'string',
         required: arg.required === 'REQUIRED',
         value,
@@ -162,7 +162,17 @@ const argumentAsParameter = (
       return {
         argType: arg.argType,
         name: 'variable',
-        description: 'A variable name',
+        description: 'Mission-level vs insert parameter syntax',
+        helpLinks: [
+          {
+            label: 'Syntax guide',
+            url: 'https://docs.mbari.org/tethysdash/mission/',
+          },
+          {
+            label: 'LRAUV missions',
+            url: 'https://docs.mbari.org/lrauvmissions/missions/',
+          },
+        ],
         inputType: 'string',
         required: arg.required === 'REQUIRED',
         value,
@@ -181,8 +191,9 @@ const argumentAsParameter = (
     case 'ARG_LIST':
       return {
         argType: arg.argType,
-        name: 'float list',
-        description: 'A list of floating point values',
+        name: 'variable value(s) to set',
+        description:
+          'One or more numbers, comma-separated (e.g. 1 or 1.5, 2.0)',
         inputType: 'string',
         required: arg.required === 'REQUIRED',
         value,
@@ -254,6 +265,7 @@ export interface BuildTemplatedCommandStepProps {
   universals?: OptionSet[]
   onUpdateField?: CommandDetailProps['onSelect']
   onCommandTextChange?: (text: string) => void
+  onReset?: () => void
 }
 
 export const BuildTemplatedCommandStep: React.FC<
@@ -274,6 +286,7 @@ export const BuildTemplatedCommandStep: React.FC<
   onSelectSyntax: handleSelectSyntax,
   onUpdateField: handleUpdatedField,
   onCommandTextChange: handleCommandTextChange,
+  onReset: handleReset,
 }) => {
   // Assign default syntax if none is selected
   useEffect(() => {
@@ -322,16 +335,22 @@ export const BuildTemplatedCommandStep: React.FC<
         if (values[0] === 'Universal') {
           return values?.slice(-1)[0] ?? undefined
         }
-        return values.length > 2
-          ? values
-              .map((v) => {
-                // extract any file name from a path i.e. script path
-                const file = v.match(/[a-zA-Z_]+(?=\.xml|\.tl)/)
-                return file ? file[0] : v
-              })
-              ?.slice(-2)
-              .join('.')
-          : undefined
+        if (values[0] === 'Mission' && values.length >= 2) {
+          const missionFullPath = values[1]
+          const element = values[2]
+          if (!missionFullPath || !element) return undefined
+          // Extract bare filename without extension (e.g. 'sci2_circle_hotspot')
+          const missionName =
+            missionFullPath.match(/[a-zA-Z0-9_]+(?=\.xml|\.tl)/)?.[0] ??
+            missionFullPath.split('/').pop() ??
+            missionFullPath
+          // element is 'ParamName' (root) or 'Insert.ParamName' (scoped)
+          if (element.includes('.')) {
+            return `${missionName}:${element}`
+          }
+          return `${missionName}.${element}`
+        }
+        return undefined
       case 'ARG_UNIVERSAL':
         return values?.slice(-1)[0] ?? undefined
       case 'ARG_COMPONENT':
@@ -339,7 +358,9 @@ export const BuildTemplatedCommandStep: React.FC<
       case 'ARG_COMMAND':
         return value ? values[0] : value
       case 'ARG_MISSION':
-        return value ? values[0] : value
+        if (!value) return value
+        // Single-tier flat path (e.g. 'Science/sci2_circle_hotspot.tl')
+        return values[0]
       case 'ARG_QUOTED_STRING':
         return value ? `"${value}"` : value
       default:
@@ -377,11 +398,21 @@ export const BuildTemplatedCommandStep: React.FC<
   return (
     <section className="flex h-full flex-col">
       <ul className="flex flex-col">
-        <li className="w-full">
-          Build command{' '}
-          <span className="text-teal-500" data-testid="vehicle name">
-            {selectedCommandName}
+        <li className="flex w-full items-center justify-between">
+          <span>
+            Build command{' '}
+            <span className="text-teal-500" data-testid="vehicle name">
+              {selectedCommandName}
+            </span>
           </span>
+          <a
+            href="https://docs.mbari.org/tethysdash/mission/"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-xs text-blue-500 hover:text-blue-700 hover:underline"
+          >
+            Mission Script Structure Guide
+          </a>
         </li>
         <li className="my-4 flex w-full items-center">
           <p className="mr-2 flex-shrink-0">Choose a syntax</p>

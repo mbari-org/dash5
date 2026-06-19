@@ -24,7 +24,7 @@ export interface InputProps {
 
 const style = {
   input:
-    'font-body border rounded px-2 py-1 flex flex-grow max-w-full focus:outline-none focus:border-green-300',
+    'font-body border border-gray-300 rounded px-2 py-1 min-h-[38px] flex flex-grow max-w-full placeholder:text-gray-500 focus:outline-none focus:border-green-300',
 }
 
 export const Input = React.forwardRef<HTMLInputElement, InputProps>(
