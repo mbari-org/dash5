@@ -11,7 +11,6 @@ import { humanize } from '@mbari/utils'
 import { DateTime } from 'luxon'
 import clsx from 'clsx'
 import { usePersistentState } from '../lib/usePersistentState'
-import { usePersistentState } from '../lib/usePersistentState'
 
 const LineChart: any = dynamic(
   () => import('@mbari/react-ui/dist/Charts/LineChart'),
