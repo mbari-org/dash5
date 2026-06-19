@@ -265,7 +265,6 @@ export interface BuildTemplatedCommandStepProps {
   universals?: OptionSet[]
   onUpdateField?: CommandDetailProps['onSelect']
   onCommandTextChange?: (text: string) => void
-  onReset?: () => void
 }
 
 export const BuildTemplatedCommandStep: React.FC<
@@ -286,7 +285,6 @@ export const BuildTemplatedCommandStep: React.FC<
   onSelectSyntax: handleSelectSyntax,
   onUpdateField: handleUpdatedField,
   onCommandTextChange: handleCommandTextChange,
-  onReset: handleReset,
 }) => {
   // Assign default syntax if none is selected
   useEffect(() => {

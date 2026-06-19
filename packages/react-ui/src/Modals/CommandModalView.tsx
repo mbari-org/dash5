@@ -67,8 +67,6 @@ export interface CommandModalViewProps
   onSelectModule?: (module: string) => void
   onSelectOutputUri?: (outputUri: string) => void
   vehicles?: string[]
-  showAdvanced?: boolean
-  onToggleAdvanced?: () => void
   /** Called when user clicks Amend Command; returns initial selectedParameters to pre-fill. */
   onAmendCommand?: (commandText: string) => Record<string, string>
 }
@@ -369,7 +367,6 @@ const CommandModalBody: React.FC<CommandModalViewProps> = ({
               },
             ]}
             onCommandTextChange={setCommandText}
-            onReset={handleReset}
           />
         ) : (
           <BuildFreeformCommandStep

@@ -133,12 +133,6 @@ export const SelectCommandStep: React.FC<SelectCommandStepProps> = ({
   // Commands that are marked advanced in the API but should always appear in the standard list
   const ALWAYS_SHOW_IN_STANDARD = new Set(['quit', 'strobe'])
 
-  const standardCommands = React.useMemo(
-    () =>
-      commands.filter((c) => !c.advanced || ALWAYS_SHOW_IN_STANDARD.has(c.id)),
-    [commands]
-  )
-
   const lastSelectedFilter = useRef(selectedFilter)
   useEffect(() => {
     if (selectedFilter) {

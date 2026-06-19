@@ -105,9 +105,11 @@ export const scopedSelectOptions = (
           .filter((x) => x)
           .join(V_SEPARATOR)
 
+      const stripExt = (s: string) => s.replace(/\.(tl|xml|py)$/i, '')
+
       const flatOptions: SelectOption[] = options.map((option) => ({
         id: buildId(option),
-        name: groupBy ? option.split('/').pop() ?? option : option,
+        name: groupBy ? stripExt(option.split('/').pop() ?? option) : option,
       }))
 
       let groupedOptions: SelectOptionGroup[] | undefined
@@ -118,7 +120,7 @@ export const scopedSelectOptions = (
           if (!map.has(label)) map.set(label, [])
           map.get(label)!.push({
             id: buildId(option),
-            name: option.split('/').pop() ?? option,
+            name: stripExt(option.split('/').pop() ?? option),
           })
         })
         groupedOptions = Array.from(map.entries()).map(([label, opts]) => ({
