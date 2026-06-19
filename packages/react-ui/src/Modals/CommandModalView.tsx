@@ -229,6 +229,7 @@ const CommandModalBody: React.FC<CommandModalViewProps> = ({
 
   const handleReset = () => {
     setSelectedParameters({})
+    setSelectedSyntax(null)
     handleResetParameters?.()
   }
 
@@ -244,8 +245,9 @@ const CommandModalBody: React.FC<CommandModalViewProps> = ({
       pendingInitialParams.current = Object.keys(initialParams).length
         ? initialParams
         : null
-      // Reset the command name to just the keyword so the Build step header is clean
-      setSelectedCommandName(matchingCommand.name ?? matchingCommand.id)
+      // Use the canonical keyword (id) so the correct keyword is sent to the vehicle,
+      // not a display alias such as 'failc' instead of 'failComponent'
+      setSelectedCommandName(matchingCommand.id)
       setSelectedCommandId(matchingCommand.id)
       setUseTemplateStep(true)
       onSelectCommandId?.(matchingCommand.id)

@@ -47,7 +47,7 @@ export const Select = React.forwardRef<any, SelectProps>(
     const allFlat = groupedOptions
       ? groupedOptions.flatMap((g) => g.options)
       : options
-    const defaultValue = allFlat.filter((s) => s.id === value)
+    const defaultValue = allFlat.find((s) => s.id === value) ?? null
     const handleChange = (s: SelectOption | null) => {
       handleSelect?.(s?.id ?? null)
     }

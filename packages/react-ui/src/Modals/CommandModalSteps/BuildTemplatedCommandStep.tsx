@@ -339,8 +339,11 @@ export const BuildTemplatedCommandStep: React.FC<
           if (!missionFullPath || !element) return undefined
           // Extract bare filename without extension (e.g. 'sci2_circle_hotspot')
           const missionName =
-            missionFullPath.match(/[a-zA-Z0-9_]+(?=\.xml|\.tl)/)?.[0] ??
-            missionFullPath.split('/').pop() ??
+            missionFullPath.match(/[a-zA-Z0-9_]+(?=\.xml|\.tl|\.py)/i)?.[0] ??
+            missionFullPath
+              .split('/')
+              .pop()
+              ?.replace(/\.(tl|xml|py)$/i, '') ??
             missionFullPath
           // element is 'ParamName' (root) or 'Insert.ParamName' (scoped)
           if (element.includes('.')) {

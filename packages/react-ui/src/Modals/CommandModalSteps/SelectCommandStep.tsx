@@ -156,8 +156,10 @@ export const SelectCommandStep: React.FC<SelectCommandStepProps> = ({
     if (searchTerm) {
       // Search always runs against all commands regardless of the standard-only toggle
       setSortDirection(null)
-      const searchResults = sortedCommands.filter(({ name }) =>
-        name.includes(searchTerm)
+      const term = searchTerm.toLowerCase()
+      const searchResults = sortedCommands.filter(
+        ({ name, id }) =>
+          name.toLowerCase().includes(term) || id.toLowerCase().includes(term)
       )
       setFilteredCommands(searchResults)
     }
