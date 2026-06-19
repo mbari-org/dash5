@@ -3,7 +3,8 @@ import useGlobalModalId from '../lib/useGlobalModalId'
 import dynamic from 'next/dynamic'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { capitalize, humanize, swallow } from '@mbari/utils'
-import { useChartData } from '@mbari/api-client'
+import { useChartData, useDeploymentChartData } from '@mbari/api-client'
+import { DateTime } from 'luxon'
 import clsx from 'clsx'
 
 const LineChart: any = dynamic(
@@ -83,25 +84,71 @@ export const ScienceCell: React.FC<{
   )
 }
 
+type TimeWindow = 'latest' | '3d' | '7d' | 'deployment'
+
+const TIME_WINDOW_OPTIONS: { id: TimeWindow; name: string }[] = [
+  { id: 'latest', name: 'Latest Dive' },
+  { id: '3d', name: '3 Days' },
+  { id: '7d', name: '7 Days' },
+  { id: 'deployment', name: 'Full Deployment' },
+]
+
+const getWindowFrom = (
+  window: TimeWindow,
+  deploymentFrom: number,
+  deploymentTo?: number
+): number => {
+  // For ended deployments `deploymentTo` is in the past, so relative windows
+  // (3d/7d) must be computed from the end of the deployment, not from now.
+  // Clamp the result so it is never earlier than the deployment start.
+  const anchor = deploymentTo ?? DateTime.utc().toMillis()
+  switch (window) {
+    case '3d':
+      return Math.max(deploymentFrom, anchor - 3 * 24 * 60 * 60 * 1000)
+    case '7d':
+      return Math.max(deploymentFrom, anchor - 7 * 24 * 60 * 60 * 1000)
+    case 'deployment':
+      return deploymentFrom
+    default:
+      return deploymentFrom
+  }
+}
+
 const ScienceDataSection: React.FC<{
   vehicleName: string
-  from: number // milliseconds since epoch
-  to?: number // milliseconds since epoch
+  from: number // milliseconds since epoch — deployment start
+  to?: number // milliseconds since epoch — deployment end
 }> = ({ vehicleName, from, to }) => {
   const { setGlobalModalId } = useGlobalModalId()
+  const [timeWindow, setTimeWindow] = useState<TimeWindow>('latest')
+  const [category, setCategory] = useState<string | null>('vehicle')
+
+  const isExtended = timeWindow !== 'latest'
+  // Memoize so the query key stays stable across re-renders. Without this,
+  // DateTime.utc() returns a new millisecond value on every render, which
+  // changes the query key and causes React Query to treat each render as a
+  // brand-new query — keeping isLoading permanently true.
+  const extendedFrom = useMemo(
+    () => getWindowFrom(timeWindow, from, to),
+    [timeWindow, from, to]
+  )
+
+  const latestQuery = useChartData(
+    { vehicle: vehicleName, from, to },
+    { enabled: !isExtended }
+  )
+
+  const deploymentQuery = useDeploymentChartData(
+    { vehicle: vehicleName, deploymentFrom: from, from: extendedFrom, to },
+    { enabled: isExtended }
+  )
+
   const {
     data: chartData,
     isLoading,
-    isFetching,
     isError,
     error,
-  } = useChartData({
-    vehicle: vehicleName,
-    from: from,
-    to: to,
-  })
-
-  const [category, setCategory] = useState<string | null>('vehicle')
+  } = isExtended ? deploymentQuery : latestQuery
 
   const charts = chartData?.filter((d) =>
     category === 'vehicle'
@@ -129,7 +176,7 @@ const ScienceDataSection: React.FC<{
 
   return (
     <>
-      <header className="flex p-2">
+      <header className="flex items-center gap-2 p-2">
         <SelectField
           name="category"
           value={category ?? ''}
@@ -140,6 +187,18 @@ const ScienceDataSection: React.FC<{
           onSelect={setCategory}
           className="my-auto"
         />
+        <div
+          title="Select how far back to display chart data. 'Latest Dive' shows the current log session only; other options pull data across multiple log sessions."
+          className="my-auto min-w-[10rem]"
+        >
+          <SelectField
+            name="timeWindow"
+            value={timeWindow}
+            options={TIME_WINDOW_OPTIONS}
+            onSelect={(v) => setTimeWindow((v ?? 'latest') as TimeWindow)}
+            aria-label="Chart time window"
+          />
+        </div>
         <button
           className="my-auto ml-auto px-4 py-2 font-bold text-violet-800"
           onClick={handleespSamples}
@@ -174,10 +233,21 @@ const ScienceDataSection: React.FC<{
               )}
             </div>
           )}
+          {!isLoading && !isError && !charts?.length && (
+            <p className="m-4 text-sm text-stone-500">
+              {chartData?.length
+                ? `No ${
+                    category ?? 'vehicle'
+                  } data for this time window. Try switching to ${
+                    category === 'vehicle' ? 'Science' : 'Vehicle'
+                  }.`
+                : 'No chart data available for this time window. Try a wider range or check back after the vehicle surfaces.'}
+            </p>
+          )}
           <AccordionCells
             cellAtIndex={cellAtIndex}
             count={charts?.length}
-            loading={isLoading || isFetching}
+            loading={isLoading}
           />
         </div>
         <div className="absolute inset-x-0 bottom-0 z-10 h-2 bg-gradient-to-t from-stone-400/20" />
