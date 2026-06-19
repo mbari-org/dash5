@@ -254,19 +254,19 @@ const CommandModalBody: React.FC<CommandModalViewProps> = ({
     }
   }
 
-  /* Reset params when command or syntax changes; apply pending amend params if present */
+  /* Reset params when command changes; apply pending amend params if present.
+     Intentionally excludes selectedSyntax: BuildTemplatedCommandStep auto-selects
+     the default syntax on mount, which would fire a second time and wipe pending
+     amend params after pendingInitialParams has already been cleared. */
   const pendingInitialParams = useRef<Record<string, string> | null>(null)
-  const lastSyntax = useRef({ selectedSyntax, selectedCommandId })
+  const lastCommandId = useRef(selectedCommandId)
   useEffect(() => {
-    if (
-      selectedCommandId !== lastSyntax.current.selectedCommandId ||
-      selectedSyntax !== lastSyntax.current.selectedSyntax
-    ) {
+    if (selectedCommandId !== lastCommandId.current) {
       setSelectedParameters(pendingInitialParams.current ?? {})
       pendingInitialParams.current = null
-      lastSyntax.current = { selectedSyntax, selectedCommandId }
+      lastCommandId.current = selectedCommandId
     }
-  }, [selectedCommandId, selectedSyntax])
+  }, [selectedCommandId])
 
   const handleSchedule = () => {
     onSchedule({
