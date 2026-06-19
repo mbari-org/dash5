@@ -13,41 +13,16 @@ import { humanize } from '@mbari/utils'
 import { DateTime } from 'luxon'
 import clsx from 'clsx'
 import { usePersistentState } from '../lib/usePersistentState'
+import {
+  TimeWindow,
+  TIME_WINDOW_OPTIONS,
+  getWindowFrom,
+} from '../lib/timeWindows'
 
 const LineChart: any = dynamic(
   () => import('@mbari/react-ui/dist/Charts/LineChart'),
   { ssr: false }
 )
-
-type TimeWindow = 'latest' | '3d' | '7d' | 'deployment'
-
-const TIME_WINDOW_OPTIONS: { id: TimeWindow; name: string }[] = [
-  { id: 'latest', name: 'Latest Dive' },
-  { id: '3d', name: '3 Days' },
-  { id: '7d', name: '7 Days' },
-  { id: 'deployment', name: 'Full Deployment' },
-]
-
-const getWindowFrom = (
-  window: TimeWindow,
-  deploymentFrom: number,
-  deploymentTo?: number
-): number => {
-  // Clamp to now so future-padded end times on active deployments don't shift
-  // the window forward and silently drop older data.
-  const now = DateTime.utc().toMillis()
-  const anchor = Math.min(deploymentTo ?? now, now)
-  switch (window) {
-    case '3d':
-      return Math.max(deploymentFrom, anchor - 3 * 24 * 60 * 60 * 1000)
-    case '7d':
-      return Math.max(deploymentFrom, anchor - 7 * 24 * 60 * 60 * 1000)
-    case 'deployment':
-      return deploymentFrom
-    default:
-      return deploymentFrom
-  }
-}
 
 const DepthSection: React.FC<{
   vehicleName: string

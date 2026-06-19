@@ -10,6 +10,11 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import { capitalize, humanize, swallow } from '@mbari/utils'
 import { usePersistentState } from '../lib/usePersistentState'
 import {
+  TimeWindow,
+  TIME_WINDOW_OPTIONS,
+  getWindowFrom,
+} from '../lib/timeWindows'
+import {
   useChartData,
   useDeploymentChartData,
   useEvents,
@@ -96,38 +101,6 @@ export const ScienceCell: React.FC<{
       </div>
     </div>
   )
-}
-
-type TimeWindow = 'latest' | '3d' | '7d' | 'deployment'
-
-const TIME_WINDOW_OPTIONS: { id: TimeWindow; name: string }[] = [
-  { id: 'latest', name: 'Latest Dive' },
-  { id: '3d', name: '3 Days' },
-  { id: '7d', name: '7 Days' },
-  { id: 'deployment', name: 'Full Deployment' },
-]
-
-const getWindowFrom = (
-  window: TimeWindow,
-  deploymentFrom: number,
-  deploymentTo?: number
-): number => {
-  // For ended deployments `deploymentTo` is in the past, so relative windows
-  // (3d/7d) must be computed from the end of the deployment, not from now.
-  // Clamp to now so future-padded end times on active deployments don't shift
-  // the window forward and silently drop older data.
-  const now = DateTime.utc().toMillis()
-  const anchor = Math.min(deploymentTo ?? now, now)
-  switch (window) {
-    case '3d':
-      return Math.max(deploymentFrom, anchor - 3 * 24 * 60 * 60 * 1000)
-    case '7d':
-      return Math.max(deploymentFrom, anchor - 7 * 24 * 60 * 60 * 1000)
-    case 'deployment':
-      return deploymentFrom
-    default:
-      return deploymentFrom
-  }
 }
 
 const ScienceDataSection: React.FC<{
@@ -400,7 +373,6 @@ const ScienceDataSection: React.FC<{
             loading={isLoading}
           />
         </div>
-        <div className="absolute inset-x-0 bottom-0 z-10 h-2 bg-gradient-to-t from-stone-400/20" />
       </div>
     </>
   )
