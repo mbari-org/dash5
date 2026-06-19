@@ -167,7 +167,13 @@ export const SelectCommandStep: React.FC<SelectCommandStepProps> = ({
     if (!selectedFilter && !searchTerm) {
       setFilteredCommands(sortedCommands)
     }
-  }, [searchTerm, selectedFilter, sortedCommands])
+  }, [
+    searchTerm,
+    selectedFilter,
+    sortedCommands,
+    recentCommands,
+    frequentCommands,
+  ])
 
   return (
     <section className="h-full">

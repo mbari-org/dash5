@@ -78,7 +78,7 @@ export const splitValues = (valueString: string) =>
 
 export const mapValues = (valueString: string) =>
   splitValues(valueString).reduce((acc, [k, v]) => {
-    acc[k] = v
+    if (k) acc[k] = v
     return acc
   }, {} as Record<string, string>)
 
@@ -133,8 +133,8 @@ export const scopedSelectOptions = (
         name,
         value: values[i],
         options: flatOptions,
-        groupedOptions,
-        pinnedNames,
+        ...(groupedOptions !== undefined && { groupedOptions }),
+        ...(pinnedNames !== undefined && { pinnedNames }),
       }
     })
   return options
@@ -227,7 +227,7 @@ const makeRow = (
         label: selectOptions ? (
           <ul className="flex flex-col">
             {selectOptions?.map(
-              ({ name, value, options, groupedOptions, pinnedNames }, i) => (
+              ({ name, value, options, groupedOptions, pinnedNames }) => (
                 <li key={name}>
                   {groupedOptions ? (
                     <MissionCascader

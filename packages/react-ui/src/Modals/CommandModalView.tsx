@@ -255,18 +255,31 @@ const CommandModalBody: React.FC<CommandModalViewProps> = ({
   }
 
   /* Reset params when command changes; apply pending amend params if present.
-     Intentionally excludes selectedSyntax: BuildTemplatedCommandStep auto-selects
-     the default syntax on mount, which would fire a second time and wipe pending
-     amend params after pendingInitialParams has already been cleared. */
+     skipNextSyntaxReset is set when a command changes so the first
+     auto-selected syntax (from BuildTemplatedCommandStep mount) doesn't wipe
+     the amend params that were just applied. Subsequent manual syntax switches
+     by the user DO reset params as expected. */
   const pendingInitialParams = useRef<Record<string, string> | null>(null)
   const lastCommandId = useRef(selectedCommandId)
+  const skipNextSyntaxReset = useRef(false)
+
   useEffect(() => {
     if (selectedCommandId !== lastCommandId.current) {
       setSelectedParameters(pendingInitialParams.current ?? {})
       pendingInitialParams.current = null
       lastCommandId.current = selectedCommandId
+      skipNextSyntaxReset.current = true
     }
   }, [selectedCommandId])
+
+  useEffect(() => {
+    if (!selectedSyntax) return
+    if (skipNextSyntaxReset.current) {
+      skipNextSyntaxReset.current = false
+      return
+    }
+    setSelectedParameters({})
+  }, [selectedSyntax])
 
   const handleSchedule = () => {
     onSchedule({
@@ -318,13 +331,15 @@ const CommandModalBody: React.FC<CommandModalViewProps> = ({
                   onClick: handleReset,
                 },
               ]
-            : [
+            : handleAmendCommandExternal
+            ? [
                 {
                   buttonText: 'Amend Command',
                   appearance: 'secondary',
                   onClick: handleAmendCommand,
                 },
               ]
+            : []
           : []
       }
       extraWideModal
@@ -365,7 +380,7 @@ const CommandModalBody: React.FC<CommandModalViewProps> = ({
             commands={[
               {
                 name: 'Command',
-                options: commands.map((c) => c.name),
+                options: commands.map((c) => c.id),
               },
             ]}
             onCommandTextChange={setCommandText}

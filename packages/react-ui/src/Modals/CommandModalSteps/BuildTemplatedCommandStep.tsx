@@ -33,7 +33,7 @@ const argumentAsParameter = (
     case 'ARG_FLOAT':
       return {
         argType: arg.argType,
-        name: 'variable value to set',
+        name: arg?.altName ?? 'value',
         description: 'A numeric value (e.g. 1.5)',
         inputType: 'number',
         required: arg.required === 'REQUIRED',
@@ -337,19 +337,24 @@ export const BuildTemplatedCommandStep: React.FC<
           const missionFullPath = values[1]
           const element = values[2]
           if (!missionFullPath || !element) return undefined
-          // Extract bare filename without extension (e.g. 'sci2_circle_hotspot')
+          // Extract bare filename without extension (e.g. 'sci2_circle_hotspot',
+          // 'foo-bar'). Basename + extension stripping handles all filename chars.
           const missionName =
-            missionFullPath.match(/[a-zA-Z0-9_]+(?=\.xml|\.tl|\.py)/i)?.[0] ??
             missionFullPath
               .split('/')
               .pop()
-              ?.replace(/\.(tl|xml|py)$/i, '') ??
-            missionFullPath
+              ?.replace(/\.(tl|xml|py)$/i, '') ?? missionFullPath
           // element is 'ParamName' (root) or 'Insert.ParamName' (scoped)
           if (element.includes('.')) {
             return `${missionName}:${element}`
           }
           return `${missionName}.${element}`
+        }
+        if (values[0] === 'Component') {
+          const component = values[2]
+          const element = values[3]
+          if (!component || !element) return undefined
+          return `${component}.${element}`
         }
         return undefined
       case 'ARG_UNIVERSAL':

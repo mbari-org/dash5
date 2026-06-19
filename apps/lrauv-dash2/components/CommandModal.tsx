@@ -1,4 +1,4 @@
-import React from 'react'
+import React, { useState } from 'react'
 import {
   CommandModalView,
   CommandModalViewProps,
@@ -24,7 +24,6 @@ import {
 import { makeCommand } from '../lib/makeCommand'
 import { useRouter } from 'next/router'
 import toast from 'react-hot-toast'
-import { useState } from 'react'
 import useGlobalModalId from '../lib/useGlobalModalId'
 
 export interface CommandModalProps {
@@ -107,16 +106,24 @@ export const CommandModal: React.FC<CommandModalProps> = ({
 
   const handleAmendCommand = (commandText: string): Record<string, string> => {
     const params: Record<string, string> = {}
-    // Parse: set <mission>[.:]<element> <value> [<unit>]
+    // Parse: set <mission>[.:]<element> <rest>
+    // Capture the entire rest-of-line so multi-token values (ARG_LIST) are
+    // preserved. The last space-delimited token is treated as an optional unit.
     const setMatch = commandText.match(
-      /^set\s+([a-zA-Z0-9_]+)([.:])([a-zA-Z0-9_.]+)\s+(\S+)(?:\s+(\S+))?/
+      /^set\s+([a-zA-Z0-9_]+)([.:])([a-zA-Z0-9_.]+)\s+(.+)$/
     )
     if (setMatch) {
-      const [, missionName, separator, paramPart, value, unit] = setMatch
+      const [, missionName, separator, paramPart, rest] = setMatch
+      const lastSpace = rest.lastIndexOf(' ')
+      const value = lastSpace >= 0 ? rest.slice(0, lastSpace) : rest
+      const unit = lastSpace >= 0 ? rest.slice(lastSpace + 1) : undefined
 
       // Find full mission path (e.g. "Science/sci2_circle_hotspot.tl")
       const fullPath = allMissionPaths.find((p) => {
-        const base = p.split('/').pop()?.replace(/\.tl$/, '')
+        const base = p
+          .split('/')
+          .pop()
+          ?.replace(/\.(tl|xml|py)$/i, '')
         return base === missionName
       })
 
@@ -266,8 +273,10 @@ export const CommandModal: React.FC<CommandModalProps> = ({
       // set missionname.param ... or set missionname:Section.param ...
       const setMatch = cmd.match(/^set\s+([a-zA-Z0-9_]+)[.:]/)
       if (setMatch) names.add(setMatch[1])
-      // load path/missionname.tl
-      const loadMatch = cmd.match(/load\s+(?:\S+\/)?([a-zA-Z0-9_]+)\.tl/)
+      // load path/missionname.tl/.xml/.py
+      const loadMatch = cmd.match(
+        /load\s+(?:\S+\/)?([a-zA-Z0-9_]+)\.(tl|xml|py)/i
+      )
       if (loadMatch) names.add(loadMatch[1])
     })
     return Array.from(names).slice(0, 5)

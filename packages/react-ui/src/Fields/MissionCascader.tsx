@@ -15,7 +15,13 @@ export interface MissionCascaderProps {
 
 const groupPriority = (label: string) => {
   if (label === 'Standard Ops') return 0
-  if (label.toLowerCase().startsWith('deprecated') || label.startsWith('_'))
+  // Check the last path segment so nested folders like Science/_scratch or
+  // Science/Deprecated are deprioritized the same as top-level _ / Deprecated.
+  const lastSegment = label.split('/').pop() ?? label
+  if (
+    lastSegment.toLowerCase().startsWith('deprecated') ||
+    lastSegment.startsWith('_')
+  )
     return 2
   return 1
 }
@@ -95,6 +101,7 @@ export const MissionCascader: React.FC<MissionCascaderProps> = ({
   }
 
   useEffect(() => {
+    if (!isOpen) return
     const handler = (e: MouseEvent) => {
       const target = e.target as Node
       const inTrigger = containerRef.current?.contains(target)
@@ -105,7 +112,25 @@ export const MissionCascader: React.FC<MissionCascaderProps> = ({
     }
     document.addEventListener('mousedown', handler)
     return () => document.removeEventListener('mousedown', handler)
-  }, [])
+  }, [isOpen])
+
+  // Recompute fixed dropdown position while open so it tracks the trigger
+  // if the modal body is scrolled or the window is resized.
+  useEffect(() => {
+    if (!isOpen) return
+    const recompute = () => {
+      if (containerRef.current) {
+        const rect = containerRef.current.getBoundingClientRect()
+        setDropdownPos({ top: rect.bottom, left: rect.left, width: rect.width })
+      }
+    }
+    window.addEventListener('scroll', recompute, true)
+    window.addEventListener('resize', recompute)
+    return () => {
+      window.removeEventListener('scroll', recompute, true)
+      window.removeEventListener('resize', recompute)
+    }
+  }, [isOpen])
 
   const searchResults =
     search.trim().length > 0
@@ -130,7 +155,20 @@ export const MissionCascader: React.FC<MissionCascaderProps> = ({
       {/* Trigger */}
       <div
         className="client__multi__select_container w-full cursor-pointer"
+        role="button"
+        tabIndex={0}
+        aria-expanded={isOpen}
+        aria-haspopup="listbox"
         onClick={() => (isOpen ? close() : open())}
+        onKeyDown={(e) => {
+          if (e.key === 'Enter' || e.key === ' ') {
+            e.preventDefault()
+            isOpen ? close() : open()
+          } else if (e.key === 'Escape' && isOpen) {
+            e.preventDefault()
+            close()
+          }
+        }}
       >
         <div className="client__multi__select__control flex min-h-[38px] items-center justify-between rounded border border-gray-300 bg-white px-2">
           <span
@@ -235,12 +273,21 @@ export const MissionCascader: React.FC<MissionCascaderProps> = ({
                   searchResults.map(({ folder, option }) => (
                     <div
                       key={option.id}
+                      role="option"
+                      aria-selected={option.id === value}
+                      tabIndex={0}
                       className={`cursor-pointer px-4 py-1.5 text-sm ${
                         option.id === value
                           ? 'bg-blue-50 font-medium text-blue-700'
                           : 'text-gray-700 hover:bg-gray-50'
                       }`}
                       onClick={() => handleSelect(option.id)}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter' || e.key === ' ') {
+                          e.preventDefault()
+                          handleSelect(option.id)
+                        }
+                      }}
                     >
                       <span className="mr-1 text-xs text-gray-400">
                         {folder}/
@@ -258,6 +305,9 @@ export const MissionCascader: React.FC<MissionCascaderProps> = ({
                     <div key={g.label}>
                       {/* Folder row — blue text, light background */}
                       <div
+                        role="button"
+                        tabIndex={0}
+                        aria-expanded={isExpanded}
                         className={`flex cursor-pointer items-center justify-between border-t border-gray-100 px-3 py-2 text-sm font-semibold ${
                           isExpanded
                             ? 'bg-blue-50 text-blue-700'
@@ -268,6 +318,12 @@ export const MissionCascader: React.FC<MissionCascaderProps> = ({
                         onClick={() =>
                           setExpandedFolder(isExpanded ? null : g.label)
                         }
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter' || e.key === ' ') {
+                            e.preventDefault()
+                            setExpandedFolder(isExpanded ? null : g.label)
+                          }
+                        }}
                       >
                         <span>{g.label}</span>
                         <svg
@@ -291,12 +347,21 @@ export const MissionCascader: React.FC<MissionCascaderProps> = ({
                         g.options.map((opt) => (
                           <div
                             key={opt.id}
+                            role="option"
+                            aria-selected={opt.id === value}
+                            tabIndex={0}
                             className={`cursor-pointer border-b border-gray-50 py-1.5 pl-6 pr-3 text-sm font-normal ${
                               opt.id === value
                                 ? 'bg-blue-50 font-medium text-blue-700'
                                 : 'bg-white text-gray-700 hover:bg-blue-50 hover:text-blue-600'
                             }`}
                             onClick={() => handleSelect(opt.id)}
+                            onKeyDown={(e) => {
+                              if (e.key === 'Enter' || e.key === ' ') {
+                                e.preventDefault()
+                                handleSelect(opt.id)
+                              }
+                            }}
                           >
                             {opt.name}
                           </div>
