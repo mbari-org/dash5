@@ -186,6 +186,11 @@ const DepthSection: React.FC<{
         )}
       </header>
       <div className="min-h-0 flex-1 px-4 pb-1">
+        {!isLoading && !isError && !chartAvailable && (
+          <p className="mt-4 text-center text-sm text-slate-500">
+            No depth data available for this time window.
+          </p>
+        )}
         {chartAvailable && (
           <LineChart
             name={depthData.name}
