@@ -198,10 +198,11 @@ const ScienceDataSection: React.FC<{
     { enabled: !isExtended }
   )
 
-  // Clamp to to now so future-padded end times on active deployments don't
-  // cause the step to be overestimated and chart data to be under-sampled.
+  // For active deployments `to` is future-padded; treat it as open-ended
+  // (undefined) so the query key is stable across renders. For ended
+  // deployments `to` is in the past and is passed through unchanged.
   const clampedTo =
-    to != null ? Math.min(to, DateTime.utc().toMillis()) : undefined
+    to != null && to <= DateTime.utc().toMillis() ? to : undefined
 
   const deploymentQuery = useDeploymentChartData(
     {
@@ -318,6 +319,7 @@ const ScienceDataSection: React.FC<{
               ? 'border-blue-300 bg-blue-50 text-blue-700'
               : 'border-gray-300 bg-white text-gray-600 hover:bg-gray-50'
           )}
+          type="button"
           onClick={() => setAlignAxes((v) => !v)}
         >
           {alignAxes ? 'Best X-Axes Fit' : 'Align X-Axes'}

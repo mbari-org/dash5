@@ -107,8 +107,11 @@ const DepthSection: React.FC<{
   // useDeploymentChartData would trigger one request per variable in
   // chartData2.json (potentially dozens), which is wasteful when we only
   // need depth.
+  // For active deployments `to` is future-padded; treat it as open-ended
+  // (undefined) so the query key is stable across renders. For ended
+  // deployments `to` is in the past and is passed through unchanged.
   const now = DateTime.utc().toMillis()
-  const clampedTo = to != null ? Math.min(to, now) : undefined
+  const clampedTo = to != null && to <= now ? to : undefined
   const windowMs = (clampedTo ?? now) - extendedFrom
   const step = Math.max(1, Math.round(windowMs / 1000 / 2000))
 

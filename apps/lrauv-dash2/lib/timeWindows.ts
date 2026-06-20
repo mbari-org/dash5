@@ -31,7 +31,7 @@ export const getWindowFrom = (
       return Math.max(deploymentFrom, anchor - 7 * 24 * 60 * 60 * 1000)
     case 'deployment':
       return deploymentFrom
-    default:
+    case 'latest':
       return deploymentFrom
   }
 }
