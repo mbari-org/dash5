@@ -350,6 +350,7 @@ const ScienceDataSection: React.FC<{
               : 'border-gray-300 bg-white text-gray-600 hover:bg-gray-50'
           )}
           type="button"
+          aria-pressed={alignAxes}
           onClick={() => setAlignAxes((v) => !v)}
         >
           {alignAxes ? 'Best X-Axes Fit' : 'Align X-Axes'}

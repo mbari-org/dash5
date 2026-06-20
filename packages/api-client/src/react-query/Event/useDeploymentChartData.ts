@@ -163,7 +163,7 @@ export const useDeploymentChartData = (
   // step-sampled responses are already appropriately decimated by TethysDash.
   const resolvedData: ChartData[] = variableQueries
     .map((q) => q.data)
-    .filter((d): d is ChartData => d != null && d !== null)
+    .filter((d): d is ChartData => d != null)
 
   // Show the full loading overlay only until we have at least one chart to
   // display. Once data starts arriving, `isFetching` tracks the remainder.
