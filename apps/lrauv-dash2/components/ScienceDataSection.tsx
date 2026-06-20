@@ -33,7 +33,6 @@ const LineChart: any = dynamic(
 const vehicleUnits = ['arcdeg', 'deg', 'm', 's', 'v', 'rad', 'ma', 'ah']
 
 export const ScienceCell: React.FC<{
-  title?: string
   color: string
   name: string
   unit: string
@@ -276,7 +275,6 @@ const ScienceDataSection: React.FC<{
       <ScienceCell
         color="#666"
         unit={item?.units ?? ''}
-        title={item?.name ?? 'Data'}
         name={item?.name ?? 'Unknown'}
         values={item?.values}
         times={item?.times}
