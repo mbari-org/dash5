@@ -11,6 +11,10 @@ export const useSubscribers = (options?: SupportedQueryOptions) => {
     {
       refetchInterval: 30 * 1000,
       staleTime: 25 * 1000,
+      // With 30s polling, React Query's default retry on failure would pile on
+      // top of the refetch cadence. Set retry: false so poll interval is the
+      // only retry mechanism (avoids traffic spikes on expected 403s).
+      retry: false,
       ...options,
       // Placed after spread so callers cannot accidentally disable the auth
       // gate by passing options.enabled. Both conditions must hold.

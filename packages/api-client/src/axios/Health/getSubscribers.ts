@@ -22,7 +22,7 @@ export const getSubscribers = async ({
   instance = getInstance(),
   ...config
 }: RequestConfig = {}) => {
-  const url = 'async/subscribers'
+  const url = '/async/subscribers'
 
   if (debug) {
     console.debug(`GET ${url}`)
