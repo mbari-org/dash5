@@ -156,7 +156,12 @@ const DepthSection: React.FC<{
     ? depthQuery.data ?? undefined
     : latestChartData?.find((d) => d.name === 'depth')
 
-  const isLoading = isExtended ? depthQuery.isLoading : latestQuery.isLoading
+  // While logsets are still loading / auto-selecting, latestQuery is disabled
+  // (isLoading = false). Treat that wait as loading so "No depth data" doesn't
+  // appear prematurely before any data has been fetched.
+  const isLoading =
+    (isExtended ? depthQuery.isLoading : latestQuery.isLoading) ||
+    (!isExtended && !logsetReady)
   const isError = isExtended ? depthQuery.isError : latestQuery.isError
   const chartAvailable = !!depthData && !isLoading && !isError
 

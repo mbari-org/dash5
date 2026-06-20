@@ -242,10 +242,15 @@ const ScienceDataSection: React.FC<{
 
   const {
     data: chartData,
-    isLoading,
+    isLoading: queryIsLoading,
     isError,
     error,
   } = isExtended ? deploymentQuery : latestQuery
+
+  // While logsets are still loading / auto-selecting, latestQuery is disabled
+  // (isLoading = false). Treat that wait as loading so the empty-state message
+  // doesn't appear prematurely before any data has been fetched.
+  const isLoading = queryIsLoading || (!isExtended && !logsetReady)
 
   const charts = chartData?.filter((d) =>
     category === 'vehicle'

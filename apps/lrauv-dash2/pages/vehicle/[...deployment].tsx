@@ -234,7 +234,13 @@ const Vehicle: NextPage = () => {
   // older deployment via deploymentId, deployment comes from useDeployments which
   // may not include recoverEvent — in that case only fall back to lastDeployment
   // if it is actually the same deployment (i.e. the user is on the latest one).
-  const isSameAsLast = deployment?.deploymentId === lastDeployment?.deploymentId
+  // deployment.deploymentId (from useDeployments) is a number; lastDeployment
+  // .deploymentId (from useLastDeployment) may be a string. Normalise both to
+  // Number so the comparison works regardless of the source type.
+  const isSameAsLast =
+    deployment?.deploymentId != null &&
+    lastDeployment?.deploymentId != null &&
+    Number(deployment.deploymentId) === Number(lastDeployment.deploymentId)
   const recoverEvent =
     deployment?.recoverEvent ??
     (isSameAsLast ? lastDeployment?.recoverEvent : undefined)
