@@ -24,6 +24,7 @@ export type ModalId =
   | 'scheduleEventDetails'
   | 'color'
   | 'emailNotifications'
+  | 'serverHealth'
   | null
 
 export interface GlobalModalMetaData {
