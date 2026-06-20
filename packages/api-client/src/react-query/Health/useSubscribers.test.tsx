@@ -24,6 +24,8 @@ const server = setupServer(
   rest.get('/user/token', (_req, res, ctx) =>
     res(ctx.status(200), ctx.json(mockAuthResponse))
   ),
+  // useSiteConfig (mounted by TethysApiProvider) always queries /info.
+  rest.get('/info', (_req, res, ctx) => res(ctx.status(200), ctx.json({}))),
   rest.get('/async/subscribers', (req, res, ctx) => {
     capturedAuthHeader = req.headers.get('Authorization')
     return res(ctx.status(200), ctx.json(mockSubscribers))

@@ -96,7 +96,9 @@ const ServerHealthModal: React.FC<ServerHealthModalProps> = ({ onClose }) => {
               </div>
               {subscribersError && subscriberStatus === 403 && (
                 <p className="text-xs text-amber-600">
-                  Connected users require operator or admin role in TethysDash.
+                  Access denied — viewing connected users requires operator or
+                  admin role in TethysDash. If you have this role, try
+                  refreshing the page.
                 </p>
               )}
               {subscribersError && subscriberStatus !== 403 && (
