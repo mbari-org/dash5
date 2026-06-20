@@ -81,13 +81,20 @@ export const ChartsModal: React.FC<ChartsModalProps> = ({
     return next ? next.unixTime : deploymentEndTime
   }, [selectedLogsetId, logPathEvents, deploymentEndTime])
 
+  // Wait until logsets are loaded and a logset is selected (or confirmed absent)
+  // before firing the chart query. This prevents a wasted fetch with the fallback
+  // deployment window followed by a refetch once the logset auto-selection runs.
+  const logsetReady =
+    logPathEvents !== undefined &&
+    (logPathEvents.length === 0 || selectedLogsetId !== null)
+
   const { data: chartData } = useChartData(
     {
       vehicle: vehicleName,
       from: resolvedFrom,
       to: resolvedTo,
     },
-    { enabled: resolvedFrom > 0 }
+    { enabled: resolvedFrom > 0 && logsetReady }
   )
   const [chart, setChart] = useState<string | null>(null)
   const data = chartData?.find((c) => c.name === chart)

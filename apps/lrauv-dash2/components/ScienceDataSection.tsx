@@ -210,9 +210,16 @@ const ScienceDataSection: React.FC<{
     [timeWindow, deploymentFrom, to, bucketedNow]
   )
 
+  // Wait until logsets are loaded and a logset is selected (or confirmed absent)
+  // before firing the chart query. This prevents a wasted fetch with the fallback
+  // deployment window followed by a refetch once the logset auto-selection runs.
+  const logsetReady =
+    logPathEvents !== undefined &&
+    (logPathEvents.length === 0 || selectedLogsetId !== null)
+
   const latestQuery = useChartData(
     { vehicle: vehicleName, from: logsetFrom, to: logsetTo },
-    { enabled: !isExtended }
+    { enabled: !isExtended && logsetReady }
   )
 
   // For active deployments `to` is future-padded; treat it as open-ended

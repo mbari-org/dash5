@@ -102,9 +102,16 @@ const DepthSection: React.FC<{
     [timeWindow, from, to, bucketedNow]
   )
 
+  // Wait until logsets are loaded and a logset is selected (or confirmed absent)
+  // before firing the chart query. This prevents a wasted fetch with the fallback
+  // deployment window followed by a refetch once the logset auto-selection runs.
+  const logsetReady =
+    logPathEvents !== undefined &&
+    (logPathEvents.length === 0 || selectedLogsetId !== null)
+
   const latestQuery = useChartData(
     { vehicle: vehicleName, from: logsetFrom, to: logsetTo },
-    { enabled: !isExtended }
+    { enabled: !isExtended && logsetReady }
   )
 
   // For extended windows fetch only the depth variable directly — using
