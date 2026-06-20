@@ -49,7 +49,11 @@ export function usePersistentState<T>(
       const next =
         typeof action === 'function' ? (action as (prev: T) => T)(prev) : action
       try {
-        sessionStorage.setItem(key, JSON.stringify(next))
+        if (next === undefined) {
+          sessionStorage.removeItem(key)
+        } else {
+          sessionStorage.setItem(key, JSON.stringify(next))
+        }
       } catch {
         // sessionStorage unavailable
       }

@@ -36,6 +36,9 @@ const VALID_SECTIONS: VehicleAccordionSection[] = [
 
 export interface VehicleAccordionProps {
   vehicleName: string
+  /** True deployment start (unixTime from startEvent) for deployment-scoped queries. */
+  deploymentFrom?: number
+  /** Adjusted query start (may be offset for active deployments). */
   from: number
   to?: number
   picLabel?: string
@@ -47,6 +50,7 @@ export interface VehicleAccordionProps {
 }
 
 const VehicleAccordion: React.FC<VehicleAccordionProps> = ({
+  deploymentFrom,
   from,
   to,
   vehicleName,
@@ -219,7 +223,12 @@ const VehicleAccordion: React.FC<VehicleAccordionProps> = ({
         onExpand={handleExpand('charts')}
       />
       {section === 'data' && (
-        <ScienceDataSection from={from} to={to} vehicleName={vehicleName} />
+        <ScienceDataSection
+          deploymentFrom={deploymentFrom}
+          from={from}
+          to={to}
+          vehicleName={vehicleName}
+        />
       )}
       <AccordionHeader
         label="Schedule"

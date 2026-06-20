@@ -17,6 +17,10 @@ export const TIME_WINDOW_OPTIONS: { id: TimeWindow; name: string }[] = [
  * clamped to now so future-padded end times on active deployments don't
  * shift the window forward and silently drop older data.
  *
+ * For the `'latest'` window this returns `deploymentFrom` as a fallback;
+ * callers must not rely on it for logset-scoped start times — use the
+ * resolved logset start from the logPath event list instead.
+ *
  * Pass a pre-computed `now` to make the result stable for memoization
  * (e.g. bucket to the nearest minute so the key doesn't change every render
  * while still re-anchoring periodically).
