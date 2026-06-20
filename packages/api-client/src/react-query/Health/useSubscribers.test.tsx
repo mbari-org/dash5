@@ -18,6 +18,9 @@ const mockSubscribers = {
 let capturedAuthHeader: string | null = null
 
 const server = setupServer(
+  // TethysApiProvider fetches /user/token to hydrate profile + token from
+  // the session cookie. Without this mock the token never enters context and
+  // useSubscribers stays disabled.
   rest.get('/user/token', (_req, res, ctx) =>
     res(ctx.status(200), ctx.json(mockAuthResponse))
   ),
@@ -61,10 +64,12 @@ describe('useSubscribers', () => {
         <MockComponent />
       </MockProviders>
     )
-    await waitFor(() =>
-      expect(screen.queryByText('loading')).not.toBeInTheDocument()
+    // Wait for TethysApiProvider to process the session token and for the
+    // subscribers query to fire and resolve.
+    await waitFor(
+      () => expect(screen.getByText('operator@mbari.org')).toBeInTheDocument(),
+      { timeout: 5000 }
     )
-    expect(screen.getByText('operator@mbari.org')).toBeInTheDocument()
   })
 
   it('sends an Authorization header', async () => {
@@ -76,10 +81,9 @@ describe('useSubscribers', () => {
         <MockComponent />
       </MockProviders>
     )
-    await waitFor(() =>
-      expect(screen.queryByText('loading')).not.toBeInTheDocument()
-    )
-    expect(capturedAuthHeader).toMatch(/^Bearer /)
+    await waitFor(() => expect(capturedAuthHeader).toMatch(/^Bearer /), {
+      timeout: 5000,
+    })
   })
 
   it('does not fetch when no token is present', async () => {
@@ -88,8 +92,8 @@ describe('useSubscribers', () => {
         <MockComponent />
       </MockProviders>
     )
-    // stays in loading (query disabled) — subscribers endpoint should not be called
-    await new Promise((r) => setTimeout(r, 50))
+    // Query is disabled — give it a moment to confirm no request was made.
+    await new Promise((r) => setTimeout(r, 100))
     expect(capturedAuthHeader).toBeNull()
   })
 
@@ -107,9 +111,8 @@ describe('useSubscribers', () => {
         <MockComponent />
       </MockProviders>
     )
-    await waitFor(() =>
-      expect(screen.queryByText('loading')).not.toBeInTheDocument()
-    )
-    expect(screen.getByText('error')).toBeInTheDocument()
+    await waitFor(() => expect(screen.getByText('error')).toBeInTheDocument(), {
+      timeout: 5000,
+    })
   })
 })
