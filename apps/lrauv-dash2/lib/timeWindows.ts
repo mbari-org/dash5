@@ -20,6 +20,11 @@ export const TIME_WINDOW_OPTIONS: { id: TimeWindow; name: string }[] = [
  * Pass a pre-computed `now` to make the result stable for memoization
  * (e.g. bucket to the nearest minute so the key doesn't change every render
  * while still re-anchoring periodically).
+ *
+ * Note: 'latest' is not computed here — it returns `deploymentFrom` as a
+ * safe fallback, since the actual logset-scoped start is resolved separately
+ * from logPath events. Do not rely on this function to produce a "latest dive"
+ * start time.
  */
 export const getWindowFrom = (
   window: TimeWindow,

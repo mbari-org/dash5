@@ -49,9 +49,15 @@ export function usePersistentState<T>(
       const next =
         typeof action === 'function' ? (action as (prev: T) => T)(prev) : action
       try {
-        sessionStorage.setItem(key, JSON.stringify(next))
+        if (next === undefined) {
+          // JSON.stringify(undefined) returns undefined (not a string), which
+          // would silently fail or store garbage. Treat undefined as "clear".
+          sessionStorage.removeItem(key)
+        } else {
+          sessionStorage.setItem(key, JSON.stringify(next))
+        }
       } catch {
-        // sessionStorage unavailable
+        // sessionStorage unavailable (e.g. private browsing with storage blocked)
       }
       return next
     })
