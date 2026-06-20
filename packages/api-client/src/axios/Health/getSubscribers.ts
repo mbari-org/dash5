@@ -1,5 +1,5 @@
-import { AxiosInstance } from 'axios'
 import { getInstance } from '../getInstance'
+import { RequestConfig } from '../types'
 
 export interface SessionInfo {
   tduiv: string | null
@@ -15,13 +15,19 @@ export interface SubscriberInfo {
 export type GetSubscribersResponse = Record<string, SubscriberInfo>
 
 // GET /api/async/subscribers — requires operator or admin role.
-export const getSubscribers = async (
-  token?: string,
-  instance?: AxiosInstance
-) => {
-  const axios = instance ?? getInstance()
-  const response = await axios.get('async/subscribers', {
-    headers: token ? { Authorization: `Bearer ${token}` } : undefined,
-  })
+// Authorization is handled by the shared axiosInstance (Bearer token injected
+// at the axios layer), so no token parameter is needed here.
+export const getSubscribers = async ({
+  debug,
+  instance = getInstance(),
+  ...config
+}: RequestConfig = {}) => {
+  const url = 'async/subscribers'
+
+  if (debug) {
+    console.debug(`GET ${url}`)
+  }
+
+  const response = await instance.get(url, config)
   return response.data.result as GetSubscribersResponse
 }

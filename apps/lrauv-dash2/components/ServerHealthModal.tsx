@@ -1,3 +1,4 @@
+import React from 'react'
 import { Modal } from '@mbari/react-ui'
 import { useHealth, useSubscribers } from '@mbari/api-client'
 import { DateTime } from 'luxon'
@@ -20,7 +21,11 @@ const Stat: React.FC<{ label: string; value: React.ReactNode }> = ({
 
 const ServerHealthModal: React.FC<ServerHealthModalProps> = ({ onClose }) => {
   const { data: health, isLoading: healthLoading, dataUpdatedAt } = useHealth()
-  const { data: subscribers, isError: subscribersError } = useSubscribers()
+  const {
+    data: subscribers,
+    isLoading: subscribersLoading,
+    isError: subscribersError,
+  } = useSubscribers()
 
   const usedMemoryMb = health
     ? Math.round((health.totalMemory - health.freeMemory) / MB)
@@ -74,11 +79,16 @@ const ServerHealthModal: React.FC<ServerHealthModalProps> = ({ onClose }) => {
                   Connected users require operator or admin role in TethysDash.
                 </p>
               )}
-              {!subscribersError && subscriberEntries.length === 0 && (
-                <p className="text-xs text-slate-400">
-                  No user data available.
-                </p>
+              {subscribersLoading && !subscribers && (
+                <p className="text-xs text-slate-400">Loading users...</p>
               )}
+              {!subscribersLoading &&
+                !subscribersError &&
+                subscriberEntries.length === 0 && (
+                  <p className="text-xs text-slate-400">
+                    No user data available.
+                  </p>
+                )}
               {subscriberEntries.length > 0 && (
                 <div className="max-h-56 overflow-y-auto rounded border border-slate-100">
                   {subscriberEntries.map(([email, info]) => (
@@ -90,8 +100,18 @@ const ServerHealthModal: React.FC<ServerHealthModalProps> = ({ onClose }) => {
                         {email}
                       </div>
                       <div className="flex flex-wrap gap-1">
-                        {info.sessions.map((s, i) => {
-                          const tduiv = s.tduiv ?? 'unknown'
+                        {info.sessions.map((s) => {
+                          const tduiv = s.tduiv
+                          if (!tduiv) {
+                            return (
+                              <span
+                                key={s.session}
+                                className="rounded-full bg-slate-100 px-2 py-0.5 text-xs font-medium text-slate-500"
+                              >
+                                Unknown client
+                              </span>
+                            )
+                          }
                           const majorVersion = parseInt(
                             tduiv.split('.')[0] ?? '0',
                             10
@@ -99,7 +119,7 @@ const ServerHealthModal: React.FC<ServerHealthModalProps> = ({ onClose }) => {
                           const isDash5 = tduiv === 'dev' || majorVersion >= 5
                           return (
                             <span
-                              key={i}
+                              key={s.session}
                               className={`rounded-full px-2 py-0.5 text-xs font-medium ${
                                 isDash5
                                   ? 'bg-violet-100 text-violet-700'

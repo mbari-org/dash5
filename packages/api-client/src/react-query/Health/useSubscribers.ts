@@ -4,15 +4,17 @@ import { useTethysApiContext } from '../TethysApiProvider'
 import { SupportedQueryOptions } from '../types'
 
 export const useSubscribers = (options?: SupportedQueryOptions) => {
-  const { axiosInstance, authenticated, token } = useTethysApiContext()
+  const { axiosInstance, authenticated } = useTethysApiContext()
   return useQuery(
     ['health', 'subscribers'],
-    () => getSubscribers(token, axiosInstance),
+    () => getSubscribers({ instance: axiosInstance ?? undefined }),
     {
-      enabled: authenticated,
       refetchInterval: 30 * 1000,
       staleTime: 25 * 1000,
       ...options,
+      // Placed after spread so callers cannot accidentally disable the auth
+      // gate by passing options.enabled. Both conditions must hold.
+      enabled: (options?.enabled ?? true) && !!authenticated,
     }
   )
 }

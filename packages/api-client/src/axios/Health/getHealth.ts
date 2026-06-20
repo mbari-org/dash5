@@ -1,5 +1,5 @@
-import { AxiosInstance } from 'axios'
 import { getInstance } from '../getInstance'
+import { RequestConfig } from '../types'
 
 export interface GetHealthResponse {
   atIso: string
@@ -18,8 +18,17 @@ export interface GetHealthResponse {
 // Health lives at /api/health on TethysDash. When called via the shared
 // axiosInstance (baseURL = .../TethysDash/api), 'health' (no leading slash)
 // appends correctly → .../TethysDash/api/health.
-export const getHealth = async (instance?: AxiosInstance) => {
-  const axios = instance ?? getInstance()
-  const response = await axios.get('health')
+export const getHealth = async ({
+  debug,
+  instance = getInstance(),
+  ...config
+}: RequestConfig = {}) => {
+  const url = 'health'
+
+  if (debug) {
+    console.debug(`GET ${url}`)
+  }
+
+  const response = await instance.get(url, config)
   return response.data.result as GetHealthResponse
 }

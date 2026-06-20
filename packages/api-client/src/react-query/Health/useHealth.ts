@@ -5,9 +5,13 @@ import { SupportedQueryOptions } from '../types'
 
 export const useHealth = (options?: SupportedQueryOptions) => {
   const { axiosInstance } = useTethysApiContext()
-  return useQuery(['health'], () => getHealth(axiosInstance), {
-    refetchInterval: 30 * 1000,
-    staleTime: 25 * 1000,
-    ...options,
-  })
+  return useQuery(
+    ['health'],
+    () => getHealth({ instance: axiosInstance ?? undefined }),
+    {
+      refetchInterval: 30 * 1000,
+      staleTime: 25 * 1000,
+      ...options,
+    }
+  )
 }
