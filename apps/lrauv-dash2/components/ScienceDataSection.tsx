@@ -58,7 +58,7 @@ export const ScienceCell: React.FC<{
   const timeout = useRef<ReturnType<typeof setTimeout> | null>(null)
   useEffect(() => {
     if (!ready && !timeout.current) {
-      timeout.current = setTimeout(() => {
+      setTimeout(() => {
         setReady(true)
       }, timeoutms ?? 2000)
     }
@@ -105,14 +105,9 @@ export const ScienceCell: React.FC<{
 
 const ScienceDataSection: React.FC<{
   vehicleName: string
-  /** True deployment start (unixTime from startEvent). Used for logset/event
-   *  queries and window calculations so they are scoped to the exact deployment. */
-  deploymentFrom: number
-  /** Adjusted query start (may be offset back by 1 day for active deployments
-   *  to capture in-flight data). Used only as the data fetch lower bound. */
-  from: number
+  from: number // milliseconds since epoch — deployment start
   to?: number // milliseconds since epoch — deployment end
-}> = ({ vehicleName, deploymentFrom, from, to }) => {
+}> = ({ vehicleName, from, to }) => {
   const { setGlobalModalId } = useGlobalModalId()
   const [timeWindow, setTimeWindow] = usePersistentState<TimeWindow>(
     'scienceSection.timeWindow',
@@ -135,15 +130,12 @@ const ScienceDataSection: React.FC<{
     {
       vehicles: [vehicleName],
       eventTypes: ['logPath'] as EventType[],
-      from: deploymentFrom,
+      from,
       to,
       limit: 200,
       ascending: 'n',
     },
-    {
-      enabled: !!vehicleName && !isExtended && deploymentFrom > 0,
-      staleTime: 5 * 60 * 1000,
-    }
+    { enabled: !!vehicleName && !isExtended, staleTime: 5 * 60 * 1000 }
   )
 
   const [selectedLogsetId, setSelectedLogsetId] = usePersistentState<
@@ -197,9 +189,9 @@ const ScienceDataSection: React.FC<{
   // The memo re-anchors at most once per minute as bucketedNow advances.
   const bucketedNow = Math.floor(DateTime.utc().toMillis() / 60_000) * 60_000
   const extendedFrom = useMemo(
-    () => getWindowFrom(timeWindow, deploymentFrom, to, bucketedNow),
+    () => getWindowFrom(timeWindow, from, to, bucketedNow),
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [timeWindow, deploymentFrom, to, bucketedNow]
+    [timeWindow, from, to, bucketedNow]
   )
 
   const latestQuery = useChartData(
@@ -216,7 +208,7 @@ const ScienceDataSection: React.FC<{
   const deploymentQuery = useDeploymentChartData(
     {
       vehicle: vehicleName,
-      deploymentFrom,
+      deploymentFrom: from,
       from: extendedFrom,
       to: clampedTo,
     },
