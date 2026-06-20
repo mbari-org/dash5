@@ -244,10 +244,17 @@ const Vehicle: NextPage = () => {
     recoverEvent: lastDeployment?.recoverEvent,
     startEventUnix: lastDeployment?.startEvent?.unixTime,
   })
-  const isRecovered = Boolean(lastDeployment?.recoverEvent)
-  const recoveredAt = lastDeployment?.recoverEvent?.unixTime
-    ? DateTime.fromMillis(lastDeployment.recoverEvent.unixTime).toRelative() ??
-      undefined
+  // Use the selected deployment's recoverEvent when available. When viewing an
+  // older deployment via deploymentId, deployment comes from useDeployments which
+  // may not include recoverEvent — in that case only fall back to lastDeployment
+  // if it is actually the same deployment (i.e. the user is on the latest one).
+  const isSameAsLast = deployment?.deploymentId === lastDeployment?.deploymentId
+  const recoverEvent =
+    deployment?.recoverEvent ??
+    (isSameAsLast ? lastDeployment?.recoverEvent : undefined)
+  const isRecovered = Boolean(recoverEvent)
+  const recoveredAt = recoverEvent?.unixTime
+    ? DateTime.fromMillis(recoverEvent.unixTime).toRelative() ?? undefined
     : undefined
   const handleRoleReassign = () => setGlobalModalId({ id: 'reassign' })
   const handleNewDeployment = () => setGlobalModalId({ id: 'newDeployment' })
