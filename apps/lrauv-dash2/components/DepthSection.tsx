@@ -93,9 +93,13 @@ const DepthSection: React.FC<{
     return next ? next.unixTime : to
   }, [selectedLogsetId, logPathEvents, to])
 
+  // Bucket now to the nearest minute so relative windows (3d/7d) stay bounded
+  // on active deployments without changing the query key on every render.
+  const bucketedNow = Math.floor(DateTime.utc().toMillis() / 60_000) * 60_000
   const extendedFrom = useMemo(
-    () => getWindowFrom(timeWindow, from, to),
-    [timeWindow, from, to]
+    () => getWindowFrom(timeWindow, from, to, bucketedNow),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [timeWindow, from, to, bucketedNow]
   )
 
   const latestQuery = useChartData(

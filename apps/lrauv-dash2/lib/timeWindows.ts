@@ -16,21 +16,25 @@ export const TIME_WINDOW_OPTIONS: { id: TimeWindow; name: string }[] = [
  * (3d/7d) are anchored from the deployment end, not now. The anchor is
  * clamped to now so future-padded end times on active deployments don't
  * shift the window forward and silently drop older data.
+ *
+ * Pass a pre-computed `now` to make the result stable for memoization
+ * (e.g. bucket to the nearest minute so the key doesn't change every render
+ * while still re-anchoring periodically).
  */
 export const getWindowFrom = (
   window: TimeWindow,
   deploymentFrom: number,
-  deploymentTo?: number
+  deploymentTo?: number,
+  now?: number
 ): number => {
-  const now = DateTime.utc().toMillis()
-  const anchor = Math.min(deploymentTo ?? now, now)
+  const effectiveNow = now ?? DateTime.utc().toMillis()
+  const anchor = Math.min(deploymentTo ?? effectiveNow, effectiveNow)
   switch (window) {
     case '3d':
       return Math.max(deploymentFrom, anchor - 3 * 24 * 60 * 60 * 1000)
     case '7d':
       return Math.max(deploymentFrom, anchor - 7 * 24 * 60 * 60 * 1000)
     case 'deployment':
-      return deploymentFrom
     case 'latest':
       return deploymentFrom
   }

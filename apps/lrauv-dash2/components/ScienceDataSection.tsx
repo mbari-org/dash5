@@ -184,13 +184,14 @@ const ScienceDataSection: React.FC<{
     return next ? next.unixTime : to
   }, [selectedLogsetId, logPathEvents, to])
 
-  // Memoize so the query key stays stable across re-renders. Without this,
-  // DateTime.utc() returns a new millisecond value on every render, which
-  // changes the query key and causes React Query to treat each render as a
-  // brand-new query — keeping isLoading permanently true.
+  // Bucket now to the nearest minute so relative windows (3d/7d) stay bounded
+  // on active deployments without changing the query key on every render.
+  // The memo re-anchors at most once per minute as bucketedNow advances.
+  const bucketedNow = Math.floor(DateTime.utc().toMillis() / 60_000) * 60_000
   const extendedFrom = useMemo(
-    () => getWindowFrom(timeWindow, from, to),
-    [timeWindow, from, to]
+    () => getWindowFrom(timeWindow, from, to, bucketedNow),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [timeWindow, from, to, bucketedNow]
   )
 
   const latestQuery = useChartData(

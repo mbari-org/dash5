@@ -42,6 +42,7 @@ export const useDeploymentChartData = (
     vehicles: [vehicle],
     eventTypes: ['dataProcessed'] as EventType[],
     limit: 2,
+    ascending: 'n' as const, // newest first — ensures we pick the latest event
     from: deploymentFrom,
     ...(to != null ? { to } : {}),
   }
