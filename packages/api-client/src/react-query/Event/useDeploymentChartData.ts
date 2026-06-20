@@ -149,6 +149,9 @@ export const useDeploymentChartData = (
       enabled:
         !!axiosInstance &&
         variableNames.length > 0 &&
+        // Guard against a near-epoch from timestamp (e.g. unloaded deployment
+        // start) — TethysDash returns 400 for from=0 or near-epoch values.
+        from > 1_000_000_000_000 &&
         (options?.enabled ?? true),
     }))
   )
