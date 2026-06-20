@@ -1,5 +1,6 @@
 import { rest } from 'msw'
 import { setupServer } from 'msw/node'
+import type { AxiosRequestHeaders } from 'axios'
 import { getSubscribers, GetSubscribersResponse } from './getSubscribers'
 
 export const mockResponse: { result: GetSubscribersResponse } = {
@@ -42,7 +43,7 @@ describe('getSubscribers', () => {
 
   it('should send the Authorization header when provided', async () => {
     await getSubscribers({
-      headers: { Authorization: 'Bearer test-token' } as never,
+      headers: { Authorization: 'Bearer test-token' } as AxiosRequestHeaders,
     })
     expect(capturedAuthHeader).toBe('Bearer test-token')
   })
