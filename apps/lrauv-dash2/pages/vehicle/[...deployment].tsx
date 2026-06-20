@@ -371,6 +371,7 @@ const Vehicle: NextPage = () => {
         <VehicleAccordion
           authenticated={authenticated}
           vehicleName={vehicleName}
+          deploymentFrom={startTime}
           from={adjustedDeploymentStartTime}
           to={endTime}
           picLabel={picLabel}
