@@ -139,7 +139,7 @@ const ScienceDataSection: React.FC<{
   // Fetch logPath events to populate the logset picker (only in 'latest' mode).
   // Use deploymentFrom (true start) so we don't miss logsets from the beginning
   // of the deployment when `from` has been offset forward for active deployments.
-  const { data: logPathEvents } = useEvents(
+  const { data: logPathEvents, isError: logPathError } = useEvents(
     {
       vehicles: [vehicleName],
       eventTypes: ['logPath'] as EventType[],
@@ -210,12 +210,15 @@ const ScienceDataSection: React.FC<{
     [timeWindow, deploymentFrom, to, bucketedNow]
   )
 
-  // Wait until logsets are loaded and a logset is selected (or confirmed absent)
-  // before firing the chart query. This prevents a wasted fetch with the fallback
-  // deployment window followed by a refetch once the logset auto-selection runs.
+  // Wait until logsets are loaded (or confirmed absent/errored) and a logset
+  // is selected before firing the chart query. This prevents a wasted fetch
+  // with the fallback window followed by a refetch once logset auto-selection
+  // runs. On error we treat logsets as unavailable so charts still render
+  // using the fallback deployment window rather than staying permanently blank.
   const logsetReady =
-    logPathEvents !== undefined &&
-    (logPathEvents.length === 0 || selectedLogsetId !== null)
+    logPathError ||
+    (logPathEvents !== undefined &&
+      (logPathEvents.length === 0 || selectedLogsetId !== null))
 
   const latestQuery = useChartData(
     { vehicle: vehicleName, from: logsetFrom, to: logsetTo },

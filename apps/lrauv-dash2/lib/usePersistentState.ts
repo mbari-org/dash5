@@ -39,17 +39,27 @@ export function usePersistentState<T>(
       const stored = sessionStorage.getItem(key)
       if (stored !== null) {
         setState(JSON.parse(stored) as T)
+      } else {
+        // No stored value for this key — reset to initialValue so that stale
+        // state from a previous key (e.g. per-vehicle/deployment parameterized
+        // keys) doesn't linger after a key change.
+        setState(initialValue)
       }
     } catch {
-      // Corrupted or outdated value — remove it so future mounts hydrate
-      // cleanly from initialValue rather than retrying the same bad data.
+      // Corrupted or outdated value — remove it and reset to initialValue so
+      // future mounts hydrate cleanly rather than retrying the same bad data.
       try {
         sessionStorage.removeItem(key)
       } catch {
         // sessionStorage unavailable (e.g. private browsing with storage blocked)
       }
+      setState(initialValue)
     }
-  }, [key])
+    // initialValue is included so the hook resets when the caller's default
+    // changes alongside a key change. Callers should use stable primitives
+    // (strings, booleans, null) as initialValue to avoid unnecessary re-runs.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [key, initialValue])
 
   // Memoize so the setter identity is stable across renders. Callers that
   // include the setter in effect dependency arrays (e.g. ScienceDataSection,

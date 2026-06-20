@@ -23,7 +23,7 @@ export const ChartsModal: React.FC<ChartsModalProps> = ({
   const deploymentStartTime = deployment?.startEvent?.unixTime ?? 0
   const deploymentEndTime = deployment?.endEvent?.unixTime
 
-  const { data: logPathEvents } = useEvents(
+  const { data: logPathEvents, isError: logPathError } = useEvents(
     {
       vehicles: [vehicleName],
       eventTypes: ['logPath'] as EventType[],
@@ -81,12 +81,15 @@ export const ChartsModal: React.FC<ChartsModalProps> = ({
     return next ? next.unixTime : deploymentEndTime
   }, [selectedLogsetId, logPathEvents, deploymentEndTime])
 
-  // Wait until logsets are loaded and a logset is selected (or confirmed absent)
-  // before firing the chart query. This prevents a wasted fetch with the fallback
-  // deployment window followed by a refetch once the logset auto-selection runs.
+  // Wait until logsets are loaded (or confirmed absent/errored) and a logset
+  // is selected before firing the chart query. This prevents a wasted fetch
+  // with the fallback window followed by a refetch once logset auto-selection
+  // runs. On error we treat logsets as unavailable so charts still render
+  // using the fallback deployment window rather than staying permanently blank.
   const logsetReady =
-    logPathEvents !== undefined &&
-    (logPathEvents.length === 0 || selectedLogsetId !== null)
+    logPathError ||
+    (logPathEvents !== undefined &&
+      (logPathEvents.length === 0 || selectedLogsetId !== null))
 
   const { data: chartData } = useChartData(
     {
