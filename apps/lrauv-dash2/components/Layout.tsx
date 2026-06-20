@@ -147,13 +147,19 @@ const Layout: React.FC<{ children?: React.ReactNode }> = ({ children }) => {
                         dismissDropdown()
                       },
                     },
-                    {
-                      label: 'Server Status',
-                      onSelect: () => {
-                        setGlobalModalId({ id: 'serverHealth' })
-                        dismissDropdown()
-                      },
-                    },
+                    ...(profile?.roles?.some(
+                      (r) => r === 'operator' || r === 'admin'
+                    )
+                      ? [
+                          {
+                            label: 'Server Status',
+                            onSelect: () => {
+                              setGlobalModalId({ id: 'serverHealth' })
+                              dismissDropdown()
+                            },
+                          },
+                        ]
+                      : []),
                     {
                       label: 'Logout',
                       onSelect: handleLogout,
