@@ -112,8 +112,12 @@ export const useDeploymentChartData = (
   // N samples and so truncates older data in long windows), step spreads samples
   // uniformly so the full time range is always visible.
   // Target 2000 points per variable; minimum step of 1 second.
+  // Bucket the fallback "now" to the nearest minute so step (and each variable's
+  // queryKey) stays stable across renders on active deployments and only changes
+  // at most once per minute rather than on every render.
   const TARGET_POINTS = 2000
-  const windowMs = (to ?? Date.now()) - from
+  const bucketedNow = Math.floor(Date.now() / 60_000) * 60_000
+  const windowMs = (to ?? bucketedNow) - from
   const windowSeconds = windowMs / 1000
   const step = Math.max(1, Math.round(windowSeconds / TARGET_POINTS))
 

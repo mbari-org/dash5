@@ -40,7 +40,13 @@ export function usePersistentState<T>(
         setState(JSON.parse(stored) as T)
       }
     } catch {
-      // sessionStorage unavailable (e.g. private browsing with storage blocked)
+      // Corrupted or outdated value — remove it so future mounts hydrate
+      // cleanly from initialValue rather than retrying the same bad data.
+      try {
+        sessionStorage.removeItem(key)
+      } catch {
+        // sessionStorage unavailable (e.g. private browsing with storage blocked)
+      }
     }
   }, [key])
 

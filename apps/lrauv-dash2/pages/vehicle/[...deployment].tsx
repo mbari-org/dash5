@@ -230,6 +230,18 @@ const Vehicle: NextPage = () => {
     ? DateTime.fromMillis(nextCommTimeMs)
     : null
 
+  // Use the selected deployment's recoverEvent when available. When viewing an
+  // older deployment via deploymentId, deployment comes from useDeployments which
+  // may not include recoverEvent — in that case only fall back to lastDeployment
+  // if it is actually the same deployment (i.e. the user is on the latest one).
+  const isSameAsLast = deployment?.deploymentId === lastDeployment?.deploymentId
+  const recoverEvent =
+    deployment?.recoverEvent ??
+    (isSameAsLast ? lastDeployment?.recoverEvent : undefined)
+
+  // Pass the deployment-aware recoverEvent and startEventUnix so that
+  // physicalStatus reflects the selected deployment's context rather than
+  // always using the latest deployment's boundaries.
   const {
     pingEvent,
     cellPingReachable,
@@ -241,17 +253,10 @@ const Vehicle: NextPage = () => {
     lastSatCommsTime,
     lastCellCommsTime,
     nowMs,
-    recoverEvent: lastDeployment?.recoverEvent,
-    startEventUnix: lastDeployment?.startEvent?.unixTime,
+    recoverEvent,
+    startEventUnix:
+      deployment?.startEvent?.unixTime ?? lastDeployment?.startEvent?.unixTime,
   })
-  // Use the selected deployment's recoverEvent when available. When viewing an
-  // older deployment via deploymentId, deployment comes from useDeployments which
-  // may not include recoverEvent — in that case only fall back to lastDeployment
-  // if it is actually the same deployment (i.e. the user is on the latest one).
-  const isSameAsLast = deployment?.deploymentId === lastDeployment?.deploymentId
-  const recoverEvent =
-    deployment?.recoverEvent ??
-    (isSameAsLast ? lastDeployment?.recoverEvent : undefined)
   const isRecovered = Boolean(recoverEvent)
   const recoveredAt = recoverEvent?.unixTime
     ? DateTime.fromMillis(recoverEvent.unixTime).toRelative() ?? undefined
