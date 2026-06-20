@@ -121,9 +121,11 @@ const DepthSection: React.FC<{
   // For active deployments `to` is future-padded; treat it as open-ended
   // (undefined) so the query key is stable across renders. For ended
   // deployments `to` is in the past and is passed through unchanged.
-  const now = DateTime.utc().toMillis()
-  const clampedTo = to != null && to <= now ? to : undefined
-  const windowMs = (clampedTo ?? now) - extendedFrom
+  // Reuse bucketedNow (already minute-bucketed above) so that clampedTo and
+  // step — both part of the React Query key — only change at most once per
+  // minute rather than on every render.
+  const clampedTo = to != null && to <= bucketedNow ? to : undefined
+  const windowMs = (clampedTo ?? bucketedNow) - extendedFrom
   const step = Math.max(1, Math.round(windowMs / 1000 / 2000))
 
   const { axiosInstance } = useTethysApiContext()
