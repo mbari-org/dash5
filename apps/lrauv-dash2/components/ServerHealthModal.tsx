@@ -48,7 +48,11 @@ const ServerHealthModal: React.FC<ServerHealthModalProps> = ({ onClose }) => {
     ? DateTime.fromMillis(dataUpdatedAt).toFormat('HH:mm:ss')
     : null
 
-  const subscriberEntries = subscribers ? Object.entries(subscribers) : []
+  // Do not show stale cached data when there is an active error — React Query
+  // keeps last-successful data on error by default, which could leak a
+  // previous subscriber list to a user who is no longer authorized.
+  const subscriberEntries =
+    !subscribersError && subscribers ? Object.entries(subscribers) : []
 
   return (
     <Modal

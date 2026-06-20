@@ -4,9 +4,12 @@ import { useTethysApiContext } from '../TethysApiProvider'
 import { SupportedQueryOptions } from '../types'
 
 export const useSubscribers = (options?: SupportedQueryOptions) => {
-  const { axiosInstance, token } = useTethysApiContext()
+  const { axiosInstance, token, profile } = useTethysApiContext()
+  // Include the authenticated user's email in the key so the cache is scoped
+  // per-user and doesn't leak a previous user's subscriber list on login
+  // change or role change that results in a 403.
   return useQuery(
-    ['health', 'subscribers'],
+    ['health', 'subscribers', profile?.email ?? null],
     () =>
       getSubscribers({
         instance: axiosInstance ?? undefined,
