@@ -2,6 +2,7 @@ import React from 'react'
 import { Modal } from '@mbari/react-ui'
 import { useHealth, useSubscribers } from '@mbari/api-client'
 import { DateTime } from 'luxon'
+import type { AxiosError } from 'axios'
 
 export interface ServerHealthModalProps {
   onClose?: () => void
@@ -20,12 +21,22 @@ const Stat: React.FC<{ label: string; value: React.ReactNode }> = ({
 )
 
 const ServerHealthModal: React.FC<ServerHealthModalProps> = ({ onClose }) => {
-  const { data: health, isLoading: healthLoading, dataUpdatedAt } = useHealth()
+  const {
+    data: health,
+    isLoading: healthLoading,
+    isError: healthError,
+    dataUpdatedAt,
+  } = useHealth()
   const {
     data: subscribers,
     isLoading: subscribersLoading,
     isError: subscribersError,
+    error: subscribersRawError,
   } = useSubscribers()
+
+  // Distinguish 403 (role restriction) from generic network/server errors.
+  const subscriberStatus = (subscribersRawError as AxiosError | null)?.response
+    ?.status
 
   const usedMemoryMb = health
     ? Math.round((health.totalMemory - health.freeMemory) / MB)
@@ -49,6 +60,11 @@ const ServerHealthModal: React.FC<ServerHealthModalProps> = ({ onClose }) => {
       <div className="p-4">
         {healthLoading && !health && (
           <p className="text-center text-sm text-slate-500">Loading...</p>
+        )}
+        {!healthLoading && healthError && !health && (
+          <p className="text-center text-sm text-red-600">
+            Server status could not be loaded. Please try again later.
+          </p>
         )}
         {health && (
           <>
@@ -74,9 +90,14 @@ const ServerHealthModal: React.FC<ServerHealthModalProps> = ({ onClose }) => {
               <div className="mb-2 text-xs font-semibold uppercase tracking-wide text-slate-400">
                 Connected Users
               </div>
-              {subscribersError && (
+              {subscribersError && subscriberStatus === 403 && (
                 <p className="text-xs text-amber-600">
                   Connected users require operator or admin role in TethysDash.
+                </p>
+              )}
+              {subscribersError && subscriberStatus !== 403 && (
+                <p className="text-xs text-red-600">
+                  Could not load connected users. Please try again later.
                 </p>
               )}
               {subscribersLoading && !subscribers && (
