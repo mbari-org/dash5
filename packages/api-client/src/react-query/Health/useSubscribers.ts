@@ -25,6 +25,11 @@ export const useSubscribers = (options?: SupportedQueryOptions) => {
         )?.response?.status
         return status === 403 ? false : 30 * 1000
       },
+      // Prevent window-focus and reconnect refetches from producing repeated
+      // 403s after a role-restriction error is detected. Callers can override
+      // either flag via options if needed.
+      refetchOnWindowFocus: false,
+      refetchOnReconnect: false,
       staleTime: 25 * 1000,
       // With 30s polling, React Query's default retry would pile on top of the
       // refetch cadence. Set retry: false so poll interval is the only retry.
