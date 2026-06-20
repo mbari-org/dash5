@@ -5,11 +5,12 @@ import { SupportedQueryOptions } from '../types'
 
 export const useSubscribers = (options?: SupportedQueryOptions) => {
   const { axiosInstance, token, profile } = useTethysApiContext()
-  // Include the authenticated user's email in the key so the cache is scoped
-  // per-user and doesn't leak a previous user's subscriber list on login
-  // change or role change that results in a 403.
+  // Include email + sorted roles in the key so the cache is scoped per-user
+  // and React Query treats a role change (e.g. operator granted mid-session)
+  // as a new cache entry, triggering an automatic refetch.
+  const roleKey = (profile?.roles ?? []).slice().sort().join(',')
   return useQuery(
-    ['health', 'subscribers', profile?.email ?? null],
+    ['health', 'subscribers', profile?.email ?? null, roleKey],
     () =>
       getSubscribers({
         instance: axiosInstance ?? undefined,
