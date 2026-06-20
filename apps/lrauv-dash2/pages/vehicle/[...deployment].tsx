@@ -4,7 +4,6 @@ import { useRouter } from 'next/router'
 import { DateTime } from 'luxon'
 import {
   getAdjustedUnixTime,
-  humanize,
   createRoleLabel,
   calculateRelativeNextComm,
 } from '@mbari/utils'
@@ -23,7 +22,6 @@ import {
 import {
   useDeployments,
   useTethysApiContext,
-  useChartData,
   useVehiclePicAndOnCall,
   useMissionStartedEvent,
 } from '@mbari/api-client'
@@ -33,6 +31,7 @@ import clsx from 'clsx'
 import Layout from '../../components/Layout'
 import VehicleDiagram from '../../components/VehicleDiagram'
 import VehicleAccordion from '../../components/VehicleAccordion'
+import DepthSection from '../../components/DepthSection'
 import useGlobalModalId from '../../lib/useGlobalModalId'
 import useCurrentDeployment from '../../lib/useCurrentDeployment'
 import useGlobalDrawerState from '../../lib/useGlobalDrawerState'
@@ -65,13 +64,6 @@ const styles = {
   secondary:
     'flex w-full h-full flex-shrink-0 flex-col bg-white border-t-2 border-t-secondary-300/60 border-l border-l-slate-300 min-h-0',
 }
-
-const LineChart = dynamic(
-  () => import('@mbari/react-ui/dist/Charts/LineChart'),
-  {
-    ssr: false,
-  }
-)
 
 const DeploymentMap = dynamic(() => import('../../components/DeploymentMap'), {
   ssr: false,
@@ -238,6 +230,24 @@ const Vehicle: NextPage = () => {
     ? DateTime.fromMillis(nextCommTimeMs)
     : null
 
+  // Use the selected deployment's recoverEvent when available. When viewing an
+  // older deployment via deploymentId, deployment comes from useDeployments which
+  // may not include recoverEvent — in that case only fall back to lastDeployment
+  // if it is actually the same deployment (i.e. the user is on the latest one).
+  // deployment.deploymentId (from useDeployments) is a number; lastDeployment
+  // .deploymentId (from useLastDeployment) may be a string. Normalise both to
+  // Number so the comparison works regardless of the source type.
+  const isSameAsLast =
+    deployment?.deploymentId != null &&
+    lastDeployment?.deploymentId != null &&
+    Number(deployment.deploymentId) === Number(lastDeployment.deploymentId)
+  const recoverEvent =
+    deployment?.recoverEvent ??
+    (isSameAsLast ? lastDeployment?.recoverEvent : undefined)
+
+  // Pass the deployment-aware recoverEvent and startEventUnix so that
+  // physicalStatus reflects the selected deployment's context rather than
+  // always using the latest deployment's boundaries.
   const {
     pingEvent,
     cellPingReachable,
@@ -249,37 +259,17 @@ const Vehicle: NextPage = () => {
     lastSatCommsTime,
     lastCellCommsTime,
     nowMs,
-    recoverEvent: lastDeployment?.recoverEvent,
-    startEventUnix: lastDeployment?.startEvent?.unixTime,
+    recoverEvent,
+    startEventUnix:
+      deployment?.startEvent?.unixTime ?? lastDeployment?.startEvent?.unixTime,
   })
-  const isRecovered = Boolean(lastDeployment?.recoverEvent)
-  const recoveredAt = lastDeployment?.recoverEvent?.unixTime
-    ? DateTime.fromMillis(lastDeployment.recoverEvent.unixTime).toRelative() ??
-      undefined
+  const isRecovered = Boolean(recoverEvent)
+  const recoveredAt = recoverEvent?.unixTime
+    ? DateTime.fromMillis(recoverEvent.unixTime).toRelative() ?? undefined
     : undefined
   const handleRoleReassign = () => setGlobalModalId({ id: 'reassign' })
   const handleNewDeployment = () => setGlobalModalId({ id: 'newDeployment' })
   const handleEditDeployment = () => setGlobalModalId({ id: 'editDeployment' })
-
-  const {
-    data: chartData,
-    isLoading: chartLoading,
-    isError: chartError,
-    isIdle: chartIdle,
-  } = useChartData(
-    {
-      vehicle: vehicleName as string,
-      from: startTime,
-      to: endTime ? endTime : undefined,
-    },
-    {
-      enabled: currentTab === 'depth' && startTime > 0,
-    }
-  )
-
-  const depthData = chartData?.find((d) => d.name === 'depth')
-  const chartAvailable =
-    !!depthData && !chartLoading && !chartIdle && !chartError
 
   const [indicatorTime, setIndicatorTime] = useState<number | null | undefined>(
     null
@@ -302,22 +292,6 @@ const Vehicle: NextPage = () => {
   const handleMapScrub = (time?: number | null) => {
     setIndicatorTime(time)
   }
-
-  const depthChart = useMemo(() => {
-    return chartAvailable ? (
-      <LineChart
-        name={depthData?.name ?? ''}
-        data={depthData?.values?.map((v, i) => ({
-          value: v,
-          timestamp: depthData?.times?.[i],
-        }))}
-        yAxisLabel={`${humanize(depthData?.name)} (${depthData?.units})`}
-        onHover={handleTimeScrub}
-        inverted={depthData?.name === 'depth'}
-        className="h-[340px] w-full"
-      />
-    ) : null
-  }, [depthData, chartAvailable])
 
   const handleBatteryClick = () => {
     setGlobalModalId({ id: 'battery' })
@@ -388,18 +362,13 @@ const Vehicle: NextPage = () => {
                 nextCommsText={nextCommsText}
               />
             )}
-            {currentTab === 'depth' && (
-              <div className="flex h-full w-full overflow-hidden px-4">
-                {depthChart}
-                {chartLoading && (
-                  <p className="text-md m-auto font-bold">Loading Depth Data</p>
-                )}
-                {chartError && (
-                  <p className="text-md m-auto font-bold">
-                    Depth Data Could Not Be Loaded
-                  </p>
-                )}
-              </div>
+            {currentTab === 'depth' && startTime > 0 && (
+              <DepthSection
+                vehicleName={vehicleName as string}
+                from={startTime}
+                to={deployment?.active ? undefined : endTime || undefined}
+                onHover={handleTimeScrub}
+              />
             )}
           </div>
         </div>
@@ -413,6 +382,7 @@ const Vehicle: NextPage = () => {
         <VehicleAccordion
           authenticated={authenticated}
           vehicleName={vehicleName}
+          deploymentFrom={startTime}
           from={adjustedDeploymentStartTime}
           to={endTime}
           picLabel={picLabel}
