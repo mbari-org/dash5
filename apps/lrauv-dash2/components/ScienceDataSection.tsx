@@ -55,7 +55,7 @@ export const ScienceCell: React.FC<{
   xAxisRange,
 }) => {
   const [ready, setReady] = useState(false)
-  const timeout = useRef<ReturnType<typeof setTimeout>>(null)
+  const timeout = useRef<ReturnType<typeof setTimeout> | null>(null)
   useEffect(() => {
     if (!ready && !timeout.current) {
       timeout.current = setTimeout(() => {
