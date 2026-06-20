@@ -62,10 +62,12 @@ export const ScienceCell: React.FC<{
         setReady(true)
       }, timeoutms ?? 2000)
     }
-    const currentTimeout = timeout.current
     return () => {
-      if (currentTimeout) {
-        clearTimeout(currentTimeout)
+      // Reset timeout.current so that a remount (e.g. React Strict Mode's
+      // artificial unmount/remount cycle) can schedule a fresh timer.
+      if (timeout.current) {
+        clearTimeout(timeout.current)
+        timeout.current = null
       }
     }
   }, [ready, timeout, setReady, timeoutms])
