@@ -1,7 +1,6 @@
 import React from 'react'
 import { render, screen } from '@testing-library/react'
 import '@testing-library/jest-dom'
-import ServerHealthModal from '../components/ServerHealthModal'
 
 jest.mock('@mbari/api-client', () => ({
   useHealth: jest.fn(),
@@ -9,6 +8,7 @@ jest.mock('@mbari/api-client', () => ({
 }))
 
 import { useHealth, useSubscribers } from '@mbari/api-client'
+import ServerHealthModal from '../components/ServerHealthModal'
 
 const mockHealth = {
   atIso: '2026-06-19T00:00:00Z',
