@@ -1,6 +1,7 @@
 import {
   Dispatch,
   SetStateAction,
+  useCallback,
   useEffect,
   useLayoutEffect,
   useState,
@@ -50,22 +51,30 @@ export function usePersistentState<T>(
     }
   }, [key])
 
-  const setPersistentState: Dispatch<SetStateAction<T>> = (action) => {
-    setState((prev) => {
-      const next =
-        typeof action === 'function' ? (action as (prev: T) => T)(prev) : action
-      try {
-        if (next === undefined) {
-          sessionStorage.removeItem(key)
-        } else {
-          sessionStorage.setItem(key, JSON.stringify(next))
+  // Memoize so the setter identity is stable across renders. Callers that
+  // include the setter in effect dependency arrays (e.g. ScienceDataSection,
+  // DepthSection) won't re-run unnecessarily when the parent re-renders.
+  const setPersistentState = useCallback<Dispatch<SetStateAction<T>>>(
+    (action) => {
+      setState((prev) => {
+        const next =
+          typeof action === 'function'
+            ? (action as (prev: T) => T)(prev)
+            : action
+        try {
+          if (next === undefined) {
+            sessionStorage.removeItem(key)
+          } else {
+            sessionStorage.setItem(key, JSON.stringify(next))
+          }
+        } catch {
+          // sessionStorage unavailable
         }
-      } catch {
-        // sessionStorage unavailable
-      }
-      return next
-    })
-  }
+        return next
+      })
+    },
+    [key] // setState from useState is stable; key is the only meaningful dep
+  )
 
   return [state, setPersistentState]
 }

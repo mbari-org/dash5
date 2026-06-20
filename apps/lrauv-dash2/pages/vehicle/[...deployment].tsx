@@ -360,7 +360,7 @@ const Vehicle: NextPage = () => {
               <DepthSection
                 vehicleName={vehicleName as string}
                 from={startTime}
-                to={isRecovered ? endTime || undefined : undefined}
+                to={deployment?.active ? undefined : endTime || undefined}
                 onHover={handleTimeScrub}
               />
             )}
