@@ -4,10 +4,14 @@ import { useTethysApiContext } from '../TethysApiProvider'
 import { SupportedQueryOptions } from '../types'
 
 export const useSubscribers = (options?: SupportedQueryOptions) => {
-  const { axiosInstance, authenticated } = useTethysApiContext()
+  const { axiosInstance, token } = useTethysApiContext()
   return useQuery(
     ['health', 'subscribers'],
-    () => getSubscribers({ instance: axiosInstance ?? undefined }),
+    () =>
+      getSubscribers({
+        instance: axiosInstance ?? undefined,
+        headers: { Authorization: `Bearer ${token}` },
+      }),
     {
       // Stop polling after a 403 (role restriction) — the error is expected
       // and will not resolve without a permission change, so there is no
@@ -25,7 +29,7 @@ export const useSubscribers = (options?: SupportedQueryOptions) => {
       ...options,
       // Placed after spread so callers cannot accidentally disable the auth
       // gate by passing options.enabled. Both conditions must hold.
-      enabled: (options?.enabled ?? true) && !!authenticated,
+      enabled: (options?.enabled ?? true) && (token?.length ?? 0) > 0,
     }
   )
 }

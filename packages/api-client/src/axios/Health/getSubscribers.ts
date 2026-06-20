@@ -15,8 +15,9 @@ export interface SubscriberInfo {
 export type GetSubscribersResponse = Record<string, SubscriberInfo>
 
 // GET /api/async/subscribers — requires operator or admin role.
-// Authorization is handled by the shared axiosInstance (Bearer token injected
-// at the axios layer), so no token parameter is needed here.
+// Callers must pass Authorization via RequestConfig.headers (e.g.
+// { headers: { Authorization: `Bearer ${token}` } }) — the axiosInstance
+// does not inject it automatically.
 export const getSubscribers = async ({
   debug,
   instance = getInstance(),

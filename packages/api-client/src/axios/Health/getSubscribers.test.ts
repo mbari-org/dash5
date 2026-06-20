@@ -18,13 +18,19 @@ export const mockResponse: { result: GetSubscribersResponse } = {
   },
 }
 
+let capturedAuthHeader: string | null = null
+
 const server = setupServer(
   rest.get('/async/subscribers', (req, res, ctx) => {
+    capturedAuthHeader = req.headers.get('Authorization')
     return res(ctx.status(200), ctx.json(mockResponse))
   })
 )
 
 beforeAll(() => server.listen())
+beforeEach(() => {
+  capturedAuthHeader = null
+})
 afterEach(() => server.resetHandlers())
 afterAll(() => server.close())
 
@@ -32,6 +38,13 @@ describe('getSubscribers', () => {
   it('should return subscriber data when successful', async () => {
     const response = await getSubscribers()
     expect(response).toEqual(mockResponse.result)
+  })
+
+  it('should send the Authorization header when provided', async () => {
+    await getSubscribers({
+      headers: { Authorization: 'Bearer test-token' } as never,
+    })
+    expect(capturedAuthHeader).toBe('Bearer test-token')
   })
 
   it('should throw when the request fails (e.g. 403 unauthorized)', async () => {
