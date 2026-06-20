@@ -92,7 +92,8 @@ describe('useSubscribers', () => {
         <MockComponent />
       </MockProviders>
     )
-    // Query is disabled — give it a moment to confirm no request was made.
+    // When enabled is false React Query returns an idle (not loading) state
+    // immediately. Give it a moment to confirm the endpoint was never called.
     await new Promise((r) => setTimeout(r, 100))
     expect(capturedAuthHeader).toBeNull()
   })

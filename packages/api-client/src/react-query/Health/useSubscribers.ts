@@ -17,14 +17,21 @@ export const useSubscribers = (options?: SupportedQueryOptions) => {
         headers: { Authorization: `Bearer ${token}` },
       }),
     {
-      // Stop polling after a 403 (role restriction) — the error is expected
-      // and will not resolve without a permission change, so there is no
-      // value in continuing to poll. All other errors keep the 30s cadence.
+      // Stop polling on 403 only when the user lacks the required role — in
+      // that case the error won't resolve without a permission change. If the
+      // user already has operator/admin, a 403 is more likely a transient auth
+      // issue (e.g. token rotation) that will resolve on the next refetch.
       refetchInterval: (_data, query) => {
         const status = (
           query.state.error as { response?: { status?: number } } | null
         )?.response?.status
-        return status === 403 ? false : 30 * 1000
+        if (status === 403) {
+          const hasRole =
+            profile?.roles?.some((r) => r === 'operator' || r === 'admin') ??
+            false
+          if (!hasRole) return false
+        }
+        return 30 * 1000
       },
       // Prevent window-focus and reconnect refetches from producing repeated
       // 403s after a role-restriction error is detected. Callers can override
