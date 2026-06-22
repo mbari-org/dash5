@@ -162,12 +162,8 @@ const argumentAsParameter = (
       return {
         argType: arg.argType,
         name: 'variable',
-        description: 'Mission-level vs insert parameter syntax',
+        description: 'Mission-level and insert parameter syntax',
         helpLinks: [
-          {
-            label: 'Syntax guide',
-            url: 'https://docs.mbari.org/tethysdash/mission/',
-          },
           {
             label: 'LRAUV missions',
             url: 'https://docs.mbari.org/lrauvmissions/missions/',
@@ -411,14 +407,6 @@ export const BuildTemplatedCommandStep: React.FC<
               {selectedCommandName}
             </span>
           </span>
-          <a
-            href="https://docs.mbari.org/tethysdash/mission/"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="text-xs text-blue-500 hover:text-blue-700 hover:underline"
-          >
-            Mission Script Structure Guide
-          </a>
         </li>
         <li className="my-4 flex w-full items-center">
           <p className="mr-2 flex-shrink-0">Choose a syntax</p>
