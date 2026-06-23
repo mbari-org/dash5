@@ -126,7 +126,7 @@ export const scopedSelectOptions = (
           if (!map.has(label)) map.set(label, [])
           map.get(label)!.push({
             id: buildId(option),
-            name: stripExt(option.split('/').pop() ?? option),
+            name: displayName(option),
           })
         })
         groupedOptions = Array.from(map.entries()).map(([label, opts]) => ({

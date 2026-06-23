@@ -261,6 +261,51 @@ describe('scopedSelectOptions with pinnedNames', () => {
   })
 })
 
+describe('scopedSelectOptions with optionLabels', () => {
+  const unitOptionSet: OptionSet[] = [
+    {
+      name: 'Units',
+      options: ['h', 'min', 's'],
+      optionLabels: { h: 'hour', min: 'minute', s: 'second' },
+    },
+  ]
+
+  test('should use optionLabels as display name while preserving the raw value in the id', () => {
+    const [tier] = scopedSelectOptions('', unitOptionSet)
+    expect(tier.options).toEqual([
+      { id: 'Units____h', name: 'hour' },
+      { id: 'Units____min', name: 'minute' },
+      { id: 'Units____s', name: 'second' },
+    ])
+  })
+
+  test('should fall back to the raw option value when no label is provided for that key', () => {
+    const sets: OptionSet[] = [
+      {
+        name: 'Units',
+        options: ['h', 'kg'],
+        optionLabels: { h: 'hour' },
+      },
+    ]
+    const [tier] = scopedSelectOptions('', sets)
+    expect(tier.options.find((o) => o.id === 'Units____kg')?.name).toBe('kg')
+  })
+
+  test('should apply optionLabels inside groupedOptions when groupBy is also provided', () => {
+    const sets: OptionSet[] = [
+      {
+        name: 'Mission',
+        options: ['Science/sci2.tl'],
+        groupBy: (p) => p.split('/')[0] ?? 'Other',
+        optionLabels: { 'Science/sci2.tl': 'Sci2 — standard science' },
+      },
+    ]
+    const [tier] = scopedSelectOptions('', sets)
+    const sciGroup = tier.groupedOptions?.find((g) => g.label === 'Science')
+    expect(sciGroup?.options[0].name).toBe('Sci2 — standard science')
+  })
+})
+
 describe('mapValues', () => {
   test('should return an empty object for an empty string', () => {
     expect(mapValues('')).toEqual({})
