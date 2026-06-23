@@ -190,7 +190,42 @@ export const CommandModal: React.FC<CommandModalProps> = ({
   ]
   const moduleNames = makeModuleNames(variable)
 
-  const units = unitsData?.map((u) => u.abbreviation) ?? []
+  const allUnitAbbreviations = unitsData?.map((u) => u.abbreviation) ?? []
+
+  // When a Mission element is selected, derive its unit from the script args and
+  // filter the units dropdown to only show compatible options (same baseUnit).
+  // Falls back to all units if no unit info is available for the selected parameter.
+  const selectedArgUnit = React.useMemo(() => {
+    if (
+      variable['Variable Type'] !== 'Mission' ||
+      !variable.Element ||
+      !selectedMissionData
+    )
+      return undefined
+    const element = variable.Element
+    const rootArg = selectedMissionData.scriptArgs?.find(
+      (a) => a.name === element
+    )
+    if (rootArg?.unit) return rootArg.unit
+    for (const ins of selectedMissionData.inserts ?? []) {
+      const insArg = ins.scriptArgs?.find(
+        (a) => `${ins.id}.${a.name}` === element
+      )
+      if (insArg?.unit) return insArg.unit
+    }
+    return undefined
+  }, [variable, selectedMissionData])
+
+  const filteredUnitAbbreviations = React.useMemo(() => {
+    if (!selectedArgUnit) return allUnitAbbreviations
+    const compatible =
+      unitsData
+        ?.filter(
+          (u) => u.name === selectedArgUnit || u.baseUnit === selectedArgUnit
+        )
+        .map((u) => u.abbreviation) ?? []
+    return compatible.length > 0 ? compatible : allUnitAbbreviations
+  }, [unitsData, selectedArgUnit, allUnitAbbreviations])
 
   // Display aliases: shown in UI but the original keyword is still sent to the vehicle
   const COMMAND_DISPLAY_ALIASES: Record<string, string> = {
@@ -345,7 +380,7 @@ export const CommandModal: React.FC<CommandModalProps> = ({
       steps={steps}
       onSelectCommandId={setCurrentCommand}
       syntaxVariations={syntaxVariations ?? []}
-      units={[{ name: 'Units', options: units }]}
+      units={[{ name: 'Units', options: filteredUnitAbbreviations }]}
       universals={[{ name: 'Universal', options: universalData ?? [] }]}
       missions={missionTypeOptions}
       decimationTypes={[{ name: 'Decimation Type', options: decimationTypes }]}
