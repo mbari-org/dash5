@@ -26,6 +26,33 @@ import { useRouter } from 'next/router'
 import toast from 'react-hot-toast'
 import useGlobalModalId from '../lib/useGlobalModalId'
 
+export interface UnitEntry {
+  name: string
+  abbreviation: string
+  baseUnit?: string
+}
+
+/** Pure helper — exported for testing. */
+export const getFilteredUnitAbbreviations = (
+  unitsData: UnitEntry[] | undefined,
+  selectedArgUnit: string | undefined
+): string[] => {
+  const all = unitsData?.map((u) => u.abbreviation) ?? []
+  if (!selectedArgUnit) return all
+  const selectedUnitEntry = unitsData?.find((u) => u.name === selectedArgUnit)
+  const canonicalBase = selectedUnitEntry?.baseUnit ?? selectedArgUnit
+  const compatible =
+    unitsData
+      ?.filter((u) => u.name === canonicalBase || u.baseUnit === canonicalBase)
+      .map((u) => u.abbreviation) ?? []
+  // Mirror ParameterField: sort time-based units by abbreviation length
+  // so short forms (s, h, d) appear before longer ones (min, ms, etc.)
+  if (canonicalBase === 'second') {
+    compatible.sort((a, b) => a.length - b.length)
+  }
+  return compatible.length > 0 ? compatible : all
+}
+
 export interface CommandModalProps {
   onClose: () => void
   className?: string
@@ -229,20 +256,10 @@ export const CommandModal: React.FC<CommandModalProps> = ({
     return undefined
   }, [variable, selectedMissionData])
 
-  const filteredUnitAbbreviations = React.useMemo(() => {
-    if (!selectedArgUnit) return allUnitAbbreviations
-    // Resolve the canonical base unit: e.g. "hour" → baseUnit "second",
-    // "meter_per_second" → no baseUnit so canonical base is itself.
-    const selectedUnitEntry = unitsData?.find((u) => u.name === selectedArgUnit)
-    const canonicalBase = selectedUnitEntry?.baseUnit ?? selectedArgUnit
-    const compatible =
-      unitsData
-        ?.filter(
-          (u) => u.name === canonicalBase || u.baseUnit === canonicalBase
-        )
-        .map((u) => u.abbreviation) ?? []
-    return compatible.length > 0 ? compatible : allUnitAbbreviations
-  }, [unitsData, selectedArgUnit, allUnitAbbreviations])
+  const filteredUnitAbbreviations = React.useMemo(
+    () => getFilteredUnitAbbreviations(unitsData, selectedArgUnit),
+    [unitsData, selectedArgUnit]
+  )
 
   // Display aliases: shown in UI but the original keyword is still sent to the vehicle
   const COMMAND_DISPLAY_ALIASES: Record<string, string> = {
