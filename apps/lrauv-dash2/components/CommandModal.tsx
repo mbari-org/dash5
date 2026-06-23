@@ -217,11 +217,6 @@ export const CommandModal: React.FC<CommandModalProps> = ({
   ]
   const moduleNames = makeModuleNames(variable)
 
-  const allUnitAbbreviations = React.useMemo(
-    () => unitsData?.map((u) => u.abbreviation) ?? [],
-    [unitsData]
-  )
-
   // Display label map: abbreviation → human-readable name (e.g. h → hour, min → minute)
   const unitLabels: Record<string, string> = React.useMemo(
     () =>

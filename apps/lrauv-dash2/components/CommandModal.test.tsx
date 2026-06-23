@@ -24,7 +24,7 @@ describe('getFilteredUnitAbbreviations', () => {
     expect(result).toEqual(ALL_UNITS.map((u) => u.abbreviation))
   })
 
-  test('returns all abbreviations when unitsData is undefined', () => {
+  test('returns an empty array when unitsData is undefined', () => {
     const result = getFilteredUnitAbbreviations(undefined, 'meter')
     expect(result).toEqual([])
   })
