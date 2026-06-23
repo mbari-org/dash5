@@ -26,6 +26,33 @@ import { useRouter } from 'next/router'
 import toast from 'react-hot-toast'
 import useGlobalModalId from '../lib/useGlobalModalId'
 
+export interface UnitEntry {
+  name: string
+  abbreviation: string
+  baseUnit?: string
+}
+
+/** Pure helper — exported for testing. */
+export const getFilteredUnitAbbreviations = (
+  unitsData: UnitEntry[] | undefined,
+  selectedArgUnit: string | undefined
+): string[] => {
+  const all = unitsData?.map((u) => u.abbreviation) ?? []
+  if (!selectedArgUnit) return all
+  const selectedUnitEntry = unitsData?.find((u) => u.name === selectedArgUnit)
+  const canonicalBase = selectedUnitEntry?.baseUnit ?? selectedArgUnit
+  const compatible =
+    unitsData
+      ?.filter((u) => u.name === canonicalBase || u.baseUnit === canonicalBase)
+      .map((u) => u.abbreviation) ?? []
+  // Mirror ParameterField: sort time-based units by abbreviation length
+  // so short forms (s, h, d) appear before longer ones (min, ms, etc.)
+  if (canonicalBase === 'second') {
+    compatible.sort((a, b) => a.length - b.length)
+  }
+  return compatible.length > 0 ? compatible : all
+}
+
 export interface CommandModalProps {
   onClose: () => void
   className?: string
@@ -190,7 +217,44 @@ export const CommandModal: React.FC<CommandModalProps> = ({
   ]
   const moduleNames = makeModuleNames(variable)
 
-  const units = unitsData?.map((u) => u.abbreviation) ?? []
+  // Display label map: abbreviation → human-readable name (e.g. h → hour, min → minute)
+  const unitLabels: Record<string, string> = React.useMemo(
+    () =>
+      (unitsData ?? []).reduce<Record<string, string>>((acc, u) => {
+        acc[u.abbreviation] = u.name.replace(/_/g, ' ')
+        return acc
+      }, {}),
+    [unitsData]
+  )
+
+  // When a Mission element is selected, derive its unit from the script args and
+  // filter the units dropdown to only show compatible options (same baseUnit).
+  // Falls back to all units if no unit info is available for the selected parameter.
+  const selectedArgUnit = React.useMemo(() => {
+    if (
+      variable['Variable Type'] !== 'Mission' ||
+      !variable.Element ||
+      !selectedMissionData
+    )
+      return undefined
+    const element = variable.Element
+    const rootArg = selectedMissionData.scriptArgs?.find(
+      (a) => a.name === element
+    )
+    if (rootArg?.unit) return rootArg.unit
+    for (const ins of selectedMissionData.inserts ?? []) {
+      const insArg = ins.scriptArgs?.find(
+        (a) => `${ins.id}.${a.name}` === element
+      )
+      if (insArg?.unit) return insArg.unit
+    }
+    return undefined
+  }, [variable, selectedMissionData])
+
+  const filteredUnitAbbreviations = React.useMemo(
+    () => getFilteredUnitAbbreviations(unitsData, selectedArgUnit),
+    [unitsData, selectedArgUnit]
+  )
 
   // Display aliases: shown in UI but the original keyword is still sent to the vehicle
   const COMMAND_DISPLAY_ALIASES: Record<string, string> = {
@@ -345,7 +409,13 @@ export const CommandModal: React.FC<CommandModalProps> = ({
       steps={steps}
       onSelectCommandId={setCurrentCommand}
       syntaxVariations={syntaxVariations ?? []}
-      units={[{ name: 'Units', options: units }]}
+      units={[
+        {
+          name: 'Units',
+          options: filteredUnitAbbreviations,
+          optionLabels: unitLabels,
+        },
+      ]}
       universals={[{ name: 'Universal', options: universalData ?? [] }]}
       missions={missionTypeOptions}
       decimationTypes={[{ name: 'Decimation Type', options: decimationTypes }]}
