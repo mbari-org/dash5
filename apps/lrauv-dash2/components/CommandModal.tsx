@@ -26,6 +26,21 @@ import { useRouter } from 'next/router'
 import toast from 'react-hot-toast'
 import useGlobalModalId from '../lib/useGlobalModalId'
 
+/** Pure helper — exported for testing. Returns the group label for a mission path, collapsing all Deprecated/* sub-paths into the single label "Deprecated" so the mission picker renders them as one deprioritized group at the bottom. */
+export const missionGroupLabel = (path: string): string => {
+  if (path.toLowerCase().startsWith('deprecated/')) return 'Deprecated'
+  const slash = path.lastIndexOf('/')
+  return slash >= 0 ? path.slice(0, slash) : 'Standard Ops'
+}
+
+/** Pure helper — exported for testing. Sorts mission paths alphabetically with Deprecated/ pinned last. */
+export const sortMissionPaths = (a: string, b: string): number => {
+  const aDeprecated = a.toLowerCase().startsWith('deprecated/')
+  const bDeprecated = b.toLowerCase().startsWith('deprecated/')
+  if (aDeprecated !== bDeprecated) return aDeprecated ? 1 : -1
+  return a.localeCompare(b)
+}
+
 export interface UnitEntry {
   name: string
   abbreviation: string
@@ -321,13 +336,13 @@ export const CommandModal: React.FC<CommandModalProps> = ({
   const serviceTypes = commandData?.serviceTypes ?? []
 
   // Flat sorted mission paths for both ARG_VARIABLE and ARG_MISSION pickers.
-  const allMissionPaths = (missionData?.list?.map((m) => m.path) ?? []).sort()
+  const allMissionPaths = React.useMemo(
+    () => (missionData?.list?.map((m) => m.path) ?? []).sort(sortMissionPaths),
+    [missionData]
+  )
 
   // Groups paths by folder prefix for the grouped dropdown headers.
-  const missionGroupBy = (path: string) => {
-    const slash = path.lastIndexOf('/')
-    return slash >= 0 ? path.slice(0, slash) : 'Standard Ops'
-  }
+  const missionGroupBy = missionGroupLabel
 
   // Extract unique mission base names from recent commands (set/load) for pinning.
   const recentMissionNames = React.useMemo(() => {
