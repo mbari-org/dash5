@@ -44,6 +44,8 @@ export interface OptionSet {
   groupBy?: (option: string) => string
   /** Mission base names (without extension) to pin at the top as "Recently used". */
   pinnedNames?: string[]
+  /** Optional display label overrides keyed by option value (e.g. { h: 'hour', min: 'minute' }). */
+  optionLabels?: Record<string, string>
 }
 
 export interface HelpLink {
@@ -99,7 +101,7 @@ export const scopedSelectOptions = (
   const values = scopedValues(valueString ?? '')
   const options = optionSets
     .filter((_, i) => i <= values.length)
-    .map(({ name, options, groupBy, pinnedNames }, i) => {
+    .map(({ name, options, groupBy, pinnedNames, optionLabels }, i) => {
       const buildId = (option: string) =>
         [i ? values[i - 1] : '', [name, option].join(L_SEPARATOR)]
           .filter((x) => x)
@@ -107,9 +109,13 @@ export const scopedSelectOptions = (
 
       const stripExt = (s: string) => s.replace(/\.(tl|xml|py)$/i, '')
 
+      const displayName = (option: string) =>
+        optionLabels?.[option] ??
+        (groupBy ? stripExt(option.split('/').pop() ?? option) : option)
+
       const flatOptions: SelectOption[] = options.map((option) => ({
         id: buildId(option),
-        name: groupBy ? stripExt(option.split('/').pop() ?? option) : option,
+        name: displayName(option),
       }))
 
       let groupedOptions: SelectOptionGroup[] | undefined

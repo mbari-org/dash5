@@ -192,6 +192,16 @@ export const CommandModal: React.FC<CommandModalProps> = ({
 
   const allUnitAbbreviations = unitsData?.map((u) => u.abbreviation) ?? []
 
+  // Display label map: abbreviation → human-readable name (e.g. h → hour, min → minute)
+  const unitLabels: Record<string, string> = React.useMemo(
+    () =>
+      (unitsData ?? []).reduce<Record<string, string>>((acc, u) => {
+        acc[u.abbreviation] = u.name.replace(/_/g, ' ')
+        return acc
+      }, {}),
+    [unitsData]
+  )
+
   // When a Mission element is selected, derive its unit from the script args and
   // filter the units dropdown to only show compatible options (same baseUnit).
   // Falls back to all units if no unit info is available for the selected parameter.
@@ -384,7 +394,13 @@ export const CommandModal: React.FC<CommandModalProps> = ({
       steps={steps}
       onSelectCommandId={setCurrentCommand}
       syntaxVariations={syntaxVariations ?? []}
-      units={[{ name: 'Units', options: filteredUnitAbbreviations }]}
+      units={[
+        {
+          name: 'Units',
+          options: filteredUnitAbbreviations,
+          optionLabels: unitLabels,
+        },
+      ]}
       universals={[{ name: 'Universal', options: universalData ?? [] }]}
       missions={missionTypeOptions}
       decimationTypes={[{ name: 'Decimation Type', options: decimationTypes }]}
