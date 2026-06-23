@@ -26,6 +26,13 @@ import { useRouter } from 'next/router'
 import toast from 'react-hot-toast'
 import useGlobalModalId from '../lib/useGlobalModalId'
 
+/** Pure helper — exported for testing. Returns the group label for a mission path, collapsing all Deprecated/* into a single "Deprecated" group so MissionCascader.groupPriority can deprioritize it correctly. */
+export const missionGroupLabel = (path: string): string => {
+  if (path.toLowerCase().startsWith('deprecated/')) return 'Deprecated'
+  const slash = path.lastIndexOf('/')
+  return slash >= 0 ? path.slice(0, slash) : 'Standard Ops'
+}
+
 /** Pure helper — exported for testing. Sorts mission paths alphabetically with Deprecated/ pinned last. */
 export const sortMissionPaths = (a: string, b: string): number => {
   const aDeprecated = a.toLowerCase().startsWith('deprecated/')
@@ -334,10 +341,7 @@ export const CommandModal: React.FC<CommandModalProps> = ({
   )
 
   // Groups paths by folder prefix for the grouped dropdown headers.
-  const missionGroupBy = (path: string) => {
-    const slash = path.lastIndexOf('/')
-    return slash >= 0 ? path.slice(0, slash) : 'Standard Ops'
-  }
+  const missionGroupBy = missionGroupLabel
 
   // Extract unique mission base names from recent commands (set/load) for pinning.
   const recentMissionNames = React.useMemo(() => {

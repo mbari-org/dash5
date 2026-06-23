@@ -2,6 +2,7 @@ import {
   getFilteredUnitAbbreviations,
   UnitEntry,
   sortMissionPaths,
+  missionGroupLabel,
 } from './CommandModal'
 
 const TIME_UNITS: UnitEntry[] = [
@@ -21,6 +22,27 @@ const LENGTH_UNITS: UnitEntry[] = [
 ]
 
 const ALL_UNITS = [...TIME_UNITS, ...LENGTH_UNITS]
+
+describe('missionGroupLabel', () => {
+  test('returns the parent folder for normal paths', () => {
+    expect(missionGroupLabel('Science/sci2.tl')).toBe('Science')
+    expect(missionGroupLabel('Engineering/test.tl')).toBe('Engineering')
+  })
+
+  test('collapses all Deprecated/* sub-paths into a single "Deprecated" label', () => {
+    expect(missionGroupLabel('Deprecated/Demo/old.tl')).toBe('Deprecated')
+    expect(missionGroupLabel('Deprecated/BehaviorScripts/foo.xml')).toBe(
+      'Deprecated'
+    )
+    expect(missionGroupLabel('deprecated/Engineering/bar.tl')).toBe(
+      'Deprecated'
+    )
+  })
+
+  test('returns Standard Ops for paths with no folder', () => {
+    expect(missionGroupLabel('mission.tl')).toBe('Standard Ops')
+  })
+})
 
 describe('sortMissionPaths', () => {
   const paths = [
