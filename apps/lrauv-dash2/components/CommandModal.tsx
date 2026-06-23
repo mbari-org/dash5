@@ -218,10 +218,14 @@ export const CommandModal: React.FC<CommandModalProps> = ({
 
   const filteredUnitAbbreviations = React.useMemo(() => {
     if (!selectedArgUnit) return allUnitAbbreviations
+    // Resolve the canonical base unit: e.g. "hour" → baseUnit "second",
+    // "meter_per_second" → no baseUnit so canonical base is itself.
+    const selectedUnitEntry = unitsData?.find((u) => u.name === selectedArgUnit)
+    const canonicalBase = selectedUnitEntry?.baseUnit ?? selectedArgUnit
     const compatible =
       unitsData
         ?.filter(
-          (u) => u.name === selectedArgUnit || u.baseUnit === selectedArgUnit
+          (u) => u.name === canonicalBase || u.baseUnit === canonicalBase
         )
         .map((u) => u.abbreviation) ?? []
     return compatible.length > 0 ? compatible : allUnitAbbreviations
