@@ -336,8 +336,9 @@ export const CommandModal: React.FC<CommandModalProps> = ({
   const serviceTypes = commandData?.serviceTypes ?? []
 
   // Flat sorted mission paths for both ARG_VARIABLE and ARG_MISSION pickers.
-  const allMissionPaths = (missionData?.list?.map((m) => m.path) ?? []).sort(
-    sortMissionPaths
+  const allMissionPaths = React.useMemo(
+    () => (missionData?.list?.map((m) => m.path) ?? []).sort(sortMissionPaths),
+    [missionData]
   )
 
   // Groups paths by folder prefix for the grouped dropdown headers.
