@@ -26,7 +26,7 @@ import { useRouter } from 'next/router'
 import toast from 'react-hot-toast'
 import useGlobalModalId from '../lib/useGlobalModalId'
 
-/** Pure helper — exported for testing. Returns the group label for a mission path, collapsing all Deprecated/* into a single "Deprecated" group so MissionCascader.groupPriority can deprioritize it correctly. */
+/** Pure helper — exported for testing. Returns the group label for a mission path, collapsing all Deprecated/* sub-paths into the single label "Deprecated" so the mission picker renders them as one deprioritized group at the bottom. */
 export const missionGroupLabel = (path: string): string => {
   if (path.toLowerCase().startsWith('deprecated/')) return 'Deprecated'
   const slash = path.lastIndexOf('/')
