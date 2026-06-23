@@ -1,4 +1,8 @@
-import { getFilteredUnitAbbreviations, UnitEntry } from './CommandModal'
+import {
+  getFilteredUnitAbbreviations,
+  UnitEntry,
+  sortMissionPaths,
+} from './CommandModal'
 
 const TIME_UNITS: UnitEntry[] = [
   { name: 'second', abbreviation: 's', baseUnit: undefined },
@@ -17,6 +21,48 @@ const LENGTH_UNITS: UnitEntry[] = [
 ]
 
 const ALL_UNITS = [...TIME_UNITS, ...LENGTH_UNITS]
+
+describe('sortMissionPaths', () => {
+  const paths = [
+    'Science/sci2.tl',
+    'Deprecated/Demo/old_mission.tl',
+    'Engineering/test.tl',
+    'Deprecated/BehaviorScripts/foo.xml',
+    'Transport/transit.tl',
+  ]
+
+  test('sorts Deprecated/ paths to the bottom', () => {
+    const sorted = [...paths].sort(sortMissionPaths)
+    const firstDeprecated = sorted.findIndex((p) =>
+      p.toLowerCase().startsWith('deprecated/')
+    )
+    const lastNonDeprecated = sorted.reduce(
+      (acc, p, i) => (!p.toLowerCase().startsWith('deprecated/') ? i : acc),
+      -1
+    )
+    expect(firstDeprecated).toBeGreaterThan(lastNonDeprecated)
+  })
+
+  test('keeps non-deprecated paths in alphabetical order', () => {
+    const sorted = [...paths].sort(sortMissionPaths)
+    const nonDeprecated = sorted.filter(
+      (p) => !p.toLowerCase().startsWith('deprecated/')
+    )
+    expect(nonDeprecated).toEqual(
+      [...nonDeprecated].sort((a, b) => a.localeCompare(b))
+    )
+  })
+
+  test('keeps deprecated paths in alphabetical order among themselves', () => {
+    const sorted = [...paths].sort(sortMissionPaths)
+    const deprecated = sorted.filter((p) =>
+      p.toLowerCase().startsWith('deprecated/')
+    )
+    expect(deprecated).toEqual(
+      [...deprecated].sort((a, b) => a.localeCompare(b))
+    )
+  })
+})
 
 describe('getFilteredUnitAbbreviations', () => {
   test('returns all abbreviations when selectedArgUnit is undefined', () => {

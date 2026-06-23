@@ -26,6 +26,14 @@ import { useRouter } from 'next/router'
 import toast from 'react-hot-toast'
 import useGlobalModalId from '../lib/useGlobalModalId'
 
+/** Pure helper — exported for testing. Sorts mission paths alphabetically with Deprecated/ pinned last. */
+export const sortMissionPaths = (a: string, b: string): number => {
+  const aDeprecated = a.toLowerCase().startsWith('deprecated/')
+  const bDeprecated = b.toLowerCase().startsWith('deprecated/')
+  if (aDeprecated !== bDeprecated) return aDeprecated ? 1 : -1
+  return a.localeCompare(b)
+}
+
 export interface UnitEntry {
   name: string
   abbreviation: string
@@ -321,7 +329,9 @@ export const CommandModal: React.FC<CommandModalProps> = ({
   const serviceTypes = commandData?.serviceTypes ?? []
 
   // Flat sorted mission paths for both ARG_VARIABLE and ARG_MISSION pickers.
-  const allMissionPaths = (missionData?.list?.map((m) => m.path) ?? []).sort()
+  const allMissionPaths = (missionData?.list?.map((m) => m.path) ?? []).sort(
+    sortMissionPaths
+  )
 
   // Groups paths by folder prefix for the grouped dropdown headers.
   const missionGroupBy = (path: string) => {
