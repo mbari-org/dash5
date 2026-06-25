@@ -143,9 +143,9 @@ As a safe default, build all three before starting the dev server for the first 
 
 ```bash
 # From the repo root
+yarn workspace @mbari/utils build
 yarn workspace @mbari/react-ui build
 yarn workspace @mbari/api-client build
-yarn workspace @mbari/utils build
 ```
 
 ### 2. Start the dev server
