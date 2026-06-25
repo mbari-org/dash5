@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import React, { useState, useRef, useEffect } from 'react'
 import {
   CommandModalView,
   CommandModalViewProps,
@@ -95,6 +95,20 @@ export const CommandModal: React.FC<CommandModalProps> = ({
     Element: '',
   })
 
+  // Stable ref wired by CommandModalView so we can push corrected ARG_VARIABLE
+  // values after the mission script loads.
+  const forceUpdateParamsRef = useRef<
+    ((params: Record<string, string>) => void) | null
+  >(null)
+
+  // Stores the raw paramPart + missionPath from the most recent amend parse so
+  // that the resolution useEffect below can find the correct element name once
+  // selectedMissionData is available.
+  const pendingAmendRef = useRef<{
+    missionPath: string
+    paramPart: string
+  } | null>(null)
+
   const steps = ['Command', 'Build', 'Schedule']
   const router = useRouter()
   const params = (router.query?.deployment ?? []) as string[]
@@ -183,6 +197,11 @@ export const CommandModal: React.FC<CommandModalProps> = ({
 
         params['ARG_VARIABLE'] = cumulativeId
         setVariable(mapValues(cumulativeId))
+
+        // Store for deferred resolution: if paramPart is the bare name of an
+        // insert arg (e.g. 'MedianFilterLen' → 'Science.MedianFilterLen'), the
+        // useEffect below will correct ARG_VARIABLE once the script data loads.
+        pendingAmendRef.current = { missionPath: fullPath, paramPart: element }
       }
 
       if (value) params['ARG_LIST'] = value
@@ -381,6 +400,39 @@ export const CommandModal: React.FC<CommandModalProps> = ({
       ].sort()
     : []
 
+  // When amend parsed a paramPart using the '.' separator (root-arg format) but
+  // the element only exists in an insert (e.g. 'MedianFilterLen' → 'Science.MedianFilterLen'),
+  // the initial cumulative ID won't match any option in elementOptions. Once the
+  // mission script loads, re-check and push the corrected ARG_VARIABLE so the
+  // Element dropdown shows the right selection.
+  useEffect(() => {
+    const pending = pendingAmendRef.current
+    if (!pending || elementOptions.length === 0) return
+    const { missionPath, paramPart } = pending
+
+    // Exact match → already correct, no correction needed.
+    if (elementOptions.includes(paramPart)) {
+      pendingAmendRef.current = null
+      return
+    }
+
+    // Suffix match: paramPart is the bare name of an insert arg (e.g. 'MedianFilterLen'
+    // matching 'Science.MedianFilterLen').
+    const suffixMatch = elementOptions.find((o) => o.endsWith(`.${paramPart}`))
+    if (suffixMatch) {
+      const varTypeTier = `Variable Type${L_SEPARATOR}Mission`
+      const missionTier = `Mission${L_SEPARATOR}${missionPath}`
+      const elementTier = `Element${L_SEPARATOR}${suffixMatch}`
+      const resolvedId = [varTypeTier, missionTier, elementTier].join(
+        V_SEPARATOR
+      )
+      setVariable(mapValues(resolvedId))
+      forceUpdateParamsRef.current?.({ ARG_VARIABLE: resolvedId })
+    }
+
+    pendingAmendRef.current = null
+  }, [elementOptions])
+
   const variableTypes: OptionSet[] = [
     { name: 'Variable Type', options: ['Mission', 'Universal', 'Component'] },
   ]
@@ -439,6 +491,7 @@ export const CommandModal: React.FC<CommandModalProps> = ({
       showAdvanced={!hideAdvanced}
       onToggleAdvanced={() => setHideAdvanced((v) => !v)}
       onAmendCommand={handleAmendCommand}
+      forceUpdateParamsRef={forceUpdateParamsRef}
       onUpdateField={handleUpdatedField}
       onResetParameters={() =>
         setVariable({

@@ -69,6 +69,15 @@ export interface CommandModalViewProps
   vehicles?: string[]
   /** Called when user clicks Amend Command; returns initial selectedParameters to pre-fill. */
   onAmendCommand?: (commandText: string) => Record<string, string>
+  /**
+   * Stable ref whose `.current` is wired by CommandModalBody to its internal
+   * setSelectedParameters. CommandModal uses it to push a corrected
+   * ARG_VARIABLE value after the mission script loads and the element can be
+   * resolved to the correct insert-arg name (e.g. "Science.MedianFilterLen").
+   */
+  forceUpdateParamsRef?: React.MutableRefObject<
+    ((params: Record<string, string>) => void) | null
+  >
 }
 
 export const CommandModalView: React.FC<CommandModalViewProps> = (props) => (
@@ -114,6 +123,7 @@ const CommandModalBody: React.FC<CommandModalViewProps> = ({
   onToggleAdvanced: handleToggleAdvanced,
   onAmendCommand: handleAmendCommandExternal,
   defaultCommand,
+  forceUpdateParamsRef,
 }) => {
   const [selectedCommandId, setSelectedCommandId] =
     useState<SelectCommandStepProps['selectedId']>(selectedId)
@@ -219,6 +229,18 @@ const CommandModalBody: React.FC<CommandModalViewProps> = ({
   const [selectedParameters, setSelectedParameters] = useState<{
     [key: string]: string
   }>({})
+
+  // Wire forceUpdateParamsRef so CommandModal can push a corrected ARG_VARIABLE
+  // after the mission script loads and the element name is resolved.
+  useEffect(() => {
+    if (!forceUpdateParamsRef) return
+    forceUpdateParamsRef.current = (params) => {
+      setSelectedParameters((prev) => ({ ...prev, ...params }))
+    }
+    return () => {
+      forceUpdateParamsRef.current = null
+    }
+  }, [forceUpdateParamsRef])
 
   const handleTemplateParameterChange: BuildTemplatedCommandStepProps['onUpdateField'] =
     (param, argType, value) => {
