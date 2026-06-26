@@ -259,6 +259,13 @@ export const MissionCascader: React.FC<MissionCascaderProps> = ({
                 type="text"
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Escape') {
+                    e.preventDefault()
+                    setIsOpen(false)
+                    setSearch('')
+                  }
+                }}
                 placeholder="Search missions…"
                 className="w-full text-sm text-gray-700 outline-none placeholder:text-gray-400"
               />

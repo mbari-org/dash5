@@ -264,15 +264,25 @@ const CommandModalBody: React.FC<CommandModalViewProps> = ({
     if (matchingCommand) {
       // Parse and store initial params — applied after the reset useEffect fires
       const initialParams = handleAmendCommandExternal?.(text) ?? {}
-      pendingInitialParams.current = Object.keys(initialParams).length
-        ? initialParams
-        : null
+      const hasParams = Object.keys(initialParams).length > 0
       // Use the canonical keyword (id) so the correct keyword is sent to the vehicle,
       // not a display alias such as 'failc' instead of 'failComponent'
       setSelectedCommandName(matchingCommand.id)
-      setSelectedCommandId(matchingCommand.id)
       setUseTemplateStep(true)
       onSelectCommandId?.(matchingCommand.id)
+      if (matchingCommand.id === selectedCommandId) {
+        // The [selectedCommandId] effect won't re-fire when the id is unchanged,
+        // so apply params immediately and force a syntax re-select so the template
+        // step rebuilds with the corrected args.
+        setSelectedParameters(hasParams ? initialParams : {})
+        pendingInitialParams.current = null
+        skipNextSyntaxReset.current = hasParams
+        setSelectedCommandId(matchingCommand.id + ' ')
+        setTimeout(() => setSelectedCommandId(matchingCommand.id), 0)
+      } else {
+        pendingInitialParams.current = hasParams ? initialParams : null
+        setSelectedCommandId(matchingCommand.id)
+      }
     }
   }
 
