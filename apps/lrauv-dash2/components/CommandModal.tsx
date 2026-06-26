@@ -189,10 +189,12 @@ export const CommandModal: React.FC<CommandModalProps> = ({
     )
     if (setMatch) {
       const [, missionName, separator, paramPart, rawRest] = setMatch
-      // Trim trailing whitespace so that command strings stored with a trailing
-      // space ("set x:y 0 bool ") don't cause lastIndexOf(' ') to land on the
-      // trailing space, leaving candidate empty and breaking unit detection.
-      const rest = rawRest.trimEnd()
+      // Strip trailing semicolons and whitespace. TethysDash stores set commands
+      // as part of a semicolon-delimited string (e.g. "load ...;set x:y 1 bool;run"),
+      // so event.data can end with "bool;" — which breaks unit detection because
+      // "bool;" !== "bool". The semicolon is a syntax separator only; the command
+      // builder reconstructs the outgoing text independently, so it is safe to drop.
+      const rest = rawRest.replace(/[;\s]+$/, '')
       // Only treat the trailing token as a unit when it matches a known unit
       // abbreviation. Without this guard, multi-token values like ARG_LIST
       // ("1.5, 2.0") would have their last number mis-parsed as a unit.
