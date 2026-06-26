@@ -247,10 +247,15 @@ const ScienceDataSection: React.FC<{
     error,
   } = isExtended ? deploymentQuery : latestQuery
 
-  // While logsets are still loading / auto-selecting, latestQuery is disabled
-  // (isLoading = false). Treat that wait as loading so the empty-state message
-  // doesn't appear prematurely before any data has been fetched.
-  const isLoading = queryIsLoading || (!isExtended && !logsetReady)
+  // Treat the following as loading so the empty-state message doesn't appear
+  // prematurely before any query can run:
+  //   • latest view: logsets are still loading / auto-selecting
+  //   • extended view: deploymentFrom hasn't loaded yet (still 0 / initial value),
+  //     so the hook's internal guards keep all sub-queries disabled
+  const isLoading =
+    queryIsLoading ||
+    (!isExtended && !logsetReady) ||
+    (isExtended && deploymentFrom <= 0)
 
   const charts = chartData?.filter((d) =>
     category === 'vehicle'

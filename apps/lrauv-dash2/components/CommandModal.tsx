@@ -157,7 +157,7 @@ export const CommandModal: React.FC<CommandModalProps> = ({
       path: missionPath,
       gitRef: missionData?.gitRef ?? 'master',
     },
-    { enabled: missionPath !== '' }
+    { enabled: missionPath !== '' && variable['Variable Type'] === 'Mission' }
   )
 
   const handleAmendCommand = (commandText: string): Record<string, string> => {
@@ -166,7 +166,7 @@ export const CommandModal: React.FC<CommandModalProps> = ({
     // Capture the entire rest-of-line so multi-token values (ARG_LIST) are
     // preserved. The last space-delimited token is treated as an optional unit.
     const setMatch = commandText.match(
-      /^set\s+([a-zA-Z0-9_]+)([.:])([a-zA-Z0-9_.]+)\s+(.+)$/
+      /^set\s+([-a-zA-Z0-9_]+)([.:])([a-zA-Z0-9_.]+)\s+(.+)$/
     )
     if (setMatch) {
       const [, missionName, separator, paramPart, rest] = setMatch
@@ -369,11 +369,11 @@ export const CommandModal: React.FC<CommandModalProps> = ({
     recentCommandsData?.forEach((c) => {
       const cmd = c?.writtenCommand ?? ''
       // set missionname.param ... or set missionname:Section.param ...
-      const setMatch = cmd.match(/^set\s+([a-zA-Z0-9_]+)[.:]/)
+      const setMatch = cmd.match(/^set\s+([-a-zA-Z0-9_]+)[.:]/)
       if (setMatch) names.add(setMatch[1])
       // load path/missionname.tl/.xml/.py
       const loadMatch = cmd.match(
-        /load\s+(?:\S+\/)?([a-zA-Z0-9_]+)\.(tl|xml|py)/i
+        /load\s+(?:\S+\/)?([-a-zA-Z0-9_]+)\.(tl|xml|py)/i
       )
       if (loadMatch) names.add(loadMatch[1])
     })
