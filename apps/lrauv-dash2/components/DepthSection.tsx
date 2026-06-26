@@ -146,7 +146,11 @@ const DepthSection: React.FC<{
         { instance: axiosInstance ?? undefined }
       ),
     {
-      enabled: isExtended && !!axiosInstance && extendedFrom > 0,
+      enabled:
+        isExtended &&
+        !!axiosInstance &&
+        !!vehicleName &&
+        extendedFrom > 1_000_000_000_000,
       staleTime: 5 * 60 * 1000,
     }
   )
