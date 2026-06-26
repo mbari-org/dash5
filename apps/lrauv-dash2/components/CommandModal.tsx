@@ -174,9 +174,23 @@ export const CommandModal: React.FC<CommandModalProps> = ({
       // abbreviation. Without this guard, multi-token values like ARG_LIST
       // ("1.5, 2.0") would have their last number mis-parsed as a unit.
       const knownUnits = new Set(unitsData?.map((u) => u.abbreviation) ?? [])
+      // LRAUV type annotations appear as trailing tokens in set commands but
+      // are not returned by /commands/units (they're types, not physical units).
+      const LRAUV_TYPE_ANNOTATIONS = new Set([
+        'bool',
+        'enum',
+        'string',
+        'int',
+        'uint',
+        'float',
+        'double',
+      ])
       const lastSpace = rest.lastIndexOf(' ')
       const candidate = lastSpace >= 0 ? rest.slice(lastSpace + 1) : ''
-      const isKnownUnit = candidate !== '' && knownUnits.has(candidate)
+      const isKnownUnit =
+        candidate !== '' &&
+        (knownUnits.has(candidate) ||
+          LRAUV_TYPE_ANNOTATIONS.has(candidate.toLowerCase()))
       const value = isKnownUnit ? rest.slice(0, lastSpace) : rest
       const unit = isKnownUnit ? candidate : undefined
 
