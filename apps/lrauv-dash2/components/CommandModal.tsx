@@ -189,10 +189,10 @@ export const CommandModal: React.FC<CommandModalProps> = ({
     )
     if (setMatch) {
       const [, missionName, separator, paramPart, rawRest] = setMatch
-      // Trim trailing whitespace and semicolons so that command strings like
-      // "set x:y 0 bool;" or "set x:y 0 bool " don't leave the trailing
-      // character inside `candidate` and break the unit-detection logic.
-      const rest = rawRest.replace(/[;\s]+$/, '')
+      // Trim trailing whitespace so that command strings stored with a trailing
+      // space ("set x:y 0 bool ") don't cause lastIndexOf(' ') to land on the
+      // trailing space, leaving candidate empty and breaking unit detection.
+      const rest = rawRest.trimEnd()
       // Only treat the trailing token as a unit when it matches a known unit
       // abbreviation. Without this guard, multi-token values like ARG_LIST
       // ("1.5, 2.0") would have their last number mis-parsed as a unit.
