@@ -233,6 +233,13 @@ export const MissionCascader: React.FC<MissionCascaderProps> = ({
             ref={dropdownRef}
             role="listbox"
             aria-label="Mission"
+            onKeyDown={(e) => {
+              if (e.key === 'Escape') {
+                e.preventDefault()
+                setIsOpen(false)
+                setSearch('')
+              }
+            }}
             className="fixed z-[9999] min-w-[280px] overflow-hidden rounded border border-gray-200 bg-white shadow-lg"
             style={{
               top: dropdownPos.top + 4,
