@@ -231,6 +231,8 @@ export const MissionCascader: React.FC<MissionCascaderProps> = ({
         createPortal(
           <div
             ref={dropdownRef}
+            role="listbox"
+            aria-label="Mission"
             className="fixed z-[9999] min-w-[280px] overflow-hidden rounded border border-gray-200 bg-white shadow-lg"
             style={{
               top: dropdownPos.top + 4,
