@@ -47,6 +47,18 @@ export interface UnitEntry {
   baseUnit?: string
 }
 
+// LRAUV type annotations used as parameter units — not returned by
+// /commands/units but must appear as selectable options in the unit dropdown.
+export const LRAUV_TYPE_ANNOTATIONS = new Set([
+  'bool',
+  'enum',
+  'string',
+  'int',
+  'uint',
+  'float',
+  'double',
+])
+
 /** Pure helper — exported for testing. */
 export const getFilteredUnitAbbreviations = (
   unitsData: UnitEntry[] | undefined,
@@ -54,6 +66,13 @@ export const getFilteredUnitAbbreviations = (
 ): string[] => {
   const all = unitsData?.map((u) => u.abbreviation) ?? []
   if (!selectedArgUnit) return all
+
+  // Type annotations (bool, enum, etc.) are not in unitsData. Return only the
+  // annotation itself so the dropdown shows exactly one correct option.
+  if (LRAUV_TYPE_ANNOTATIONS.has(selectedArgUnit.toLowerCase())) {
+    return [selectedArgUnit]
+  }
+
   const selectedUnitEntry = unitsData?.find((u) => u.name === selectedArgUnit)
   const canonicalBase = selectedUnitEntry?.baseUnit ?? selectedArgUnit
   const compatible =
@@ -174,17 +193,6 @@ export const CommandModal: React.FC<CommandModalProps> = ({
       // abbreviation. Without this guard, multi-token values like ARG_LIST
       // ("1.5, 2.0") would have their last number mis-parsed as a unit.
       const knownUnits = new Set(unitsData?.map((u) => u.abbreviation) ?? [])
-      // LRAUV type annotations appear as trailing tokens in set commands but
-      // are not returned by /commands/units (they're types, not physical units).
-      const LRAUV_TYPE_ANNOTATIONS = new Set([
-        'bool',
-        'enum',
-        'string',
-        'int',
-        'uint',
-        'float',
-        'double',
-      ])
       const lastSpace = rest.lastIndexOf(' ')
       const candidate = lastSpace >= 0 ? rest.slice(lastSpace + 1) : ''
       const isKnownUnit =
