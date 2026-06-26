@@ -223,11 +223,16 @@ export const CommandModal: React.FC<CommandModalProps> = ({
     argType,
     value
   ) => {
+    // ARG_VARIABLE / ARG_COMPONENT / ARG_CONFIG_VARIABLE drive cascading
+    // dropdowns via the variable state (Variable Type → Mission → Element).
+    // ARG_MISSION (load/run commands) is intentionally excluded: the selected
+    // mission is already captured in selectedParameters via the standard param
+    // path, and merging it into variable would overwrite Variable Type / Element
+    // and break the mission-script query for any prior set-command selection.
     if (
       argType === 'ARG_VARIABLE' ||
       argType === 'ARG_COMPONENT' ||
-      argType === 'ARG_CONFIG_VARIABLE' ||
-      argType === 'ARG_MISSION'
+      argType === 'ARG_CONFIG_VARIABLE'
     ) {
       setVariable(mapValues(value))
     }
