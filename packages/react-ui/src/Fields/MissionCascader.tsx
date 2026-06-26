@@ -267,6 +267,7 @@ export const MissionCascader: React.FC<MissionCascaderProps> = ({
                   }
                 }}
                 placeholder="Search missions…"
+                aria-label="Search missions"
                 className="w-full text-sm text-gray-700 outline-none placeholder:text-gray-400"
               />
             </div>
