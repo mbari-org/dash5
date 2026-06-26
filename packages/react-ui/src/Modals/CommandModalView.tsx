@@ -63,9 +63,21 @@ export interface CommandModalViewProps
   variableTypes?: OptionSet[]
   universals?: OptionSet[]
   onUpdateField?: CommandDetailProps['onSelect']
+  onResetParameters?: () => void
   onSelectModule?: (module: string) => void
   onSelectOutputUri?: (outputUri: string) => void
   vehicles?: string[]
+  /** Called when user clicks Amend Command; returns initial selectedParameters to pre-fill. */
+  onAmendCommand?: (commandText: string) => Record<string, string>
+  /**
+   * Stable ref whose `.current` is wired by CommandModalBody to its internal
+   * setSelectedParameters. CommandModal uses it to push a corrected
+   * ARG_VARIABLE value after the mission script loads and the element can be
+   * resolved to the correct insert-arg name (e.g. "Science.MedianFilterLen").
+   */
+  forceUpdateParamsRef?: React.MutableRefObject<
+    ((params: Record<string, string>) => void) | null
+  >
 }
 
 export const CommandModalView: React.FC<CommandModalViewProps> = (props) => (
@@ -106,7 +118,12 @@ const CommandModalBody: React.FC<CommandModalViewProps> = ({
   universals,
   decimationTypes,
   onUpdateField: handleUpdatedField,
+  onResetParameters: handleResetParameters,
+  showAdvanced,
+  onToggleAdvanced: handleToggleAdvanced,
+  onAmendCommand: handleAmendCommandExternal,
   defaultCommand,
+  forceUpdateParamsRef,
 }) => {
   const [selectedCommandId, setSelectedCommandId] =
     useState<SelectCommandStepProps['selectedId']>(selectedId)
@@ -213,6 +230,18 @@ const CommandModalBody: React.FC<CommandModalViewProps> = ({
     [key: string]: string
   }>({})
 
+  // Wire forceUpdateParamsRef so CommandModal can push a corrected ARG_VARIABLE
+  // after the mission script loads and the element name is resolved.
+  useEffect(() => {
+    if (!forceUpdateParamsRef) return
+    forceUpdateParamsRef.current = (params) => {
+      setSelectedParameters((prev) => ({ ...prev, ...params }))
+    }
+    return () => {
+      forceUpdateParamsRef.current = null
+    }
+  }, [forceUpdateParamsRef])
+
   const handleTemplateParameterChange: BuildTemplatedCommandStepProps['onUpdateField'] =
     (param, argType, value) => {
       const lookup = argType === 'ARG_KEYWORD' ? param : argType
@@ -220,17 +249,87 @@ const CommandModalBody: React.FC<CommandModalViewProps> = ({
       handleUpdatedField?.(param, argType, value)
     }
 
-  /* Reset params when command or syntax changes */
-  const lastSyntax = useRef({ selectedSyntax, selectedCommandId })
-  useEffect(() => {
-    if (
-      selectedCommandId !== lastSyntax.current.selectedCommandId ||
-      selectedSyntax !== lastSyntax.current.selectedSyntax
-    ) {
-      setSelectedParameters({})
-      lastSyntax.current = { selectedSyntax, selectedCommandId }
+  const handleReset = () => {
+    setSelectedParameters({})
+    setSelectedSyntax(null)
+    handleResetParameters?.()
+  }
+
+  const handleAmendCommand = () => {
+    const text = commandText ?? selectedCommandName ?? ''
+    const keyword = text.trim().split(/\s+/)[0]?.toLowerCase()
+    const matchingCommand = commands.find(
+      (c) => c.id.toLowerCase() === keyword || c.name.toLowerCase() === keyword
+    )
+    if (matchingCommand) {
+      // Parse and store initial params — applied after the reset useEffect fires
+      const initialParams = handleAmendCommandExternal?.(text) ?? {}
+      const hasParams = Object.keys(initialParams).length > 0
+      // Use the canonical keyword (id) so the correct keyword is sent to the vehicle,
+      // not a display alias such as 'failc' instead of 'failComponent'
+      setSelectedCommandName(matchingCommand.id)
+      setUseTemplateStep(true)
+      onSelectCommandId?.(matchingCommand.id)
+      if (matchingCommand.id === selectedCommandId) {
+        // The [selectedCommandId] effect won't re-fire when the id is unchanged.
+        // Apply params directly — setSelectedParameters alone triggers a
+        // re-render of the template step with the corrected args, so no dummy
+        // id toggle is needed (and any such toggle would cause the effect to
+        // fire and immediately wipe the params back to {}).
+        // skipNextSyntaxReset prevents the [selectedSyntax] effect from resetting.
+        if (amendResetTimeoutRef.current != null) {
+          clearTimeout(amendResetTimeoutRef.current)
+          amendResetTimeoutRef.current = null
+        }
+        setSelectedParameters(hasParams ? initialParams : {})
+        pendingInitialParams.current = null
+        skipNextSyntaxReset.current = hasParams
+      } else {
+        pendingInitialParams.current = hasParams ? initialParams : null
+        setSelectedCommandId(matchingCommand.id)
+      }
     }
-  }, [selectedCommandId, selectedSyntax])
+  }
+
+  /* Reset params when command changes; apply pending amend params if present.
+     skipNextSyntaxReset is set when a command changes so the first
+     auto-selected syntax (from BuildTemplatedCommandStep mount) doesn't wipe
+     the amend params that were just applied. Subsequent manual syntax switches
+     by the user DO reset params as expected. */
+  const pendingInitialParams = useRef<Record<string, string> | null>(null)
+  const lastCommandId = useRef(selectedCommandId)
+  const skipNextSyntaxReset = useRef(false)
+  const amendResetTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(
+    null
+  )
+
+  // Cancel any in-flight amend reset timer when the modal unmounts so we
+  // don't trigger state updates on an unmounted component.
+  useEffect(() => {
+    return () => {
+      if (amendResetTimeoutRef.current != null) {
+        clearTimeout(amendResetTimeoutRef.current)
+      }
+    }
+  }, [])
+
+  useEffect(() => {
+    if (selectedCommandId !== lastCommandId.current) {
+      setSelectedParameters(pendingInitialParams.current ?? {})
+      pendingInitialParams.current = null
+      lastCommandId.current = selectedCommandId
+      skipNextSyntaxReset.current = true
+    }
+  }, [selectedCommandId])
+
+  useEffect(() => {
+    if (!selectedSyntax) return
+    if (skipNextSyntaxReset.current) {
+      skipNextSyntaxReset.current = false
+      return
+    }
+    setSelectedParameters({})
+  }, [selectedSyntax])
 
   const handleSchedule = () => {
     onSchedule({
@@ -272,6 +371,27 @@ const CommandModalBody: React.FC<CommandModalViewProps> = ({
       onCancel={onCancel}
       confirmButtonText={confirmButtonText}
       extraButtons={extraButtons()}
+      leftExtraButtons={
+        currentStep === 1
+          ? useTemplateStep
+            ? [
+                {
+                  buttonText: 'Reset',
+                  appearance: 'secondary',
+                  onClick: handleReset,
+                },
+              ]
+            : handleAmendCommandExternal
+            ? [
+                {
+                  buttonText: 'Amend Command',
+                  appearance: 'secondary',
+                  onClick: handleAmendCommand,
+                },
+              ]
+            : []
+          : []
+      }
       extraWideModal
       bodyOverflowHidden
       snapTo="top-right"
@@ -286,6 +406,8 @@ const CommandModalBody: React.FC<CommandModalViewProps> = ({
           onSelectCommandId={handleSelectCommandId}
           onMoreInfo={handleMoreInfo}
           vehicleName={vehicleName}
+          showAdvanced={showAdvanced}
+          onToggleAdvanced={handleToggleAdvanced}
         />
       )}
 
@@ -308,7 +430,7 @@ const CommandModalBody: React.FC<CommandModalViewProps> = ({
             commands={[
               {
                 name: 'Command',
-                options: commands.map((c) => c.name),
+                options: commands.map((c) => c.id),
               },
             ]}
             onCommandTextChange={setCommandText}

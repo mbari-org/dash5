@@ -89,7 +89,6 @@ export const BatteryModal: React.FC<BatteryModalProps> = ({
         <ScienceCell
           color="#666"
           unit={data?.units ?? ''}
-          title={data?.name ?? 'Data'}
           name={data?.name ?? 'Unknown'}
           values={data?.values}
           times={data?.times}

@@ -33,6 +33,7 @@ import { HexColorPicker } from 'react-colorful'
 import { useCookies } from 'react-cookie'
 import EmailNotificationsModal from './EmailNotificationsModal'
 import ScheduleEventDetailsModal from './ScheduleEventDetailsModal'
+import ServerHealthModal from './ServerHealthModal'
 
 const Layout: React.FC<{ children?: React.ReactNode }> = ({ children }) => {
   const [showLogin, setLogin] = useState(false)
@@ -146,6 +147,19 @@ const Layout: React.FC<{ children?: React.ReactNode }> = ({ children }) => {
                         dismissDropdown()
                       },
                     },
+                    ...(profile?.roles?.some(
+                      (r) => r === 'operator' || r === 'admin'
+                    )
+                      ? [
+                          {
+                            label: 'Server Status',
+                            onSelect: () => {
+                              setGlobalModalId({ id: 'serverHealth' })
+                              dismissDropdown()
+                            },
+                          },
+                        ]
+                      : []),
                     {
                       label: 'Logout',
                       onSelect: handleLogout,
@@ -233,6 +247,8 @@ const Layout: React.FC<{ children?: React.ReactNode }> = ({ children }) => {
         requireAuthentication(
           <EmailNotificationsModal onClose={setModal(null)} />
         )}
+      {globalModalId?.id === 'serverHealth' &&
+        requireAuthentication(<ServerHealthModal onClose={setModal(null)} />)}
       {/* {globalModalId?.id === 'color' && vehicleName.length > 0 ? (
         <ColorModal name={trackedVehicles[index]} color={color} />
       ) : null} */}
