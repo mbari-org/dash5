@@ -277,8 +277,17 @@ const CommandModalBody: React.FC<CommandModalViewProps> = ({
         setSelectedParameters(hasParams ? initialParams : {})
         pendingInitialParams.current = null
         skipNextSyntaxReset.current = hasParams
+        // Force the [selectedCommandId] effect to re-run by briefly setting a
+        // dummy id then restoring. Cancel any previous pending reset first so
+        // rapid amend clicks don't queue multiple conflicting state updates.
+        if (amendResetTimeoutRef.current != null) {
+          clearTimeout(amendResetTimeoutRef.current)
+        }
         setSelectedCommandId(matchingCommand.id + ' ')
-        setTimeout(() => setSelectedCommandId(matchingCommand.id), 0)
+        amendResetTimeoutRef.current = setTimeout(() => {
+          amendResetTimeoutRef.current = null
+          setSelectedCommandId(matchingCommand.id)
+        }, 0)
       } else {
         pendingInitialParams.current = hasParams ? initialParams : null
         setSelectedCommandId(matchingCommand.id)
@@ -294,6 +303,19 @@ const CommandModalBody: React.FC<CommandModalViewProps> = ({
   const pendingInitialParams = useRef<Record<string, string> | null>(null)
   const lastCommandId = useRef(selectedCommandId)
   const skipNextSyntaxReset = useRef(false)
+  const amendResetTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(
+    null
+  )
+
+  // Cancel any in-flight amend reset timer when the modal unmounts so we
+  // don't trigger state updates on an unmounted component.
+  useEffect(() => {
+    return () => {
+      if (amendResetTimeoutRef.current != null) {
+        clearTimeout(amendResetTimeoutRef.current)
+      }
+    }
+  }, [])
 
   useEffect(() => {
     if (selectedCommandId !== lastCommandId.current) {
