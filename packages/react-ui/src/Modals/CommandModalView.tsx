@@ -271,23 +271,19 @@ const CommandModalBody: React.FC<CommandModalViewProps> = ({
       setUseTemplateStep(true)
       onSelectCommandId?.(matchingCommand.id)
       if (matchingCommand.id === selectedCommandId) {
-        // The [selectedCommandId] effect won't re-fire when the id is unchanged,
-        // so apply params immediately and force a syntax re-select so the template
-        // step rebuilds with the corrected args.
+        // The [selectedCommandId] effect won't re-fire when the id is unchanged.
+        // Apply params directly — setSelectedParameters alone triggers a
+        // re-render of the template step with the corrected args, so no dummy
+        // id toggle is needed (and any such toggle would cause the effect to
+        // fire and immediately wipe the params back to {}).
+        // skipNextSyntaxReset prevents the [selectedSyntax] effect from resetting.
+        if (amendResetTimeoutRef.current != null) {
+          clearTimeout(amendResetTimeoutRef.current)
+          amendResetTimeoutRef.current = null
+        }
         setSelectedParameters(hasParams ? initialParams : {})
         pendingInitialParams.current = null
         skipNextSyntaxReset.current = hasParams
-        // Force the [selectedCommandId] effect to re-run by briefly setting a
-        // dummy id then restoring. Cancel any previous pending reset first so
-        // rapid amend clicks don't queue multiple conflicting state updates.
-        if (amendResetTimeoutRef.current != null) {
-          clearTimeout(amendResetTimeoutRef.current)
-        }
-        setSelectedCommandId(matchingCommand.id + ' ')
-        amendResetTimeoutRef.current = setTimeout(() => {
-          amendResetTimeoutRef.current = null
-          setSelectedCommandId(matchingCommand.id)
-        }, 0)
       } else {
         pendingInitialParams.current = hasParams ? initialParams : null
         setSelectedCommandId(matchingCommand.id)
