@@ -170,9 +170,15 @@ export const CommandModal: React.FC<CommandModalProps> = ({
     )
     if (setMatch) {
       const [, missionName, separator, paramPart, rest] = setMatch
+      // Only treat the trailing token as a unit when it matches a known unit
+      // abbreviation. Without this guard, multi-token values like ARG_LIST
+      // ("1.5, 2.0") would have their last number mis-parsed as a unit.
+      const knownUnits = new Set(unitsData?.map((u) => u.abbreviation) ?? [])
       const lastSpace = rest.lastIndexOf(' ')
-      const value = lastSpace >= 0 ? rest.slice(0, lastSpace) : rest
-      const unit = lastSpace >= 0 ? rest.slice(lastSpace + 1) : undefined
+      const candidate = lastSpace >= 0 ? rest.slice(lastSpace + 1) : ''
+      const isKnownUnit = candidate !== '' && knownUnits.has(candidate)
+      const value = isKnownUnit ? rest.slice(0, lastSpace) : rest
+      const unit = isKnownUnit ? candidate : undefined
 
       // Find full mission path (e.g. "Science/sci2_circle_hotspot.tl")
       const fullPath = allMissionPaths.find((p) => {

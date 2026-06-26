@@ -257,7 +257,7 @@ const CommandModalBody: React.FC<CommandModalViewProps> = ({
 
   const handleAmendCommand = () => {
     const text = commandText ?? selectedCommandName ?? ''
-    const keyword = text.split(/\s+/)[0]?.toLowerCase()
+    const keyword = text.trim().split(/\s+/)[0]?.toLowerCase()
     const matchingCommand = commands.find(
       (c) => c.id.toLowerCase() === keyword || c.name.toLowerCase() === keyword
     )
