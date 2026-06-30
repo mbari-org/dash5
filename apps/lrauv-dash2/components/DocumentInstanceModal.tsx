@@ -160,6 +160,7 @@ const DocumentInstanceModal: React.FC<{ onClose?: () => void }> = ({
       lastLoadedExistingId.current !== currentDocInstanceId &&
       existingInstanceQuery.isSuccess &&
       existingData != null &&
+      existingData.text != null &&
       currentDocInstanceId
     ) {
       lastLoadedExistingId.current = currentDocInstanceId

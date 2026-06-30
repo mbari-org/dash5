@@ -224,7 +224,7 @@ const VehicleDiagram: React.FC<{
     colorWhiteled: vehicle?.color_whiteled,
     colorRedbeam: vehicle?.color_redbeam,
     colorRedled: vehicle?.color_redled,
-    textArriveLabel: vehicle?.text_waypoint ?? 'Arrive at Station',
+    textArriveLabel: vehicle?.text_waypoint,
     colorVoltThresh: vehicle?.color_voltthresh,
     textVoltThresh: vehicle?.text_voltthresh,
     colorAmpThresh: vehicle?.color_ampthresh,
