@@ -269,8 +269,6 @@ const DeploymentMap: React.FC<DeploymentMapProps> = ({
       }, 200)
     }
   }, [showVehicleColors])
-  // Store all vehicle locations to calculate center
-  const vehiclePosition = useRef<Array<[number, number]>>([])
   // Vehicle path points for bounds calculation
   const pathPoints = useRef<Array<[number, number]>>([])
 
@@ -295,24 +293,21 @@ const DeploymentMap: React.FC<DeploymentMapProps> = ({
       if (!latestGPS) {
         // First fix — initialize
         setLatestGPS(gps)
-      } else if (gps.isoTime > latestGPS.isoTime) {
+      } else if (gps.unixTime > latestGPS.unixTime) {
         // Newer fix arrived — update so the center button zooms to current position
         setLatestGPS(gps)
-      } else if (gps.isoTime < latestGPS.isoTime) {
+      } else if (gps.unixTime < latestGPS.unixTime) {
         // Incoming fix is older than what we have — vehicle or deployment changed;
-        // reset both accumulated arrays so bounds/centering don't use stale points.
-        vehiclePosition.current = []
+        // reset accumulated path so bounds/centering don't draw on stale points.
         pathPoints.current = []
         setLatestGPS(gps)
       }
-      // Equal isoTime: same fix, no-op
+      // Equal unixTime: same fix, no-op
       if (Number.isFinite(gps?.latitude) && Number.isFinite(gps?.longitude)) {
         pathPoints.current.push([gps.latitude, gps.longitude])
         if (pathPoints.current.length > 1000) {
           pathPoints.current = pathPoints.current.slice(-1000)
         }
-        const position: [number, number] = [gps.latitude, gps.longitude]
-        vehiclePosition.current.push(position)
       }
     },
     [latestGPS, setLatestGPS]
