@@ -98,7 +98,7 @@ const DocumentInstanceModal: React.FC<{ onClose?: () => void }> = ({
     existingInstanceQuery.isLoading || sourceInstanceQuery.isLoading
 
   // Fetch docType for mode switching
-  const { data: docs } = useDocuments(
+  const { data: docs, isLoading: docsLoading } = useDocuments(
     existingData?.docId ? { docId: String(existingData.docId) } : undefined,
     { enabled: !!existingData?.docId }
   )
@@ -395,9 +395,11 @@ const DocumentInstanceModal: React.FC<{ onClose?: () => void }> = ({
       return false
     }
 
-    // For duplicates, block save until the docs query resolves so existingDocType
-    // reflects the real source type (not the 'NORMAL' fallback).
-    if (duplicate && !docs) {
+    // For duplicates, block save while the docs query is still in flight so
+    // existingDocType reflects the real source type (not the 'NORMAL' fallback).
+    // We only block while loading — errors fall through to the NORMAL fallback
+    // rather than permanently disabling Save.
+    if (duplicate && docsLoading) {
       return false
     }
 
@@ -417,7 +419,7 @@ const DocumentInstanceModal: React.FC<{ onClose?: () => void }> = ({
     newDocRequest,
     duplicate,
     docInstanceId,
-    docs,
+    docsLoading,
     sourceInstanceQuery.isLoading,
   ])
 
