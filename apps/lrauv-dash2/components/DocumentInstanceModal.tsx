@@ -166,7 +166,6 @@ const DocumentInstanceModal: React.FC<{ onClose?: () => void }> = ({
       lastLoadedExistingId.current !== currentDocInstanceId &&
       existingInstanceQuery.isSuccess &&
       existingData != null &&
-      existingData.text != null &&
       currentDocInstanceId
     ) {
       lastLoadedExistingId.current = currentDocInstanceId
@@ -396,6 +395,12 @@ const DocumentInstanceModal: React.FC<{ onClose?: () => void }> = ({
       return false
     }
 
+    // For duplicates, block save until the docs query resolves so existingDocType
+    // reflects the real source type (not the 'NORMAL' fallback).
+    if (duplicate && !docs) {
+      return false
+    }
+
     if (
       newDocRequest?.action === 'newEmpty' ||
       (!newDocRequest && !duplicate && !docInstanceId)
@@ -412,6 +417,7 @@ const DocumentInstanceModal: React.FC<{ onClose?: () => void }> = ({
     newDocRequest,
     duplicate,
     docInstanceId,
+    docs,
     sourceInstanceQuery.isLoading,
   ])
 
