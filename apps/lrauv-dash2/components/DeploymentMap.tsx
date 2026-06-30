@@ -307,7 +307,9 @@ const DeploymentMap: React.FC<DeploymentMapProps> = ({
         pathPoints.current = []
         setLatestGPS(gps)
       }
-      // Equal unixTime: same fix, no-op
+      // Always accumulate valid coordinates for bounds/centering regardless of
+      // whether latestGPS was updated above (equal unixTime is only a no-op for
+      // the latestGPS state update, not for pathPoints).
       if (Number.isFinite(gps?.latitude) && Number.isFinite(gps?.longitude)) {
         pathPoints.current.push([gps.latitude, gps.longitude])
         if (pathPoints.current.length > 1000) {

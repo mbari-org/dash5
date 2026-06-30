@@ -315,10 +315,14 @@ const VehiclePath: React.FC<VehiclePathProps> = ({
     const remainingPts = pts.slice(startIdx)
     if (remainingPts.length === 0) return null
 
-    return [
+    const positions = [
       ...start,
       ...remainingPts.map((p) => [p.lat, p.lon] as [number, number]),
     ]
+    // Leaflet polylines require at least 2 points; guard to avoid runtime errors
+    // when there is no GPS fix yet and only one remaining waypoint.
+    if (positions.length < 2) return null
+    return positions
   }, [futureWaypoints?.points, vehiclePosition?.gpsFixes])
 
   const fitPositions = useMemo(() => {
