@@ -38,6 +38,7 @@ export const CommsModal: React.FC<CommsModalProps> = ({
       )} from ${formattedStart} to ${formattedEnd}`}
       onClose={onClose}
       maximized
+      blurBackground
       open
     >
       <div className="flex flex-grow flex-col rounded border border-stone-200">

@@ -110,6 +110,14 @@ export interface GetVehicleInfoResponse {
   dock_eye?: string
   dock_line?: string
   dock_tri?: string
+  text_LM?: string
+  text_HM?: string
+  text_roiago?: string
+  text_waypoint?: string
+  color_whitebeam?: string
+  color_whiteled?: string
+  color_redbeam?: string
+  color_redled?: string
   not_found: boolean
 }
 

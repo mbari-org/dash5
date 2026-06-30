@@ -25,6 +25,7 @@ export const DocsModal: React.FC<DocsModalProps> = ({
       title={`Rendering Docs for ${capitalize(vehicleName ?? '')}`}
       onClose={onClose}
       maximized
+      blurBackground
       open
     >
       <div className="flex flex-grow flex-col rounded border border-stone-200">

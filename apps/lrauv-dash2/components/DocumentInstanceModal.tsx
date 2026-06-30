@@ -36,9 +36,11 @@ function isMeaningfulHtml(html: string): boolean {
 
 function deriveCreateDocType(
   req: NewDocRequest | undefined,
-  duplicate?: boolean
+  duplicate?: boolean,
+  sourceDocType?: DocumentType
 ) {
-  if (!req) return duplicate ? ('NORMAL' as const) : ('NORMAL' as const)
+  // Duplicates preserve the original document type (FORM, TEMPLATE, FILLED, NORMAL).
+  if (!req) return duplicate ? sourceDocType ?? 'NORMAL' : ('NORMAL' as const)
   if (req.action === 'newEmpty') return req.docType
   return req.sourceDoc.docType === 'FORM'
     ? ('FILLED' as const)
@@ -84,7 +86,7 @@ const DocumentInstanceModal: React.FC<{ onClose?: () => void }> = ({
     {
       docInstanceId: currentDocInstanceId?.toString() ?? '',
     },
-    { enabled: !!currentDocInstanceId && !duplicate && !newDocRequest }
+    { enabled: !!currentDocInstanceId && !newDocRequest }
   )
   const sourceInstanceQuery = useDocumentInstance(
     { docInstanceId: sourceInstanceId ? String(sourceInstanceId) : '' },
@@ -96,7 +98,7 @@ const DocumentInstanceModal: React.FC<{ onClose?: () => void }> = ({
     existingInstanceQuery.isLoading || sourceInstanceQuery.isLoading
 
   // Fetch docType for mode switching
-  const { data: docs } = useDocuments(
+  const { data: docs, isLoading: docsLoading } = useDocuments(
     existingData?.docId ? { docId: String(existingData.docId) } : undefined,
     { enabled: !!existingData?.docId }
   )
@@ -111,7 +113,11 @@ const DocumentInstanceModal: React.FC<{ onClose?: () => void }> = ({
     return 'NORMAL'
   }, [docs, content])
 
-  const createDocType = deriveCreateDocType(newDocRequest, duplicate)
+  const createDocType = deriveCreateDocType(
+    newDocRequest,
+    duplicate,
+    existingDocType
+  )
   const docType: DocumentType = isCreateFlow ? createDocType : existingDocType
   const withFormInputs = docType === 'FORM'
 
@@ -153,10 +159,13 @@ const DocumentInstanceModal: React.FC<{ onClose?: () => void }> = ({
     }
 
     // Existing doc (or duplicate) flow.
+    // Guard on isSuccess so the block never fires with undefined existingData
+    // (existingData?.text !== null is true when existingData is undefined,
+    //  which incorrectly overwrites content in error/unresolved query states).
     if (
       lastLoadedExistingId.current !== currentDocInstanceId &&
-      existingData?.text !== null &&
-      !existingInstanceQuery.isLoading &&
+      existingInstanceQuery.isSuccess &&
+      existingData != null &&
       currentDocInstanceId
     ) {
       lastLoadedExistingId.current = currentDocInstanceId
@@ -164,7 +173,7 @@ const DocumentInstanceModal: React.FC<{ onClose?: () => void }> = ({
       setDocumentName(
         `${existingData?.docName ?? ''}${duplicate ? ' (duplicate)' : ''}`
       )
-      setIsEditing(false)
+      setIsEditing(!!duplicate)
     }
 
     // Handle case where revision was deleted
@@ -351,7 +360,7 @@ const DocumentInstanceModal: React.FC<{ onClose?: () => void }> = ({
       } else {
         // Create (new empty / use form / use template / duplicate)
         await createDocument({
-          docType: createDocType,
+          docType,
           name,
           text: content,
         })
@@ -386,6 +395,14 @@ const DocumentInstanceModal: React.FC<{ onClose?: () => void }> = ({
       return false
     }
 
+    // For duplicates, block save while the docs query is still in flight so
+    // existingDocType reflects the real source type (not the 'NORMAL' fallback).
+    // We only block while loading — errors fall through to the NORMAL fallback
+    // rather than permanently disabling Save.
+    if (duplicate && docsLoading) {
+      return false
+    }
+
     if (
       newDocRequest?.action === 'newEmpty' ||
       (!newDocRequest && !duplicate && !docInstanceId)
@@ -402,6 +419,7 @@ const DocumentInstanceModal: React.FC<{ onClose?: () => void }> = ({
     newDocRequest,
     duplicate,
     docInstanceId,
+    docsLoading,
     sourceInstanceQuery.isLoading,
   ])
 
