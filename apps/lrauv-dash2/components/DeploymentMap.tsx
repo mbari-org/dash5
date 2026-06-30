@@ -658,7 +658,7 @@ const DeploymentMap: React.FC<DeploymentMapProps> = ({
           key={`deployment-map-${router.asPath}-${vehicleName ?? 'unknown'}`}
           ref={mapRef}
           className="h-full min-h-0 w-full"
-          maxZoom={17}
+          maxZoom={MAP_MAX_ZOOM}
           onMapReady={(map) => {
             logger.debug('Map is ready!')
             mapRef.current = map

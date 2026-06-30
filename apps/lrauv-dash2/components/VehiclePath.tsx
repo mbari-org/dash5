@@ -298,7 +298,7 @@ const VehiclePath: React.FC<VehiclePathProps> = ({
       // Walk cumulative segment distances to find the first waypoint whose
       // cumulative distance >= vehicleDist (i.e., still ahead of the vehicle).
       let cumDist = 0
-      startIdx = pts.length - 1 // fallback: past all but the final waypoint
+      startIdx = pts.length - 1 // fallback: show only the final waypoint if vehicle is past all others
       for (let i = 0; i < pts.length; i++) {
         if (cumDist >= vehicleDist) {
           startIdx = i
