@@ -1,5 +1,5 @@
 import React from 'react'
-import { VehicleProps } from '../Vehicle'
+import type { VehicleProps } from '../Vehicle'
 
 export interface PlanktivoreIndicatorProps {
   textLM?: VehicleProps['textLM']
