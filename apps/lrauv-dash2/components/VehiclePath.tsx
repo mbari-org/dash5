@@ -8,7 +8,7 @@ import {
 import { Polyline, useMap, Circle, Tooltip } from 'react-leaflet'
 import { LatLng, LeafletMouseEventHandlerFn } from 'leaflet'
 import { useRouter } from 'next/router'
-import { distance } from '@turf/turf'
+import { distance, nearestPointOnLine, lineString } from '@turf/turf'
 import { useSharedPath } from './SharedPathContextProvider'
 import { parseISO, getTime } from 'date-fns'
 import { formatElapsedTime } from '@mbari/utils'
@@ -277,21 +277,40 @@ const VehiclePath: React.FC<VehiclePathProps> = ({
         : []
 
     // The /wp endpoint returns all planned waypoints for the mission, including
-    // those the vehicle has already passed. Slice to the nearest waypoint so the
-    // projected route doesn't draw a backward segment toward an already-visited
-    // position before continuing forward.
-    // Use Turf distance (consistent with the rest of this file) rather than
-    // raw-degree Euclidean distance, which is inaccurate and latitude-dependent.
+    // those the vehicle has already passed. Find the first waypoint that is
+    // still ahead of the vehicle by projecting the vehicle's position onto the
+    // full route polyline and walking cumulative segment distances — this avoids
+    // a backward leg even when the vehicle has just passed a waypoint and the
+    // nearest vertex is still the one behind it.
     let startIdx = 0
-    if (latest?.latitude != null && latest?.longitude != null) {
-      let minDist = Infinity
-      pts.forEach((p, i) => {
-        const d = distance([latest.longitude, latest.latitude], [p.lon, p.lat])
-        if (d < minDist) {
-          minDist = d
+    if (
+      pts.length >= 2 &&
+      latest?.latitude != null &&
+      latest?.longitude != null
+    ) {
+      const routeLine = lineString(pts.map((p) => [p.lon, p.lat]))
+      const snapped = nearestPointOnLine(routeLine, [
+        latest.longitude,
+        latest.latitude,
+      ])
+      // Distance along the route to the vehicle's nearest projection point.
+      const vehicleDist = snapped.properties.location ?? 0
+      // Walk cumulative segment distances to find the first waypoint whose
+      // cumulative distance >= vehicleDist (i.e., still ahead of the vehicle).
+      let cumDist = 0
+      startIdx = pts.length - 1 // fallback: past all but the final waypoint
+      for (let i = 0; i < pts.length; i++) {
+        if (cumDist >= vehicleDist) {
           startIdx = i
+          break
         }
-      })
+        if (i < pts.length - 1) {
+          cumDist += distance(
+            [pts[i].lon, pts[i].lat],
+            [pts[i + 1].lon, pts[i + 1].lat]
+          )
+        }
+      }
     }
     const remainingPts = pts.slice(startIdx)
     if (remainingPts.length === 0) return null

@@ -74,6 +74,11 @@ const PlatformPaths = dynamic(
 )
 
 const logger = createLogger('DeploymentMap')
+
+const MAP_MAX_ZOOM = 17
+// Center-on-vehicle zoom: 3 levels below the tile ceiling so surrounding
+// geography is visible. Update MAP_MAX_ZOOM if the Map maxZoom prop changes.
+const CENTER_ZOOM = MAP_MAX_ZOOM - 3
 interface DeploymentMapProps {
   vehicleName?: string | null
   indicatorTime?: number | null
@@ -534,7 +539,7 @@ const DeploymentMap: React.FC<DeploymentMapProps> = ({
   const handleCoordinateRequest = useCallback(() => {
     if (latestGPS) {
       setCenter([latestGPS.latitude, latestGPS.longitude])
-      setCenterZoom(14)
+      setCenterZoom(CENTER_ZOOM)
       setBounds(undefined)
       setViewMode('center')
     } else {
@@ -542,7 +547,7 @@ const DeploymentMap: React.FC<DeploymentMapProps> = ({
       const lastPoint = pathPoints.current[pathPoints.current.length - 1]
       if (lastPoint) {
         setCenter(lastPoint)
-        setCenterZoom(14)
+        setCenterZoom(CENTER_ZOOM)
         setBounds(undefined)
         setViewMode('center')
       } else {
