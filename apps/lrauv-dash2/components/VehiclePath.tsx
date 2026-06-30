@@ -275,7 +275,29 @@ const VehiclePath: React.FC<VehiclePathProps> = ({
       latest?.latitude != null && latest?.longitude != null
         ? [[latest.latitude, latest.longitude] as [number, number]]
         : []
-    return [...start, ...pts.map((p) => [p.lat, p.lon] as [number, number])]
+
+    // The /wp endpoint returns all planned waypoints for the mission, including
+    // those the vehicle has already passed. Slice to the nearest waypoint so the
+    // projected route doesn't draw a backward segment toward an already-visited
+    // position before continuing forward.
+    let startIdx = 0
+    if (latest?.latitude != null && latest?.longitude != null) {
+      let minDist = Infinity
+      pts.forEach((p, i) => {
+        const d = Math.hypot(p.lat - latest.latitude, p.lon - latest.longitude)
+        if (d < minDist) {
+          minDist = d
+          startIdx = i
+        }
+      })
+    }
+    const remainingPts = pts.slice(startIdx)
+    if (remainingPts.length === 0) return null
+
+    return [
+      ...start,
+      ...remainingPts.map((p) => [p.lat, p.lon] as [number, number]),
+    ]
   }, [futureWaypoints?.points, vehiclePosition?.gpsFixes])
 
   const fitPositions = useMemo(() => {

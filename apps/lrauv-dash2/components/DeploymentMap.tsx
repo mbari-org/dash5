@@ -292,20 +292,25 @@ const DeploymentMap: React.FC<DeploymentMapProps> = ({
   // Handler for GPS fix updates
   const handleGPSFix = useCallback(
     (gps: VPosDetail) => {
-      // Reset the array if vehicle name changes
-      if ((latestGPS?.isoTime ?? 0) > gps.isoTime || !latestGPS) {
+      if (!latestGPS) {
+        // First fix — initialize
+        setLatestGPS(gps)
+      } else if (gps.isoTime > latestGPS.isoTime) {
+        // Newer fix arrived — update so the center button zooms to current position
+        setLatestGPS(gps)
+      } else if (gps.isoTime < latestGPS.isoTime) {
+        // Incoming fix is older than what we have — vehicle or deployment changed;
+        // reset accumulated positions and start fresh for the new vehicle.
         vehiclePosition.current = []
         setLatestGPS(gps)
       }
-      // Store position for path bounds calculation
+      // Equal isoTime: same fix, no-op
       if (gps?.latitude && gps?.longitude) {
         pathPoints.current.push([gps.latitude, gps.longitude])
       }
-      // Limit stored positions to prevent memory issues
       if (pathPoints.current.length > 1000) {
         pathPoints.current = pathPoints.current.slice(-1000)
       }
-      // Store position for centering
       const position: [number, number] = [gps.latitude, gps.longitude]
       vehiclePosition.current.push(position)
     },
@@ -527,11 +532,13 @@ const DeploymentMap: React.FC<DeploymentMapProps> = ({
     setViewMode('bounds')
   }, [])
 
-  // Handler for centering the map on the latest GPS fix
+  // Handler for centering the map on the latest GPS fix.
+  // Zoom to maxZoom - 3 (14) so the user sees surrounding context rather than
+  // being pinned to the tile ceiling.
   const handleCoordinateRequest = useCallback(() => {
     if (latestGPS) {
       setCenter([latestGPS.latitude, latestGPS.longitude])
-      setCenterZoom(17)
+      setCenterZoom(14)
       setBounds(undefined)
       setViewMode('center')
     } else {
@@ -539,7 +546,7 @@ const DeploymentMap: React.FC<DeploymentMapProps> = ({
       const lastPoint = pathPoints.current[pathPoints.current.length - 1]
       if (lastPoint) {
         setCenter(lastPoint)
-        setCenterZoom(17)
+        setCenterZoom(14)
         setBounds(undefined)
         setViewMode('center')
       } else {
