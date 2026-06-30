@@ -232,6 +232,10 @@ const DeploymentMap: React.FC<DeploymentMapProps> = ({
     if (vehicleName !== latestVehicle.current) {
       setLatestGPS(undefined)
       setCenter(undefined)
+      // Also flush accumulated path so bounds/centering don't inherit stale
+      // points from the previous vehicle when the first fix for the new vehicle
+      // initializes latestGPS via the !latestGPS branch in handleGPSFix.
+      pathPoints.current = []
       latestVehicle.current = vehicleName
     }
   }, [vehicleName, setLatestGPS])
