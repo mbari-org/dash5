@@ -153,10 +153,13 @@ const DocumentInstanceModal: React.FC<{ onClose?: () => void }> = ({
     }
 
     // Existing doc (or duplicate) flow.
+    // Guard on isSuccess so the block never fires with undefined existingData
+    // (existingData?.text !== null is true when existingData is undefined,
+    //  which incorrectly overwrites content in error/unresolved query states).
     if (
       lastLoadedExistingId.current !== currentDocInstanceId &&
-      existingData?.text !== null &&
-      !existingInstanceQuery.isLoading &&
+      existingInstanceQuery.isSuccess &&
+      existingData != null &&
       currentDocInstanceId
     ) {
       lastLoadedExistingId.current = currentDocInstanceId
