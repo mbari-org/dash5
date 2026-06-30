@@ -272,6 +272,60 @@ describe('DocumentInstanceModal — duplicate document flow (fix #728)', () => {
       expect(screen.queryByTestId('doc-editor')).not.toBeInTheDocument()
     })
   })
+
+  it('preserves source docType (FORM) when creating the duplicate copy', async () => {
+    const createDoc = jest.fn().mockResolvedValue({})
+    ;(useGlobalModalId as jest.Mock).mockReturnValue({
+      globalModalId: {
+        id: 'editDocument',
+        meta: { docInstanceId: INSTANCE_ID, duplicate: true },
+      },
+      setGlobalModalId: jest.fn(),
+    })
+    ;(useDocumentInstance as jest.Mock).mockReturnValue({
+      data: mockInstanceData,
+      isLoading: false,
+      isError: false,
+      isSuccess: true,
+      refetch: jest.fn().mockResolvedValue({}),
+    })
+    // Source document is a FORM type
+    ;(useDocuments as jest.Mock).mockReturnValue({
+      data: [{ ...mockDocsList[0], docType: 'FORM' }],
+      isLoading: false,
+    })
+    ;(useCreateDocument as jest.Mock).mockReturnValue({
+      mutateAsync: createDoc,
+      isLoading: false,
+    })
+    ;(useCreateDocumentInstance as jest.Mock).mockReturnValue({
+      mutateAsync: jest.fn().mockResolvedValue({}),
+      isLoading: false,
+    })
+    ;(useDeleteDocumentInstance as jest.Mock).mockReturnValue({
+      mutateAsync: jest.fn().mockResolvedValue({}),
+      isLoading: false,
+    })
+
+    render(<DocumentInstanceModal />)
+
+    // Wait for modal to be in edit mode with the duplicate name
+    await waitFor(() => {
+      expect(
+        screen.getByDisplayValue(/Daphne Deployment Plan \(duplicate\)/i)
+      ).toBeInTheDocument()
+    })
+
+    // Save the duplicate
+    const saveButton = screen.getByRole('button', { name: /Save/i })
+    fireEvent.click(saveButton)
+
+    await waitFor(() => {
+      expect(createDoc).toHaveBeenCalledWith(
+        expect.objectContaining({ docType: 'FORM' })
+      )
+    })
+  })
 })
 
 describe('DocumentInstanceModal — save error handling (fix #619 item 1)', () => {

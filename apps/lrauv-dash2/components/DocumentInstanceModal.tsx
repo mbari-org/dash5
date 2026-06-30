@@ -36,9 +36,11 @@ function isMeaningfulHtml(html: string): boolean {
 
 function deriveCreateDocType(
   req: NewDocRequest | undefined,
-  duplicate?: boolean
+  duplicate?: boolean,
+  sourceDocType?: DocumentType
 ) {
-  if (!req) return duplicate ? ('NORMAL' as const) : ('NORMAL' as const)
+  // Duplicates preserve the original document type (FORM, TEMPLATE, FILLED, NORMAL).
+  if (!req) return duplicate ? sourceDocType ?? 'NORMAL' : ('NORMAL' as const)
   if (req.action === 'newEmpty') return req.docType
   return req.sourceDoc.docType === 'FORM'
     ? ('FILLED' as const)
@@ -111,7 +113,11 @@ const DocumentInstanceModal: React.FC<{ onClose?: () => void }> = ({
     return 'NORMAL'
   }, [docs, content])
 
-  const createDocType = deriveCreateDocType(newDocRequest, duplicate)
+  const createDocType = deriveCreateDocType(
+    newDocRequest,
+    duplicate,
+    existingDocType
+  )
   const docType: DocumentType = isCreateFlow ? createDocType : existingDocType
   const withFormInputs = docType === 'FORM'
 
@@ -355,7 +361,7 @@ const DocumentInstanceModal: React.FC<{ onClose?: () => void }> = ({
       } else {
         // Create (new empty / use form / use template / duplicate)
         await createDocument({
-          docType: createDocType,
+          docType,
           name,
           text: content,
         })
