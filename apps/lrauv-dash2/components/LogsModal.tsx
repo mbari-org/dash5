@@ -39,6 +39,7 @@ export const LogsModal: React.FC<LogsModalProps> = ({
       )} from ${formattedStart} to ${formattedEnd}`}
       onClose={onClose}
       maximized
+      blurBackground
       open
     >
       <div className="flex flex-grow flex-col rounded border border-stone-200">

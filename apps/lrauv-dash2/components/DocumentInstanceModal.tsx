@@ -84,7 +84,7 @@ const DocumentInstanceModal: React.FC<{ onClose?: () => void }> = ({
     {
       docInstanceId: currentDocInstanceId?.toString() ?? '',
     },
-    { enabled: !!currentDocInstanceId && !duplicate && !newDocRequest }
+    { enabled: !!currentDocInstanceId && !newDocRequest }
   )
   const sourceInstanceQuery = useDocumentInstance(
     { docInstanceId: sourceInstanceId ? String(sourceInstanceId) : '' },
@@ -164,7 +164,7 @@ const DocumentInstanceModal: React.FC<{ onClose?: () => void }> = ({
       setDocumentName(
         `${existingData?.docName ?? ''}${duplicate ? ' (duplicate)' : ''}`
       )
-      setIsEditing(false)
+      setIsEditing(!!duplicate)
     }
 
     // Handle case where revision was deleted
