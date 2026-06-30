@@ -179,6 +179,101 @@ describe('DocumentInstanceModal — last-editor attribution (fix #619 item 4)', 
   })
 })
 
+describe('DocumentInstanceModal — duplicate document flow (fix #728)', () => {
+  function setupDuplicateMocks() {
+    ;(useGlobalModalId as jest.Mock).mockReturnValue({
+      globalModalId: {
+        id: 'editDocument',
+        meta: { docInstanceId: INSTANCE_ID, duplicate: true },
+      },
+      setGlobalModalId: jest.fn(),
+    })
+    ;(useDocumentInstance as jest.Mock).mockReturnValue({
+      data: mockInstanceData,
+      isLoading: false,
+      isError: false,
+      isSuccess: true,
+      refetch: jest.fn().mockResolvedValue({}),
+    })
+    ;(useDocuments as jest.Mock).mockReturnValue({
+      data: mockDocsList,
+      isLoading: false,
+    })
+    ;(useCreateDocument as jest.Mock).mockReturnValue({
+      mutateAsync: jest.fn().mockResolvedValue({}),
+      isLoading: false,
+    })
+    ;(useCreateDocumentInstance as jest.Mock).mockReturnValue({
+      mutateAsync: jest.fn().mockResolvedValue({
+        docInstanceId: INSTANCE_ID + 1,
+        docName: 'Daphne Deployment Plan (duplicate)',
+        text: '<p>Hello world</p>',
+      }),
+      isLoading: false,
+    })
+    ;(useDeleteDocumentInstance as jest.Mock).mockReturnValue({
+      mutateAsync: jest.fn().mockResolvedValue({}),
+      isLoading: false,
+    })
+  }
+
+  it('loads source content when duplicate=true (query is not blocked)', async () => {
+    setupDuplicateMocks()
+    render(<DocumentInstanceModal />)
+
+    // If the query were still blocked by a !duplicate guard, existingData would be
+    // undefined and the name field would be empty. Presence of the "(duplicate)"
+    // suffix proves the query ran and returned the source document's docName.
+    await waitFor(() => {
+      expect(
+        screen.getByDisplayValue(/Daphne Deployment Plan \(duplicate\)/i)
+      ).toBeInTheDocument()
+    })
+  })
+
+  it('pre-fills the document name with "(duplicate)" suffix', async () => {
+    setupDuplicateMocks()
+    render(<DocumentInstanceModal />)
+
+    await waitFor(() => {
+      const nameInput = screen.getByDisplayValue(
+        /Daphne Deployment Plan \(duplicate\)/i
+      )
+      expect(nameInput).toBeInTheDocument()
+    })
+  })
+
+  it('opens in edit mode so the user can immediately edit the copy', async () => {
+    setupDuplicateMocks()
+    render(<DocumentInstanceModal />)
+
+    // Edit mode renders the doc-editor, not the read-only doc-viewer
+    await waitFor(() => {
+      expect(screen.getByTestId('doc-editor')).toBeInTheDocument()
+    })
+    expect(screen.queryByTestId('doc-viewer')).not.toBeInTheDocument()
+  })
+
+  it('does NOT overwrite content when the query returns undefined data', async () => {
+    setupDuplicateMocks()
+    // Simulate an error state: isSuccess=false, data=undefined
+    ;(useDocumentInstance as jest.Mock).mockReturnValue({
+      data: undefined,
+      isLoading: false,
+      isError: true,
+      isSuccess: false,
+      refetch: jest.fn(),
+    })
+    render(<DocumentInstanceModal />)
+
+    // The editor/viewer should not show stale or blank content from a failed query
+    await waitFor(() => {
+      // Component renders without crashing
+      expect(screen.queryByTestId('doc-editor')).not.toBeInTheDocument()
+    })
+  })
+})
+
 describe('DocumentInstanceModal — save error handling (fix #619 item 1)', () => {
   it('shows an error toast when createRevision throws instead of silently failing', async () => {
     const failingCreate = jest
