@@ -8,7 +8,7 @@ import {
 import { Polyline, useMap, Circle, Tooltip } from 'react-leaflet'
 import { LatLng, LeafletMouseEventHandlerFn } from 'leaflet'
 import { useRouter } from 'next/router'
-import { distance } from '@turf/turf'
+import { distance, nearestPointOnLine, lineString } from '@turf/turf'
 import { useSharedPath } from './SharedPathContextProvider'
 import { parseISO, getTime } from 'date-fns'
 import { formatElapsedTime } from '@mbari/utils'
@@ -275,7 +275,54 @@ const VehiclePath: React.FC<VehiclePathProps> = ({
       latest?.latitude != null && latest?.longitude != null
         ? [[latest.latitude, latest.longitude] as [number, number]]
         : []
-    return [...start, ...pts.map((p) => [p.lat, p.lon] as [number, number])]
+
+    // The /wp endpoint returns all planned waypoints for the mission, including
+    // those the vehicle has already passed. Find the first waypoint that is
+    // still ahead of the vehicle by projecting the vehicle's position onto the
+    // full route polyline and walking cumulative segment distances — this avoids
+    // a backward leg even when the vehicle has just passed a waypoint and the
+    // nearest vertex is still the one behind it.
+    let startIdx = 0
+    if (
+      pts.length >= 2 &&
+      latest?.latitude != null &&
+      latest?.longitude != null
+    ) {
+      const routeLine = lineString(pts.map((p) => [p.lon, p.lat]))
+      const snapped = nearestPointOnLine(routeLine, [
+        latest.longitude,
+        latest.latitude,
+      ])
+      // Distance along the route to the vehicle's nearest projection point.
+      const vehicleDist = snapped.properties.location ?? 0
+      // Walk cumulative segment distances to find the first waypoint whose
+      // cumulative distance >= vehicleDist (i.e., still ahead of the vehicle).
+      let cumDist = 0
+      startIdx = pts.length - 1 // fallback: show only the final waypoint if vehicle is past all others
+      for (let i = 0; i < pts.length; i++) {
+        if (cumDist >= vehicleDist) {
+          startIdx = i
+          break
+        }
+        if (i < pts.length - 1) {
+          cumDist += distance(
+            [pts[i].lon, pts[i].lat],
+            [pts[i + 1].lon, pts[i + 1].lat]
+          )
+        }
+      }
+    }
+    const remainingPts = pts.slice(startIdx)
+    if (remainingPts.length === 0) return null
+
+    const positions = [
+      ...start,
+      ...remainingPts.map((p) => [p.lat, p.lon] as [number, number]),
+    ]
+    // Leaflet polylines require at least 2 points; guard to avoid runtime errors
+    // when there is no GPS fix yet and only one remaining waypoint.
+    if (positions.length < 2) return null
+    return positions
   }, [futureWaypoints?.points, vehiclePosition?.gpsFixes])
 
   const fitPositions = useMemo(() => {
