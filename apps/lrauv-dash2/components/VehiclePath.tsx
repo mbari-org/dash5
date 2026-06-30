@@ -280,11 +280,13 @@ const VehiclePath: React.FC<VehiclePathProps> = ({
     // those the vehicle has already passed. Slice to the nearest waypoint so the
     // projected route doesn't draw a backward segment toward an already-visited
     // position before continuing forward.
+    // Use Turf distance (consistent with the rest of this file) rather than
+    // raw-degree Euclidean distance, which is inaccurate and latitude-dependent.
     let startIdx = 0
     if (latest?.latitude != null && latest?.longitude != null) {
       let minDist = Infinity
       pts.forEach((p, i) => {
-        const d = Math.hypot(p.lat - latest.latitude, p.lon - latest.longitude)
+        const d = distance([latest.longitude, latest.latitude], [p.lon, p.lat])
         if (d < minDist) {
           minDist = d
           startIdx = i

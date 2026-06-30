@@ -300,19 +300,20 @@ const DeploymentMap: React.FC<DeploymentMapProps> = ({
         setLatestGPS(gps)
       } else if (gps.isoTime < latestGPS.isoTime) {
         // Incoming fix is older than what we have — vehicle or deployment changed;
-        // reset accumulated positions and start fresh for the new vehicle.
+        // reset both accumulated arrays so bounds/centering don't use stale points.
         vehiclePosition.current = []
+        pathPoints.current = []
         setLatestGPS(gps)
       }
       // Equal isoTime: same fix, no-op
-      if (gps?.latitude && gps?.longitude) {
+      if (Number.isFinite(gps?.latitude) && Number.isFinite(gps?.longitude)) {
         pathPoints.current.push([gps.latitude, gps.longitude])
+        if (pathPoints.current.length > 1000) {
+          pathPoints.current = pathPoints.current.slice(-1000)
+        }
+        const position: [number, number] = [gps.latitude, gps.longitude]
+        vehiclePosition.current.push(position)
       }
-      if (pathPoints.current.length > 1000) {
-        pathPoints.current = pathPoints.current.slice(-1000)
-      }
-      const position: [number, number] = [gps.latitude, gps.longitude]
-      vehiclePosition.current.push(position)
     },
     [latestGPS, setLatestGPS]
   )
