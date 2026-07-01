@@ -553,18 +553,19 @@ const VehiclePath: React.FC<VehiclePathProps> = ({
             radius={20}
           />
         ))}
-      {/* Current vehicle position — hollow ring with thick stroke. At close zoom
-          it reads as a ring; as you zoom out the stroke fills the center and it
-          naturally merges into a solid dot. Matches Dash4's visual behavior. */}
+      {/* Current vehicle position — solid filled dot with a contrasting white
+          border ring. The fill anchors the center point at all zoom levels;
+          the white stroke acts as the visible ring separator from the track.
+          Matches Dash4's l-circle-marker approach (radius=6, solid). */}
       {latest && (
         <CircleMarker
           data-vehicle-point={`${name}-latest`}
           center={{ lat: latest.latitude, lng: latest.longitude }}
-          radius={8}
-          color={color}
+          radius={7}
+          color="white"
           fillColor={color}
-          fillOpacity={0}
-          weight={4}
+          fillOpacity={1}
+          weight={2}
         >
           <Tooltip
             className="text-bold text-purple"
