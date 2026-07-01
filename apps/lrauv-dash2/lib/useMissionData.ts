@@ -29,7 +29,8 @@ export const useMissionData = (params: {
 }) => {
   const { vehicleName, selectedMission, showAllVehicleMissions } = params
 
-  const { data: missionData } = useMissionList()
+  const { data: missionData, isLoading: isMissionListLoading } =
+    useMissionList()
   const { data: siteInfo } = useSiteConfig()
 
   const frequentVehicles = useMemo(() => {
@@ -213,5 +214,6 @@ export const useMissionData = (params: {
     allMissions,
     isRecentRunsLoading,
     isFrequentRunsLoading,
+    isMissionListLoading,
   }
 }
