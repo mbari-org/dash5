@@ -353,10 +353,14 @@ const ConnectedVehicleCellComponent: React.FC<{
       undefined
     : undefined
 
-  const timeSpanSinceRecovery =
-    DateTime.fromMillis(
-      lastDeployment?.recoverEvent?.unixTime ?? 0
-    ).toRelative() ?? ''
+  // Only produce a recovery-time string when we actually have a timestamp.
+  // derivedStatus can be 'recovered' from vehicle.text_mission before
+  // lastDeployment.recoverEvent loads; falling back to epoch (0) would render
+  // "Recovered 56 years ago", so we leave it undefined until the event arrives.
+  const timeSpanSinceRecovery = lastDeployment?.recoverEvent?.unixTime
+    ? DateTime.fromMillis(lastDeployment.recoverEvent.unixTime).toRelative() ??
+      ''
+    : undefined
 
   const { setGlobalModalId } = useGlobalModalId()
   const onColorChange = (_: string, _v: string) => {
