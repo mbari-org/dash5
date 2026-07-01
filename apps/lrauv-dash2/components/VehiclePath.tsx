@@ -50,8 +50,6 @@ const VehiclePoint: React.FC<{
 // Memoized hit-circle layer so it never re-renders when VehiclePath state
 // (mapHoverFix, indicatorTime, etc.) changes — prevents React-Leaflet from
 // re-mounting the circles and emitting spurious mouseout/mouseover events.
-// Also carries the sticky summary tooltip so it appears even when the cursor
-// is over a hit circle (which intercepts pointer events before the Polyline).
 const HitCircles = React.memo(
   ({
     name,
@@ -553,7 +551,7 @@ const VehiclePath: React.FC<VehiclePathProps> = ({
           <CircleMarker
             key={`${name}:surfacing:${fix.eventId ?? fix.unixTime}`}
             center={{ lat: fix.latitude, lng: fix.longitude }}
-            radius={3}
+            radius={2}
             color={color}
             fillColor={color}
             fillOpacity={0.7}
@@ -569,7 +567,7 @@ const VehiclePath: React.FC<VehiclePathProps> = ({
         <CircleMarker
           data-vehicle-point={`${name}-latest`}
           center={{ lat: latest.latitude, lng: latest.longitude }}
-          radius={7}
+          radius={6}
           color="white"
           fillColor={color}
           fillOpacity={1}
@@ -731,8 +729,8 @@ const VehiclePath: React.FC<VehiclePathProps> = ({
                 </div>
               )}
               <div className="mt-0.5">
-                Latest position: {latest.latitude.toFixed(5)},{' '}
-                {latest.longitude.toFixed(5)}
+                {futureRoute ? 'Lat/Lon:' : 'Latest position:'}{' '}
+                {latest.latitude.toFixed(5)}, {latest.longitude.toFixed(5)}
               </div>
               <div>
                 {latestTimeFix?.replace('T', ' ').replace('Z', ' UTC')}{' '}
