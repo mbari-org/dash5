@@ -127,16 +127,25 @@ export const PlatformPath: React.FC<PlatformPathProps> = ({
   }
 
   if (error) {
-    logger.warn(`Failed to load positions for platform ${platformId}:`, error)
+    const isTimeout =
+      error instanceof Error && error.message?.toLowerCase().includes('timeout')
+    if (isTimeout) {
+      // Timeout errors are expected for slow or offline external platforms
+      // and are not actionable by the developer — log at debug to reduce noise.
+      logger.debug(
+        `Failed to load positions for platform ${platformId}:`,
+        error
+      )
+    } else {
+      // Auth/config/5xx and other unexpected failures should remain visible.
+      logger.warn(`Failed to load positions for platform ${platformId}:`, error)
+    }
     return null
   }
 
   const platformColor = color || 'cyan'
 
   if (!route || route.length === 0) {
-    logger.debug(
-      `No positions found for platform ${platformId} within the query window — nothing to render`
-    )
     return null
   }
 

@@ -5,7 +5,7 @@ import {
   VPosDetail,
   useWaypointsInfo,
 } from '@mbari/api-client'
-import { Polyline, useMap, Circle, Tooltip } from 'react-leaflet'
+import { Polyline, useMap, Circle, CircleMarker, Tooltip } from 'react-leaflet'
 import { LatLng, LeafletMouseEventHandlerFn } from 'leaflet'
 import { useRouter } from 'next/router'
 import { distance, nearestPointOnLine, lineString } from '@turf/turf'
@@ -205,16 +205,17 @@ const VehiclePath: React.FC<VehiclePathProps> = ({
   const lastHoveredFixTimeRef = useRef<number | null>(null)
   // Refs keep handleCoord/handleMouseOut deps-free so they never change
   // reference — preventing HitCircles from re-rendering on every poll/render.
-  const gpsFixesRef = useRef(vehiclePosition?.gpsFixes)
+  // displayedFixesRef is updated below (after displayedFixes is computed) so
+  // handleCoord always iterates the same deduplicated set used for rendering.
+  const displayedFixesRef = useRef<VPosDetail[]>([])
   const handleScrubRef = useRef(handleScrub)
-  gpsFixesRef.current = vehiclePosition?.gpsFixes
   handleScrubRef.current = handleScrub
 
   const handleCoord: LeafletMouseEventHandlerFn = useCallback((e) => {
     if (timeout.current) clearTimeout(timeout.current)
     let coord: VPosDetail | null = null
     let bestDist = Infinity
-    for (const fix of gpsFixesRef.current ?? []) {
+    for (const fix of displayedFixesRef.current) {
       const d = getDistance(fix, e.latlng)
       if (d < bestDist) {
         bestDist = d
@@ -344,6 +345,33 @@ const VehiclePath: React.FC<VehiclePathProps> = ({
   // dimTime   → set only from the timeline bar → drives track split/dimming
   // indicatorTime → set from timeline bar OR map hover → drives indicator dot
   const gpsFixes = vehiclePosition?.gpsFixes ?? null
+
+  // Show all GPS surfacing fixes so dots appear across the full deployment
+  // track, not just the most recent segment. gpsFixes is already bounded by
+  // the deployment window query, so the array is not unbounded.
+  // Deduplicate by unixTime — the API occasionally returns duplicate fixes
+  // with the same timestamp, which causes React duplicate-key warnings.
+  const displayedFixes = useMemo(() => {
+    if (!gpsFixes) return []
+    const seen = new Set<number>()
+    return gpsFixes.filter((fix) => {
+      if (seen.has(fix.unixTime)) return false
+      seen.add(fix.unixTime)
+      return true
+    })
+  }, [gpsFixes])
+  // Keep the ref in sync so handleCoord always iterates the same deduplicated
+  // list that is used for rendering — consistent hover/scrub behaviour.
+  displayedFixesRef.current = displayedFixes
+
+  // Deduplicated position count for the "Positions: N" tooltip label.
+  // When dimTime is active, count only fixes at or before that threshold.
+  // Uses displayedFixes (already deduped) as the source to avoid over-counting
+  // duplicate unixTime entries that exist in the raw gpsFixes array.
+  const displayedPositionCount = useMemo(() => {
+    if (!dimTime || dimTime <= 0) return displayedFixes.length
+    return displayedFixes.filter((fix) => fix.unixTime <= dimTime).length
+  }, [dimTime, displayedFixes])
 
   // Track-split: which fixes are in the "past" relative to dimTime
   const activePoints = useMemo(() => {
@@ -527,61 +555,47 @@ const VehiclePath: React.FC<VehiclePathProps> = ({
             radius={20}
           />
         ))}
-      {latest && (
-        <>
-          {/* DEPLOYMENT AND OVERVIEW PAGE */}
-          {/* Circle = large dotted indicator circle. */}
-          <Circle
-            data-vehicle-point={`${name}-latest`}
-            center={{ lat: latest.latitude, lng: latest.longitude }}
-            pathOptions={{
-              color,
-              fillColor: color,
-              fillOpacity: 0.1,
-              weight: 1,
-              dashArray: '4, 4',
-            }}
-            radius={200}
-          >
-            <Tooltip
-              className="text-bold text-purple"
-              direction="right"
-              offset={[10, 0]}
-              opacity={0.4}
-              permanent
-            >
-              {name}
-            </Tooltip>
-          </Circle>
-        </>
+      {/* GPS surfacing dots along the full deployment track — rendered before the
+          current position marker so the latest dot always appears on top when
+          positions overlap. Non-interactive so HitCircles retain pointer priority
+          for scrub/hover. Per-fix details are shown via the mapHoverFix tooltip. */}
+      {displayedFixes.map((fix, index) =>
+        index === 0 ? null : (
+          <CircleMarker
+            key={`${name}:surfacing:${fix.eventId ?? fix.unixTime}`}
+            center={{ lat: fix.latitude, lng: fix.longitude }}
+            radius={2}
+            color={color}
+            fillColor={color}
+            fillOpacity={0.7}
+            weight={1}
+            interactive={false}
+          />
+        )
       )}
-      {/* Solid dot at the latest GPS fix — always visible, tooltip on hover only */}
+      {/* Current vehicle position — solid filled dot with a contrasting white
+          border ring. Rendered after surfacing dots so it always appears on top.
+          Matches Dash4's l-circle-marker approach (radius=6, solid). */}
       {latest && (
-        <Circle
-          pathOptions={{ color }}
+        <CircleMarker
+          data-vehicle-point={`${name}-latest`}
           center={{ lat: latest.latitude, lng: latest.longitude }}
+          radius={6}
+          color="white"
           fillColor={color}
           fillOpacity={1}
-          color={color}
-          radius={60}
+          weight={2}
         >
-          <Tooltip direction="right" offset={[10, 0]} opacity={0.9}>
-            <div>
-              <div className="text-purple text-bold">{name}</div>
-              <div>
-                Latest position: {latest.latitude.toFixed(5)},{' '}
-                {latest.longitude.toFixed(5)}
-              </div>
-              <div>
-                {latest.isoTime.split('T')[0] +
-                  ' ' +
-                  latest.isoTime.split('T')[1].split('Z')[0]}
-                {' - '}
-                {timeSinceFixDisplay}
-              </div>
-            </div>
+          <Tooltip
+            className="text-bold text-purple"
+            direction="right"
+            offset={[10, 0]}
+            opacity={0.4}
+            permanent
+          >
+            {name}
           </Tooltip>
-        </Circle>
+        </CircleMarker>
       )}
       {/* Scrub indicator dot — shown for any scrub source (depth chart, timeline)
           unless the map-hover highlight is already visible at that position */}
@@ -648,7 +662,13 @@ const VehiclePath: React.FC<VehiclePathProps> = ({
                 {mapHoverFix.longitude.toFixed(5)}
               </div>
               <div className="text-gray-600">
-                {mapHoverFix.isoTime.replace('T', ' ').replace('Z', ' UTC')}
+                {mapHoverFix.isoTime.replace('T', ' ').replace('Z', ' UTC')}{' '}
+                <span className="text-[10px] italic text-gray-500">
+                  -{formatElapsedTime(Date.now() - mapHoverFix.unixTime)}
+                </span>
+              </div>
+              <div className="text-gray-500 mt-0.5">
+                Positions: {displayedPositionCount}
               </div>
             </div>
           </Tooltip>
@@ -677,6 +697,7 @@ const VehiclePath: React.FC<VehiclePathProps> = ({
             opacity={0.5}
           />
         ))}
+
       {/* Memoized hit targets — isolated from VehiclePath re-renders to
           prevent spurious mouseout/mouseover events causing tooltip flicker. */}
       <HitCircles
@@ -687,6 +708,53 @@ const VehiclePath: React.FC<VehiclePathProps> = ({
         onCoord={handleCoord}
         onMouseOut={handleMouseOut}
       />
+      {/* Invisible hit target for the latest-position tooltip — rendered AFTER
+          HitCircles so it sits on top and its tooltip is reliably reachable.
+          Shows "Position before waypoint trajectory" when a future route exists. */}
+      {latest && (
+        <CircleMarker
+          center={{ lat: latest.latitude, lng: latest.longitude }}
+          radius={12}
+          color="transparent"
+          fillColor="transparent"
+          fillOpacity={0}
+          weight={0}
+        >
+          <Tooltip direction="right" offset={[10, 0]} opacity={0.9}>
+            <div className="text-xs leading-snug">
+              <div className="flex items-center gap-1 font-bold text-black">
+                <span
+                  style={{
+                    background: color,
+                    border: '1.5px solid rgba(0,0,0,0.4)',
+                    borderRadius: '50%',
+                    width: 8,
+                    height: 8,
+                    display: 'inline-block',
+                    flexShrink: 0,
+                  }}
+                />
+                {name}
+              </div>
+              {futureRoute && (
+                <div className="text-gray-500 italic">
+                  Position before waypoint trajectory
+                </div>
+              )}
+              <div className="mt-0.5">
+                {futureRoute ? 'Lat/Lon:' : 'Latest position:'}{' '}
+                {latest.latitude.toFixed(5)}, {latest.longitude.toFixed(5)}
+              </div>
+              <div>
+                {latestTimeFix?.replace('T', ' ').replace('Z', ' UTC')}{' '}
+                <span className="text-[10px] italic text-gray-500">
+                  -{formatElapsedTime(Date.now() - latest.unixTime)}
+                </span>
+              </div>
+            </div>
+          </Tooltip>
+        </CircleMarker>
+      )}
     </>
   ) : null
 }
