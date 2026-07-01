@@ -1,5 +1,10 @@
-import { useEvents } from '@mbari/api-client'
+import {
+  getEvents,
+  GetEventsParams,
+  useTethysApiContext,
+} from '@mbari/api-client'
 import { getAdjustedUnixTime } from '@mbari/utils'
+import { useQuery } from 'react-query'
 
 export type CommsType = 'sat' | 'cell' | null
 
@@ -22,23 +27,32 @@ export const useLastCommsTime = (
   vehicleName: string,
   startTimeMillis: number
 ): LastCommsTimeResult => {
+  const { axiosInstance } = useTethysApiContext()
   const adjustedStartTime = getAdjustedUnixTime({
     unixTime: startTimeMillis,
     offsetDays: -1,
   })
-  const { data: eventsData } = useEvents(
-    {
-      vehicles: [vehicleName as string],
-      eventTypes: ['sbdReceive'],
-      from: adjustedStartTime,
-      // Fetch only the most recent events in descending order so a small limit
-      // is sufficient and polling does not trigger a backfill/pagination loop.
-      limit: 20,
-      ascending: 'n',
-    },
+
+  // Use a single-page fetch (no recursive backfill) so that polling at 30s
+  // does not generate unbounded paginated requests for long deployments.
+  // Fetching in descending order with a small limit gives us the most recent
+  // sbdReceive events in one request — all we need for last-comms times.
+  const params: GetEventsParams = {
+    vehicles: [vehicleName],
+    eventTypes: ['sbdReceive'],
+    from: adjustedStartTime,
+    limit: 20,
+    ascending: 'n',
+  }
+
+  const { data: eventsData } = useQuery(
+    ['event', 'lastCommsTime', vehicleName, adjustedStartTime],
+    () => getEvents(params, { instance: axiosInstance }),
     {
       staleTime: 60 * 1000,
       refetchInterval: 30 * 1000,
+      refetchOnWindowFocus: false,
+      refetchOnReconnect: false,
       // startTimeMillis defaults to 0 when the deployment hasn't loaded yet.
       // Subtracting 1 day produces from=-86400000, which TethysDash rejects
       // with a 400. Disable the query until a real start time is available.
