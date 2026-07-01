@@ -581,7 +581,9 @@ const VehiclePath: React.FC<VehiclePathProps> = ({
           </Circle>
         </>
       )}
-      {/* Solid dot at the latest GPS fix — always visible, tooltip on hover only */}
+      {/* Solid dot at the latest GPS fix — always visible, tooltip on hover only.
+          When a future route exists, also shows "Position before waypoint trajectory"
+          so both pieces of info come from a single tooltip with no overlap. */}
       {latest && (
         <Circle
           pathOptions={{ color }}
@@ -592,18 +594,35 @@ const VehiclePath: React.FC<VehiclePathProps> = ({
           radius={60}
         >
           <Tooltip direction="right" offset={[10, 0]} opacity={0.9}>
-            <div>
-              <div className="text-purple text-bold">{name}</div>
-              <div>
-                Latest position: {latest.latitude.toFixed(5)},{' '}
+            <div className="text-xs leading-snug">
+              <div className="flex items-center gap-1 font-bold text-black">
+                <span
+                  style={{
+                    background: color,
+                    border: '1.5px solid rgba(0,0,0,0.4)',
+                    borderRadius: '50%',
+                    width: 8,
+                    height: 8,
+                    display: 'inline-block',
+                    flexShrink: 0,
+                  }}
+                />
+                {name}
+              </div>
+              {futureRoute && (
+                <div className="text-gray-500 italic">
+                  Position before waypoint trajectory
+                </div>
+              )}
+              <div className="mt-0.5">
+                Lat/Lon: {latest.latitude.toFixed(5)},{' '}
                 {latest.longitude.toFixed(5)}
               </div>
               <div>
-                {latest.isoTime.split('T')[0] +
-                  ' ' +
-                  latest.isoTime.split('T')[1].split('Z')[0]}
-                {' - '}
-                {timeSinceFixDisplay}
+                {latest.isoTime.replace('T', ' ').replace('Z', '').trim()}{' '}
+                <span className="text-[10px] italic text-gray-500">
+                  -{formatElapsedTime(Date.now() - latest.unixTime)}
+                </span>
               </div>
             </div>
           </Tooltip>
@@ -764,44 +783,6 @@ const VehiclePath: React.FC<VehiclePathProps> = ({
         onCoord={handleCoord}
         onMouseOut={handleMouseOut}
       />
-
-      {/* "Position before waypoint trajectory" — invisible hit target so the
-          tooltip is reachable without adding a visual circle on top of the
-          existing vehicle position indicator (which would cause a star artifact). */}
-      {futureRoute && latest && (
-        <CircleMarker
-          center={{ lat: latest.latitude, lng: latest.longitude }}
-          radius={12}
-          color="transparent"
-          fillColor="transparent"
-          fillOpacity={0}
-          weight={0}
-        >
-          <Tooltip direction="top" offset={[0, -10]} opacity={0.9}>
-            <div className="text-xs leading-snug">
-              <div className="flex items-center gap-1 font-bold text-black">
-                <span
-                  style={{
-                    background: color,
-                    border: '1.5px solid rgba(0,0,0,0.4)',
-                    borderRadius: '50%',
-                    width: 8,
-                    height: 8,
-                    display: 'inline-block',
-                    flexShrink: 0,
-                  }}
-                />
-                {name}
-              </div>
-              <div>Position before waypoint trajectory</div>
-              <div>
-                Lat/Lon: {latest.latitude.toFixed(5)},{' '}
-                {latest.longitude.toFixed(5)}
-              </div>
-            </div>
-          </Tooltip>
-        </CircleMarker>
-      )}
     </>
   ) : null
 }
