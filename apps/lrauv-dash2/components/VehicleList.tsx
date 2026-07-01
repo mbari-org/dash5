@@ -36,6 +36,20 @@ const parsePos = (pos: string | number) => parseFloat(`${pos}`).toFixed(3)
 const calcPosition = (lat?: number | string, long?: number | string) =>
   lat && long ? [parsePos(lat), parsePos(long)].join(', ') : undefined
 
+export const deriveStatusLabel = ({
+  recoverEvent,
+  missionText,
+  mission,
+}: {
+  recoverEvent?: object | null
+  missionText?: string | null
+  mission?: string | null
+}): string => {
+  if (recoverEvent || missionText?.includes('RECOVERED')) return 'Recovered'
+  if (missionText?.includes('PLUGGED')) return 'Plugged in'
+  return `Running ${mission ?? 'mission'}`
+}
+
 const ConnectedVehicleCellComponent: React.FC<{
   name: string
   color: string
@@ -292,9 +306,11 @@ const ConnectedVehicleCellComponent: React.FC<{
       }
     : undefined
 
-  const status = lastDeployment?.recoverEvent
-    ? 'Plugged in'
-    : `Running ${mission ?? 'mission'}`
+  const status = deriveStatusLabel({
+    recoverEvent: lastDeployment?.recoverEvent,
+    missionText: vehicle?.text_mission,
+    mission,
+  })
   const endDate = DateTime.fromMillis(lastDeployment?.endEvent?.unixTime ?? 0)
 
   const ended = lastDeployment?.endEvent?.eventId && true
