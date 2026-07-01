@@ -581,17 +581,19 @@ const VehiclePath: React.FC<VehiclePathProps> = ({
           </Circle>
         </>
       )}
-      {/* Solid dot at the latest GPS fix — always visible, tooltip on hover only.
-          When a future route exists, also shows "Position before waypoint trajectory"
-          so both pieces of info come from a single tooltip with no overlap. */}
+      {/* Current vehicle position — pixel-based dashed ring stays visible at all
+          zoom levels (CircleMarker radius is in screen pixels, not meters).
+          The solid fill dot sits inside the ring. When a future route exists,
+          the tooltip also notes "Position before waypoint trajectory". */}
       {latest && (
-        <Circle
-          pathOptions={{ color }}
+        <CircleMarker
           center={{ lat: latest.latitude, lng: latest.longitude }}
+          radius={10}
+          color={color}
           fillColor={color}
           fillOpacity={1}
-          color={color}
-          radius={60}
+          weight={2}
+          dashArray="4, 3"
         >
           <Tooltip direction="right" offset={[10, 0]} opacity={0.9}>
             <div className="text-xs leading-snug">
@@ -626,7 +628,7 @@ const VehiclePath: React.FC<VehiclePathProps> = ({
               </div>
             </div>
           </Tooltip>
-        </Circle>
+        </CircleMarker>
       )}
       {/* Scrub indicator dot — shown for any scrub source (depth chart, timeline)
           unless the map-hover highlight is already visible at that position */}
