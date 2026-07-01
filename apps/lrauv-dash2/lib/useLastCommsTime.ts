@@ -28,26 +28,31 @@ export const useLastCommsTime = (
   startTimeMillis: number
 ): LastCommsTimeResult => {
   const { axiosInstance } = useTethysApiContext()
-  const adjustedStartTime = getAdjustedUnixTime({
+
+  // Use a rolling 7-day lookback rather than the full deployment window.
+  // Since we can't filter by event state (sat=0 / cell=2) server-side, we
+  // rely on the time window being narrow enough that limit:100 reliably covers
+  // both sat and cell events. If comms of either type haven't occurred in 7
+  // days the vehicle is well overdue; the NextComm display will then fall
+  // back to vehicle.text_nextcomm (refreshed by useVehicleInfo polling).
+  const COMMS_LOOKBACK_MS = 7 * 24 * 60 * 60 * 1000
+  const deploymentFrom = getAdjustedUnixTime({
     unixTime: startTimeMillis,
     offsetDays: -1,
   })
+  // Don't search earlier than deployment start, but cap at 7 days ago.
+  const recentFrom = Math.max(deploymentFrom, Date.now() - COMMS_LOOKBACK_MS)
 
-  // Use a single-page fetch (no recursive backfill) so that polling at 30s
-  // does not generate unbounded paginated requests for long deployments.
-  // Fetching in descending order (most recent first) with a generous limit
-  // ensures we capture at least one sat (state===0) and cell (state===2)
-  // event even when one type dominates — without paging.
   const params: GetEventsParams = {
     vehicles: [vehicleName],
     eventTypes: ['sbdReceive'],
-    from: adjustedStartTime,
+    from: recentFrom,
     limit: 100,
     ascending: 'n',
   }
 
   const { data: eventsData } = useQuery(
-    ['event', 'lastCommsTime', vehicleName, adjustedStartTime],
+    ['event', 'lastCommsTime', vehicleName, recentFrom],
     () => getEvents(params, { instance: axiosInstance }),
     {
       staleTime: 60 * 1000,
