@@ -46,9 +46,14 @@ export const deriveStatusLabel = ({
   missionText?: string | null
   mission?: string | null
 }): string => {
-  if (recoverEvent?.eventId || missionText?.includes('RECOVERED'))
-    return 'Recovered'
-  if (missionText?.includes('PLUGGED')) return 'Plugged in'
+  // Delegate to the shared helper so recovered/plugged precedence stays
+  // consistent with the diagram status — avoids duplicating the logic here.
+  const status = deriveVehiclePropsStatus({
+    recoverEventId: recoverEvent?.eventId,
+    missionText,
+  })
+  if (status === 'recovered') return 'Recovered'
+  if (status === 'pluggedIn') return 'Plugged in'
   return `Running ${mission?.trim() || 'mission'}`
 }
 

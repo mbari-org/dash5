@@ -35,13 +35,14 @@ export const useLastCommsTime = (
 
   // Use a single-page fetch (no recursive backfill) so that polling at 30s
   // does not generate unbounded paginated requests for long deployments.
-  // Fetching in descending order with a small limit gives us the most recent
-  // sbdReceive events in one request — all we need for last-comms times.
+  // Fetching in descending order (most recent first) with a generous limit
+  // ensures we capture at least one sat (state===0) and cell (state===2)
+  // event even when one type dominates — without paging.
   const params: GetEventsParams = {
     vehicles: [vehicleName],
     eventTypes: ['sbdReceive'],
     from: adjustedStartTime,
-    limit: 20,
+    limit: 100,
     ascending: 'n',
   }
 
