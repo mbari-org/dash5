@@ -1,7 +1,7 @@
 import '@testing-library/jest-dom'
 import React from 'react'
 import { render } from '@testing-library/react'
-import VehicleList from './VehicleList'
+import VehicleList, { deriveStatusLabel } from './VehicleList'
 import { QueryClient } from 'react-query'
 import { rest } from 'msw'
 import { setupServer } from 'msw/node'
@@ -46,5 +46,68 @@ describe('VehicleList', () => {
         </MockProviders>
       )
     ).not.toThrow()
+  })
+})
+
+describe('deriveStatusLabel', () => {
+  test('returns "Recovered" when recoverEvent has a valid eventId', () => {
+    expect(
+      deriveStatusLabel({ recoverEvent: { eventId: 123 }, missionText: '' })
+    ).toBe('Recovered')
+  })
+
+  test('does not treat an empty recoverEvent object as recovered', () => {
+    expect(
+      deriveStatusLabel({
+        recoverEvent: { eventId: undefined },
+        missionText: '',
+        mission: 'sci2.xml',
+      })
+    ).toBe('Running sci2.xml')
+  })
+
+  test('returns "Recovered" when text_mission contains RECOVERED', () => {
+    expect(
+      deriveStatusLabel({ recoverEvent: null, missionText: 'RECOVERED' })
+    ).toBe('Recovered')
+  })
+
+  test('returns "Plugged in" when text_mission contains PLUGGED', () => {
+    expect(
+      deriveStatusLabel({ recoverEvent: null, missionText: 'PLUGGED IN' })
+    ).toBe('Plugged in')
+  })
+
+  test('returns running mission label for an active mission', () => {
+    expect(
+      deriveStatusLabel({
+        recoverEvent: null,
+        missionText: 'some active mission',
+        mission: 'sci2.xml',
+      })
+    ).toBe('Running sci2.xml')
+  })
+
+  test('trims leading whitespace from mission name (from .replace result)', () => {
+    expect(
+      deriveStatusLabel({
+        recoverEvent: null,
+        missionText: 'some active mission',
+        mission: ' sci2.xml',
+      })
+    ).toBe('Running sci2.xml')
+  })
+
+  test('falls back to "Running mission" when mission name is null', () => {
+    expect(
+      deriveStatusLabel({ recoverEvent: null, missionText: '', mission: null })
+    ).toBe('Running mission')
+  })
+
+  test('falls back to "Running mission" when mission is an empty string', () => {
+    // .replace(/started mission/i, '') on "started mission" produces ""
+    expect(
+      deriveStatusLabel({ recoverEvent: null, missionText: '', mission: '' })
+    ).toBe('Running mission')
   })
 })

@@ -31,10 +31,31 @@ import { useLastCommsTime } from '../lib/useLastCommsTime'
 import { useNeedCommsTime } from '../lib/useNeedCommsTime'
 import { useTick } from '../lib/useTick'
 import { useVehicleStatus } from '../lib/useVehicleStatus'
+import { deriveVehiclePropsStatus } from '../lib/deriveVehiclePropsStatus'
 
 const parsePos = (pos: string | number) => parseFloat(`${pos}`).toFixed(3)
 const calcPosition = (lat?: number | string, long?: number | string) =>
   lat && long ? [parsePos(lat), parsePos(long)].join(', ') : undefined
+
+export const deriveStatusLabel = ({
+  recoverEvent,
+  missionText,
+  mission,
+}: {
+  recoverEvent?: { eventId?: number | string | null } | null
+  missionText?: string | null
+  mission?: string | null
+}): string => {
+  // Delegate to the shared helper so recovered/plugged precedence stays
+  // consistent with the diagram status — avoids duplicating the logic here.
+  const status = deriveVehiclePropsStatus({
+    recoverEventId: recoverEvent?.eventId,
+    missionText,
+  })
+  if (status === 'recovered') return 'Recovered'
+  if (status === 'pluggedIn') return 'Plugged in'
+  return `Running ${mission?.trim() || 'mission'}`
+}
 
 const ConnectedVehicleCellComponent: React.FC<{
   name: string
@@ -59,7 +80,7 @@ const ConnectedVehicleCellComponent: React.FC<{
     {
       vehicle: name,
     },
-    { staleTime: 5 * 60 * 1000 }
+    { staleTime: 5 * 60 * 1000, refetchInterval: 30 * 1000 }
   )
 
   const defaultFrom = useMemo(() => Date.now() - 24 * 60 * 60 * 1000, [])
@@ -67,9 +88,13 @@ const ConnectedVehicleCellComponent: React.FC<{
     {
       vehicle: name,
       from: lastDeployment?.lastEvent ?? defaultFrom,
+      // Only the most recent GPS fix is used (gpsFixes[0]); limit to 1 so
+      // polling at 30s doesn't repeatedly download the full deployment track.
+      limit: 1,
     },
     {
       enabled: !!lastDeployment?.lastEvent,
+      refetchInterval: 30 * 1000,
     }
   )
 
@@ -173,6 +198,12 @@ const ConnectedVehicleCellComponent: React.FC<{
   )
   const formattedNextComm = nextCommsText ?? vehicle?.text_nextcomm
 
+  // Compute once; reused for vehicleProps.status and the recovered boolean.
+  const derivedStatus = deriveVehiclePropsStatus({
+    recoverEventId: lastDeployment?.recoverEvent?.eventId,
+    missionText: vehicle?.text_mission,
+  })
+
   const vehicleProps = vehicle
     ? {
         textAmpAgo: vehicle.text_ampago,
@@ -252,10 +283,7 @@ const ConnectedVehicleCellComponent: React.FC<{
         colorMissionDefault: vehicle.color_missiondefault,
         textVolts: vehicle.text_volts,
         colorVolts: vehicle.color_volts,
-        status: (lastDeployment?.recoverEvent ||
-        (vehicle?.text_mission?.indexOf('PLUGGED') ?? -1) >= 0
-          ? 'pluggedIn'
-          : 'onMission') as 'pluggedIn' | 'onMission',
+        status: derivedStatus,
         textLeak: vehicle.text_leak,
         textLeakAgo: vehicle.text_leakago,
         colorLeak: vehicle.color_leak,
@@ -278,16 +306,26 @@ const ConnectedVehicleCellComponent: React.FC<{
         textVersion: vehicle.text_version,
         svgCurrent: vehicle.svg_current,
         colorDuration: vehicle.color_duration,
+        textLM: vehicle.text_LM,
+        textHM: vehicle.text_HM,
+        textRoiAgo: vehicle.text_roiago,
+        colorWhitebeam: vehicle.color_whitebeam,
+        colorWhiteled: vehicle.color_whiteled,
+        colorRedbeam: vehicle.color_redbeam,
+        colorRedled: vehicle.color_redled,
+        textArriveLabel: vehicle.text_waypoint,
       }
     : undefined
 
-  const status = lastDeployment?.recoverEvent
-    ? 'Plugged in'
-    : `Running ${mission ?? 'mission'}`
+  const status = deriveStatusLabel({
+    recoverEvent: lastDeployment?.recoverEvent,
+    missionText: vehicle?.text_mission,
+    mission,
+  })
   const endDate = DateTime.fromMillis(lastDeployment?.endEvent?.unixTime ?? 0)
 
   const ended = lastDeployment?.endEvent?.eventId && true
-  const recovered = Boolean(lastDeployment?.recoverEvent?.eventId)
+  const recovered = derivedStatus === 'recovered'
   const active = lastDeployment?.active
 
   // Prefer launchEvent (vehicle in water) over startEvent (deployment record
@@ -318,10 +356,14 @@ const ConnectedVehicleCellComponent: React.FC<{
       undefined
     : undefined
 
-  const timeSpanSinceRecovery =
-    DateTime.fromMillis(
-      lastDeployment?.recoverEvent?.unixTime ?? 0
-    ).toRelative() ?? ''
+  // Only produce a recovery-time string when we actually have a timestamp.
+  // derivedStatus can be 'recovered' from vehicle.text_mission before
+  // lastDeployment.recoverEvent loads; falling back to epoch (0) would render
+  // "Recovered 56 years ago", so we leave it undefined until the event arrives.
+  const timeSpanSinceRecovery = lastDeployment?.recoverEvent?.unixTime
+    ? DateTime.fromMillis(lastDeployment.recoverEvent.unixTime).toRelative() ??
+      ''
+    : undefined
 
   const { setGlobalModalId } = useGlobalModalId()
   const onColorChange = (_: string, _v: string) => {
