@@ -511,17 +511,19 @@ const VehiclePath: React.FC<VehiclePathProps> = ({
               {latest && (
                 <>
                   <div className="mt-0.5">
-                    Latest position: {latest.latitude.toFixed(5)},{' '}
+                    Latest: {latest.latitude.toFixed(5)},{' '}
                     {latest.longitude.toFixed(5)}
                   </div>
                   <div>
                     {latest.isoTime.replace('T', ' ').replace('Z', ' UTC')}
-                    {timeSinceFixDisplay ? ` — ${timeSinceFixDisplay}` : ''}
+                  </div>
+                  <div>
+                    {formatElapsedTime(Date.now() - latest.unixTime)} ago
                   </div>
                 </>
               )}
               <div className="text-gray-500 mt-0.5">
-                Positions displayed: {gpsFixes?.length ?? 0}
+                Positions: {gpsFixes?.length ?? 0}
               </div>
             </div>
           </Tooltip>
