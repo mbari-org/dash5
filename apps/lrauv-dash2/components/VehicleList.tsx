@@ -47,7 +47,7 @@ export const deriveStatusLabel = ({
 }): string => {
   if (recoverEvent || missionText?.includes('RECOVERED')) return 'Recovered'
   if (missionText?.includes('PLUGGED')) return 'Plugged in'
-  return `Running ${mission ?? 'mission'}`
+  return `Running ${mission?.trim() ?? 'mission'}`
 }
 
 const ConnectedVehicleCellComponent: React.FC<{

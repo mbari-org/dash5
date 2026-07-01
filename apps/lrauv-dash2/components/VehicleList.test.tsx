@@ -78,6 +78,16 @@ describe('deriveStatusLabel', () => {
     ).toBe('Running sci2.xml')
   })
 
+  test('trims leading whitespace from mission name (from .replace result)', () => {
+    expect(
+      deriveStatusLabel({
+        recoverEvent: null,
+        missionText: 'some active mission',
+        mission: ' sci2.xml',
+      })
+    ).toBe('Running sci2.xml')
+  })
+
   test('falls back to "Running mission" when mission name is absent', () => {
     expect(
       deriveStatusLabel({ recoverEvent: null, missionText: '', mission: null })
