@@ -581,19 +581,41 @@ const VehiclePath: React.FC<VehiclePathProps> = ({
           </Circle>
         </>
       )}
-      {/* Current vehicle position — pixel-based dashed ring stays visible at all
-          zoom levels (CircleMarker radius is in screen pixels, not meters).
-          The solid fill dot sits inside the ring. When a future route exists,
-          the tooltip also notes "Position before waypoint trajectory". */}
+      {/* Current vehicle position — two separate pixel-based markers:
+          1. Small solid inner dot (no dashes, no star artifacts)
+          2. Hollow dashed outer ring for visibility when zoomed out
+          Keeping fill and dashes on separate elements avoids the star effect. */}
+      {latest && (
+        <>
+          <CircleMarker
+            center={{ lat: latest.latitude, lng: latest.longitude }}
+            radius={10}
+            color={color}
+            fillColor="transparent"
+            fillOpacity={0}
+            weight={2}
+            dashArray="4, 3"
+            interactive={false}
+          />
+          <CircleMarker
+            center={{ lat: latest.latitude, lng: latest.longitude }}
+            radius={4}
+            color={color}
+            fillColor={color}
+            fillOpacity={1}
+            weight={0}
+            interactive={false}
+          />
+        </>
+      )}
       {latest && (
         <CircleMarker
           center={{ lat: latest.latitude, lng: latest.longitude }}
-          radius={10}
-          color={color}
-          fillColor={color}
-          fillOpacity={1}
-          weight={2}
-          dashArray="4, 3"
+          radius={12}
+          color="transparent"
+          fillColor="transparent"
+          fillOpacity={0}
+          weight={0}
         >
           <Tooltip direction="right" offset={[10, 0]} opacity={0.9}>
             <div className="text-xs leading-snug">
