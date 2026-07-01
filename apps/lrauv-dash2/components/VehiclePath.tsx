@@ -5,7 +5,7 @@ import {
   VPosDetail,
   useWaypointsInfo,
 } from '@mbari/api-client'
-import { Polyline, useMap, Circle, Tooltip } from 'react-leaflet'
+import { Polyline, useMap, Circle, CircleMarker, Tooltip } from 'react-leaflet'
 import { LatLng, LeafletMouseEventHandlerFn } from 'leaflet'
 import { useRouter } from 'next/router'
 import { distance, nearestPointOnLine, lineString } from '@turf/turf'
@@ -501,7 +501,31 @@ const VehiclePath: React.FC<VehiclePathProps> = ({
               setLineStyle({ color, weight: 3 })
             },
           }}
-        />
+        >
+          {/* Sticky tooltip on the track line — follows cursor, shows summary */}
+          <Tooltip sticky opacity={0.88}>
+            <div className="text-xs leading-snug min-w-[170px]">
+              <div className="font-bold" style={{ color }}>
+                {name}
+              </div>
+              {latest && (
+                <>
+                  <div className="mt-0.5">
+                    Latest position: {latest.latitude.toFixed(5)},{' '}
+                    {latest.longitude.toFixed(5)}
+                  </div>
+                  <div>
+                    {latest.isoTime.replace('T', ' ').replace('Z', ' UTC')}
+                    {timeSinceFixDisplay ? ` — ${timeSinceFixDisplay}` : ''}
+                  </div>
+                </>
+              )}
+              <div className="text-gray-500 mt-0.5">
+                Positions displayed: {gpsFixes?.length ?? 0}
+              </div>
+            </div>
+          </Tooltip>
+        </Polyline>
       )}
       {/* dashed future waypoint trajectory */}
       {futureRoute && (
@@ -677,6 +701,25 @@ const VehiclePath: React.FC<VehiclePathProps> = ({
             opacity={0.5}
           />
         ))}
+      {/* GPS surfacing dots — small visual markers at every recorded GPS fix.
+          These show where the vehicle surfaced throughout the deployment.
+          interactive=false so HitCircles (below) keep hover/scrub control. */}
+      {gpsFixes &&
+        gpsFixes.map((fix, index) => (
+          <CircleMarker
+            key={`${name}:surfacing:${fix.unixTime}`}
+            center={{ lat: fix.latitude, lng: fix.longitude }}
+            radius={index === 0 ? 5 : 2}
+            interactive={false}
+            pathOptions={{
+              color,
+              fillColor: color,
+              fillOpacity: index === 0 ? 1 : 0.65,
+              weight: 1,
+            }}
+          />
+        ))}
+
       {/* Memoized hit targets — isolated from VehiclePath re-renders to
           prevent spurious mouseout/mouseover events causing tooltip flicker. */}
       <HitCircles
@@ -687,6 +730,34 @@ const VehiclePath: React.FC<VehiclePathProps> = ({
         onCoord={handleCoord}
         onMouseOut={handleMouseOut}
       />
+
+      {/* "Position before waypoint trajectory" — interactive marker rendered
+          on top of hit circles so its tooltip is reachable on hover */}
+      {futureRoute && latest && (
+        <CircleMarker
+          center={{ lat: latest.latitude, lng: latest.longitude }}
+          radius={5}
+          pathOptions={{
+            color,
+            fillColor: color,
+            fillOpacity: 0.5,
+            weight: 2,
+          }}
+        >
+          <Tooltip direction="right" offset={[6, 0]} opacity={0.9}>
+            <div className="text-xs leading-snug">
+              <div className="font-bold" style={{ color }}>
+                {name}
+              </div>
+              <div>Position before waypoint trajectory</div>
+              <div>
+                Lat/Lon: {latest.latitude.toFixed(5)},{' '}
+                {latest.longitude.toFixed(5)}
+              </div>
+            </div>
+          </Tooltip>
+        </CircleMarker>
+      )}
     </>
   ) : null
 }
