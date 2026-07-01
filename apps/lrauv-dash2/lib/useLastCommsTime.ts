@@ -31,7 +31,10 @@ export const useLastCommsTime = (
       vehicles: [vehicleName as string],
       eventTypes: ['sbdReceive'],
       from: adjustedStartTime,
-      limit: 500,
+      // Fetch only the most recent events in descending order so a small limit
+      // is sufficient and polling does not trigger a backfill/pagination loop.
+      limit: 20,
+      ascending: 'n',
     },
     {
       staleTime: 60 * 1000,

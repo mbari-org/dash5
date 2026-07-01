@@ -31,6 +31,7 @@ import { useLastCommsTime } from '../lib/useLastCommsTime'
 import { useNeedCommsTime } from '../lib/useNeedCommsTime'
 import { useTick } from '../lib/useTick'
 import { useVehicleStatus } from '../lib/useVehicleStatus'
+import { deriveVehiclePropsStatus } from '../lib/deriveVehiclePropsStatus'
 
 const parsePos = (pos: string | number) => parseFloat(`${pos}`).toFixed(3)
 const calcPosition = (lat?: number | string, long?: number | string) =>
@@ -268,12 +269,10 @@ const ConnectedVehicleCellComponent: React.FC<{
         colorMissionDefault: vehicle.color_missiondefault,
         textVolts: vehicle.text_volts,
         colorVolts: vehicle.color_volts,
-        status: (lastDeployment?.recoverEvent?.eventId ||
-        vehicle?.text_mission?.includes('RECOVERED')
-          ? 'recovered'
-          : vehicle?.text_mission?.includes('PLUGGED')
-          ? 'pluggedIn'
-          : 'onMission') as 'pluggedIn' | 'onMission' | 'recovered',
+        status: deriveVehiclePropsStatus({
+          recoverEventId: lastDeployment?.recoverEvent?.eventId,
+          missionText: vehicle?.text_mission,
+        }),
         textLeak: vehicle.text_leak,
         textLeakAgo: vehicle.text_leakago,
         colorLeak: vehicle.color_leak,
@@ -316,8 +315,10 @@ const ConnectedVehicleCellComponent: React.FC<{
 
   const ended = lastDeployment?.endEvent?.eventId && true
   const recovered =
-    Boolean(lastDeployment?.recoverEvent?.eventId) ||
-    Boolean(vehicle?.text_mission?.includes('RECOVERED'))
+    deriveVehiclePropsStatus({
+      recoverEventId: lastDeployment?.recoverEvent?.eventId,
+      missionText: vehicle?.text_mission,
+    }) === 'recovered'
   const active = lastDeployment?.active
 
   // Prefer launchEvent (vehicle in water) over startEvent (deployment record
