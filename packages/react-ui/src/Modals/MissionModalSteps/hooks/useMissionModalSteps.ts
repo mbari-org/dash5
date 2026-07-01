@@ -96,6 +96,18 @@ const useMissionModalSteps = ({
     }
 
     if (prevStep >= 0) {
+      // If landing back on a summary-eligible step, re-show the summary screen
+      // so Back mirrors the forward path (e.g. Back from Safety & Comms should
+      // return to ParameterSummary, not skip straight to the Parameters form).
+      const landingOnWaypoints =
+        summarySteps.includes(prevStep) && steps[prevStep].match(/waypoint/i)
+      const landingOnParameters =
+        summarySteps.includes(prevStep) &&
+        steps[prevStep].match(/parameters/i) &&
+        updatedParameters.some((param) => param.overrideValue)
+      if (landingOnWaypoints || landingOnParameters) {
+        setShowSummary(true)
+      }
       return setCurrentStep(prevStep)
     }
   }
