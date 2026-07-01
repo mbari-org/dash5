@@ -507,29 +507,13 @@ const VehiclePath: React.FC<VehiclePathProps> = ({
             },
           }}
         >
-          {/* Sticky tooltip on the track line — follows cursor, shows summary */}
+          {/* Sticky tooltip on the track line — vehicle name + position count */}
           <Tooltip sticky opacity={0.88}>
-            <div className="text-xs leading-snug min-w-[170px]">
+            <div className="text-xs leading-snug">
               <div className="font-bold" style={{ color }}>
                 {name}
               </div>
-              {latest && (
-                <>
-                  <div className="mt-0.5">
-                    Latest: {latest.latitude.toFixed(5)},{' '}
-                    {latest.longitude.toFixed(5)}
-                  </div>
-                  <div>
-                    {latest.isoTime.replace('T', ' ').replace('Z', ' UTC')}
-                  </div>
-                  <div>
-                    {formatElapsedTime(Date.now() - latest.unixTime)} ago
-                  </div>
-                </>
-              )}
-              <div className="text-gray-500 mt-0.5">
-                Positions displayed: {displayedFixes.length}
-              </div>
+              <div>Positions: {displayedFixes.length}</div>
             </div>
           </Tooltip>
         </Polyline>
@@ -717,12 +701,26 @@ const VehiclePath: React.FC<VehiclePathProps> = ({
           key={`${name}:surfacing:${fix.unixTime}`}
           center={{ lat: fix.latitude, lng: fix.longitude }}
           radius={index === 0 ? 5 : 3}
-          interactive={false}
           color={color}
           fillColor={color}
           fillOpacity={index === 0 ? 1 : 0.7}
           weight={1}
-        />
+        >
+          <Tooltip direction="top" offset={[0, -4]} opacity={0.9}>
+            <div className="text-xs leading-snug">
+              <div className="font-bold" style={{ color }}>
+                {name}
+              </div>
+              <div>
+                Lat/Lon: {fix.latitude.toFixed(5)}, {fix.longitude.toFixed(5)}
+              </div>
+              <div>
+                {fix.isoTime.replace('T', ' ').replace('Z', '').trim()}
+                {fix.note ? ` ${fix.note}` : ''}
+              </div>
+            </div>
+          </Tooltip>
+        </CircleMarker>
       ))}
 
       {/* Memoized hit targets — isolated from VehiclePath re-renders to
