@@ -88,6 +88,9 @@ const ConnectedVehicleCellComponent: React.FC<{
     {
       vehicle: name,
       from: lastDeployment?.lastEvent ?? defaultFrom,
+      // Only the most recent GPS fix is used (gpsFixes[0]); limit to 1 so
+      // polling at 30s doesn't repeatedly download the full deployment track.
+      limit: 1,
     },
     {
       enabled: !!lastDeployment?.lastEvent,

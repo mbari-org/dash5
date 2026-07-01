@@ -56,7 +56,10 @@ export const useLastCommsTime = (
         vehicles: [vehicleName],
         eventTypes: ['sbdReceive'],
         from: recentFrom,
-        limit: 100,
+        // 500 events in a 7-day window gives a large safety margin so both
+        // sat (state=0) and cell (state=2) types are captured even if one
+        // type dominates — without reintroducing a full deployment-range fetch.
+        limit: 500,
         ascending: 'n',
       }
       return getEvents(params, { instance: axiosInstance })
