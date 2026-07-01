@@ -50,12 +50,15 @@ const VehiclePoint: React.FC<{
 // Memoized hit-circle layer so it never re-renders when VehiclePath state
 // (mapHoverFix, indicatorTime, etc.) changes — prevents React-Leaflet from
 // re-mounting the circles and emitting spurious mouseout/mouseover events.
+// Also carries the sticky summary tooltip so it appears even when the cursor
+// is over a hit circle (which intercepts pointer events before the Polyline).
 const HitCircles = React.memo(
   ({
     name,
     grouped,
     route,
     color,
+    positionCount,
     onCoord,
     onMouseOut,
   }: {
@@ -63,6 +66,7 @@ const HitCircles = React.memo(
     grouped?: boolean
     route: [number, number][]
     color: string
+    positionCount: number
     onCoord: LeafletMouseEventHandlerFn
     onMouseOut: LeafletMouseEventHandlerFn
   }) => (
@@ -79,7 +83,27 @@ const HitCircles = React.memo(
           color={color}
           opacity={0}
           eventHandlers={{ mouseover: onCoord, mouseout: onMouseOut }}
-        />
+        >
+          <Tooltip sticky opacity={0.88}>
+            <div className="text-xs leading-snug">
+              <div className="flex items-center gap-1 font-bold text-black">
+                <span
+                  style={{
+                    background: color,
+                    border: '1.5px solid rgba(0,0,0,0.4)',
+                    borderRadius: '50%',
+                    width: 8,
+                    height: 8,
+                    display: 'inline-block',
+                    flexShrink: 0,
+                  }}
+                />
+                {name}
+              </div>
+              <div>Positions: {positionCount}</div>
+            </div>
+          </Tooltip>
+        </Circle>
       ))}
     </>
   )
@@ -516,28 +540,7 @@ const VehiclePath: React.FC<VehiclePathProps> = ({
               setLineStyle({ color, weight: 3 })
             },
           }}
-        >
-          {/* Sticky tooltip on the track line — vehicle name + position count */}
-          <Tooltip sticky opacity={0.88}>
-            <div className="text-xs leading-snug">
-              <div className="flex items-center gap-1 font-bold text-black">
-                <span
-                  style={{
-                    background: color,
-                    border: '1.5px solid rgba(0,0,0,0.4)',
-                    borderRadius: '50%',
-                    width: 8,
-                    height: 8,
-                    display: 'inline-block',
-                    flexShrink: 0,
-                  }}
-                />
-                {name}
-              </div>
-              <div>Positions: {displayedFixes.length}</div>
-            </div>
-          </Tooltip>
-        </Polyline>
+        />
       )}
       {/* dashed future waypoint trajectory */}
       {futureRoute && (
@@ -667,7 +670,7 @@ const VehiclePath: React.FC<VehiclePathProps> = ({
                 {latest.longitude.toFixed(5)}
               </div>
               <div>
-                {latest.isoTime.replace('T', ' ').replace('Z', '').trim()}{' '}
+                {latestTimeFix?.replace('T', ' ').replace('Z', '').trim()}{' '}
                 <span className="text-[10px] italic text-gray-500">
                   -{formatElapsedTime(Date.now() - latest.unixTime)}
                 </span>
@@ -781,6 +784,7 @@ const VehiclePath: React.FC<VehiclePathProps> = ({
         grouped={grouped}
         route={route}
         color={color}
+        positionCount={activePoints?.length ?? displayedFixes.length}
         onCoord={handleCoord}
         onMouseOut={handleMouseOut}
       />
