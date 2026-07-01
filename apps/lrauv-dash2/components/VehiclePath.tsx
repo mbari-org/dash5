@@ -345,6 +345,19 @@ const VehiclePath: React.FC<VehiclePathProps> = ({
   // indicatorTime → set from timeline bar OR map hover → drives indicator dot
   const gpsFixes = vehiclePosition?.gpsFixes ?? null
 
+  // Limit surfacing dots to the 20 most recent fixes within the last 24h,
+  // matching Dash4's limitPositions=20 / timeWindowHoursForPositions=24 defaults.
+  // gpsFixes[0] is the most recent fix, so slicing from 0 keeps the latest.
+  const SURFACING_LIMIT = 20
+  const SURFACING_WINDOW_MS = 24 * 60 * 60 * 1000
+  const displayedFixes = useMemo(() => {
+    if (!gpsFixes) return []
+    const windowStart = Date.now() - SURFACING_WINDOW_MS
+    return gpsFixes
+      .filter((fix) => fix.unixTime >= windowStart)
+      .slice(0, SURFACING_LIMIT)
+  }, [gpsFixes])
+
   // Track-split: which fixes are in the "past" relative to dimTime
   const activePoints = useMemo(() => {
     if (!dimTime || dimTime <= 0 || !gpsFixes) return null
@@ -523,7 +536,7 @@ const VehiclePath: React.FC<VehiclePathProps> = ({
                 </>
               )}
               <div className="text-gray-500 mt-0.5">
-                Positions: {gpsFixes?.length ?? 0}
+                Positions displayed: {displayedFixes.length}
               </div>
             </div>
           </Tooltip>
@@ -703,24 +716,23 @@ const VehiclePath: React.FC<VehiclePathProps> = ({
             opacity={0.5}
           />
         ))}
-      {/* GPS surfacing dots — small visual markers at every recorded GPS fix.
-          These show where the vehicle surfaced throughout the deployment.
-          interactive=false so HitCircles (below) keep hover/scrub control. */}
-      {gpsFixes &&
-        gpsFixes.map((fix, index) => (
-          <CircleMarker
-            key={`${name}:surfacing:${fix.unixTime}`}
-            center={{ lat: fix.latitude, lng: fix.longitude }}
-            radius={index === 0 ? 5 : 2}
-            interactive={false}
-            pathOptions={{
-              color,
-              fillColor: color,
-              fillOpacity: index === 0 ? 1 : 0.65,
-              weight: 1,
-            }}
-          />
-        ))}
+      {/* GPS surfacing dots — 20 most recent fixes within last 24h, matching
+          Dash4's limitPositions/timeWindowHoursForPositions defaults.
+          interactive=false so HitCircles keep hover/scrub control. */}
+      {displayedFixes.map((fix, index) => (
+        <CircleMarker
+          key={`${name}:surfacing:${fix.unixTime}`}
+          center={{ lat: fix.latitude, lng: fix.longitude }}
+          radius={index === 0 ? 5 : 2}
+          interactive={false}
+          pathOptions={{
+            color,
+            fillColor: color,
+            fillOpacity: index === 0 ? 1 : 0.65,
+            weight: 1,
+          }}
+        />
+      ))}
 
       {/* Memoized hit targets — isolated from VehiclePath re-renders to
           prevent spurious mouseout/mouseover events causing tooltip flicker. */}
