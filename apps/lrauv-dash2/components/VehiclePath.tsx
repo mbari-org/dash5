@@ -510,14 +510,18 @@ const VehiclePath: React.FC<VehiclePathProps> = ({
           {/* Sticky tooltip on the track line — vehicle name + position count */}
           <Tooltip sticky opacity={0.88}>
             <div className="text-xs leading-snug">
-              <div
-                className="font-bold"
-                style={{
-                  color,
-                  textShadow:
-                    '0 0 1px #000, 0 0 2px #000, 0 0 3px rgba(0,0,0,0.6)',
-                }}
-              >
+              <div className="flex items-center gap-1 font-bold text-black">
+                <span
+                  style={{
+                    background: color,
+                    border: '1.5px solid rgba(0,0,0,0.4)',
+                    borderRadius: '50%',
+                    width: 8,
+                    height: 8,
+                    display: 'inline-block',
+                    flexShrink: 0,
+                  }}
+                />
                 {name}
               </div>
               <div>Positions: {displayedFixes.length}</div>
@@ -718,14 +722,18 @@ const VehiclePath: React.FC<VehiclePathProps> = ({
         >
           <Tooltip direction="top" offset={[0, -4]} opacity={0.9}>
             <div className="text-xs leading-snug">
-              <div
-                className="font-bold"
-                style={{
-                  color,
-                  textShadow:
-                    '0 0 1px #000, 0 0 2px #000, 0 0 3px rgba(0,0,0,0.6)',
-                }}
-              >
+              <div className="flex items-center gap-1 font-bold text-black">
+                <span
+                  style={{
+                    background: color,
+                    border: '1.5px solid rgba(0,0,0,0.4)',
+                    borderRadius: '50%',
+                    width: 8,
+                    height: 8,
+                    display: 'inline-block',
+                    flexShrink: 0,
+                  }}
+                />
                 {name}
               </div>
               <div>
@@ -766,14 +774,18 @@ const VehiclePath: React.FC<VehiclePathProps> = ({
         >
           <Tooltip direction="right" offset={[6, 0]} opacity={0.9}>
             <div className="text-xs leading-snug">
-              <div
-                className="font-bold"
-                style={{
-                  color,
-                  textShadow:
-                    '0 0 1px #000, 0 0 2px #000, 0 0 3px rgba(0,0,0,0.6)',
-                }}
-              >
+              <div className="flex items-center gap-1 font-bold text-black">
+                <span
+                  style={{
+                    background: color,
+                    border: '1.5px solid rgba(0,0,0,0.4)',
+                    borderRadius: '50%',
+                    width: 8,
+                    height: 8,
+                    display: 'inline-block',
+                    flexShrink: 0,
+                  }}
+                />
                 {name}
               </div>
               <div>Position before waypoint trajectory</div>
