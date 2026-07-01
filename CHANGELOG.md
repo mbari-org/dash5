@@ -48,7 +48,6 @@ PRs included: #734, #737, #738, #739, #742, #743, #745 (Issues #718, #723, #728,
 ### Mission wizard
 
 - **Back button** — pressing Back now correctly re-shows the Parameters Summary screen (previously it skipped back to the raw Parameters form, bypassing the summary)
-- **Tab memory** — the selected tab (Templates / Frequent Runs / Recent Runs) is preserved when navigating Back, so the user returns to the same tab they were on
 
 ### Document editor
 
