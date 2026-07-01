@@ -124,8 +124,12 @@ describe('LogsSection', () => {
       expect(screen.getByText(/Deployment/i)).toBeInTheDocument()
     })
 
-    // The mock includes one `dataProcessed` event which maps to the "Data" label.
-    expect(screen.queryByText(/^Data$/)).not.toBeInTheDocument()
+    // The mock includes one `dataProcessed` event. Verify no DATA log-cell label
+    // appears. Note: the RealTimeLogs download button also renders with the text
+    // "Data", so we specifically exclude <button> elements from this check.
+    const dataTexts = screen.queryAllByText(/^Data$/)
+    const dataLogLabels = dataTexts.filter((el) => !el.closest('button'))
+    expect(dataLogLabels).toHaveLength(0)
   })
 
   test('should include data events when checkbox is checked', async () => {
