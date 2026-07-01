@@ -196,7 +196,7 @@ const ConnectedVehicleCellComponent: React.FC<{
   const formattedNextComm = nextCommsText ?? vehicle?.text_nextcomm
 
   // Compute once; reused for vehicleProps.status and the recovered boolean.
-  const provedStatus = deriveVehiclePropsStatus({
+  const derivedStatus = deriveVehiclePropsStatus({
     recoverEventId: lastDeployment?.recoverEvent?.eventId,
     missionText: vehicle?.text_mission,
   })
@@ -280,7 +280,7 @@ const ConnectedVehicleCellComponent: React.FC<{
         colorMissionDefault: vehicle.color_missiondefault,
         textVolts: vehicle.text_volts,
         colorVolts: vehicle.color_volts,
-        status: provedStatus,
+        status: derivedStatus,
         textLeak: vehicle.text_leak,
         textLeakAgo: vehicle.text_leakago,
         colorLeak: vehicle.color_leak,
@@ -322,7 +322,7 @@ const ConnectedVehicleCellComponent: React.FC<{
   const endDate = DateTime.fromMillis(lastDeployment?.endEvent?.unixTime ?? 0)
 
   const ended = lastDeployment?.endEvent?.eventId && true
-  const recovered = provedStatus === 'recovered'
+  const recovered = derivedStatus === 'recovered'
   const active = lastDeployment?.active
 
   // Prefer launchEvent (vehicle in water) over startEvent (deployment record
