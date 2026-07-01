@@ -348,7 +348,17 @@ const VehiclePath: React.FC<VehiclePathProps> = ({
   // Show all GPS surfacing fixes so dots appear across the full deployment
   // track, not just the most recent segment. gpsFixes is already bounded by
   // the deployment window query, so the array is not unbounded.
-  const displayedFixes = gpsFixes ?? []
+  // Deduplicate by unixTime — the API occasionally returns duplicate fixes
+  // with the same timestamp, which causes React duplicate-key warnings.
+  const displayedFixes = useMemo(() => {
+    if (!gpsFixes) return []
+    const seen = new Set<number>()
+    return gpsFixes.filter((fix) => {
+      if (seen.has(fix.unixTime)) return false
+      seen.add(fix.unixTime)
+      return true
+    })
+  }, [gpsFixes])
 
   // Track-split: which fixes are in the "past" relative to dimTime
   const activePoints = useMemo(() => {
@@ -729,7 +739,7 @@ const VehiclePath: React.FC<VehiclePathProps> = ({
         // already marks the current location. Rendering on top causes a star artifact.
         index === 0 ? null : (
           <CircleMarker
-            key={`${name}:surfacing:${fix.unixTime}`}
+            key={`${name}:surfacing:${fix.eventId ?? fix.unixTime}`}
             center={{ lat: fix.latitude, lng: fix.longitude }}
             radius={3}
             color={color}
