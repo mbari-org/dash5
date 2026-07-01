@@ -510,7 +510,14 @@ const VehiclePath: React.FC<VehiclePathProps> = ({
           {/* Sticky tooltip on the track line — vehicle name + position count */}
           <Tooltip sticky opacity={0.88}>
             <div className="text-xs leading-snug">
-              <div className="font-bold" style={{ color }}>
+              <div
+                className="font-bold"
+                style={{
+                  color,
+                  textShadow:
+                    '0 0 2px rgba(0,0,0,0.6), 0 0 4px rgba(0,0,0,0.3)',
+                }}
+              >
                 {name}
               </div>
               <div>Positions: {displayedFixes.length}</div>
@@ -708,15 +715,22 @@ const VehiclePath: React.FC<VehiclePathProps> = ({
         >
           <Tooltip direction="top" offset={[0, -4]} opacity={0.9}>
             <div className="text-xs leading-snug">
-              <div className="font-bold" style={{ color }}>
+              <div
+                className="font-bold"
+                style={{
+                  color,
+                  textShadow:
+                    '0 0 2px rgba(0,0,0,0.6), 0 0 4px rgba(0,0,0,0.3)',
+                }}
+              >
                 {name}
               </div>
               <div>
                 Lat/Lon: {fix.latitude.toFixed(5)}, {fix.longitude.toFixed(5)}
               </div>
-              <div>
-                {fix.isoTime.replace('T', ' ').replace('Z', '').trim()} ~
-                {((Date.now() - fix.unixTime) / 60000).toFixed(2)}m
+              <div>{fix.isoTime.replace('T', ' ').replace('Z', '').trim()}</div>
+              <div className="text-[10px] italic text-gray-500">
+                -{formatElapsedTime(Date.now() - fix.unixTime)}
               </div>
             </div>
           </Tooltip>
@@ -747,7 +761,14 @@ const VehiclePath: React.FC<VehiclePathProps> = ({
         >
           <Tooltip direction="right" offset={[6, 0]} opacity={0.9}>
             <div className="text-xs leading-snug">
-              <div className="font-bold" style={{ color }}>
+              <div
+                className="font-bold"
+                style={{
+                  color,
+                  textShadow:
+                    '0 0 2px rgba(0,0,0,0.6), 0 0 4px rgba(0,0,0,0.3)',
+                }}
+              >
                 {name}
               </div>
               <div>Position before waypoint trajectory</div>
