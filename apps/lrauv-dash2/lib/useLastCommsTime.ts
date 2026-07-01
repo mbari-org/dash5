@@ -47,9 +47,12 @@ export const useLastCommsTime = (
       // covers both sat and cell events even in high-volume deployments. If
       // comms of either type haven't occurred in 7 days the vehicle is overdue;
       // the caller falls back to vehicle.text_nextcomm (from useVehicleInfo).
-      const recentFrom = Math.max(
-        deploymentFrom,
-        Date.now() - COMMS_LOOKBACK_MS
+      // Clamp to Date.now() so a future-dated deployment start (the API can
+      // return launch events scheduled in the future) never produces a from
+      // value in the future, which would cause the query to return no events.
+      const recentFrom = Math.min(
+        Date.now(),
+        Math.max(deploymentFrom, Date.now() - COMMS_LOOKBACK_MS)
       )
       const params: GetEventsParams = {
         vehicles: [vehicleName],

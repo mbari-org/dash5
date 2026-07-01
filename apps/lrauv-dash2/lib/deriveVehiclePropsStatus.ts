@@ -13,7 +13,13 @@ export const deriveVehiclePropsStatus = ({
   recoverEventId?: number | string | null
   missionText?: string | null
 }): 'recovered' | 'pluggedIn' | 'onMission' => {
-  if (recoverEventId || missionText?.includes('RECOVERED')) return 'recovered'
+  // Explicit null/undefined/empty-string check so a valid numeric id of 0
+  // is not mistakenly treated as absent (truthiness would coerce 0 to false).
+  if (
+    (recoverEventId != null && recoverEventId !== '') ||
+    missionText?.includes('RECOVERED')
+  )
+    return 'recovered'
   if (missionText?.includes('PLUGGED')) return 'pluggedIn'
   return 'onMission'
 }

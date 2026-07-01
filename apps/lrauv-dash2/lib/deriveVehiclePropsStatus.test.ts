@@ -8,6 +8,12 @@ describe('deriveVehiclePropsStatus', () => {
       ).toBe('recovered')
     })
 
+    test('treats recoverEventId of 0 as a valid (recovered) id', () => {
+      expect(
+        deriveVehiclePropsStatus({ recoverEventId: 0, missionText: '' })
+      ).toBe('recovered')
+    })
+
     test('returns "recovered" when missionText contains RECOVERED', () => {
       expect(
         deriveVehiclePropsStatus({
