@@ -765,18 +765,19 @@ const VehiclePath: React.FC<VehiclePathProps> = ({
         onMouseOut={handleMouseOut}
       />
 
-      {/* "Position before waypoint trajectory" — interactive marker rendered
-          on top of hit circles so its tooltip is reachable on hover */}
+      {/* "Position before waypoint trajectory" — invisible hit target so the
+          tooltip is reachable without adding a visual circle on top of the
+          existing vehicle position indicator (which would cause a star artifact). */}
       {futureRoute && latest && (
         <CircleMarker
           center={{ lat: latest.latitude, lng: latest.longitude }}
-          radius={5}
-          color={color}
-          fillColor={color}
-          fillOpacity={0.5}
-          weight={2}
+          radius={12}
+          color="transparent"
+          fillColor="transparent"
+          fillOpacity={0}
+          weight={0}
         >
-          <Tooltip direction="right" offset={[6, 0]} opacity={0.9}>
+          <Tooltip direction="top" offset={[0, -10]} opacity={0.9}>
             <div className="text-xs leading-snug">
               <div className="flex items-center gap-1 font-bold text-black">
                 <span
