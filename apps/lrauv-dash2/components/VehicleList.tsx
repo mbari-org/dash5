@@ -268,7 +268,7 @@ const ConnectedVehicleCellComponent: React.FC<{
         colorMissionDefault: vehicle.color_missiondefault,
         textVolts: vehicle.text_volts,
         colorVolts: vehicle.color_volts,
-        status: (lastDeployment?.recoverEvent ||
+        status: (lastDeployment?.recoverEvent?.eventId ||
         vehicle?.text_mission?.includes('RECOVERED')
           ? 'recovered'
           : vehicle?.text_mission?.includes('PLUGGED')
