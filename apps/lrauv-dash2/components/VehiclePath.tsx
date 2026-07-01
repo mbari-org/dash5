@@ -553,21 +553,23 @@ const VehiclePath: React.FC<VehiclePathProps> = ({
             radius={20}
           />
         ))}
+      {/* Current vehicle position — pixel-based so both elements stay at fixed
+          screen sizes at every zoom level, preventing the star collision artifact:
+          - outer ring: 16px hollow dashed ring (always clearly outside the dot)
+          - inner dot:  4px solid fill (always clearly inside the ring)
+          The vehicle name label uses the existing permanent tooltip on the ring. */}
       {latest && (
         <>
-          {/* DEPLOYMENT AND OVERVIEW PAGE */}
-          {/* Circle = large dotted indicator circle. */}
-          <Circle
+          <CircleMarker
             data-vehicle-point={`${name}-latest`}
             center={{ lat: latest.latitude, lng: latest.longitude }}
-            pathOptions={{
-              color,
-              fillColor: color,
-              fillOpacity: 0.1,
-              weight: 1,
-              dashArray: '4, 4',
-            }}
-            radius={200}
+            radius={16}
+            color={color}
+            fillColor={color}
+            fillOpacity={0.08}
+            weight={1.5}
+            dashArray="5, 4"
+            interactive={false}
           >
             <Tooltip
               className="text-bold text-purple"
@@ -578,19 +580,27 @@ const VehiclePath: React.FC<VehiclePathProps> = ({
             >
               {name}
             </Tooltip>
-          </Circle>
+          </CircleMarker>
+          <CircleMarker
+            center={{ lat: latest.latitude, lng: latest.longitude }}
+            radius={4}
+            color={color}
+            fillColor={color}
+            fillOpacity={1}
+            weight={0}
+            interactive={false}
+          />
         </>
       )}
-      {/* Current vehicle position — solid pixel-based dot stays visible at all
-          zoom levels. Tooltip includes pre-waypoint info when future route exists. */}
+      {/* Tooltip hit target for current position — invisible, sits on top */}
       {latest && (
         <CircleMarker
           center={{ lat: latest.latitude, lng: latest.longitude }}
-          radius={6}
-          color={color}
-          fillColor={color}
-          fillOpacity={1}
-          weight={1}
+          radius={16}
+          color="transparent"
+          fillColor="transparent"
+          fillOpacity={0}
+          weight={0}
         >
           <Tooltip direction="right" offset={[10, 0]} opacity={0.9}>
             <div className="text-xs leading-snug">
