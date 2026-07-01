@@ -670,10 +670,10 @@ const VehiclePath: React.FC<VehiclePathProps> = ({
                 {mapHoverFix.longitude.toFixed(5)}
               </div>
               <div className="text-gray-600">
-                {mapHoverFix.isoTime.replace('T', ' ').replace('Z', '').trim()}
-              </div>
-              <div className="text-[10px] italic text-gray-500">
-                -{formatElapsedTime(Date.now() - mapHoverFix.unixTime)}
+                {mapHoverFix.isoTime.replace('T', ' ').replace('Z', '').trim()}{' '}
+                <span className="text-[10px] italic text-gray-500">
+                  -{formatElapsedTime(Date.now() - mapHoverFix.unixTime)}
+                </span>
               </div>
             </div>
           </Tooltip>
@@ -731,9 +731,11 @@ const VehiclePath: React.FC<VehiclePathProps> = ({
               <div>
                 Lat/Lon: {fix.latitude.toFixed(5)}, {fix.longitude.toFixed(5)}
               </div>
-              <div>{fix.isoTime.replace('T', ' ').replace('Z', '').trim()}</div>
-              <div className="text-[10px] italic text-gray-500">
-                -{formatElapsedTime(Date.now() - fix.unixTime)}
+              <div>
+                {fix.isoTime.replace('T', ' ').replace('Z', '').trim()}{' '}
+                <span className="text-[10px] italic text-gray-500">
+                  -{formatElapsedTime(Date.now() - fix.unixTime)}
+                </span>
               </div>
             </div>
           </Tooltip>
