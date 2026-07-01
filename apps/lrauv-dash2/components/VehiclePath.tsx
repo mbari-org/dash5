@@ -553,50 +553,35 @@ const VehiclePath: React.FC<VehiclePathProps> = ({
             radius={20}
           />
         ))}
-      {/* Current vehicle position — pixel-based so both elements stay at fixed
-          screen sizes at every zoom level, preventing the star collision artifact:
-          - outer ring: 16px hollow dashed ring (always clearly outside the dot)
-          - inner dot:  4px solid fill (always clearly inside the ring)
-          The vehicle name label uses the existing permanent tooltip on the ring. */}
+      {/* Current vehicle position — single solid pixel-based dot with vehicle
+          name label. No outer ring: rings at any radius cause visual clutter
+          or star artifacts at different zoom levels. */}
       {latest && (
-        <>
-          <CircleMarker
-            data-vehicle-point={`${name}-latest`}
-            center={{ lat: latest.latitude, lng: latest.longitude }}
-            radius={16}
-            color={color}
-            fillColor={color}
-            fillOpacity={0.08}
-            weight={1.5}
-            dashArray="5, 4"
-            interactive={false}
+        <CircleMarker
+          data-vehicle-point={`${name}-latest`}
+          center={{ lat: latest.latitude, lng: latest.longitude }}
+          radius={6}
+          color={color}
+          fillColor={color}
+          fillOpacity={1}
+          weight={1}
+        >
+          <Tooltip
+            className="text-bold text-purple"
+            direction="right"
+            offset={[10, 0]}
+            opacity={0.4}
+            permanent
           >
-            <Tooltip
-              className="text-bold text-purple"
-              direction="right"
-              offset={[10, 0]}
-              opacity={0.4}
-              permanent
-            >
-              {name}
-            </Tooltip>
-          </CircleMarker>
-          <CircleMarker
-            center={{ lat: latest.latitude, lng: latest.longitude }}
-            radius={4}
-            color={color}
-            fillColor={color}
-            fillOpacity={1}
-            weight={0}
-            interactive={false}
-          />
-        </>
+            {name}
+          </Tooltip>
+        </CircleMarker>
       )}
-      {/* Tooltip hit target for current position — invisible, sits on top */}
+      {/* Invisible hit target for the hover tooltip */}
       {latest && (
         <CircleMarker
           center={{ lat: latest.latitude, lng: latest.longitude }}
-          radius={16}
+          radius={12}
           color="transparent"
           fillColor="transparent"
           fillOpacity={0}
