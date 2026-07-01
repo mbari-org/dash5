@@ -345,15 +345,10 @@ const VehiclePath: React.FC<VehiclePathProps> = ({
   // indicatorTime → set from timeline bar OR map hover → drives indicator dot
   const gpsFixes = vehiclePosition?.gpsFixes ?? null
 
-  // Show the 20 most recent GPS surfacing fixes regardless of age so dots
-  // are distributed across the full visible track. Dash4 additionally filters
-  // to a 24h window, but that hides dots on older portions of longer deployments
-  // creating a confusing "dots only on the recent segment" effect.
-  const SURFACING_LIMIT = 20
-  const displayedFixes = useMemo(
-    () => (gpsFixes ? gpsFixes.slice(0, SURFACING_LIMIT) : []),
-    [gpsFixes]
-  )
+  // Show all GPS surfacing fixes so dots appear across the full deployment
+  // track, not just the most recent segment. gpsFixes is already bounded by
+  // the deployment window query, so the array is not unbounded.
+  const displayedFixes = gpsFixes ?? []
 
   // Track-split: which fixes are in the "past" relative to dimTime
   const activePoints = useMemo(() => {
