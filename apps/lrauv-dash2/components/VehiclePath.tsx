@@ -708,21 +708,20 @@ const VehiclePath: React.FC<VehiclePathProps> = ({
             opacity={0.5}
           />
         ))}
-      {/* GPS surfacing dots — 20 most recent fixes within last 24h, matching
-          Dash4's limitPositions/timeWindowHoursForPositions defaults.
+      {/* GPS surfacing dots along the full deployment track.
+          Color props must be direct props on CircleMarker (not pathOptions)
+          for react-leaflet to apply them correctly.
           interactive=false so HitCircles keep hover/scrub control. */}
       {displayedFixes.map((fix, index) => (
         <CircleMarker
           key={`${name}:surfacing:${fix.unixTime}`}
           center={{ lat: fix.latitude, lng: fix.longitude }}
-          radius={index === 0 ? 6 : 4}
+          radius={index === 0 ? 5 : 3}
           interactive={false}
-          pathOptions={{
-            color,
-            fillColor: color,
-            fillOpacity: index === 0 ? 1 : 0.65,
-            weight: 1,
-          }}
+          color={color}
+          fillColor={color}
+          fillOpacity={index === 0 ? 1 : 0.7}
+          weight={1}
         />
       ))}
 
@@ -743,12 +742,10 @@ const VehiclePath: React.FC<VehiclePathProps> = ({
         <CircleMarker
           center={{ lat: latest.latitude, lng: latest.longitude }}
           radius={5}
-          pathOptions={{
-            color,
-            fillColor: color,
-            fillOpacity: 0.5,
-            weight: 2,
-          }}
+          color={color}
+          fillColor={color}
+          fillOpacity={0.5}
+          weight={2}
         >
           <Tooltip direction="right" offset={[6, 0]} opacity={0.9}>
             <div className="text-xs leading-snug">
