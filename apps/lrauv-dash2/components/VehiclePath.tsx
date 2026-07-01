@@ -553,18 +553,18 @@ const VehiclePath: React.FC<VehiclePathProps> = ({
             radius={20}
           />
         ))}
-      {/* Current vehicle position — single solid pixel-based dot with vehicle
-          name label. No outer ring: rings at any radius cause visual clutter
-          or star artifacts at different zoom levels. */}
+      {/* Current vehicle position — hollow ring with thick stroke. At close zoom
+          it reads as a ring; as you zoom out the stroke fills the center and it
+          naturally merges into a solid dot. Matches Dash4's visual behavior. */}
       {latest && (
         <CircleMarker
           data-vehicle-point={`${name}-latest`}
           center={{ lat: latest.latitude, lng: latest.longitude }}
-          radius={6}
+          radius={8}
           color={color}
           fillColor={color}
-          fillOpacity={1}
-          weight={1}
+          fillOpacity={0}
+          weight={4}
         >
           <Tooltip
             className="text-bold text-purple"
