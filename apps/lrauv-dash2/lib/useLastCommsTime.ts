@@ -13,12 +13,18 @@ export interface LastCommsTimeResult {
   lastCellCommsTime: number | null
 }
 
-const isSatCommsEvent = (event: { eventType: string; state?: number }) => {
+export const isSatCommsEvent = (event: {
+  eventType: string
+  state?: number
+}) => {
   // Satellite comms: sbdReceive with state === 0
   return event.eventType === 'sbdReceive' && event.state === 0
 }
 
-const isCellCommsEvent = (event: { eventType: string; state?: number }) => {
+export const isCellCommsEvent = (event: {
+  eventType: string
+  state?: number
+}) => {
   // Cell comms: sbdReceive with state === 2
   return event.eventType === 'sbdReceive' && event.state === 2
 }

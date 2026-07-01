@@ -7,6 +7,10 @@ import { useTick } from '../lib/useTick'
 
 const logger = createLogger('PlatformPath')
 
+/** Exported for testing — true only for genuine network timeout errors. */
+export const isTimeoutError = (error: unknown): boolean =>
+  error instanceof Error && !!error.message?.toLowerCase().includes('timeout')
+
 // How far back to search for position fixes when no explicit window is given.
 // 365 days ensures infrequently-updated fixed platforms (e.g. CA offshore
 // structures that may not report for months) are still found.
@@ -127,9 +131,7 @@ export const PlatformPath: React.FC<PlatformPathProps> = ({
   }
 
   if (error) {
-    const isTimeout =
-      error instanceof Error && error.message?.toLowerCase().includes('timeout')
-    if (isTimeout) {
+    if (isTimeoutError(error)) {
       // Timeout errors are expected for slow or offline external platforms
       // and are not actionable by the developer — log at debug to reduce noise.
       logger.debug(

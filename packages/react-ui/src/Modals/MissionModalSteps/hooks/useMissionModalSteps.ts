@@ -78,6 +78,8 @@ const useMissionModalSteps = ({
     }
 
     let prevStep = currentStep - 1
+    if (prevStep < 0) return
+
     if (
       steps[prevStep].match(/safety/i) &&
       safetyParams.length === 0 &&
@@ -95,21 +97,19 @@ const useMissionModalSteps = ({
       prevStep = prevStep - 1
     }
 
-    if (prevStep >= 0) {
-      // If landing back on a summary-eligible step, re-show the summary screen
-      // so Back mirrors the forward path (e.g. Back from Safety & Comms should
-      // return to ParameterSummary, not skip straight to the Parameters form).
-      const waypointIdx = steps.indexOf('Waypoints')
-      const parametersIdx = steps.indexOf('Parameters')
-      const landingOnWaypoints = prevStep === waypointIdx
-      const landingOnParameters =
-        prevStep === parametersIdx &&
-        updatedParameters.some((param) => param.overrideValue)
-      if (landingOnWaypoints || landingOnParameters) {
-        setShowSummary(true)
-      }
-      return setCurrentStep(prevStep)
+    // If landing back on a summary-eligible step, re-show the summary screen
+    // so Back mirrors the forward path (e.g. Back from Safety & Comms should
+    // return to ParameterSummary, not skip straight to the Parameters form).
+    const waypointIdx = steps.indexOf('Waypoints')
+    const parametersIdx = steps.indexOf('Parameters')
+    const landingOnWaypoints = prevStep === waypointIdx
+    const landingOnParameters =
+      prevStep === parametersIdx &&
+      updatedParameters.some((param) => param.overrideValue)
+    if (landingOnWaypoints || landingOnParameters) {
+      setShowSummary(true)
     }
+    return setCurrentStep(prevStep)
   }
 
   return {

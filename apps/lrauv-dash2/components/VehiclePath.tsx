@@ -13,6 +13,10 @@ import { useSharedPath } from './SharedPathContextProvider'
 import { parseISO, getTime } from 'date-fns'
 import { formatElapsedTime } from '@mbari/utils'
 import { useVehicleColors } from './VehicleColorsContext'
+import {
+  deduplicateFixesByUnixTime,
+  countDisplayedPositions,
+} from '../lib/vehiclePathUtils'
 
 const getDistance = (a: VPosDetail, b: LatLng) =>
   distance([a.longitude, a.latitude], [b.lng, b.lat])
@@ -351,15 +355,10 @@ const VehiclePath: React.FC<VehiclePathProps> = ({
   // the deployment window query, so the array is not unbounded.
   // Deduplicate by unixTime — the API occasionally returns duplicate fixes
   // with the same timestamp, which causes React duplicate-key warnings.
-  const displayedFixes = useMemo(() => {
-    if (!gpsFixes) return []
-    const seen = new Set<number>()
-    return gpsFixes.filter((fix) => {
-      if (seen.has(fix.unixTime)) return false
-      seen.add(fix.unixTime)
-      return true
-    })
-  }, [gpsFixes])
+  const displayedFixes = useMemo(
+    () => deduplicateFixesByUnixTime(gpsFixes ?? []),
+    [gpsFixes]
+  )
   // Keep the ref in sync so handleCoord always iterates the same deduplicated
   // list that is used for rendering — consistent hover/scrub behaviour.
   displayedFixesRef.current = displayedFixes
@@ -368,10 +367,10 @@ const VehiclePath: React.FC<VehiclePathProps> = ({
   // When dimTime is active, count only fixes at or before that threshold.
   // Uses displayedFixes (already deduped) as the source to avoid over-counting
   // duplicate unixTime entries that exist in the raw gpsFixes array.
-  const displayedPositionCount = useMemo(() => {
-    if (!dimTime || dimTime <= 0) return displayedFixes.length
-    return displayedFixes.filter((fix) => fix.unixTime <= dimTime).length
-  }, [dimTime, displayedFixes])
+  const displayedPositionCount = useMemo(
+    () => countDisplayedPositions(displayedFixes, dimTime),
+    [displayedFixes, dimTime]
+  )
 
   // Track-split: which fixes are in the "past" relative to dimTime
   const activePoints = useMemo(() => {
