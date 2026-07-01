@@ -58,7 +58,6 @@ const HitCircles = React.memo(
     grouped,
     route,
     color,
-    positionCount,
     onCoord,
     onMouseOut,
   }: {
@@ -66,7 +65,6 @@ const HitCircles = React.memo(
     grouped?: boolean
     route: [number, number][]
     color: string
-    positionCount: number
     onCoord: LeafletMouseEventHandlerFn
     onMouseOut: LeafletMouseEventHandlerFn
   }) => (
@@ -83,27 +81,7 @@ const HitCircles = React.memo(
           color={color}
           opacity={0}
           eventHandlers={{ mouseover: onCoord, mouseout: onMouseOut }}
-        >
-          <Tooltip sticky opacity={0.88}>
-            <div className="text-xs leading-snug">
-              <div className="flex items-center gap-1 font-bold text-black">
-                <span
-                  style={{
-                    background: color,
-                    border: '1.5px solid rgba(0,0,0,0.4)',
-                    borderRadius: '50%',
-                    width: 8,
-                    height: 8,
-                    display: 'inline-block',
-                    flexShrink: 0,
-                  }}
-                />
-                {name}
-              </div>
-              <div>Positions: {positionCount}</div>
-            </div>
-          </Tooltip>
-        </Circle>
+        />
       ))}
     </>
   )
@@ -678,6 +656,9 @@ const VehiclePath: React.FC<VehiclePathProps> = ({
                   -{formatElapsedTime(Date.now() - mapHoverFix.unixTime)}
                 </span>
               </div>
+              <div className="text-gray-500 mt-0.5">
+                Positions: {activePoints?.length ?? displayedFixes.length}
+              </div>
             </div>
           </Tooltip>
         </Circle>
@@ -713,7 +694,6 @@ const VehiclePath: React.FC<VehiclePathProps> = ({
         grouped={grouped}
         route={route}
         color={color}
-        positionCount={activePoints?.length ?? displayedFixes.length}
         onCoord={handleCoord}
         onMouseOut={handleMouseOut}
       />
