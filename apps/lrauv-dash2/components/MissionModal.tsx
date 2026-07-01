@@ -85,6 +85,7 @@ const MissionModal: React.FC<MissionModalProps> = ({
     selectedMissionData,
     isRecentRunsLoading: recentRunsLoading,
     isFrequentRunsLoading: frequentRunsLoading,
+    isMissionListLoading,
     missionCategories,
   } = useMissionData({ vehicleName, selectedMission, showAllVehicleMissions })
 
@@ -111,13 +112,11 @@ const MissionModal: React.FC<MissionModalProps> = ({
       return
     }
 
-    // While data is still loading, return early WITHOUT setting the ref so
-    // the effect retries once loading completes. Once loading is done, setting
-    // the ref unconditionally (below) ensures that later re-renders triggered
-    // by user navigation (e.g. Back clearing selectedMission, which causes
-    // missionsWithTemporaryEntry to change) cannot re-run auto-selection and
-    // overwrite the user's chosen tab/category.
-    if (recentRunsLoading || frequentRunsLoading) return
+    // Gate on all three data sources. Returning early (without touching the ref)
+    // lets the effect retry naturally when any loading flag flips to false —
+    // including isMissionListLoading which covers template missions that load
+    // separately from recent/frequent runs.
+    if (recentRunsLoading || frequentRunsLoading || isMissionListLoading) return
 
     if (
       missionPath &&
@@ -125,16 +124,17 @@ const MissionModal: React.FC<MissionModalProps> = ({
       missionsWithTemporaryEntry.length > 0 &&
       !hasAutoSelectedRef.current
     ) {
-      // Mark as attempted unconditionally: data is loaded so any future
-      // re-renders cannot produce a better result.
-      hasAutoSelectedRef.current = true
-
       // Find mission by id (temporary re-run entries) or missionPath (recent runs)
       const matchingMission = missionsWithTemporaryEntry.find(
         (m) => m.id === missionPath || m.missionPath === missionPath
       )
 
       if (matchingMission) {
+        // Set ref only after a confirmed match so the effect can still retry
+        // on later renders if template missions arrive after recent/frequent runs.
+        // Once all three loading flags are false and a match is found, all future
+        // re-renders (including Back navigation) will see the ref as true and skip.
+        hasAutoSelectedRef.current = true
         setSelectedMission(matchingMission.id)
         // If rerunning from schedule history (has eventData), always use 'Recent Runs'
         if (eventData) {
@@ -164,6 +164,7 @@ const MissionModal: React.FC<MissionModalProps> = ({
     missionCategories,
     recentRunsLoading,
     frequentRunsLoading,
+    isMissionListLoading,
   ])
 
   // Missions with parameter/waypoint overrides that should be applied.
