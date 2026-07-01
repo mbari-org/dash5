@@ -111,21 +111,28 @@ const MissionModal: React.FC<MissionModalProps> = ({
       return
     }
 
+    // While data is still loading, return early WITHOUT setting the ref so
+    // the effect retries once loading completes. Once loading is done, setting
+    // the ref unconditionally (below) ensures that later re-renders triggered
+    // by user navigation (e.g. Back clearing selectedMission, which causes
+    // missionsWithTemporaryEntry to change) cannot re-run auto-selection and
+    // overwrite the user's chosen tab/category.
+    if (recentRunsLoading || frequentRunsLoading) return
+
     if (
       missionPath &&
       missionsWithTemporaryEntry &&
       missionsWithTemporaryEntry.length > 0 &&
       !hasAutoSelectedRef.current
     ) {
+      // Mark as attempted unconditionally: data is loaded so any future
+      // re-renders cannot produce a better result.
+      hasAutoSelectedRef.current = true
+
       // Find mission by id (temporary re-run entries) or missionPath (recent runs)
       const matchingMission = missionsWithTemporaryEntry.find(
         (m) => m.id === missionPath || m.missionPath === missionPath
       )
-      // Mark as auto-selected now (before checking matchingMission) so that
-      // any subsequent re-render triggered by state changes (e.g. clearing
-      // selectedMission on Back) doesn't re-run the auto-select and overwrite
-      // the user's tab/category choice.
-      hasAutoSelectedRef.current = true
 
       if (matchingMission) {
         setSelectedMission(matchingMission.id)
@@ -155,6 +162,8 @@ const MissionModal: React.FC<MissionModalProps> = ({
     globalModalId?.meta?.eventData,
     missionsWithTemporaryEntry,
     missionCategories,
+    recentRunsLoading,
+    frequentRunsLoading,
   ])
 
   // Missions with parameter/waypoint overrides that should be applied.
