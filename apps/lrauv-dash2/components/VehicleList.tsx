@@ -41,13 +41,14 @@ export const deriveStatusLabel = ({
   missionText,
   mission,
 }: {
-  recoverEvent?: object | null
+  recoverEvent?: { eventId?: number | string | null } | null
   missionText?: string | null
   mission?: string | null
 }): string => {
-  if (recoverEvent || missionText?.includes('RECOVERED')) return 'Recovered'
+  if (recoverEvent?.eventId || missionText?.includes('RECOVERED'))
+    return 'Recovered'
   if (missionText?.includes('PLUGGED')) return 'Plugged in'
-  return `Running ${mission?.trim() ?? 'mission'}`
+  return `Running ${mission?.trim() || 'mission'}`
 }
 
 const ConnectedVehicleCellComponent: React.FC<{
@@ -314,7 +315,9 @@ const ConnectedVehicleCellComponent: React.FC<{
   const endDate = DateTime.fromMillis(lastDeployment?.endEvent?.unixTime ?? 0)
 
   const ended = lastDeployment?.endEvent?.eventId && true
-  const recovered = Boolean(lastDeployment?.recoverEvent?.eventId)
+  const recovered =
+    Boolean(lastDeployment?.recoverEvent?.eventId) ||
+    Boolean(vehicle?.text_mission?.includes('RECOVERED'))
   const active = lastDeployment?.active
 
   // Prefer launchEvent (vehicle in water) over startEvent (deployment record

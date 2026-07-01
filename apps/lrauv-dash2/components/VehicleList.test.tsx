@@ -50,10 +50,20 @@ describe('VehicleList', () => {
 })
 
 describe('deriveStatusLabel', () => {
-  test('returns "Recovered" when recoverEvent is present', () => {
+  test('returns "Recovered" when recoverEvent has a valid eventId', () => {
     expect(
       deriveStatusLabel({ recoverEvent: { eventId: 123 }, missionText: '' })
     ).toBe('Recovered')
+  })
+
+  test('does not treat an empty recoverEvent object as recovered', () => {
+    expect(
+      deriveStatusLabel({
+        recoverEvent: { eventId: undefined },
+        missionText: '',
+        mission: 'sci2.xml',
+      })
+    ).toBe('Running sci2.xml')
   })
 
   test('returns "Recovered" when text_mission contains RECOVERED', () => {
@@ -88,9 +98,16 @@ describe('deriveStatusLabel', () => {
     ).toBe('Running sci2.xml')
   })
 
-  test('falls back to "Running mission" when mission name is absent', () => {
+  test('falls back to "Running mission" when mission name is null', () => {
     expect(
       deriveStatusLabel({ recoverEvent: null, missionText: '', mission: null })
+    ).toBe('Running mission')
+  })
+
+  test('falls back to "Running mission" when mission is an empty string', () => {
+    // .replace(/started mission/i, '') on "started mission" produces ""
+    expect(
+      deriveStatusLabel({ recoverEvent: null, missionText: '', mission: '' })
     ).toBe('Running mission')
   })
 })
