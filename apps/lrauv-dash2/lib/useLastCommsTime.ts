@@ -29,25 +29,24 @@ export const useLastCommsTime = (
 ): LastCommsTimeResult => {
   const { axiosInstance } = useTethysApiContext()
 
-  // Deployment start minus one day, used as the stable query-key anchor.
+  // deploymentFrom (deployment start − 1 day) anchors the stable query key.
+  // The actual rolling window is computed inside the fetch function at fetch
+  // time so that Date.now() doesn't change the cache key on every render.
   const COMMS_LOOKBACK_MS = 7 * 24 * 60 * 60 * 1000
   const deploymentFrom = getAdjustedUnixTime({
     unixTime: startTimeMillis,
     offsetDays: -1,
   })
 
-  // Keep the query key stable (keyed by deploymentFrom, not Date.now()).
-  // The rolling window is computed inside the fetch function so it is always
-  // evaluated at fetch time — avoiding cache churn on every render.
   const { data: eventsData } = useQuery(
     ['event', 'lastCommsTime', vehicleName, deploymentFrom],
     () => {
       // Use a rolling 7-day lookback rather than the full deployment window.
       // Since we can't filter by event state (sat=0 / cell=2) server-side, we
-      // rely on the time window being narrow enough that limit:100 reliably
-      // covers both sat and cell events. If comms of either type haven't
-      // occurred in 7 days the vehicle is overdue; the caller falls back to
-      // vehicle.text_nextcomm (refreshed by useVehicleInfo polling).
+      // rely on the time window being narrow enough that limit:500 reliably
+      // covers both sat and cell events even in high-volume deployments. If
+      // comms of either type haven't occurred in 7 days the vehicle is overdue;
+      // the caller falls back to vehicle.text_nextcomm (from useVehicleInfo).
       const recentFrom = Math.max(
         deploymentFrom,
         Date.now() - COMMS_LOOKBACK_MS
