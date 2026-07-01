@@ -35,6 +35,7 @@ export const useLastCommsTime = (
     },
     {
       staleTime: 60 * 1000,
+      refetchInterval: 30 * 1000,
       // startTimeMillis defaults to 0 when the deployment hasn't loaded yet.
       // Subtracting 1 day produces from=-86400000, which TethysDash rejects
       // with a 400. Disable the query until a real start time is available.

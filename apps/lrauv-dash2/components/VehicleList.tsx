@@ -59,7 +59,7 @@ const ConnectedVehicleCellComponent: React.FC<{
     {
       vehicle: name,
     },
-    { staleTime: 5 * 60 * 1000 }
+    { staleTime: 5 * 60 * 1000, refetchInterval: 30 * 1000 }
   )
 
   const defaultFrom = useMemo(() => Date.now() - 24 * 60 * 60 * 1000, [])
@@ -70,6 +70,7 @@ const ConnectedVehicleCellComponent: React.FC<{
     },
     {
       enabled: !!lastDeployment?.lastEvent,
+      refetchInterval: 30 * 1000,
     }
   )
 
@@ -253,9 +254,11 @@ const ConnectedVehicleCellComponent: React.FC<{
         textVolts: vehicle.text_volts,
         colorVolts: vehicle.color_volts,
         status: (lastDeployment?.recoverEvent ||
-        (vehicle?.text_mission?.indexOf('PLUGGED') ?? -1) >= 0
+        vehicle?.text_mission?.includes('RECOVERED')
+          ? 'recovered'
+          : vehicle?.text_mission?.includes('PLUGGED')
           ? 'pluggedIn'
-          : 'onMission') as 'pluggedIn' | 'onMission',
+          : 'onMission') as 'pluggedIn' | 'onMission' | 'recovered',
         textLeak: vehicle.text_leak,
         textLeakAgo: vehicle.text_leakago,
         colorLeak: vehicle.color_leak,
@@ -278,6 +281,14 @@ const ConnectedVehicleCellComponent: React.FC<{
         textVersion: vehicle.text_version,
         svgCurrent: vehicle.svg_current,
         colorDuration: vehicle.color_duration,
+        textLM: vehicle.text_LM,
+        textHM: vehicle.text_HM,
+        textRoiAgo: vehicle.text_roiago,
+        colorWhitebeam: vehicle.color_whitebeam,
+        colorWhiteled: vehicle.color_whiteled,
+        colorRedbeam: vehicle.color_redbeam,
+        colorRedled: vehicle.color_redled,
+        textArriveLabel: vehicle.text_waypoint,
       }
     : undefined
 
