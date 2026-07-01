@@ -670,7 +670,10 @@ const VehiclePath: React.FC<VehiclePathProps> = ({
                 {mapHoverFix.longitude.toFixed(5)}
               </div>
               <div className="text-gray-600">
-                {mapHoverFix.isoTime.replace('T', ' ').replace('Z', ' UTC')}
+                {mapHoverFix.isoTime.replace('T', ' ').replace('Z', '').trim()}
+              </div>
+              <div className="text-[10px] italic text-gray-500">
+                -{formatElapsedTime(Date.now() - mapHoverFix.unixTime)}
               </div>
             </div>
           </Tooltip>
