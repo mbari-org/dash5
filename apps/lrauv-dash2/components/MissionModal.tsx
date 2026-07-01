@@ -121,9 +121,13 @@ const MissionModal: React.FC<MissionModalProps> = ({
       const matchingMission = missionsWithTemporaryEntry.find(
         (m) => m.id === missionPath || m.missionPath === missionPath
       )
-      // Only auto-select once per modal open
+      // Mark as auto-selected now (before checking matchingMission) so that
+      // any subsequent re-render triggered by state changes (e.g. clearing
+      // selectedMission on Back) doesn't re-run the auto-select and overwrite
+      // the user's tab/category choice.
+      hasAutoSelectedRef.current = true
+
       if (matchingMission) {
-        hasAutoSelectedRef.current = true
         setSelectedMission(matchingMission.id)
         // If rerunning from schedule history (has eventData), always use 'Recent Runs'
         if (eventData) {
