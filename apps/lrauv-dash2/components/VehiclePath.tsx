@@ -563,9 +563,52 @@ const VehiclePath: React.FC<VehiclePathProps> = ({
             radius={20}
           />
         ))}
+      {/* GPS surfacing dots along the full deployment track — rendered before the
+          current position marker so the latest dot always appears on top when
+          positions overlap. Color props must be direct props on CircleMarker. */}
+      {displayedFixes.map((fix, index) =>
+        index === 0 ? null : (
+          <CircleMarker
+            key={`${name}:surfacing:${fix.eventId ?? fix.unixTime}`}
+            center={{ lat: fix.latitude, lng: fix.longitude }}
+            radius={3}
+            color={color}
+            fillColor={color}
+            fillOpacity={0.7}
+            weight={1}
+          >
+            <Tooltip direction="top" offset={[0, -4]} opacity={0.9}>
+              <div className="text-xs leading-snug">
+                <div className="flex items-center gap-1 font-bold text-black">
+                  <span
+                    style={{
+                      background: color,
+                      border: '1.5px solid rgba(0,0,0,0.4)',
+                      borderRadius: '50%',
+                      width: 8,
+                      height: 8,
+                      display: 'inline-block',
+                      flexShrink: 0,
+                    }}
+                  />
+                  {name}
+                </div>
+                <div>
+                  Lat/Lon: {fix.latitude.toFixed(5)}, {fix.longitude.toFixed(5)}
+                </div>
+                <div>
+                  {fix.isoTime.replace('T', ' ').replace('Z', '').trim()}{' '}
+                  <span className="text-[10px] italic text-gray-500">
+                    -{formatElapsedTime(Date.now() - fix.unixTime)}
+                  </span>
+                </div>
+              </div>
+            </Tooltip>
+          </CircleMarker>
+        )
+      )}
       {/* Current vehicle position — solid filled dot with a contrasting white
-          border ring. The fill anchors the center point at all zoom levels;
-          the white stroke acts as the visible ring separator from the track.
+          border ring. Rendered after surfacing dots so it always appears on top.
           Matches Dash4's l-circle-marker approach (radius=6, solid). */}
       {latest && (
         <CircleMarker
@@ -730,53 +773,6 @@ const VehiclePath: React.FC<VehiclePathProps> = ({
             opacity={0.5}
           />
         ))}
-      {/* GPS surfacing dots along the full deployment track.
-          Color props must be direct props on CircleMarker (not pathOptions)
-          for react-leaflet to apply them correctly.
-          interactive=false so HitCircles keep hover/scrub control. */}
-      {displayedFixes.map((fix, index) =>
-        // Skip index 0 — the existing vehicle position indicator (60m Circle)
-        // already marks the current location. Rendering on top causes a star artifact.
-        index === 0 ? null : (
-          <CircleMarker
-            key={`${name}:surfacing:${fix.eventId ?? fix.unixTime}`}
-            center={{ lat: fix.latitude, lng: fix.longitude }}
-            radius={3}
-            color={color}
-            fillColor={color}
-            fillOpacity={0.7}
-            weight={1}
-          >
-            <Tooltip direction="top" offset={[0, -4]} opacity={0.9}>
-              <div className="text-xs leading-snug">
-                <div className="flex items-center gap-1 font-bold text-black">
-                  <span
-                    style={{
-                      background: color,
-                      border: '1.5px solid rgba(0,0,0,0.4)',
-                      borderRadius: '50%',
-                      width: 8,
-                      height: 8,
-                      display: 'inline-block',
-                      flexShrink: 0,
-                    }}
-                  />
-                  {name}
-                </div>
-                <div>
-                  Lat/Lon: {fix.latitude.toFixed(5)}, {fix.longitude.toFixed(5)}
-                </div>
-                <div>
-                  {fix.isoTime.replace('T', ' ').replace('Z', '').trim()}{' '}
-                  <span className="text-[10px] italic text-gray-500">
-                    -{formatElapsedTime(Date.now() - fix.unixTime)}
-                  </span>
-                </div>
-              </div>
-            </Tooltip>
-          </CircleMarker>
-        )
-      )}
 
       {/* Memoized hit targets — isolated from VehiclePath re-renders to
           prevent spurious mouseout/mouseover events causing tooltip flicker. */}
