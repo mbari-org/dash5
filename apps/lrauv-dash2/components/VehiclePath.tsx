@@ -205,16 +205,17 @@ const VehiclePath: React.FC<VehiclePathProps> = ({
   const lastHoveredFixTimeRef = useRef<number | null>(null)
   // Refs keep handleCoord/handleMouseOut deps-free so they never change
   // reference — preventing HitCircles from re-rendering on every poll/render.
-  const gpsFixesRef = useRef(vehiclePosition?.gpsFixes)
+  // displayedFixesRef is updated below (after displayedFixes is computed) so
+  // handleCoord always iterates the same deduplicated set used for rendering.
+  const displayedFixesRef = useRef<VPosDetail[]>([])
   const handleScrubRef = useRef(handleScrub)
-  gpsFixesRef.current = vehiclePosition?.gpsFixes
   handleScrubRef.current = handleScrub
 
   const handleCoord: LeafletMouseEventHandlerFn = useCallback((e) => {
     if (timeout.current) clearTimeout(timeout.current)
     let coord: VPosDetail | null = null
     let bestDist = Infinity
-    for (const fix of gpsFixesRef.current ?? []) {
+    for (const fix of displayedFixesRef.current) {
       const d = getDistance(fix, e.latlng)
       if (d < bestDist) {
         bestDist = d
@@ -359,6 +360,9 @@ const VehiclePath: React.FC<VehiclePathProps> = ({
       return true
     })
   }, [gpsFixes])
+  // Keep the ref in sync so handleCoord always iterates the same deduplicated
+  // list that is used for rendering — consistent hover/scrub behaviour.
+  displayedFixesRef.current = displayedFixes
 
   // Deduplicated position count for the "Positions: N" tooltip label.
   // When dimTime is active, count only fixes at or before that threshold.
