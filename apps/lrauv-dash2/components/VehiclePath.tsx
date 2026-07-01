@@ -515,7 +515,7 @@ const VehiclePath: React.FC<VehiclePathProps> = ({
                 style={{
                   color,
                   textShadow:
-                    '0 0 2px rgba(0,0,0,0.6), 0 0 4px rgba(0,0,0,0.3)',
+                    '0 0 1px #000, 0 0 2px #000, 0 0 3px rgba(0,0,0,0.6)',
                 }}
               >
                 {name}
@@ -723,7 +723,7 @@ const VehiclePath: React.FC<VehiclePathProps> = ({
                 style={{
                   color,
                   textShadow:
-                    '0 0 2px rgba(0,0,0,0.6), 0 0 4px rgba(0,0,0,0.3)',
+                    '0 0 1px #000, 0 0 2px #000, 0 0 3px rgba(0,0,0,0.6)',
                 }}
               >
                 {name}
@@ -771,7 +771,7 @@ const VehiclePath: React.FC<VehiclePathProps> = ({
                 style={{
                   color,
                   textShadow:
-                    '0 0 2px rgba(0,0,0,0.6), 0 0 4px rgba(0,0,0,0.3)',
+                    '0 0 1px #000, 0 0 2px #000, 0 0 3px rgba(0,0,0,0.6)',
                 }}
               >
                 {name}
