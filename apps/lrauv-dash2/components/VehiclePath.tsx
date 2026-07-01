@@ -715,8 +715,8 @@ const VehiclePath: React.FC<VehiclePathProps> = ({
                 Lat/Lon: {fix.latitude.toFixed(5)}, {fix.longitude.toFixed(5)}
               </div>
               <div>
-                {fix.isoTime.replace('T', ' ').replace('Z', '').trim()}
-                {fix.note ? ` ${fix.note}` : ''}
+                {fix.isoTime.replace('T', ' ').replace('Z', '').trim()} ~
+                {((Date.now() - fix.unixTime) / 60000).toFixed(2)}m
               </div>
             </div>
           </Tooltip>
