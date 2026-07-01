@@ -127,7 +127,9 @@ export const PlatformPath: React.FC<PlatformPathProps> = ({
   }
 
   if (error) {
-    logger.warn(`Failed to load positions for platform ${platformId}:`, error)
+    // Downgraded to debug: external platform timeouts are expected and non-actionable.
+    // warn-level would pollute the console for platforms that are simply slow or offline.
+    logger.debug(`Failed to load positions for platform ${platformId}:`, error)
     return null
   }
 
