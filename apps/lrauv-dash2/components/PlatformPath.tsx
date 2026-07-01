@@ -127,9 +127,19 @@ export const PlatformPath: React.FC<PlatformPathProps> = ({
   }
 
   if (error) {
-    // Downgraded to debug: external platform timeouts are expected and non-actionable.
-    // warn-level would pollute the console for platforms that are simply slow or offline.
-    logger.debug(`Failed to load positions for platform ${platformId}:`, error)
+    const isTimeout =
+      error instanceof Error && error.message?.toLowerCase().includes('timeout')
+    if (isTimeout) {
+      // Timeout errors are expected for slow or offline external platforms
+      // and are not actionable by the developer — log at debug to reduce noise.
+      logger.debug(
+        `Failed to load positions for platform ${platformId}:`,
+        error
+      )
+    } else {
+      // Auth/config/5xx and other unexpected failures should remain visible.
+      logger.warn(`Failed to load positions for platform ${platformId}:`, error)
+    }
     return null
   }
 

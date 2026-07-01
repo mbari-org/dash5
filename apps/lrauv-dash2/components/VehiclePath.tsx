@@ -568,7 +568,8 @@ const VehiclePath: React.FC<VehiclePathProps> = ({
         ))}
       {/* GPS surfacing dots along the full deployment track — rendered before the
           current position marker so the latest dot always appears on top when
-          positions overlap. Color props must be direct props on CircleMarker. */}
+          positions overlap. Non-interactive so HitCircles retain pointer priority
+          for scrub/hover. Per-fix details are shown via the mapHoverFix tooltip. */}
       {displayedFixes.map((fix, index) =>
         index === 0 ? null : (
           <CircleMarker
@@ -579,35 +580,8 @@ const VehiclePath: React.FC<VehiclePathProps> = ({
             fillColor={color}
             fillOpacity={0.7}
             weight={1}
-          >
-            <Tooltip direction="top" offset={[0, -4]} opacity={0.9}>
-              <div className="text-xs leading-snug">
-                <div className="flex items-center gap-1 font-bold text-black">
-                  <span
-                    style={{
-                      background: color,
-                      border: '1.5px solid rgba(0,0,0,0.4)',
-                      borderRadius: '50%',
-                      width: 8,
-                      height: 8,
-                      display: 'inline-block',
-                      flexShrink: 0,
-                    }}
-                  />
-                  {name}
-                </div>
-                <div>
-                  Lat/Lon: {fix.latitude.toFixed(5)}, {fix.longitude.toFixed(5)}
-                </div>
-                <div>
-                  {fix.isoTime.replace('T', ' ').replace('Z', '').trim()}{' '}
-                  <span className="text-[10px] italic text-gray-500">
-                    -{formatElapsedTime(Date.now() - fix.unixTime)}
-                  </span>
-                </div>
-              </div>
-            </Tooltip>
-          </CircleMarker>
+            interactive={false}
+          />
         )
       )}
       {/* Current vehicle position — solid filled dot with a contrasting white
@@ -631,51 +605,6 @@ const VehiclePath: React.FC<VehiclePathProps> = ({
             permanent
           >
             {name}
-          </Tooltip>
-        </CircleMarker>
-      )}
-      {/* Invisible hit target for the hover tooltip */}
-      {latest && (
-        <CircleMarker
-          center={{ lat: latest.latitude, lng: latest.longitude }}
-          radius={12}
-          color="transparent"
-          fillColor="transparent"
-          fillOpacity={0}
-          weight={0}
-        >
-          <Tooltip direction="right" offset={[10, 0]} opacity={0.9}>
-            <div className="text-xs leading-snug">
-              <div className="flex items-center gap-1 font-bold text-black">
-                <span
-                  style={{
-                    background: color,
-                    border: '1.5px solid rgba(0,0,0,0.4)',
-                    borderRadius: '50%',
-                    width: 8,
-                    height: 8,
-                    display: 'inline-block',
-                    flexShrink: 0,
-                  }}
-                />
-                {name}
-              </div>
-              {futureRoute && (
-                <div className="text-gray-500 italic">
-                  Position before waypoint trajectory
-                </div>
-              )}
-              <div className="mt-0.5">
-                Latest position: {latest.latitude.toFixed(5)},{' '}
-                {latest.longitude.toFixed(5)}
-              </div>
-              <div>
-                {latestTimeFix?.replace('T', ' ').replace('Z', '').trim()}{' '}
-                <span className="text-[10px] italic text-gray-500">
-                  -{formatElapsedTime(Date.now() - latest.unixTime)}
-                </span>
-              </div>
-            </div>
           </Tooltip>
         </CircleMarker>
       )}
@@ -744,7 +673,7 @@ const VehiclePath: React.FC<VehiclePathProps> = ({
                 {mapHoverFix.longitude.toFixed(5)}
               </div>
               <div className="text-gray-600">
-                {mapHoverFix.isoTime.replace('T', ' ').replace('Z', '').trim()}{' '}
+                {mapHoverFix.isoTime.replace('T', ' ').replace('Z', ' UTC')}{' '}
                 <span className="text-[10px] italic text-gray-500">
                   -{formatElapsedTime(Date.now() - mapHoverFix.unixTime)}
                 </span>
@@ -788,6 +717,53 @@ const VehiclePath: React.FC<VehiclePathProps> = ({
         onCoord={handleCoord}
         onMouseOut={handleMouseOut}
       />
+      {/* Invisible hit target for the latest-position tooltip — rendered AFTER
+          HitCircles so it sits on top and its tooltip is reliably reachable.
+          Shows "Position before waypoint trajectory" when a future route exists. */}
+      {latest && (
+        <CircleMarker
+          center={{ lat: latest.latitude, lng: latest.longitude }}
+          radius={12}
+          color="transparent"
+          fillColor="transparent"
+          fillOpacity={0}
+          weight={0}
+        >
+          <Tooltip direction="right" offset={[10, 0]} opacity={0.9}>
+            <div className="text-xs leading-snug">
+              <div className="flex items-center gap-1 font-bold text-black">
+                <span
+                  style={{
+                    background: color,
+                    border: '1.5px solid rgba(0,0,0,0.4)',
+                    borderRadius: '50%',
+                    width: 8,
+                    height: 8,
+                    display: 'inline-block',
+                    flexShrink: 0,
+                  }}
+                />
+                {name}
+              </div>
+              {futureRoute && (
+                <div className="text-gray-500 italic">
+                  Position before waypoint trajectory
+                </div>
+              )}
+              <div className="mt-0.5">
+                Latest position: {latest.latitude.toFixed(5)},{' '}
+                {latest.longitude.toFixed(5)}
+              </div>
+              <div>
+                {latestTimeFix?.replace('T', ' ').replace('Z', ' UTC')}{' '}
+                <span className="text-[10px] italic text-gray-500">
+                  -{formatElapsedTime(Date.now() - latest.unixTime)}
+                </span>
+              </div>
+            </div>
+          </Tooltip>
+        </CircleMarker>
+      )}
     </>
   ) : null
 }
