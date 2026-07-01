@@ -610,7 +610,7 @@ const VehiclePath: React.FC<VehiclePathProps> = ({
                 </div>
               )}
               <div className="mt-0.5">
-                Lat/Lon: {latest.latitude.toFixed(5)},{' '}
+                Latest position: {latest.latitude.toFixed(5)},{' '}
                 {latest.longitude.toFixed(5)}
               </div>
               <div>
