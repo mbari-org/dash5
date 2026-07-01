@@ -360,6 +360,15 @@ const VehiclePath: React.FC<VehiclePathProps> = ({
     })
   }, [gpsFixes])
 
+  // Deduplicated position count for the "Positions: N" tooltip label.
+  // When dimTime is active, count only fixes at or before that threshold.
+  // Uses displayedFixes (already deduped) as the source to avoid over-counting
+  // duplicate unixTime entries that exist in the raw gpsFixes array.
+  const displayedPositionCount = useMemo(() => {
+    if (!dimTime || dimTime <= 0) return displayedFixes.length
+    return displayedFixes.filter((fix) => fix.unixTime <= dimTime).length
+  }, [dimTime, displayedFixes])
+
   // Track-split: which fixes are in the "past" relative to dimTime
   const activePoints = useMemo(() => {
     if (!dimTime || dimTime <= 0 || !gpsFixes) return null
@@ -655,7 +664,7 @@ const VehiclePath: React.FC<VehiclePathProps> = ({
                 </span>
               </div>
               <div className="text-gray-500 mt-0.5">
-                Positions: {activePoints?.length ?? displayedFixes.length}
+                Positions: {displayedPositionCount}
               </div>
             </div>
           </Tooltip>
