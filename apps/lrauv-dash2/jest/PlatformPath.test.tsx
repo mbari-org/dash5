@@ -3,8 +3,8 @@ import React from 'react'
 import { render } from '@testing-library/react'
 
 // Mock react-leaflet so PlatformPath can render without a map context.
-// <Pane> is included because PlatformPath now uses it declaratively to register
-// the custom platformsPane — no need for useMap/map.createPane at all.
+// <Pane> is mocked here as a no-op because PlatformPaths (the parent) renders
+// it; including it keeps the mock complete if future tests render PlatformPaths.
 jest.mock('react-leaflet', () => ({
   Pane: () => null,
   Marker: ({ children }: { children?: React.ReactNode }) => (
