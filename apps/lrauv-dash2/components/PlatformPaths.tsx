@@ -23,9 +23,9 @@ export const PlatformPaths: React.FC = () => {
 
   return (
     <>
-      {/* Single pane declaration for all ship/platform layers — must be here
-          (not in PlatformPath) to avoid duplicate-pane errors when multiple
-          ships are selected simultaneously. */}
+      {/* Single pane declaration for ship/platform polylines and circle markers
+          (icon Markers stay in the default markerPane) — declared here once to
+          avoid duplicate-pane errors when multiple ships are selected. */}
       <Pane name={PLATFORM_PANE} style={{ zIndex: PLATFORM_PANE_Z }} />
       {selectedPlatformIds.map((platformId) => {
         const platform = platformMap[platformId]

@@ -163,14 +163,16 @@ export const PlatformPath: React.FC<PlatformPathProps> = ({
 
   return (
     <>
-      {/* Custom icon at latest position, shown for fixed/infrequently-updated platforms */}
+      {/* Custom icon at latest position, shown for fixed/infrequently-updated platforms.
+          Tooltip is permanent so the name label is always visible, matching the
+          behaviour of the prominent CircleMarker used for no-icon platforms. */}
       {platformIcon && route.length > 0 && (
         <Marker position={[route[0][0], route[0][1]]} icon={platformIcon}>
-          <Tooltip opacity={0.9}>
+          <Tooltip permanent opacity={0.75}>
             <div className="text-italic">
-              <div className="text-bold">{displayName}</div>
+              <span className="text-bold">{displayName}</span>
               {displayAbbrev && (
-                <div className="text-gray-500">({displayAbbrev})</div>
+                <span className="text-gray-500"> ({displayAbbrev})</span>
               )}
             </div>
           </Tooltip>
