@@ -105,13 +105,13 @@ export const PlatformPath: React.FC<PlatformPathProps> = ({
     if (!iconUrl) return null
 
     const container = document.createElement('div')
-    container.style.cssText = 'width:32px;height:32px;overflow:hidden;'
+    container.style.cssText = 'width:44px;height:44px;overflow:hidden;'
 
     const img = document.createElement('img')
     img.src = iconUrl
     img.alt = displayName
     img.style.cssText =
-      'width:32px;height:32px;object-fit:contain;border:none;background:transparent;'
+      'width:44px;height:44px;object-fit:contain;border:none;background:transparent;'
     img.onerror = () => {
       img.style.display = 'none'
     }
@@ -120,9 +120,9 @@ export const PlatformPath: React.FC<PlatformPathProps> = ({
     return L.divIcon({
       className: '',
       html: container,
-      iconSize: [32, 32],
-      iconAnchor: [16, 16],
-      tooltipAnchor: [16, 0],
+      iconSize: [44, 44],
+      iconAnchor: [22, 22],
+      tooltipAnchor: [22, 0],
     })
   }, [iconUrl, displayName])
 
