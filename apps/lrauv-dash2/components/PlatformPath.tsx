@@ -1,5 +1,5 @@
-import React, { useMemo, useState, useEffect, useCallback, useRef } from 'react'
-import { Marker, Polyline, Tooltip, CircleMarker, useMap } from 'react-leaflet'
+import React, { useMemo, useState, useEffect, useCallback } from 'react'
+import { Marker, Polyline, Tooltip, CircleMarker, Pane } from 'react-leaflet'
 import L from 'leaflet'
 import { usePlatformPositions } from '@mbari/api-client'
 import { createLogger } from '@mbari/utils'
@@ -8,6 +8,8 @@ import { useTick } from '../lib/useTick'
 // Dedicated Leaflet pane for ship/platform tracks — sits above the vehicle
 // hit-circle layer (overlayPane z-index 400) so ship elements always win
 // pointer-event priority when a ship track overlaps a vehicle surfacing fix.
+// Declared as a <Pane /> component (declarative) rather than map.createPane()
+// (imperative side-effect in render) to follow react-leaflet best practice.
 const PLATFORM_PANE = 'platformsPane'
 const PLATFORM_PANE_Z = 450
 
@@ -45,22 +47,6 @@ export const PlatformPath: React.FC<PlatformPathProps> = ({
   limitPositions = 20,
   refreshIntervalMs = 5 * 60_000,
 }) => {
-  const map = useMap()
-
-  // Create the platforms pane synchronously (before JSX returns) so that the
-  // pane exists by the time react-leaflet mounts Polyline/CircleMarker into it.
-  // useEffect is too late — Leaflet crashes with "Cannot read appendChild of
-  // undefined" if the pane doesn't exist when the layer first mounts.
-  const paneInitializedRef = useRef(false)
-  if (!paneInitializedRef.current) {
-    if (!map.getPane(PLATFORM_PANE)) {
-      map.createPane(PLATFORM_PANE)
-      const pane = map.getPane(PLATFORM_PANE)
-      if (pane) pane.style.zIndex = String(PLATFORM_PANE_Z)
-    }
-    paneInitializedRef.current = true
-  }
-
   const [hovered, setHovered] = useState(false)
   // Track icon load failure so we can show the fallback CircleMarker when
   // the ODSS image is blocked or unavailable. Reset whenever iconUrl changes
@@ -184,6 +170,9 @@ export const PlatformPath: React.FC<PlatformPathProps> = ({
 
   return (
     <>
+      {/* Declare the platforms pane declaratively so react-leaflet owns the
+          lifecycle — avoids imperative map.createPane() side-effects in render. */}
+      <Pane name={PLATFORM_PANE} style={{ zIndex: PLATFORM_PANE_Z }} />
       {/* Custom icon at latest position, shown for fixed/infrequently-updated platforms */}
       {platformIcon && route.length > 0 && (
         <Marker position={[route[0][0], route[0][1]]} icon={platformIcon}>
@@ -231,7 +220,8 @@ export const PlatformPath: React.FC<PlatformPathProps> = ({
               outline so it reads clearly against both the track line and the
               basemap. Also shown as fallback when the custom icon image fails
               to load (e.g. ODSS blocks the request). */}
-          {(!platformIcon || iconFailed) && (
+          {/* platformIcon is already null when iconFailed — !platformIcon covers both cases */}
+          {!platformIcon && (
             <CircleMarker
               center={[route[0][0], route[0][1]]}
               pane={PLATFORM_PANE}

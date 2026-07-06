@@ -3,18 +3,10 @@ import React from 'react'
 import { render } from '@testing-library/react'
 
 // Mock react-leaflet so PlatformPath can render without a map context.
-// useMap must return a minimal map stub with getPane/createPane so the
-// platformsPane initialization code in PlatformPath doesn't throw.
-const mockPane = { style: { zIndex: '' } }
-const mockMap = {
-  getPane: jest.fn((name: string) =>
-    name === 'platformsPane' ? undefined : mockPane
-  ),
-  createPane: jest.fn(() => mockPane),
-}
-
+// <Pane> is included because PlatformPath now uses it declaratively to register
+// the custom platformsPane — no need for useMap/map.createPane at all.
 jest.mock('react-leaflet', () => ({
-  useMap: () => mockMap,
+  Pane: () => null,
   Marker: ({ children }: { children?: React.ReactNode }) => (
     <div data-testid="marker">{children}</div>
   ),
@@ -124,5 +116,44 @@ describe('PlatformPath rendering', () => {
       <PlatformPath platformId="abc" platformName="Test Platform" />
     )
     expect(getByTestId('polyline')).toBeInTheDocument()
+  })
+
+  it('renders 1 prominent + 1 historical CircleMarker for 2 fixes with no icon', () => {
+    mockUsePlatformPositions.mockReturnValue({
+      data: {
+        positions: [
+          { timeMs: 2000, lat: 36.1, lon: -122.1 },
+          { timeMs: 1000, lat: 36.0, lon: -122.0 },
+        ],
+      },
+      isLoading: false,
+      error: null,
+    })
+    const { getAllByTestId } = render(
+      <PlatformPath platformId="abc" platformName="Test Platform" />
+    )
+    // index 0 → prominent current-position CircleMarker
+    // index 1 → historical dot CircleMarker
+    // index 0 is skipped in the historical map loop
+    expect(getAllByTestId('circle-marker')).toHaveLength(2)
+  })
+
+  it('skips the latest-position CircleMarker in the historical dots loop', () => {
+    mockUsePlatformPositions.mockReturnValue({
+      data: {
+        positions: [
+          { timeMs: 3000, lat: 36.2, lon: -122.2 },
+          { timeMs: 2000, lat: 36.1, lon: -122.1 },
+          { timeMs: 1000, lat: 36.0, lon: -122.0 },
+        ],
+      },
+      isLoading: false,
+      error: null,
+    })
+    const { getAllByTestId } = render(
+      <PlatformPath platformId="abc" platformName="Test Platform" />
+    )
+    // 1 prominent marker (index 0) + 2 historical dots (index 1, 2) = 3 total
+    expect(getAllByTestId('circle-marker')).toHaveLength(3)
   })
 })
