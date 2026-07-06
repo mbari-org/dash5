@@ -1,9 +1,15 @@
-import React, { useMemo, useState } from 'react'
-import { Marker, Polyline, Tooltip, CircleMarker } from 'react-leaflet'
+import React, { useMemo, useState, useEffect } from 'react'
+import { Marker, Polyline, Tooltip, CircleMarker, useMap } from 'react-leaflet'
 import L from 'leaflet'
 import { usePlatformPositions } from '@mbari/api-client'
 import { createLogger } from '@mbari/utils'
 import { useTick } from '../lib/useTick'
+
+// Dedicated Leaflet pane for ship/platform tracks — sits above the vehicle
+// hit-circle layer (overlayPane z-index 400) so ship elements always win
+// pointer-event priority when a ship track overlaps a vehicle surfacing fix.
+const PLATFORM_PANE = 'platformsPane'
+const PLATFORM_PANE_Z = 450
 
 const logger = createLogger('PlatformPath')
 
@@ -39,6 +45,18 @@ export const PlatformPath: React.FC<PlatformPathProps> = ({
   limitPositions = 20,
   refreshIntervalMs = 5 * 60_000,
 }) => {
+  const map = useMap()
+
+  // Create the platforms pane once so ship elements receive pointer events
+  // before the vehicle hit-circle layer (overlayPane, z-index 400).
+  useEffect(() => {
+    if (!map.getPane(PLATFORM_PANE)) {
+      map.createPane(PLATFORM_PANE)
+      const pane = map.getPane(PLATFORM_PANE)
+      if (pane) pane.style.zIndex = String(PLATFORM_PANE_Z)
+    }
+  }, [map])
+
   const [hovered, setHovered] = useState(false)
 
   const nowMs = useTick(refreshIntervalMs)
@@ -169,6 +187,7 @@ export const PlatformPath: React.FC<PlatformPathProps> = ({
       {route.length > 0 && (
         <>
           <Polyline
+            pane={PLATFORM_PANE}
             pathOptions={{
               color: platformColor,
               weight: 3,
@@ -201,6 +220,7 @@ export const PlatformPath: React.FC<PlatformPathProps> = ({
           {!platformIcon && (
             <CircleMarker
               center={[route[0][0], route[0][1]]}
+              pane={PLATFORM_PANE}
               radius={8}
               pathOptions={{
                 color: 'white',
@@ -241,6 +261,7 @@ export const PlatformPath: React.FC<PlatformPathProps> = ({
               <CircleMarker
                 key={`${platformId}-${index}`}
                 center={[position[0], position[1]]}
+                pane={PLATFORM_PANE}
                 radius={2}
                 pathOptions={{
                   color: platformColor,
