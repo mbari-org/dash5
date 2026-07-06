@@ -109,7 +109,11 @@ export const DeploymentDetailsPopUp: React.FC<DeploymentDetailsPopUpProps> = ({
         ...deployment,
         [`${type}Date`]: DateTime.now().toISO(),
       })
-      onSetDeploymentEventToCurrentTime(type)
+      // 'start' is updated via onSaveChanges (updateDeployment) — not
+      // alterDeployment which only accepts 'launch' | 'recover' | 'end'.
+      if (type !== 'start') {
+        onSetDeploymentEventToCurrentTime(type)
+      }
     }
 
     // Start date in edit mode: show quick-pick first, DateField only if

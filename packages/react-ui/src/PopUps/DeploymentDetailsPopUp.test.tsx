@@ -139,11 +139,9 @@ test('should still show DateField for non-start events in edit mode', async () =
 
   fireEvent.click(screen.getByLabelText(/edit dates button/i))
 
-  // launch/recover/end date pickers (index 0 is now start custom — skip to launch)
-  // There should be date pickers for launch, recover, end but NOT immediately for start
+  // start → quick-pick (no DateField); launch, recover, end → DateField = exactly 3
   const datePickers = screen.queryAllByLabelText('date picker')
-  // launch, recover, end = 3 pickers (start shows quick-pick, not DateField)
-  expect(datePickers.length).toBeGreaterThanOrEqual(1)
+  expect(datePickers).toHaveLength(3)
 })
 
 test('should display number of log files', async () => {
