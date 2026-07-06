@@ -63,9 +63,13 @@ export const PlatformPath: React.FC<PlatformPathProps> = ({
 
   const [hovered, setHovered] = useState(false)
   // Track icon load failure so we can show the fallback CircleMarker when
-  // the ODSS image is blocked or unavailable (Copilot review suggestion).
+  // the ODSS image is blocked or unavailable. Reset whenever iconUrl changes
+  // so a new valid URL gets a fresh attempt.
   const [iconFailed, setIconFailed] = useState(false)
   const handleIconError = useCallback(() => setIconFailed(true), [])
+  useEffect(() => {
+    setIconFailed(false)
+  }, [iconUrl])
 
   const nowMs = useTick(refreshIntervalMs)
 
@@ -128,7 +132,7 @@ export const PlatformPath: React.FC<PlatformPathProps> = ({
   // - the icon object is memoized to avoid unnecessary Leaflet icon churn
   // Must be declared before any early returns to satisfy Rules of Hooks.
   const platformIcon = useMemo(() => {
-    if (!iconUrl) return null
+    if (!iconUrl || iconFailed) return null
 
     const container = document.createElement('div')
     container.style.cssText = 'width:44px;height:44px;overflow:hidden;'
@@ -151,7 +155,7 @@ export const PlatformPath: React.FC<PlatformPathProps> = ({
       iconAnchor: [22, 22],
       tooltipAnchor: [22, 0],
     })
-  }, [iconUrl, displayName])
+  }, [iconUrl, iconFailed, displayName, handleIconError])
 
   if (isLoading) {
     return null

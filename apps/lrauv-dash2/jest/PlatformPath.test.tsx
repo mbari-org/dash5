@@ -2,8 +2,19 @@ import '@testing-library/jest-dom'
 import React from 'react'
 import { render } from '@testing-library/react'
 
-// Mock react-leaflet so PlatformPath can render without a map context
+// Mock react-leaflet so PlatformPath can render without a map context.
+// useMap must return a minimal map stub with getPane/createPane so the
+// platformsPane initialization code in PlatformPath doesn't throw.
+const mockPane = { style: { zIndex: '' } }
+const mockMap = {
+  getPane: jest.fn((name: string) =>
+    name === 'platformsPane' ? undefined : mockPane
+  ),
+  createPane: jest.fn(() => mockPane),
+}
+
 jest.mock('react-leaflet', () => ({
+  useMap: () => mockMap,
   Marker: ({ children }: { children?: React.ReactNode }) => (
     <div data-testid="marker">{children}</div>
   ),
