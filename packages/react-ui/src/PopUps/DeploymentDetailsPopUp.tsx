@@ -190,18 +190,6 @@ export const DeploymentDetailsPopUp: React.FC<DeploymentDetailsPopUpProps> = ({
               </button>
               <button
                 className={styles.markTimeButton}
-                onClick={() =>
-                  setDeployment({
-                    ...deployment,
-                    startDate: DateTime.now().plus({ hours: 1 }).toISO(),
-                  })
-                }
-                aria-label="set start time to one hour from now"
-              >
-                In 1 hour
-              </button>
-              <button
-                className={styles.markTimeButton}
                 onClick={() => setShowStartCustomPicker(true)}
                 aria-label="pick a custom start date"
               >

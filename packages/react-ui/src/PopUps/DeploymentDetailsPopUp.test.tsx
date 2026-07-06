@@ -107,10 +107,10 @@ test('should display quick-pick buttons for start when edit dates is clicked', a
   fireEvent.click(screen.getByLabelText(/edit dates button/i))
 
   expect(screen.getByLabelText(/set start time to now/i)).toBeInTheDocument()
-  expect(
-    screen.getByLabelText(/set start time to one hour from now/i)
-  ).toBeInTheDocument()
   expect(screen.getByLabelText(/pick a custom start date/i)).toBeInTheDocument()
+  expect(
+    screen.queryByLabelText(/set start time to one hour from now/i)
+  ).not.toBeInTheDocument()
   expect(screen.queryByLabelText(/edit dates button/i)).not.toBeInTheDocument()
 })
 
