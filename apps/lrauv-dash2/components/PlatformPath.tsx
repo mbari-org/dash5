@@ -197,7 +197,7 @@ export const PlatformPath: React.FC<PlatformPathProps> = ({
 
           {/* Prominent current-position marker — solid filled circle with white
               outline so it reads clearly against both the track line and the
-              basemap. Carries the permanent name label and the hover tooltip. */}
+              basemap. Single permanent tooltip carries name + position details. */}
           {!platformIcon && (
             <CircleMarker
               center={[route[0][0], route[0][1]]}
@@ -215,23 +215,16 @@ export const PlatformPath: React.FC<PlatformPathProps> = ({
                   {displayAbbrev ? (
                     <span className="text-gray-500"> ({displayAbbrev})</span>
                   ) : null}
-                </div>
-              </Tooltip>
-              <Tooltip opacity={0.9}>
-                <div className="text-italic">
-                  <div className="text-bold">{displayName}</div>
-                  {displayAbbrev && (
-                    <div className="text-gray-500">({displayAbbrev})</div>
+                  <br />
+                  <span className="text-xs text-gray-400">
+                    {route[0][0].toFixed(5)}, {route[0][1].toFixed(5)}
+                  </span>
+                  {displayPositions[0] && (
+                    <div className="text-xs text-gray-400">
+                      {new Date(displayPositions[0].timeMs).toLocaleString()}
+                    </div>
                   )}
                 </div>
-                <span>Latest position:</span> {route[0][0].toFixed(5)},{' '}
-                {route[0][1].toFixed(5)}
-                <br />
-                {displayPositions[0] && (
-                  <div className="text-sm text-gray-400">
-                    {new Date(displayPositions[0].timeMs).toLocaleString()}
-                  </div>
-                )}
               </Tooltip>
             </CircleMarker>
           )}
