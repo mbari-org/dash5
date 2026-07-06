@@ -41,6 +41,7 @@ export const PlatformPath: React.FC<PlatformPathProps> = ({
   refreshIntervalMs = 5 * 60_000,
 }) => {
   const [hovered, setHovered] = useState(false)
+  const [currentPosHovered, setCurrentPosHovered] = useState(false)
   // Track icon load failure so we can show the fallback CircleMarker when
   // the ODSS image is blocked or unavailable. Reset whenever iconUrl changes
   // so a new valid URL gets a fresh attempt.
@@ -224,21 +225,33 @@ export const PlatformPath: React.FC<PlatformPathProps> = ({
                 fillOpacity: 0.9,
                 weight: 2,
               }}
+              eventHandlers={{
+                mouseover: () => setCurrentPosHovered(true),
+                mouseout: () => setCurrentPosHovered(false),
+              }}
             >
+              {/* Permanent tooltip shows name label only — coords/timestamp
+                  are added on hover to avoid clutter with multiple platforms. */}
               <Tooltip permanent opacity={0.75}>
                 <div className="text-italic">
                   <span className="text-bold">{displayName}</span>
                   {displayAbbrev ? (
                     <span className="text-gray-500"> ({displayAbbrev})</span>
                   ) : null}
-                  <br />
-                  <span className="text-xs text-gray-400">
-                    {route[0][0].toFixed(5)}, {route[0][1].toFixed(5)}
-                  </span>
-                  {displayPositions[0] && (
-                    <div className="text-xs text-gray-400">
-                      {new Date(displayPositions[0].timeMs).toLocaleString()}
-                    </div>
+                  {currentPosHovered && (
+                    <>
+                      <br />
+                      <span className="text-xs text-gray-400">
+                        {route[0][0].toFixed(5)}, {route[0][1].toFixed(5)}
+                      </span>
+                      {displayPositions[0] && (
+                        <div className="text-xs text-gray-400">
+                          {new Date(
+                            displayPositions[0].timeMs
+                          ).toLocaleString()}
+                        </div>
+                      )}
+                    </>
                   )}
                 </div>
               </Tooltip>
