@@ -30,6 +30,19 @@ export interface MouseCoordinatesProps {
   onRequestDepth?: (lat: number, lng: number) => Promise<number | null>
 }
 
+/** Returns true when the user is in a text-editing context (input, textarea,
+ *  contenteditable, or has an active text selection). Used to prevent the map
+ *  Ctrl+C shortcut from clobbering clipboard content from the doc editor or
+ *  other text fields. Exported for unit testing. */
+export const isInTextContext = (
+  active: Element | null,
+  selection: string
+): boolean =>
+  active instanceof HTMLInputElement ||
+  active instanceof HTMLTextAreaElement ||
+  (active instanceof HTMLElement && active.isContentEditable) ||
+  selection.length > 0
+
 const MouseCoordinates: React.FC<MouseCoordinatesProps> = ({
   onRequestDepth,
 }) => {
@@ -96,7 +109,11 @@ const MouseCoordinates: React.FC<MouseCoordinatesProps> = ({
           event.key === 'c' &&
           event.ctrlKey &&
           formattedCoordinates.length > 0 &&
-          navigator.clipboard
+          navigator.clipboard &&
+          !isInTextContext(
+            document.activeElement,
+            window.getSelection()?.toString() ?? ''
+          )
         ) {
           navigator.clipboard?.writeText(formattedCoordinates)
         }
