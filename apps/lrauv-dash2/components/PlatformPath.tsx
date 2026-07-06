@@ -1,4 +1,4 @@
-import React, { useMemo, useState, useEffect, useCallback } from 'react'
+import React, { useMemo, useState, useEffect, useCallback, useRef } from 'react'
 import { Marker, Polyline, Tooltip, CircleMarker, useMap } from 'react-leaflet'
 import L from 'leaflet'
 import { usePlatformPositions } from '@mbari/api-client'
@@ -47,15 +47,19 @@ export const PlatformPath: React.FC<PlatformPathProps> = ({
 }) => {
   const map = useMap()
 
-  // Create the platforms pane once so ship elements receive pointer events
-  // before the vehicle hit-circle layer (overlayPane, z-index 400).
-  useEffect(() => {
+  // Create the platforms pane synchronously (before JSX returns) so that the
+  // pane exists by the time react-leaflet mounts Polyline/CircleMarker into it.
+  // useEffect is too late — Leaflet crashes with "Cannot read appendChild of
+  // undefined" if the pane doesn't exist when the layer first mounts.
+  const paneInitializedRef = useRef(false)
+  if (!paneInitializedRef.current) {
     if (!map.getPane(PLATFORM_PANE)) {
       map.createPane(PLATFORM_PANE)
       const pane = map.getPane(PLATFORM_PANE)
       if (pane) pane.style.zIndex = String(PLATFORM_PANE_Z)
     }
-  }, [map])
+    paneInitializedRef.current = true
+  }
 
   const [hovered, setHovered] = useState(false)
   // Track icon load failure so we can show the fallback CircleMarker when
