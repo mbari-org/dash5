@@ -116,6 +116,11 @@ export const DeploymentDetailsPopUp: React.FC<DeploymentDetailsPopUpProps> = ({
     // the user explicitly chooses "Custom date…"
     if (isSelectDateMode && type === 'start') {
       if (showStartCustomPicker) {
+        const customStartValue =
+          deployment[eventDateLabel as keyof DeploymentDetails] ?? ''
+        const isCustomFuture =
+          !!customStartValue &&
+          DateTime.fromISO(customStartValue) > DateTime.now()
         return {
           label: (
             <div className="flex flex-col gap-1">
@@ -123,7 +128,7 @@ export const DeploymentDetailsPopUp: React.FC<DeploymentDetailsPopUpProps> = ({
                 name={eventDateLabel}
                 timeZone={timezone && !isLocal ? timezone : undefined}
                 className="text-sm"
-                value={deployment[eventDateLabel as keyof DeploymentDetails]}
+                value={customStartValue}
                 onChange={(newValue: string) =>
                   setDeployment({
                     ...deployment,
@@ -132,6 +137,12 @@ export const DeploymentDetailsPopUp: React.FC<DeploymentDetailsPopUpProps> = ({
                 }
                 disabled={false}
               />
+              {isCustomFuture && (
+                <span className="text-xs italic text-amber-600">
+                  Start is set in the future — GPS fixes won&apos;t appear until
+                  then.
+                </span>
+              )}
               <button
                 className="text-xs text-indigo-600 underline"
                 onClick={() => setShowStartCustomPicker(false)}

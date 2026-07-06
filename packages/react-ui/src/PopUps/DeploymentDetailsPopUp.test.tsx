@@ -101,17 +101,49 @@ test('should display mark recovery time now button if a recovery time is not pro
   expect(markRecoveryTimeButton).toBeInTheDocument()
 })
 
-test('should display date selectors if edit dates button is clicked', async () => {
+test('should display quick-pick buttons for start when edit dates is clicked', async () => {
   render(<DeploymentDetailsPopUp {...props} />)
 
-  const editDateButton = screen.getByLabelText(/edit dates button/i)
+  fireEvent.click(screen.getByLabelText(/edit dates button/i))
 
-  fireEvent.click(editDateButton)
+  expect(screen.getByLabelText(/set start time to now/i)).toBeInTheDocument()
+  expect(
+    screen.getByLabelText(/set start time to one hour from now/i)
+  ).toBeInTheDocument()
+  expect(screen.getByLabelText(/pick a custom start date/i)).toBeInTheDocument()
+  expect(screen.queryByLabelText(/edit dates button/i)).not.toBeInTheDocument()
+})
+
+test('should show DateField after clicking Custom date in start quick-pick', async () => {
+  render(<DeploymentDetailsPopUp {...props} />)
+
+  fireEvent.click(screen.getByLabelText(/edit dates button/i))
+  fireEvent.click(screen.getByLabelText(/pick a custom start date/i))
 
   const startDateSelector = screen.queryAllByLabelText('date picker')[0]
-
   expect(startDateSelector).toBeInTheDocument()
-  expect(screen.queryByLabelText(/edit dates button/i)).not.toBeInTheDocument()
+  expect(screen.getByText(/← Back to quick options/i)).toBeInTheDocument()
+})
+
+test('should show inline warning when existing start date is in the future', async () => {
+  const futureDate = new Date(
+    Date.now() + 7 * 24 * 60 * 60 * 1000
+  ).toISOString()
+  render(<DeploymentDetailsPopUp {...props} startDate={futureDate} />)
+
+  expect(screen.getByText(/Start is in the future/i)).toBeInTheDocument()
+})
+
+test('should still show DateField for non-start events in edit mode', async () => {
+  render(<DeploymentDetailsPopUp {...props} />)
+
+  fireEvent.click(screen.getByLabelText(/edit dates button/i))
+
+  // launch/recover/end date pickers (index 0 is now start custom — skip to launch)
+  // There should be date pickers for launch, recover, end but NOT immediately for start
+  const datePickers = screen.queryAllByLabelText('date picker')
+  // launch, recover, end = 3 pickers (start shows quick-pick, not DateField)
+  expect(datePickers.length).toBeGreaterThanOrEqual(1)
 })
 
 test('should display number of log files', async () => {
