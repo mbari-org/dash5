@@ -16,8 +16,17 @@ jest.mock('react-leaflet', () => ({
   Tooltip: ({ children }: { children?: React.ReactNode }) => (
     <div data-testid="tooltip">{children}</div>
   ),
-  CircleMarker: ({ children }: { children?: React.ReactNode }) => (
-    <div data-testid="circle-marker">{children}</div>
+  // Expose radius so tests can assert prominent (8) vs historical (2) styling
+  CircleMarker: ({
+    children,
+    radius,
+  }: {
+    children?: React.ReactNode
+    radius?: number
+  }) => (
+    <div data-testid="circle-marker" data-radius={radius}>
+      {children}
+    </div>
   ),
 }))
 
@@ -132,10 +141,12 @@ describe('PlatformPath rendering', () => {
     const { getAllByTestId } = render(
       <PlatformPath platformId="abc" platformName="Test Platform" />
     )
-    // index 0 → prominent current-position CircleMarker
-    // index 1 → historical dot CircleMarker
-    // index 0 is skipped in the historical map loop
-    expect(getAllByTestId('circle-marker')).toHaveLength(2)
+    const markers = getAllByTestId('circle-marker')
+    // index 0 → prominent current-position marker (radius 8)
+    // index 1 → historical dot (radius 2)
+    expect(markers).toHaveLength(2)
+    expect(markers[0]).toHaveAttribute('data-radius', '8')
+    expect(markers[1]).toHaveAttribute('data-radius', '2')
   })
 
   it('skips the latest-position CircleMarker in the historical dots loop', () => {
@@ -153,7 +164,11 @@ describe('PlatformPath rendering', () => {
     const { getAllByTestId } = render(
       <PlatformPath platformId="abc" platformName="Test Platform" />
     )
-    // 1 prominent marker (index 0) + 2 historical dots (index 1, 2) = 3 total
-    expect(getAllByTestId('circle-marker')).toHaveLength(3)
+    const markers = getAllByTestId('circle-marker')
+    // 1 prominent marker (radius 8) + 2 historical dots (radius 2) = 3 total
+    expect(markers).toHaveLength(3)
+    expect(markers[0]).toHaveAttribute('data-radius', '8')
+    expect(markers[1]).toHaveAttribute('data-radius', '2')
+    expect(markers[2]).toHaveAttribute('data-radius', '2')
   })
 })

@@ -1,5 +1,5 @@
 import React, { useMemo, useState, useEffect, useCallback } from 'react'
-import { Marker, Polyline, Tooltip, CircleMarker, Pane } from 'react-leaflet'
+import { Marker, Polyline, Tooltip, CircleMarker } from 'react-leaflet'
 import L from 'leaflet'
 import { usePlatformPositions } from '@mbari/api-client'
 import { createLogger } from '@mbari/utils'
@@ -8,10 +8,10 @@ import { useTick } from '../lib/useTick'
 // Dedicated Leaflet pane for ship/platform tracks — sits above the vehicle
 // hit-circle layer (overlayPane z-index 400) so ship elements always win
 // pointer-event priority when a ship track overlaps a vehicle surfacing fix.
-// Declared as a <Pane /> component (declarative) rather than map.createPane()
-// (imperative side-effect in render) to follow react-leaflet best practice.
-const PLATFORM_PANE = 'platformsPane'
-const PLATFORM_PANE_Z = 450
+// The <Pane /> must be rendered exactly ONCE (in PlatformPaths.tsx, the parent)
+// to avoid "A pane with this name already exists" when multiple ships are shown.
+export const PLATFORM_PANE = 'platformsPane'
+export const PLATFORM_PANE_Z = 450
 
 const logger = createLogger('PlatformPath')
 
@@ -170,9 +170,6 @@ export const PlatformPath: React.FC<PlatformPathProps> = ({
 
   return (
     <>
-      {/* Declare the platforms pane declaratively so react-leaflet owns the
-          lifecycle — avoids imperative map.createPane() side-effects in render. */}
-      <Pane name={PLATFORM_PANE} style={{ zIndex: PLATFORM_PANE_Z }} />
       {/* Custom icon at latest position, shown for fixed/infrequently-updated platforms */}
       {platformIcon && route.length > 0 && (
         <Marker position={[route[0][0], route[0][1]]} icon={platformIcon}>

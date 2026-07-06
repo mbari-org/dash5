@@ -1,8 +1,10 @@
 import React from 'react'
 import dynamic from 'next/dynamic'
+import { Pane } from 'react-leaflet'
 import { useSelectedPlatforms } from './SelectedPlatformContext'
 import { usePlatformList } from '../lib/usePlatformList'
 import { ODSS_BASE_URL } from '../lib/constants'
+import { PLATFORM_PANE, PLATFORM_PANE_Z } from './PlatformPath'
 
 const PlatformPath = dynamic(
   () => import('./PlatformPath').then((mod) => ({ default: mod.PlatformPath })),
@@ -22,6 +24,10 @@ export const PlatformPaths: React.FC = () => {
 
   return (
     <>
+      {/* Single pane declaration for all ship/platform layers — must be here
+          (not in PlatformPath) to avoid duplicate-pane errors when multiple
+          ships are selected simultaneously. */}
+      <Pane name={PLATFORM_PANE} style={{ zIndex: PLATFORM_PANE_Z }} />
       {selectedPlatformIds.map((platformId) => {
         const platform = platformMap[platformId]
         if (!platform) return null
