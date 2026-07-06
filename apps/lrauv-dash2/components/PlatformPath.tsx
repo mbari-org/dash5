@@ -195,33 +195,52 @@ export const PlatformPath: React.FC<PlatformPathProps> = ({
             </Tooltip>
           </Polyline>
 
-          {/* Name-label dot at latest position — always rendered so the position
-              remains visible even if the custom icon image fails to load */}
-          <CircleMarker
-            center={[route[0][0], route[0][1]]}
-            radius={1}
-            pathOptions={{
-              color: platformColor,
-              fillColor: platformColor,
-              fillOpacity: 1,
-              weight: 0,
-            }}
-          >
-            <Tooltip permanent opacity={0.6}>
-              <div className="text-italic">
-                <span className="text-bold">{displayName}</span>
-                {displayAbbrev ? (
-                  <span className="text-gray-500"> ({displayAbbrev})</span>
-                ) : null}
-              </div>
-            </Tooltip>
-          </CircleMarker>
+          {/* Prominent current-position marker — solid filled circle with white
+              outline so it reads clearly against both the track line and the
+              basemap. Carries the permanent name label and the hover tooltip. */}
+          {!platformIcon && (
+            <CircleMarker
+              center={[route[0][0], route[0][1]]}
+              radius={8}
+              pathOptions={{
+                color: 'white',
+                fillColor: platformColor,
+                fillOpacity: 0.9,
+                weight: 2,
+              }}
+            >
+              <Tooltip permanent opacity={0.75}>
+                <div className="text-italic">
+                  <span className="text-bold">{displayName}</span>
+                  {displayAbbrev ? (
+                    <span className="text-gray-500"> ({displayAbbrev})</span>
+                  ) : null}
+                </div>
+              </Tooltip>
+              <Tooltip opacity={0.9}>
+                <div className="text-italic">
+                  <div className="text-bold">{displayName}</div>
+                  {displayAbbrev && (
+                    <div className="text-gray-500">({displayAbbrev})</div>
+                  )}
+                </div>
+                <span>Latest position:</span> {route[0][0].toFixed(5)},{' '}
+                {route[0][1].toFixed(5)}
+                <br />
+                {displayPositions[0] && (
+                  <div className="text-sm text-gray-400">
+                    {new Date(displayPositions[0].timeMs).toLocaleString()}
+                  </div>
+                )}
+              </Tooltip>
+            </CircleMarker>
+          )}
 
-          {/* One circle marker per fix with hover tooltip.
-              Skip the latest-position dot when a custom icon already marks it. */}
+          {/* Historical fix dots — small, semi-transparent, hover-only tooltip.
+              Skip index 0 (latest) since the prominent marker above covers it
+              for no-icon platforms; skip it too when a custom icon marks it. */}
           {route.map((position, index) => {
-            const isLatest = index === 0
-            if (isLatest && platformIcon) return null
+            if (index === 0) return null
             const pos = displayPositions[index]
             const timestamp = pos ? new Date(pos.timeMs).toLocaleString() : ''
 
@@ -229,13 +248,13 @@ export const PlatformPath: React.FC<PlatformPathProps> = ({
               <CircleMarker
                 key={`${platformId}-${index}`}
                 center={[position[0], position[1]]}
-                radius={isLatest ? 6 : 2}
+                radius={2}
                 pathOptions={{
                   color: platformColor,
                   fillColor: platformColor,
-                  fillOpacity: 0.2,
-                  weight: 3,
-                  opacity: 1,
+                  fillOpacity: 0.5,
+                  weight: 1,
+                  opacity: 0.7,
                 }}
               >
                 <Tooltip opacity={0.9}>
@@ -245,8 +264,8 @@ export const PlatformPath: React.FC<PlatformPathProps> = ({
                       <div className="text-gray-500">({displayAbbrev})</div>
                     )}
                   </div>
-                  <span>{isLatest ? 'Latest position:' : 'Lat/Lon:'}</span>{' '}
-                  {position[0].toFixed(5)}, {position[1].toFixed(5)}
+                  <span>Lat/Lon:</span> {position[0].toFixed(5)},{' '}
+                  {position[1].toFixed(5)}
                   <br />
                   {timestamp && (
                     <div className="text-sm text-gray-400">{timestamp}</div>
