@@ -1,4 +1,4 @@
-import React, { useMemo, useState, useEffect } from 'react'
+import React, { useMemo, useState, useEffect, useCallback } from 'react'
 import { Marker, Polyline, Tooltip, CircleMarker, useMap } from 'react-leaflet'
 import L from 'leaflet'
 import { usePlatformPositions } from '@mbari/api-client'
@@ -58,6 +58,10 @@ export const PlatformPath: React.FC<PlatformPathProps> = ({
   }, [map])
 
   const [hovered, setHovered] = useState(false)
+  // Track icon load failure so we can show the fallback CircleMarker when
+  // the ODSS image is blocked or unavailable (Copilot review suggestion).
+  const [iconFailed, setIconFailed] = useState(false)
+  const handleIconError = useCallback(() => setIconFailed(true), [])
 
   const nowMs = useTick(refreshIntervalMs)
 
@@ -132,6 +136,7 @@ export const PlatformPath: React.FC<PlatformPathProps> = ({
       'width:44px;height:44px;object-fit:contain;border:none;background:transparent;'
     img.onerror = () => {
       img.style.display = 'none'
+      handleIconError()
     }
     container.appendChild(img)
 
@@ -216,8 +221,9 @@ export const PlatformPath: React.FC<PlatformPathProps> = ({
 
           {/* Prominent current-position marker — solid filled circle with white
               outline so it reads clearly against both the track line and the
-              basemap. Single permanent tooltip carries name + position details. */}
-          {!platformIcon && (
+              basemap. Also shown as fallback when the custom icon image fails
+              to load (e.g. ODSS blocks the request). */}
+          {(!platformIcon || iconFailed) && (
             <CircleMarker
               center={[route[0][0], route[0][1]]}
               pane={PLATFORM_PANE}
