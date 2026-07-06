@@ -7,6 +7,7 @@ import {
   faCalendar,
 } from '@fortawesome/free-regular-svg-icons'
 import { faLink } from '@fortawesome/free-solid-svg-icons'
+import { WATCHBILL_URL } from '../lib/constants'
 
 interface LrauvResourcesDropdownProps {
   isAdmin?: boolean
@@ -15,7 +16,7 @@ interface LrauvResourcesDropdownProps {
 const picLinks = [
   {
     label: 'Watchbill',
-    url: 'https://docs.google.com/spreadsheets/d/1kOTNsOcUKWlfK1YHQAq38arX9HLQINzlpuR-vL6bCrE/edit?gid=0#gid=0',
+    url: WATCHBILL_URL,
     tooltip: 'Sign up to pilot an LRAUV!\n(earn a team LRAUV hat)',
     icon: faFileExcel,
   },

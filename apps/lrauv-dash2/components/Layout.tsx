@@ -34,6 +34,7 @@ import { useCookies } from 'react-cookie'
 import EmailNotificationsModal from './EmailNotificationsModal'
 import ScheduleEventDetailsModal from './ScheduleEventDetailsModal'
 import ServerHealthModal from './ServerHealthModal'
+import { WATCHBILL_URL } from '../lib/constants'
 
 const Layout: React.FC<{ children?: React.ReactNode }> = ({ children }) => {
   const [showLogin, setLogin] = useState(false)
@@ -144,7 +145,7 @@ const Layout: React.FC<{ children?: React.ReactNode }> = ({ children }) => {
                       label: 'Watchbill',
                       onSelect: () => {
                         window.open(
-                          'https://docs.google.com/spreadsheets/d/1kOTNsOcUKWlfK1YHQAq38arX9HLQINzlpuR-vL6bCrE/edit?gid=0#gid=0',
+                          WATCHBILL_URL,
                           '_blank',
                           'noopener,noreferrer'
                         )
