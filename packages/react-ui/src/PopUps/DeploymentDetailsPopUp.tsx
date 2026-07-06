@@ -25,6 +25,15 @@ export interface DeploymentDetails {
   endDate?: string
 }
 
+/**
+ * Strips empty-string optional fields so they aren't forwarded as blank query
+ * params. `name` is always present so the result still satisfies DeploymentDetails.
+ */
+const sanitizeDeployment = (d: DeploymentDetails): DeploymentDetails =>
+  Object.fromEntries(
+    Object.entries(d).filter(([, v]) => v !== '' && v !== undefined)
+  ) as DeploymentDetails
+
 export type EventType = 'start' | 'launch' | 'recover' | 'end'
 
 export interface DeploymentDetailsPopUpConfig {
@@ -111,7 +120,8 @@ export const DeploymentDetailsPopUp: React.FC<DeploymentDetailsPopUpProps> = ({
       if (type === 'start') {
         // 'start' must go through onSaveChanges (updateDeployment) — not
         // alterDeployment which only accepts 'launch' | 'recover' | 'end'.
-        onSaveChanges(updated)
+        // Sanitize to avoid sending empty strings for unset date fields.
+        onSaveChanges(sanitizeDeployment(updated))
       } else {
         onSetDeploymentEventToCurrentTime(type)
       }
@@ -296,18 +306,7 @@ export const DeploymentDetailsPopUp: React.FC<DeploymentDetailsPopUpProps> = ({
   const handleConfirm = () => {
     setIsSelectDateMode(false)
     setShowStartCustomPicker(false)
-
-    const nonEmptyKeys = Object.keys(deployment).filter(
-      (key) => deployment[key as keyof DeploymentDetails] && key
-    )
-
-    const updatedDeployment = Object.fromEntries(
-      nonEmptyKeys.map((key) => [
-        [key as keyof DeploymentDetails],
-        deployment[key as keyof DeploymentDetails],
-      ])
-    )
-    onSaveChanges(updatedDeployment)
+    onSaveChanges(sanitizeDeployment(deployment))
   }
 
   const handleSelect = (newValue: string | null) => {
