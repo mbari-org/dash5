@@ -42,6 +42,7 @@ export const PlatformPath: React.FC<PlatformPathProps> = ({
 }) => {
   const [hovered, setHovered] = useState(false)
   const [currentPosHovered, setCurrentPosHovered] = useState(false)
+  const [iconHovered, setIconHovered] = useState(false)
   // Track icon load failure so we can show the fallback CircleMarker when
   // the ODSS image is blocked or unavailable. Reset whenever iconUrl changes
   // so a new valid URL gets a fresh attempt.
@@ -165,15 +166,35 @@ export const PlatformPath: React.FC<PlatformPathProps> = ({
   return (
     <>
       {/* Custom icon at latest position, shown for fixed/infrequently-updated platforms.
-          Tooltip is permanent so the name label is always visible, matching the
-          behaviour of the prominent CircleMarker used for no-icon platforms. */}
+          Permanent name label always visible; coords + timestamp appear on hover,
+          matching the CircleMarker behaviour for no-icon platforms. */}
       {platformIcon && route.length > 0 && (
-        <Marker position={[route[0][0], route[0][1]]} icon={platformIcon}>
+        <Marker
+          position={[route[0][0], route[0][1]]}
+          icon={platformIcon}
+          eventHandlers={{
+            mouseover: () => setIconHovered(true),
+            mouseout: () => setIconHovered(false),
+          }}
+        >
           <Tooltip permanent opacity={0.75}>
             <div className="text-italic">
               <span className="text-bold">{displayName}</span>
               {displayAbbrev && (
                 <span className="text-gray-500"> ({displayAbbrev})</span>
+              )}
+              {iconHovered && (
+                <>
+                  <br />
+                  <span className="text-xs text-gray-400">
+                    {route[0][0].toFixed(5)}, {route[0][1].toFixed(5)}
+                  </span>
+                  {displayPositions[0] && (
+                    <div className="text-xs text-gray-400">
+                      {new Date(displayPositions[0].timeMs).toLocaleString()}
+                    </div>
+                  )}
+                </>
               )}
             </div>
           </Tooltip>
