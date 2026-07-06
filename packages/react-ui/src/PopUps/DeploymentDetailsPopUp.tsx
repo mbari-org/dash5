@@ -105,13 +105,14 @@ export const DeploymentDetailsPopUp: React.FC<DeploymentDetailsPopUpProps> = ({
       deployment[eventDateLabel as keyof DeploymentDetails] || ''
 
     const handleSetCurrentTime = () => {
-      setDeployment({
-        ...deployment,
-        [`${type}Date`]: DateTime.now().toISO(),
-      })
-      // 'start' is updated via onSaveChanges (updateDeployment) — not
-      // alterDeployment which only accepts 'launch' | 'recover' | 'end'.
-      if (type !== 'start') {
+      const now = DateTime.now().toISO()
+      const updated = { ...deployment, [`${type}Date`]: now }
+      setDeployment(updated)
+      if (type === 'start') {
+        // 'start' must go through onSaveChanges (updateDeployment) — not
+        // alterDeployment which only accepts 'launch' | 'recover' | 'end'.
+        onSaveChanges(updated)
+      } else {
         onSetDeploymentEventToCurrentTime(type)
       }
     }
@@ -143,7 +144,7 @@ export const DeploymentDetailsPopUp: React.FC<DeploymentDetailsPopUpProps> = ({
               />
               {isCustomFuture && (
                 <span className="text-xs italic text-amber-600">
-                  Start is set in the future — GPS fixes won&apos;t appear until
+                  Start is in the future — GPS fixes won&apos;t appear until
                   then.
                 </span>
               )}
@@ -199,8 +200,7 @@ export const DeploymentDetailsPopUp: React.FC<DeploymentDetailsPopUpProps> = ({
             </div>
             {eventDate && DateTime.fromISO(eventDate) > DateTime.now() && (
               <span className="text-xs italic text-amber-600">
-                Start is set in the future — GPS fixes won&apos;t appear until
-                then.
+                Start is in the future — GPS fixes won&apos;t appear until then.
               </span>
             )}
           </div>
