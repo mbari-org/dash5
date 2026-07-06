@@ -95,10 +95,107 @@ export const DeploymentDetailsPopUp: React.FC<DeploymentDetailsPopUpProps> = ({
   const [isSelectTimezoneMode, setIsSelectTimezoneMode] = useState(false)
   const [isLocal, setIsLocal] = useState(true)
   const [timezone, setTimezone] = useState<string | null>('')
+  // Controls whether the start-date row shows the free-form DateField (true)
+  // or the quick-pick buttons (false, the default when entering edit mode).
+  const [showStartCustomPicker, setShowStartCustomPicker] = useState(false)
 
   const dateCell = (type: EventType) => {
     const eventDateLabel = `${type}Date`
+    const eventDate =
+      deployment[eventDateLabel as keyof DeploymentDetails] || ''
 
+    const handleSetCurrentTime = () => {
+      setDeployment({
+        ...deployment,
+        [`${type}Date`]: DateTime.now().toISO(),
+      })
+      onSetDeploymentEventToCurrentTime(type)
+    }
+
+    // Start date in edit mode: show quick-pick first, DateField only if
+    // the user explicitly chooses "Custom date…"
+    if (isSelectDateMode && type === 'start') {
+      if (showStartCustomPicker) {
+        return {
+          label: (
+            <div className="flex flex-col gap-1">
+              <DateField
+                name={eventDateLabel}
+                timeZone={timezone && !isLocal ? timezone : undefined}
+                className="text-sm"
+                value={deployment[eventDateLabel as keyof DeploymentDetails]}
+                onChange={(newValue: string) =>
+                  setDeployment({
+                    ...deployment,
+                    [eventDateLabel as keyof DeploymentDetails]: newValue,
+                  })
+                }
+                disabled={false}
+              />
+              <button
+                className="text-xs text-indigo-600 underline"
+                onClick={() => setShowStartCustomPicker(false)}
+              >
+                ← Back to quick options
+              </button>
+            </div>
+          ),
+          highlighted: true,
+          span: 3,
+        }
+      }
+
+      // Quick-pick buttons
+      return {
+        label: (
+          <div className="flex flex-col gap-2">
+            <div className="flex flex-wrap gap-2">
+              <button
+                className={styles.markTimeButton}
+                onClick={() =>
+                  setDeployment({
+                    ...deployment,
+                    startDate: DateTime.now().toISO(),
+                  })
+                }
+                aria-label="set start time to now"
+              >
+                Now
+              </button>
+              <button
+                className={styles.markTimeButton}
+                onClick={() =>
+                  setDeployment({
+                    ...deployment,
+                    startDate: DateTime.now().plus({ hours: 1 }).toISO(),
+                  })
+                }
+                aria-label="set start time to one hour from now"
+              >
+                In 1 hour
+              </button>
+              <button
+                className={styles.markTimeButton}
+                onClick={() => setShowStartCustomPicker(true)}
+                aria-label="pick a custom start date"
+              >
+                Custom date…
+              </button>
+            </div>
+            {eventDate && DateTime.fromISO(eventDate) > DateTime.now() && (
+              <span className="text-xs italic text-amber-600">
+                Start is set in the future — GPS fixes won&apos;t appear until
+                then.
+              </span>
+            )}
+          </div>
+        ),
+        highlighted: true,
+        span: 3,
+      }
+    }
+
+    // All other events in edit mode: standard DateField
     if (isSelectDateMode) {
       return {
         label: (
@@ -120,26 +217,34 @@ export const DeploymentDetailsPopUp: React.FC<DeploymentDetailsPopUpProps> = ({
         span: 3,
       }
     }
-    const eventDate =
-      deployment[eventDateLabel as keyof DeploymentDetails] || ''
 
-    const handleSetCurrentTime = () => {
-      setDeployment({
-        ...deployment,
-        [`${type}Date`]: DateTime.now().toISO(),
-      })
-      onSetDeploymentEventToCurrentTime(type)
-    }
+    // Display mode: show formatted date or "Mark X time now" button
+    const isFutureStart =
+      type === 'start' &&
+      !!eventDate &&
+      DateTime.fromISO(eventDate) > DateTime.now()
+
     return eventDate
       ? {
-          label:
-            isLocal || !timezone
-              ? DateTime.fromJSDate(new Date(eventDate)).toLocaleString(
-                  DateTime.DATETIME_FULL
-                )
-              : DateTime.fromJSDate(new Date(eventDate))
-                  .setZone(timezone ?? undefined)
-                  .toLocaleString(DateTime.DATETIME_FULL),
+          label: (
+            <div className="flex flex-col gap-0.5">
+              <span>
+                {isLocal || !timezone
+                  ? DateTime.fromJSDate(new Date(eventDate)).toLocaleString(
+                      DateTime.DATETIME_FULL
+                    )
+                  : DateTime.fromJSDate(new Date(eventDate))
+                      .setZone(timezone ?? undefined)
+                      .toLocaleString(DateTime.DATETIME_FULL)}
+              </span>
+              {isFutureStart && (
+                <span className="text-xs italic text-amber-600">
+                  Start is in the future — GPS fixes won&apos;t appear until
+                  then.
+                </span>
+              )}
+            </div>
+          ),
           span: 3,
         }
       : {
@@ -175,6 +280,7 @@ export const DeploymentDetailsPopUp: React.FC<DeploymentDetailsPopUpProps> = ({
 
   const handleConfirm = () => {
     setIsSelectDateMode(false)
+    setShowStartCustomPicker(false)
 
     const nonEmptyKeys = Object.keys(deployment).filter(
       (key) => deployment[key as keyof DeploymentDetails] && key
@@ -203,6 +309,7 @@ export const DeploymentDetailsPopUp: React.FC<DeploymentDetailsPopUpProps> = ({
 
   const handleCancel = () => {
     setIsSelectDateMode(false)
+    setShowStartCustomPicker(false)
     setDeployment({ ...initialDeploymentValues, gitTag: deployment.gitTag })
   }
 
