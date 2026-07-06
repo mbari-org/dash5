@@ -34,6 +34,7 @@ import { useCookies } from 'react-cookie'
 import EmailNotificationsModal from './EmailNotificationsModal'
 import ScheduleEventDetailsModal from './ScheduleEventDetailsModal'
 import ServerHealthModal from './ServerHealthModal'
+import { WATCHBILL_URL } from '../lib/constants'
 
 const Layout: React.FC<{ children?: React.ReactNode }> = ({ children }) => {
   const [showLogin, setLogin] = useState(false)
@@ -140,6 +141,17 @@ const Layout: React.FC<{ children?: React.ReactNode }> = ({ children }) => {
                   profileRole={profile?.roles?.[0]}
                   onDismiss={dismissDropdown}
                   options={[
+                    {
+                      label: 'Watchbill',
+                      onSelect: () => {
+                        window.open(
+                          WATCHBILL_URL,
+                          '_blank',
+                          'noopener,noreferrer'
+                        )
+                        dismissDropdown()
+                      },
+                    },
                     {
                       label: 'Notifications',
                       onSelect: () => {
