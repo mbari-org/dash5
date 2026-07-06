@@ -114,6 +114,20 @@ test('should display quick-pick buttons for start when edit dates is clicked', a
   expect(screen.queryByLabelText(/edit dates button/i)).not.toBeInTheDocument()
 })
 
+test('should save and exit edit mode immediately when Now is clicked', async () => {
+  const onSaveChanges = jest.fn()
+  render(<DeploymentDetailsPopUp {...props} onSaveChanges={onSaveChanges} />)
+
+  fireEvent.click(screen.getByLabelText(/edit dates button/i))
+  fireEvent.click(screen.getByLabelText(/set start time to now/i))
+
+  expect(onSaveChanges).toHaveBeenCalledTimes(1)
+  expect(screen.getByLabelText(/edit dates button/i)).toBeInTheDocument()
+  expect(
+    screen.queryByLabelText(/set start time to now/i)
+  ).not.toBeInTheDocument()
+})
+
 test('should show DateField after clicking Custom date in start quick-pick', async () => {
   render(<DeploymentDetailsPopUp {...props} />)
 

@@ -178,12 +178,14 @@ export const DeploymentDetailsPopUp: React.FC<DeploymentDetailsPopUpProps> = ({
             <div className="flex flex-wrap gap-2">
               <button
                 className={styles.markTimeButton}
-                onClick={() =>
-                  setDeployment({
-                    ...deployment,
-                    startDate: DateTime.now().toISO(),
-                  })
-                }
+                onClick={() => {
+                  const now = DateTime.now().toISO()
+                  const updated = { ...deployment, startDate: now }
+                  setDeployment(updated)
+                  onSaveChanges(sanitizeDeployment(updated))
+                  setIsSelectDateMode(false)
+                  setShowStartCustomPicker(false)
+                }}
                 aria-label="set start time to now"
               >
                 Now
