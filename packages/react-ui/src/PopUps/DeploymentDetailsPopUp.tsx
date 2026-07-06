@@ -26,13 +26,16 @@ export interface DeploymentDetails {
 }
 
 /**
- * Strips empty-string optional fields so they aren't forwarded as blank query
- * params. `name` is always present so the result still satisfies DeploymentDetails.
+ * Strips empty-string optional date/tag fields so they aren't forwarded as
+ * blank query params. Required fields (name) are always preserved.
  */
-const sanitizeDeployment = (d: DeploymentDetails): DeploymentDetails =>
-  Object.fromEntries(
-    Object.entries(d).filter(([, v]) => v !== '' && v !== undefined)
-  ) as DeploymentDetails
+const sanitizeDeployment = (d: DeploymentDetails): DeploymentDetails => {
+  const { name, ...optional } = d
+  const filteredOptional = Object.fromEntries(
+    Object.entries(optional).filter(([, v]) => v !== '' && v !== undefined)
+  )
+  return { name, ...filteredOptional }
+}
 
 export type EventType = 'start' | 'launch' | 'recover' | 'end'
 
