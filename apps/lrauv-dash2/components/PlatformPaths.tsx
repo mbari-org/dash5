@@ -3,8 +3,7 @@ import dynamic from 'next/dynamic'
 import { Pane } from 'react-leaflet'
 import { useSelectedPlatforms } from './SelectedPlatformContext'
 import { usePlatformList } from '../lib/usePlatformList'
-import { ODSS_BASE_URL } from '../lib/constants'
-import { PLATFORM_PANE, PLATFORM_PANE_Z } from './PlatformPath'
+import { ODSS_BASE_URL, PLATFORM_PANE, PLATFORM_PANE_Z } from '../lib/constants'
 
 const PlatformPath = dynamic(
   () => import('./PlatformPath').then((mod) => ({ default: mod.PlatformPath })),

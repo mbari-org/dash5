@@ -4,14 +4,7 @@ import L from 'leaflet'
 import { usePlatformPositions } from '@mbari/api-client'
 import { createLogger } from '@mbari/utils'
 import { useTick } from '../lib/useTick'
-
-// Dedicated Leaflet pane for ship/platform tracks — sits above the vehicle
-// hit-circle layer (overlayPane z-index 400) so ship elements always win
-// pointer-event priority when a ship track overlaps a vehicle surfacing fix.
-// The <Pane /> must be rendered exactly ONCE (in PlatformPaths.tsx, the parent)
-// to avoid "A pane with this name already exists" when multiple ships are shown.
-export const PLATFORM_PANE = 'platformsPane'
-export const PLATFORM_PANE_Z = 450
+import { PLATFORM_PANE } from '../lib/constants'
 
 const logger = createLogger('PlatformPath')
 
@@ -251,8 +244,8 @@ export const PlatformPath: React.FC<PlatformPathProps> = ({
           )}
 
           {/* Historical fix dots — small, semi-transparent, hover-only tooltip.
-              Skip index 0 (latest) since the prominent marker above covers it
-              for no-icon platforms; skip it too when a custom icon marks it. */}
+              Index 0 (latest position) is always skipped here; it is covered
+              by the prominent CircleMarker above (no-icon) or the Marker icon. */}
           {route.map((position, index) => {
             if (index === 0) return null
             const pos = displayPositions[index]
