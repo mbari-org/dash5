@@ -47,11 +47,14 @@ Object.defineProperty(navigator, 'clipboard', {
 import MouseCoordinates, { isInTextContext } from './MouseCoordinates'
 
 describe('MouseCoordinates — Ctrl+C clipboard guard (fix #751)', () => {
+  // Shared spy — created once per test in beforeEach and reused within tests
+  // to avoid double-spying errors (jest throws if you spy on an already-spied method).
+  let getSelectionSpy: jest.SpyInstance
+
   beforeEach(() => {
     mockWriteText.mockClear()
     capturedMousemoveHandler = null
-    // Reset activeElement to body and selection to empty
-    jest.spyOn(window, 'getSelection').mockReturnValue({
+    getSelectionSpy = jest.spyOn(window, 'getSelection').mockReturnValue({
       toString: () => '',
     } as unknown as Selection)
     Object.defineProperty(document, 'activeElement', {
@@ -73,7 +76,7 @@ describe('MouseCoordinates — Ctrl+C clipboard guard (fix #751)', () => {
   })
 
   it('does NOT copy coordinates when the user has text selected (window.getSelection guard)', () => {
-    jest.spyOn(window, 'getSelection').mockReturnValue({
+    getSelectionSpy.mockReturnValue({
       toString: () => 'EnableBackseat',
     } as unknown as Selection)
     render(<MouseCoordinates />)
