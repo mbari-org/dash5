@@ -141,6 +141,17 @@ const Layout: React.FC<{ children?: React.ReactNode }> = ({ children }) => {
                   onDismiss={dismissDropdown}
                   options={[
                     {
+                      label: 'Watchbill',
+                      onSelect: () => {
+                        window.open(
+                          'https://docs.google.com/spreadsheets/d/1kOTNsOcUKWlfK1YHQAq38arX9HLQINzlpuR-vL6bCrE/edit?gid=0#gid=0',
+                          '_blank',
+                          'noopener,noreferrer'
+                        )
+                        dismissDropdown()
+                      },
+                    },
+                    {
                       label: 'Notifications',
                       onSelect: () => {
                         setGlobalModalId({ id: 'emailNotifications' })
