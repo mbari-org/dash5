@@ -101,17 +101,150 @@ test('should display mark recovery time now button if a recovery time is not pro
   expect(markRecoveryTimeButton).toBeInTheDocument()
 })
 
-test('should display date selectors if edit dates button is clicked', async () => {
+test('should reset to quick-pick view if modal is reopened after choosing Custom date', async () => {
   render(<DeploymentDetailsPopUp {...props} />)
 
-  const editDateButton = screen.getByLabelText(/edit dates button/i)
+  // Enter edit mode, open the custom picker
+  fireEvent.click(screen.getByLabelText(/edit dates button/i))
+  fireEvent.click(screen.getByLabelText(/pick a custom start date/i))
+  expect(screen.getByText(/← Back to quick options/i)).toBeInTheDocument()
 
-  fireEvent.click(editDateButton)
+  // Close edit mode (simulates Cancel / X button) by clicking the Cancel button
+  fireEvent.click(screen.getByText(/^Cancel$/i))
+
+  // Re-enter edit mode — should be back at quick-pick, not the DateField
+  fireEvent.click(screen.getByLabelText(/edit dates button/i))
+  expect(screen.getByLabelText(/set start time to now/i)).toBeInTheDocument()
+  expect(screen.queryByText(/← Back to quick options/i)).not.toBeInTheDocument()
+})
+
+test('should call onSaveChanges (not onSetDeploymentEventToCurrentTime) when mark start time now is clicked in display mode', async () => {
+  const onSaveChanges = jest.fn()
+  const onSetDeploymentEventToCurrentTime = jest.fn()
+  render(
+    <DeploymentDetailsPopUp
+      {...props}
+      startDate={undefined}
+      onSaveChanges={onSaveChanges}
+      onSetDeploymentEventToCurrentTime={onSetDeploymentEventToCurrentTime}
+    />
+  )
+
+  fireEvent.click(screen.getByLabelText(/mark start time now button/i))
+
+  expect(onSaveChanges).toHaveBeenCalledTimes(1)
+  expect(onSetDeploymentEventToCurrentTime).not.toHaveBeenCalled()
+})
+
+test('should restore pre-custom-picker startDate when Back is clicked, not save typed value', async () => {
+  const onSaveChanges = jest.fn()
+  const originalDate = '2022-06-30T11:29:42.598-07:00'
+  render(
+    <DeploymentDetailsPopUp
+      {...props}
+      startDate={originalDate}
+      onSaveChanges={onSaveChanges}
+    />
+  )
+
+  // Enter edit mode and open the custom picker (snapshots originalDate to ref)
+  fireEvent.click(screen.getByLabelText(/edit dates button/i))
+  fireEvent.click(screen.getByLabelText(/pick a custom start date/i))
+
+  // Navigate back without saving — ref should restore the original value
+  fireEvent.click(screen.getByText(/← Back to quick options/i))
+
+  // Save from the quick-pick view — should send the original date, not a modified one
+  fireEvent.click(screen.getByText(/^Save Changes$/i))
+
+  expect(onSaveChanges).toHaveBeenCalledTimes(1)
+  expect(onSaveChanges.mock.calls[0][0].startDate).toBe(originalDate)
+})
+
+test('should display quick-pick buttons for start when edit dates is clicked', async () => {
+  render(<DeploymentDetailsPopUp {...props} />)
+
+  fireEvent.click(screen.getByLabelText(/edit dates button/i))
+
+  expect(screen.getByLabelText(/set start time to now/i)).toBeInTheDocument()
+  expect(screen.getByLabelText(/pick a custom start date/i)).toBeInTheDocument()
+  expect(
+    screen.queryByLabelText(/set start time to one hour from now/i)
+  ).not.toBeInTheDocument()
+  expect(screen.queryByLabelText(/edit dates button/i)).not.toBeInTheDocument()
+})
+
+test('should save and exit edit mode immediately when Now is clicked', async () => {
+  const onSaveChanges = jest.fn()
+  render(<DeploymentDetailsPopUp {...props} onSaveChanges={onSaveChanges} />)
+
+  fireEvent.click(screen.getByLabelText(/edit dates button/i))
+  fireEvent.click(screen.getByLabelText(/set start time to now/i))
+
+  expect(onSaveChanges).toHaveBeenCalledTimes(1)
+  expect(screen.getByLabelText(/edit dates button/i)).toBeInTheDocument()
+  expect(
+    screen.queryByLabelText(/set start time to now/i)
+  ).not.toBeInTheDocument()
+})
+
+test('should show DateField after clicking Custom date in start quick-pick', async () => {
+  render(<DeploymentDetailsPopUp {...props} />)
+
+  fireEvent.click(screen.getByLabelText(/edit dates button/i))
+  fireEvent.click(screen.getByLabelText(/pick a custom start date/i))
 
   const startDateSelector = screen.queryAllByLabelText('date picker')[0]
-
   expect(startDateSelector).toBeInTheDocument()
-  expect(screen.queryByLabelText(/edit dates button/i)).not.toBeInTheDocument()
+  expect(screen.getByText(/← Back to quick options/i)).toBeInTheDocument()
+})
+
+test('should show inline warning when existing start date is in the future', async () => {
+  const futureDate = new Date(
+    Date.now() + 7 * 24 * 60 * 60 * 1000
+  ).toISOString()
+  render(<DeploymentDetailsPopUp {...props} startDate={futureDate} />)
+
+  expect(screen.getByText(/Start is in the future/i)).toBeInTheDocument()
+})
+
+test('should show inline warning in quick-pick view when existing start date is in the future', async () => {
+  const futureDate = new Date(
+    Date.now() + 7 * 24 * 60 * 60 * 1000
+  ).toISOString()
+  render(<DeploymentDetailsPopUp {...props} startDate={futureDate} />)
+
+  fireEvent.click(screen.getByLabelText(/edit dates button/i))
+
+  // quick-pick buttons should be visible and warning should appear below them
+  expect(screen.getByLabelText(/set start time to now/i)).toBeInTheDocument()
+  expect(screen.getAllByText(/Start is in the future/i).length).toBeGreaterThan(
+    0
+  )
+})
+
+test('should show inline warning in custom date view when start date is in the future', async () => {
+  const futureDate = new Date(
+    Date.now() + 7 * 24 * 60 * 60 * 1000
+  ).toISOString()
+  render(<DeploymentDetailsPopUp {...props} startDate={futureDate} />)
+
+  fireEvent.click(screen.getByLabelText(/edit dates button/i))
+  fireEvent.click(screen.getByLabelText(/pick a custom start date/i))
+
+  // Custom DateField pre-populates with the existing future startDate,
+  // so isCustomFuture should be true and the warning should appear.
+  expect(screen.getByText(/Start is in the future/i)).toBeInTheDocument()
+})
+
+test('should still show DateField for non-start events in edit mode', async () => {
+  render(<DeploymentDetailsPopUp {...props} />)
+
+  fireEvent.click(screen.getByLabelText(/edit dates button/i))
+
+  // start → quick-pick (no DateField); launch, recover, end → DateField = exactly 3
+  const datePickers = screen.queryAllByLabelText('date picker')
+  expect(datePickers).toHaveLength(3)
 })
 
 test('should display number of log files', async () => {
