@@ -492,11 +492,26 @@ export const ScheduleSection: React.FC<ScheduleSectionProps> = ({
         // matching — it belongs to a prior run of this same mission, and
         // promoting it would incorrectly show the old row as running.
         if (item.status === 'completed') return bestIdx
+        // Skip future-scheduled commands: if this row has a sched TIMESTAMP
+        // that is after the mission's known startedAt, it is queued to run
+        // later — it is not the currently running instance. Without this guard,
+        // a second queued profile_station (sent more recently) would win the
+        // "most recently sent" heuristic and be incorrectly promoted to running,
+        // hiding the future-queued row from the pending queue.
+        const itemScheduledTime = parseScheduledUnixTime(
+          item.event.data,
+          item.event.text
+        )
+        if (
+          itemScheduledTime != null &&
+          currentMissionEntry.startedAt != null &&
+          itemScheduledTime > currentMissionEntry.startedAt
+        )
+          return bestIdx
         if (bestIdx === -1) return idx
         // Prefer the most recently SENT command: when the same mission is
-        // commanded multiple times, the newest ack'd command is the active
-        // one. Picking "closest to telemetry startedAt" was backwards —
-        // it selected the oldest row when only one timeline entry exists.
+        // retried (re-sent without a future sched timestamp), the newest
+        // ack'd command is the active one.
         const bestSentTime = enriched[bestIdx].event.unixTime ?? 0
         return (item.event.unixTime ?? 0) > bestSentTime ? idx : bestIdx
       }, -1)
@@ -699,7 +714,16 @@ export const ScheduleSection: React.FC<ScheduleSectionProps> = ({
     return hasScheduledTimestamp
   }
 
-  const scheduledCells = missions?.filter(isAboveSeparator)
+  const scheduledCells = missions?.filter(isAboveSeparator)?.sort((a, b) => {
+    // Running mission sits just above the history separator (bottom of queue).
+    // Use toScheduleCellStatus for consistent normalisation (trims, lowercases,
+    // maps 'tbd' → 'pending') in case raw status strings ever vary.
+    const aRunning = toScheduleCellStatus(a.status) === 'running' ? 1 : 0
+    const bRunning = toScheduleCellStatus(b.status) === 'running' ? 1 : 0
+    if (aRunning !== bRunning) return aRunning - bRunning
+    // Pending items newest-queued first: most recently sent command at top.
+    return (b.event.unixTime ?? 0) - (a.event.unixTime ?? 0)
+  })
 
   const allHistoricCells = missions?.filter((v) => !isAboveSeparator(v))
 

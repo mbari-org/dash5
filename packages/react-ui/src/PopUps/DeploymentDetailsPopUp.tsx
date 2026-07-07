@@ -37,7 +37,14 @@ const sanitizeDeployment = (d: DeploymentDetails): DeploymentDetails => {
   return { name, ...filteredOptional }
 }
 
+/** All four deployment timeline event types, used for UI rendering. */
 export type EventType = 'start' | 'launch' | 'recover' | 'end'
+
+/**
+ * Event types supported by alterDeployment (excludes 'start', which must go
+ * through updateDeployment via onSaveChanges to avoid a 400 error).
+ */
+export type AlterableEventType = Exclude<EventType, 'start'>
 
 export interface DeploymentDetailsPopUpConfig {
   complete?: boolean
@@ -48,7 +55,7 @@ export interface DeploymentDetailsPopUpConfig {
   onExpand?: () => void
   onSaveChanges: (details: DeploymentDetails) => void
   onChangeGitTag: (gitTag: string) => void
-  onSetDeploymentEventToCurrentTime: (event: EventType) => void
+  onSetDeploymentEventToCurrentTime: (event: AlterableEventType) => void
 }
 
 export type DeploymentDetailsPopUpProps = DeploymentDetailsPopUpConfig &
