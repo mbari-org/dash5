@@ -102,7 +102,7 @@ test('should display mark recovery time now button if a recovery time is not pro
 })
 
 test('should reset to quick-pick view if modal is reopened after choosing Custom date', async () => {
-  const { rerender } = render(<DeploymentDetailsPopUp {...props} />)
+  render(<DeploymentDetailsPopUp {...props} />)
 
   // Enter edit mode, open the custom picker
   fireEvent.click(screen.getByLabelText(/edit dates button/i))

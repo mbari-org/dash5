@@ -171,7 +171,15 @@ export const DeploymentDetailsPopUp: React.FC<DeploymentDetailsPopUpProps> = ({
               )}
               <button
                 className="text-xs text-indigo-600 underline"
-                onClick={() => setShowStartCustomPicker(false)}
+                onClick={() => {
+                  // Discard the custom value so it can't be silently saved from
+                  // the quick-pick view without the user reviewing it.
+                  setDeployment({
+                    ...deployment,
+                    startDate: initialDeploymentValues.startDate,
+                  })
+                  setShowStartCustomPicker(false)
+                }}
               >
                 ← Back to quick options
               </button>
