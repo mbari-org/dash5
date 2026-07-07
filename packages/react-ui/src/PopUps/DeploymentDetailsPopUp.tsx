@@ -349,7 +349,11 @@ export const DeploymentDetailsPopUp: React.FC<DeploymentDetailsPopUpProps> = ({
         onConfirm={isSelectDateMode ? handleConfirm : null}
         onCancel={isSelectDateMode ? handleCancel : null}
         confirmButtonText="Save Changes"
-        onClose={onClose}
+        onClose={() => {
+          setIsSelectDateMode(false)
+          setShowStartCustomPicker(false)
+          onClose?.()
+        }}
         grayHeader
         title={
           <section className="ml-2 flex">

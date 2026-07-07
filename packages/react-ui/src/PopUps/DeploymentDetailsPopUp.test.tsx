@@ -136,6 +136,31 @@ test('should call onSaveChanges (not onSetDeploymentEventToCurrentTime) when mar
   expect(onSetDeploymentEventToCurrentTime).not.toHaveBeenCalled()
 })
 
+test('should restore pre-custom-picker startDate when Back is clicked, not save typed value', async () => {
+  const onSaveChanges = jest.fn()
+  const originalDate = '2022-06-30T11:29:42.598-07:00'
+  render(
+    <DeploymentDetailsPopUp
+      {...props}
+      startDate={originalDate}
+      onSaveChanges={onSaveChanges}
+    />
+  )
+
+  // Enter edit mode and open the custom picker (snapshots originalDate to ref)
+  fireEvent.click(screen.getByLabelText(/edit dates button/i))
+  fireEvent.click(screen.getByLabelText(/pick a custom start date/i))
+
+  // Navigate back without saving — ref should restore the original value
+  fireEvent.click(screen.getByText(/← Back to quick options/i))
+
+  // Save from the quick-pick view — should send the original date, not a modified one
+  fireEvent.click(screen.getByText(/^Save Changes$/i))
+
+  expect(onSaveChanges).toHaveBeenCalledTimes(1)
+  expect(onSaveChanges.mock.calls[0][0].startDate).toBe(originalDate)
+})
+
 test('should display quick-pick buttons for start when edit dates is clicked', async () => {
   render(<DeploymentDetailsPopUp {...props} />)
 
