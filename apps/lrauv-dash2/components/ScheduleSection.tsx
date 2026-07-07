@@ -699,7 +699,14 @@ export const ScheduleSection: React.FC<ScheduleSectionProps> = ({
     return hasScheduledTimestamp
   }
 
-  const scheduledCells = missions?.filter(isAboveSeparator)
+  const scheduledCells = missions?.filter(isAboveSeparator).sort((a, b) => {
+    // Running mission always pins to the top.
+    const aRunning = a.status === 'running' ? 0 : 1
+    const bRunning = b.status === 'running' ? 0 : 1
+    if (aRunning !== bRunning) return aRunning - bRunning
+    // Pending items in FIFO order: oldest-sent command executes first.
+    return (a.event.unixTime ?? 0) - (b.event.unixTime ?? 0)
+  })
 
   const allHistoricCells = missions?.filter((v) => !isAboveSeparator(v))
 
