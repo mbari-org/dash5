@@ -701,8 +701,10 @@ export const ScheduleSection: React.FC<ScheduleSectionProps> = ({
 
   const scheduledCells = missions?.filter(isAboveSeparator).sort((a, b) => {
     // Running mission sits just above the history separator (bottom of queue).
-    const aRunning = a.status === 'running' ? 1 : 0
-    const bRunning = b.status === 'running' ? 1 : 0
+    // Use toScheduleCellStatus for consistent normalisation (trims, lowercases,
+    // maps 'tbd' → 'pending') in case raw status strings ever vary.
+    const aRunning = toScheduleCellStatus(a.status) === 'running' ? 1 : 0
+    const bRunning = toScheduleCellStatus(b.status) === 'running' ? 1 : 0
     if (aRunning !== bRunning) return aRunning - bRunning
     // Pending items newest-queued first: most recently sent command at top.
     return (b.event.unixTime ?? 0) - (a.event.unixTime ?? 0)

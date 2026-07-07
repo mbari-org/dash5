@@ -101,7 +101,7 @@ test('should display mark recovery time now button if a recovery time is not pro
   expect(markRecoveryTimeButton).toBeInTheDocument()
 })
 
-test('should reset to quick-pick view if modal is reopened after choosing Custom date', async () => {
+test('should reset to quick-pick view when re-entering edit mode after choosing Custom date', async () => {
   render(<DeploymentDetailsPopUp {...props} />)
 
   // Enter edit mode, open the custom picker
@@ -136,7 +136,7 @@ test('should call onSaveChanges (not onSetDeploymentEventToCurrentTime) when mar
   expect(onSetDeploymentEventToCurrentTime).not.toHaveBeenCalled()
 })
 
-test('should restore pre-custom-picker startDate when Back is clicked, not save typed value', async () => {
+test('should restore pre-custom-picker startDate when Back is clicked', async () => {
   const onSaveChanges = jest.fn()
   const originalDate = '2022-06-30T11:29:42.598-07:00'
   render(
