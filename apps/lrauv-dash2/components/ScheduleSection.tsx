@@ -714,7 +714,7 @@ export const ScheduleSection: React.FC<ScheduleSectionProps> = ({
     return hasScheduledTimestamp
   }
 
-  const scheduledCells = missions?.filter(isAboveSeparator).sort((a, b) => {
+  const scheduledCells = missions?.filter(isAboveSeparator)?.sort((a, b) => {
     // Running mission sits just above the history separator (bottom of queue).
     // Use toScheduleCellStatus for consistent normalisation (trims, lowercases,
     // maps 'tbd' → 'pending') in case raw status strings ever vary.
