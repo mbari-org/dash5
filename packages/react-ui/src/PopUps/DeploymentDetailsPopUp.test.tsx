@@ -101,6 +101,41 @@ test('should display mark recovery time now button if a recovery time is not pro
   expect(markRecoveryTimeButton).toBeInTheDocument()
 })
 
+test('should reset to quick-pick view if modal is reopened after choosing Custom date', async () => {
+  const { rerender } = render(<DeploymentDetailsPopUp {...props} />)
+
+  // Enter edit mode, open the custom picker
+  fireEvent.click(screen.getByLabelText(/edit dates button/i))
+  fireEvent.click(screen.getByLabelText(/pick a custom start date/i))
+  expect(screen.getByText(/← Back to quick options/i)).toBeInTheDocument()
+
+  // Close edit mode (simulates Cancel / X button) by clicking the Cancel button
+  fireEvent.click(screen.getByText(/^Cancel$/i))
+
+  // Re-enter edit mode — should be back at quick-pick, not the DateField
+  fireEvent.click(screen.getByLabelText(/edit dates button/i))
+  expect(screen.getByLabelText(/set start time to now/i)).toBeInTheDocument()
+  expect(screen.queryByText(/← Back to quick options/i)).not.toBeInTheDocument()
+})
+
+test('should call onSaveChanges (not onSetDeploymentEventToCurrentTime) when mark start time now is clicked in display mode', async () => {
+  const onSaveChanges = jest.fn()
+  const onSetDeploymentEventToCurrentTime = jest.fn()
+  render(
+    <DeploymentDetailsPopUp
+      {...props}
+      startDate={undefined}
+      onSaveChanges={onSaveChanges}
+      onSetDeploymentEventToCurrentTime={onSetDeploymentEventToCurrentTime}
+    />
+  )
+
+  fireEvent.click(screen.getByLabelText(/mark start time now button/i))
+
+  expect(onSaveChanges).toHaveBeenCalledTimes(1)
+  expect(onSetDeploymentEventToCurrentTime).not.toHaveBeenCalled()
+})
+
 test('should display quick-pick buttons for start when edit dates is clicked', async () => {
   render(<DeploymentDetailsPopUp {...props} />)
 

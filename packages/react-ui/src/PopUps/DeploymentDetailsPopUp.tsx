@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import React, { useEffect, useState } from 'react'
 import clsx from 'clsx'
 import { Modal, ModalPropsWithoutTitle } from '../Modal'
 import { UnderwaterIcon } from '../Icons/UnderwaterIcon'
@@ -110,6 +110,14 @@ export const DeploymentDetailsPopUp: React.FC<DeploymentDetailsPopUpProps> = ({
   // Controls whether the start-date row shows the free-form DateField (true)
   // or the quick-pick buttons (false, the default when entering edit mode).
   const [showStartCustomPicker, setShowStartCustomPicker] = useState(false)
+
+  // Reset the custom picker sub-mode whenever edit mode closes (including via
+  // the modal's X button) so the next edit session always starts at quick-pick.
+  useEffect(() => {
+    if (!isSelectDateMode) {
+      setShowStartCustomPicker(false)
+    }
+  }, [isSelectDateMode])
 
   const dateCell = (type: EventType) => {
     const eventDateLabel = `${type}Date`
