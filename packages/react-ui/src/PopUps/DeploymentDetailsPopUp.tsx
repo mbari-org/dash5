@@ -144,7 +144,7 @@ export const DeploymentDetailsPopUp: React.FC<DeploymentDetailsPopUpProps> = ({
         // Sanitize to avoid sending empty strings for unset date fields.
         onSaveChanges(sanitizeDeployment(updated))
       } else {
-        onSetDeploymentEventToCurrentTime(type as AlterableEventType)
+        onSetDeploymentEventToCurrentTime(type)
       }
     }
 

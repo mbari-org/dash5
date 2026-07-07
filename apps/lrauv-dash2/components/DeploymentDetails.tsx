@@ -94,7 +94,7 @@ const DeploymentDetails: React.FC<{
       alterDeployment({
         deploymentId: deployment.deploymentId as number,
         date: DateTime.now().toISO(),
-        deploymentType: event as 'launch' | 'recover' | 'end',
+        deploymentType: event,
         note,
       })
     }
