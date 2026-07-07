@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react'
+import React, { useEffect, useRef, useState } from 'react'
 import clsx from 'clsx'
 import { Modal, ModalPropsWithoutTitle } from '../Modal'
 import { UnderwaterIcon } from '../Icons/UnderwaterIcon'
@@ -110,6 +110,9 @@ export const DeploymentDetailsPopUp: React.FC<DeploymentDetailsPopUpProps> = ({
   // Controls whether the start-date row shows the free-form DateField (true)
   // or the quick-pick buttons (false, the default when entering edit mode).
   const [showStartCustomPicker, setShowStartCustomPicker] = useState(false)
+  // Snapshot of deployment.startDate taken when the user opens the custom
+  // picker, so Back can restore exactly that value rather than the stale prop.
+  const preCustomStartDateRef = useRef<string>('')
 
   // Reset the custom picker sub-mode whenever edit mode closes (including via
   // the modal's X button) so the next edit session always starts at quick-pick.
@@ -172,11 +175,11 @@ export const DeploymentDetailsPopUp: React.FC<DeploymentDetailsPopUpProps> = ({
               <button
                 className="text-xs text-indigo-600 underline"
                 onClick={() => {
-                  // Discard the custom value so it can't be silently saved from
-                  // the quick-pick view without the user reviewing it.
+                  // Restore the startDate to what it was when the user opened
+                  // the custom picker, discarding any partially-typed value.
                   setDeployment({
                     ...deployment,
-                    startDate: initialDeploymentValues.startDate,
+                    startDate: preCustomStartDateRef.current,
                   })
                   setShowStartCustomPicker(false)
                 }}
@@ -211,7 +214,10 @@ export const DeploymentDetailsPopUp: React.FC<DeploymentDetailsPopUpProps> = ({
               </button>
               <button
                 className={styles.markTimeButton}
-                onClick={() => setShowStartCustomPicker(true)}
+                onClick={() => {
+                  preCustomStartDateRef.current = deployment.startDate ?? ''
+                  setShowStartCustomPicker(true)
+                }}
                 aria-label="pick a custom start date"
               >
                 Custom date…
