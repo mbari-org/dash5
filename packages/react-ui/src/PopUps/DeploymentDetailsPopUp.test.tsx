@@ -148,6 +148,35 @@ test('should show inline warning when existing start date is in the future', asy
   expect(screen.getByText(/Start is in the future/i)).toBeInTheDocument()
 })
 
+test('should show inline warning in quick-pick view when existing start date is in the future', async () => {
+  const futureDate = new Date(
+    Date.now() + 7 * 24 * 60 * 60 * 1000
+  ).toISOString()
+  render(<DeploymentDetailsPopUp {...props} startDate={futureDate} />)
+
+  fireEvent.click(screen.getByLabelText(/edit dates button/i))
+
+  // quick-pick buttons should be visible and warning should appear below them
+  expect(screen.getByLabelText(/set start time to now/i)).toBeInTheDocument()
+  expect(screen.getAllByText(/Start is in the future/i).length).toBeGreaterThan(
+    0
+  )
+})
+
+test('should show inline warning in custom date view when start date is in the future', async () => {
+  const futureDate = new Date(
+    Date.now() + 7 * 24 * 60 * 60 * 1000
+  ).toISOString()
+  render(<DeploymentDetailsPopUp {...props} startDate={futureDate} />)
+
+  fireEvent.click(screen.getByLabelText(/edit dates button/i))
+  fireEvent.click(screen.getByLabelText(/pick a custom start date/i))
+
+  // Custom DateField pre-populates with the existing future startDate,
+  // so isCustomFuture should be true and the warning should appear.
+  expect(screen.getByText(/Start is in the future/i)).toBeInTheDocument()
+})
+
 test('should still show DateField for non-start events in edit mode', async () => {
   render(<DeploymentDetailsPopUp {...props} />)
 
