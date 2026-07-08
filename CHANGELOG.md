@@ -5,6 +5,43 @@ Versions on `develop` are deployed to **dash5-staging.mbari.org**; versions merg
 
 ---
 
+## [v5.2.13] — 2026-07-08 · Staging
+
+**Fix depth chart zoom resetting on mouse move (Issue #763, PR #764)**
+
+- Depth chart zoom now persists while hovering — moving the mouse over the chart no longer snaps the view back to the full range after zooming in
+- Zoom correctly resets when switching time windows, logsets, vehicles, or deployments
+- Added opt-in `uirevision` prop to `LineChart` so other charts keep Plotly's default behavior unless they explicitly opt in
+
+---
+
+## [v5.2.12] — 2026-07-07 · Staging
+
+**Watch Bill link, ship marker visibility, deployment start date UX, Schedule tab ordering (Issues #753, #755, #757, #760, #762)**
+
+### User interface
+
+- **Watch Bill link** — the user account dropdown now includes a direct link to the Watch Bill spreadsheet for quick access (Issue #753, PR #754)
+
+### Map
+
+- **Ship/platform position markers** — current-position markers for TrackDB ships (e.g. R/V Paragon) are now significantly larger and more prominent; icon size increased and the fallback circle marker uses a bold colored fill with white border so the current location is always obvious (Issue #755, PR #756)
+
+### Deployment details
+
+- **Start date quick-pick** — clicking the Start date field now shows a two-option confirmation ("Now" or "Custom date…") instead of opening the date picker immediately; clicking "Now" saves the timestamp instantly and closes the editor, preventing accidental future-date entries that caused vehicles to disappear from the map. An inline warning is shown when the start date is in the future (Issue #757, PR #759)
+
+### Schedule tab
+
+- **Correct queue ordering** — pending missions in the active queue are now displayed newest-queued first (most recently sent command at the top) with the currently running mission anchored at the bottom of the queue, matching the expected FIFO execution order (Issue #760, PR #761)
+- **Missing pending mission fix** — a second queued instance of the same mission (e.g. a future-scheduled `profile_station`) is no longer incorrectly promoted to "running" status and hidden from the pending queue (Issue #762, PR #761)
+
+### Ctrl+C clipboard fix
+
+- Map coordinates no longer clobber the clipboard when Ctrl+C is pressed inside a text field, textarea, or contenteditable element — native copy behavior is fully restored in those contexts (Issue #751, PR #752)
+
+---
+
 ## [v5.2.11] — 2026-07-01 · Staging
 
 **Fix 3 pre-existing failing unit tests (Issue #750)**
