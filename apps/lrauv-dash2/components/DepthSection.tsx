@@ -160,6 +160,16 @@ const DepthSection: React.FC<{
     ? depthQuery.data ?? undefined
     : latestChartData?.find((d) => d.name === 'depth')
 
+  const chartPoints = useMemo(
+    () =>
+      depthData?.values?.map((v: number, i: number) => ({
+        value: v,
+        timestamp: depthData.times?.[i],
+      })),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [depthData?.values, depthData?.times]
+  )
+
   // While logsets are still loading / auto-selecting, latestQuery is disabled
   // (isLoading = false). Treat that wait as loading so "No depth data" doesn't
   // appear prematurely before any data has been fetched.
@@ -222,10 +232,7 @@ const DepthSection: React.FC<{
         {chartAvailable && (
           <LineChart
             name={depthData.name}
-            data={depthData.values?.map((v: number, i: number) => ({
-              value: v,
-              timestamp: depthData.times?.[i],
-            }))}
+            data={chartPoints}
             yAxisLabel={`${humanize(depthData.name)} (${depthData.units})`}
             onHover={onHover}
             inverted

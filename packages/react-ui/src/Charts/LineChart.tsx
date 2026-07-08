@@ -77,6 +77,9 @@ const LineChart: React.FC<LineChartProps> = ({
           },
         ]}
         layout={{
+          // Preserve user zoom/pan across React re-renders. When uirevision
+          // doesn't change, Plotly keeps its internal UI state (axes, zoom).
+          uirevision: name,
           title: {
             text: title ? `<b>${title}</b>` : undefined,
             font: {
