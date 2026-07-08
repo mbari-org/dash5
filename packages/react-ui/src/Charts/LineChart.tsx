@@ -22,6 +22,13 @@ export interface LineChartProps {
   /** When provided, locks the x-axis to this [start, end] range (ms since epoch) */
   xAxisRange?: [number, number]
   onHover?: (millis?: number | null) => void
+  /**
+   * Opt-in Plotly uirevision key. When provided and unchanged across renders,
+   * Plotly preserves user zoom/pan state. When it changes, Plotly resets zoom.
+   * When omitted, Plotly's default behavior applies (zoom resets on every
+   * data/layout update).
+   */
+  uirevision?: string
 }
 
 const LineChart: React.FC<LineChartProps> = ({
@@ -35,6 +42,7 @@ const LineChart: React.FC<LineChartProps> = ({
   inverted,
   xAxisRange,
   onHover: handleHoverFromParent,
+  uirevision,
 }) => {
   const container = useRef(null)
   const { size } = useResizeObserver({ element: container })
@@ -77,6 +85,11 @@ const LineChart: React.FC<LineChartProps> = ({
           },
         ]}
         layout={{
+          // Only set uirevision when the caller opts in. Without it Plotly
+          // uses its default behavior (zoom resets on every re-render).
+          // When provided and stable, Plotly preserves zoom/pan; when it
+          // changes (e.g. time-window switch) Plotly resets the axes.
+          ...(uirevision !== undefined && { uirevision }),
           title: {
             text: title ? `<b>${title}</b>` : undefined,
             font: {
