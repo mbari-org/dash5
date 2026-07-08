@@ -237,6 +237,7 @@ const DepthSection: React.FC<{
             onHover={onHover}
             inverted
             className="h-full w-full"
+            uirevision={`${depthData.name}-${timeWindow}-${selectedLogsetId}`}
           />
         )}
       </div>
