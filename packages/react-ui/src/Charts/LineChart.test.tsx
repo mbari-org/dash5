@@ -10,9 +10,7 @@ jest.mock('react-plotly.js', () => ({
     <div
       data-testid="plot"
       data-uirevision={
-        layout.uirevision !== undefined
-          ? String(layout.uirevision)
-          : '__unset__'
+        'uirevision' in layout ? String(layout.uirevision) : '__unset__'
       }
     />
   ),
