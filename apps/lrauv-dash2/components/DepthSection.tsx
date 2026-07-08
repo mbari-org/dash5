@@ -160,14 +160,15 @@ const DepthSection: React.FC<{
     ? depthQuery.data ?? undefined
     : latestChartData?.find((d) => d.name === 'depth')
 
+  const depthValues = depthData?.values
+  const depthTimes = depthData?.times
   const chartPoints = useMemo(
     () =>
-      depthData?.values?.map((v: number, i: number) => ({
+      depthValues?.map((v: number, i: number) => ({
         value: v,
-        timestamp: depthData.times?.[i],
+        timestamp: depthTimes?.[i],
       })),
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    [depthData?.values, depthData?.times]
+    [depthValues, depthTimes]
   )
 
   // While logsets are still loading / auto-selecting, latestQuery is disabled
