@@ -162,14 +162,16 @@ const DepthSection: React.FC<{
 
   const depthValues = depthData?.values
   const depthTimes = depthData?.times
-  const chartPoints = useMemo(
-    () =>
-      depthValues?.map((v: number, i: number) => ({
-        value: v,
-        timestamp: depthTimes?.[i],
-      })),
-    [depthValues, depthTimes]
-  )
+  const chartPoints = useMemo(() => {
+    if (!depthValues || !depthTimes) return undefined
+    // Clamp to the shorter array so indices are always in-bounds and
+    // timestamps are always defined (both arrays are number[] per the API).
+    const len = Math.min(depthValues.length, depthTimes.length)
+    return Array.from({ length: len }, (_, i) => ({
+      value: depthValues[i],
+      timestamp: depthTimes[i],
+    }))
+  }, [depthValues, depthTimes])
 
   // While logsets are still loading / auto-selecting, latestQuery is disabled
   // (isLoading = false). Treat that wait as loading so "No depth data" doesn't
