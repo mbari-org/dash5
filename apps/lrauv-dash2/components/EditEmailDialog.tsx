@@ -43,11 +43,9 @@ const EditEmailDialog: React.FC<EditEmailDialogProps> = ({
   const countdownRef = useRef<ReturnType<typeof setInterval> | null>(null)
   const codeInputRef = useRef<HTMLInputElement>(null)
 
-  const {
-    mutate: sendCode,
-    isLoading: isSendingCode,
-    error: sendCodeError,
-  } = useSendVerificationCode()
+  const { mutate: sendCode, isLoading: isSendingCode } =
+    useSendVerificationCode()
+  const [sendCodeFailed, setSendCodeFailed] = useState(false)
 
   const trimmed = value.trim()
   const normalized = destType === 'phone' ? normalizePhone(trimmed) : trimmed
@@ -106,12 +104,16 @@ const EditEmailDialog: React.FC<EditEmailDialogProps> = ({
 
   const handleSendCode = () => {
     const recipient = destType === 'phone' ? normalized : trimmed
+    setSendCodeFailed(false)
     sendCode(
       { recipient },
       {
         onSuccess: (data) => {
           setExpiresInSeconds(data.result?.expiresInSeconds ?? 300)
           setStep('verify')
+        },
+        onError: () => {
+          setSendCodeFailed(true)
         },
       }
     )
@@ -255,7 +257,7 @@ const EditEmailDialog: React.FC<EditEmailDialogProps> = ({
             </div>
           )}
 
-          {sendCodeError && (
+          {sendCodeFailed && (
             <p className="text-xs text-red-600">
               Failed to send verification code. Please try again.
             </p>
