@@ -10,6 +10,7 @@ export const useUpdateEmailAddress = () => {
   const { axiosInstance, token } = useTethysApiContext()
   const mutation = useMutation(
     (params: UpdateEmailAddressesForNotificationsParams) => {
+      // `code` is optional — included only when the caller provides it
       return updateEmailAddressesForNotifications(params, {
         instance: axiosInstance,
         headers: { Authorization: `Bearer ${token}` },
