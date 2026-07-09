@@ -96,11 +96,11 @@ const DeploymentMap: React.FC<DeploymentMapProps> = ({
   endTime,
 }) => {
   // Derive the Leaflet MapContainer key from window.location.pathname (no
-  // query string) at render time. window.location is available immediately on
-  // the client — unlike router.query or vehicleName it is never undefined
-  // mid-hydration — so the key stays stable across query-string changes
-  // (preventing mid-zoom remounts) while still updating on real
-  // vehicle/deployment path changes (allowing the map to remount correctly).
+  // query string) at render time. Unlike router.query route params, which are
+  // undefined before router.isReady, window.location.pathname is available
+  // immediately on the client. This keeps the key stable across query-string
+  // changes (time window, logset — preventing mid-zoom-animation remounts)
+  // while still updating on real path changes (vehicle/deployment navigation).
   const mapKey =
     typeof window !== 'undefined'
       ? `deployment-map-${window.location.pathname}`
