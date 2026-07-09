@@ -38,21 +38,21 @@ The repo is a **Yarn monorepo** managed with [Turborepo](https://turbo.build/rep
 
 You need the following tools installed before you can run the project.
 
-### Node.js — version 20.x
+### Node.js — version 22.x
 
-The project requires **Node 20**. We strongly recommend managing Node versions with [nvm](https://github.com/nvm-sh/nvm):
+The project requires **Node 22** (LTS). We strongly recommend managing Node versions with [nvm](https://github.com/nvm-sh/nvm):
 
 ```bash
 # Install nvm (skip if already installed)
 curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.7/install.sh | bash
 
 # Reload your shell, then:
-nvm install 20
-nvm use 20
-nvm alias default 20
+nvm install 22
+nvm use 22
+nvm alias default 22
 
 # Confirm
-node --version   # should print v20.x.x
+node --version   # should print v22.x.x
 ```
 
 ### Yarn — version 1.22.x
