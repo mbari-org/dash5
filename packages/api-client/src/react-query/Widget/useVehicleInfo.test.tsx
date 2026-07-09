@@ -83,10 +83,44 @@ const mockResponse = {
   color_volts: 'st5',
 }
 
+const mockSiteConfig = {
+  result: {
+    vehicleNames: [],
+    vehicleBasicInfos: [],
+    defaultVehicle: '',
+    eventTypes: [],
+    eventKinds: [],
+    appConfig: {
+      version: '1.0',
+      external: {
+        statusWidgets: {
+          lrauvStatusWidgetUrlPattern: 'https://widget.test/<vehicleName>.svg',
+          espStatusWidgetUrlPattern: '',
+        },
+        base: '',
+        dashui: '',
+        eventTypeDoc: '',
+        miscLinksFile: '',
+        schemaBase: '',
+        tethysdash: '',
+        useradmin: '',
+      },
+      googleApiKey: '',
+      odss2dashApi: '',
+      recaptcha: { siteKey: '' },
+      slack: { primaryChannel: '' },
+      webSockets: { useWebsocket: false, maxIdleTimeout: 0 },
+      pusher: { appKey: '', eventChannel: '', cluster: '' },
+    },
+  },
+}
+
 const server = setupServer(
   rest.get('/custom/widget/auv_brizo.json', (_req, res, ctx) => {
     return res(ctx.status(200), ctx.json(mockResponse))
-  })
+  }),
+  // Default: no siteConfig → fallbackVehicleInfoUrl stays null, fallback disabled
+  rest.get('/info', (_req, res, ctx) => res(ctx.status(200), ctx.json({})))
 )
 
 beforeAll(() => server.listen())
@@ -109,6 +143,21 @@ const MockVehicleList: React.FC = () => {
   )
 }
 
+const MockFallbackResult: React.FC = () => {
+  const query = useVehicleInfo(
+    { name: 'brizo' },
+    axios.create({ baseURL: '/custom', timeout: 5000 })
+  )
+  if (query.isLoading) return <div data-testid="loading">loading</div>
+  return (
+    <div data-testid="result">
+      {query.data?.not_found
+        ? 'not_found'
+        : (query.data as GetVehicleInfoResponse)?.text_vehicle ?? 'no-data'}
+    </div>
+  )
+}
+
 describe('useVehicleInfo', () => {
   it('should render the vehicle name from the response', async () => {
     render(
@@ -122,6 +171,38 @@ describe('useVehicleInfo', () => {
 
     expect(screen.queryByText(mockResponse.text_vehicle)).toHaveTextContent(
       mockResponse.text_vehicle
+    )
+  })
+
+  it('should return not_found when the fallback request encounters a network error', async () => {
+    server.use(
+      // Provide siteConfig with fallback URL pattern so the hook knows where to fall back
+      rest.get('/info', (_req, res, ctx) =>
+        res(ctx.status(200), ctx.json(mockSiteConfig))
+      ),
+      // Primary returns 404 → not_found: true, which enables the fallback
+      rest.get('/custom/widget/auv_brizo.json', (_req, res, ctx) =>
+        res.once(ctx.status(404))
+      ),
+      // Fallback URL simulates an unreachable server (network error)
+      rest.get('https://widget.test/brizo.json', (_req, res) =>
+        res.networkError('Simulated unreachable server')
+      )
+    )
+
+    render(
+      <MockProviders
+        queryClient={
+          new QueryClient({ defaultOptions: { queries: { retry: false } } })
+        }
+      >
+        <MockFallbackResult />
+      </MockProviders>
+    )
+
+    await waitFor(
+      () => expect(screen.getByTestId('result')).toHaveTextContent('not_found'),
+      { timeout: 5000 }
     )
   })
 })

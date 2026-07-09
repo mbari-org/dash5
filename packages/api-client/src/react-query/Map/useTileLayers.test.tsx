@@ -49,6 +49,21 @@ const MockTileLayers: React.FC = () => {
   )
 }
 
+const MockAllLayerNames: React.FC = () => {
+  const query = useTileLayers()
+  if (query.isLoading) return null
+  const names = query.data?.map((l) => l.name) ?? []
+  return (
+    <ul>
+      {names.map((n) => (
+        <li key={n} data-testid="layer-name">
+          {n}
+        </li>
+      ))}
+    </ul>
+  )
+}
+
 describe('useTileLayers', () => {
   it('should display the first tile layer name after unwrapping { result }', async () => {
     render(
@@ -58,5 +73,50 @@ describe('useTileLayers', () => {
     )
     await waitFor(() => screen.getByText(mockTileLayers[0].name))
     expect(screen.getByTestId('name')).toHaveTextContent(mockTileLayers[0].name)
+  })
+
+  it('should filter out disabled tile layers (DK3HORRO, 2020 Summer Astrid) from results', async () => {
+    server.use(
+      rest.get('/info/map/tileLayers', (_req, res, ctx) =>
+        res(
+          ctx.status(200),
+          ctx.json({
+            result: [
+              ...mockTileLayers,
+              {
+                name: 'DK3HORRO',
+                urlTemplate: 'https://hacked.example.com/tiles/{z}/{x}/{y}.png',
+                wms: false,
+              },
+              {
+                name: '2020 Summer Astrid',
+                urlTemplate:
+                  'https://hacked.example.com/astrid/{z}/{x}/{y}.png',
+                wms: false,
+              },
+            ],
+          })
+        )
+      )
+    )
+
+    render(
+      <MockProviders queryClient={new QueryClient()}>
+        <MockAllLayerNames />
+      </MockProviders>
+    )
+
+    await waitFor(() =>
+      expect(screen.queryAllByTestId('layer-name').length).toBeGreaterThan(0)
+    )
+
+    const names = screen
+      .queryAllByTestId('layer-name')
+      .map((el) => el.textContent)
+
+    expect(names).not.toContain('DK3HORRO')
+    expect(names).not.toContain('2020 Summer Astrid')
+    expect(names).toContain('SST 1 Day Composite')
+    expect(names).toContain('Cell phone coverage map')
   })
 })
