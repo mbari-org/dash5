@@ -1,4 +1,5 @@
 import dynamic from 'next/dynamic'
+import { useRouter } from 'next/router'
 import React, { useCallback, useState, useRef, useEffect, useMemo } from 'react'
 import { useManagedWaypoints } from '@mbari/react-ui'
 import useGoogleElevator from '../lib/useGoogleElevator'
@@ -95,6 +96,7 @@ const DeploymentMap: React.FC<DeploymentMapProps> = ({
   startTime,
   endTime,
 }) => {
+  const router = useRouter()
   const mapRef = useRef<any>(null)
   const {
     updatedWaypoints,
@@ -653,7 +655,11 @@ const DeploymentMap: React.FC<DeploymentMapProps> = ({
       ) : null}
       <div className="relative h-full min-h-0 w-full">
         <Map
-          key={`deployment-map-${vehicleName ?? 'unknown'}`}
+          key={`deployment-map-${
+            (router.query?.deployment as string[] | undefined)?.join('/') ??
+            vehicleName ??
+            'unknown'
+          }`}
           ref={mapRef}
           className="h-full min-h-0 w-full"
           maxZoom={MAP_MAX_ZOOM}
