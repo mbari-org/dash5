@@ -655,7 +655,11 @@ const DeploymentMap: React.FC<DeploymentMapProps> = ({
       ) : null}
       <div className="relative h-full min-h-0 w-full">
         <Map
-          key={`deployment-map-${router.asPath}-${vehicleName ?? 'unknown'}`}
+          key={`deployment-map-${
+            (router.query?.deployment as string[] | undefined)?.join('/') ??
+            vehicleName ??
+            'unknown'
+          }`}
           ref={mapRef}
           className="h-full min-h-0 w-full"
           maxZoom={MAP_MAX_ZOOM}
