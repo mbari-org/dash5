@@ -1,5 +1,4 @@
 import dynamic from 'next/dynamic'
-import { useRouter } from 'next/router'
 import React, { useCallback, useState, useRef, useEffect, useMemo } from 'react'
 import { useManagedWaypoints } from '@mbari/react-ui'
 import useGoogleElevator from '../lib/useGoogleElevator'
@@ -96,7 +95,17 @@ const DeploymentMap: React.FC<DeploymentMapProps> = ({
   startTime,
   endTime,
 }) => {
-  const router = useRouter()
+  // Derive the Leaflet MapContainer key from window.location.pathname (no
+  // query string) at render time. Unlike router.query route params, which are
+  // undefined before router.isReady, window.location.pathname is available
+  // immediately on the client. This keeps the key stable across query-string
+  // changes (time window, logset — preventing mid-zoom-animation remounts)
+  // while still updating on real path changes (vehicle/deployment navigation).
+  const mapKey =
+    typeof window !== 'undefined'
+      ? `deployment-map-${window.location.pathname}`
+      : `deployment-map-unknown`
+
   const mapRef = useRef<any>(null)
   const {
     updatedWaypoints,
@@ -655,11 +664,7 @@ const DeploymentMap: React.FC<DeploymentMapProps> = ({
       ) : null}
       <div className="relative h-full min-h-0 w-full">
         <Map
-          key={`deployment-map-${
-            (router.query?.deployment as string[] | undefined)?.join('/') ??
-            vehicleName ??
-            'unknown'
-          }`}
+          key={mapKey}
           ref={mapRef}
           className="h-full min-h-0 w-full"
           maxZoom={MAP_MAX_ZOOM}
