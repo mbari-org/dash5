@@ -95,15 +95,16 @@ const DeploymentMap: React.FC<DeploymentMapProps> = ({
   startTime,
   endTime,
 }) => {
-  // Compute the Leaflet MapContainer key once on first client render using the
-  // URL pathname (no query string). window.location is available immediately —
-  // unlike router.query or vehicleName, it is never undefined mid-hydration —
-  // so the key never flips and the map is never unmounted mid-zoom-animation.
-  const stableMapKey = useRef(
+  // Derive the Leaflet MapContainer key from window.location.pathname (no
+  // query string) at render time. window.location is available immediately on
+  // the client — unlike router.query or vehicleName it is never undefined
+  // mid-hydration — so the key stays stable across query-string changes
+  // (preventing mid-zoom remounts) while still updating on real
+  // vehicle/deployment path changes (allowing the map to remount correctly).
+  const mapKey =
     typeof window !== 'undefined'
       ? `deployment-map-${window.location.pathname}`
       : `deployment-map-unknown`
-  )
 
   const mapRef = useRef<any>(null)
   const {
@@ -663,7 +664,7 @@ const DeploymentMap: React.FC<DeploymentMapProps> = ({
       ) : null}
       <div className="relative h-full min-h-0 w-full">
         <Map
-          key={stableMapKey.current}
+          key={mapKey}
           ref={mapRef}
           className="h-full min-h-0 w-full"
           maxZoom={MAP_MAX_ZOOM}
