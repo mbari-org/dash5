@@ -16,6 +16,7 @@ import { RequestConfig } from '../types'
 export interface AddExtraEmailToUserParams {
   email: string
   addExtraEmails: string
+  code?: string
 }
 
 export interface AddExtraEmailToUserResponse {
