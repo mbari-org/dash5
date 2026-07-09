@@ -140,7 +140,7 @@ export const getVehicleInfo = async (
     )
     return response.data as GetVehicleInfoResponse
   } catch (e: unknown) {
-    if ((e as Error).message.indexOf('404')) {
+    if ((e as Error).message.includes('404')) {
       return { not_found: true }
     } else {
       throw e
