@@ -81,13 +81,16 @@ export const useVehicleInfo = (
         return response.data as GetVehicleInfoResponse
       } catch (e: unknown) {
         if (axios.isAxiosError(e)) {
-          // Treat 404, timeouts (ECONNABORTED), and no-response network errors
-          // as "not found" so they don't bubble up to the console as unhandled
-          // errors when the external status widget server is unreachable.
+          // Treat 404, timeouts (ECONNABORTED), and network-layer failures
+          // (ERR_NETWORK: DNS failures, connection refused, no internet) as
+          // "not found" so they don't surface as console errors when the
+          // external status widget server is unreachable.
+          // Other AxiosErrors (e.g. 5xx, misconfigured URL that produces a
+          // non-network error) are still re-thrown.
           if (
             e.response?.status === 404 ||
             e.code === 'ECONNABORTED' ||
-            !e.response
+            e.code === 'ERR_NETWORK'
           ) {
             return { not_found: true } as GetVehicleInfoResponse
           }

@@ -1,4 +1,5 @@
 // Use scaffold axiosBase to generate the resources imported below.
+import axios from 'axios'
 import { getInstance } from '../getInstance'
 import { RequestConfig } from '../types'
 
@@ -140,10 +141,9 @@ export const getVehicleInfo = async (
     )
     return response.data as GetVehicleInfoResponse
   } catch (e: unknown) {
-    if ((e as Error).message.includes('404')) {
+    if (axios.isAxiosError(e) && e.response?.status === 404) {
       return { not_found: true }
-    } else {
-      throw e
     }
+    throw e
   }
 }
