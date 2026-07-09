@@ -58,7 +58,7 @@
   },
   "volta": {
     "node": "22.20.0",
-    "yarn": "1.22.19"
+    "yarn": "1.22.22"
   },
   "dependencies": {
     "@types/leaflet.gridlayer.googlemutant": "^0.4.6",
