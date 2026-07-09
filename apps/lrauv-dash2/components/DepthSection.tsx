@@ -160,6 +160,19 @@ const DepthSection: React.FC<{
     ? depthQuery.data ?? undefined
     : latestChartData?.find((d) => d.name === 'depth')
 
+  const depthValues = depthData?.values
+  const depthTimes = depthData?.times
+  const chartPoints = useMemo(() => {
+    if (!depthValues || !depthTimes) return undefined
+    // Clamp to the shorter array so indices are always in-bounds and
+    // timestamps are always defined (both arrays are number[] per the API).
+    const len = Math.min(depthValues.length, depthTimes.length)
+    return Array.from({ length: len }, (_, i) => ({
+      value: depthValues[i],
+      timestamp: depthTimes[i],
+    }))
+  }, [depthValues, depthTimes])
+
   // While logsets are still loading / auto-selecting, latestQuery is disabled
   // (isLoading = false). Treat that wait as loading so "No depth data" doesn't
   // appear prematurely before any data has been fetched.
@@ -222,14 +235,12 @@ const DepthSection: React.FC<{
         {chartAvailable && (
           <LineChart
             name={depthData.name}
-            data={depthData.values?.map((v: number, i: number) => ({
-              value: v,
-              timestamp: depthData.times?.[i],
-            }))}
+            data={chartPoints}
             yAxisLabel={`${humanize(depthData.name)} (${depthData.units})`}
             onHover={onHover}
             inverted
             className="h-full w-full"
+            uirevision={`${vehicleName}-${from}-${depthData.name}-${timeWindow}-${selectedLogsetId}`}
           />
         )}
       </div>

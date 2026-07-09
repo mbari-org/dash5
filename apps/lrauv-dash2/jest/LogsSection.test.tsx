@@ -53,8 +53,13 @@ const makeTimeoutNote = (eventId: number, chunkNum: number): object => {
 test('shows "Updated ... ago" in toolbar after a successful data load', async () => {
   renderLogs([makeTimeoutNote(1, 1)])
 
+  // The toolbar renders the last-updated indicator across three stacked spans:
+  // "Updated" / "<duration>" / "ago". Spans share a parent div whose textContent
+  // concatenates them WITHOUT spaces (e.g. "Updated0sago"), so we check for the
+  // "Updated" span individually and for the "ago" span to confirm both are rendered.
   await waitFor(() => {
-    expect(screen.getByText(/Updated .+ ago/)).toBeInTheDocument()
+    expect(screen.getByText('Updated')).toBeInTheDocument()
+    expect(screen.getByText('ago')).toBeInTheDocument()
   })
 })
 

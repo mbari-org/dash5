@@ -24,6 +24,7 @@ import { ErrorLabel } from './VehicleAssets/ErrorLabel'
 import { Leak } from './VehicleAssets/Leak'
 import { Note } from './VehicleAssets/Note'
 import { CtdIndicator } from './VehicleAssets/CtdIndicator'
+import { PlanktivoreIndicator } from './VehicleAssets/PlanktivoreIndicator'
 
 export interface VehicleProps {
   className?: string
@@ -135,6 +136,13 @@ export interface VehicleProps {
   dockEye?: string
   dockLine?: string
   dockTri?: string
+  textLM?: string
+  textHM?: string
+  textRoiAgo?: string
+  colorWhitebeam?: string
+  colorWhiteled?: string
+  colorRedbeam?: string
+  colorRedled?: string
 }
 
 export const Vehicle: React.FC<VehicleProps> = ({
@@ -238,6 +246,13 @@ export const Vehicle: React.FC<VehicleProps> = ({
   dockEye,
   dockLine,
   dockTri,
+  textLM,
+  textHM,
+  textRoiAgo,
+  colorWhitebeam = 'st18',
+  colorWhiteled = 'st18',
+  colorRedbeam = 'st18',
+  colorRedled = 'st18',
 }) => {
   const isDocked = status === 'pluggedIn' || status === 'recovered'
   return (
@@ -421,6 +436,18 @@ export const Vehicle: React.FC<VehicleProps> = ({
           colorCam2={colorCam2}
           isDocked={isDocked}
         />
+
+        {(textLM || textHM) && (
+          <PlanktivoreIndicator
+            textLM={textLM}
+            textHM={textHM}
+            textRoiAgo={textRoiAgo}
+            colorWhitebeam={colorWhitebeam}
+            colorWhiteled={colorWhiteled}
+            colorRedbeam={colorRedbeam}
+            colorRedled={colorRedled}
+          />
+        )}
 
         <DvlIndicator
           colorDvl={colorDvl}

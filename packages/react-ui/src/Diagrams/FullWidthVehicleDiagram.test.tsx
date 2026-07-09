@@ -465,6 +465,52 @@ test('should not render actionButton when vehicle is pluggedIn', async () => {
   expect(screen.queryByLabelText('test action')).not.toBeInTheDocument()
 })
 
+// ── PlanktivoreIndicator (#733) ───────────────────────────────────────────────
+
+test('should render planktivore body and LM/HM labels when textLM and textHM are provided', async () => {
+  render(<FullWidthVehicleDiagram {...props} textLM="125.6" textHM="1.9" />)
+  expect(screen.queryByLabelText('planktivore body')).toBeInTheDocument()
+  expect(screen.queryByLabelText('planktivore lens')).toBeInTheDocument()
+  expect(screen.queryByLabelText('LM value')).toHaveTextContent('LM:125.6')
+  expect(screen.queryByLabelText('HM value')).toHaveTextContent('HM:1.9')
+})
+
+test('should render planktivore body when only textLM is provided', async () => {
+  render(<FullWidthVehicleDiagram {...props} textLM="222.9" />)
+  expect(screen.queryByLabelText('planktivore body')).toBeInTheDocument()
+  expect(screen.queryByLabelText('LM value')).toHaveTextContent('LM:222.9')
+  expect(screen.queryByLabelText('HM value')).not.toBeInTheDocument()
+})
+
+test('should display ROI time-ago on the planktivore housing when provided', async () => {
+  render(
+    <FullWidthVehicleDiagram
+      {...props}
+      textLM="125.6"
+      textRoiAgo="1h 41m ago"
+    />
+  )
+  expect(screen.queryByLabelText('ROI time ago')).toHaveTextContent(
+    '1h 41m ago'
+  )
+})
+
+test('should apply whitebeam class to white beam LED when provided', async () => {
+  render(
+    <FullWidthVehicleDiagram
+      {...props}
+      textLM="125.6"
+      colorWhitebeam="whitebeam"
+    />
+  )
+  expect(screen.queryByLabelText('white beam')).toHaveClass('whitebeam')
+})
+
+test('should NOT render planktivore body when neither textLM nor textHM is provided', async () => {
+  render(<FullWidthVehicleDiagram {...props} />)
+  expect(screen.queryByLabelText('planktivore body')).not.toBeInTheDocument()
+})
+
 test('should not render actionButton when vehicle is recovered', async () => {
   render(
     <FullWidthVehicleDiagram

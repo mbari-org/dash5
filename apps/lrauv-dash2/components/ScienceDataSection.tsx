@@ -1,9 +1,5 @@
-import {
-  SelectField,
-  AbsoluteOverlay,
-  AccordionCells,
-  ToolTip,
-} from '@mbari/react-ui'
+import { SelectField, AbsoluteOverlay, AccordionCells } from '@mbari/react-ui'
+import Tippy from '@tippyjs/react'
 import useGlobalModalId from '../lib/useGlobalModalId'
 import dynamic from 'next/dynamic'
 import { useEffect, useMemo, useRef, useState } from 'react'
@@ -131,7 +127,6 @@ const ScienceDataSection: React.FC<{
     'scienceSection.alignAxes',
     false
   )
-  const [logsetTooltip, setLogsetTooltip] = useState(false)
 
   const isExtended = timeWindow !== 'latest'
 
@@ -323,24 +318,21 @@ const ScienceDataSection: React.FC<{
           />
         </div>
         {!isExtended && logsetOptions.length > 0 && (
-          <div
-            className="relative my-auto"
-            onMouseEnter={() => setLogsetTooltip(true)}
-            onMouseLeave={() => setLogsetTooltip(false)}
+          <Tippy
+            content="Select a logset to scope the charts to that time window"
+            placement="bottom"
+            theme="mapBtnTT"
           >
-            <SelectField
-              name="logset"
-              placeholder="Logset"
-              value={selectedLogsetId ?? ''}
-              options={logsetOptions}
-              onSelect={setSelectedLogsetId}
-            />
-            <ToolTip
-              label="Select a logset to scope the charts to that time window"
-              direction="below"
-              active={logsetTooltip}
-            />
-          </div>
+            <div className="my-auto">
+              <SelectField
+                name="logset"
+                placeholder="Logset"
+                value={selectedLogsetId ?? ''}
+                options={logsetOptions}
+                onSelect={setSelectedLogsetId}
+              />
+            </div>
+          </Tippy>
         )}
         <button
           title={

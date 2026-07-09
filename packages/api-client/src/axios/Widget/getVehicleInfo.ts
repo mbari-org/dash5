@@ -1,4 +1,5 @@
 // Use scaffold axiosBase to generate the resources imported below.
+import axios from 'axios'
 import { getInstance } from '../getInstance'
 import { RequestConfig } from '../types'
 
@@ -110,6 +111,14 @@ export interface GetVehicleInfoResponse {
   dock_eye?: string
   dock_line?: string
   dock_tri?: string
+  text_LM?: string
+  text_HM?: string
+  text_roiago?: string
+  text_waypoint?: string
+  color_whitebeam?: string
+  color_whiteled?: string
+  color_redbeam?: string
+  color_redled?: string
   not_found: boolean
 }
 
@@ -132,10 +141,9 @@ export const getVehicleInfo = async (
     )
     return response.data as GetVehicleInfoResponse
   } catch (e: unknown) {
-    if ((e as Error).message.indexOf('404')) {
+    if (axios.isAxiosError(e) && e.response?.status === 404) {
       return { not_found: true }
-    } else {
-      throw e
     }
+    throw e
   }
 }

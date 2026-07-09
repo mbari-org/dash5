@@ -18,6 +18,7 @@ import {
 import clsx from 'clsx'
 import { DateTime } from 'luxon'
 import { decodeHtmlEntities, formatCompactDuration } from '@mbari/utils'
+import { deriveVehiclePropsStatus } from '../lib/deriveVehiclePropsStatus'
 import { useTethysApiContext } from 'api-client'
 
 const DepthSparkline = dynamic(
@@ -202,12 +203,7 @@ const VehicleDiagram: React.FC<{
     colorMissionDefault: vehicle?.color_missiondefault,
     textVolts: vehicle?.text_volts,
     colorVolts: vehicle?.color_volts,
-    status:
-      missionText.indexOf('PLUGGED') >= 0
-        ? 'pluggedIn'
-        : missionText.indexOf('RECOVERED') >= 0
-        ? 'recovered'
-        : 'onMission',
+    status: deriveVehiclePropsStatus({ missionText }),
     colorLeak: vehicle?.color_leak,
     textLeakAgo: vehicle?.text_leakago,
     textLeak: vehicle?.text_leak,
@@ -217,6 +213,14 @@ const VehicleDiagram: React.FC<{
     colorCam1: vehicle?.color_cam1,
     colorCam2: vehicle?.color_cam2,
     textCameraAgo: vehicle?.text_cameraago,
+    textLM: vehicle?.text_LM,
+    textHM: vehicle?.text_HM,
+    textRoiAgo: vehicle?.text_roiago,
+    colorWhitebeam: vehicle?.color_whitebeam,
+    colorWhiteled: vehicle?.color_whiteled,
+    colorRedbeam: vehicle?.color_redbeam,
+    colorRedled: vehicle?.color_redled,
+    textArriveLabel: vehicle?.text_waypoint,
     colorVoltThresh: vehicle?.color_voltthresh,
     textVoltThresh: vehicle?.text_voltthresh,
     colorAmpThresh: vehicle?.color_ampthresh,

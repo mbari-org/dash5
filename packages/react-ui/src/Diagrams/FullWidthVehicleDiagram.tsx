@@ -15,6 +15,7 @@ import { Cart } from './VehicleAssets/Cart'
 import { ErrorLabel } from './VehicleAssets/ErrorLabel'
 import { Note } from './VehicleAssets/Note'
 import { CtdIndicator } from './VehicleAssets/CtdIndicator'
+import { PlanktivoreIndicator } from './VehicleAssets/PlanktivoreIndicator'
 import { MissionLabel } from './VehicleAssets/MissionLabel'
 import { ScheduleLabel } from './VehicleAssets/ScheduleLabel'
 import { NextCommLabel } from './VehicleAssets/NextCommLabel'
@@ -135,6 +136,13 @@ export const FullWidthVehicleDiagram: React.FC<
   textVersion,
   svgCurrent,
   colorDuration,
+  textLM,
+  textHM,
+  textRoiAgo,
+  colorWhitebeam = 'st18',
+  colorWhiteled = 'st18',
+  colorRedbeam = 'st18',
+  colorRedled = 'st18',
   onBatteryClick: handleBatteryClick,
   actionButton,
 }) => {
@@ -451,6 +459,18 @@ export const FullWidthVehicleDiagram: React.FC<
             colorCam2={colorCam2}
             isDocked={isDocked}
           />
+
+          {(textLM || textHM) && (
+            <PlanktivoreIndicator
+              textLM={textLM}
+              textHM={textHM}
+              textRoiAgo={textRoiAgo}
+              colorWhitebeam={colorWhitebeam}
+              colorWhiteled={colorWhiteled}
+              colorRedbeam={colorRedbeam}
+              colorRedled={colorRedled}
+            />
+          )}
 
           <DvlIndicator
             colorDvl={colorDvl}

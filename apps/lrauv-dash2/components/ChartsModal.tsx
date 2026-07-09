@@ -113,6 +113,7 @@ export const ChartsModal: React.FC<ChartsModalProps> = ({
       )}`}
       onClose={onClose}
       maximized
+      blurBackground
       open
     >
       <div className="flex gap-2">

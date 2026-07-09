@@ -4,7 +4,7 @@ import {
   useUpdateDeployment,
   useAlterDeployment,
 } from '@mbari/api-client'
-import { DeploymentDetailsPopUp, EventType } from '@mbari/react-ui'
+import { DeploymentDetailsPopUp, AlterableEventType } from '@mbari/react-ui'
 import type { DeploymentDetails as DeploymentDetailsType } from '@mbari/react-ui'
 import { DateTime } from 'luxon'
 import useCurrentDeployment from '../lib/useCurrentDeployment'
@@ -78,7 +78,7 @@ const DeploymentDetails: React.FC<{
     }
   }
 
-  const handleSetDeploymentTime = (event: EventType) => {
+  const handleSetDeploymentTime = (event: AlterableEventType) => {
     let note = ''
     switch (event) {
       case 'launch':
@@ -94,7 +94,7 @@ const DeploymentDetails: React.FC<{
       alterDeployment({
         deploymentId: deployment.deploymentId as number,
         date: DateTime.now().toISO(),
-        deploymentType: event as 'launch' | 'recover' | 'end',
+        deploymentType: event,
         note,
       })
     }

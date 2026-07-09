@@ -199,8 +199,9 @@ test('queue count excludes a command that is "sent" in commsEvents but timed-out
   // the full history via recursive backfill and should override that status.
   server.use(
     rest.get('/events', (req, res, ctx) => {
-      const noteMatches = req.url.searchParams.get('noteMatches')
-      if (noteMatches === 'Timeout while waiting') {
+      // The timeout-notes query uses eventTypes=note (not the removed noteMatches param).
+      const eventTypes = req.url.searchParams.get('eventTypes')
+      if (eventTypes === 'note') {
         // The dedicated timeout-notes query returns the note for command 350.
         return res(
           ctx.status(200),

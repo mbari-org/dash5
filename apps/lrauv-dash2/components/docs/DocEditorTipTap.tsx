@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useEditor, EditorContent } from '@tiptap/react'
 import type { Editor } from '@tiptap/core'
 import StarterKit from '@tiptap/starter-kit'
@@ -50,6 +50,12 @@ export default function DocEditorTipTap(props: DocEditorTipTapProps) {
   const [textFieldDialogOpen, setTextFieldDialogOpen] = useState(false)
   const [textFieldRows, setTextFieldRows] = useState('1')
   const [textFieldCols, setTextFieldCols] = useState('30')
+
+  // Track the last HTML string produced by the editor itself so we can
+  // distinguish internal edits (no setContent needed) from external loads
+  // (new document or duplicate). Calling setContent unnecessarily resets
+  // ProseMirror's internal clipboard state, breaking repeated Ctrl+V.
+  const editorHtmlRef = useRef(html)
 
   const editor = useEditor({
     immediatelyRender: false,
@@ -125,14 +131,20 @@ export default function DocEditorTipTap(props: DocEditorTipTapProps) {
     ],
     content: html || '',
     onUpdate: ({ editor }: { editor: Editor }) => {
-      onChange(editor.getHTML())
+      const newHtml = editor.getHTML()
+      editorHtmlRef.current = newHtml
+      onChange(newHtml)
     },
   })
 
   useEffect(() => {
     if (editor && typeof html === 'string') {
-      const current = editor.getHTML()
-      if (current !== html) {
+      // Only call setContent for genuinely external changes (e.g. loading a
+      // new document). If the html prop change originated from the editor's own
+      // onUpdate, editorHtmlRef.current already equals html and we skip the
+      // call, preserving ProseMirror's clipboard state between Ctrl+C / Ctrl+V.
+      if (html !== editorHtmlRef.current) {
+        editorHtmlRef.current = html
         editor.commands.setContent(html, { emitUpdate: false })
       }
     }

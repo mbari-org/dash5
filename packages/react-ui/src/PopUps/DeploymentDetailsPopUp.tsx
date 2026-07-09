@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import React, { useEffect, useRef, useState } from 'react'
 import clsx from 'clsx'
 import { Modal, ModalPropsWithoutTitle } from '../Modal'
 import { UnderwaterIcon } from '../Icons/UnderwaterIcon'
@@ -25,7 +25,26 @@ export interface DeploymentDetails {
   endDate?: string
 }
 
+/**
+ * Strips empty-string optional date/tag fields so they aren't forwarded as
+ * blank query params. Required fields (name) are always preserved.
+ */
+const sanitizeDeployment = (d: DeploymentDetails): DeploymentDetails => {
+  const { name, ...optional } = d
+  const filteredOptional = Object.fromEntries(
+    Object.entries(optional).filter(([, v]) => v !== '' && v !== undefined)
+  )
+  return { name, ...filteredOptional }
+}
+
+/** All four deployment timeline event types, used for UI rendering. */
 export type EventType = 'start' | 'launch' | 'recover' | 'end'
+
+/**
+ * Event types supported by alterDeployment (excludes 'start', which must go
+ * through updateDeployment via onSaveChanges to avoid a 400 error).
+ */
+export type AlterableEventType = Exclude<EventType, 'start'>
 
 export interface DeploymentDetailsPopUpConfig {
   complete?: boolean
@@ -36,7 +55,7 @@ export interface DeploymentDetailsPopUpConfig {
   onExpand?: () => void
   onSaveChanges: (details: DeploymentDetails) => void
   onChangeGitTag: (gitTag: string) => void
-  onSetDeploymentEventToCurrentTime: (event: EventType) => void
+  onSetDeploymentEventToCurrentTime: (event: AlterableEventType) => void
 }
 
 export type DeploymentDetailsPopUpProps = DeploymentDetailsPopUpConfig &
@@ -95,10 +114,135 @@ export const DeploymentDetailsPopUp: React.FC<DeploymentDetailsPopUpProps> = ({
   const [isSelectTimezoneMode, setIsSelectTimezoneMode] = useState(false)
   const [isLocal, setIsLocal] = useState(true)
   const [timezone, setTimezone] = useState<string | null>('')
+  // Controls whether the start-date row shows the free-form DateField (true)
+  // or the quick-pick buttons (false, the default when entering edit mode).
+  const [showStartCustomPicker, setShowStartCustomPicker] = useState(false)
+  // Snapshot of deployment.startDate taken when the user opens the custom
+  // picker, so Back can restore exactly that value rather than the stale prop.
+  const preCustomStartDateRef = useRef<string>('')
+
+  // Reset the custom picker sub-mode whenever edit mode closes (including via
+  // the modal's X button) so the next edit session always starts at quick-pick.
+  useEffect(() => {
+    if (!isSelectDateMode) {
+      setShowStartCustomPicker(false)
+    }
+  }, [isSelectDateMode])
 
   const dateCell = (type: EventType) => {
     const eventDateLabel = `${type}Date`
+    const eventDate =
+      deployment[eventDateLabel as keyof DeploymentDetails] || ''
 
+    const handleSetCurrentTime = () => {
+      const now = DateTime.now().toISO()
+      const updated = { ...deployment, [`${type}Date`]: now }
+      setDeployment(updated)
+      if (type === 'start') {
+        // 'start' must go through onSaveChanges (updateDeployment) — not
+        // alterDeployment which only accepts 'launch' | 'recover' | 'end'.
+        // Sanitize to avoid sending empty strings for unset date fields.
+        onSaveChanges(sanitizeDeployment(updated))
+      } else {
+        onSetDeploymentEventToCurrentTime(type)
+      }
+    }
+
+    // Start date in edit mode: show quick-pick first, DateField only if
+    // the user explicitly chooses "Custom date…"
+    if (isSelectDateMode && type === 'start') {
+      if (showStartCustomPicker) {
+        const customStartValue =
+          deployment[eventDateLabel as keyof DeploymentDetails] ?? ''
+        const isCustomFuture =
+          !!customStartValue &&
+          DateTime.fromISO(customStartValue) > DateTime.now()
+        return {
+          label: (
+            <div className="flex flex-col gap-1">
+              <DateField
+                name={eventDateLabel}
+                timeZone={timezone && !isLocal ? timezone : undefined}
+                className="text-sm"
+                value={customStartValue}
+                onChange={(newValue: string) =>
+                  setDeployment({
+                    ...deployment,
+                    [eventDateLabel as keyof DeploymentDetails]: newValue,
+                  })
+                }
+                disabled={false}
+              />
+              {isCustomFuture && (
+                <span className="text-xs italic text-amber-600">
+                  Start is in the future — GPS fixes won&apos;t appear until
+                  then.
+                </span>
+              )}
+              <button
+                className="text-xs text-indigo-600 underline"
+                onClick={() => {
+                  // Restore the startDate to what it was when the user opened
+                  // the custom picker, discarding any partially-typed value.
+                  setDeployment({
+                    ...deployment,
+                    startDate: preCustomStartDateRef.current,
+                  })
+                  setShowStartCustomPicker(false)
+                }}
+              >
+                ← Back to quick options
+              </button>
+            </div>
+          ),
+          highlighted: true,
+          span: 3,
+        }
+      }
+
+      // Quick-pick buttons
+      return {
+        label: (
+          <div className="flex flex-col gap-2">
+            <div className="flex flex-wrap gap-2">
+              <button
+                className={styles.markTimeButton}
+                onClick={() => {
+                  const now = DateTime.now().toISO()
+                  const updated = { ...deployment, startDate: now }
+                  setDeployment(updated)
+                  onSaveChanges(sanitizeDeployment(updated))
+                  setIsSelectDateMode(false)
+                  setShowStartCustomPicker(false)
+                }}
+                aria-label="set start time to now"
+              >
+                Now
+              </button>
+              <button
+                className={styles.markTimeButton}
+                onClick={() => {
+                  preCustomStartDateRef.current = deployment.startDate ?? ''
+                  setShowStartCustomPicker(true)
+                }}
+                aria-label="pick a custom start date"
+              >
+                Custom date…
+              </button>
+            </div>
+            {eventDate && DateTime.fromISO(eventDate) > DateTime.now() && (
+              <span className="text-xs italic text-amber-600">
+                Start is in the future — GPS fixes won&apos;t appear until then.
+              </span>
+            )}
+          </div>
+        ),
+        highlighted: true,
+        span: 3,
+      }
+    }
+
+    // All other events in edit mode: standard DateField
     if (isSelectDateMode) {
       return {
         label: (
@@ -120,26 +264,34 @@ export const DeploymentDetailsPopUp: React.FC<DeploymentDetailsPopUpProps> = ({
         span: 3,
       }
     }
-    const eventDate =
-      deployment[eventDateLabel as keyof DeploymentDetails] || ''
 
-    const handleSetCurrentTime = () => {
-      setDeployment({
-        ...deployment,
-        [`${type}Date`]: DateTime.now().toISO(),
-      })
-      onSetDeploymentEventToCurrentTime(type)
-    }
+    // Display mode: show formatted date or "Mark X time now" button
+    const isFutureStart =
+      type === 'start' &&
+      !!eventDate &&
+      DateTime.fromISO(eventDate) > DateTime.now()
+
     return eventDate
       ? {
-          label:
-            isLocal || !timezone
-              ? DateTime.fromJSDate(new Date(eventDate)).toLocaleString(
-                  DateTime.DATETIME_FULL
-                )
-              : DateTime.fromJSDate(new Date(eventDate))
-                  .setZone(timezone ?? undefined)
-                  .toLocaleString(DateTime.DATETIME_FULL),
+          label: (
+            <div className="flex flex-col gap-0.5">
+              <span>
+                {isLocal || !timezone
+                  ? DateTime.fromJSDate(new Date(eventDate)).toLocaleString(
+                      DateTime.DATETIME_FULL
+                    )
+                  : DateTime.fromJSDate(new Date(eventDate))
+                      .setZone(timezone ?? undefined)
+                      .toLocaleString(DateTime.DATETIME_FULL)}
+              </span>
+              {isFutureStart && (
+                <span className="text-xs italic text-amber-600">
+                  Start is in the future — GPS fixes won&apos;t appear until
+                  then.
+                </span>
+              )}
+            </div>
+          ),
           span: 3,
         }
       : {
@@ -175,18 +327,8 @@ export const DeploymentDetailsPopUp: React.FC<DeploymentDetailsPopUpProps> = ({
 
   const handleConfirm = () => {
     setIsSelectDateMode(false)
-
-    const nonEmptyKeys = Object.keys(deployment).filter(
-      (key) => deployment[key as keyof DeploymentDetails] && key
-    )
-
-    const updatedDeployment = Object.fromEntries(
-      nonEmptyKeys.map((key) => [
-        [key as keyof DeploymentDetails],
-        deployment[key as keyof DeploymentDetails],
-      ])
-    )
-    onSaveChanges(updatedDeployment)
+    setShowStartCustomPicker(false)
+    onSaveChanges(sanitizeDeployment(deployment))
   }
 
   const handleSelect = (newValue: string | null) => {
@@ -203,6 +345,7 @@ export const DeploymentDetailsPopUp: React.FC<DeploymentDetailsPopUpProps> = ({
 
   const handleCancel = () => {
     setIsSelectDateMode(false)
+    setShowStartCustomPicker(false)
     setDeployment({ ...initialDeploymentValues, gitTag: deployment.gitTag })
   }
 
@@ -213,7 +356,11 @@ export const DeploymentDetailsPopUp: React.FC<DeploymentDetailsPopUpProps> = ({
         onConfirm={isSelectDateMode ? handleConfirm : null}
         onCancel={isSelectDateMode ? handleCancel : null}
         confirmButtonText="Save Changes"
-        onClose={onClose}
+        onClose={() => {
+          setIsSelectDateMode(false)
+          setShowStartCustomPicker(false)
+          onClose?.()
+        }}
         grayHeader
         title={
           <section className="ml-2 flex">

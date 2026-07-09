@@ -324,6 +324,19 @@ test('should display Parameters Summary when Next button is clicked after select
   expect(screen.queryByText(/Summary of overrides/i)).toBeInTheDocument()
 })
 
+test('should return to Parameters Summary (not Parameters form) when Back is clicked from Safety & Comms', async () => {
+  render(
+    <RecoilRoot>
+      <MissionModalView {...props} currentStepIndex={3} />
+    </RecoilRoot>
+  )
+  // Navigate back from Safety & Comms (step 3) → should land on Parameters Summary
+  const backButton = screen.getByRole('button', { name: 'Back' })
+  fireEvent.click(backButton)
+
+  expect(screen.queryByText(/Summary of overrides/i)).toBeInTheDocument()
+})
+
 // Safety and Comms Parameters: Step 4 tests
 test('should display safety parameter names', async () => {
   render(

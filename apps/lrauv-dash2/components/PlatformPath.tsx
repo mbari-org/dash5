@@ -1,11 +1,16 @@
-import React, { useMemo, useState } from 'react'
+import React, { useMemo, useState, useEffect, useCallback } from 'react'
 import { Marker, Polyline, Tooltip, CircleMarker } from 'react-leaflet'
 import L from 'leaflet'
 import { usePlatformPositions } from '@mbari/api-client'
 import { createLogger } from '@mbari/utils'
 import { useTick } from '../lib/useTick'
+import { PLATFORM_PANE } from '../lib/constants'
 
 const logger = createLogger('PlatformPath')
+
+/** Exported for testing — true only for genuine network timeout errors. */
+export const isTimeoutError = (error: unknown): boolean =>
+  error instanceof Error && !!error.message?.toLowerCase().includes('timeout')
 
 // How far back to search for position fixes when no explicit window is given.
 // 365 days ensures infrequently-updated fixed platforms (e.g. CA offshore
@@ -36,6 +41,16 @@ export const PlatformPath: React.FC<PlatformPathProps> = ({
   refreshIntervalMs = 5 * 60_000,
 }) => {
   const [hovered, setHovered] = useState(false)
+  const [currentPosHovered, setCurrentPosHovered] = useState(false)
+  const [iconHovered, setIconHovered] = useState(false)
+  // Track icon load failure so we can show the fallback CircleMarker when
+  // the ODSS image is blocked or unavailable. Reset whenever iconUrl changes
+  // so a new valid URL gets a fresh attempt.
+  const [iconFailed, setIconFailed] = useState(false)
+  const handleIconError = useCallback(() => setIconFailed(true), [])
+  useEffect(() => {
+    setIconFailed(false)
+  }, [iconUrl])
 
   const nowMs = useTick(refreshIntervalMs)
 
@@ -98,58 +113,88 @@ export const PlatformPath: React.FC<PlatformPathProps> = ({
   // - the icon object is memoized to avoid unnecessary Leaflet icon churn
   // Must be declared before any early returns to satisfy Rules of Hooks.
   const platformIcon = useMemo(() => {
-    if (!iconUrl) return null
+    if (!iconUrl || iconFailed) return null
 
     const container = document.createElement('div')
-    container.style.cssText = 'width:32px;height:32px;overflow:hidden;'
+    container.style.cssText = 'width:44px;height:44px;overflow:hidden;'
 
     const img = document.createElement('img')
     img.src = iconUrl
     img.alt = displayName
     img.style.cssText =
-      'width:32px;height:32px;object-fit:contain;border:none;background:transparent;'
+      'width:44px;height:44px;object-fit:contain;border:none;background:transparent;'
     img.onerror = () => {
       img.style.display = 'none'
+      handleIconError()
     }
     container.appendChild(img)
 
     return L.divIcon({
       className: '',
       html: container,
-      iconSize: [32, 32],
-      iconAnchor: [16, 16],
-      tooltipAnchor: [16, 0],
+      iconSize: [44, 44],
+      iconAnchor: [22, 22],
+      tooltipAnchor: [22, 0],
     })
-  }, [iconUrl, displayName])
+  }, [iconUrl, iconFailed, displayName, handleIconError])
 
   if (isLoading) {
     return null
   }
 
   if (error) {
-    logger.warn(`Failed to load positions for platform ${platformId}:`, error)
+    if (isTimeoutError(error)) {
+      // Timeout errors are expected for slow or offline external platforms
+      // and are not actionable by the developer — log at debug to reduce noise.
+      logger.debug(
+        `Failed to load positions for platform ${platformId}:`,
+        error
+      )
+    } else {
+      // Auth/config/5xx and other unexpected failures should remain visible.
+      logger.warn(`Failed to load positions for platform ${platformId}:`, error)
+    }
     return null
   }
 
   const platformColor = color || 'cyan'
 
   if (!route || route.length === 0) {
-    logger.debug(
-      `No positions found for platform ${platformId} within the query window — nothing to render`
-    )
     return null
   }
 
   return (
     <>
-      {/* Custom icon at latest position, shown for fixed/infrequently-updated platforms */}
+      {/* Custom icon at latest position, shown for fixed/infrequently-updated platforms.
+          Permanent name label always visible; coords + timestamp appear on hover,
+          matching the CircleMarker behaviour for no-icon platforms. */}
       {platformIcon && route.length > 0 && (
-        <Marker position={[route[0][0], route[0][1]]} icon={platformIcon}>
-          <Tooltip opacity={0.9}>
+        <Marker
+          position={[route[0][0], route[0][1]]}
+          icon={platformIcon}
+          eventHandlers={{
+            mouseover: () => setIconHovered(true),
+            mouseout: () => setIconHovered(false),
+          }}
+        >
+          <Tooltip permanent opacity={0.75}>
             <div className="text-italic">
-              <div className="text-bold">{displayName}</div>
+              <span className="text-bold">{displayName}</span>
               {displayAbbrev && (
-                <div className="text-gray-500">({displayAbbrev})</div>
+                <span className="text-gray-500"> ({displayAbbrev})</span>
+              )}
+              {iconHovered && (
+                <>
+                  <br />
+                  <span className="text-xs text-gray-400">
+                    {route[0][0].toFixed(5)}, {route[0][1].toFixed(5)}
+                  </span>
+                  {displayPositions[0] && (
+                    <div className="text-xs text-gray-400">
+                      {new Date(displayPositions[0].timeMs).toLocaleString()}
+                    </div>
+                  )}
+                </>
               )}
             </div>
           </Tooltip>
@@ -158,6 +203,7 @@ export const PlatformPath: React.FC<PlatformPathProps> = ({
       {route.length > 0 && (
         <>
           <Polyline
+            pane={PLATFORM_PANE}
             pathOptions={{
               color: platformColor,
               weight: 3,
@@ -184,33 +230,60 @@ export const PlatformPath: React.FC<PlatformPathProps> = ({
             </Tooltip>
           </Polyline>
 
-          {/* Name-label dot at latest position — always rendered so the position
-              remains visible even if the custom icon image fails to load */}
-          <CircleMarker
-            center={[route[0][0], route[0][1]]}
-            radius={1}
-            pathOptions={{
-              color: platformColor,
-              fillColor: platformColor,
-              fillOpacity: 1,
-              weight: 0,
-            }}
-          >
-            <Tooltip permanent opacity={0.6}>
-              <div className="text-italic">
-                <span className="text-bold">{displayName}</span>
-                {displayAbbrev ? (
-                  <span className="text-gray-500"> ({displayAbbrev})</span>
-                ) : null}
-              </div>
-            </Tooltip>
-          </CircleMarker>
+          {/* Prominent current-position marker — solid filled circle with white
+              outline so it reads clearly against both the track line and the
+              basemap. Also shown as fallback when the custom icon image fails
+              to load (e.g. ODSS blocks the request). */}
+          {/* platformIcon is already null when iconFailed — !platformIcon covers both cases */}
+          {!platformIcon && (
+            <CircleMarker
+              center={[route[0][0], route[0][1]]}
+              pane={PLATFORM_PANE}
+              radius={8}
+              pathOptions={{
+                color: 'white',
+                fillColor: platformColor,
+                fillOpacity: 0.9,
+                weight: 2,
+              }}
+              eventHandlers={{
+                mouseover: () => setCurrentPosHovered(true),
+                mouseout: () => setCurrentPosHovered(false),
+              }}
+            >
+              {/* Permanent tooltip shows name label only — coords/timestamp
+                  are added on hover to avoid clutter with multiple platforms. */}
+              <Tooltip permanent opacity={0.75}>
+                <div className="text-italic">
+                  <span className="text-bold">{displayName}</span>
+                  {displayAbbrev ? (
+                    <span className="text-gray-500"> ({displayAbbrev})</span>
+                  ) : null}
+                  {currentPosHovered && (
+                    <>
+                      <br />
+                      <span className="text-xs text-gray-400">
+                        {route[0][0].toFixed(5)}, {route[0][1].toFixed(5)}
+                      </span>
+                      {displayPositions[0] && (
+                        <div className="text-xs text-gray-400">
+                          {new Date(
+                            displayPositions[0].timeMs
+                          ).toLocaleString()}
+                        </div>
+                      )}
+                    </>
+                  )}
+                </div>
+              </Tooltip>
+            </CircleMarker>
+          )}
 
-          {/* One circle marker per fix with hover tooltip.
-              Skip the latest-position dot when a custom icon already marks it. */}
+          {/* Historical fix dots — small, semi-transparent, hover-only tooltip.
+              Index 0 (latest position) is always skipped here; it is covered
+              by the prominent CircleMarker above (no-icon) or the Marker icon. */}
           {route.map((position, index) => {
-            const isLatest = index === 0
-            if (isLatest && platformIcon) return null
+            if (index === 0) return null
             const pos = displayPositions[index]
             const timestamp = pos ? new Date(pos.timeMs).toLocaleString() : ''
 
@@ -218,13 +291,14 @@ export const PlatformPath: React.FC<PlatformPathProps> = ({
               <CircleMarker
                 key={`${platformId}-${index}`}
                 center={[position[0], position[1]]}
-                radius={isLatest ? 6 : 2}
+                pane={PLATFORM_PANE}
+                radius={2}
                 pathOptions={{
                   color: platformColor,
                   fillColor: platformColor,
-                  fillOpacity: 0.2,
-                  weight: 3,
-                  opacity: 1,
+                  fillOpacity: 0.5,
+                  weight: 1,
+                  opacity: 0.7,
                 }}
               >
                 <Tooltip opacity={0.9}>
@@ -234,8 +308,8 @@ export const PlatformPath: React.FC<PlatformPathProps> = ({
                       <div className="text-gray-500">({displayAbbrev})</div>
                     )}
                   </div>
-                  <span>{isLatest ? 'Latest position:' : 'Lat/Lon:'}</span>{' '}
-                  {position[0].toFixed(5)}, {position[1].toFixed(5)}
+                  <span>Lat/Lon:</span> {position[0].toFixed(5)},{' '}
+                  {position[1].toFixed(5)}
                   <br />
                   {timestamp && (
                     <div className="text-sm text-gray-400">{timestamp}</div>

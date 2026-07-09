@@ -1,5 +1,4 @@
 import dynamic from 'next/dynamic'
-import { useRouter } from 'next/router'
 import React, { useCallback, useState, useRef, useEffect, useMemo } from 'react'
 import { useManagedWaypoints } from '@mbari/react-ui'
 import useGoogleElevator from '../lib/useGoogleElevator'
@@ -74,6 +73,11 @@ const PlatformPaths = dynamic(
 )
 
 const logger = createLogger('DeploymentMap')
+
+const MAP_MAX_ZOOM = 17
+// Center-on-vehicle zoom: 3 levels below the tile ceiling so surrounding
+// geography is visible. Update MAP_MAX_ZOOM if the Map maxZoom prop changes.
+const CENTER_ZOOM = MAP_MAX_ZOOM - 3
 interface DeploymentMapProps {
   vehicleName?: string | null
   indicatorTime?: number | null
@@ -91,7 +95,17 @@ const DeploymentMap: React.FC<DeploymentMapProps> = ({
   startTime,
   endTime,
 }) => {
-  const router = useRouter()
+  // Derive the Leaflet MapContainer key from window.location.pathname (no
+  // query string) at render time. Unlike router.query route params, which are
+  // undefined before router.isReady, window.location.pathname is available
+  // immediately on the client. This keeps the key stable across query-string
+  // changes (time window, logset — preventing mid-zoom-animation remounts)
+  // while still updating on real path changes (vehicle/deployment navigation).
+  const mapKey =
+    typeof window !== 'undefined'
+      ? `deployment-map-${window.location.pathname}`
+      : `deployment-map-unknown`
+
   const mapRef = useRef<any>(null)
   const {
     updatedWaypoints,
@@ -227,6 +241,10 @@ const DeploymentMap: React.FC<DeploymentMapProps> = ({
     if (vehicleName !== latestVehicle.current) {
       setLatestGPS(undefined)
       setCenter(undefined)
+      // Also flush accumulated path so bounds/centering don't inherit stale
+      // points from the previous vehicle when the first fix for the new vehicle
+      // initializes latestGPS via the !latestGPS branch in handleGPSFix.
+      pathPoints.current = []
       latestVehicle.current = vehicleName
     }
   }, [vehicleName, setLatestGPS])
@@ -269,8 +287,6 @@ const DeploymentMap: React.FC<DeploymentMapProps> = ({
       }, 200)
     }
   }, [showVehicleColors])
-  // Store all vehicle locations to calculate center
-  const vehiclePosition = useRef<Array<[number, number]>>([])
   // Vehicle path points for bounds calculation
   const pathPoints = useRef<Array<[number, number]>>([])
 
@@ -292,22 +308,27 @@ const DeploymentMap: React.FC<DeploymentMapProps> = ({
   // Handler for GPS fix updates
   const handleGPSFix = useCallback(
     (gps: VPosDetail) => {
-      // Reset the array if vehicle name changes
-      if ((latestGPS?.isoTime ?? 0) > gps.isoTime || !latestGPS) {
-        vehiclePosition.current = []
+      if (!latestGPS) {
+        // First fix — initialize
+        setLatestGPS(gps)
+      } else if (gps.unixTime > latestGPS.unixTime) {
+        // Newer fix arrived — update so the center button zooms to current position
+        setLatestGPS(gps)
+      } else if (gps.unixTime < latestGPS.unixTime) {
+        // Incoming fix is older than what we have — vehicle or deployment changed;
+        // reset accumulated path so bounds/centering don't draw on stale points.
+        pathPoints.current = []
         setLatestGPS(gps)
       }
-      // Store position for path bounds calculation
-      if (gps?.latitude && gps?.longitude) {
+      // Always accumulate valid coordinates for bounds/centering regardless of
+      // whether latestGPS was updated above (equal unixTime is only a no-op for
+      // the latestGPS state update, not for pathPoints).
+      if (Number.isFinite(gps?.latitude) && Number.isFinite(gps?.longitude)) {
         pathPoints.current.push([gps.latitude, gps.longitude])
+        if (pathPoints.current.length > 1000) {
+          pathPoints.current = pathPoints.current.slice(-1000)
+        }
       }
-      // Limit stored positions to prevent memory issues
-      if (pathPoints.current.length > 1000) {
-        pathPoints.current = pathPoints.current.slice(-1000)
-      }
-      // Store position for centering
-      const position: [number, number] = [gps.latitude, gps.longitude]
-      vehiclePosition.current.push(position)
     },
     [latestGPS, setLatestGPS]
   )
@@ -527,11 +548,13 @@ const DeploymentMap: React.FC<DeploymentMapProps> = ({
     setViewMode('bounds')
   }, [])
 
-  // Handler for centering the map on the latest GPS fix
+  // Handler for centering the map on the latest GPS fix.
+  // Zoom to maxZoom - 3 (14) so the user sees surrounding context rather than
+  // being pinned to the tile ceiling.
   const handleCoordinateRequest = useCallback(() => {
     if (latestGPS) {
       setCenter([latestGPS.latitude, latestGPS.longitude])
-      setCenterZoom(17)
+      setCenterZoom(CENTER_ZOOM)
       setBounds(undefined)
       setViewMode('center')
     } else {
@@ -539,7 +562,7 @@ const DeploymentMap: React.FC<DeploymentMapProps> = ({
       const lastPoint = pathPoints.current[pathPoints.current.length - 1]
       if (lastPoint) {
         setCenter(lastPoint)
-        setCenterZoom(17)
+        setCenterZoom(CENTER_ZOOM)
         setBounds(undefined)
         setViewMode('center')
       } else {
@@ -641,10 +664,10 @@ const DeploymentMap: React.FC<DeploymentMapProps> = ({
       ) : null}
       <div className="relative h-full min-h-0 w-full">
         <Map
-          key={`deployment-map-${router.asPath}-${vehicleName ?? 'unknown'}`}
+          key={mapKey}
           ref={mapRef}
           className="h-full min-h-0 w-full"
-          maxZoom={17}
+          maxZoom={MAP_MAX_ZOOM}
           onMapReady={(map) => {
             logger.debug('Map is ready!')
             mapRef.current = map
