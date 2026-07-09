@@ -11,7 +11,7 @@ try {
     cwd: __dirname,
     stdio: ['pipe', 'pipe', 'pipe'],
   }).trim()
-  appVersion = raw.replace(/^v/, '')
+  appVersion = raw.replace(/^v/, '').replace(/-production$/, '')
 } catch {
   // git unavailable or no tags yet
 }
