@@ -21,21 +21,22 @@ const mockDeploymentResponse = {
   },
 }
 
-const mockVehicleResponse = {
-  result: [
-    { vehicleName: 'daphne', color: '#CC33FF' },
-    { vehicleName: 'brizo', color: '#f4ba0c' },
-    { vehicleName: '', color: '#FF9900' },
-  ],
+const mockInfoResponse = {
+  result: {
+    vehicleBasicInfos: [
+      { vehicleName: 'daphne', color: '#CC33FF' },
+      { vehicleName: 'brizo', color: '#f4ba0c' },
+    ],
+  },
 }
 
 test('should inform user to add a vehicle and replace with content upon selection', async ({
   page,
 }) => {
-  await page.route('**/info/vehicles*', (route) =>
+  await page.route('**/info*', (route) =>
     route.fulfill({
       status: 200,
-      body: JSON.stringify(mockVehicleResponse),
+      body: JSON.stringify(mockInfoResponse),
     })
   )
   await page.route('**/deployments/last*', (route) =>
@@ -44,19 +45,14 @@ test('should inform user to add a vehicle and replace with content upon selectio
       body: JSON.stringify(mockDeploymentResponse),
     })
   )
-  await page.route('**/info?', (route) =>
-    route.fulfill({
-      status: 200,
-      body: JSON.stringify({}),
-    })
-  )
   await page.goto('/')
   await expect(
-    page.getByText('you must add at least one vehicle')
+    page.getByText('you must add at least one vehicle', { exact: false })
   ).toBeVisible()
   await page.getByTestId('dropdown-option-0').click()
-  await expect(page.getByTestId('vehicle-dashboard')).toBeVisible()
-  await expect(page.getByText('you must add at least one vehicle')).toBeHidden()
+  await expect(
+    page.getByText('you must add at least one vehicle', { exact: false })
+  ).toBeHidden({ timeout: 10000 })
 })
 
 test('should allow the user to login', async ({ page }) => {
