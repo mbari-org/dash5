@@ -143,10 +143,12 @@ const LineChart: React.FC<LineChartProps> = ({
     setChartHovered(true)
     // Use the hovered point's original timestamp (UTC ms) rather than xvals[0],
     // which Plotly shifts by the local timezone offset when ISO strings include it.
-    // pointNumber is the index within the trace data array (correct for non-transform traces).
-    const pointNumber = e.points?.[0]?.pointNumber
+    // Prefer pointNumber (canonical index within the trace) but fall back to
+    // pointIndex (exposed by some Plotly versions / transform traces) so we
+    // always look up the right data point rather than relying on xvals[0].
+    const pointIdx = e.points?.[0]?.pointNumber ?? e.points?.[0]?.pointIndex
     const originalTimestamp =
-      pointNumber != null ? data[pointNumber]?.timestamp : undefined
+      pointIdx != null ? data[pointIdx]?.timestamp : undefined
     handleHoverFromParent?.(originalTimestamp ?? (e.xvals[0] as number))
   }
 
