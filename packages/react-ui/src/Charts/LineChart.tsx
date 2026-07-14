@@ -144,20 +144,22 @@ const LineChart: React.FC<LineChartProps> = ({
   }
 
   const handleHover: PlotParams['onHover'] = (e) => {
-    setChartHovered(true)
-    // Use the hovered point's original timestamp (UTC ms) rather than xvals[0],
-    // which Plotly shifts by the local timezone offset when ISO strings include it.
-    // Prefer pointNumber (canonical index within the trace) but fall back to
-    // pointIndex (exposed by some Plotly versions / transform traces) so we
-    // always look up the right data point rather than relying on xvals[0].
+    // Only flip chartHovered when indicatorTime is in use; otherwise the state
+    // change is a no-op but still triggers a React re-render on every Plotly
+    // hover event, which is wasteful for charts that don't use scrubber syncing.
+    if (indicatorTime !== undefined) setChartHovered(true)
+    // x-values in this trace are ISO strings so e.xvals[0] is NOT a ms epoch.
+    // Only emit from the original data array to guarantee a valid epoch value.
+    // Prefer pointNumber (canonical index) and fall back to pointIndex for
+    // Plotly versions / transform traces that expose it instead.
     const pointIdx = e.points?.[0]?.pointNumber ?? e.points?.[0]?.pointIndex
     const originalTimestamp =
       pointIdx != null ? data[pointIdx]?.timestamp : undefined
-    handleHoverFromParent?.(originalTimestamp ?? (e.xvals[0] as number))
+    if (originalTimestamp != null) handleHoverFromParent?.(originalTimestamp)
   }
 
   const resetHover = () => {
-    setChartHovered(false)
+    if (indicatorTime !== undefined) setChartHovered(false)
     handleHoverFromParent?.(null)
   }
 
