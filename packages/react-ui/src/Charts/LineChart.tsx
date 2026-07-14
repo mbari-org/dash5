@@ -1,4 +1,4 @@
-import React, { useRef } from 'react'
+import React, { useRef, useState } from 'react'
 import clsx from 'clsx'
 import Plot, { PlotParams } from 'react-plotly.js'
 import { DateTime } from 'luxon'
@@ -29,6 +29,11 @@ export interface LineChartProps {
    * data/layout update).
    */
   uirevision?: string
+  /**
+   * When provided, draws a vertical dashed cursor at this timestamp (ms since
+   * epoch) so an external scrubber or map indicator can be reflected on the chart.
+   */
+  indicatorTime?: number | null
 }
 
 const LineChart: React.FC<LineChartProps> = ({
@@ -43,9 +48,13 @@ const LineChart: React.FC<LineChartProps> = ({
   xAxisRange,
   onHover: handleHoverFromParent,
   uirevision,
+  indicatorTime,
 }) => {
   const container = useRef(null)
   const { size } = useResizeObserver({ element: container })
+  // Track whether the user is actively hovering the chart so we suppress the
+  // external indicator shape while the spike line is already tracking the cursor.
+  const [chartHovered, setChartHovered] = useState(false)
 
   // React-Plotly.js doesn't support the 'modebar' property in it's typedefs, so we need to
   // pass this in anonymously as any.
@@ -56,10 +65,17 @@ const LineChart: React.FC<LineChartProps> = ({
   }
 
   const handleHover: PlotParams['onHover'] = (e) => {
-    handleHoverFromParent?.(e.xvals[0] as number)
+    setChartHovered(true)
+    // Use the hovered point's original timestamp (UTC ms) rather than xvals[0],
+    // which Plotly shifts by the local timezone offset when ISO strings include it.
+    const pointIndex = e.points?.[0]?.pointIndex
+    const originalTimestamp =
+      pointIndex != null ? data[pointIndex]?.timestamp : undefined
+    handleHoverFromParent?.(originalTimestamp ?? (e.xvals[0] as number))
   }
 
   const resetHover = () => {
+    setChartHovered(false)
     handleHoverFromParent?.(null)
   }
 
@@ -82,6 +98,15 @@ const LineChart: React.FC<LineChartProps> = ({
             mode: 'lines',
             name,
             line: { color },
+            // Pre-compute UTC time per point so the tooltip can display both
+            // local and UTC regardless of DST transitions.
+            customdata: data.map(({ timestamp }) =>
+              DateTime.fromMillis(timestamp ?? 0)
+                .toUTC()
+                .toFormat('HH:mm')
+            ),
+            hovertemplate:
+              '<b>%{y:.1f} m</b>  %{x|%H:%M} local (%{customdata} UTC)<extra></extra>',
           },
         ]}
         layout={{
@@ -90,6 +115,10 @@ const LineChart: React.FC<LineChartProps> = ({
           // When provided and stable, Plotly preserves zoom/pan; when it
           // changes (e.g. time-window switch) Plotly resets the axes.
           ...(uirevision !== undefined && { uirevision }),
+          hovermode: 'x',
+          // Always show hover and spike — no distance threshold.
+          hoverdistance: -1,
+          spikedistance: -1,
           title: {
             text: title ? `<b>${title}</b>` : undefined,
             font: {
@@ -101,6 +130,14 @@ const LineChart: React.FC<LineChartProps> = ({
           },
           xaxis: {
             tickangle: 0,
+            // Spike line tracks the cursor in real-time directly in Plotly
+            // (no React render cycle lag). Used for the chart-hover direction.
+            showspikes: true,
+            spikemode: 'across',
+            spikecolor: '#EF4444',
+            spikethickness: 2,
+            spikedash: 'dot',
+            spikesnap: 'cursor',
             ...(xAxisRange && {
               range: [
                 DateTime.fromMillis(xAxisRange[0]).toISO(),
@@ -113,6 +150,39 @@ const LineChart: React.FC<LineChartProps> = ({
             title: yAxisLabel,
             autorange: inverted ? 'reversed' : undefined,
           },
+          // Only show the external indicator shape when the user is NOT
+          // hovering the chart — the spike line handles in-chart hover precisely.
+          shapes:
+            indicatorTime && !chartHovered
+              ? [
+                  {
+                    type: 'line' as const,
+                    xref: 'x' as const,
+                    yref: 'paper' as const,
+                    x0: DateTime.fromMillis(indicatorTime).toISO(),
+                    x1: DateTime.fromMillis(indicatorTime).toISO(),
+                    y0: 0,
+                    y1: 1,
+                    line: { color: '#EF4444', dash: 'dot', width: 2 },
+                  },
+                ]
+              : [],
+          annotations:
+            indicatorTime && !chartHovered
+              ? [
+                  {
+                    xref: 'x' as const,
+                    yref: 'paper' as const,
+                    x: DateTime.fromMillis(indicatorTime).toISO(),
+                    y: 1,
+                    text: DateTime.fromMillis(indicatorTime).toFormat('HH:mm'),
+                    showarrow: false,
+                    font: { color: '#EF4444', size: 10 },
+                    xanchor: 'left' as const,
+                    yanchor: 'bottom' as const,
+                  },
+                ]
+              : [],
           width: size.width || undefined,
           height: size.height || undefined,
           margin: {
