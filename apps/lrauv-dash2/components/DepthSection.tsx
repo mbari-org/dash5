@@ -155,8 +155,10 @@ const DepthSection: React.FC<{
       staleTime: 5 * 60 * 1000,
       // Poll for active deployments so new depth data from vehicle surfacing
       // events is reflected without requiring a page reload or window refocus.
-      // clampedTo is undefined when the deployment has no end time (active).
-      refetchInterval: clampedTo == null ? 5 * 60 * 1000 : false,
+      // Key off the raw `to` prop (undefined for active deployments) rather than
+      // clampedTo, which can be undefined for ended deployments that ended within
+      // the current minute (bucketedNow floors to the minute boundary).
+      refetchInterval: to == null ? 5 * 60 * 1000 : false,
     }
   )
 

@@ -61,6 +61,10 @@ const LineChart: React.FC<LineChartProps> = ({
   const [chartHovered, setChartHovered] = useState(false)
   // Ref to the underlying Plotly graph div, captured via onInitialized.
   const graphDivRef = useRef<any>(null)
+  // Cache the last point index shown via Fx.hover so we skip redundant calls
+  // when indicatorTime moves but the nearest point hasn't changed (common while
+  // scrubbing slowly across a sparse section of the chart).
+  const lastHoveredPointRef = useRef<number | null>(null)
 
   // Memoize the O(n) trace arrays so they only recompute when data changes,
   // not on every indicatorTime update (which can fire at mouse-move frequency).
@@ -96,6 +100,7 @@ const LineChart: React.FC<LineChartProps> = ({
     // null is the explicit "clear tooltip" signal and falls through to unhover.
     if (indicatorTime === undefined) return
     if (indicatorTime === null || data.length === 0) {
+      lastHoveredPointRef.current = null
       // Lazy-load Plotly inside the effect so its browser-global side-effects
       // don't run at module scope (SSR / Jest safe). The module is already in
       // the bundle via react-plotly.js, so this import resolves synchronously
@@ -125,6 +130,11 @@ const LineChart: React.FC<LineChartProps> = ({
     ) {
       lo -= 1
     }
+    // Skip the Plotly hover call when the nearest point index hasn't changed —
+    // indicatorTime is driven by mouse-move events so this fires frequently,
+    // and Plotly's layout + tooltip work is not free.
+    if (lo === lastHoveredPointRef.current) return
+    lastHoveredPointRef.current = lo
     void import('plotly.js').then(({ default: PlotlyLib }) => {
       const PlotlyFx = (PlotlyLib as unknown as Record<string, any>).Fx
       try {
