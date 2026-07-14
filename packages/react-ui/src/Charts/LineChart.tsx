@@ -4,6 +4,19 @@ import Plot, { PlotParams } from 'react-plotly.js'
 import { DateTime } from 'luxon'
 import { useResizeObserver } from '@mbari/utils'
 
+// Module-level cache for the Plotly Fx API so repeated dynamic imports during
+// scrubbing don't create new promise chains on every indicatorTime update.
+// Populated lazily on first use (browser only — never runs during SSR/Jest
+// module evaluation since it lives inside an effect callback).
+let cachedPlotlyFx: Record<string, any> | null = null
+const getPlotlyFx = (): Promise<Record<string, any>> => {
+  if (cachedPlotlyFx) return Promise.resolve(cachedPlotlyFx)
+  return import('plotly.js').then(({ default: PlotlyLib }) => {
+    cachedPlotlyFx = (PlotlyLib as unknown as Record<string, any>).Fx
+    return cachedPlotlyFx!
+  })
+}
+
 export interface TimeSeriesDataPoint {
   value: number
   timestamp: number
@@ -101,12 +114,7 @@ const LineChart: React.FC<LineChartProps> = ({
     if (indicatorTime === undefined) return
     if (indicatorTime === null || data.length === 0) {
       lastHoveredPointRef.current = null
-      // Lazy-load Plotly inside the effect so its browser-global side-effects
-      // don't run at module scope (SSR / Jest safe). The module is already in
-      // the bundle via react-plotly.js, so this import resolves synchronously
-      // from the module cache in practice.
-      void import('plotly.js').then(({ default: PlotlyLib }) => {
-        const PlotlyFx = (PlotlyLib as unknown as Record<string, any>).Fx
+      void getPlotlyFx().then((PlotlyFx) => {
         try {
           PlotlyFx.unhover(gd)
         } catch {
@@ -135,8 +143,7 @@ const LineChart: React.FC<LineChartProps> = ({
     // and Plotly's layout + tooltip work is not free.
     if (lo === lastHoveredPointRef.current) return
     lastHoveredPointRef.current = lo
-    void import('plotly.js').then(({ default: PlotlyLib }) => {
-      const PlotlyFx = (PlotlyLib as unknown as Record<string, any>).Fx
+    void getPlotlyFx().then((PlotlyFx) => {
       try {
         PlotlyFx.hover(gd, [{ curveNumber: 0, pointNumber: lo }])
       } catch {
