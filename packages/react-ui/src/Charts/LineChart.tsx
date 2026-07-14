@@ -53,6 +53,10 @@ const LineChart: React.FC<LineChartProps> = ({
 }) => {
   const container = useRef(null)
   const { size } = useResizeObserver({ element: container })
+  // Parse the unit from yAxisLabel (e.g. "Depth (m)" → "m") so the tooltip
+  // is correct for any variable, not just depth.
+  const unitMatch = yAxisLabel?.match(/\(([^)]+)\)$/)
+  const unit = unitMatch ? unitMatch[1] : ''
   // Track whether the user is actively hovering the chart so we suppress the
   // external indicator shape while the spike line is already tracking the cursor.
   const [chartHovered, setChartHovered] = useState(false)
@@ -107,9 +111,10 @@ const LineChart: React.FC<LineChartProps> = ({
     setChartHovered(true)
     // Use the hovered point's original timestamp (UTC ms) rather than xvals[0],
     // which Plotly shifts by the local timezone offset when ISO strings include it.
-    const pointIndex = e.points?.[0]?.pointIndex
+    // pointNumber is the index within the trace data array (correct for non-transform traces).
+    const pointNumber = e.points?.[0]?.pointNumber
     const originalTimestamp =
-      pointIndex != null ? data[pointIndex]?.timestamp : undefined
+      pointNumber != null ? data[pointNumber]?.timestamp : undefined
     handleHoverFromParent?.(originalTimestamp ?? (e.xvals[0] as number))
   }
 
@@ -123,7 +128,7 @@ const LineChart: React.FC<LineChartProps> = ({
       className={clsx('', className)}
       style={style}
       ref={container}
-      onMouseOut={resetHover}
+      onMouseLeave={resetHover}
     >
       {/* @ts-ignore */}
       <Plot
@@ -144,8 +149,9 @@ const LineChart: React.FC<LineChartProps> = ({
                 .toUTC()
                 .toFormat('HH:mm')
             ),
-            hovertemplate:
-              '<b>%{y:.1f} m</b>  %{x|%H:%M} local (%{customdata} UTC)<extra></extra>',
+            hovertemplate: `<b>%{y:.1f}${
+              unit ? ` ${unit}` : ''
+            }</b>  %{x|%H:%M} local (%{customdata} UTC)<extra></extra>`,
           },
         ]}
         layout={{
@@ -192,7 +198,7 @@ const LineChart: React.FC<LineChartProps> = ({
           // Only show the external indicator shape when the user is NOT
           // hovering the chart — the spike line handles in-chart hover precisely.
           shapes:
-            indicatorTime && !chartHovered
+            indicatorTime != null && !chartHovered
               ? [
                   {
                     type: 'line' as const,
@@ -207,7 +213,7 @@ const LineChart: React.FC<LineChartProps> = ({
                 ]
               : [],
           annotations:
-            indicatorTime && !chartHovered
+            indicatorTime != null && !chartHovered
               ? [
                   {
                     xref: 'x' as const,
