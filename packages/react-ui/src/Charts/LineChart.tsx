@@ -1,8 +1,26 @@
-import React, { useRef } from 'react'
+import React, { useEffect, useMemo, useRef, useState } from 'react'
 import clsx from 'clsx'
 import Plot, { PlotParams } from 'react-plotly.js'
 import { DateTime } from 'luxon'
 import { useResizeObserver } from '@mbari/utils'
+
+// Module-level cache for the Plotly Fx API so all callers share a single
+// in-flight import promise. Caching the Promise (not just the resolved value)
+// prevents concurrent effect runs from each scheduling their own import chain
+// and replaying stale hover/unhover calls once Plotly finishes loading.
+let plotlyFxPromise: Promise<Record<string, any>> | null = null
+const getPlotlyFx = (): Promise<Record<string, any>> => {
+  if (!plotlyFxPromise) {
+    plotlyFxPromise = import('plotly.js').then(
+      ({ default: PlotlyLib }) =>
+        (PlotlyLib as unknown as Record<string, any>).Fx
+    )
+  }
+  return plotlyFxPromise
+}
+
+const escapeHtml = (s: string): string =>
+  s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
 
 export interface TimeSeriesDataPoint {
   value: number
@@ -29,6 +47,11 @@ export interface LineChartProps {
    * data/layout update).
    */
   uirevision?: string
+  /**
+   * When provided, draws a vertical dashed cursor at this timestamp (ms since
+   * epoch) so an external scrubber or map indicator can be reflected on the chart.
+   */
+  indicatorTime?: number | null
 }
 
 const LineChart: React.FC<LineChartProps> = ({
@@ -43,9 +66,109 @@ const LineChart: React.FC<LineChartProps> = ({
   xAxisRange,
   onHover: handleHoverFromParent,
   uirevision,
+  indicatorTime,
 }) => {
   const container = useRef(null)
   const { size } = useResizeObserver({ element: container })
+  // Parse the unit from yAxisLabel (e.g. "Depth (m)" → "m") so the tooltip
+  // is correct for any variable, not just depth.
+  const unitMatch = yAxisLabel?.match(/\(([^)]+)\)$/)
+  const unit = unitMatch ? unitMatch[1] : ''
+  // Track whether the user is actively hovering the chart so we suppress the
+  // external indicator shape while the spike line is already tracking the cursor.
+  const [chartHovered, setChartHovered] = useState(false)
+  // Ref to the underlying Plotly graph div, captured via onInitialized.
+  const graphDivRef = useRef<any>(null)
+  // Cache the last point index shown via Fx.hover so we skip redundant calls
+  // when indicatorTime moves but the nearest point hasn't changed (common while
+  // scrubbing slowly across a sparse section of the chart).
+  const lastHoveredPointRef = useRef<number | null>(null)
+
+  // Memoize the O(n) trace arrays so they only recompute when data changes,
+  // not on every indicatorTime update (which can fire at mouse-move frequency).
+  const traceX = useMemo(
+    () =>
+      data.map(({ timestamp }) => DateTime.fromMillis(timestamp ?? 0).toISO()),
+    [data]
+  )
+  const traceY = useMemo(() => data.map(({ value }) => value), [data])
+  // Pre-compute UTC time per point for the tooltip. Done here (not inline) so
+  // scrubber-driven indicatorTime changes don't redo O(n) Luxon conversions.
+  const traceCustomData = useMemo(
+    () =>
+      data.map(({ timestamp }) =>
+        DateTime.fromMillis(timestamp ?? 0)
+          .toUTC()
+          .toFormat('HH:mm')
+      ),
+    [data]
+  )
+
+  // Reset the cached hover index whenever data is refreshed (e.g. by the
+  // 5-minute polling interval on active deployments). Without this, the
+  // if (lo === lastHoveredPointRef.current) guard would suppress the Fx.hover
+  // call after a replot even when the point index is numerically unchanged,
+  // leaving the programmatic tooltip stale. Declared before the hover effect
+  // so it clears the ref first; the hover effect then re-applies it.
+  useEffect(() => {
+    lastHoveredPointRef.current = null
+  }, [data])
+
+  // When the scrubber/map drives indicatorTime, programmatically show the
+  // Plotly tooltip at the nearest data point so the user sees the depth value
+  // without having to hover the chart directly.
+  useEffect(() => {
+    const gd = graphDivRef.current
+    if (!gd) return
+    // When the user is hovering the chart, Plotly manages its own tooltip —
+    // do not interfere.
+    if (chartHovered) return
+    // undefined means indicatorTime is not in use for this chart instance —
+    // return without importing Plotly to avoid unnecessary work on every render.
+    // null is the explicit "clear tooltip" signal and falls through to unhover.
+    if (indicatorTime === undefined) return
+    if (indicatorTime === null || data.length === 0) {
+      lastHoveredPointRef.current = null
+      void getPlotlyFx().then((PlotlyFx) => {
+        try {
+          PlotlyFx.unhover(gd)
+        } catch {
+          // ignore
+        }
+      })
+      return
+    }
+    // Binary search for the data point whose timestamp is closest to indicatorTime.
+    let lo = 0
+    let hi = data.length - 1
+    while (lo < hi) {
+      const mid = Math.floor((lo + hi) / 2)
+      if (data[mid].timestamp < indicatorTime) lo = mid + 1
+      else hi = mid
+    }
+    if (
+      lo > 0 &&
+      Math.abs(data[lo - 1].timestamp - indicatorTime) <
+        Math.abs(data[lo].timestamp - indicatorTime)
+    ) {
+      lo -= 1
+    }
+    // Skip the Plotly hover call when the nearest point index hasn't changed —
+    // indicatorTime is driven by mouse-move events so this fires frequently,
+    // and Plotly's layout + tooltip work is not free.
+    if (lo === lastHoveredPointRef.current) return
+    lastHoveredPointRef.current = lo
+    void getPlotlyFx().then((PlotlyFx) => {
+      // Guard against stale callbacks: if indicatorTime moved to a different
+      // point while the promise was in-flight, skip this now-outdated call.
+      if (lo !== lastHoveredPointRef.current) return
+      try {
+        PlotlyFx.hover(gd, [{ curveNumber: 0, pointNumber: lo }])
+      } catch {
+        // Plotly may not be fully initialised yet — silently ignore.
+      }
+    })
+  }, [indicatorTime, chartHovered, data])
 
   // React-Plotly.js doesn't support the 'modebar' property in it's typedefs, so we need to
   // pass this in anonymously as any.
@@ -56,10 +179,22 @@ const LineChart: React.FC<LineChartProps> = ({
   }
 
   const handleHover: PlotParams['onHover'] = (e) => {
-    handleHoverFromParent?.(e.xvals[0] as number)
+    // Only flip chartHovered when indicatorTime is in use; otherwise the state
+    // change is a no-op but still triggers a React re-render on every Plotly
+    // hover event, which is wasteful for charts that don't use scrubber syncing.
+    if (indicatorTime !== undefined) setChartHovered(true)
+    // x-values in this trace are ISO strings so e.xvals[0] is NOT a ms epoch.
+    // Only emit from the original data array to guarantee a valid epoch value.
+    // Prefer pointNumber (canonical index) and fall back to pointIndex for
+    // Plotly versions / transform traces that expose it instead.
+    const pointIdx = e.points?.[0]?.pointNumber ?? e.points?.[0]?.pointIndex
+    const originalTimestamp =
+      pointIdx != null ? data[pointIdx]?.timestamp : undefined
+    if (originalTimestamp != null) handleHoverFromParent?.(originalTimestamp)
   }
 
   const resetHover = () => {
+    if (indicatorTime !== undefined) setChartHovered(false)
     handleHoverFromParent?.(null)
   }
 
@@ -68,20 +203,22 @@ const LineChart: React.FC<LineChartProps> = ({
       className={clsx('', className)}
       style={style}
       ref={container}
-      onMouseOut={resetHover}
+      onMouseLeave={resetHover}
     >
       {/* @ts-ignore */}
       <Plot
         data={[
           {
-            x: data.map(({ timestamp }) =>
-              DateTime.fromMillis(timestamp ?? 0).toISO()
-            ),
-            y: data.map(({ value }) => value),
+            x: traceX,
+            y: traceY,
             type: 'scatter',
             mode: 'lines',
-            name,
+            name: escapeHtml(name),
             line: { color },
+            customdata: traceCustomData,
+            hovertemplate: `<b>%{y:.1f}${
+              unit ? ` ${escapeHtml(unit)}` : ''
+            }</b>  %{x|%H:%M} local (%{customdata} UTC)<extra>%{fullData.name}</extra>`,
           },
         ]}
         layout={{
@@ -90,8 +227,12 @@ const LineChart: React.FC<LineChartProps> = ({
           // When provided and stable, Plotly preserves zoom/pan; when it
           // changes (e.g. time-window switch) Plotly resets the axes.
           ...(uirevision !== undefined && { uirevision }),
+          hovermode: 'x',
+          // Always show hover and spike — no distance threshold.
+          hoverdistance: -1,
+          spikedistance: -1,
           title: {
-            text: title ? `<b>${title}</b>` : undefined,
+            text: title ? `<b>${escapeHtml(title)}</b>` : undefined,
             font: {
               family: 'Inter, sans-serif',
               size: 14,
@@ -101,6 +242,14 @@ const LineChart: React.FC<LineChartProps> = ({
           },
           xaxis: {
             tickangle: 0,
+            // Spike line tracks the cursor in real-time directly in Plotly
+            // (no React render cycle lag). Used for the chart-hover direction.
+            showspikes: true,
+            spikemode: 'across',
+            spikecolor: '#EF4444',
+            spikethickness: 2,
+            spikedash: 'dot',
+            spikesnap: 'cursor',
             ...(xAxisRange && {
               range: [
                 DateTime.fromMillis(xAxisRange[0]).toISO(),
@@ -113,6 +262,39 @@ const LineChart: React.FC<LineChartProps> = ({
             title: yAxisLabel,
             autorange: inverted ? 'reversed' : undefined,
           },
+          // Only show the external indicator shape when the user is NOT
+          // hovering the chart — the spike line handles in-chart hover precisely.
+          shapes:
+            indicatorTime != null && !chartHovered
+              ? [
+                  {
+                    type: 'line' as const,
+                    xref: 'x' as const,
+                    yref: 'paper' as const,
+                    x0: DateTime.fromMillis(indicatorTime).toISO(),
+                    x1: DateTime.fromMillis(indicatorTime).toISO(),
+                    y0: 0,
+                    y1: 1,
+                    line: { color: '#EF4444', dash: 'dot', width: 2 },
+                  },
+                ]
+              : [],
+          annotations:
+            indicatorTime != null && !chartHovered
+              ? [
+                  {
+                    xref: 'x' as const,
+                    yref: 'paper' as const,
+                    x: DateTime.fromMillis(indicatorTime).toISO(),
+                    y: 1,
+                    text: DateTime.fromMillis(indicatorTime).toFormat('HH:mm'),
+                    showarrow: false,
+                    font: { color: '#EF4444', size: 10 },
+                    xanchor: 'left' as const,
+                    yanchor: 'bottom' as const,
+                  },
+                ]
+              : [],
           width: size.width || undefined,
           height: size.height || undefined,
           margin: {
@@ -126,6 +308,12 @@ const LineChart: React.FC<LineChartProps> = ({
         }}
         config={{
           displaylogo: false,
+        }}
+        onInitialized={(_, gd) => {
+          graphDivRef.current = gd
+        }}
+        onUpdate={(_, gd) => {
+          graphDivRef.current = gd
         }}
         onHover={handleHover}
       />

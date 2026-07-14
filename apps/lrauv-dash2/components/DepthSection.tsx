@@ -29,7 +29,8 @@ const DepthSection: React.FC<{
   from: number
   to?: number
   onHover?: (millis?: number | null) => void
-}> = ({ vehicleName, from, to, onHover }) => {
+  indicatorTime?: number | null
+}> = ({ vehicleName, from, to, onHover, indicatorTime }) => {
   const [timeWindow, setTimeWindow] = usePersistentState<TimeWindow>(
     'depthSection.timeWindow',
     'deployment'
@@ -152,6 +153,12 @@ const DepthSection: React.FC<{
         !!vehicleName &&
         extendedFrom > 1_000_000_000_000,
       staleTime: 5 * 60 * 1000,
+      // Poll for active deployments so new depth data from vehicle surfacing
+      // events is reflected without requiring a page reload or window refocus.
+      // Key off the raw `to` prop (undefined for active deployments) rather than
+      // clampedTo, which can be undefined for ended deployments that ended within
+      // the current minute (bucketedNow floors to the minute boundary).
+      refetchInterval: to == null ? 5 * 60 * 1000 : false,
     }
   )
 
@@ -238,6 +245,7 @@ const DepthSection: React.FC<{
             data={chartPoints}
             yAxisLabel={`${humanize(depthData.name)} (${depthData.units})`}
             onHover={onHover}
+            indicatorTime={indicatorTime}
             inverted
             className="h-full w-full"
             uirevision={`${vehicleName}-${from}-${depthData.name}-${timeWindow}-${selectedLogsetId}`}
