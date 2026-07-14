@@ -4,18 +4,23 @@ import Plot, { PlotParams } from 'react-plotly.js'
 import { DateTime } from 'luxon'
 import { useResizeObserver } from '@mbari/utils'
 
-// Module-level cache for the Plotly Fx API so repeated dynamic imports during
-// scrubbing don't create new promise chains on every indicatorTime update.
-// Populated lazily on first use (browser only — never runs during SSR/Jest
-// module evaluation since it lives inside an effect callback).
-let cachedPlotlyFx: Record<string, any> | null = null
+// Module-level cache for the Plotly Fx API so all callers share a single
+// in-flight import promise. Caching the Promise (not just the resolved value)
+// prevents concurrent effect runs from each scheduling their own import chain
+// and replaying stale hover/unhover calls once Plotly finishes loading.
+let plotlyFxPromise: Promise<Record<string, any>> | null = null
 const getPlotlyFx = (): Promise<Record<string, any>> => {
-  if (cachedPlotlyFx) return Promise.resolve(cachedPlotlyFx)
-  return import('plotly.js').then(({ default: PlotlyLib }) => {
-    cachedPlotlyFx = (PlotlyLib as unknown as Record<string, any>).Fx
-    return cachedPlotlyFx!
-  })
+  if (!plotlyFxPromise) {
+    plotlyFxPromise = import('plotly.js').then(
+      ({ default: PlotlyLib }) =>
+        (PlotlyLib as unknown as Record<string, any>).Fx
+    )
+  }
+  return plotlyFxPromise
 }
+
+const escapeHtml = (s: string): string =>
+  s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
 
 export interface TimeSeriesDataPoint {
   value: number
@@ -144,6 +149,9 @@ const LineChart: React.FC<LineChartProps> = ({
     if (lo === lastHoveredPointRef.current) return
     lastHoveredPointRef.current = lo
     void getPlotlyFx().then((PlotlyFx) => {
+      // Guard against stale callbacks: if indicatorTime moved to a different
+      // point while the promise was in-flight, skip this now-outdated call.
+      if (lo !== lastHoveredPointRef.current) return
       try {
         PlotlyFx.hover(gd, [{ curveNumber: 0, pointNumber: lo }])
       } catch {
@@ -199,7 +207,7 @@ const LineChart: React.FC<LineChartProps> = ({
             line: { color },
             customdata: traceCustomData,
             hovertemplate: `<b>%{y:.1f}${
-              unit ? ` ${unit}` : ''
+              unit ? ` ${escapeHtml(unit)}` : ''
             }</b>  %{x|%H:%M} local (%{customdata} UTC)<extra>%{fullData.name}</extra>`,
           },
         ]}

@@ -108,6 +108,14 @@ test('hovertemplate includes the unit extracted from yAxisLabel', () => {
   ).toContain(' m')
 })
 
+test('hovertemplate HTML-escapes the unit to prevent injection from API metadata', () => {
+  render(<LineChart {...props} yAxisLabel="Depth (<b>m</b>)" />)
+  const tmpl =
+    screen.getByTestId('plot').getAttribute('data-hovertemplate') ?? ''
+  expect(tmpl).toContain('&lt;b&gt;m&lt;/b&gt;')
+  expect(tmpl).not.toContain('<b>m</b>')
+})
+
 test('hovertemplate has no unit when yAxisLabel has no parenthetical', () => {
   render(<LineChart {...props} yAxisLabel="Depth" />)
   // The value block should not contain " m" or similar unit text.
@@ -216,6 +224,30 @@ test('calls Fx.hover with the nearest point index when indicatorTime is set', as
     expect(hover).toHaveBeenCalledWith(expect.anything(), [
       { curveNumber: 0, pointNumber: targetIdx },
     ])
+  })
+})
+
+test('only the final Fx.hover call is executed when indicatorTime changes before the promise resolves', async () => {
+  const { hover } = await getPlotlyFxMocks()
+  const data = makeData(10)
+
+  const { rerender } = render(
+    <LineChart data={data} name="Depth" indicatorTime={data[3].timestamp} />
+  )
+  // Immediately move to a later point before any microtasks flush.
+  rerender(
+    <LineChart data={data} name="Depth" indicatorTime={data[7].timestamp} />
+  )
+
+  await waitFor(() => {
+    expect(hover).toHaveBeenCalledWith(expect.anything(), [
+      { curveNumber: 0, pointNumber: 7 },
+    ])
+  })
+  // The stale callback for index 3 must not fire after index 7 was committed.
+  const calls = hover.mock.calls
+  calls.forEach((call: any[]) => {
+    expect(call[1]).not.toEqual([{ curveNumber: 0, pointNumber: 3 }])
   })
 })
 
