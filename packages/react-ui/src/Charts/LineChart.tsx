@@ -203,7 +203,7 @@ const LineChart: React.FC<LineChartProps> = ({
             y: traceY,
             type: 'scatter',
             mode: 'lines',
-            name,
+            name: escapeHtml(name),
             line: { color },
             customdata: traceCustomData,
             hovertemplate: `<b>%{y:.1f}${
@@ -222,7 +222,7 @@ const LineChart: React.FC<LineChartProps> = ({
           hoverdistance: -1,
           spikedistance: -1,
           title: {
-            text: title ? `<b>${title}</b>` : undefined,
+            text: title ? `<b>${escapeHtml(title)}</b>` : undefined,
             font: {
               family: 'Inter, sans-serif',
               size: 14,

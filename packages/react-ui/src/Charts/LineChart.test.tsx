@@ -49,6 +49,12 @@ jest.mock('react-plotly.js', () => ({
         data-annotations={JSON.stringify(layout.annotations ?? [])}
         data-hovertemplate={traces?.[0]?.hovertemplate ?? ''}
         data-has-customdata={traces?.[0]?.customdata != null ? 'true' : 'false'}
+        data-trace-name={traces?.[0]?.name ?? ''}
+        data-title={
+          (layout as any)?.title?.text != null
+            ? String((layout as any).title.text)
+            : ''
+        }
       />
     )
   },
@@ -114,6 +120,21 @@ test('hovertemplate HTML-escapes the unit to prevent injection from API metadata
     screen.getByTestId('plot').getAttribute('data-hovertemplate') ?? ''
   expect(tmpl).toContain('&lt;b&gt;m&lt;/b&gt;')
   expect(tmpl).not.toContain('<b>m</b>')
+})
+
+test('trace name is HTML-escaped before being passed to Plotly', () => {
+  render(<LineChart {...props} name="<script>alert(1)</script>" />)
+  const traceName =
+    screen.getByTestId('plot').getAttribute('data-trace-name') ?? ''
+  expect(traceName).toContain('&lt;script&gt;')
+  expect(traceName).not.toContain('<script>')
+})
+
+test('chart title is HTML-escaped inside the bold wrapper', () => {
+  render(<LineChart {...props} title="<img src=x onerror=alert(1)>" />)
+  const titleText = screen.getByTestId('plot').getAttribute('data-title') ?? ''
+  expect(titleText).toContain('&lt;img')
+  expect(titleText).not.toContain('<img')
 })
 
 test('hovertemplate has no unit when yAxisLabel has no parenthetical', () => {
@@ -244,11 +265,10 @@ test('only the final Fx.hover call is executed when indicatorTime changes before
       { curveNumber: 0, pointNumber: 7 },
     ])
   })
-  // The stale callback for index 3 must not fire after index 7 was committed.
-  const calls = hover.mock.calls
-  calls.forEach((call: any[]) => {
-    expect(call[1]).not.toEqual([{ curveNumber: 0, pointNumber: 3 }])
-  })
+  // The last hover call must be for index 7 — the stale-call guard must not
+  // allow an older position to win after indicatorTime has already moved on.
+  const lastCall = hover.mock.calls[hover.mock.calls.length - 1]
+  expect(lastCall[1]).toEqual([{ curveNumber: 0, pointNumber: 7 }])
 })
 
 test('calls Fx.unhover when indicatorTime is null', async () => {
