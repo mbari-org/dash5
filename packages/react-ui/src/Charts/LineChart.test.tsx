@@ -124,6 +124,13 @@ test('hovertemplate shows local and UTC time placeholders', () => {
   expect(tmpl).toContain('UTC')
 })
 
+test('hovertemplate includes series name in extra tag so callers without yAxisLabel retain trace context', () => {
+  render(<LineChart {...props} />)
+  const tmpl =
+    screen.getByTestId('plot').getAttribute('data-hovertemplate') ?? ''
+  expect(tmpl).toContain('<extra>%{fullData.name}</extra>')
+})
+
 test('customdata is pre-computed for every data point', () => {
   render(<LineChart {...props} />)
   expect(screen.getByTestId('plot')).toHaveAttribute(

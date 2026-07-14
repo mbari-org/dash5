@@ -200,7 +200,7 @@ const LineChart: React.FC<LineChartProps> = ({
             customdata: traceCustomData,
             hovertemplate: `<b>%{y:.1f}${
               unit ? ` ${unit}` : ''
-            }</b>  %{x|%H:%M} local (%{customdata} UTC)<extra></extra>`,
+            }</b>  %{x|%H:%M} local (%{customdata} UTC)<extra>%{fullData.name}</extra>`,
           },
         ]}
         layout={{
@@ -298,7 +298,6 @@ const LineChart: React.FC<LineChartProps> = ({
           graphDivRef.current = gd
         }}
         onHover={handleHover}
-        onUnhover={resetHover}
       />
     </div>
   )
