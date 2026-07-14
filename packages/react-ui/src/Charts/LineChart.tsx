@@ -1,7 +1,6 @@
-import React, { useEffect, useRef, useState } from 'react'
+import React, { useEffect, useMemo, useRef, useState } from 'react'
 import clsx from 'clsx'
 import Plot, { PlotParams } from 'react-plotly.js'
-import Plotly from 'plotly.js'
 import { DateTime } from 'luxon'
 import { useResizeObserver } from '@mbari/utils'
 
@@ -63,6 +62,26 @@ const LineChart: React.FC<LineChartProps> = ({
   // Ref to the underlying Plotly graph div, captured via onInitialized.
   const graphDivRef = useRef<any>(null)
 
+  // Memoize the O(n) trace arrays so they only recompute when data changes,
+  // not on every indicatorTime update (which can fire at mouse-move frequency).
+  const traceX = useMemo(
+    () =>
+      data.map(({ timestamp }) => DateTime.fromMillis(timestamp ?? 0).toISO()),
+    [data]
+  )
+  const traceY = useMemo(() => data.map(({ value }) => value), [data])
+  // Pre-compute UTC time per point for the tooltip. Done here (not inline) so
+  // scrubber-driven indicatorTime changes don't redo O(n) Luxon conversions.
+  const traceCustomData = useMemo(
+    () =>
+      data.map(({ timestamp }) =>
+        DateTime.fromMillis(timestamp ?? 0)
+          .toUTC()
+          .toFormat('HH:mm')
+      ),
+    [data]
+  )
+
   // When the scrubber/map drives indicatorTime, programmatically show the
   // Plotly tooltip at the nearest data point so the user sees the depth value
   // without having to hover the chart directly.
@@ -72,9 +91,19 @@ const LineChart: React.FC<LineChartProps> = ({
     // When the user is hovering the chart, Plotly manages its own tooltip —
     // do not interfere.
     if (chartHovered) return
-    const PlotlyFx = (Plotly as unknown as Record<string, any>).Fx
-    if (!indicatorTime || data.length === 0) {
-      PlotlyFx.unhover(gd)
+    if (indicatorTime == null || data.length === 0) {
+      // Lazy-load Plotly inside the effect so its browser-global side-effects
+      // don't run at module scope (SSR / Jest safe). The module is already in
+      // the bundle via react-plotly.js, so this import resolves synchronously
+      // from the module cache in practice.
+      void import('plotly.js').then(({ default: PlotlyLib }) => {
+        const PlotlyFx = (PlotlyLib as unknown as Record<string, any>).Fx
+        try {
+          PlotlyFx.unhover(gd)
+        } catch {
+          // ignore
+        }
+      })
       return
     }
     // Binary search for the data point whose timestamp is closest to indicatorTime.
@@ -92,11 +121,14 @@ const LineChart: React.FC<LineChartProps> = ({
     ) {
       lo -= 1
     }
-    try {
-      PlotlyFx.hover(gd, [{ curveNumber: 0, pointNumber: lo }])
-    } catch {
-      // Plotly may not be fully initialised yet — silently ignore.
-    }
+    void import('plotly.js').then(({ default: PlotlyLib }) => {
+      const PlotlyFx = (PlotlyLib as unknown as Record<string, any>).Fx
+      try {
+        PlotlyFx.hover(gd, [{ curveNumber: 0, pointNumber: lo }])
+      } catch {
+        // Plotly may not be fully initialised yet — silently ignore.
+      }
+    })
   }, [indicatorTime, chartHovered, data])
 
   // React-Plotly.js doesn't support the 'modebar' property in it's typedefs, so we need to
@@ -134,21 +166,13 @@ const LineChart: React.FC<LineChartProps> = ({
       <Plot
         data={[
           {
-            x: data.map(({ timestamp }) =>
-              DateTime.fromMillis(timestamp ?? 0).toISO()
-            ),
-            y: data.map(({ value }) => value),
+            x: traceX,
+            y: traceY,
             type: 'scatter',
             mode: 'lines',
             name,
             line: { color },
-            // Pre-compute UTC time per point so the tooltip can display both
-            // local and UTC regardless of DST transitions.
-            customdata: data.map(({ timestamp }) =>
-              DateTime.fromMillis(timestamp ?? 0)
-                .toUTC()
-                .toFormat('HH:mm')
-            ),
+            customdata: traceCustomData,
             hovertemplate: `<b>%{y:.1f}${
               unit ? ` ${unit}` : ''
             }</b>  %{x|%H:%M} local (%{customdata} UTC)<extra></extra>`,
