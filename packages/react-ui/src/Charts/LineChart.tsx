@@ -1,6 +1,7 @@
-import React, { useRef, useState } from 'react'
+import React, { useEffect, useRef, useState } from 'react'
 import clsx from 'clsx'
 import Plot, { PlotParams } from 'react-plotly.js'
+import Plotly from 'plotly.js'
 import { DateTime } from 'luxon'
 import { useResizeObserver } from '@mbari/utils'
 
@@ -55,6 +56,44 @@ const LineChart: React.FC<LineChartProps> = ({
   // Track whether the user is actively hovering the chart so we suppress the
   // external indicator shape while the spike line is already tracking the cursor.
   const [chartHovered, setChartHovered] = useState(false)
+  // Ref to the underlying Plotly graph div, captured via onInitialized.
+  const graphDivRef = useRef<any>(null)
+
+  // When the scrubber/map drives indicatorTime, programmatically show the
+  // Plotly tooltip at the nearest data point so the user sees the depth value
+  // without having to hover the chart directly.
+  useEffect(() => {
+    const gd = graphDivRef.current
+    if (!gd) return
+    // When the user is hovering the chart, Plotly manages its own tooltip —
+    // do not interfere.
+    if (chartHovered) return
+    const PlotlyFx = (Plotly as unknown as Record<string, any>).Fx
+    if (!indicatorTime || data.length === 0) {
+      PlotlyFx.unhover(gd)
+      return
+    }
+    // Binary search for the data point whose timestamp is closest to indicatorTime.
+    let lo = 0
+    let hi = data.length - 1
+    while (lo < hi) {
+      const mid = Math.floor((lo + hi) / 2)
+      if (data[mid].timestamp < indicatorTime) lo = mid + 1
+      else hi = mid
+    }
+    if (
+      lo > 0 &&
+      Math.abs(data[lo - 1].timestamp - indicatorTime) <
+        Math.abs(data[lo].timestamp - indicatorTime)
+    ) {
+      lo -= 1
+    }
+    try {
+      PlotlyFx.hover(gd, [{ curveNumber: 0, pointNumber: lo }])
+    } catch {
+      // Plotly may not be fully initialised yet — silently ignore.
+    }
+  }, [indicatorTime, chartHovered, data])
 
   // React-Plotly.js doesn't support the 'modebar' property in it's typedefs, so we need to
   // pass this in anonymously as any.
@@ -197,7 +236,14 @@ const LineChart: React.FC<LineChartProps> = ({
         config={{
           displaylogo: false,
         }}
+        onInitialized={(_, gd) => {
+          graphDivRef.current = gd
+        }}
+        onUpdate={(_, gd) => {
+          graphDivRef.current = gd
+        }}
         onHover={handleHover}
+        onUnhover={resetHover}
       />
     </div>
   )
