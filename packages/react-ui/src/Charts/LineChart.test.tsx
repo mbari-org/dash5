@@ -271,6 +271,41 @@ test('only the final Fx.hover call is executed when indicatorTime changes before
   expect(lastCall[1]).toEqual([{ curveNumber: 0, pointNumber: 7 }])
 })
 
+test('re-applies Fx.hover after data refresh even when the nearest point index is unchanged', async () => {
+  const { hover } = await getPlotlyFxMocks()
+  const data = makeData(10)
+  const targetIdx = 5
+  const indicatorTime = data[targetIdx].timestamp
+
+  const { rerender } = render(
+    <LineChart data={data} name="Depth" indicatorTime={indicatorTime} />
+  )
+
+  await waitFor(() => {
+    expect(hover).toHaveBeenCalledWith(expect.anything(), [
+      { curveNumber: 0, pointNumber: targetIdx },
+    ])
+  })
+
+  const callsBefore = hover.mock.calls.length
+
+  // Simulate a polling refresh — same shape of data, same indicatorTime.
+  // The ref reset effect must clear lastHoveredPointRef so the hover effect
+  // fires again even though the point index is numerically unchanged.
+  const refreshedData = makeData(10)
+  rerender(
+    <LineChart
+      data={refreshedData}
+      name="Depth"
+      indicatorTime={indicatorTime}
+    />
+  )
+
+  await waitFor(() => {
+    expect(hover.mock.calls.length).toBeGreaterThan(callsBefore)
+  })
+})
+
 test('calls Fx.unhover when indicatorTime is null', async () => {
   const { unhover } = await getPlotlyFxMocks()
 

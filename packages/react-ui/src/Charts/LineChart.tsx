@@ -104,6 +104,16 @@ const LineChart: React.FC<LineChartProps> = ({
     [data]
   )
 
+  // Reset the cached hover index whenever data is refreshed (e.g. by the
+  // 5-minute polling interval on active deployments). Without this, the
+  // if (lo === lastHoveredPointRef.current) guard would suppress the Fx.hover
+  // call after a replot even when the point index is numerically unchanged,
+  // leaving the programmatic tooltip stale. Declared before the hover effect
+  // so it clears the ref first; the hover effect then re-applies it.
+  useEffect(() => {
+    lastHoveredPointRef.current = null
+  }, [data])
+
   // When the scrubber/map drives indicatorTime, programmatically show the
   // Plotly tooltip at the nearest data point so the user sees the depth value
   // without having to hover the chart directly.
