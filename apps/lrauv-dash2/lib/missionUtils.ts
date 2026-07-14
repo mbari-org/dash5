@@ -3,7 +3,13 @@ export const normalizeMissionName = (missionName?: string): string => {
   const trimmed = missionName.trim()
   if (!trimmed) return ''
   const filename = trimmed.split('/').pop() ?? ''
-  return filename.replace(/\.(xml|tl)$/i, '').toLowerCase()
+  // Strip the MBARI vehicle-tailored suffix (_vt) before comparing so that
+  // a file named "profile_station_vt.tl" matches telemetry that reports
+  // "Started mission profile_station" (the vehicle omits the suffix).
+  return filename
+    .replace(/\.(xml|tl)$/i, '')
+    .replace(/_vt$/i, '')
+    .toLowerCase()
 }
 
 export const normalizeMissionPath = (missionName?: string): string => {

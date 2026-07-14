@@ -368,6 +368,7 @@ const Vehicle: NextPage = () => {
                 from={startTime}
                 to={deployment?.active ? undefined : endTime || undefined}
                 onHover={handleTimeScrub}
+                indicatorTime={indicatorTime}
               />
             )}
           </div>
