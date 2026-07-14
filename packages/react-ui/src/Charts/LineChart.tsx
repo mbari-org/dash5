@@ -91,7 +91,11 @@ const LineChart: React.FC<LineChartProps> = ({
     // When the user is hovering the chart, Plotly manages its own tooltip —
     // do not interfere.
     if (chartHovered) return
-    if (indicatorTime == null || data.length === 0) {
+    // undefined means indicatorTime is not in use for this chart instance —
+    // return without importing Plotly to avoid unnecessary work on every render.
+    // null is the explicit "clear tooltip" signal and falls through to unhover.
+    if (indicatorTime === undefined) return
+    if (indicatorTime === null || data.length === 0) {
       // Lazy-load Plotly inside the effect so its browser-global side-effects
       // don't run at module scope (SSR / Jest safe). The module is already in
       // the bundle via react-plotly.js, so this import resolves synchronously

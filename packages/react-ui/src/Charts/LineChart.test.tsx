@@ -1,5 +1,5 @@
 import React from 'react'
-import { render, screen } from '@testing-library/react'
+import { act, render, screen, waitFor } from '@testing-library/react'
 import '@testing-library/jest-dom'
 import LineChart, { LineChartProps } from './LineChart'
 import { DateTime } from 'luxon'
@@ -17,26 +17,41 @@ jest.mock('plotly.js', () => ({
 }))
 
 // Capture layout and trace data from each render so tests can assert on them.
+// onInitialized is called with the rendered div so LineChart's graphDivRef is
+// populated — this lets the indicatorTime Fx.hover/Fx.unhover effect run in tests.
+// Child effects fire before parent effects in React, so the ref is set before
+// LineChart's own useEffect reads it.
 jest.mock('react-plotly.js', () => ({
   __esModule: true,
-  default: ({
+  default: function MockPlot({
     layout,
     data: traces,
+    onInitialized,
   }: {
     layout: Record<string, unknown>
     data: any[]
-  }) => (
-    <div
-      data-testid="plot"
-      data-uirevision={
-        'uirevision' in layout ? String(layout.uirevision) : '__unset__'
-      }
-      data-shapes={JSON.stringify(layout.shapes ?? [])}
-      data-annotations={JSON.stringify(layout.annotations ?? [])}
-      data-hovertemplate={traces?.[0]?.hovertemplate ?? ''}
-      data-has-customdata={traces?.[0]?.customdata != null ? 'true' : 'false'}
-    />
-  ),
+    onInitialized?: (figure: unknown, graphDiv: HTMLDivElement) => void
+  }) {
+    const ref = React.useRef<HTMLDivElement>(null)
+    const onInitRef = React.useRef(onInitialized)
+    onInitRef.current = onInitialized
+    React.useEffect(() => {
+      if (ref.current) onInitRef.current?.({}, ref.current)
+    }, [])
+    return (
+      <div
+        ref={ref}
+        data-testid="plot"
+        data-uirevision={
+          'uirevision' in layout ? String(layout.uirevision) : '__unset__'
+        }
+        data-shapes={JSON.stringify(layout.shapes ?? [])}
+        data-annotations={JSON.stringify(layout.annotations ?? [])}
+        data-hovertemplate={traces?.[0]?.hovertemplate ?? ''}
+        data-has-customdata={traces?.[0]?.customdata != null ? 'true' : 'false'}
+      />
+    )
+  },
 }))
 
 const makeData = (n = 60) =>
@@ -162,4 +177,59 @@ test('clears layout.annotations when indicatorTime is null', () => {
     screen.getByTestId('plot').getAttribute('data-annotations') ?? '[]'
   )
   expect(annotations).toHaveLength(0)
+})
+
+// ---------------------------------------------------------------------------
+// Programmatic Plotly hover (Fx.hover / Fx.unhover)
+// ---------------------------------------------------------------------------
+
+// Helper: access the mocked Plotly.Fx functions
+const getPlotlyFxMocks = async () => {
+  const { default: PlotlyLib } = await import('plotly.js')
+  return {
+    hover: (PlotlyLib as any).Fx.hover as jest.Mock,
+    unhover: (PlotlyLib as any).Fx.unhover as jest.Mock,
+  }
+}
+
+beforeEach(() => {
+  jest.clearAllMocks()
+})
+
+test('calls Fx.hover with the nearest point index when indicatorTime is set', async () => {
+  const { hover } = await getPlotlyFxMocks()
+  const data = makeData(10)
+  const targetIdx = 5
+  // Use the exact timestamp of data[5] so binary search lands on index 5.
+  const indicatorTime = data[targetIdx].timestamp
+
+  render(<LineChart data={data} name="Depth" indicatorTime={indicatorTime} />)
+
+  await waitFor(() => {
+    expect(hover).toHaveBeenCalledWith(expect.anything(), [
+      { curveNumber: 0, pointNumber: targetIdx },
+    ])
+  })
+})
+
+test('calls Fx.unhover when indicatorTime is null', async () => {
+  const { unhover } = await getPlotlyFxMocks()
+
+  render(<LineChart {...props} indicatorTime={null} />)
+
+  await waitFor(() => {
+    expect(unhover).toHaveBeenCalled()
+  })
+})
+
+test('does not call Fx.hover or Fx.unhover when indicatorTime is undefined', async () => {
+  const { hover, unhover } = await getPlotlyFxMocks()
+
+  render(<LineChart {...props} />)
+
+  // Flush any pending microtasks (e.g. the lazy import promise chain).
+  await act(async () => {})
+
+  expect(hover).not.toHaveBeenCalled()
+  expect(unhover).not.toHaveBeenCalled()
 })
