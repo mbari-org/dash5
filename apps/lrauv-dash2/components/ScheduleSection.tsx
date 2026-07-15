@@ -965,20 +965,20 @@ export const ScheduleSection: React.FC<ScheduleSectionProps> = ({
       )
     }
 
-    const { parameters: missionParams } = parseMissionCommand(
-      mission?.event.data ?? ''
-    )
-    // Display name priority:
+    const { name: parsedMissionName, parameters: missionParams } =
+      parseMissionCommand(mission?.event.data ?? '')
+    // Display name priority (|| so empty strings fall through to the next level):
     // 1. missionId — vehicle-reported mission ID from missionStarted telemetry
     //    (e.g. "keepstation", "follow_that_car"). Most accurate: it's what the
     //    vehicle actually calls the mission, regardless of filename or _vt suffix.
     // 2. missionNameFromEventData — filename without path/extension as a clean
     //    fallback when the row hasn't been matched to a missionStarted event.
-    // 3. parseMissionCommand is kept for parameters and modal pre-fill only.
+    // 3. parsedMissionName from parseMissionCommand — last resort for edge cases
+    //    not covered by missionNameFromEventData (e.g. non-load command formats).
     const missionName =
-      mission?.missionId ??
-      missionNameFromEventData(mission?.event.data) ??
-      undefined
+      mission?.missionId ||
+      missionNameFromEventData(mission?.event.data) ||
+      parsedMissionName
     const isMission =
       mission?.event?.eventType === 'run' ||
       isMissionCommand(mission?.event?.data, mission?.event?.text)
