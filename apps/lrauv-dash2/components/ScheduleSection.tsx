@@ -33,6 +33,7 @@ import { useQueryClient } from 'react-query'
 import useGlobalModalId from '../lib/useGlobalModalId'
 import {
   missionNameFromStartedText,
+  missionNameFromEventData,
   missionPathFromEventData,
   rawMissionPathFromEventData,
   normalizeMissionName,
@@ -70,6 +71,9 @@ export interface CommandStatusItem {
   isDefaultMission?: boolean
   /** Vehicle GPS position at the moment this mission started (from missionStarted telemetry) */
   fix?: { latitude: number; longitude: number }
+  /** Vehicle-reported mission ID from missionStarted telemetry (e.g. "keepstation",
+   *  "follow_that_car"). Preferred display name over the raw command text. */
+  missionId?: string
 }
 
 const VALID_SCHEDULE_CELL_STATUSES: ScheduleCellStatus[] = [
@@ -435,6 +439,7 @@ export const ScheduleSection: React.FC<ScheduleSectionProps> = ({
               status: newerRun.status,
               endedAt: newerRun.endedAt,
               startedAt: newerRun.startedAt,
+              missionId: newerRun.name,
             }
           }
         }
@@ -443,6 +448,7 @@ export const ScheduleSection: React.FC<ScheduleSectionProps> = ({
           status: inInterval.status,
           endedAt: inInterval.endedAt,
           startedAt: inInterval.startedAt,
+          missionId: inInterval.name,
         }
       }
 
@@ -463,6 +469,7 @@ export const ScheduleSection: React.FC<ScheduleSectionProps> = ({
         status: best.status,
         endedAt: best.endedAt,
         startedAt: best.startedAt,
+        missionId: best.name,
       }
     })
 
@@ -524,11 +531,13 @@ export const ScheduleSection: React.FC<ScheduleSectionProps> = ({
             status: 'running',
             endedAt: undefined,
             startedAt: currentMissionEntry.startedAt,
+            missionId: currentMissionEntry.name,
           }
         } else if (!matchingItem.startedAt) {
           enriched[matchingMissionIndex] = {
             ...matchingItem,
             startedAt: currentMissionEntry.startedAt,
+            missionId: currentMissionEntry.name,
           }
         }
         // Demote any OTHER rows for the same mission that are still marked
@@ -560,9 +569,9 @@ export const ScheduleSection: React.FC<ScheduleSectionProps> = ({
           if (currentRawEvent) {
             enriched.unshift({
               event: {
-                // Construct a command-format data string so parseMissionCommand
-                // produces a consistent label and "Use for new mission" receives
-                // a valid path. GetMissionStartedEventResponse has no data field.
+                // Construct a command-format data string so "Use for new mission"
+                // receives a valid path. GetMissionStartedEventResponse has no
+                // data field. missionId carries the clean display name separately.
                 data: `load ${currentMissionEntry.name};run`,
                 unixTime: currentRawEvent.unixTime,
                 eventId: currentRawEvent.eventId,
@@ -571,6 +580,7 @@ export const ScheduleSection: React.FC<ScheduleSectionProps> = ({
               },
               status: 'running',
               endedAt: undefined,
+              missionId: currentMissionEntry.name,
             })
           }
         }
@@ -955,8 +965,20 @@ export const ScheduleSection: React.FC<ScheduleSectionProps> = ({
       )
     }
 
-    const { name: missionName, parameters: missionParams } =
-      parseMissionCommand(mission?.event.data ?? '')
+    const { parameters: missionParams } = parseMissionCommand(
+      mission?.event.data ?? ''
+    )
+    // Display name priority:
+    // 1. missionId — vehicle-reported mission ID from missionStarted telemetry
+    //    (e.g. "keepstation", "follow_that_car"). Most accurate: it's what the
+    //    vehicle actually calls the mission, regardless of filename or _vt suffix.
+    // 2. missionNameFromEventData — filename without path/extension as a clean
+    //    fallback when the row hasn't been matched to a missionStarted event.
+    // 3. parseMissionCommand is kept for parameters and modal pre-fill only.
+    const missionName =
+      mission?.missionId ??
+      missionNameFromEventData(mission?.event.data) ??
+      undefined
     const isMission =
       mission?.event?.eventType === 'run' ||
       isMissionCommand(mission?.event?.data, mission?.event?.text)
