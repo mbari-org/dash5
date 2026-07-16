@@ -5,6 +5,51 @@ Versions on `develop` are deployed to **dash5-staging.mbari.org**; versions merg
 
 ---
 
+## [v5.2.18] — 2026-07-15 · Staging
+
+**Mission schedule label cleanup — vehicle-reported mission ID as display name (PR #776)**
+
+- Mission rows in the schedule now display the clean vehicle-reported mission name (e.g. `keepstation`) instead of the raw operator command text (e.g. `load Transport/keepstation.tl`)
+- For missions where the declared mission ID differs from the filename (e.g. `tail_acoustic_contact.tl` with ID `follow_that_car`), the vehicle-reported ID is used as the label — matching what the vehicle actually calls the mission
+- "Use for new mission" modal pre-fill is preserved correctly in all cases, including when mission ID and filename differ
+- Falls back to the clean filename (without path or extension) when no telemetry match is available
+
+---
+
+## [v5.2.17] — 2026-07-15 · Production mirror (port 4051)
+
+Same content as v5.2.16 — production image tagged from `main`.
+
+---
+
+## [v5.2.16] — 2026-07-15 · Staging
+
+Same content as v5.2.15 — staging image tagged from `develop` after v5.2.15 was accidentally tagged from `main`.
+
+---
+
+## [v5.2.15] — 2026-07-15 · Production mirror (port 4051)
+
+**Depth chart ↔ map scrubber bidirectional sync (PR #773)**
+
+- Full Deployment Depth Chart and map scrubber now stay in sync in both directions — hovering the scrubber highlights the matching depth point; hovering the chart moves the scrubber to that GPS fix
+- Active deployments auto-refresh depth data every 5 minutes (previously could show data hours stale without a page reload)
+- Tooltip shows depth with unit, local time, and UTC time in parentheses; also appears automatically while scrubbing the map timeline
+- Performance: Plotly import is lazy-loaded and cached; hover point de-duplication skips redundant calls; hover cache resets on data refresh so tooltip never goes stale after a poll
+- Security: unit, trace name, and chart title strings from API metadata are HTML-escaped before embedding in Plotly hovertemplate
+
+**Mission Details — `_vt` mission matching (PR #774)**
+
+- Dash5 was displaying a simplified synthetic command (`load profile_station;run`) as the active mission instead of the actual scheduled mission (`profile_station_vt.tl`). The vehicle omits the `_vt` suffix when reporting the mission name; Dash5 now ignores that suffix when matching, so the correct mission is highlighted
+- Fixes the "Use for new mission" modal showing the wrong command
+
+**Other fixes**
+
+- Amend command: strip trailing whitespace and semicolons; show type-annotation units (`bool`, `enum`, etc.) in unit dropdown
+- Version string: strip `-production` suffix from the displayed app version
+
+---
+
 ## [v5.2.13] — 2026-07-08 · Staging
 
 **Fix depth chart zoom resetting on mouse move (Issue #763, PR #764)**
