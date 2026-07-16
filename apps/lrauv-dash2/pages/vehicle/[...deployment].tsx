@@ -32,6 +32,7 @@ import Layout from '../../components/Layout'
 import VehicleDiagram from '../../components/VehicleDiagram'
 import VehicleAccordion from '../../components/VehicleAccordion'
 import DepthSection from '../../components/DepthSection'
+import WatchSummarySection from '../../components/WatchSummarySection'
 import useGlobalModalId from '../../lib/useGlobalModalId'
 import useCurrentDeployment from '../../lib/useCurrentDeployment'
 import useGlobalDrawerState from '../../lib/useGlobalDrawerState'
@@ -69,7 +70,7 @@ const DeploymentMap = dynamic(() => import('../../components/DeploymentMap'), {
   ssr: false,
 })
 
-type AvailableTab = 'vehicle' | 'depth' | null
+type AvailableTab = 'vehicle' | 'depth' | 'watch' | null
 type MobileView = 'main' | 'sidebar'
 
 const useIsDesktop = () => {
@@ -343,6 +344,11 @@ const Vehicle: NextPage = () => {
               label="Depth Data"
               onClick={setCurrentTab('depth')}
               selected={currentTab === 'depth'}
+            />
+            <Tab
+              label="Watch Summary"
+              onClick={setCurrentTab('watch')}
+              selected={currentTab === 'watch'}
               className="mr-auto"
             />
           </TabGroup>
@@ -370,6 +376,9 @@ const Vehicle: NextPage = () => {
                 onHover={handleTimeScrub}
                 indicatorTime={indicatorTime}
               />
+            )}
+            {currentTab === 'watch' && (
+              <WatchSummarySection vehicleName={vehicleName as string} />
             )}
           </div>
         </div>
