@@ -13,9 +13,45 @@ export interface DepthSparklineProps {
   height?: number // SVG box height (default 20)
   windowMinutes?: number // time window to show (default 480 = 8h)
   responsive?: boolean // when true, fills container (no explicit width/height on SVG element)
+  /**
+   * Controls where the comms legend and last-data labels are rendered.
+   * 'right' (default): to the right of the chart.
+   * 'top': compact row above the tick rows.
+   * 'none': legend is omitted entirely — render it externally as HTML.
+   */
+  legendPosition?: 'right' | 'top' | 'none'
+  /**
+   * ms-epoch timestamp at which to draw a vertical indicator line inside
+   * the plot area. Useful for highlighting a selected event.
+   */
+  highlightTime?: number
+  /**
+   * SVG preserveAspectRatio attribute. Defaults to 'xMidYMid meet'.
+   * Pass 'none' to stretch the chart to fill the container (no letterboxing).
+   */
+  preserveAspectRatio?: string
+  /**
+   * Font size for axis labels (depth scale and time labels). Defaults to 6 SVG units.
+   * Pass a smaller value (e.g. 4) when displaying in a large container where the
+   * labels would otherwise appear oversized.
+   */
+  labelFontSize?: number
+  /**
+   * When true, reduces the comms tick area height and axis label space so the
+   * depth chart body occupies the maximum proportion of the SVG height.
+   */
+  compact?: boolean
   className?: string
   style?: React.CSSProperties
 }
+
+/**
+ * SVG unit overhead values for compact mode (legendPosition='none').
+ * Use these to compute the `height` prop that fills a measured container.
+ * viewBoxH = height + COMPACT_TICK_OVERHEAD + COMPACT_AXIS_OVERHEAD
+ */
+export const COMPACT_TICK_OVERHEAD = 1 * 4 * 1.2 + 1 + 2 // tickRowGap*4 + tickRowHeight + 2 ≈ 7.8
+export const COMPACT_AXIS_OVERHEAD_BASE = 4 // added to labelFontSize: axisOverhead = labelFontSize + 4
 
 // Dynamic max-depth scale matching auvstatus.py
 const DEPTH_STOPS = [40, 80, 120, 160, 240, 300, 600, 1200, 1600, 2500]
@@ -73,6 +109,11 @@ const DepthSparkline: React.FC<DepthSparklineProps> = ({
   height: h = 20,
   windowMinutes = 480,
   responsive = false,
+  legendPosition = 'right',
+  highlightTime,
+  preserveAspectRatio,
+  labelFontSize = 6,
+  compact = false,
   className,
   style,
 }) => {
@@ -99,11 +140,10 @@ const DepthSparkline: React.FC<DepthSparklineProps> = ({
 
   const xdiv = windowMinutes / w // minutes per pixel
 
-  const svgWidth = w + 68 // right margin: comms legend row + combined time·dot·ago row
-
-  // Rows of comms ticks sit above the depth box
-  const tickRowHeight = 1.5
-  const tickRowGap = 2
+  // Rows of comms ticks sit above the depth box.
+  // compact=true squeezes these to give the depth chart more room.
+  const tickRowHeight = compact ? 0.6 : 1.5
+  const tickRowGap = compact ? 1.2 : 2
   const tickRows: Record<
     string,
     { times: number[]; color: string; y: number }
@@ -267,6 +307,7 @@ const DepthSparkline: React.FC<DepthSparklineProps> = ({
     nowBucket,
     nowMs,
     nowMin,
+    // tickRows is derived from props above — no extra dep needed
   ])
 
   if (!chart) return null
@@ -287,9 +328,22 @@ const DepthSparkline: React.FC<DepthSparklineProps> = ({
     isPadded,
   } = chart
 
-  // SVG viewBox: x0=0, top accounting for tick rows, full width + right labels
-  const viewBoxTop = y0 - tickAreaHeight - 2
-  const viewBoxH = h + tickAreaHeight + 14 // +14 for axis labels below
+  // 'none' and 'top' both eliminate the right margin; 'top' also reserves
+  // extra space above tick rows for the compact in-SVG legend row.
+  const svgWidth = legendPosition === 'right' ? w + 68 : w + 2
+  const topLegendHeight = legendPosition === 'top' ? 7 : 0
+  // Reduce top gap so comms bars sit near the SVG top edge (was -2, now -0.5)
+  const viewBoxTop = y0 - tickAreaHeight - 0.5 - topLegendHeight
+  // compact: extra room so axis labels clear the chart border
+  const axisOverhead = compact ? labelFontSize + 7 : 14
+  const viewBoxH = h + tickAreaHeight + axisOverhead + topLegendHeight
+
+  // Highlight line x coordinate (SVG units). Computed outside useMemo since it
+  // depends on highlightTime which can change independently of chart data.
+  const highlightX =
+    highlightTime != null
+      ? boxRight - (nowMin - highlightTime / 60000) / xdiv
+      : null
 
   return (
     <svg
@@ -297,6 +351,7 @@ const DepthSparkline: React.FC<DepthSparklineProps> = ({
       viewBox={`${x0 - 1} ${viewBoxTop} ${svgWidth} ${viewBoxH}`}
       width={responsive ? undefined : svgWidth}
       height={responsive ? undefined : viewBoxH}
+      preserveAspectRatio={preserveAspectRatio}
       className={clsx('depth-sparkline', className)}
       style={responsive ? { width: '100%', height: '100%', ...style } : style}
       role="img"
@@ -350,55 +405,143 @@ const DepthSparkline: React.FC<DepthSparklineProps> = ({
       {/* Comms + GPS tick marks */}
       {tickElems}
 
-      {/* Legend — dot flush against label, both vertically centered on the same baseline */}
-      <circle cx={x0 + w + 3} cy={y0} r={1.5} fill="#3b82f6" />
-      <text
-        x={x0 + w + 5}
-        y={y0}
-        fontSize={5}
-        fill="#374151"
-        dominantBaseline="central"
-      >
-        argo
-      </text>
-      <circle cx={x0 + w + 20} cy={y0} r={1.5} fill="#a855f7" />
-      <text
-        x={x0 + w + 22}
-        y={y0}
-        fontSize={5}
-        fill="#374151"
-        dominantBaseline="central"
-      >
-        gps
-      </text>
-      <circle cx={x0 + w + 37} cy={y0} r={1.5} fill="#f97316" />
-      <text
-        x={x0 + w + 39}
-        y={y0}
-        fontSize={5}
-        fill="#374151"
-        dominantBaseline="central"
-      >
-        sat
-      </text>
-      <circle cx={x0 + w + 53} cy={y0} r={1.5} fill="#22c55e" />
-      <text
-        x={x0 + w + 55}
-        y={y0}
-        fontSize={5}
-        fill="#374151"
-        dominantBaseline="central"
-      >
-        cell
-      </text>
+      {/* Legend: right layout (default) */}
+      {legendPosition === 'right' && (
+        <>
+          <circle cx={x0 + w + 3} cy={y0} r={1.5} fill="#3b82f6" />
+          <text
+            x={x0 + w + 5}
+            y={y0}
+            fontSize={5}
+            fill="#374151"
+            dominantBaseline="central"
+          >
+            argo
+          </text>
+          <circle cx={x0 + w + 20} cy={y0} r={1.5} fill="#a855f7" />
+          <text
+            x={x0 + w + 22}
+            y={y0}
+            fontSize={5}
+            fill="#374151"
+            dominantBaseline="central"
+          >
+            gps
+          </text>
+          <circle cx={x0 + w + 37} cy={y0} r={1.5} fill="#f97316" />
+          <text
+            x={x0 + w + 39}
+            y={y0}
+            fontSize={5}
+            fill="#374151"
+            dominantBaseline="central"
+          >
+            sat
+          </text>
+          <circle cx={x0 + w + 53} cy={y0} r={1.5} fill="#22c55e" />
+          <text
+            x={x0 + w + 55}
+            y={y0}
+            fontSize={5}
+            fill="#374151"
+            dominantBaseline="central"
+          >
+            cell
+          </text>
+          <text x={x0 + w + 2} y={y0 + 10} fontSize={6} fill="#374151">
+            {timeLabel}
+          </text>
+          <circle
+            cx={x0 + w + 23}
+            cy={y0 + 7}
+            r={2}
+            fill={isPadded && isStale ? '#f97316' : '#22c55e'}
+          />
+          <text x={x0 + w + 27} y={y0 + 10} fontSize={5} fill="#6b7280">
+            ({agoLabel})
+          </text>
+        </>
+      )}
+
+      {/* Legend: top layout — single compact row above tick rows */}
+      {legendPosition === 'top' && (
+        <>
+          {/* comms type dots — left half */}
+          <circle cx={x0} cy={viewBoxTop + 3} r={1.2} fill="#3b82f6" />
+          <text
+            x={x0 + 2.5}
+            y={viewBoxTop + 3}
+            fontSize={4}
+            fill="#374151"
+            dominantBaseline="central"
+          >
+            argo
+          </text>
+          <circle cx={x0 + 14} cy={viewBoxTop + 3} r={1.2} fill="#a855f7" />
+          <text
+            x={x0 + 16.5}
+            y={viewBoxTop + 3}
+            fontSize={4}
+            fill="#374151"
+            dominantBaseline="central"
+          >
+            gps
+          </text>
+          <circle cx={x0 + 27} cy={viewBoxTop + 3} r={1.2} fill="#f97316" />
+          <text
+            x={x0 + 29.5}
+            y={viewBoxTop + 3}
+            fontSize={4}
+            fill="#374151"
+            dominantBaseline="central"
+          >
+            sat
+          </text>
+          <circle cx={x0 + 39} cy={viewBoxTop + 3} r={1.2} fill="#22c55e" />
+          <text
+            x={x0 + 41.5}
+            y={viewBoxTop + 3}
+            fontSize={4}
+            fill="#374151"
+            dominantBaseline="central"
+          >
+            cell
+          </text>
+          {/* last-data time · freshness dot · ago — right half */}
+          <text
+            x={x0 + 60}
+            y={viewBoxTop + 3}
+            fontSize={4}
+            fill="#374151"
+            dominantBaseline="central"
+          >
+            {timeLabel}
+          </text>
+          <circle
+            cx={x0 + 73}
+            cy={viewBoxTop + 3}
+            r={1.5}
+            fill={isPadded && isStale ? '#f97316' : '#22c55e'}
+          />
+          <text
+            x={x0 + 76}
+            y={viewBoxTop + 3}
+            fontSize={4}
+            fill="#6b7280"
+            dominantBaseline="central"
+          >
+            ({agoLabel})
+          </text>
+        </>
+      )}
 
       {/* Axis time labels below the box */}
       {axisLabels.map(({ frac, label, anchor }) => (
         <text
           key={`ax-${frac}`}
           x={x0 + w * frac + (frac === 0 ? 1 : -2)}
-          y={y0 + h + 5}
-          fontSize={6}
+          y={y0 + h + (compact ? 4 : 5)}
+          fontSize={labelFontSize}
           fill="#6b7280"
           textAnchor={anchor}
         >
@@ -406,24 +549,28 @@ const DepthSparkline: React.FC<DepthSparklineProps> = ({
         </text>
       ))}
 
-      {/* Max depth label (bottom-left inside box) */}
-      <text x={x0 + 1} y={y0 + h - 1} fontSize={6} fill="#374151">
+      {/* Max depth label — positioned near bottom of box but clear of the border */}
+      <text
+        x={x0 + 1}
+        y={y0 + h - (compact ? labelFontSize + 0.5 : 1)}
+        fontSize={labelFontSize}
+        fill="#374151"
+      >
         {depthScale}m
       </text>
 
-      {/* Last data: time · freshness dot · age — all on one line */}
-      <text x={x0 + w + 2} y={y0 + 10} fontSize={6} fill="#374151">
-        {timeLabel}
-      </text>
-      <circle
-        cx={x0 + w + 23}
-        cy={y0 + 7}
-        r={2}
-        fill={isPadded && isStale ? '#f97316' : '#22c55e'}
-      />
-      <text x={x0 + w + 27} y={y0 + 10} fontSize={5} fill="#6b7280">
-        ({agoLabel})
-      </text>
+      {/* Vertical indicator line for a selected event time */}
+      {highlightX != null && highlightX >= x0 && highlightX <= boxRight && (
+        <line
+          x1={highlightX}
+          y1={y0}
+          x2={highlightX}
+          y2={y0 + h}
+          stroke="#ef4444"
+          strokeWidth={0.3}
+          strokeDasharray="2 1"
+        />
+      )}
 
       {/* Border rendered last so it sits on top of grid lines and polygons */}
       <rect
