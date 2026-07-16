@@ -93,7 +93,7 @@ const styles = {
   dragging: 'shadow-2xl border-stone-200',
 }
 
-export const Modal: React.FC<ModalProps & FooterProps> = ({
+export const Modal: React.FC<ModalProps> = ({
   title,
   open,
   grayHeader,
@@ -109,6 +109,7 @@ export const Modal: React.FC<ModalProps & FooterProps> = ({
   onConfirm: handleConfirm,
   cancelButtonText,
   confirmButtonText,
+  confirmButtonAppearance,
   disableCancel,
   disableConfirm,
   form,
@@ -302,6 +303,7 @@ export const Modal: React.FC<ModalProps & FooterProps> = ({
             onCancel={handleCancel}
             cancelButtonText={cancelButtonText}
             confirmButtonText={confirmButtonText}
+            confirmButtonAppearance={confirmButtonAppearance}
             disableCancel={disableCancel}
             disableConfirm={disableConfirm}
             form={form}

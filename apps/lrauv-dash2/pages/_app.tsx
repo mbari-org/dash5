@@ -19,6 +19,7 @@ import { GoogleMapsProvider } from '../components/GoogleMapsProvider'
 import { VehicleColorsProvider } from '../components/VehicleColorsContext'
 import '../styles/vehicle.css'
 import '../styles/docs.css'
+import { ConfirmationProvider } from '../components/ConfirmContext'
 
 // prevent font awesome from auto-adding styles.
 config.autoAddCss = false
@@ -62,20 +63,22 @@ function MyApp({ Component, pageProps }: AppProps) {
     <QueryClientProvider client={queryClient}>
       <CookiesProvider defaultSetOptions={{ path: '/' }}>
         <UIProvider>
-          <VehicleColorsProvider>
-            <MarkerProvider>
-              <TethysApiProvider
-                baseURL={process.env.NEXT_PUBLIC_BASE_URL}
-                sessionToken={sessionToken}
-                setSessionToken={setSessionToken}
-                onSessionEnd={handleSessionEnd}
-              >
-                <GoogleMapsProvider>
-                  <Component {...pageProps} />
-                </GoogleMapsProvider>
-              </TethysApiProvider>
-            </MarkerProvider>
-          </VehicleColorsProvider>
+          <ConfirmationProvider>
+            <VehicleColorsProvider>
+              <MarkerProvider>
+                <TethysApiProvider
+                  baseURL={process.env.NEXT_PUBLIC_BASE_URL}
+                  sessionToken={sessionToken}
+                  setSessionToken={setSessionToken}
+                  onSessionEnd={handleSessionEnd}
+                >
+                  <GoogleMapsProvider>
+                    <Component {...pageProps} />
+                  </GoogleMapsProvider>
+                </TethysApiProvider>
+              </MarkerProvider>
+            </VehicleColorsProvider>
+          </ConfirmationProvider>
         </UIProvider>
       </CookiesProvider>
       <Toaster />
