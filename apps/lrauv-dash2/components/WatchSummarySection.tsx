@@ -238,7 +238,7 @@ const WatchSummarySection: React.FC<WatchSummarySectionProps> = ({
               compact
               labelFontSize={LABEL_FONT_SIZE}
               highlightTime={indicatorTime ?? undefined}
-              preserveAspectRatio="xMidYMin meet"
+              preserveAspectRatio="xMaxYMin meet"
               className="h-full w-full"
             />
           )}
@@ -247,7 +247,7 @@ const WatchSummarySection: React.FC<WatchSummarySectionProps> = ({
         {/* Vertical legend column — right of SVG, no separator line */}
         {sparklineLegend && (
           <div
-            className="flex w-24 flex-shrink-0 flex-col pb-2 pl-2 text-sm text-gray-600"
+            className="flex w-24 flex-shrink-0 flex-col pb-2 pl-1 text-sm text-gray-600"
             style={{ paddingTop: '80px' }}
           >
             {/* Last-data time — pushed down to sit beside the most-recent surface area */}
