@@ -577,8 +577,14 @@ export const ScheduleSection: React.FC<ScheduleSectionProps> = ({
             const missionParamColon = `${currentMissionEntry.name}:`
             const sourceEvent = enriched.find((item) => {
               const d = item.event.data ?? item.event.text ?? ''
+              // Only accept candidates that carry an actual mission file path
+              // (load <file>;run) — a standalone set <missionId>.* param update
+              // would match the prefix check but contains no loadable path and
+              // would produce an empty "Use for new mission" pre-fill.
               return (
-                d.includes(missionParamPrefix) || d.includes(missionParamColon)
+                isMissionCommand(item.event.data, item.event.text) &&
+                (d.includes(missionParamPrefix) ||
+                  d.includes(missionParamColon))
               )
             })
             enriched.unshift({
