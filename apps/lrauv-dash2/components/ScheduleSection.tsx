@@ -33,6 +33,7 @@ import { useQueryClient } from 'react-query'
 import useGlobalModalId from '../lib/useGlobalModalId'
 import {
   missionNameFromStartedText,
+  missionNameFromEventData,
   missionPathFromEventData,
   rawMissionPathFromEventData,
   normalizeMissionName,
@@ -70,6 +71,9 @@ export interface CommandStatusItem {
   isDefaultMission?: boolean
   /** Vehicle GPS position at the moment this mission started (from missionStarted telemetry) */
   fix?: { latitude: number; longitude: number }
+  /** Vehicle-reported mission ID from missionStarted telemetry (e.g. "keepstation",
+   *  "follow_that_car"). Preferred display name over the raw command text. */
+  missionId?: string
 }
 
 const VALID_SCHEDULE_CELL_STATUSES: ScheduleCellStatus[] = [
@@ -435,6 +439,7 @@ export const ScheduleSection: React.FC<ScheduleSectionProps> = ({
               status: newerRun.status,
               endedAt: newerRun.endedAt,
               startedAt: newerRun.startedAt,
+              missionId: newerRun.name,
             }
           }
         }
@@ -443,6 +448,7 @@ export const ScheduleSection: React.FC<ScheduleSectionProps> = ({
           status: inInterval.status,
           endedAt: inInterval.endedAt,
           startedAt: inInterval.startedAt,
+          missionId: inInterval.name,
         }
       }
 
@@ -463,6 +469,7 @@ export const ScheduleSection: React.FC<ScheduleSectionProps> = ({
         status: best.status,
         endedAt: best.endedAt,
         startedAt: best.startedAt,
+        missionId: best.name,
       }
     })
 
@@ -524,11 +531,13 @@ export const ScheduleSection: React.FC<ScheduleSectionProps> = ({
             status: 'running',
             endedAt: undefined,
             startedAt: currentMissionEntry.startedAt,
+            missionId: currentMissionEntry.name,
           }
         } else if (!matchingItem.startedAt) {
           enriched[matchingMissionIndex] = {
             ...matchingItem,
             startedAt: currentMissionEntry.startedAt,
+            missionId: currentMissionEntry.name,
           }
         }
         // Demote any OTHER rows for the same mission that are still marked
@@ -558,12 +567,32 @@ export const ScheduleSection: React.FC<ScheduleSectionProps> = ({
         if (!isDefaultMissionName(currentMissionEntry.name)) {
           const currentRawEvent = missionStartedResponse.data?.[0]
           if (currentRawEvent) {
+            // For missions where the vehicle-reported ID differs from the script
+            // filename (e.g. tail_acoustic_contact.tl reports follow_that_car),
+            // look for an unmatched command event whose data/text references the
+            // mission ID in parameter names (e.g. "set follow_that_car.Timeout").
+            // That event carries the real file path needed by "Use for new mission".
+            // Fall back to a synthetic load string only when no such event exists.
+            const missionParamPrefix = `${currentMissionEntry.name}.`
+            const missionParamColon = `${currentMissionEntry.name}:`
+            const sourceEvent = enriched.find((item) => {
+              const d = item.event.data ?? item.event.text ?? ''
+              // Only accept candidates that carry an actual mission file path
+              // (load <file>;run) — a standalone set <missionId>.* param update
+              // would match the prefix check but contains no loadable path and
+              // would produce an empty "Use for new mission" pre-fill.
+              return (
+                isMissionCommand(item.event.data, item.event.text) &&
+                (d.includes(missionParamPrefix) ||
+                  d.includes(missionParamColon))
+              )
+            })
             enriched.unshift({
               event: {
-                // Construct a command-format data string so parseMissionCommand
-                // produces a consistent label and "Use for new mission" receives
-                // a valid path. GetMissionStartedEventResponse has no data field.
-                data: `load ${currentMissionEntry.name};run`,
+                data:
+                  sourceEvent?.event.data ??
+                  sourceEvent?.event.text ??
+                  `load ${currentMissionEntry.name};run`,
                 unixTime: currentRawEvent.unixTime,
                 eventId: currentRawEvent.eventId,
                 eventType: 'run',
@@ -571,6 +600,7 @@ export const ScheduleSection: React.FC<ScheduleSectionProps> = ({
               },
               status: 'running',
               endedAt: undefined,
+              missionId: currentMissionEntry.name,
             })
           }
         }
@@ -955,8 +985,22 @@ export const ScheduleSection: React.FC<ScheduleSectionProps> = ({
       )
     }
 
-    const { name: missionName, parameters: missionParams } =
-      parseMissionCommand(mission?.event.data ?? '')
+    const commandData = mission?.event.data ?? mission?.event.text ?? ''
+    const { name: parsedMissionName, parameters: missionParams } =
+      parseMissionCommand(commandData)
+    // Display name priority (|| so empty strings fall through to the next level):
+    // 1. missionId — vehicle-reported mission ID from missionStarted telemetry
+    //    (e.g. "keepstation", "follow_that_car"). Most accurate: it's what the
+    //    vehicle actually calls the mission, regardless of filename or _vt suffix.
+    // 2. missionNameFromEventData — filename without path/extension. Checked
+    //    against both data and text since commands can arrive in either field.
+    // 3. parsedMissionName from parseMissionCommand — last resort for edge cases
+    //    not covered by missionNameFromEventData (e.g. non-load command formats).
+    const missionName =
+      mission?.missionId ||
+      missionNameFromEventData(mission?.event.data) ||
+      missionNameFromEventData(mission?.event.text) ||
+      parsedMissionName
     const isMission =
       mission?.event?.eventType === 'run' ||
       isMissionCommand(mission?.event?.data, mission?.event?.text)
