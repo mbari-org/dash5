@@ -994,10 +994,11 @@ test('bare command row does not show "No parameters" secondary text', async () =
   ).not.toBeInTheDocument()
 })
 
-test('running mission label uses vehicle-reported missionId over raw command text', async () => {
-  // When the vehicle reports "Started mission keepstation", the schedule row
-  // for "load Transport/keepstation.tl;run" should display "keepstation"
-  // (the mission ID), not the raw "load Transport/keepstation.tl" command text.
+test('running mission label uses vehicle-reported missionId over filename when they differ', async () => {
+  // tail_acoustic_contact.tl declares "mission follow_that_car" so the vehicle
+  // reports "Started mission follow_that_car". The missionId (follow_that_car)
+  // must win over missionNameFromEventData (tail_acoustic_contact) to prove
+  // that missionId precedence is exercised, not just the filename fallback.
   server.use(
     rest.get('/events', (_req, res, ctx) =>
       res(
@@ -1005,7 +1006,7 @@ test('running mission label uses vehicle-reported missionId over raw command tex
         ctx.json({
           result: [
             {
-              data: 'load Transport/keepstation.tl;run',
+              data: 'load Engineering/tail_acoustic_contact.tl;set follow_that_car.MissionTimeout 3 h;run',
               unixTime: Date.now() - 60 * 1000,
               eventId: 402,
               eventType: 'run',
@@ -1023,7 +1024,7 @@ test('running mission label uses vehicle-reported missionId over raw command tex
         ctx.json({
           result: [
             {
-              text: 'Started mission keepstation',
+              text: 'Started mission follow_that_car',
               unixTime: Date.now() - 55 * 1000,
               eventId: 403,
             },
@@ -1040,11 +1041,11 @@ test('running mission label uses vehicle-reported missionId over raw command tex
   )
 
   await waitFor(() => {
-    expect(screen.getByText('keepstation')).toBeInTheDocument()
+    expect(screen.getByText('follow_that_car')).toBeInTheDocument()
   })
-  expect(
-    screen.queryByText('load Transport/keepstation.tl')
-  ).not.toBeInTheDocument()
+  // Must not show the filename-derived label or raw command text
+  expect(screen.queryByText('tail_acoustic_contact')).not.toBeInTheDocument()
+  expect(screen.queryByText(/load Engineering/)).not.toBeInTheDocument()
 })
 
 test('mission command row shows "No parameters" secondary text when no params set', async () => {
