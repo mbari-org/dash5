@@ -335,7 +335,7 @@ const DepthSparkline: React.FC<DepthSparklineProps> = ({
   // Reduce top gap so comms bars sit near the SVG top edge (was -2, now -0.5)
   const viewBoxTop = y0 - tickAreaHeight - 0.5 - topLegendHeight
   // compact: extra room so axis labels clear the chart border
-  const axisOverhead = compact ? labelFontSize + 7 : 14
+  const axisOverhead = compact ? labelFontSize + 4 : 14
   const viewBoxH = h + tickAreaHeight + axisOverhead + topLegendHeight
 
   // Highlight line x coordinate (SVG units). Computed outside useMemo since it
@@ -549,13 +549,8 @@ const DepthSparkline: React.FC<DepthSparklineProps> = ({
         </text>
       ))}
 
-      {/* Max depth label — positioned near bottom of box but clear of the border */}
-      <text
-        x={x0 + 1}
-        y={y0 + h - (compact ? labelFontSize + 0.5 : 1)}
-        fontSize={labelFontSize}
-        fill="#374151"
-      >
+      {/* Max depth label — pegged to bottom-left corner where y-axis meets x-axis */}
+      <text x={x0 + 1} y={y0 + h - 0.5} fontSize={labelFontSize} fill="#374151">
         {depthScale}m
       </text>
 

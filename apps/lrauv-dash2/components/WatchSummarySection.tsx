@@ -155,7 +155,7 @@ const WatchSummarySection: React.FC<WatchSummarySectionProps> = ({
     if (!containerDims || containerDims.w === 0) return 20
     const svgWidth = 122
     const compactTickOverhead = 1.2 * 4 + 0.6 + 2 // 7.4 (matches tickRowHeight=0.6)
-    const compactAxisOverhead = LABEL_FONT_SIZE + 7 // matches axisOverhead in DepthSparkline
+    const compactAxisOverhead = LABEL_FONT_SIZE + 4 // matches actual axisOverhead in DepthSparkline (compact)
     const totalOverhead = compactTickOverhead + compactAxisOverhead // ≈ 15.3
     const targetViewBoxH = (containerDims.h / containerDims.w) * svgWidth
     return Math.max(8, Math.round(targetViewBoxH - totalOverhead))
@@ -238,7 +238,7 @@ const WatchSummarySection: React.FC<WatchSummarySectionProps> = ({
               compact
               labelFontSize={LABEL_FONT_SIZE}
               highlightTime={indicatorTime ?? undefined}
-              preserveAspectRatio="none"
+              preserveAspectRatio="xMidYMin meet"
               className="h-full w-full"
             />
           )}
