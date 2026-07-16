@@ -567,12 +567,26 @@ export const ScheduleSection: React.FC<ScheduleSectionProps> = ({
         if (!isDefaultMissionName(currentMissionEntry.name)) {
           const currentRawEvent = missionStartedResponse.data?.[0]
           if (currentRawEvent) {
+            // For missions where the vehicle-reported ID differs from the script
+            // filename (e.g. tail_acoustic_contact.tl reports follow_that_car),
+            // look for an unmatched command event whose data/text references the
+            // mission ID in parameter names (e.g. "set follow_that_car.Timeout").
+            // That event carries the real file path needed by "Use for new mission".
+            // Fall back to a synthetic load string only when no such event exists.
+            const missionParamPrefix = `${currentMissionEntry.name}.`
+            const missionParamColon = `${currentMissionEntry.name}:`
+            const sourceEvent = enriched.find((item) => {
+              const d = item.event.data ?? item.event.text ?? ''
+              return (
+                d.includes(missionParamPrefix) || d.includes(missionParamColon)
+              )
+            })
             enriched.unshift({
               event: {
-                // Construct a command-format data string so "Use for new mission"
-                // receives a valid path. GetMissionStartedEventResponse has no
-                // data field. missionId carries the clean display name separately.
-                data: `load ${currentMissionEntry.name};run`,
+                data:
+                  sourceEvent?.event.data ??
+                  sourceEvent?.event.text ??
+                  `load ${currentMissionEntry.name};run`,
                 unixTime: currentRawEvent.unixTime,
                 eventId: currentRawEvent.eventId,
                 eventType: 'run',
