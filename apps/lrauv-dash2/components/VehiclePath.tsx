@@ -21,7 +21,8 @@ import {
 const getDistance = (a: VPosDetail, b: LatLng) =>
   distance([a.longitude, a.latitude], [b.lng, b.lat])
 
-// VehiclePoint component
+// VehiclePoint component — uses CircleMarker (pixel radius) so dots stay
+// the same visual size regardless of zoom level.
 const VehiclePoint: React.FC<{
   position: [number, number]
   color: string
@@ -33,13 +34,13 @@ const VehiclePoint: React.FC<{
 }> = ({
   position,
   color,
-  radius = 10,
+  radius = 4,
   opacity = 1,
   fillOpacity = 1,
   eventHandlers,
   children,
 }) => (
-  <Circle
+  <CircleMarker
     center={{ lat: position[0], lng: position[1] }}
     pathOptions={{ color, opacity }}
     fillColor={color}
@@ -48,7 +49,7 @@ const VehiclePoint: React.FC<{
     eventHandlers={eventHandlers}
   >
     {children}
-  </Circle>
+  </CircleMarker>
 )
 
 // Memoized hit-circle layer so it never re-renders when VehiclePath state
@@ -72,13 +73,13 @@ const HitCircles = React.memo(
   }) => (
     <>
       {route.map((r, index) => (
-        <Circle
+        <CircleMarker
           key={`${name}:${
             grouped ? 'overview' : 'detail'
           }:touch:${index}:${r.join()}`}
           center={{ lat: r[0], lng: r[1] }}
           fillColor={color}
-          radius={200}
+          radius={18}
           fillOpacity={0}
           color={color}
           opacity={0}
@@ -599,7 +600,7 @@ const VehiclePath: React.FC<VehiclePathProps> = ({
       {/* Scrub indicator dot — shown for any scrub source (depth chart, timeline)
           unless the map-hover highlight is already visible at that position */}
       {indicatorCoord && mapHoverFix?.unixTime !== indicatorCoord.unixTime && (
-        <Circle
+        <CircleMarker
           center={{
             lat: indicatorCoord.latitude,
             lng: indicatorCoord.longitude,
@@ -611,7 +612,7 @@ const VehiclePath: React.FC<VehiclePathProps> = ({
             fillOpacity: 0.85,
             weight: 2,
           }}
-          radius={40}
+          radius={8}
         />
       )}
       {/* Crumb trail dots — only shown while the timeline bar is being hovered */}
@@ -623,14 +624,14 @@ const VehiclePath: React.FC<VehiclePathProps> = ({
             }:preview:${i}:${r.join()}`}
             position={r}
             color={color}
-            radius={10}
+            radius={4}
             opacity={1}
             fillOpacity={1}
           />
         ))}
       {/* Hover highlight — grows at the nearest fix when hovering the map track */}
       {mapHoverFix && (
-        <Circle
+        <CircleMarker
           center={{ lat: mapHoverFix.latitude, lng: mapHoverFix.longitude }}
           interactive={false}
           pathOptions={{
@@ -639,7 +640,7 @@ const VehiclePath: React.FC<VehiclePathProps> = ({
             fillOpacity: 0.85,
             weight: 2,
           }}
-          radius={60}
+          radius={10}
         >
           <Tooltip permanent direction="right" offset={[10, 0]} opacity={0.95}>
             <div className="text-xs leading-snug">
@@ -671,7 +672,7 @@ const VehiclePath: React.FC<VehiclePathProps> = ({
               </div>
             </div>
           </Tooltip>
-        </Circle>
+        </CircleMarker>
       )}
       {dedupedInactiveRoute && (
         <Polyline
@@ -681,7 +682,7 @@ const VehiclePath: React.FC<VehiclePathProps> = ({
       )}
       {dedupedInactiveRoute &&
         dedupedInactiveRoute.map((r, i) => (
-          <Circle
+          <CircleMarker
             key={`${name}:${
               grouped ? 'overview' : 'detail'
             }:inactivePreview:${i}:${r.join()}`}
@@ -690,7 +691,7 @@ const VehiclePath: React.FC<VehiclePathProps> = ({
               lng: r[1],
             }}
             fillColor={color}
-            radius={10}
+            radius={4}
             fillOpacity={0.5}
             color={color}
             opacity={0.5}

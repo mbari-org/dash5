@@ -84,6 +84,16 @@ describe('normalizeMissionName', () => {
     expect(normalizeMissionName('Long-Range/Default.xml')).toBe('default')
   })
 
+  test('strips _vt vehicle-tailored suffix so it matches telemetry name', () => {
+    expect(normalizeMissionName('Science/profile_station_vt.tl')).toBe(
+      'profile_station'
+    )
+  })
+
+  test('strips _vt suffix when no directory prefix', () => {
+    expect(normalizeMissionName('profile_station_vt')).toBe('profile_station')
+  })
+
   test('returns empty string for undefined', () => {
     expect(normalizeMissionName(undefined)).toBe('')
   })

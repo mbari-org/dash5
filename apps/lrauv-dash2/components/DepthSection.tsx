@@ -29,7 +29,8 @@ const DepthSection: React.FC<{
   from: number
   to?: number
   onHover?: (millis?: number | null) => void
-}> = ({ vehicleName, from, to, onHover }) => {
+  indicatorTime?: number | null
+}> = ({ vehicleName, from, to, onHover, indicatorTime }) => {
   const [timeWindow, setTimeWindow] = usePersistentState<TimeWindow>(
     'depthSection.timeWindow',
     'deployment'
@@ -152,6 +153,12 @@ const DepthSection: React.FC<{
         !!vehicleName &&
         extendedFrom > 1_000_000_000_000,
       staleTime: 5 * 60 * 1000,
+      // Poll for active deployments so new depth data from vehicle surfacing
+      // events is reflected without requiring a page reload or window refocus.
+      // Key off the raw `to` prop (undefined for active deployments) rather than
+      // clampedTo, which can be undefined for ended deployments that ended within
+      // the current minute (bucketedNow floors to the minute boundary).
+      refetchInterval: to == null ? 5 * 60 * 1000 : false,
     }
   )
 
@@ -159,6 +166,19 @@ const DepthSection: React.FC<{
   const depthData = isExtended
     ? depthQuery.data ?? undefined
     : latestChartData?.find((d) => d.name === 'depth')
+
+  const depthValues = depthData?.values
+  const depthTimes = depthData?.times
+  const chartPoints = useMemo(() => {
+    if (!depthValues || !depthTimes) return undefined
+    // Clamp to the shorter array so indices are always in-bounds and
+    // timestamps are always defined (both arrays are number[] per the API).
+    const len = Math.min(depthValues.length, depthTimes.length)
+    return Array.from({ length: len }, (_, i) => ({
+      value: depthValues[i],
+      timestamp: depthTimes[i],
+    }))
+  }, [depthValues, depthTimes])
 
   // While logsets are still loading / auto-selecting, latestQuery is disabled
   // (isLoading = false). Treat that wait as loading so "No depth data" doesn't
@@ -222,14 +242,13 @@ const DepthSection: React.FC<{
         {chartAvailable && (
           <LineChart
             name={depthData.name}
-            data={depthData.values?.map((v: number, i: number) => ({
-              value: v,
-              timestamp: depthData.times?.[i],
-            }))}
+            data={chartPoints}
             yAxisLabel={`${humanize(depthData.name)} (${depthData.units})`}
             onHover={onHover}
+            indicatorTime={indicatorTime}
             inverted
             className="h-full w-full"
+            uirevision={`${vehicleName}-${from}-${depthData.name}-${timeWindow}-${selectedLogsetId}`}
           />
         )}
       </div>

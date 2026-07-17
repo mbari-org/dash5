@@ -994,6 +994,60 @@ test('bare command row does not show "No parameters" secondary text', async () =
   ).not.toBeInTheDocument()
 })
 
+test('running mission label uses vehicle-reported missionId over filename when they differ', async () => {
+  // tail_acoustic_contact.tl declares "mission follow_that_car" so the vehicle
+  // reports "Started mission follow_that_car". The missionId (follow_that_car)
+  // must win over missionNameFromEventData (tail_acoustic_contact) to prove
+  // that missionId precedence is exercised, not just the filename fallback.
+  server.use(
+    rest.get('/events', (_req, res, ctx) =>
+      res(
+        ctx.status(200),
+        ctx.json({
+          result: [
+            {
+              data: 'load Engineering/tail_acoustic_contact.tl;set follow_that_car.MissionTimeout 3 h;run',
+              unixTime: Date.now() - 60 * 1000,
+              eventId: 402,
+              eventType: 'run',
+              text: null,
+              note: null,
+              user: 'test-operator',
+            },
+          ],
+        })
+      )
+    ),
+    rest.get('/events/mission-started', (_req, res, ctx) =>
+      res(
+        ctx.status(200),
+        ctx.json({
+          result: [
+            {
+              text: 'Started mission follow_that_car',
+              unixTime: Date.now() - 55 * 1000,
+              eventId: 403,
+            },
+          ],
+        })
+      )
+    )
+  )
+
+  render(
+    <MockProviders queryClient={new QueryClient()}>
+      <ScheduleSection {...props} currentDeploymentId={1} />
+    </MockProviders>
+  )
+
+  await waitFor(() => {
+    expect(screen.getByText('follow_that_car')).toBeInTheDocument()
+  })
+  // Must not show the filename-derived label or raw command text
+  expect(screen.queryByText('tail_acoustic_contact')).not.toBeInTheDocument()
+  expect(screen.queryByText(/load Engineering/)).not.toBeInTheDocument()
+})
+
 test('mission command row shows "No parameters" secondary text when no params set', async () => {
   server.use(
     rest.get('/events', (_req, res, ctx) =>
@@ -1026,7 +1080,8 @@ test('mission command row shows "No parameters" secondary text when no params se
   )
 
   await waitFor(() => {
-    expect(screen.getByText('load Transport/transit.tl')).toBeInTheDocument()
+    // missionNameFromEventData extracts the clean name from the command path
+    expect(screen.getByText('transit')).toBeInTheDocument()
   })
   expect(screen.getByText('No parameters')).toBeInTheDocument()
 })
@@ -1120,7 +1175,8 @@ test('legacy run <file> mission row does not show "No parameters" subtitle', asy
   )
 
   await waitFor(() => {
-    expect(screen.getByText('Science/mbts_sci2.tl')).toBeInTheDocument()
+    // Legacy bare-run format: missionNameFromEventData strips path and extension
+    expect(screen.getByText('mbts_sci2')).toBeInTheDocument()
   })
   expect(screen.queryByText('No parameters')).not.toBeInTheDocument()
 })

@@ -103,11 +103,7 @@ describe('getVehicleInfo', () => {
       })
     )
 
-    try {
-      await getVehicleInfo(params)
-    } catch (error) {
-      expect(error).toBeDefined()
-    }
+    await expect(getVehicleInfo(params)).rejects.toBeDefined()
   })
 
   it('should return an empty response on a 404 error', async () => {

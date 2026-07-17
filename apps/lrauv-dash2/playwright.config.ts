@@ -55,12 +55,19 @@ const config: PlaywrightTestConfig = {
         ...devices['Desktop Firefox'],
       },
     },
-    {
-      name: 'Desktop Safari',
-      use: {
-        ...devices['Desktop Safari'],
-      },
-    },
+    // Safari (WebKit) is only run in CI where the system WebKit binary is
+    // available. The Playwright-managed WebKit binary does not work on all
+    // macOS configurations and causes browserContext.newPage: Target closed.
+    ...(process.env.CI
+      ? [
+          {
+            name: 'Desktop Safari',
+            use: {
+              ...devices['Desktop Safari'],
+            },
+          },
+        ]
+      : []),
     // Test against mobile viewports.
     // {
     //   name: 'Mobile Chrome',

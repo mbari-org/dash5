@@ -6,6 +6,7 @@ export interface UpdateEmailAddressesForNotificationsParams {
   email: string
   extraEmail: string
   newExtraEmail: string
+  code?: string
 }
 
 export interface UpdateEmailAddressesForNotificationsResponse {

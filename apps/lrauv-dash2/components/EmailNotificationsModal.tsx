@@ -574,9 +574,13 @@ const EmailNotificationsModal: React.FC<EmailNotificationsModalProps> = ({
   }
 
   // ── extra email address management ───────────────────────────────────────
-  const handleAddEmail = (newEmail: string, makeDefault?: boolean) => {
+  const handleAddEmail = (
+    newEmail: string,
+    code: string,
+    makeDefault?: boolean
+  ) => {
     addExtraEmail(
-      { email: accountEmail, addExtraEmails: newEmail },
+      { email: accountEmail, addExtraEmails: newEmail, code },
       {
         onSuccess: () => {
           setShowAddEmail(false)
@@ -593,13 +597,14 @@ const EmailNotificationsModal: React.FC<EmailNotificationsModalProps> = ({
     )
   }
 
-  const handleEditSaveAddress = (newEmail: string) => {
+  const handleEditSaveAddress = (newEmail: string, code: string) => {
     const oldEmail = selectedEmail
     updateEmailAddress(
       {
         email: accountEmail,
         extraEmail: oldEmail,
         newExtraEmail: newEmail,
+        code,
       },
       {
         onSuccess: () => {
