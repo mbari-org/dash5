@@ -1347,33 +1347,33 @@ export const ScheduleSection: React.FC<ScheduleSectionProps> = ({
         )
         return
       }
-    }
 
-    // Refresh schedule immediately after the DELETE succeeds, regardless of note outcome.
-    queryClient.invalidateQueries(['event', 'events'])
-    queryClient.invalidateQueries(['events'])
-    queryClient.invalidateQueries(['event', 'missionStarted'])
-
-    toast.success(`Cancelled directive ${eventId}.`)
-
-    const matchedResult = results.find((r) => r?.event.eventId === eventId)
-    const rawCommandText =
-      matchedResult?.event?.data ?? matchedResult?.event?.text ?? ''
-    const normalizedCommandText = rawCommandText.replace(/\s+/g, ' ').trim()
-    const commandText =
-      normalizedCommandText.length > 200
-        ? `${normalizedCommandText.slice(0, 200)}…`
-        : normalizedCommandText
-    try {
-      await createNoteMutation.mutateAsync({
-        vehicle: vehicleName,
-        note: `Cancelled request ${eventId} for '${vehicleName}': '${commandText}'`,
-      })
+      // Refresh schedule immediately after the DELETE succeeds, regardless of note outcome.
       queryClient.invalidateQueries(['event', 'events'])
-    } catch (e) {
-      toast.error(
-        `Directive ${eventId} was cancelled, but the cancellation note could not be recorded.`
-      )
+      queryClient.invalidateQueries(['events'])
+      queryClient.invalidateQueries(['event', 'missionStarted'])
+
+      toast.success(`Cancelled directive ${eventId}.`)
+
+      const matchedResult = results.find((r) => r?.event.eventId === eventId)
+      const rawCommandText =
+        matchedResult?.event?.data ?? matchedResult?.event?.text ?? ''
+      const normalizedCommandText = rawCommandText.replace(/\s+/g, ' ').trim()
+      const commandText =
+        normalizedCommandText.length > 200
+          ? `${normalizedCommandText.slice(0, 200)}…`
+          : normalizedCommandText
+      try {
+        await createNoteMutation.mutateAsync({
+          vehicle: vehicleName,
+          note: `Cancelled request ${eventId} for '${vehicleName}': '${commandText}'`,
+        })
+        queryClient.invalidateQueries(['event', 'events'])
+      } catch (e) {
+        toast.error(
+          `Directive ${eventId} was cancelled, but the cancellation note could not be recorded.`
+        )
+      }
     }
   }
 
