@@ -39,6 +39,7 @@ import {
   normalizeMissionPath,
 } from '../lib/missionUtils'
 import { toast } from 'react-hot-toast'
+import { useConfirm } from './ConfirmContext'
 
 export interface ScheduleSectionProps {
   className?: string
@@ -178,6 +179,7 @@ export const ScheduleSection: React.FC<ScheduleSectionProps> = ({
   deploymentStartTime,
   isRecovered,
 }) => {
+  const confirm = useConfirm()
   const { setGlobalModalId } = useGlobalModalId()
   const [scheduleFilter, setScheduleFilter] = useState<string>('')
   const [scheduleSearch, setScheduleSearch] = useState<string>('')
@@ -1262,23 +1264,21 @@ export const ScheduleSection: React.FC<ScheduleSectionProps> = ({
     eventId: number
     commandType: 'mission' | 'command'
   }) => {
-    if (
-      !confirm(
-        `Cancel this ${commandType} directive (event ID ${eventId})? This will remove it from the shore-side queue.`
-      )
-    ) {
-      return
-    }
-    try {
-      await deleteCommandQueueMutation.mutateAsync({
-        vehicle: vehicleName,
-        refEventId: eventId,
-      })
-    } catch (e) {
-      toast.error(
-        `Failed to cancel directive ${eventId}. It may have already been sent to the vehicle.`
-      )
-      return
+    const isConfirmed = await confirm({
+      title: `Cancel this ${commandType} directive (event ID ${eventId})? This will remove it from the shore-side queue.`,
+    })
+    if (isConfirmed) {
+      try {
+        await deleteCommandQueueMutation.mutateAsync({
+          vehicle: vehicleName,
+          refEventId: eventId,
+        })
+      } catch (e) {
+        toast.error(
+          `Failed to cancel directive ${eventId}. It may have already been sent to the vehicle.`
+        )
+        return
+      }
     }
 
     // Refresh schedule immediately after the DELETE succeeds, regardless of note outcome.

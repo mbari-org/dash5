@@ -16,6 +16,7 @@ import React, {
 // } from '@mbari/api-client'
 import toast from 'react-hot-toast'
 import { createLogger } from '@mbari/utils'
+import { useConfirm } from './ConfirmContext'
 
 const logger = createLogger('MarkerContext')
 
@@ -99,6 +100,7 @@ export const MarkerProvider: React.FC<{ children: React.ReactNode }> = ({
   }, [])
   const [selectedMarkerId, setSelectedMarkerId] = useState<string | null>(null)
   const [nextId, setNextId] = useState(1)
+  const confirm = useConfirm()
 
   // Fetch markers on mount
   useEffect(() => {
@@ -323,12 +325,12 @@ export const MarkerProvider: React.FC<{ children: React.ReactNode }> = ({
   }, [])
 
   // Add function to clear all markers
-  const clearAllMarkers = useCallback(() => {
-    if (
-      window.confirm(
-        'Are you sure you want to remove all markers? This cannot be undone.'
-      )
-    ) {
+  const clearAllMarkers = useCallback(async () => {
+    const isConfirmed = await confirm({
+      title:
+        'Are you sure you want to remove all markers? This cannot be undone.',
+    })
+    if (isConfirmed) {
       setMarkers([])
       toast.success('All markers have been removed', {
         duration: 3000,

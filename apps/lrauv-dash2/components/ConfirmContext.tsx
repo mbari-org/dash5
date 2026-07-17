@@ -5,7 +5,7 @@ interface ConfirmOptions {
   title: string
   confirmLabel?: string
   cancelLabel?: string
-  destructive?: boolean
+  nonDestructive?: boolean
 }
 
 interface ConfirmContextProps {
@@ -54,7 +54,7 @@ export const ConfirmationProvider = ({ children }: { children: ReactNode }) => {
           onCancel={handleCancel}
           onConfirm={handleConfirm}
           confirmButtonAppearance={
-            options.destructive ? 'destructive' : 'primary'
+            options.nonDestructive ? 'primary' : 'destructive'
           }
           open
           blurBackground

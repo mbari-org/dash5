@@ -27,6 +27,7 @@ import {
   getDefaultDest,
   saveDefaultDest,
 } from '../lib/notificationDestinations'
+import { useConfirm } from './ConfirmContext'
 
 export interface EmailNotificationsModalProps {
   onClose?: () => void
@@ -35,6 +36,7 @@ export interface EmailNotificationsModalProps {
 const EmailNotificationsModal: React.FC<EmailNotificationsModalProps> = ({
   onClose,
 }) => {
+  const confirm = useConfirm()
   const { profile, axiosInstance, token } = useTethysApiContext()
   const queryClient = useQueryClient()
   const accountEmail = profile?.email ?? ''
@@ -551,20 +553,23 @@ const EmailNotificationsModal: React.FC<EmailNotificationsModalProps> = ({
 
   const handleDeleteAll = async () => {
     if (!selectedEmail) return
-    if (!confirm(`Delete all notification settings for ${selectedEmail}?`))
-      return
-    try {
-      setIsDeleting(true)
-      await axiosInstance!.delete('/ens', {
-        params: { email: selectedEmail },
-        headers: { Authorization: `Bearer ${token}` },
-      })
-      queryClient.removeQueries(['email', 'settings', selectedEmail])
-      onClose?.()
-    } catch {
-      toast.error('Failed to delete notification settings. Please try again.')
-    } finally {
-      setIsDeleting(false)
+    const isConfirmed = await confirm({
+      title: `Delete all notification settings for ${selectedEmail}?`,
+    })
+    if (isConfirmed) {
+      try {
+        setIsDeleting(true)
+        await axiosInstance!.delete('/ens', {
+          params: { email: selectedEmail },
+          headers: { Authorization: `Bearer ${token}` },
+        })
+        queryClient.removeQueries(['email', 'settings', selectedEmail])
+        onClose?.()
+      } catch {
+        toast.error('Failed to delete notification settings. Please try again.')
+      } finally {
+        setIsDeleting(false)
+      }
     }
   }
 
@@ -613,29 +618,30 @@ const EmailNotificationsModal: React.FC<EmailNotificationsModalProps> = ({
     )
   }
 
-  const handleDeleteAddress = () => {
-    if (
-      !confirm(`Remove ${selectedEmail} from your notification destinations?`)
-    )
-      return
-    const deletedEmail = selectedEmail
-    deleteEmailAddress(
-      { email: accountEmail, extraEmail: deletedEmail },
-      {
-        onSuccess: () => {
-          setShowEditEmail(false)
-          setSelectedEmail(accountEmail)
-          // If the deleted address was the stored default, revert to account email.
-          if (deletedEmail === defaultDest) {
-            saveDefaultDest(accountEmail)
-            setDefaultDest(accountEmail)
-          }
-        },
-        onError: () => {
-          toast.error('Failed to remove destination. Please try again.')
-        },
-      }
-    )
+  const handleDeleteAddress = async () => {
+    const isConfirmed = await confirm({
+      title: `Remove ${selectedEmail} from your notification destinations?`,
+    })
+    if (isConfirmed) {
+      const deletedEmail = selectedEmail
+      deleteEmailAddress(
+        { email: accountEmail, extraEmail: deletedEmail },
+        {
+          onSuccess: () => {
+            setShowEditEmail(false)
+            setSelectedEmail(accountEmail)
+            // If the deleted address was the stored default, revert to account email.
+            if (deletedEmail === defaultDest) {
+              saveDefaultDest(accountEmail)
+              setDefaultDest(accountEmail)
+            }
+          },
+          onError: () => {
+            toast.error('Failed to remove destination. Please try again.')
+          },
+        }
+      )
+    }
   }
 
   // ── derived flags ────────────────────────────────────────────────────────
