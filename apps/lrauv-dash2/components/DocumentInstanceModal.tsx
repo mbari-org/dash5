@@ -6,6 +6,7 @@ import {
   useCreateDocument,
   useCreateDocumentInstance,
   useDeleteDocumentInstance,
+  useTethysApiContext,
 } from '@mbari/api-client'
 import { useQueryClient } from 'react-query'
 import toast from 'react-hot-toast'
@@ -51,6 +52,7 @@ const DocumentInstanceModal: React.FC<{ onClose?: () => void }> = ({
   onClose,
 }) => {
   const { globalModalId, setGlobalModalId } = useGlobalModalId()
+  const { authenticated } = useTethysApiContext()
   const docInstanceId = globalModalId?.meta?.docInstanceId
   const duplicate = globalModalId?.meta?.duplicate
   const newDocRequest = globalModalId?.meta?.newDocRequest
@@ -132,6 +134,13 @@ const DocumentInstanceModal: React.FC<{ onClose?: () => void }> = ({
       setCurrentDocInstanceId(docInstanceId)
     }
   }, [docInstanceId, duplicate, newDocRequest])
+
+  // Defense in depth: never remain in edit mode while logged out.
+  useEffect(() => {
+    if (!authenticated && isEditing) {
+      setIsEditing(false)
+    }
+  }, [authenticated, isEditing])
 
   useEffect(() => {
     // Create flow: initialize editor immediately.
@@ -451,7 +460,7 @@ const DocumentInstanceModal: React.FC<{ onClose?: () => void }> = ({
               onChange={handleNameChange}
               disabled={!isEditing && !!docInstanceId && !duplicate}
             />
-            {docInstanceId && (
+            {docInstanceId && authenticated && (
               <div className="ml-1 flex items-center">
                 {!isEditing ? (
                   <Button
@@ -494,14 +503,16 @@ const DocumentInstanceModal: React.FC<{ onClose?: () => void }> = ({
                   onChange={handleRevisionChange}
                   latestDocInstanceId={docs?.[0]?.latestRevision?.docInstanceId}
                 />
-                <Button
-                  onClick={handleDeleteRevisionClick}
-                  appearance="secondary"
-                  className="hover:bg-red-600 hover:text-white"
-                  disabled={isEditing}
-                >
-                  Delete Revision
-                </Button>
+                {authenticated && (
+                  <Button
+                    onClick={handleDeleteRevisionClick}
+                    appearance="secondary"
+                    className="hover:bg-red-600 hover:text-white"
+                    disabled={isEditing}
+                  >
+                    Delete Revision
+                  </Button>
+                )}
               </div>
             )}
           <div style={{ height: 'calc(100vh - 280px)', overflow: 'auto' }}>

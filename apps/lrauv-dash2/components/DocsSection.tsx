@@ -161,8 +161,8 @@ const DocsSection: React.FC<DocsSectionProps> = ({
         attachments={attachments}
         time={time}
         date={date}
-        onSelectAttachment={handleRemoveAttachment}
-        onMoreClick={openMoreMenu}
+        onSelectAttachment={authenticated ? handleRemoveAttachment : undefined}
+        onMoreClick={authenticated ? openMoreMenu : undefined}
         onSelect={handleSelectDocument}
         docId={item?.docId as number}
         docInstanceId={item?.latestRevision?.docInstanceId as number}
@@ -187,6 +187,11 @@ const DocsSection: React.FC<DocsSectionProps> = ({
     <>
       <header className="flex p-2">
         <div className="flex flex-grow flex-col">
+          {!authenticated && (
+            <p className="mb-1 text-sm italic text-stone-600">
+              Sign in to add or edit
+            </p>
+          )}
           <SelectField
             name="Filter"
             options={DOCUMENT_FILTER_TYPES.map((name) => ({ name, id: name }))}

@@ -48,6 +48,23 @@ test('should render the more options button', async () => {
   expect(screen.getByLabelText(/more options/i)).toBeInTheDocument()
 })
 
+test('should hide more options when onMoreClick is omitted', async () => {
+  render(<DocCell {...props} onMoreClick={undefined} />)
+
+  expect(screen.queryByLabelText(/more options/i)).not.toBeInTheDocument()
+})
+
+test('should render read-only attachment labels when onSelectAttachment is omitted', async () => {
+  render(<DocCell {...props} onSelectAttachment={undefined} />)
+
+  expect(
+    screen.getByText(`${props?.attachments?.[0].name}`)
+  ).toBeInTheDocument()
+  expect(
+    screen.queryByRole('button', { name: /Gup S EcoHAB/i })
+  ).not.toBeInTheDocument()
+})
+
 test('should render the secondary label when provided', async () => {
   render(<DocCell {...props} secondary="predeployment" />)
 

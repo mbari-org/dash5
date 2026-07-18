@@ -101,17 +101,19 @@ export const OverviewToolbar: React.FC<OverviewToolbarProps> = ({
       })()
     : null
 
-  const newDeploymentOptions = [
-    {
-      label: `New ${capitalize(vehicleName ?? '')} deployment`,
-      icon: faPlus as IconDefinition,
-      onSelect: () => {
-        handleNewDeployment?.()
-        setShowDeployments(false)
-      },
-      disabled: !handleNewDeployment,
-    },
-  ]
+  const newDeploymentOptions =
+    authenticated && handleNewDeployment
+      ? [
+          {
+            label: `New ${capitalize(vehicleName ?? '')} deployment`,
+            icon: faPlus as IconDefinition,
+            onSelect: () => {
+              handleNewDeployment()
+              setShowDeployments(false)
+            },
+          },
+        ]
+      : []
   const deploymentOptions =
     deployments?.map((d) => ({
       label: d.name,
@@ -191,7 +193,7 @@ export const OverviewToolbar: React.FC<OverviewToolbarProps> = ({
             />
           </li>
         )}
-        {onEditDeployment ? (
+        {onEditDeployment && authenticated ? (
           <li data-testid="deploymentDetails" className="ml-2">
             <IconButton
               icon={faClipboardList}

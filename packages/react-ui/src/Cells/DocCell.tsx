@@ -15,8 +15,10 @@ export interface DocCellProps {
   className?: string
   style?: React.CSSProperties
   onSelect: () => void
-  onSelectAttachment: (attachment: Attachment) => void
-  onMoreClick: (
+  /** When omitted, attachments render as read-only labels (no detach control). */
+  onSelectAttachment?: (attachment: Attachment) => void
+  /** When omitted, the more-options menu is hidden. */
+  onMoreClick?: (
     id: { docInstanceId: number; docId: number },
     rect?: DOMRect
   ) => void
@@ -52,7 +54,7 @@ export const DocCell: React.FC<DocCellProps> = ({
   const moreButtonRef = useRef<HTMLDivElement | null>(null)
 
   const handleMoreClick = () => {
-    onMoreClick(
+    onMoreClick?.(
       { docInstanceId, docId },
       moreButtonRef.current?.getBoundingClientRect()
     )
@@ -84,26 +86,34 @@ export const DocCell: React.FC<DocCellProps> = ({
           <ul className="flex flex-col">
             {attachments?.map((attachment) => (
               <li key={attachment.id}>
-                <AccessoryButton
-                  className={styles.accButton}
-                  label={attachment.name}
-                  icon={faTimes as IconProp}
-                  onClick={swallow(() => onSelectAttachment(attachment))}
-                  reverse={true}
-                />
+                {onSelectAttachment ? (
+                  <AccessoryButton
+                    className={styles.accButton}
+                    label={attachment.name}
+                    icon={faTimes as IconProp}
+                    onClick={swallow(() => onSelectAttachment(attachment))}
+                    reverse={true}
+                  />
+                ) : (
+                  <span className="mb-1 text-sm font-semibold text-gray-700">
+                    {attachment.name}
+                  </span>
+                )}
               </li>
             ))}
           </ul>
         </div>
       </article>
-      <div className={styles.iconButton} ref={moreButtonRef}>
-        <IconButton
-          icon={faEllipsisV}
-          ariaLabel={'More options'}
-          onClick={handleMoreClick}
-          size={'text-2xl'}
-        />
-      </div>
+      {onMoreClick && (
+        <div className={styles.iconButton} ref={moreButtonRef}>
+          <IconButton
+            icon={faEllipsisV}
+            ariaLabel={'More options'}
+            onClick={handleMoreClick}
+            size={'text-2xl'}
+          />
+        </div>
+      )}
     </div>
   )
 }

@@ -136,11 +136,11 @@ test('should render the deployment dropdown when selecting the toggle', async ()
   expect(screen.getByText(/new brizo/i)).not.toHaveClass('opacity-30')
 })
 
-test('should disable the new deployment dropdown if no handler is present', async () => {
+test('should hide the new deployment option if no handler is present', async () => {
   render(<OverviewToolbar {...props} onSelectNewDeployment={undefined} />)
 
   fireEvent.click(screen.getByTestId('deploymentToggle'))
-  expect(screen.getByText(/new brizo/i)).toHaveClass('opacity-30')
+  expect(screen.queryByText(/new brizo/i)).not.toBeInTheDocument()
 })
 
 test('should render the icon1 hover popup', async () => {
@@ -289,6 +289,22 @@ test('should not render the resources slot when unauthenticated', async () => {
     />
   )
   expect(screen.queryByTestId('resources-slot')).not.toBeInTheDocument()
+})
+
+test('should render deployment details when authenticated', async () => {
+  render(<OverviewToolbar {...props} authenticated />)
+  expect(screen.getByTestId('deploymentDetails')).toBeInTheDocument()
+})
+
+test('should not render deployment details when unauthenticated', async () => {
+  render(<OverviewToolbar {...props} authenticated={false} />)
+  expect(screen.queryByTestId('deploymentDetails')).not.toBeInTheDocument()
+})
+
+test('should not offer new deployment when unauthenticated', async () => {
+  render(<OverviewToolbar {...props} authenticated={false} />)
+  fireEvent.click(screen.getByTestId('deploymentToggle'))
+  expect(screen.queryByText(/New Brizo deployment/i)).not.toBeInTheDocument()
 })
 
 test('should render the Recovered pill when recovered is true', async () => {
