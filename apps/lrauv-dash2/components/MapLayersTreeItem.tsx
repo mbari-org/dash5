@@ -9,6 +9,7 @@ import {
   faArrowsToCircle,
   faCircle,
   faCircleInfo,
+  faLinkSlash,
 } from '@fortawesome/free-solid-svg-icons'
 
 export interface TreeItemProps {
@@ -28,6 +29,10 @@ export interface TreeItemProps {
   onMouseLeaveStar?: () => void
   onCenterClick?: () => void
   centerLabel?: string
+  onRemoveClick?: () => void
+  removeLabel?: string
+  removeIcon?: IconProp
+  checkTooltip?: string
   legendContent?: React.ReactNode
 }
 
@@ -62,6 +67,10 @@ export const TreeItem: React.FC<TreeItemProps> = ({
   onMouseLeaveStar,
   onCenterClick,
   centerLabel = 'Center map on this item',
+  onRemoveClick,
+  removeLabel = 'Remove from layer',
+  removeIcon = faLinkSlash,
+  checkTooltip,
   legendContent,
 }) => {
   const hasChildren = React.Children.count(children) > 0
@@ -111,6 +120,7 @@ export const TreeItem: React.FC<TreeItemProps> = ({
             onChange={onToggleCheck}
             readOnly={!onToggleCheck}
             disabled={disabled || !onToggleCheck}
+            title={checkTooltip}
             className="mapLayersCheckbox mr-2 h-5 w-5 accent-blue-600"
             style={{
               cursor: disabled || !onToggleCheck ? 'not-allowed' : 'pointer',
@@ -179,7 +189,7 @@ export const TreeItem: React.FC<TreeItemProps> = ({
             <Tippy
               content={centerLabel}
               placement="top-start"
-              appendTo="parent"
+              appendTo={() => document.body}
             >
               <button
                 type="button"
@@ -208,6 +218,43 @@ export const TreeItem: React.FC<TreeItemProps> = ({
                 <FontAwesomeIcon
                   icon={faArrowsToCircle}
                   style={{ color: '#6b7280', fontSize: '14.5px' }}
+                />
+              </button>
+            </Tippy>
+          )}
+          {onRemoveClick !== undefined && (
+            <Tippy
+              content={removeLabel}
+              placement="top-start"
+              appendTo={() => document.body}
+            >
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.preventDefault()
+                  e.stopPropagation()
+                  onRemoveClick()
+                }}
+                className="ml-2 focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-blue-500"
+                aria-label={removeLabel}
+                style={{
+                  width: '20px',
+                  height: '20px',
+                  flexShrink: 0,
+                  borderRadius: '3px',
+                  background: '#fff',
+                  border: 0,
+                  padding: 0,
+                  boxShadow: '0 1px 3px rgba(0,0,0,0.35)',
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  cursor: 'pointer',
+                }}
+              >
+                <FontAwesomeIcon
+                  icon={removeIcon}
+                  style={{ color: '#6b7280', fontSize: '13px' }}
                 />
               </button>
             </Tippy>
