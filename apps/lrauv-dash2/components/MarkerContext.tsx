@@ -59,22 +59,43 @@ export interface MarkerContextType {
   deleteMarker: (id: string) => void
   saveMarkerToLayer: (id: string) => void
   removeMarkerFromLayer: (id: string) => void
+  removeAllMarkersFromLayer: () => void
   clearAllMarkers: () => void
   selectAllMarkers: () => void
   deselectAllMarkers: () => void
   setMarkers: React.Dispatch<React.SetStateAction<MarkerData[]>>
 }
 
-// Storage key for localStorage
+// Storage key for localStorage — only markers with savedToLayer persist
 const STORAGE_KEY = 'lrauv-map-markers'
 
 // Create context
 const MarkerContext = createContext<MarkerContextType | undefined>(undefined)
 
-// Use mock implementations until API is ready
-const getMarkers = async () => {
-  const savedMarkers = localStorage.getItem('lrauv-map-markers')
-  return savedMarkers ? JSON.parse(savedMarkers) : []
+const readStoredLayerMarkers = (): MarkerData[] => {
+  if (typeof window === 'undefined') return []
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY)
+    if (!raw) return []
+    const parsed = JSON.parse(raw) as MarkerData[]
+    if (!Array.isArray(parsed)) return []
+    // Only restore markers explicitly saved to the layer (ignore legacy session entries)
+    return parsed.filter((marker) => marker.savedToLayer === true)
+  } catch (error) {
+    logger.error('Error loading markers from localStorage:', error)
+    return []
+  }
+}
+
+const persistLayerMarkers = (markers: MarkerData[]): void => {
+  if (typeof window === 'undefined') return
+  try {
+    const layerMarkers = markers.filter((marker) => marker.savedToLayer)
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(layerMarkers))
+    logger.debug('Saved markers to localStorage:', layerMarkers.length)
+  } catch (error) {
+    logger.error('Error saving markers to localStorage:', error)
+  }
 }
 
 // Provider component
@@ -82,9 +103,10 @@ export const MarkerProvider: React.FC<{ children: React.ReactNode }> = ({
   children,
 }) => {
   const [markers, setMarkers] = useState<MarkerData[]>([])
+  const [hasHydrated, setHasHydrated] = useState(false)
   const [selectedMarkers, setSelectedMarkers] = useState<MarkerData[]>([])
-  const [loading, setLoading] = useState(false)
-  const [error, setError] = useState<Error | null>(null)
+  const [loading] = useState(false)
+  const [error] = useState<Error | null>(null)
 
   const [isAddingMarkers, setIsAddingMarkers] = useState(false)
   const [activeEditMarkerId, setActiveEditMarkerId] = useState<string | null>(
@@ -98,61 +120,18 @@ export const MarkerProvider: React.FC<{ children: React.ReactNode }> = ({
     setSelectedMarkers([])
   }, [])
   const [selectedMarkerId, setSelectedMarkerId] = useState<string | null>(null)
-  const [nextId, setNextId] = useState(1)
 
-  // Fetch markers on mount
+  // Load after mount so SSR/static export never persists an empty [] over storage
   useEffect(() => {
-    let cancelled = false
-    const fetchMarkers = async () => {
-      if (cancelled) return
-      setLoading(true)
-      try {
-        const response = await getMarkers()
-        if (!cancelled) {
-          setMarkers(response)
-          setError(null)
-        }
-      } catch (err) {
-        if (!cancelled) {
-          logger.error('Failed to fetch markers:', err)
-          setError(
-            err instanceof Error ? err : new Error('Failed to fetch markers')
-          )
-        }
-      } finally {
-        if (!cancelled) setLoading(false)
-      }
-    }
-
-    fetchMarkers()
-    return () => {
-      cancelled = true
-    }
+    setMarkers(readStoredLayerMarkers())
+    setHasHydrated(true)
   }, [])
 
-  // Load markers from localStorage on initial mount
+  // Persist only layer-saved markers (session-only markers stay in memory)
   useEffect(() => {
-    try {
-      const savedMarkers = localStorage.getItem(STORAGE_KEY)
-      if (savedMarkers) {
-        const parsedMarkers = JSON.parse(savedMarkers) as MarkerData[]
-        setMarkers(parsedMarkers)
-        logger.debug('Loaded markers from localStorage:', parsedMarkers.length)
-      }
-    } catch (error) {
-      logger.error('Error loading markers from localStorage:', error)
-    }
-  }, [])
-
-  // Save markers to localStorage whenever they change
-  useEffect(() => {
-    try {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(markers))
-      logger.debug('Saved markers to localStorage:', markers.length)
-    } catch (error) {
-      logger.error('Error saving markers to localStorage:', error)
-    }
-  }, [markers])
+    if (!hasHydrated) return
+    persistLayerMarkers(markers)
+  }, [markers, hasHydrated])
 
   const handleToggleMarkerMode = useCallback(() => {
     setIsAddingMarkers((prev) => !prev)
@@ -238,51 +217,32 @@ export const MarkerProvider: React.FC<{ children: React.ReactNode }> = ({
 
   const toggleMarkerVisibility = useCallback(
     (markerId: string, setVisible?: boolean) => {
-      setMarkers((prevMarkers) => {
-        return prevMarkers.map((marker) => {
-          if (marker.id.toString() === markerId) {
-            // If setVisible is provided, use that value; otherwise toggle
-            const newVisibility =
-              setVisible !== undefined
-                ? setVisible
-                : marker.visible === false
-                ? true
-                : false
+      setMarkers((prevMarkers) =>
+        prevMarkers.map((marker) => {
+          if (marker.id.toString() !== markerId) return marker
 
-            // Rest of your function stays the same...
-            if (marker.savedToLayer) {
-              const savedMarkers = JSON.parse(
-                localStorage.getItem('lrauv-map-markers') || '[]'
-              )
-              const updatedSavedMarkers = savedMarkers.map((m: any) =>
-                m.id.toString() === markerId
-                  ? { ...m, visible: newVisibility }
-                  : m
-              )
-              localStorage.setItem(
-                'lrauv-map-markers',
-                JSON.stringify(updatedSavedMarkers)
-              )
-            }
+          const newVisibility =
+            setVisible !== undefined
+              ? setVisible
+              : marker.visible === false
+              ? true
+              : false
 
-            return {
-              ...marker,
-              visible: newVisibility,
-            }
+          return {
+            ...marker,
+            visible: newVisibility,
           }
-          return marker
         })
-      })
+      )
     },
     []
   )
 
   // Save marker to mapLayersList layer
   const saveMarkerToLayer = useCallback((markerId: string) => {
-    setMarkers((prevMarkers) => {
-      const updatedMarkers = prevMarkers.map((marker) => {
+    setMarkers((prevMarkers) =>
+      prevMarkers.map((marker) => {
         if (marker.id.toString() === markerId) {
-          // Mark as saved to layer
           return {
             ...marker,
             savedToLayer: true,
@@ -291,19 +251,13 @@ export const MarkerProvider: React.FC<{ children: React.ReactNode }> = ({
         }
         return marker
       })
-
-      // Update storage with saved markers
-      const markersToSave = updatedMarkers.filter((m) => m.savedToLayer)
-      localStorage.setItem('lrauv-map-markers', JSON.stringify(markersToSave))
-
-      return updatedMarkers
-    })
+    )
   }, [])
 
   // Remove marker from mapLayersList layer
   const removeMarkerFromLayer = useCallback((markerId: string) => {
-    setMarkers((prevMarkers) => {
-      const updatedMarkers = prevMarkers.map((marker) => {
+    setMarkers((prevMarkers) =>
+      prevMarkers.map((marker) => {
         if (marker.id.toString() === markerId) {
           // Remove from layer but keep in local state
           return {
@@ -313,20 +267,36 @@ export const MarkerProvider: React.FC<{ children: React.ReactNode }> = ({
         }
         return marker
       })
+    )
+  }, [])
 
-      // Update storage with only saved markers
-      const markersToSave = updatedMarkers.filter((m) => m.savedToLayer)
-      localStorage.setItem('lrauv-map-markers', JSON.stringify(markersToSave))
+  // Remove all markers from layer; keep them on the map
+  const removeAllMarkersFromLayer = useCallback(() => {
+    if (
+      !window.confirm(
+        'Remove all markers from layer? They will remain on the map.'
+      )
+    ) {
+      return
+    }
 
-      return updatedMarkers
+    setMarkers((prevMarkers) =>
+      prevMarkers.map((marker) =>
+        marker.savedToLayer ? { ...marker, savedToLayer: false } : marker
+      )
+    )
+
+    toast.success('All markers removed from layer', {
+      duration: 3000,
+      className: 'blue-toast',
     })
   }, [])
 
-  // Add function to clear all markers
+  // Permanently delete every marker from the map
   const clearAllMarkers = useCallback(() => {
     if (
       window.confirm(
-        'Are you sure you want to remove all markers? This cannot be undone.'
+        'Are you sure you want to delete all markers from the map? This cannot be undone.'
       )
     ) {
       setMarkers([])
@@ -441,7 +411,7 @@ export const MarkerProvider: React.FC<{ children: React.ReactNode }> = ({
       const marker = markers.find((m) => m.id === numericId)
       const markerLabel = marker?.label || 'Unnamed'
 
-      // Remove the marker from the array
+      // Remove the marker from the array (persist effect updates localStorage)
       setMarkers((prev) => prev.filter((marker) => marker.id !== numericId))
 
       // If the deleted marker was selected, clear selection
@@ -452,21 +422,6 @@ export const MarkerProvider: React.FC<{ children: React.ReactNode }> = ({
       // If the deleted marker was being edited, reset active edit marker
       if (activeEditMarkerId === id) {
         setActiveEditMarkerId(null)
-      }
-
-      // Also remove from localStorage if it was saved to layer
-      if (marker?.savedToLayer) {
-        const updatedMarkers = markers.filter(
-          (m) => m.id !== numericId && m.savedToLayer
-        )
-        try {
-          localStorage.setItem(
-            'lrauv-map-markers',
-            JSON.stringify(updatedMarkers)
-          )
-        } catch (error) {
-          logger.error('Error removing marker from storage:', error)
-        }
       }
 
       // Show confirmation toast
@@ -501,9 +456,8 @@ export const MarkerProvider: React.FC<{ children: React.ReactNode }> = ({
       // Find the marker to include its label in the toast
       const marker = markers.find((m) => m.id === id)
 
-      setMarkers((prev) => {
-        // Create updated array with new position
-        const updated = prev.map((m) =>
+      setMarkers((prev) =>
+        prev.map((m) =>
           m.id === id
             ? {
                 ...m,
@@ -513,19 +467,7 @@ export const MarkerProvider: React.FC<{ children: React.ReactNode }> = ({
               }
             : m
         )
-
-        // If this marker is already saved to layer, update the layer storage too
-        const draggedMarker = updated.find((m) => m.id === id)
-        if (draggedMarker?.savedToLayer) {
-          localStorage.setItem(
-            'lrauv-map-markers',
-            JSON.stringify(updated.filter((m) => m.savedToLayer))
-          )
-          logger.debug(`Updated layer storage for marker ${id}`)
-        }
-
-        return updated
-      })
+      )
 
       // Show toast message with the marker label
       if (marker) {
@@ -573,6 +515,7 @@ export const MarkerProvider: React.FC<{ children: React.ReactNode }> = ({
     deleteMarker,
     toggleMarkerVisibility,
     removeMarkerFromLayer,
+    removeAllMarkersFromLayer,
     saveMarkerToLayer,
     selectAllMarkers,
     deselectAllMarkers,
