@@ -139,7 +139,7 @@ export default function DocDispatchPage() {
       ) : (
         <DocEditor
           docType={docType}
-          isEditing={authenticated && isEditing}
+          isEditing={!!authenticated && isEditing}
           html={text}
           onChange={setFullHtml}
           onSaveFilled={handleSaveFilled}
