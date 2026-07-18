@@ -105,9 +105,6 @@ export const MarkerProvider: React.FC<{ children: React.ReactNode }> = ({
   const [markers, setMarkers] = useState<MarkerData[]>([])
   const [hasHydrated, setHasHydrated] = useState(false)
   const [selectedMarkers, setSelectedMarkers] = useState<MarkerData[]>([])
-  // Placeholder until remote marker API wiring returns; kept for context consumers
-  const loading = false
-  const error: Error | null = null
 
   const [isAddingMarkers, setIsAddingMarkers] = useState(false)
   const [activeEditMarkerId, setActiveEditMarkerId] = useState<string | null>(
@@ -491,13 +488,11 @@ export const MarkerProvider: React.FC<{ children: React.ReactNode }> = ({
     [markers]
   )
 
-  const value = {
+  const value: MarkerContextType = {
     markers,
     selectedMarkers,
     isAddingMarkers,
     activeEditMarkerId,
-    loading,
-    error,
     selectedMarkerId,
     setSelectedMarkerId,
     setIsAddingMarkers,
