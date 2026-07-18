@@ -109,6 +109,7 @@ export const MarkerProvider: React.FC<{ children: React.ReactNode }> = ({
   const [hasHydrated, setHasHydrated] = useState(false)
   const [selectedMarkers, setSelectedMarkers] = useState<MarkerData[]>([])
 
+
   const [isAddingMarkers, setIsAddingMarkers] = useState(false)
   const [activeEditMarkerId, setActiveEditMarkerId] = useState<string | null>(
     null
