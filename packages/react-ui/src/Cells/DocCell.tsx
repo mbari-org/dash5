@@ -95,7 +95,7 @@ export const DocCell: React.FC<DocCellProps> = ({
                     reverse={true}
                   />
                 ) : (
-                  <span className="mb-1 text-sm font-semibold text-gray-700">
+                  <span className="mb-1 block text-sm font-semibold text-gray-700">
                     {attachment.name}
                   </span>
                 )}
