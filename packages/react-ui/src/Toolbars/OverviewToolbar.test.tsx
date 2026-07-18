@@ -307,6 +307,17 @@ test('should not offer new deployment when unauthenticated', async () => {
   expect(screen.queryByText(/New Brizo deployment/i)).not.toBeInTheDocument()
 })
 
+test('should keep deployment toggle when unauthenticated if deployments exist', async () => {
+  render(<OverviewToolbar {...props} authenticated={false} />)
+  expect(screen.getByTestId('deploymentToggle')).toBeInTheDocument()
+})
+
+test('should not show empty deployment toggle when unauthenticated with no deployments', async () => {
+  render(<OverviewToolbar {...props} authenticated={false} deployments={[]} />)
+  expect(screen.getByTestId('deploymentHeadline')).toBeInTheDocument()
+  expect(screen.queryByTestId('deploymentToggle')).not.toBeInTheDocument()
+})
+
 test('should render the Recovered pill when recovered is true', async () => {
   render(<OverviewToolbar {...props} recovered={true} recoveredAt="3h ago" />)
   expect(screen.getByText(/recovered 3h ago/i)).toBeInTheDocument()

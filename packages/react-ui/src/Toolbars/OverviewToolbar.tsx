@@ -114,14 +114,17 @@ export const OverviewToolbar: React.FC<OverviewToolbarProps> = ({
           },
         ]
       : []
-  const deploymentOptions =
-    deployments?.map((d) => ({
-      label: d.name,
-      onSelect: () => {
-        handleSelectDeployment?.(d)
-        setShowDeployments(false)
-      },
-    })) ?? []
+  const deploymentOptions = handleSelectDeployment
+    ? deployments?.map((d) => ({
+        label: d.name,
+        onSelect: () => {
+          handleSelectDeployment(d)
+          setShowDeployments(false)
+        },
+      })) ?? []
+    : []
+  const deploymentMenuOptions = [...newDeploymentOptions, ...deploymentOptions]
+  const canOpenDeploymentMenu = deploymentMenuOptions.length > 0
 
   const toggleHover = (newHover: HoverOption) => () => {
     setHovering(newHover)
@@ -130,7 +133,7 @@ export const OverviewToolbar: React.FC<OverviewToolbarProps> = ({
     <article style={style} className={clsx(styles.container, className, '')}>
       <ul className={styles.leftWrapper}>
         <li className="relative">
-          {handleSelectDeployment || handleNewDeployment ? (
+          {canOpenDeploymentMenu ? (
             <button
               onClick={handleToggle}
               className={styles.deployment}
@@ -171,9 +174,9 @@ export const OverviewToolbar: React.FC<OverviewToolbarProps> = ({
               )}
             </h2>
           )}
-          {showDeployments && (
+          {showDeployments && canOpenDeploymentMenu && (
             <Dropdown
-              options={[...newDeploymentOptions, ...deploymentOptions]}
+              options={deploymentMenuOptions}
               className={styles.dropdown}
               header={
                 deployment?.name ? (
