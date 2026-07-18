@@ -245,7 +245,7 @@ const VehicleAccordion: React.FC<VehicleAccordionProps> = ({
       />
       {section === 'schedule' && (
         <ScheduleSection
-          authenticated={authenticated}
+          authenticated={!!authenticated}
           currentDeploymentId={currentDeploymentId}
           vehicleName={vehicleName}
           activeDeployment={activeDeployment}

@@ -44,7 +44,8 @@ import { toast } from 'react-hot-toast'
 export interface ScheduleSectionProps {
   className?: string
   style?: React.CSSProperties
-  authenticated?: boolean
+  /** Required so callers cannot silently omit auth and hide write controls. */
+  authenticated: boolean
   vehicleName: string
   currentDeploymentId?: number
   activeDeployment?: boolean
