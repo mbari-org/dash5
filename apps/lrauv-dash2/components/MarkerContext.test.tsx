@@ -97,6 +97,10 @@ describe('MarkerContext', () => {
     jest.clearAllMocks()
   })
 
+  afterEach(() => {
+    jest.restoreAllMocks()
+  })
+
   test('adds a marker correctly', async () => {
     render(
       <MarkerProvider>
