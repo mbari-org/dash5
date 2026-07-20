@@ -212,11 +212,10 @@ const DraggableMarker: React.FC<DraggableMarkerProps> = ({
     // Remove the isSelected
   }, [isNew, editMode, canEdit])
 
-  // Notify parent when edit mode changes
+  // Single notification path for edit-mode changes (covers toggles and
+  // direct setEditMode calls such as logout / new-marker auto-edit).
   useEffect(() => {
-    if (onEditStateChange) {
-      onEditStateChange(editMode)
-    }
+    onEditStateChange?.(editMode)
   }, [editMode, onEditStateChange])
 
   // Update position when props change
@@ -244,14 +243,9 @@ const DraggableMarker: React.FC<DraggableMarkerProps> = ({
     }
   }, [editMode])
 
-  // Handle marker drag end
-  const handleEditModeToggle = useCallback(
-    (isEditing: boolean) => {
-      setEditMode(isEditing)
-      onEditStateChange?.(isEditing)
-    },
-    [onEditStateChange]
-  )
+  const handleEditModeToggle = useCallback((isEditing: boolean) => {
+    setEditMode(isEditing)
+  }, [])
 
   // Handle marker deletion
   const handleDelete = useCallback(
