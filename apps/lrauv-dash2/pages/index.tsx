@@ -19,7 +19,7 @@ import useGoogleElevator from '../lib/useGoogleElevator'
 import { Allotment, LayoutPriority } from 'allotment'
 import { useGoogleMaps } from '../lib/useGoogleMaps'
 import { useSidebarSizes } from '../lib/useSidebarSizes'
-import { VPosDetail, useStations } from '@mbari/api-client'
+import { VPosDetail, useStations, useTethysApiContext } from '@mbari/api-client'
 import 'allotment/dist/style.css'
 import { StationsListModal } from '../components/StationsListModal'
 import { MapLayersListModal } from '../components/MapLayersListModal'
@@ -227,6 +227,15 @@ const OverViewMap: React.FC<{
     setActiveEditMarkerId,
     setMarkers,
   } = useMarkers()
+  const { authenticated } = useTethysApiContext()
+  const canEditMarkers = !!authenticated
+
+  // Prevent add-marker mode from sticking after logout.
+  useEffect(() => {
+    if (!canEditMarkers && isAddingMarkers) {
+      setIsAddingMarkers(false)
+    }
+  }, [canEditMarkers, isAddingMarkers, setIsAddingMarkers])
 
   const uniqueTrackedVehicles = Array.from(new Set(trackedVehicles))
   // Store all vehicle positions for bounds calculation
@@ -745,18 +754,20 @@ const OverViewMap: React.FC<{
           onRequestStations={handleLayersRequest}
           onRequestVehicleColors={handleVehicleColorRequest}
           onRequestMarkers={handleMarkersRequest}
-          isAddingMarkers={isAddingMarkers}
-          onToggleMarkerMode={handleToggleMarkerMode}
+          isAddingMarkers={canEditMarkers && isAddingMarkers}
+          onToggleMarkerMode={
+            canEditMarkers ? handleToggleMarkerMode : undefined
+          }
           renderMapClickHandler={() => (
             <MapClickHandler
-              isAddingMarkers={isAddingMarkers}
+              isAddingMarkers={canEditMarkers && isAddingMarkers}
               isEditingMarker={false}
               onAddMarker={handleAddMarker}
             />
           )}
           renderCustomMarkerSet={() => (
             <CustomMarkerSet
-              isAddingMarkers={isAddingMarkers}
+              isAddingMarkers={canEditMarkers && isAddingMarkers}
               setIsAddingMarkers={(value) => setIsAddingMarkers(value)}
             />
           )}
@@ -771,28 +782,53 @@ const OverViewMap: React.FC<{
                     position={[marker.lat, marker.lng]}
                     index={marker.index}
                     label={marker.label}
-                    draggable={true}
+                    draggable={canEditMarkers}
                     isSelected={selectedMarkerId === marker.id.toString()}
                     isNew={marker.isNew}
                     savedToLayer={marker.savedToLayer}
                     iconColor={marker.iconColor || defaultMarkerColor}
                     onClick={() => handleMarkerClick(marker.id.toString())}
-                    onDragEnd={(newPos) =>
-                      handleMarkerPositionChange(marker.id.toString(), newPos)
+                    onDragEnd={
+                      canEditMarkers
+                        ? (newPos) =>
+                            handleMarkerPositionChange(
+                              marker.id.toString(),
+                              newPos
+                            )
+                        : undefined
                     }
-                    onEditStateChange={(isEditing) => {
-                      setActiveEditMarkerId(
-                        isEditing ? marker.id.toString() : null
-                      )
-                    }}
-                    onEdit={() => handleEditMarker(marker.id.toString())}
-                    onDelete={() => handleDeleteMarker(marker.id.toString())}
-                    onColorChange={(color) =>
-                      handleMarkerColorChange(marker.id.toString(), color)
+                    onEditStateChange={
+                      canEditMarkers
+                        ? (isEditing) => {
+                            setActiveEditMarkerId(
+                              isEditing ? marker.id.toString() : null
+                            )
+                          }
+                        : undefined
                     }
-                    onSaveToLayer={handleSaveMarkerToLayer}
-                    onRemoveFromLayer={(id) =>
-                      handleSaveMarkerToLayer(id, false)
+                    onEdit={
+                      canEditMarkers
+                        ? () => handleEditMarker(marker.id.toString())
+                        : undefined
+                    }
+                    onDelete={
+                      canEditMarkers
+                        ? () => handleDeleteMarker(marker.id.toString())
+                        : undefined
+                    }
+                    onColorChange={
+                      canEditMarkers
+                        ? (color) =>
+                            handleMarkerColorChange(marker.id.toString(), color)
+                        : undefined
+                    }
+                    onSaveToLayer={
+                      canEditMarkers ? handleSaveMarkerToLayer : undefined
+                    }
+                    onRemoveFromLayer={
+                      canEditMarkers
+                        ? (id) => handleSaveMarkerToLayer(id, false)
+                        : undefined
                     }
                   />
                 )
