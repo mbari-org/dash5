@@ -707,7 +707,7 @@ const DeploymentMap: React.FC<DeploymentMapProps> = ({
           renderMapClickHandler={() => (
             <MapClickHandler
               isAddingMarkers={canEditMarkers && isAddingMarkers}
-              isEditingMarker={false}
+              isEditingMarker={!!activeEditMarkerId}
               onAddMarker={handleAddMarker}
             />
           )}
