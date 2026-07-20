@@ -230,12 +230,19 @@ const OverViewMap: React.FC<{
   const { authenticated } = useTethysApiContext()
   const canEditMarkers = !!authenticated
 
-  // Prevent add-marker mode from sticking after logout.
+  // Prevent add/edit marker mode from sticking after logout.
   useEffect(() => {
-    if (!canEditMarkers && isAddingMarkers) {
-      setIsAddingMarkers(false)
+    if (!canEditMarkers) {
+      if (isAddingMarkers) setIsAddingMarkers(false)
+      if (activeEditMarkerId) setActiveEditMarkerId(null)
     }
-  }, [canEditMarkers, isAddingMarkers, setIsAddingMarkers])
+  }, [
+    canEditMarkers,
+    isAddingMarkers,
+    activeEditMarkerId,
+    setIsAddingMarkers,
+    setActiveEditMarkerId,
+  ])
 
   const uniqueTrackedVehicles = Array.from(new Set(trackedVehicles))
   // Store all vehicle positions for bounds calculation
