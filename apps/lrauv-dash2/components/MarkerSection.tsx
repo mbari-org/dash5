@@ -1,4 +1,5 @@
 import React from 'react'
+import { useTethysApiContext } from '@mbari/api-client'
 import { useMarkers } from './MarkerContext'
 import { createLogger } from '@mbari/utils'
 
@@ -12,6 +13,8 @@ export const MarkerSection: React.FC = () => {
     deleteMarker,
     removeMarkerFromLayer,
   } = useMarkers()
+  const { authenticated } = useTethysApiContext()
+  const canEditMarkers = !!authenticated
 
   // Only show markers that are saved to layer
   const savedMarkers = markers.filter((marker) => marker.savedToLayer)
@@ -56,37 +59,39 @@ export const MarkerSection: React.FC = () => {
               </div>
             </label>
           </div>
-          <div className="flex">
-            <button
-              onClick={() => {
-                const newName = prompt('Rename marker:', marker.label)
-                if (newName) {
-                  updateMarker(marker.id.toString(), { label: newName })
-                }
-              }}
-              className="mr-2 text-blue-500 hover:text-blue-700"
-              aria-label={`Rename ${marker.label || 'Unnamed Marker'}`}
-            >
-              <span role="img" aria-label="Edit">
-                ✏️
-              </span>
-            </button>
-            <button
-              onClick={() => {
-                if (confirm('Remove this marker from map layers?')) {
-                  removeMarkerFromLayer(marker.id.toString())
-                }
-              }}
-              className="text-red-500 hover:text-red-700"
-              aria-label={`Remove ${
-                marker.label || 'Unnamed Marker'
-              } from layers`}
-            >
-              <span role="img" aria-label="Remove">
-                🗑️
-              </span>
-            </button>
-          </div>
+          {canEditMarkers && (
+            <div className="flex">
+              <button
+                onClick={() => {
+                  const newName = prompt('Rename marker:', marker.label)
+                  if (newName) {
+                    updateMarker(marker.id.toString(), { label: newName })
+                  }
+                }}
+                className="mr-2 text-blue-500 hover:text-blue-700"
+                aria-label={`Rename ${marker.label || 'Unnamed Marker'}`}
+              >
+                <span role="img" aria-label="Edit">
+                  ✏️
+                </span>
+              </button>
+              <button
+                onClick={() => {
+                  if (confirm('Remove this marker from map layers?')) {
+                    removeMarkerFromLayer(marker.id.toString())
+                  }
+                }}
+                className="text-red-500 hover:text-red-700"
+                aria-label={`Remove ${
+                  marker.label || 'Unnamed Marker'
+                } from layers`}
+              >
+                <span role="img" aria-label="Remove">
+                  🗑️
+                </span>
+              </button>
+            </div>
+          )}
         </div>
       ))}
     </div>
