@@ -162,41 +162,38 @@ const DraggableMarker: React.FC<DraggableMarkerProps> = ({
     }
   }, [canEdit, editMode])
 
-  // Open the popup when the marker is clicked
+  // Open the popup and enter edit mode for newly added markers (editable only).
+  // Gate on canEdit so logout / missing handlers do not reopen popups.
   useEffect(() => {
-    if (isNew) {
-      // First ensure the marker is mounted
-      const marker = markerRef.current
-      if (!marker) {
-        logger.warn('Marker ref not available yet')
-        return
-      }
+    if (!isNew || !canEdit) return
 
-      // Use nested timeouts for proper sequencing
-      setTimeout(() => {
-        try {
-          marker.openPopup()
-
-          // Set edit mode after popup is open (only when editing is allowed)
-          if (canEdit) {
-            setEditMode(true)
-            setShowColorOptions(false)
-
-            // Focus the input field
-            setTimeout(() => {
-              if (inputRef.current) {
-                inputRef.current.focus()
-                inputRef.current.select()
-              } else {
-                logger.warn('Input ref not available')
-              }
-            }, 100)
-          }
-        } catch (err) {
-          toast.error(`Error opening popup: ${(err as Error)?.message || err}`)
-        }
-      }, 100) // Slightly longer delay
+    // First ensure the marker is mounted
+    const marker = markerRef.current
+    if (!marker) {
+      logger.warn('Marker ref not available yet')
+      return
     }
+
+    // Use nested timeouts for proper sequencing
+    setTimeout(() => {
+      try {
+        marker.openPopup()
+        setEditMode(true)
+        setShowColorOptions(false)
+
+        // Focus the input field
+        setTimeout(() => {
+          if (inputRef.current) {
+            inputRef.current.focus()
+            inputRef.current.select()
+          } else {
+            logger.warn('Input ref not available')
+          }
+        }, 100)
+      } catch (err) {
+        toast.error(`Error opening popup: ${(err as Error)?.message || err}`)
+      }
+    }, 100) // Slightly longer delay
   }, [isNew, id, canEdit])
 
   // Keep the popup open when editing
