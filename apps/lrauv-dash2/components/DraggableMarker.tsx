@@ -152,6 +152,16 @@ const DraggableMarker: React.FC<DraggableMarkerProps> = ({
     // )
   }, [])
 
+  const canEdit = !!onEdit
+
+  // Defense in depth: never remain in edit mode without an edit handler.
+  useEffect(() => {
+    if (!canEdit && editMode) {
+      setEditMode(false)
+      setShowColorOptions(false)
+    }
+  }, [canEdit, editMode])
+
   // Open the popup when the marker is clicked
   useEffect(() => {
     if (isNew) {
@@ -167,25 +177,27 @@ const DraggableMarker: React.FC<DraggableMarkerProps> = ({
         try {
           marker.openPopup()
 
-          // Set edit mode after popup is open
-          setEditMode(true)
-          setShowColorOptions(false)
+          // Set edit mode after popup is open (only when editing is allowed)
+          if (canEdit) {
+            setEditMode(true)
+            setShowColorOptions(false)
 
-          // Focus the input field
-          setTimeout(() => {
-            if (inputRef.current) {
-              inputRef.current.focus()
-              inputRef.current.select()
-            } else {
-              logger.warn('Input ref not available')
-            }
-          }, 100)
+            // Focus the input field
+            setTimeout(() => {
+              if (inputRef.current) {
+                inputRef.current.focus()
+                inputRef.current.select()
+              } else {
+                logger.warn('Input ref not available')
+              }
+            }, 100)
+          }
         } catch (err) {
           toast.error(`Error opening popup: ${(err as Error)?.message || err}`)
         }
       }, 100) // Slightly longer delay
     }
-  }, [isNew, id])
+  }, [isNew, id, canEdit])
 
   // Keep the popup open when editing
   useEffect(() => {
@@ -201,13 +213,13 @@ const DraggableMarker: React.FC<DraggableMarkerProps> = ({
 
   // Keep the popup open when selected
   useEffect(() => {
-    // Only new markers should automatically enter edit mode
-    if (isNew && !editMode) {
+    // Only new markers should automatically enter edit mode when allowed
+    if (isNew && canEdit && !editMode) {
       setEditMode(true)
       setShowColorOptions(false)
     }
     // Remove the isSelected
-  }, [isNew, editMode])
+  }, [isNew, editMode, canEdit])
 
   // Notify parent when edit mode changes
   useEffect(() => {
@@ -411,6 +423,7 @@ const DraggableMarker: React.FC<DraggableMarkerProps> = ({
   // Prevent popup from closing when clicking inside it
   const handleEditClick = useCallback(
     (e: React.MouseEvent) => {
+      if (!onEdit) return
       // Stop popup from closing
       e.stopPropagation()
       e.preventDefault()
@@ -425,7 +438,7 @@ const DraggableMarker: React.FC<DraggableMarkerProps> = ({
       setShowColorOptions(false)
       handleEditModeToggle(true)
     },
-    [handleEditModeToggle]
+    [handleEditModeToggle, onEdit]
   )
 
   const handleToggleColorOptions = useCallback((e: React.MouseEvent) => {
@@ -571,9 +584,9 @@ const DraggableMarker: React.FC<DraggableMarkerProps> = ({
             </div>
           )}
 
-          {/* Control buttons */}
+          {/* Control buttons — write actions only when handlers are provided */}
           <div className={`mt-1 flex h-8 justify-between gap-0`}>
-            {editMode ? (
+            {editMode && canEdit ? (
               <>
                 {/* Edit mode buttons - Cancel, Color, Save */}
                 <button
@@ -582,17 +595,19 @@ const DraggableMarker: React.FC<DraggableMarkerProps> = ({
                 >
                   Cancel
                 </button>
-                <button
-                  onClick={handleToggleColorOptions}
-                  className="rounded bg-blue-500 px-2 py-1 text-xs text-white"
-                  title={
-                    showColorOptions
-                      ? 'Hide marker colors'
-                      : 'Edit marker colors'
-                  }
-                >
-                  <FontAwesomeIcon icon={faPalette} size="lg" />
-                </button>
+                {onColorChange && (
+                  <button
+                    onClick={handleToggleColorOptions}
+                    className="rounded bg-blue-500 px-2 py-1 text-xs text-white"
+                    title={
+                      showColorOptions
+                        ? 'Hide marker colors'
+                        : 'Edit marker colors'
+                    }
+                  >
+                    <FontAwesomeIcon icon={faPalette} size="lg" />
+                  </button>
+                )}
                 <button
                   onClick={handleSaveClick}
                   className="rounded bg-blue-500 px-2 py-1 text-xs text-white"
@@ -602,52 +617,58 @@ const DraggableMarker: React.FC<DraggableMarkerProps> = ({
               </>
             ) : (
               <>
-                <button
-                  onClick={handleDelete}
-                  className="rounded bg-red-500 px-2 py-1 text-xs text-white"
-                  title="Delete marker"
-                >
-                  <FontAwesomeIcon icon={faTrashCan} size="lg" />
-                </button>
-
-                {!savedToLayer ? (
+                {onDelete && (
                   <button
-                    onClick={handleSaveToLayer}
-                    className="rounded bg-green-500 px-2 py-1 text-xs text-white"
-                    title="Save to Map Layers"
+                    onClick={handleDelete}
+                    className="rounded bg-red-500 px-2 py-1 text-xs text-white"
+                    title="Delete marker"
                   >
-                    <FontAwesomeIcon
-                      icon={faFlag} // Use regular star if available
-                      style={{ color: '#FFFFFF' }}
-                      size="lg"
-                    />
-                  </button>
-                ) : (
-                  <button
-                    onClick={handleRemoveFromLayer}
-                    className="relative rounded bg-white px-2 py-1 text-xs text-black"
-                    style={{
-                      borderWidth: '1px',
-                      borderColor: '#3b82f6',
-                      borderStyle: 'solid',
-                    }}
-                    title="Remove from Map Layers"
-                  >
-                    <FontAwesomeIcon
-                      icon={faStar}
-                      style={{ color: '#FFD700' }} // Gold color
-                      size="lg"
-                    />
+                    <FontAwesomeIcon icon={faTrashCan} size="lg" />
                   </button>
                 )}
 
-                <button
-                  onClick={handleEditClick}
-                  className="rounded bg-blue-500 px-2 py-1 text-xs text-white"
-                  title="Edit marker"
-                >
-                  <FontAwesomeIcon icon={faEdit} size="lg" />
-                </button>
+                {!savedToLayer
+                  ? onSaveToLayer && (
+                      <button
+                        onClick={handleSaveToLayer}
+                        className="rounded bg-green-500 px-2 py-1 text-xs text-white"
+                        title="Save to Map Layers"
+                      >
+                        <FontAwesomeIcon
+                          icon={faFlag}
+                          style={{ color: '#FFFFFF' }}
+                          size="lg"
+                        />
+                      </button>
+                    )
+                  : onRemoveFromLayer && (
+                      <button
+                        onClick={handleRemoveFromLayer}
+                        className="relative rounded bg-white px-2 py-1 text-xs text-black"
+                        style={{
+                          borderWidth: '1px',
+                          borderColor: '#3b82f6',
+                          borderStyle: 'solid',
+                        }}
+                        title="Remove from Map Layers"
+                      >
+                        <FontAwesomeIcon
+                          icon={faStar}
+                          style={{ color: '#FFD700' }}
+                          size="lg"
+                        />
+                      </button>
+                    )}
+
+                {canEdit && (
+                  <button
+                    onClick={handleEditClick}
+                    className="rounded bg-blue-500 px-2 py-1 text-xs text-white"
+                    title="Edit marker"
+                  >
+                    <FontAwesomeIcon icon={faEdit} size="lg" />
+                  </button>
+                )}
                 <button
                   onClick={handleClosePopup}
                   className="rounded bg-blue-500 px-2 py-1 text-xs text-white"
@@ -659,7 +680,7 @@ const DraggableMarker: React.FC<DraggableMarkerProps> = ({
             )}
           </div>
 
-          {editMode && showColorOptions && (
+          {editMode && canEdit && showColorOptions && (
             <div className="color-options-container mt-2">
               <p className="mb-1 text-xs font-semibold">Marker Color:</p>
               <div className="flex flex-wrap gap-0">
