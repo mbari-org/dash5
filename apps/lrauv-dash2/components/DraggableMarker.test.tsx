@@ -93,4 +93,18 @@ describe('DraggableMarker write controls', () => {
     expect(screen.getByTitle('Save to Map Layers')).toBeInTheDocument()
     expect(screen.getByTitle('Close')).toBeInTheDocument()
   })
+
+  it('notifies parent when edit mode changes via onEditStateChange', () => {
+    const onEditStateChange = jest.fn()
+    render(
+      <DraggableMarker
+        {...baseProps}
+        onEdit={jest.fn()}
+        onEditStateChange={onEditStateChange}
+      />
+    )
+
+    // Effect notifies parent of current editMode (false on mount).
+    expect(onEditStateChange).toHaveBeenCalledWith(false)
+  })
 })

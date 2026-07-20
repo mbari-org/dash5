@@ -61,6 +61,7 @@ const DraggableMarker: React.FC<DraggableMarkerProps> = ({
   onColorChange,
   onSaveToLayer,
   onRemoveFromLayer,
+  onEditStateChange,
 }) => {
   const markerRef = useRef<L.Marker>(null)
   const [editMode, setEditMode] = useState(false)
@@ -144,13 +145,6 @@ const DraggableMarker: React.FC<DraggableMarkerProps> = ({
       tooltipAnchor: [-5, -25],
     })
   }
-
-  // Handle marker click
-  const onEditStateChange = useCallback((isEditing: boolean) => {
-    // logger.debug(
-    //   `Marker edit state changed: ${isEditing ? 'Editing' : 'Not Editing'}`
-    // )
-  }, [])
 
   const canEdit = !!onEdit
 
