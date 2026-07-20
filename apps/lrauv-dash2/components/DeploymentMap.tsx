@@ -238,12 +238,19 @@ const DeploymentMap: React.FC<DeploymentMapProps> = ({
   const { authenticated } = useTethysApiContext()
   const canEditMarkers = !!authenticated
 
-  // Prevent add-marker mode from sticking after logout.
+  // Prevent add/edit marker mode from sticking after logout.
   useEffect(() => {
-    if (!canEditMarkers && isAddingMarkers) {
-      setIsAddingMarkers(false)
+    if (!canEditMarkers) {
+      if (isAddingMarkers) setIsAddingMarkers(false)
+      if (activeEditMarkerId) setActiveEditMarkerId(null)
     }
-  }, [canEditMarkers, isAddingMarkers, setIsAddingMarkers])
+  }, [
+    canEditMarkers,
+    isAddingMarkers,
+    activeEditMarkerId,
+    setIsAddingMarkers,
+    setActiveEditMarkerId,
+  ])
 
   const latestVehicle = useRef(vehicleName)
   useEffect(() => {

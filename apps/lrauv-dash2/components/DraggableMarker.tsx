@@ -202,14 +202,12 @@ const DraggableMarker: React.FC<DraggableMarkerProps> = ({
     }
   }, [editMode])
 
-  // Keep the popup open when selected
+  // Newly added markers auto-enter edit mode when editing is allowed.
   useEffect(() => {
-    // Only new markers should automatically enter edit mode when allowed
     if (isNew && canEdit && !editMode) {
       setEditMode(true)
       setShowColorOptions(false)
     }
-    // Remove the isSelected
   }, [isNew, editMode, canEdit])
 
   // Single notification path for edit-mode changes (covers toggles and
