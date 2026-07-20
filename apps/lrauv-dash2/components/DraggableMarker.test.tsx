@@ -1,6 +1,7 @@
 import '@testing-library/jest-dom'
 import React from 'react'
 import { render, screen } from '@testing-library/react'
+import userEvent from '@testing-library/user-event'
 
 jest.mock('react-leaflet', () => {
   const mockReact = require('react')
@@ -94,7 +95,8 @@ describe('DraggableMarker write controls', () => {
     expect(screen.getByTitle('Close')).toBeInTheDocument()
   })
 
-  it('notifies parent when edit mode changes via onEditStateChange', () => {
+  it('notifies parent when the user enters edit mode', async () => {
+    const user = userEvent.setup()
     const onEditStateChange = jest.fn()
     render(
       <DraggableMarker
@@ -104,7 +106,8 @@ describe('DraggableMarker write controls', () => {
       />
     )
 
-    // Effect notifies parent of current editMode (false on mount).
-    expect(onEditStateChange).toHaveBeenCalledWith(false)
+    onEditStateChange.mockClear()
+    await user.click(screen.getByTitle('Edit marker'))
+    expect(onEditStateChange).toHaveBeenCalledWith(true)
   })
 })
