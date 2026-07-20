@@ -1,16 +1,12 @@
 import React from 'react'
 import { useTethysApiContext } from '@mbari/api-client'
 import { useMarkers } from './MarkerContext'
-import { createLogger } from '@mbari/utils'
-
-const logger = createLogger('MarkerSection')
 
 export const MarkerSection: React.FC = () => {
   const {
     markers,
     toggleMarkerVisibility,
     updateMarker,
-    deleteMarker,
     removeMarkerFromLayer,
   } = useMarkers()
   const { authenticated } = useTethysApiContext()
