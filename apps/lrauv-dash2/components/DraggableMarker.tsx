@@ -210,11 +210,23 @@ const DraggableMarker: React.FC<DraggableMarkerProps> = ({
     }
   }, [isNew, editMode, canEdit])
 
-  // Single notification path for edit-mode changes (covers toggles and
-  // direct setEditMode calls such as logout / new-marker auto-edit).
+  // Keep the latest parent callback without re-subscribing when parents pass
+  // a new inline function each render (which would re-fire this effect).
+  const onEditStateChangeRef = useRef(onEditStateChange)
   useEffect(() => {
-    onEditStateChange?.(editMode)
-  }, [editMode, onEditStateChange])
+    onEditStateChangeRef.current = onEditStateChange
+  }, [onEditStateChange])
+
+  // Notify parent only on real editMode transitions — skip mount so an
+  // initial `false` does not clear another marker's activeEditMarkerId.
+  const isFirstEditModeNotify = useRef(true)
+  useEffect(() => {
+    if (isFirstEditModeNotify.current) {
+      isFirstEditModeNotify.current = false
+      return
+    }
+    onEditStateChangeRef.current?.(editMode)
+  }, [editMode])
 
   // Update position when props change
   useEffect(() => {
