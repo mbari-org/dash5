@@ -147,8 +147,11 @@ const DraggableMarker: React.FC<DraggableMarkerProps> = ({
   }
 
   const canEdit = !!onEdit
+  // Immediate view-only when handlers disappear (logout) — do not wait for
+  // the cleanup effect below to clear editMode after paint.
+  const effectiveEditMode = editMode && canEdit
 
-  // Defense in depth: never remain in edit mode without an edit handler.
+  // Defense in depth: clear stale editMode once write handlers are gone.
   useEffect(() => {
     if (!canEdit && editMode) {
       setEditMode(false)
@@ -190,17 +193,14 @@ const DraggableMarker: React.FC<DraggableMarkerProps> = ({
     }, 100) // Slightly longer delay
   }, [isNew, id, canEdit])
 
-  // Keep the popup open when editing
+  // Keep the popup open while actively editing
   useEffect(() => {
-    // Get the marker's Leaflet instance
     const marker = markerRef.current
     if (!marker) return
-
-    // If in edit mode, ensure popup is open
-    if (editMode) {
+    if (effectiveEditMode) {
       marker.openPopup()
     }
-  }, [editMode])
+  }, [effectiveEditMode])
 
   // Newly added markers auto-enter edit mode when editing is allowed.
   useEffect(() => {
@@ -217,7 +217,7 @@ const DraggableMarker: React.FC<DraggableMarkerProps> = ({
     onEditStateChangeRef.current = onEditStateChange
   }, [onEditStateChange])
 
-  // Notify parent only on real editMode transitions — skip mount so an
+  // Notify parent only on real effective-edit transitions — skip mount so an
   // initial `false` does not clear another marker's activeEditMarkerId.
   const isFirstEditModeNotify = useRef(true)
   useEffect(() => {
@@ -225,8 +225,8 @@ const DraggableMarker: React.FC<DraggableMarkerProps> = ({
       isFirstEditModeNotify.current = false
       return
     }
-    onEditStateChangeRef.current?.(editMode)
-  }, [editMode])
+    onEditStateChangeRef.current?.(effectiveEditMode)
+  }, [effectiveEditMode])
 
   // Update position when props change
   useEffect(() => {
@@ -240,18 +240,17 @@ const DraggableMarker: React.FC<DraggableMarkerProps> = ({
     }
   }, [iconColor])
 
-  // Update input value when label changes
+  // Focus label input when entering effective edit mode
   useEffect(() => {
-    if (editMode && inputRef.current) {
-      // Focus the input and select all text
+    if (effectiveEditMode && inputRef.current) {
       setTimeout(() => {
         if (inputRef.current) {
           inputRef.current.focus()
           inputRef.current.select()
         }
-      }, 10) // Small timeout to ensure the input is rendered
+      }, 10)
     }
-  }, [editMode])
+  }, [effectiveEditMode])
 
   const handleEditModeToggle = useCallback((isEditing: boolean) => {
     setEditMode(isEditing)
@@ -519,9 +518,8 @@ const DraggableMarker: React.FC<DraggableMarkerProps> = ({
       {/* Render the popup only if the marker is selected */}
       <Popup
         ref={popupRef}
-        closeOnClick={!editMode}
+        closeOnClick={!effectiveEditMode}
         autoClose={false}
-        // autoClose={!editMode}
         className="marker-popup-container"
       >
         <div className="flex flex-col gap-0">
@@ -532,7 +530,7 @@ const DraggableMarker: React.FC<DraggableMarkerProps> = ({
                 style={{ backgroundColor: selectedColor }}
                 title={selectedColor}
               />
-              {editMode ? (
+              {effectiveEditMode ? (
                 <input
                   ref={inputRef}
                   type="text"
@@ -581,7 +579,7 @@ const DraggableMarker: React.FC<DraggableMarkerProps> = ({
 
           {/* Control buttons — write actions only when handlers are provided */}
           <div className={`mt-1 flex h-8 justify-between gap-0`}>
-            {editMode && canEdit ? (
+            {effectiveEditMode ? (
               <>
                 {/* Edit mode buttons - Cancel, Color, Save */}
                 <button
@@ -675,7 +673,7 @@ const DraggableMarker: React.FC<DraggableMarkerProps> = ({
             )}
           </div>
 
-          {editMode && canEdit && showColorOptions && (
+          {effectiveEditMode && showColorOptions && (
             <div className="color-options-container mt-2">
               <p className="mb-1 text-xs font-semibold">Marker Color:</p>
               <div className="flex flex-wrap gap-0">
