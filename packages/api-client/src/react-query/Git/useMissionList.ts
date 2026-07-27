@@ -9,7 +9,7 @@ export const useMissionList = (
 ) => {
   const { axiosInstance, token } = useTethysApiContext()
   const { gitRef, reload } = params
-  // #792: keep reload out of the query key so all callers share one cache;
+  // #792: Keep reload out of the query key so all callers share one cache;
   // refetchOnMount when reload=y so that shared entry is not left stale.
   const query = useQuery(
     ['git', 'missionList', gitRef ?? null],
