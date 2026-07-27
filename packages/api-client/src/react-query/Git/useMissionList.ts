@@ -9,13 +9,8 @@ export const useMissionList = (
 ) => {
   const { axiosInstance, token } = useTethysApiContext()
   const { gitRef, reload } = params
-  // Required with picker call sites that pass reload: 'y' (#792).
-  // If reload were part of the query key, { reload: 'y' } and {} would be
-  // separate cache entries — callers without reload could keep serving a
-  // stale mission list for up to staleTime. Key on gitRef only, and when
-  // reload is requested force a network refetch on mount so the shared
-  // entry is refreshed (TethysDash caches missionList server-side unless
-  // reload=y).
+  // #792: keep reload out of the query key so all callers share one cache;
+  // refetchOnMount when reload=y so that shared entry is not left stale.
   const query = useQuery(
     ['git', 'missionList', gitRef ?? null],
     () => {
