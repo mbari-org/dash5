@@ -1,6 +1,9 @@
 import { useEffect } from 'react'
 
-/** Clears add/edit marker mode when the user can no longer edit (e.g. logout). */
+/**
+ * Clears add/edit marker mode on logout and when the map view unmounts.
+ * MarkerProvider is app-wide, so edit state must not persist across routes.
+ */
 export const useClearMarkerEditModeWhenLoggedOut = (params: {
   canEditMarkers: boolean
   isAddingMarkers: boolean
@@ -28,4 +31,11 @@ export const useClearMarkerEditModeWhenLoggedOut = (params: {
     setIsAddingMarkers,
     setActiveEditMarkerId,
   ])
+
+  useEffect(() => {
+    return () => {
+      setIsAddingMarkers(false)
+      setActiveEditMarkerId(null)
+    }
+  }, [setIsAddingMarkers, setActiveEditMarkerId])
 }
