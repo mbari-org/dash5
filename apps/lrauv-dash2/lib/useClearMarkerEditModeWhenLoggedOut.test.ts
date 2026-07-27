@@ -62,4 +62,27 @@ describe('useClearMarkerEditModeWhenLoggedOut', () => {
     expect(setIsAddingMarkers).not.toHaveBeenCalled()
     expect(setActiveEditMarkerId).not.toHaveBeenCalled()
   })
+
+  it('clears add and edit mode when the map view unmounts', () => {
+    const setIsAddingMarkers = jest.fn()
+    const setActiveEditMarkerId = jest.fn()
+
+    const { unmount } = renderHook(() =>
+      useClearMarkerEditModeWhenLoggedOut({
+        canEditMarkers: true,
+        isAddingMarkers: true,
+        activeEditMarkerId: '42',
+        setIsAddingMarkers,
+        setActiveEditMarkerId,
+      })
+    )
+
+    expect(setIsAddingMarkers).not.toHaveBeenCalled()
+    expect(setActiveEditMarkerId).not.toHaveBeenCalled()
+
+    unmount()
+
+    expect(setIsAddingMarkers).toHaveBeenCalledWith(false)
+    expect(setActiveEditMarkerId).toHaveBeenCalledWith(null)
+  })
 })
