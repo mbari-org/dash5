@@ -8,16 +8,23 @@ export const useMissionList = (
   options?: SupportedQueryOptions
 ) => {
   const { axiosInstance, token } = useTethysApiContext()
+  const { gitRef, reload } = params
   const query = useQuery(
-    ['git', 'missionList', params],
+    // Keep reload out of the key so all consumers share one cache entry.
+    ['git', 'missionList', gitRef ?? null],
     () => {
-      return getMissionList(params, {
-        instance: axiosInstance,
-        headers: { Authorization: `Bearer ${token}` },
-      })
+      return getMissionList(
+        { gitRef, reload },
+        {
+          instance: axiosInstance,
+          headers: { Authorization: `Bearer ${token}` },
+        }
+      )
     },
     {
-      staleTime: 60 * 1000 * 5, // 1 hour
+      staleTime: 60 * 1000 * 5, // 5 minutes
+      // Callers that request reload must hit the network even if cache is fresh.
+      refetchOnMount: reload === 'y' ? 'always' : undefined,
       ...options,
     }
   )
