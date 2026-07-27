@@ -110,4 +110,22 @@ describe('DraggableMarker write controls', () => {
     await user.click(screen.getByTitle('Edit marker'))
     expect(onEditStateChange).toHaveBeenCalledWith(true)
   })
+
+  it('uses the latest label when entering edit mode after an external rename', async () => {
+    const user = userEvent.setup()
+    const { rerender } = render(
+      <DraggableMarker {...baseProps} onEdit={jest.fn()} />
+    )
+
+    rerender(
+      <DraggableMarker
+        {...baseProps}
+        label="Renamed Marker"
+        onEdit={jest.fn()}
+      />
+    )
+
+    await user.click(screen.getByTitle('Edit marker'))
+    expect(screen.getByTitle('Edit marker label')).toHaveValue('Renamed Marker')
+  })
 })
