@@ -13,6 +13,7 @@ const props: DocCellProps = {
   onSelectAttachment: (attachment) => {
     console.log(attachment)
   },
+  authenticated: true,
   docId: 3000798,
   docInstanceId: 2003798,
   time: '16:29:32',
@@ -48,14 +49,14 @@ test('should render the more options button', async () => {
   expect(screen.getByLabelText(/more options/i)).toBeInTheDocument()
 })
 
-test('should hide more options when onMoreClick is omitted', async () => {
-  render(<DocCell {...props} onMoreClick={undefined} />)
+test('should hide more options when not authenticated', async () => {
+  render(<DocCell {...props} authenticated={false} />)
 
   expect(screen.queryByLabelText(/more options/i)).not.toBeInTheDocument()
 })
 
-test('should render read-only attachment labels when onSelectAttachment is omitted', async () => {
-  render(<DocCell {...props} onSelectAttachment={undefined} />)
+test('should render read-only attachment labels when not authenticated', async () => {
+  render(<DocCell {...props} authenticated={false} />)
 
   expect(
     screen.getByText(`${props?.attachments?.[0].name}`)

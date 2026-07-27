@@ -101,19 +101,18 @@ export const OverviewToolbar: React.FC<OverviewToolbarProps> = ({
       })()
     : null
 
-  const newDeploymentOptions =
-    authenticated && handleNewDeployment
-      ? [
-          {
-            label: `New ${capitalize(vehicleName ?? '')} deployment`,
-            icon: faPlus as IconDefinition,
-            onSelect: () => {
-              handleNewDeployment()
-              setShowDeployments(false)
-            },
+  const newDeploymentOptions = authenticated
+    ? [
+        {
+          label: `New ${capitalize(vehicleName ?? '')} deployment`,
+          icon: faPlus as IconDefinition,
+          onSelect: () => {
+            handleNewDeployment?.()
+            setShowDeployments(false)
           },
-        ]
-      : []
+        },
+      ]
+    : []
   const deploymentOptions = handleSelectDeployment
     ? deployments?.map((d) => ({
         label: d.name,
@@ -196,11 +195,11 @@ export const OverviewToolbar: React.FC<OverviewToolbarProps> = ({
             />
           </li>
         )}
-        {onEditDeployment && authenticated ? (
+        {authenticated ? (
           <li data-testid="deploymentDetails" className="ml-2">
             <IconButton
               icon={faClipboardList}
-              onClick={onEditDeployment}
+              onClick={() => onEditDeployment?.()}
               ariaLabel="Deployment Details"
               tooltip="Deployment Details"
               size="text-2xl"

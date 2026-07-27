@@ -107,18 +107,6 @@ describe('DocsSection', () => {
       </MockProviders>
     )
     expect(screen.queryByText(/add document/i)).not.toBeInTheDocument()
-    expect(screen.getByText(/Sign in to add or edit/i)).toBeInTheDocument()
-  })
-
-  test('should not show sign-in hint when authenticated', async () => {
-    render(
-      <MockProviders queryClient={new QueryClient()}>
-        <DocsSection vehicleName="pontus" authenticated />
-      </MockProviders>
-    )
-    expect(
-      screen.queryByText(/Sign in to add or edit/i)
-    ).not.toBeInTheDocument()
   })
 
   test('should render the add document button if authenticated', async () => {

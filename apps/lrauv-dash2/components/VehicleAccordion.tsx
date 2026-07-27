@@ -61,6 +61,7 @@ const VehicleAccordion: React.FC<VehicleAccordionProps> = ({
   currentDeploymentId,
   isRecovered,
 }) => {
+  const isAuthenticated = !!authenticated
   // Use from:0 (all history) so the badge shares the same React Query cache
   // entry as CommsSection's allLogsResponse — identical params mean both see
   // the same sbdSend/sbdReceipt/sbdReceive chain and agree on every status.
@@ -168,7 +169,7 @@ const VehicleAccordion: React.FC<VehicleAccordionProps> = ({
     }
 
   const handoffLabel =
-    (picLabel || onCallLabel) && authenticated
+    (picLabel || onCallLabel) && isAuthenticated
       ? `${!!picLabel ? picLabel : 'Unassigned'} / ${
           !!onCallLabel ? onCallLabel : 'Unassigned'
         }`
@@ -209,7 +210,7 @@ const VehicleAccordion: React.FC<VehicleAccordionProps> = ({
         <HandoffSection
           from={from}
           to={to}
-          authenticated={authenticated}
+          authenticated={isAuthenticated}
           vehicleName={vehicleName}
           activeDeployment={activeDeployment}
         />
@@ -245,7 +246,7 @@ const VehicleAccordion: React.FC<VehicleAccordionProps> = ({
       />
       {section === 'schedule' && (
         <ScheduleSection
-          authenticated={!!authenticated}
+          authenticated={isAuthenticated}
           currentDeploymentId={currentDeploymentId}
           vehicleName={vehicleName}
           activeDeployment={activeDeployment}
@@ -305,7 +306,7 @@ const VehicleAccordion: React.FC<VehicleAccordionProps> = ({
       />
       {section === 'docs' && (
         <DocsSection
-          authenticated={authenticated}
+          authenticated={isAuthenticated}
           vehicleName={vehicleName}
           currentDeploymentId={currentDeploymentId}
         />

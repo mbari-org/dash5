@@ -1420,11 +1420,6 @@ export const ScheduleSection: React.FC<ScheduleSectionProps> = ({
   return (
     <>
       <header className="flex flex-col p-2">
-        {!authenticated && (
-          <p className="mb-1 text-sm italic text-stone-600">
-            Sign in to add missions or commands
-          </p>
-        )}
         <div className="flex justify-between">
           <div className="flex">
             {authenticated && (

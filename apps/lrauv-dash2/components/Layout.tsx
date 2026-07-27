@@ -1,6 +1,6 @@
 import React, { useEffect } from 'react'
 import Head from 'next/head'
-import { Button, PrimaryToolbar, ProfileDropdown } from '@mbari/react-ui'
+import { PrimaryToolbar, ProfileDropdown } from '@mbari/react-ui'
 import { useTethysApiContext } from '@mbari/api-client'
 import { useState } from 'react'
 import Image from 'next/legacy/image'
@@ -35,17 +35,11 @@ import EmailNotificationsModal from './EmailNotificationsModal'
 import ScheduleEventDetailsModal from './ScheduleEventDetailsModal'
 import ServerHealthModal from './ServerHealthModal'
 import { WATCHBILL_URL } from '../lib/constants'
-import {
-  AUTH_BANNER_DISMISS_KEY,
-  shouldShowAuthBanner,
-} from '../lib/shouldShowAuthBanner'
 
 const Layout: React.FC<{ children?: React.ReactNode }> = ({ children }) => {
-  const [showLogin, setLogin] = useState(false)
   useTethysSubscription()
   const router = useRouter()
   const [mounted, setMounted] = useState(false)
-  const [showAuthBanner, setShowAuthBanner] = useState(false)
   const { globalModalId, setGlobalModalId } = useGlobalModalId()
   useEffect(() => {
     if (!mounted) setMounted(true)
@@ -53,12 +47,7 @@ const Layout: React.FC<{ children?: React.ReactNode }> = ({ children }) => {
 
   const { trackedVehicles, setTrackedVehicles } = useTrackedVehicles()
 
-  const {
-    logout,
-    profile,
-    authenticated,
-    loading: authLoading,
-  } = useTethysApiContext()
+  const { logout, profile, authenticated } = useTethysApiContext()
   const profileName = `${profile?.firstName} ${profile?.lastName}`
   const handleLogout = () => {
     dismissDropdown()
@@ -76,40 +65,6 @@ const Layout: React.FC<{ children?: React.ReactNode }> = ({ children }) => {
 
   const setModal = (newState: GlobalModalState | null) => () => {
     setGlobalModalId(newState)
-  }
-
-  useEffect(() => {
-    if (authenticated && showLogin) {
-      setLogin(false)
-    }
-  }, [authenticated, setLogin, showLogin])
-
-  // Wait for session restore to finish before showing the signed-out banner,
-  // so returning users cannot dismiss it during the auth loading flash.
-  useEffect(() => {
-    let dismissed = false
-    try {
-      dismissed = window.localStorage.getItem(AUTH_BANNER_DISMISS_KEY) === '1'
-    } catch {
-      dismissed = false
-    }
-    setShowAuthBanner(
-      shouldShowAuthBanner({
-        mounted,
-        authenticated: !!authenticated,
-        authLoading: !!authLoading,
-        dismissed,
-      })
-    )
-  }, [mounted, authenticated, authLoading])
-
-  const dismissAuthBanner = () => {
-    try {
-      window.localStorage.setItem(AUTH_BANNER_DISMISS_KEY, '1')
-    } catch {
-      // ignore storage failures
-    }
-    setShowAuthBanner(false)
   }
 
   const handleSelectOption = (option: string) => {
@@ -223,34 +178,6 @@ const Layout: React.FC<{ children?: React.ReactNode }> = ({ children }) => {
           signedIn={authenticated}
           versionLabel={versionLabel}
         />
-      )}
-      {showAuthBanner && (
-        <div
-          className="flex flex-shrink-0 items-center justify-between gap-3 border-b border-sky-200 bg-sky-50 px-4 py-2 text-sm text-stone-700"
-          role="status"
-          data-testid="auth-banner"
-        >
-          <p className="min-w-0 flex-1">
-            Sign in to edit documents, send commands, and manage deployments.
-          </p>
-          <div className="flex flex-shrink-0 items-center gap-2">
-            <Button
-              appearance="primary"
-              onClick={setModal({ id: 'login' })}
-              className="!py-1 !px-3 text-sm"
-            >
-              Sign in
-            </Button>
-            <button
-              type="button"
-              onClick={dismissAuthBanner}
-              className="rounded px-2 py-1 text-xs text-stone-500 hover:bg-sky-100 hover:text-stone-700"
-              aria-label="Don't show this sign-in reminder again"
-            >
-              Don&apos;t show again
-            </button>
-          </div>
-        </div>
       )}
       {children}
       {globalModalId?.id === 'login' && !authenticated && (

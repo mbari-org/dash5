@@ -15,13 +15,13 @@ export interface DocCellProps {
   className?: string
   style?: React.CSSProperties
   onSelect: () => void
-  /** When omitted, attachments render as read-only labels (no detach control). */
-  onSelectAttachment?: (attachment: Attachment) => void
-  /** When omitted, the more-options menu is hidden. */
-  onMoreClick?: (
+  onSelectAttachment: (attachment: Attachment) => void
+  onMoreClick: (
     id: { docInstanceId: number; docId: number },
     rect?: DOMRect
   ) => void
+  /** Write affordances (detach / more-options). Kept for planned auth expansion. */
+  authenticated?: boolean
   time: string
   date: string
   label: string
@@ -48,13 +48,14 @@ export const DocCell: React.FC<DocCellProps> = ({
   secondary,
   attachments,
   onMoreClick,
+  authenticated,
   docInstanceId,
   docId,
 }) => {
   const moreButtonRef = useRef<HTMLDivElement | null>(null)
 
   const handleMoreClick = () => {
-    onMoreClick?.(
+    onMoreClick(
       { docInstanceId, docId },
       moreButtonRef.current?.getBoundingClientRect()
     )
@@ -86,7 +87,7 @@ export const DocCell: React.FC<DocCellProps> = ({
           <ul className="flex flex-col">
             {attachments?.map((attachment) => (
               <li key={attachment.id}>
-                {onSelectAttachment ? (
+                {authenticated ? (
                   <AccessoryButton
                     className={styles.accButton}
                     label={attachment.name}
@@ -104,7 +105,7 @@ export const DocCell: React.FC<DocCellProps> = ({
           </ul>
         </div>
       </article>
-      {onMoreClick && (
+      {authenticated && (
         <div className={styles.iconButton} ref={moreButtonRef}>
           <IconButton
             icon={faEllipsisV}

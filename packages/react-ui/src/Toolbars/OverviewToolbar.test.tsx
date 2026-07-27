@@ -116,8 +116,10 @@ test('should also show the deployment date subtitle in the non-interactive headl
   render(
     <OverviewToolbar
       {...props}
+      authenticated={false}
       onSelectDeployment={undefined}
       onSelectNewDeployment={undefined}
+      deployments={[]}
     />
   )
 
@@ -136,11 +138,11 @@ test('should render the deployment dropdown when selecting the toggle', async ()
   expect(screen.getByText(/new brizo/i)).not.toHaveClass('opacity-30')
 })
 
-test('should hide the new deployment option if no handler is present', async () => {
+test('should offer new deployment when authenticated even if handler is omitted', async () => {
   render(<OverviewToolbar {...props} onSelectNewDeployment={undefined} />)
 
   fireEvent.click(screen.getByTestId('deploymentToggle'))
-  expect(screen.queryByText(/new brizo/i)).not.toBeInTheDocument()
+  expect(screen.getByText(/new brizo/i)).toBeInTheDocument()
 })
 
 test('should render the icon1 hover popup', async () => {
@@ -161,12 +163,14 @@ test('should render the icon2 hover popup', async () => {
   expect(screen.queryByText(/icon2detail/i)).not.toBeInTheDocument()
 })
 
-test('should not render deployment list toggle to the screen if there are no deployments or handlers', async () => {
+test('should not render deployment list toggle when unauthenticated with no deployments', async () => {
   render(
     <OverviewToolbar
       {...props}
+      authenticated={false}
       onSelectDeployment={undefined}
       onSelectNewDeployment={undefined}
+      deployments={[]}
     />
   )
 
@@ -210,10 +214,10 @@ test('should render the mission button if the handler is present', async () => {
   expect(screen.getByTestId(/deploymentDetails/i)).toBeInTheDocument()
 })
 
-test('should not render the mission button if no handler is present', async () => {
+test('should render deployment details when authenticated even if handler is omitted', async () => {
   render(<OverviewToolbar {...props} onEditDeployment={undefined} />)
 
-  expect(screen.queryByTestId(/deploymentDetails/i)).not.toBeInTheDocument()
+  expect(screen.getByTestId(/deploymentDetails/i)).toBeInTheDocument()
 })
 
 test('should render the deployment toggle if the handler is present', async () => {
@@ -222,16 +226,17 @@ test('should render the deployment toggle if the handler is present', async () =
   expect(screen.getByTestId(/deploymenttoggle/i)).toBeInTheDocument()
 })
 
-test('should not render the deployment toggle if no handler is present', async () => {
+test('should render the deployment toggle when authenticated even without handlers', async () => {
   render(
     <OverviewToolbar
       {...props}
       onSelectDeployment={undefined}
       onSelectNewDeployment={undefined}
+      deployments={[]}
     />
   )
 
-  expect(screen.queryByTestId(/deploymenttoggle/i)).not.toBeInTheDocument()
+  expect(screen.getByTestId(/deploymenttoggle/i)).toBeInTheDocument()
 })
 
 test('should render the first support icon if the handler is present', async () => {
