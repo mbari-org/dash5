@@ -13,6 +13,8 @@ import VehicleColorsModal from './VehicleColorsModal'
 import { MapRefreshButton } from './MapRefreshButton'
 import useTrackedVehicles from '../lib/useTrackedVehicles'
 import { useRefreshPositions } from '../lib/useRefreshPositions'
+import { useClearMarkerEditModeWhenLoggedOut } from '../lib/useClearMarkerEditModeWhenLoggedOut'
+import { getDraggableMarkerEditProps } from '../lib/getDraggableMarkerEditProps'
 
 // This is a tricky workaround to prevent leaflet from crashing next.js
 // SSR. If we don't do this, the leaflet map will be loaded server side
@@ -238,19 +240,13 @@ const DeploymentMap: React.FC<DeploymentMapProps> = ({
   const { authenticated } = useTethysApiContext()
   const canEditMarkers = !!authenticated
 
-  // Prevent add/edit marker mode from sticking after logout.
-  useEffect(() => {
-    if (!canEditMarkers) {
-      if (isAddingMarkers) setIsAddingMarkers(false)
-      if (activeEditMarkerId) setActiveEditMarkerId(null)
-    }
-  }, [
+  useClearMarkerEditModeWhenLoggedOut({
     canEditMarkers,
     isAddingMarkers,
     activeEditMarkerId,
     setIsAddingMarkers,
     setActiveEditMarkerId,
-  ])
+  })
 
   const latestVehicle = useRef(vehicleName)
   useEffect(() => {
@@ -735,54 +731,30 @@ const DeploymentMap: React.FC<DeploymentMapProps> = ({
                     position={[marker.lat, marker.lng]}
                     index={marker.index}
                     label={marker.label}
-                    draggable={canEditMarkers}
                     isSelected={selectedMarkerId === marker.id.toString()}
                     isNew={marker.isNew}
                     savedToLayer={marker.savedToLayer}
                     iconColor={marker.iconColor || defaultMarkerColor}
                     onClick={() => handleMarkerClick(marker.id.toString())}
-                    onDragEnd={
-                      canEditMarkers
-                        ? (newPos) =>
-                            handleMarkerPositionChange(
-                              marker.id.toString(),
-                              newPos
-                            )
-                        : undefined
-                    }
-                    onEditStateChange={
-                      canEditMarkers
-                        ? (isEditing) => {
-                            setActiveEditMarkerId(
-                              isEditing ? marker.id.toString() : null
-                            )
-                          }
-                        : undefined
-                    }
-                    onEdit={
-                      canEditMarkers
-                        ? () => handleEditMarker(marker.id.toString())
-                        : undefined
-                    }
-                    onDelete={
-                      canEditMarkers
-                        ? () => handleDeleteMarker(marker.id.toString())
-                        : undefined
-                    }
-                    onColorChange={
-                      canEditMarkers
-                        ? (color) =>
-                            handleMarkerColorChange(marker.id.toString(), color)
-                        : undefined
-                    }
-                    onSaveToLayer={
-                      canEditMarkers ? handleSaveMarkerToLayer : undefined
-                    }
-                    onRemoveFromLayer={
-                      canEditMarkers
-                        ? (id) => handleSaveMarkerToLayer(id, false)
-                        : undefined
-                    }
+                    {...getDraggableMarkerEditProps(canEditMarkers, {
+                      onDragEnd: (newPos) =>
+                        handleMarkerPositionChange(
+                          marker.id.toString(),
+                          newPos
+                        ),
+                      onEditStateChange: (isEditing) => {
+                        setActiveEditMarkerId(
+                          isEditing ? marker.id.toString() : null
+                        )
+                      },
+                      onEdit: () => handleEditMarker(marker.id.toString()),
+                      onDelete: () => handleDeleteMarker(marker.id.toString()),
+                      onColorChange: (color) =>
+                        handleMarkerColorChange(marker.id.toString(), color),
+                      onSaveToLayer: handleSaveMarkerToLayer,
+                      onRemoveFromLayer: (id) =>
+                        handleSaveMarkerToLayer(id, false),
+                    })}
                   />
                 )
             )
