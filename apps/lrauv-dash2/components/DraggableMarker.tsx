@@ -240,6 +240,13 @@ const DraggableMarker: React.FC<DraggableMarkerProps> = ({
     }
   }, [iconColor])
 
+  // Keep draft label in sync with external renames while not editing.
+  useEffect(() => {
+    if (!effectiveEditMode) {
+      setInputValue(label)
+    }
+  }, [label, effectiveEditMode])
+
   // Focus label input when entering effective edit mode
   useEffect(() => {
     if (effectiveEditMode && inputRef.current) {
