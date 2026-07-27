@@ -149,7 +149,7 @@ export const CommandModal: React.FC<CommandModalProps> = ({
   const { data: alternativeAddresses } = useSbdOutgoingAlternativeAddresses({})
   const { data: moduleInfoData } = useModuleInfo()
   const { data: universalData } = useUniversals({})
-  const { data: missionData } = useMissionList()
+  const { data: missionData } = useMissionList({ reload: 'y' })
   // Mission tier now stores the full path (e.g. 'Science/sci2_circle_hotspot.tl')
   const missionPath = variable.Mission ?? ''
   const { data: selectedMissionData } = useScript(
