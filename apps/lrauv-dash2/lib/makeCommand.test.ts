@@ -40,6 +40,27 @@ describe('makeMissionCommand', () => {
     )
     expect(schedDate).toBe('asap')
   })
+
+  // #796: filename stem ≠ script mission ID (e.g. tritoncam_expanding_donut.tl → expanding_donut)
+  it('uses script missionId for set when it differs from the filename', () => {
+    const { commandText } = makeMissionCommand({
+      mission: 'Engineering/tritoncam_expanding_donut.tl',
+      missionId: 'expanding_donut',
+      parameterOverrides: [
+        {
+          name: 'Lat1',
+          overrideValue: '36.8',
+          unit: 'degree',
+          value: 'NaN',
+        },
+      ],
+      scheduleMethod: 'ASAP',
+    })
+    expect(commandText).toBe(
+      'load Engineering/tritoncam_expanding_donut.tl;set expanding_donut.Lat1 36.8 degree;run'
+    )
+  })
+
   it('should return a command to load a mission with parameters and insert', () => {
     const { commandText, previewSbd, schedDate } = makeMissionCommand({
       mission: 'Science/profile_station.xml',

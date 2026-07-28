@@ -60,9 +60,13 @@ export const makeCommand = ({
   }
 }
 
-// Accepts a local time string and returns a formatted UTC time string
+// Accepts a local time string and returns a formatted UTC time string.
+// `mission` is the file path for `load`. `missionId` is the script's mission
+// ID from GET /commands/script (used for `set`); falls back to the filename
+// stem when omitted (e.g. path and ID match).
 export const makeMissionCommand = ({
   mission,
+  missionId,
   parameterOverrides,
   scheduleMethod,
   specifiedLocalTime,
@@ -70,11 +74,14 @@ export const makeMissionCommand = ({
 }: {
   parameterOverrides: ParameterProps[]
   mission: string
+  /** Script mission ID for `set` (may differ from the .tl filename). */
+  missionId?: string
   scheduleMethod: ScheduleMethod
   specifiedLocalTime?: string
   units?: { name: string; abbreviation: string }[]
 }) => {
-  const missionName = mission.split('/').pop()?.split('.')[0]
+  const missionName =
+    missionId?.trim() || mission.split('/').pop()?.split('.')[0]
   const commands: string[] = [`load ${mission}`]
   parameterOverrides.forEach((p) => {
     commands.push(
