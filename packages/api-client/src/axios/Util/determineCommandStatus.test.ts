@@ -464,6 +464,39 @@ describe('determineCommandStatus', () => {
     expect(result.momsn).toBeUndefined()
   })
 
+  // #798: cellsat + cell state:2 must not show Received while sat may still
+  // be delivering remaining SBD chunks.
+  it('should return sent (not ack) for cellsat with state:2 sbdSend and no sat receive', () => {
+    const recentCellsatCommand: GetEventsResponse = {
+      ...baseCellsatCommand,
+      unixTime: Date.now() - 30 * 1000,
+      note: 'command[via: cellsat, timeout:5min]',
+    }
+    const cellsatCellSend: GetEventsResponse = {
+      ...cellSbdSend,
+      eventId: 52,
+      refId: recentCellsatCommand.eventId,
+      state: 2,
+      unixTime: Date.now() - 20 * 1000,
+      isoTime: new Date(Date.now() - 20 * 1000).toISOString(),
+    }
+    const sbdSendMap = new Map<string, GetEventsResponse>([
+      [String(recentCellsatCommand.eventId), cellsatCellSend],
+    ])
+
+    const result = determineCommandStatus(
+      recentCellsatCommand,
+      sbdSendMap,
+      new Map(),
+      new Map(),
+      new Map()
+    )
+
+    expect(result.status).toBe('sent')
+    expect(result.via).toBe('cellsat')
+    expect(result.commsIsoTime).toBe(cellsatCellSend.isoTime)
+  })
+
   it('should return timeout (not sent) for sat command with sbdSend state:1 when timeout note exists', () => {
     // Regression for #604: sat comms bypass the original cell-only timeout guard and
     // fall through to 'sent' (sbdSend exists, no sbdReceive). A timeout note is ground
