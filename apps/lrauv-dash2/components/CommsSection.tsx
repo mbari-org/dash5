@@ -161,6 +161,7 @@ const CommsSection: React.FC<CommsSectionProps> = ({
         timeout={item?.timeout}
         day={day}
         time={time}
+        sbdChunks={item?.sbdChunks}
       />
     ) : (
       <span />

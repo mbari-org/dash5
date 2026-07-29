@@ -540,6 +540,43 @@ describe('determineCommandStatus', () => {
     expect(result.momsn).toBeUndefined()
   })
 
+  // #797: multi-SBD — do not ACK until all parts are delivered.
+  it('should demote ack to sent when multi-SBD chunks are incomplete', () => {
+    const multiPartCommand: GetEventsResponse = {
+      ...baseCellCommand,
+      data: [
+        'sched asap "load x.tl;set a 1 m" tok 1 3',
+        'sched asap "set b 2 m" tok 2 3',
+        'sched asap "run" tok 3 3',
+      ].join('\n'),
+    }
+    // Only one of three chunks delivered via cell
+    const sbdSendMap = new Map<string, GetEventsResponse[]>([
+      [
+        String(multiPartCommand.eventId),
+        [
+          {
+            ...cellSbdSend,
+            eventId: 70,
+            refId: multiPartCommand.eventId,
+            state: 2,
+          },
+        ],
+      ],
+    ])
+
+    const result = determineCommandStatus(
+      multiPartCommand,
+      sbdSendMap,
+      new Map(),
+      new Map(),
+      new Map()
+    )
+
+    expect(result.status).toBe('sent')
+    expect(result.sbdChunks).toEqual({ delivered: 1, total: 3 })
+  })
+
   // #798: once sat receive lands, cellsat may ACK (not stuck on sent forever).
   it('should return ack for cellsat with state:2 after sat receipt and receive', () => {
     const recentCellsatCommand: GetEventsResponse = {

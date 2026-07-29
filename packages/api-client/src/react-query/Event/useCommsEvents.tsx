@@ -60,7 +60,8 @@ export const useCommsEvents = ({
   const { commands, sbdSendMap, sbdReceiptMap, sbdReceiveMap, timeoutMap } =
     useMemo(() => {
       const commands: GetEventsResponse[] = []
-      const sbdSendMap = new Map<string, GetEventsResponse>()
+      // Arrays per command refId so multi-SBD parts are all retained (#797).
+      const sbdSendMap = new Map<string, GetEventsResponse[]>()
       const sbdReceiptMap = new Map<string, GetEventsResponse>()
       const sbdReceiveMap = new Map<number, GetEventsResponse>()
       const timeoutMap = new Map<string, GetEventsResponse>()
@@ -72,7 +73,12 @@ export const useCommsEvents = ({
             commands.push(e)
             break
           case 'sbdSend':
-            if (e.refId !== undefined) sbdSendMap.set(String(e.refId), e)
+            if (e.refId !== undefined) {
+              const key = String(e.refId)
+              const list = sbdSendMap.get(key) ?? []
+              list.push(e)
+              sbdSendMap.set(key, list)
+            }
             break
           case 'sbdReceipt':
             const id = e.name?.match(digitsForIdRegEx)?.[0]
