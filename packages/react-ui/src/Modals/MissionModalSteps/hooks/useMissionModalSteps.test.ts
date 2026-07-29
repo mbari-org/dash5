@@ -1,5 +1,11 @@
 import { renderHook, act } from '@testing-library/react'
-import useMissionModalSteps from './useMissionModalSteps'
+import useMissionModalSteps, {
+  MISSION_MODAL_SEND_COMMAND_STEP,
+} from './useMissionModalSteps'
+
+test('MISSION_MODAL_SEND_COMMAND_STEP is Review & Send index', () => {
+  expect(MISSION_MODAL_SEND_COMMAND_STEP).toBe(7)
+})
 
 // steps order: Mission(0) Waypoints(1) Parameters(2) Safety&Comms(3) Review(4) Schedule(5) Confirm(6) SendCommand(7)
 

@@ -47,6 +47,11 @@ export interface GlobalModalMetaData {
   eventNote?: string | null
   eventIsoTime?: string | null
   eventVehicleName?: string | null
+  /**
+   * When true with eventData, Mission modal opens at Review & Send (skip wizard).
+   * Used by Schedule "Send again" (#799 / #727 Option D).
+   */
+  sendAgain?: boolean
   scheduleEvent?: {
     eventId: number
     commandType: 'mission' | 'command'
