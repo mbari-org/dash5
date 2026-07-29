@@ -70,6 +70,8 @@ export interface MissionModalViewProps
   alternativeAddresses?: string[]
   vehicles?: string[]
   previewText?: string
+  /** Backend preview SBD fragment count (≥2 shown as a quiet note on Review). */
+  previewSbdCount?: number
   loading?: boolean
   onStepIndexChange?: (step: number) => void
   selectedMissionCategory?: string
@@ -117,6 +119,7 @@ const MissionModalBody: React.FC<MissionModalViewProps> = ({
   unfilteredMissionParameters,
   vehicles,
   previewText,
+  previewSbdCount,
   loading,
   unitOptions,
   selectedMissionCategory,
@@ -466,12 +469,19 @@ const MissionModalBody: React.FC<MissionModalViewProps> = ({
           extraWideModal
         >
           <div className="flex flex-col">
-            <p className="mb-2">
-              The following command will be sent to{' '}
-              <span className="text-teal-500">
-                {confirmedVehicle ?? vehicleName}
+            <p className="mb-2 flex items-baseline justify-between gap-4">
+              <span>
+                The following command will be sent to{' '}
+                <span className="text-teal-500">
+                  {confirmedVehicle ?? vehicleName}
+                </span>
+                :
               </span>
-              :
+              {previewSbdCount != null && previewSbdCount >= 2 && (
+                <span className="shrink-0 text-sm text-stone-500">
+                  (This will be sent as {previewSbdCount} SBD chunks)
+                </span>
+              )}
             </p>
             <pre className="w-full rounded-lg bg-stone-100 p-4 font-mono">
               {previewText?.split(';').join(';\n')}

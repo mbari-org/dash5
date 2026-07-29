@@ -13,6 +13,9 @@ import {
   useSbdOutgoingAlternativeAddresses,
   useCreateCommand,
   useSiteConfig,
+  useTethysApiContext,
+  getPreview,
+  countPreviewSbdChunks,
 } from '@mbari/api-client'
 import { useMissionData } from '../lib/useMissionData'
 import { useRouter } from 'next/router'
@@ -63,6 +66,7 @@ const MissionModal: React.FC<MissionModalProps> = ({
 
   const { mutate: createCommand, isLoading: sendingCommand } =
     useCreateCommand()
+  const { axiosInstance, token } = useTethysApiContext()
 
   useEffect(() => {
     if (drawerOpen) {
@@ -261,6 +265,7 @@ const MissionModal: React.FC<MissionModalProps> = ({
     })) ?? []
 
   const [previewText, setPreviewText] = useState<string | undefined>()
+  const [previewSbdCount, setPreviewSbdCount] = useState<number | undefined>()
 
   const handleSchedule: MissionModalViewProps['onSchedule'] = async ({
     confirmedVehicle,
@@ -292,31 +297,54 @@ const MissionModal: React.FC<MissionModalProps> = ({
 
     setPreviewText(previewSbd)
 
-    if (!preview) {
-      createCommand(
-        {
-          vehicle: confirmedVehicle?.toLowerCase() ?? '',
-          commandNote: notes ?? '',
-          runCommand: 'y',
-          schedDate,
-          destinationAddress: alternateAddress ?? undefined,
-          commandText: formattedCommandText ?? '',
-          via: commType,
-          timeout,
-        },
-        {
-          onSuccess: () => {
-            toast.success('Command sent')
-            onClose()
-          },
-          onError: (error) => {
-            const message =
-              error instanceof Error ? error.message : String(error)
-            toast.error(`Error sending command: ${message}`)
-          },
+    if (preview) {
+      // Ask the backend how many SBD fragments this payload becomes (#797).
+      setPreviewSbdCount(undefined)
+      const vehicle = (confirmedVehicle ?? vehicleName ?? '').toLowerCase()
+      if (vehicle && formattedCommandText) {
+        try {
+          const previewResponse = await getPreview(
+            {
+              vehicle,
+              commandText: formattedCommandText,
+              schedDate: schedDate || undefined,
+            },
+            {
+              instance: axiosInstance,
+              headers: token ? { Authorization: `Bearer ${token}` } : undefined,
+            }
+          )
+          setPreviewSbdCount(countPreviewSbdChunks(previewResponse))
+        } catch {
+          // Preview is informational only — keep Review usable without a count.
+          setPreviewSbdCount(undefined)
         }
-      )
+      }
+      return
     }
+
+    createCommand(
+      {
+        vehicle: confirmedVehicle?.toLowerCase() ?? '',
+        commandNote: notes ?? '',
+        runCommand: 'y',
+        schedDate,
+        destinationAddress: alternateAddress ?? undefined,
+        commandText: formattedCommandText ?? '',
+        via: commType,
+        timeout,
+      },
+      {
+        onSuccess: () => {
+          toast.success('Command sent')
+          onClose()
+        },
+        onError: (error) => {
+          const message = error instanceof Error ? error.message : String(error)
+          toast.error(`Error sending command: ${message}`)
+        },
+      }
+    )
   }
 
   return (
@@ -351,6 +379,7 @@ const MissionModal: React.FC<MissionModalProps> = ({
       loading={sendingCommand}
       missionsLoading={recentRunsLoading || frequentRunsLoading}
       previewText={previewText}
+      previewSbdCount={previewSbdCount}
       unitOptions={unitsData}
       selectedId={selectedMission}
       onSelectMissionCategory={handleSelectMissionCategory}

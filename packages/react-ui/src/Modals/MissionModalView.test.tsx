@@ -444,3 +444,37 @@ test('should display only plotted waypoints (i.e. ones that do not have NaN as a
     )
   ).not.toBeInTheDocument()
 })
+
+// Send Command (Review and Send): Step 7
+test('shows quiet SBD chunk note beside review intro when count >= 2', () => {
+  render(
+    <RecoilRoot>
+      <MissionModalView
+        {...props}
+        currentStepIndex={7}
+        previewText={'sched asap "load Science/sci2.tl;run"'}
+        previewSbdCount={3}
+      />
+    </RecoilRoot>
+  )
+  expect(
+    screen.getByText(/The following command will be sent to/i)
+  ).toBeInTheDocument()
+  expect(
+    screen.getByText('(This will be sent as 3 SBD chunks)')
+  ).toBeInTheDocument()
+})
+
+test('hides SBD chunk note for single-part previews', () => {
+  render(
+    <RecoilRoot>
+      <MissionModalView
+        {...props}
+        currentStepIndex={7}
+        previewText={'sched asap "load Science/sci2.tl;run"'}
+        previewSbdCount={1}
+      />
+    </RecoilRoot>
+  )
+  expect(screen.queryByText(/SBD chunk/i)).not.toBeInTheDocument()
+})
