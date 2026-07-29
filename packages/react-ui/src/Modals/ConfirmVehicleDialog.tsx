@@ -49,6 +49,7 @@ export const ConfirmVehicleDialog: React.FC<ConfirmVehicleDialogProps> = ({
   snapTo,
   bodyOverflowHidden,
   allowPointerEventsOnChildren,
+  leftExtraButtons,
 }) => {
   const [differentVehicle, setDifferentVehicle] = useState<string | undefined>(
     undefined
@@ -149,6 +150,7 @@ export const ConfirmVehicleDialog: React.FC<ConfirmVehicleDialogProps> = ({
       snapTo={snapTo}
       bodyOverflowHidden={bodyOverflowHidden}
       allowPointerEventsOnChildren={allowPointerEventsOnChildren}
+      leftExtraButtons={leftExtraButtons}
     />
   )
 }
