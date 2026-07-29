@@ -242,6 +242,17 @@ export const ScheduleSection: React.FC<ScheduleSectionProps> = ({
     return map
   }, [commsEventsResponse.data])
 
+  // eventId → multi-SBD chunk progress for Schedule row boxes (#797)
+  const commsSbdChunksLookup = useMemo(() => {
+    const map = new Map<number, { delivered: number; total: number }>()
+    commsEventsResponse.data.forEach((e) => {
+      if (e.eventId != null && e.sbdChunks) {
+        map.set(e.eventId, e.sbdChunks)
+      }
+    })
+    return map
+  }, [commsEventsResponse.data])
+
   // eventId → { mtmsn, momsn } for sat commands with Iridium sequence number
   // data. Includes pre-ACK sat sends (MTMSN only) as well as fully ACKed
   // commands (both MTMSN and MOMSN). 0 is a sentinel for "not present" in
@@ -1113,6 +1124,11 @@ export const ScheduleSection: React.FC<ScheduleSectionProps> = ({
         status={cellStatus}
         statusTooltip={
           cellStatus === 'ack' ? `Received by ${vehicleName}` : undefined
+        }
+        sbdChunks={
+          mission.event.eventId != null
+            ? commsSbdChunksLookup.get(mission.event.eventId)
+            : undefined
         }
         name={mission.event.user ?? 'Unknown'}
         scheduleStatus={

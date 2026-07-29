@@ -18,6 +18,7 @@ import { CommandType } from '../types'
 import { ConnectedIcon } from '../Icons/ConnectedIcon'
 import { AcknowledgeIcon } from '../Icons/AcknowledgeIcon'
 import { StopwatchWarningIcon } from '../Icons/StopwatchWarningIcon'
+import { SbdChunkBoxes } from './SbdChunkBoxes'
 export type ScheduleCellStatus =
   | 'pending'
   | 'running'
@@ -51,6 +52,8 @@ export interface ScheduleCellProps {
   }
   /** Override the native tooltip shown on the status icon */
   statusTooltip?: string
+  /** Multi-SBD progress boxes; ACK only when delivered === total (#797). */
+  sbdChunks?: { delivered: number; total: number }
   onSelect: () => void
   onMoreClick: (
     id: {
@@ -104,6 +107,7 @@ export const ScheduleCell: React.FC<ScheduleCellProps> = ({
   onMoreClick,
   scheduleStatus,
   statusTooltip,
+  sbdChunks,
 }) => {
   const moreButtonRef = useRef<HTMLDivElement | null>(null)
 
@@ -144,7 +148,7 @@ export const ScheduleCell: React.FC<ScheduleCellProps> = ({
         className="grid flex-grow grid-cols-9 items-center"
         onClick={swallow(onSelect)}
       >
-        <div className={styles.icon}>
+        <div className={clsx(styles.icon, 'flex-col gap-1')}>
           {status === 'sent' ? (
             <span title={statusTooltip ?? status}>
               <ConnectedIcon
@@ -184,6 +188,12 @@ export const ScheduleCell: React.FC<ScheduleCellProps> = ({
               icon={icons[status]}
               title={statusTooltip ?? status}
               className={clsx(iconColor, 'text-xl')}
+            />
+          )}
+          {sbdChunks && sbdChunks.total >= 2 && (
+            <SbdChunkBoxes
+              delivered={sbdChunks.delivered}
+              total={sbdChunks.total}
             />
           )}
         </div>
