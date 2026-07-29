@@ -41,9 +41,18 @@ describe('parseSbdChunkTotal', () => {
 })
 
 describe('isSbdChunkDelivered / countDeliveredSbdChunks', () => {
-  it('counts cell state:2 as delivered', () => {
+  it('does not count cell state:2 by default (shore dispatch ≠ vehicle receipt)', () => {
+    const sends = [send(10, 2), send(11, 2), send(12, 2)]
+    expect(countDeliveredSbdChunks(sends, new Map(), new Map())).toBe(0)
+  })
+
+  it('counts cell state:2 only when countCellState2 is enabled', () => {
     const sends = [send(10, 2), send(11, 0)]
-    expect(countDeliveredSbdChunks(sends, new Map(), new Map())).toBe(1)
+    expect(
+      countDeliveredSbdChunks(sends, new Map(), new Map(), undefined, {
+        countCellState2: true,
+      })
+    ).toBe(1)
   })
 
   it('counts sat receipt+receive as delivered', () => {
@@ -72,14 +81,40 @@ describe('isSbdChunkDelivered / countDeliveredSbdChunks', () => {
 })
 
 describe('buildSbdChunkProgress', () => {
-  it('returns delivered/total for multi-part commands', () => {
+  it('stays 0/3 when only cell state:2 exists (cellsat / timeout case)', () => {
     const text = 'sched asap "load x.tl" id 1 3\nsched asap "run" id 2 3'
     const progress = buildSbdChunkProgress(
       text,
-      [send(1, 2), send(2, 0)],
+      [send(1, 2), send(2, 2), send(3, 2)],
       new Map(),
       new Map()
     )
-    expect(progress).toEqual({ delivered: 1, total: 3 })
+    expect(progress).toEqual({ delivered: 0, total: 3 })
+  })
+
+  it('fills when sat receive confirms chunks', () => {
+    const text = 'sched asap "load x.tl" id 1 2\nsched asap "run" id 2 2'
+    const s1 = send(1, 0)
+    const receipt: GetEventsResponse = {
+      ...send(11, 0),
+      eventType: 'sbdReceipt',
+      eventId: 11,
+      mtmsn: 50,
+      name: 'sbdReceipt',
+    }
+    const receive: GetEventsResponse = {
+      ...send(12, 0),
+      eventType: 'sbdReceive',
+      eventId: 12,
+      mtmsn: 50,
+    }
+    // Receipt map is keyed by sbdSend.eventId in determineCommandStatus
+    const progress = buildSbdChunkProgress(
+      text,
+      [s1, send(2, 0)],
+      new Map([['1', receipt]]),
+      new Map([[50, receive]])
+    )
+    expect(progress).toEqual({ delivered: 1, total: 2 })
   })
 })
