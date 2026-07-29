@@ -6,6 +6,15 @@ export interface SbdChunkProgress {
   total: number
 }
 
+export interface SbdChunkDeliveredOptions {
+  /**
+   * When true, cell sbdSend state:2 counts as delivered (pure cell success).
+   * Never use for cellsat — state:2 is shore dispatch, not vehicle receipt.
+   * Never use when the command has timed out.
+   */
+  countCellState2?: boolean
+}
+
 /**
  * Parse total SBD part count from Mission Request / scheduled command text.
  * Chunks are tagged like `38kk8 1 3` … `38kk8 3 3` (part total).
@@ -29,17 +38,25 @@ export const parseSbdChunkTotal = (
   return total >= 2 ? total : undefined
 }
 
-/** A chunk is delivered via cell (state 2) or sat (receipt + receive). */
+/**
+ * Vehicle-side delivery only: sat receipt+receive.
+ * Optional cell state:2 for pure-cell success (not cellsat, not timed-out).
+ */
 export const isSbdChunkDelivered = (
   sbdSend: GetEventsResponse,
   sbdReceiptMap: Map<string, GetEventsResponse>,
-  sbdReceiveMap: Map<number, GetEventsResponse>
+  sbdReceiveMap: Map<number, GetEventsResponse>,
+  options?: SbdChunkDeliveredOptions
 ): boolean => {
-  if (sbdSend.state === 2) return true
-  if (!sbdSend.eventId) return false
-  const receipt = sbdReceiptMap.get(String(sbdSend.eventId))
-  if (!receipt?.mtmsn) return false
-  return sbdReceiveMap.has(receipt.mtmsn)
+  if (sbdSend.eventId) {
+    const receipt = sbdReceiptMap.get(String(sbdSend.eventId))
+    if (receipt?.mtmsn && sbdReceiveMap.has(receipt.mtmsn)) {
+      return true
+    }
+  }
+  // state:2 = dispatched on cell socket — not proof the vehicle has the chunk
+  // (cellsat/timeout can still fail after this).
+  return Boolean(options?.countCellState2 && sbdSend.state === 2)
 }
 
 /**
@@ -49,10 +66,11 @@ export const countDeliveredSbdChunks = (
   sbdSends: GetEventsResponse[],
   sbdReceiptMap: Map<string, GetEventsResponse>,
   sbdReceiveMap: Map<number, GetEventsResponse>,
-  total?: number
+  total?: number,
+  options?: SbdChunkDeliveredOptions
 ): number => {
   const delivered = sbdSends.filter((s) =>
-    isSbdChunkDelivered(s, sbdReceiptMap, sbdReceiveMap)
+    isSbdChunkDelivered(s, sbdReceiptMap, sbdReceiveMap, options)
   ).length
   if (total != null) return Math.min(delivered, total)
   return delivered
@@ -62,7 +80,8 @@ export const buildSbdChunkProgress = (
   commandText: string | undefined | null,
   sbdSends: GetEventsResponse[],
   sbdReceiptMap: Map<string, GetEventsResponse>,
-  sbdReceiveMap: Map<number, GetEventsResponse>
+  sbdReceiveMap: Map<number, GetEventsResponse>,
+  options?: SbdChunkDeliveredOptions
 ): SbdChunkProgress | undefined => {
   const total = parseSbdChunkTotal(commandText)
   if (total == null) return undefined
@@ -72,7 +91,8 @@ export const buildSbdChunkProgress = (
       sbdSends,
       sbdReceiptMap,
       sbdReceiveMap,
-      total
+      total,
+      options
     ),
   }
 }

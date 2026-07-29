@@ -69,11 +69,20 @@ export const determineCommandStatus = (
     ? asSbdSendList(sbdSendMap.get(String(command.eventId)))
     : []
 
+  const hasTimeoutNote = Boolean(
+    command.eventId && timeoutMap.get(String(command.eventId))
+  )
+
+  // Green boxes = vehicle has the chunk. Cell state:2 is only shore dispatch —
+  // count it for pure cell when not timed out; never for cellsat (#797/#798).
   const sbdChunks = buildSbdChunkProgress(
     command.data ?? command.text,
     matchingSbdSends,
     sbdReceiptMap,
-    sbdReceiveMap
+    sbdReceiveMap,
+    {
+      countCellState2: via === 'cell' && !hasTimeoutNote,
+    }
   )
 
   // A timeout note is ground truth for any comms type (cell, sat, cellsat, unknown).
