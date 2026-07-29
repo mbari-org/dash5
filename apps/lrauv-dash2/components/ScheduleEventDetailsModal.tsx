@@ -1,5 +1,5 @@
 import type React from 'react'
-import { Modal } from '@mbari/react-ui'
+import { Modal, SbdChunkBoxes } from '@mbari/react-ui'
 import { DateTime } from 'luxon'
 import { useRouter } from 'next/router'
 import { capitalize } from '@mbari/utils'
@@ -821,56 +821,80 @@ export const ScheduleEventDetailsModal: React.FC<
             </p>
             <p className="font-medium">{event.eventId}</p>
           </div>
-          {(event.mtmsn != null || event.momsn != null) && (
-            <div>
-              <p className="flex items-center gap-1 text-sm uppercase tracking-wide text-stone-500">
-                Iridium Msg IDs
-                <span className="relative inline-flex align-middle">
-                  <button
-                    type="button"
-                    className="cursor-pointer rounded-full border border-stone-300 px-1 text-[10px] font-semibold text-stone-500 hover:bg-stone-100 focus:bg-stone-100"
-                    onMouseEnter={() => setShowIridiumTooltip(true)}
-                    onMouseLeave={() => setShowIridiumTooltip(false)}
-                    onFocus={() => setShowIridiumTooltip(true)}
-                    onBlur={() => setShowIridiumTooltip(false)}
-                    onClick={() => setShowIridiumTooltip((prev) => !prev)}
-                    aria-label="Iridium message ID field help"
-                    aria-describedby={
-                      showIridiumTooltip ? 'iridium-msg-id-tooltip' : undefined
-                    }
-                  >
-                    ?
-                  </button>
-                  {showIridiumTooltip && (
-                    <div
-                      id="iridium-msg-id-tooltip"
-                      role="tooltip"
-                      className="pointer-events-none absolute left-0 top-full z-[9999] mt-1 w-72 -translate-x-1/2 rounded border px-3 py-2 text-xs normal-case leading-relaxed text-stone-700 shadow-lg"
-                      style={{
-                        borderColor: '#bae6fd',
-                        backgroundColor: '#fffbeb',
-                      }}
-                    >
-                      <p className="normal-case">
-                        <strong>MTMSN</strong> (Mobile Terminated): Iridium ID
-                        assigned to the command sent to the vehicle.
-                      </p>
-                      <p className="mt-1 normal-case">
-                        <strong>MOMSN</strong> (Mobile Originated): Iridium ID
-                        of the vehicle&apos;s acknowledgment reply. Present only
-                        after the vehicle confirms receipt.
-                      </p>
-                    </div>
-                  )}
-                </span>
-              </p>
-              <p className="font-mono text-sm text-red-800">
-                {event.mtmsn != null && <span>MTMSN: {event.mtmsn}</span>}
-                {event.mtmsn != null && event.momsn != null && (
-                  <span className="mx-2 text-stone-400">·</span>
-                )}
-                {event.momsn != null && <span>MOMSN: {event.momsn}</span>}
-              </p>
+          {(event.mtmsn != null ||
+            event.momsn != null ||
+            (event.sbdChunks != null && event.sbdChunks.total >= 2)) && (
+            <div className="md:col-span-2 flex flex-wrap items-start justify-between gap-4">
+              {(event.mtmsn != null || event.momsn != null) && (
+                <div className="min-w-0">
+                  <p className="flex items-center gap-1 text-sm uppercase tracking-wide text-stone-500">
+                    Iridium Msg IDs
+                    <span className="relative inline-flex align-middle">
+                      <button
+                        type="button"
+                        className="cursor-pointer rounded-full border border-stone-300 px-1 text-[10px] font-semibold text-stone-500 hover:bg-stone-100 focus:bg-stone-100"
+                        onMouseEnter={() => setShowIridiumTooltip(true)}
+                        onMouseLeave={() => setShowIridiumTooltip(false)}
+                        onFocus={() => setShowIridiumTooltip(true)}
+                        onBlur={() => setShowIridiumTooltip(false)}
+                        onClick={() => setShowIridiumTooltip((prev) => !prev)}
+                        aria-label="Iridium message ID field help"
+                        aria-describedby={
+                          showIridiumTooltip
+                            ? 'iridium-msg-id-tooltip'
+                            : undefined
+                        }
+                      >
+                        ?
+                      </button>
+                      {showIridiumTooltip && (
+                        <div
+                          id="iridium-msg-id-tooltip"
+                          role="tooltip"
+                          className="pointer-events-none absolute left-0 top-full z-[9999] mt-1 w-72 -translate-x-1/2 rounded border px-3 py-2 text-xs normal-case leading-relaxed text-stone-700 shadow-lg"
+                          style={{
+                            borderColor: '#bae6fd',
+                            backgroundColor: '#fffbeb',
+                          }}
+                        >
+                          <p className="normal-case">
+                            <strong>MTMSN</strong> (Mobile Terminated): Iridium
+                            ID assigned to the command sent to the vehicle.
+                          </p>
+                          <p className="mt-1 normal-case">
+                            <strong>MOMSN</strong> (Mobile Originated): Iridium
+                            ID of the vehicle&apos;s acknowledgment reply.
+                            Present only after the vehicle confirms receipt.
+                          </p>
+                        </div>
+                      )}
+                    </span>
+                  </p>
+                  <p className="font-mono text-sm text-red-800">
+                    {event.mtmsn != null && <span>MTMSN: {event.mtmsn}</span>}
+                    {event.mtmsn != null && event.momsn != null && (
+                      <span className="mx-2 text-stone-400">·</span>
+                    )}
+                    {event.momsn != null && <span>MOMSN: {event.momsn}</span>}
+                  </p>
+                </div>
+              )}
+              {event.sbdChunks != null && event.sbdChunks.total >= 2 && (
+                <div className="ml-auto min-w-0 text-right">
+                  <p className="text-sm uppercase tracking-wide text-stone-500">
+                    SBD Chunks
+                  </p>
+                  <div className="mt-1 flex justify-end">
+                    <SbdChunkBoxes
+                      delivered={event.sbdChunks.delivered}
+                      inTransit={event.sbdChunks.inTransit}
+                      total={event.sbdChunks.total}
+                      showLabel
+                      size="md"
+                    />
+                  </div>
+                </div>
+              )}
             </div>
           )}
         </div>

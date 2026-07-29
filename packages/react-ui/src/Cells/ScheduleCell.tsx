@@ -53,7 +53,7 @@ export interface ScheduleCellProps {
   /** Override the native tooltip shown on the status icon */
   statusTooltip?: string
   /** Multi-SBD progress boxes; ACK only when delivered === total (#797). */
-  sbdChunks?: { delivered: number; total: number }
+  sbdChunks?: { delivered: number; inTransit?: number; total: number }
   onSelect: () => void
   onMoreClick: (
     id: {
@@ -193,6 +193,7 @@ export const ScheduleCell: React.FC<ScheduleCellProps> = ({
           {sbdChunks && sbdChunks.total >= 2 && (
             <SbdChunkBoxes
               delivered={sbdChunks.delivered}
+              inTransit={sbdChunks.inTransit}
               total={sbdChunks.total}
             />
           )}

@@ -288,6 +288,22 @@ ul.tree input[type='checkbox'] {
 .animate-pulse {
   animation: pulse 1.5s infinite;
 }
+
+/* SBD chunk in-transit: orange pulsing border (#797) */
+@keyframes sbd-in-transit {
+  0%,
+  100% {
+    border-color: #ea580c;
+    box-shadow: 0 0 0 0 rgba(234, 88, 12, 0.35);
+  }
+  50% {
+    border-color: #fb923c;
+    box-shadow: 0 0 0 3px rgba(251, 146, 60, 0.35);
+  }
+}
+.sbd-chunk-in-transit {
+  animation: sbd-in-transit 1.2s ease-in-out infinite;
+}
 .pulsing-icon {
   animation: pulse 1.5s infinite;
 }

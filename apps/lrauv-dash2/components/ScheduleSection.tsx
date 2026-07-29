@@ -1282,6 +1282,10 @@ export const ScheduleSection: React.FC<ScheduleSectionProps> = ({
                 isLoadRunMission,
                 commsStatus: commsLookup.get(mission.event.eventId),
                 ...commsMsgIdLookup.get(mission.event.eventId),
+                sbdChunks:
+                  mission.event.eventId != null
+                    ? commsSbdChunksLookup.get(mission.event.eventId)
+                    : undefined,
               },
             },
           })

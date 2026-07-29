@@ -73,8 +73,9 @@ export const determineCommandStatus = (
     command.eventId && timeoutMap.get(String(command.eventId))
   )
 
-  // Green boxes = vehicle has the chunk. Cell state:2 is only shore dispatch —
-  // count it for pure cell when not timed out; never for cellsat (#797/#798).
+  // Green = vehicle has the chunk; orange = shore dispatched, not confirmed.
+  // Cell state:2 counts as delivered only for pure cell when not timed out;
+  // never for cellsat (#797/#798). Timeout freezes in-transit (no orange).
   const sbdChunks = buildSbdChunkProgress(
     command.data ?? command.text,
     matchingSbdSends,
@@ -82,6 +83,7 @@ export const determineCommandStatus = (
     sbdReceiveMap,
     {
       countCellState2: via === 'cell' && !hasTimeoutNote,
+      freezeInTransit: hasTimeoutNote,
     }
   )
 
