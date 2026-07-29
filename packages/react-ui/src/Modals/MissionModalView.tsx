@@ -444,10 +444,30 @@ const MissionModalBody: React.FC<MissionModalViewProps> = ({
     }
   }, [editable, setWaypointsEditable, currentStep, steps, showSummary])
 
+  // Fixed frame for every step so short content cannot shrink the shell and
+  // expose Schedule (or other UI) underneath for accidental clicks.
+  // calc accounts for Modal's my-12 vertical margins.
+  const missionModalFrameStyle: React.CSSProperties = {
+    ...style,
+    height: 'calc(100vh - 6rem)',
+    minHeight: 'calc(100vh - 6rem)',
+    maxHeight: 'calc(100vh - 6rem)',
+  }
+  const missionModalFrame = {
+    className,
+    style: missionModalFrameStyle,
+    snapTo: 'top-right' as const,
+    extraWideModal: true,
+    bodyOverflowHidden: true,
+    allowPointerEventsOnChildren: true,
+    open: true,
+  }
+
   switch (currentStep) {
     case steps.indexOf('Confirm'):
       return (
         <ConfirmVehicleDialog
+          {...missionModalFrame}
           vehicle={vehicleName}
           vehicleList={vehicles ?? []}
           mission={selectedId ?? ''}
@@ -460,15 +480,14 @@ const MissionModalBody: React.FC<MissionModalViewProps> = ({
     case steps.indexOf('Send Command'):
       return (
         <Modal
+          {...missionModalFrame}
           title="Review and Send Command"
           onConfirm={handleSchedule}
           onCancel={handlePrevious}
           onClose={handlePrevious}
           loading={loading}
-          open
-          extraWideModal
         >
-          <div className="flex flex-col">
+          <div className="flex h-full min-h-0 flex-col overflow-auto">
             <p className="mb-2 flex items-baseline justify-between gap-4">
               <span>
                 The following command will be sent to{' '}
@@ -502,8 +521,7 @@ const MissionModalBody: React.FC<MissionModalViewProps> = ({
     default:
       return (
         <Modal
-          className={className}
-          style={{ ...style, maxHeight: '95vh' }}
+          {...missionModalFrame}
           title={
             <StepProgress
               steps={steps.slice(0, steps.length - 1)}
@@ -517,11 +535,6 @@ const MissionModalBody: React.FC<MissionModalViewProps> = ({
           onClose={onCancel}
           confirmButtonText={confirmButtonText}
           extraButtons={extraButtons()}
-          snapTo="top-right"
-          extraWideModal
-          bodyOverflowHidden
-          allowPointerEventsOnChildren
-          open
         >
           {currentModalBody()}
         </Modal>
