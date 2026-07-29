@@ -321,7 +321,7 @@ const MissionModal: React.FC<MissionModalProps> = ({
 
   return (
     <MissionModalView
-      style={{ maxHeight: '80vh' }}
+      style={{ height: 'calc(100vh - 6rem)' }}
       alternativeAddresses={alternativeAddresses}
       currentStepIndex={0}
       vehicleName={capitalize(vehicleName)}
