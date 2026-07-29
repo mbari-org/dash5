@@ -476,8 +476,16 @@ const MissionModalBody: React.FC<MissionModalViewProps> = ({
           vehicleList={vehicles ?? []}
           mission={selectedId ?? ''}
           onChangeVehicle={setConfirmedVehicle}
-          onCancel={handlePrevious}
+          // Cancel aborts the whole flow; Back returns to Schedule.
+          onCancel={onCancel}
           onConfirm={handleSchedule}
+          leftExtraButtons={[
+            {
+              buttonText: 'Back',
+              appearance: 'secondary',
+              onClick: handlePrevious,
+            },
+          ]}
         />
       )
 
@@ -487,9 +495,16 @@ const MissionModalBody: React.FC<MissionModalViewProps> = ({
           {...missionModalFrame}
           title="Review and Send Command"
           onConfirm={handleSchedule}
-          onCancel={handlePrevious}
-          onClose={handlePrevious}
+          onCancel={onCancel}
+          onClose={onCancel}
           loading={loading}
+          leftExtraButtons={[
+            {
+              buttonText: 'Back',
+              appearance: 'secondary',
+              onClick: handlePrevious,
+            },
+          ]}
         >
           <div className="flex h-full min-h-0 flex-col overflow-auto">
             <p className="mb-2 flex items-baseline justify-between gap-4">
