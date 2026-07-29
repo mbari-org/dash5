@@ -40,16 +40,19 @@ const pickPrimarySbdSend = (
 /**
  * ACK is only honest when all known SBD parts are delivered (#797).
  * Incomplete multi-part → demote ack to sent; attach progress for UI boxes.
+ * Timeout always clears in-transit so boxes stop flashing (note or client-side).
  */
 const withChunkGate = (
   event: CommsEvent,
   sbdChunks?: SbdChunkProgress
 ): CommsEvent => {
   if (!sbdChunks) return event
-  if (event.status === 'ack' && sbdChunks.delivered < sbdChunks.total) {
-    return { ...event, status: 'sent', sbdChunks }
+  const chunks =
+    event.status === 'timeout' ? { ...sbdChunks, inTransit: 0 } : sbdChunks
+  if (event.status === 'ack' && chunks.delivered < chunks.total) {
+    return { ...event, status: 'sent', sbdChunks: chunks }
   }
-  return { ...event, sbdChunks }
+  return { ...event, sbdChunks: chunks }
 }
 
 export const determineCommandStatus = (

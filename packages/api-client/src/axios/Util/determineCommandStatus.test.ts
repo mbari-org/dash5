@@ -629,6 +629,47 @@ describe('determineCommandStatus', () => {
     })
   })
 
+  // #797: client-side timeout (no note) must also stop orange flash.
+  it('should clear inTransit on client-side timeout without a timeout note', () => {
+    const multiPartCellsat: GetEventsResponse = {
+      ...baseCellsatCommand,
+      unixTime: Date.now() - 20 * 60 * 1000, // well past 5min
+      data: [
+        'sched asap "load x.tl" tok 1 3',
+        'sched asap "set a 1 m" tok 2 3',
+        'sched asap "run" tok 3 3',
+      ].join('\n'),
+      note: 'command[via: cellsat, timeout:5min]',
+    }
+    const sbdSendMap = new Map<string, GetEventsResponse[]>([
+      [
+        String(multiPartCellsat.eventId),
+        [1, 2, 3].map((n) => ({
+          ...cellSbdSend,
+          eventId: 90 + n,
+          refId: multiPartCellsat.eventId,
+          state: 2,
+          unixTime: Date.now() - 20 * 60 * 1000,
+        })),
+      ],
+    ])
+
+    const result = determineCommandStatus(
+      multiPartCellsat,
+      sbdSendMap,
+      new Map(),
+      new Map(),
+      new Map() // no timeout note
+    )
+
+    expect(result.status).toBe('timeout')
+    expect(result.sbdChunks).toEqual({
+      delivered: 0,
+      inTransit: 0,
+      total: 3,
+    })
+  })
+
   // #798: once sat receive lands, cellsat may ACK (not stuck on sent forever).
   it('should return ack for cellsat with state:2 after sat receipt and receive', () => {
     const recentCellsatCommand: GetEventsResponse = {
