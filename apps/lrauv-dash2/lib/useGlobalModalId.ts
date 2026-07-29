@@ -72,6 +72,12 @@ export interface GlobalModalMetaData {
     mtmsn?: number
     /** Iridium Mobile Originated Message Sequence Number — vehicle's ack reply (sat comms) */
     momsn?: number
+    /** Multi-SBD chunk progress for detail modal (#797) */
+    sbdChunks?: {
+      delivered: number
+      inTransit?: number
+      total: number
+    }
     /** True for automatic Default mission rows (not operator-commanded) */
     isDefaultMission?: boolean
     /** Vehicle GPS position at Default mission start (from missionStarted telemetry) */

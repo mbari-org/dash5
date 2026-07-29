@@ -258,3 +258,25 @@ test('shows Operator field for regular operator-sent missions', () => {
   expect(screen.getByText('Operator')).toBeInTheDocument()
   expect(screen.getByText('test-operator')).toBeInTheDocument()
 })
+
+// ── SBD chunk parity (#797) ───────────────────────────────────────────────────
+
+test('shows SBD chunk progress to the right of Iridium Msg IDs', () => {
+  ;(useGlobalModalId as jest.Mock).mockReturnValue(
+    makeModalId({
+      ...baseEvent,
+      via: 'cellsat' as const,
+      mtmsn: 1938,
+      momsn: 18978,
+      sbdChunks: { delivered: 2, inTransit: 1, total: 4 },
+      isLoadRunMission: true,
+    })
+  )
+
+  render(<ScheduleEventDetailsModal onClose={() => {}} />)
+
+  expect(screen.getByText(/Iridium Msg IDs/i)).toBeInTheDocument()
+  expect(screen.getByText(/SBD Chunks/i)).toBeInTheDocument()
+  expect(screen.getByText('SBD 2 of 4')).toBeInTheDocument()
+  expect(screen.getByLabelText('SBD 2 of 4')).toBeInTheDocument()
+})

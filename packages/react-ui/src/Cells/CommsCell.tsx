@@ -72,7 +72,7 @@ export interface CommsCellProps {
   status: 'queued' | 'sent' | 'ack' | 'timeout'
   commandType: CommandType
   /** Multi-SBD progress; ACK icon is only honest when delivered === total (#797). */
-  sbdChunks?: { delivered: number; total: number }
+  sbdChunks?: { delivered: number; inTransit?: number; total: number }
   onSelect?: () => void
 }
 
@@ -136,6 +136,7 @@ export const CommsCell: React.FC<CommsCellProps> = ({
             <li className="mt-1">
               <SbdChunkBoxes
                 delivered={sbdChunks.delivered}
+                inTransit={sbdChunks.inTransit}
                 total={sbdChunks.total}
               />
             </li>

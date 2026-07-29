@@ -574,7 +574,11 @@ describe('determineCommandStatus', () => {
     )
 
     expect(result.status).toBe('sent')
-    expect(result.sbdChunks).toEqual({ delivered: 1, total: 3 })
+    expect(result.sbdChunks).toEqual({
+      delivered: 1,
+      inTransit: 0,
+      total: 3,
+    })
   })
 
   // #797: cellsat/timeout — cell state:2 must not paint boxes full.
@@ -618,7 +622,11 @@ describe('determineCommandStatus', () => {
     )
 
     expect(result.status).toBe('timeout')
-    expect(result.sbdChunks).toEqual({ delivered: 0, total: 3 })
+    expect(result.sbdChunks).toEqual({
+      delivered: 0,
+      inTransit: 0,
+      total: 3,
+    })
   })
 
   // #798: once sat receive lands, cellsat may ACK (not stuck on sent forever).
