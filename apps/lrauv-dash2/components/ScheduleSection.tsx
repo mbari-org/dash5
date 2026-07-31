@@ -809,7 +809,7 @@ export const ScheduleSection: React.FC<ScheduleSectionProps> = ({
       queryKey: ['commands', 'script', path],
       queryFn: () => getScript({ path }, { instance: axiosInstance }),
       staleTime: Infinity, // mission definitions don't change mid-deployment
-      enabled: !!axiosInstance && !!path,
+      enabled: !!axiosInstance && !!path && !!authenticated,
     }))
   )
 
