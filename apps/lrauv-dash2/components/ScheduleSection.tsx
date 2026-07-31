@@ -804,18 +804,20 @@ export const ScheduleSection: React.FC<ScheduleSectionProps> = ({
   const results = [scheduledCells, historicCells].flat()
 
   // Pre-fetch mission IDs for pending rows (no vehicle-reported missionId yet).
+  // Scoped to scheduledCells only — historic rows either already have a
+  // missionId from telemetry or are no longer actionable.
   // useQueries runs all lookups in parallel and caches aggressively — mission
   // definitions don't change during a deployment.
   const pendingScriptPaths = useMemo(() => {
     const paths = new Set<string>()
-    for (const m of results) {
+    for (const m of scheduledCells ?? []) {
       if (!m.missionId) {
         const p = rawMissionPathFromEventData(m.event.data ?? m.event.text)
         if (p) paths.add(p)
       }
     }
     return Array.from(paths)
-  }, [results])
+  }, [scheduledCells])
 
   const scriptIdQueries = useQueries(
     pendingScriptPaths.map((path) => ({
@@ -1046,8 +1048,8 @@ export const ScheduleSection: React.FC<ScheduleSectionProps> = ({
       parseMissionCommand(commandData)
     // Display name priority (|| so empty strings fall through to the next level):
     // 1. missionId — vehicle-reported ID from missionStarted telemetry. Most accurate.
-    // 2. scriptId — ID from getScriptDescription, resolved at queue time before the
-    //    vehicle reports back. Handles cases where filename ≠ mission ID (e.g. _vt files).
+    // 2. scriptId — ID from getScript (GET /commands/script), resolved at queue time before
+    //    the vehicle reports back. Handles cases where filename ≠ mission ID (e.g. _vt files).
     // 3. missionNameFromEventData — filename without path/extension. Fallback when
     //    the script lookup is still loading or returns no result.
     // 4. parsedMissionName — last resort for edge cases.
