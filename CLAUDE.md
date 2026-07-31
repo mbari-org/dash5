@@ -26,3 +26,5 @@
 - Write tests for all new components and logic
 - Mock API calls and external dependencies
 - Test rendering, interactions, error states
+- **`apps/lrauv-dash2` tests always go in `/jest/`**, never alongside the component in `/components/`
+- Before writing a new test file, check both locations (`/jest/` and `/components/`) to avoid duplicates
