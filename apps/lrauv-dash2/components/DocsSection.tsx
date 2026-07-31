@@ -163,6 +163,7 @@ const DocsSection: React.FC<DocsSectionProps> = ({
         date={date}
         onSelectAttachment={handleRemoveAttachment}
         onMoreClick={openMoreMenu}
+        authenticated={authenticated}
         onSelect={handleSelectDocument}
         docId={item?.docId as number}
         docInstanceId={item?.latestRevision?.docInstanceId as number}

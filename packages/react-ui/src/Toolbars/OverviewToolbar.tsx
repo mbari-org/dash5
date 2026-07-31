@@ -101,25 +101,29 @@ export const OverviewToolbar: React.FC<OverviewToolbarProps> = ({
       })()
     : null
 
-  const newDeploymentOptions = [
-    {
-      label: `New ${capitalize(vehicleName ?? '')} deployment`,
-      icon: faPlus as IconDefinition,
-      onSelect: () => {
-        handleNewDeployment?.()
-        setShowDeployments(false)
-      },
-      disabled: !handleNewDeployment,
-    },
-  ]
-  const deploymentOptions =
-    deployments?.map((d) => ({
-      label: d.name,
-      onSelect: () => {
-        handleSelectDeployment?.(d)
-        setShowDeployments(false)
-      },
-    })) ?? []
+  const newDeploymentOptions = authenticated
+    ? [
+        {
+          label: `New ${capitalize(vehicleName ?? '')} deployment`,
+          icon: faPlus as IconDefinition,
+          onSelect: () => {
+            handleNewDeployment?.()
+            setShowDeployments(false)
+          },
+        },
+      ]
+    : []
+  const deploymentOptions = handleSelectDeployment
+    ? deployments?.map((d) => ({
+        label: d.name,
+        onSelect: () => {
+          handleSelectDeployment(d)
+          setShowDeployments(false)
+        },
+      })) ?? []
+    : []
+  const deploymentMenuOptions = [...newDeploymentOptions, ...deploymentOptions]
+  const canOpenDeploymentMenu = deploymentMenuOptions.length > 0
 
   const toggleHover = (newHover: HoverOption) => () => {
     setHovering(newHover)
@@ -128,7 +132,7 @@ export const OverviewToolbar: React.FC<OverviewToolbarProps> = ({
     <article style={style} className={clsx(styles.container, className, '')}>
       <ul className={styles.leftWrapper}>
         <li className="relative">
-          {handleSelectDeployment || handleNewDeployment ? (
+          {canOpenDeploymentMenu ? (
             <button
               onClick={handleToggle}
               className={styles.deployment}
@@ -169,9 +173,9 @@ export const OverviewToolbar: React.FC<OverviewToolbarProps> = ({
               )}
             </h2>
           )}
-          {showDeployments && (
+          {showDeployments && canOpenDeploymentMenu && (
             <Dropdown
-              options={[...newDeploymentOptions, ...deploymentOptions]}
+              options={deploymentMenuOptions}
               className={styles.dropdown}
               header={
                 deployment?.name ? (
@@ -191,11 +195,11 @@ export const OverviewToolbar: React.FC<OverviewToolbarProps> = ({
             />
           </li>
         )}
-        {onEditDeployment ? (
+        {authenticated ? (
           <li data-testid="deploymentDetails" className="ml-2">
             <IconButton
               icon={faClipboardList}
-              onClick={onEditDeployment}
+              onClick={() => onEditDeployment?.()}
               ariaLabel="Deployment Details"
               tooltip="Deployment Details"
               size="text-2xl"

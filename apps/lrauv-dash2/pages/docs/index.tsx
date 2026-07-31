@@ -5,9 +5,11 @@ import {
   useDetachDocumentToDeployment,
   useDetachDocumentToVehicle,
   useDocuments,
+  useTethysApiContext,
 } from '@mbari/api-client'
 
 export default function DocsIndexPage() {
+  const { authenticated } = useTethysApiContext()
   const { data, isLoading } = useDocuments()
   const attachVehicle = useAttachDocumentToVehicle()
   const detachVehicle = useDetachDocumentToVehicle()
@@ -42,9 +44,15 @@ export default function DocsIndexPage() {
   return (
     <div style={{ padding: 16 }}>
       <h1>Documents</h1>
-      <div style={{ margin: '8px 0' }}>
-        <Link href="/docs/new">Add document</Link>
-      </div>
+      {authenticated ? (
+        <div style={{ margin: '8px 0' }}>
+          <Link href="/docs/new">Add document</Link>
+        </div>
+      ) : (
+        <p style={{ margin: '8px 0', fontStyle: 'italic', color: '#57534e' }}>
+          Sign in to add or edit
+        </p>
+      )}
       {isLoading ? (
         <div>Loading…</div>
       ) : (
@@ -55,7 +63,7 @@ export default function DocsIndexPage() {
               <th>Name</th>
               <th>Type</th>
               <th>Latest</th>
-              <th>Actions</th>
+              {authenticated && <th>Actions</th>}
             </tr>
           </thead>
           <tbody>
@@ -73,22 +81,24 @@ export default function DocsIndexPage() {
                       ).toLocaleString()
                     : '-'}
                 </td>
-                <td>
-                  <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
-                    <button onClick={() => handleAttachVehicle(d.docId)}>
-                      Attach vehicle
-                    </button>
-                    <button onClick={() => handleDetachVehicle(d.docId)}>
-                      Detach vehicle
-                    </button>
-                    <button onClick={() => handleAttachDeployment(d.docId)}>
-                      Attach deployment
-                    </button>
-                    <button onClick={() => handleDetachDeployment(d.docId)}>
-                      Detach deployment
-                    </button>
-                  </div>
-                </td>
+                {authenticated && (
+                  <td>
+                    <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+                      <button onClick={() => handleAttachVehicle(d.docId)}>
+                        Attach vehicle
+                      </button>
+                      <button onClick={() => handleDetachVehicle(d.docId)}>
+                        Detach vehicle
+                      </button>
+                      <button onClick={() => handleAttachDeployment(d.docId)}>
+                        Attach deployment
+                      </button>
+                      <button onClick={() => handleDetachDeployment(d.docId)}>
+                        Detach deployment
+                      </button>
+                    </div>
+                  </td>
+                )}
               </tr>
             ))}
           </tbody>
