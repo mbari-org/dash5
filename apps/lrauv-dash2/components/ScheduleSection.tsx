@@ -31,6 +31,7 @@ import {
   clearSbdInTransitOnTimeout,
   SbdChunkProgress,
   useTethysApiContext,
+  getScript,
 } from '@mbari/api-client'
 import { useQueryClient, useQueries } from 'react-query'
 import useGlobalModalId from '../lib/useGlobalModalId'
@@ -42,7 +43,6 @@ import {
   normalizeMissionName,
   normalizeMissionPath,
 } from '../lib/missionUtils'
-import { getScript } from '@mbari/api-client'
 import { toast } from 'react-hot-toast'
 import { useConfirm } from './ConfirmContext'
 
