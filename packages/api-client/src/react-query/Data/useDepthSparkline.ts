@@ -6,6 +6,16 @@ import { useTethysApiContext } from '../TethysApiProvider'
 import { SupportedQueryOptions } from '../types'
 
 const EIGHT_HOURS_MS = 8 * 60 * 60 * 1000
+// Fallback window when the 8-hour query returns no depth data (vehicle submerged
+// longer than 8 h). 7 days covers any realistic long-dive / no-comms scenario.
+const SEVEN_DAYS_MS = 7 * 24 * 60 * 60 * 1000
+// Cap the fallback at 480 points (~1/min × 8 h) to avoid an oversized payload.
+const LONG_DIVE_MAXLEN = 480
+// Default refetch interval — 2 minutes keeps the rolling window current.
+const REFETCH_INTERVAL = 2 * 60 * 1000
+// Depth threshold (meters) below which a point is considered a surface event.
+// Used to trim fallback data to the current dive cycle for correct scale.
+const SURFACE_DEPTH_M = 2
 
 export interface DepthSparklineData {
   depthTimes: number[] // minutes since epoch
@@ -26,9 +36,6 @@ export const useDepthSparkline = (
   // Keep a stable query key per vehicle so React Query re-uses the cache entry
   // across re-renders. The rolling 8-hour window is computed fresh inside each
   // queryFn so the chart stays current as long as refetchInterval triggers.
-  // Default interval is 2 minutes; callers can override via options.
-  const REFETCH_INTERVAL = 2 * 60 * 1000
-
   const depthQuery = useQuery(
     ['depthSparkline', 'depth', vehicle],
     () =>
@@ -39,6 +46,33 @@ export const useDepthSparkline = (
     {
       staleTime: REFETCH_INTERVAL,
       refetchInterval: REFETCH_INTERVAL,
+      ...options,
+      enabled: !!vehicle && options?.enabled !== false,
+    }
+  )
+
+  // Fallback: runs in parallel with the primary query. Fetches the most recent
+  // LONG_DIVE_MAXLEN points from a 7-day window so that if the 8-hour window
+  // returns no data (vehicle submerged > 8 h), the sparkline can immediately
+  // show the last known dive profile padded forward to now — no extra round-trip.
+  // Only refetches when the primary query has already succeeded with zero points
+  // (i.e. the vehicle is actually in a long-dive scenario) to avoid unnecessary
+  // 7-day API calls in the common case where the primary has data.
+  const primarySucceededEmpty =
+    depthQuery.isSuccess && (depthQuery.data?.times.length ?? 0) === 0
+  const longDiveQuery = useQuery(
+    ['depthSparkline', 'depth', vehicle, 'longDive'],
+    () =>
+      getDepthData(
+        { vehicle, from: Date.now() - SEVEN_DAYS_MS, maxlen: LONG_DIVE_MAXLEN },
+        { instance: axiosInstance }
+      ),
+    {
+      staleTime: REFETCH_INTERVAL,
+      refetchInterval: primarySucceededEmpty ? REFETCH_INTERVAL : false,
+      // Only refetch on focus/reconnect in long-dive mode — avoids spurious 7-day requests in the common case.
+      refetchOnWindowFocus: primarySucceededEmpty,
+      refetchOnReconnect: primarySucceededEmpty,
       ...options,
       enabled: !!vehicle && options?.enabled !== false,
     }
@@ -90,19 +124,48 @@ export const useDepthSparkline = (
     const windowStart = (nowMin - 8 * 60) * 60000 // ms epoch for windowStart
     const windowStartMin = nowMin - 8 * 60
 
-    // Clamp depth data to the rolling 8-hour window and keep times/values aligned.
-    // The API is asked for the same window on each refetch, but cached data can lag
-    // by up to staleTime (2 min) so we trim defensively here as well.
-    const rawTimes = depthQuery.data?.times ?? []
-    const rawValues = depthQuery.data?.values ?? []
+    // Prefer the 8-hour window query; use the long-dive fallback only when the
+    // primary query has *completed* with zero points (vehicle submerged > 8 h).
+    // Gating on isSuccess prevents the fallback from activating during initial
+    // load (when data is still undefined) and causing a premature wide-window plot.
+    const usingFallback =
+      depthQuery.isSuccess && (depthQuery.data?.times ?? []).length === 0
+    const rawTimes = usingFallback
+      ? longDiveQuery.data?.times ?? []
+      : depthQuery.data?.times ?? []
+    const rawValues = usingFallback
+      ? longDiveQuery.data?.values ?? []
+      : depthQuery.data?.values ?? []
+
+    // Clamp depth data to the rolling 8-hour window. For the long-dive fallback,
+    // skip the time clamp — all returned points are older than 8 h by definition,
+    // and we need them to reconstruct the dive profile before padding forward.
     const safeLen = Math.min(rawTimes.length, rawValues.length)
-    const depthTimesMin: number[] = []
-    const clampedValues: number[] = []
+    let depthTimesMin: number[] = []
+    let clampedValues: number[] = []
     for (let i = 0; i < safeLen; i++) {
       const tMin = Math.floor(rawTimes[i] / 60000)
-      if (tMin >= windowStartMin) {
+      if (usingFallback || tMin >= windowStartMin) {
         depthTimesMin.push(tMin)
         clampedValues.push(rawValues[i])
+      }
+    }
+
+    // In fallback mode the payload can span multiple dive cycles. Trim to the
+    // current dive by finding the last surface event (depth < 2 m) and keeping
+    // only points from there onward. This ensures the depth scale reflects the
+    // current dive rather than a historical maximum from a previous mission.
+    if (usingFallback && clampedValues.length > 0) {
+      let lastSurfaceIdx = -1
+      for (let i = clampedValues.length - 1; i >= 0; i--) {
+        if (clampedValues[i] < SURFACE_DEPTH_M) {
+          lastSurfaceIdx = i
+          break
+        }
+      }
+      if (lastSurfaceIdx >= 0) {
+        depthTimesMin = depthTimesMin.slice(lastSurfaceIdx)
+        clampedValues = clampedValues.slice(lastSurfaceIdx)
       }
     }
 
@@ -112,11 +175,13 @@ export const useDepthSparkline = (
     let depthTimes = depthTimesMin
     let depthValues = clampedValues
     let padded = false
-    if (depthTimesMin.length > 0 && nowMin - Math.max(...depthTimesMin) > 4) {
+    if (depthTimesMin.length > 0) {
       const lastT = Math.max(...depthTimesMin)
-      depthTimes = [...depthTimesMin, lastT, lastT + 2, nowMin]
-      depthValues = [...clampedValues, 1, 10, 10]
-      padded = true
+      if (nowMin - lastT > 4) {
+        depthTimes = [...depthTimesMin, lastT, lastT + 2, nowMin]
+        depthValues = [...clampedValues, 1, 10, 10]
+        padded = true
+      }
     }
 
     // Separate comms events by type and state (matching auvstatus.py extractCommHistory).
@@ -150,11 +215,17 @@ export const useDepthSparkline = (
       argoTimes,
       padded,
     }
-  }, [depthQuery.data, commsQuery.data, nowMinBucket])
+  }, [depthQuery.data, longDiveQuery.data, commsQuery.data, nowMinBucket])
 
   return {
     data,
-    isLoading: depthQuery.isLoading || commsQuery.isLoading,
-    isError: depthQuery.isError || commsQuery.isError,
+    isLoading:
+      depthQuery.isLoading ||
+      commsQuery.isLoading ||
+      (primarySucceededEmpty && longDiveQuery.isLoading),
+    isError:
+      depthQuery.isError ||
+      commsQuery.isError ||
+      (primarySucceededEmpty && longDiveQuery.isError),
   }
 }
