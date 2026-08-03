@@ -1333,7 +1333,7 @@ export const ScheduleSection: React.FC<ScheduleSectionProps> = ({
     commandType: 'mission' | 'command'
   }) => {
     const isConfirmed = await confirm({
-      title: `Cancel this ${commandType} directive (event ID ${eventId})? This will remove it from the shore-side queue.`,
+      title: `Are you sure you want to discard this ${commandType} directive (event ID ${eventId})? This will remove it from the shore-side queue.`,
     })
     if (isConfirmed) {
       try {

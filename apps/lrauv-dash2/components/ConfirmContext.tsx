@@ -1,4 +1,10 @@
-import React, { createContext, useContext, useState, ReactNode } from 'react'
+import React, {
+  createContext,
+  useContext,
+  useState,
+  useRef,
+  ReactNode,
+} from 'react'
 import { Modal } from '@mbari/react-ui'
 
 interface ConfirmOptions {
@@ -19,28 +25,26 @@ const ConfirmationContext = createContext<ConfirmContextProps | undefined>(
 export const ConfirmationProvider = ({ children }: { children: ReactNode }) => {
   const [isOpen, setIsOpen] = useState(false)
   const [options, setOptions] = useState<ConfirmOptions | null>(null)
-  const [resolver, setResolver] = useState<{
-    resolve: (value: boolean) => void
-  } | null>(null)
+  const resolverRef = useRef<((value: boolean) => void) | null>(null)
 
   const confirm = (confirmOptions: ConfirmOptions): Promise<boolean> => {
     setOptions(confirmOptions)
     setIsOpen(true)
 
-    // store resolve function in state, calling it later once a button is clicked
+    // store resolve function, calling it later once a button is clicked
     return new Promise<boolean>((resolve) => {
-      setResolver({ resolve })
+      resolverRef.current = resolve
     })
   }
 
   // resolve the promise via one of these two, after user has clicked one of the associated buttons
   const handleConfirm = () => {
-    if (resolver) resolver.resolve(true)
+    resolverRef.current?.(true)
     setIsOpen(false)
   }
 
   const handleCancel = () => {
-    if (resolver) resolver.resolve(false)
+    resolverRef.current?.(false)
     setIsOpen(false)
   }
 
