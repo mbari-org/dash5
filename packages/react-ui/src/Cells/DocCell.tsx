@@ -20,6 +20,8 @@ export interface DocCellProps {
     id: { docInstanceId: number; docId: number },
     rect?: DOMRect
   ) => void
+  /** Write affordances (detach / more-options). Kept for planned auth expansion. */
+  authenticated?: boolean
   time: string
   date: string
   label: string
@@ -46,6 +48,7 @@ export const DocCell: React.FC<DocCellProps> = ({
   secondary,
   attachments,
   onMoreClick,
+  authenticated,
   docInstanceId,
   docId,
 }) => {
@@ -84,26 +87,34 @@ export const DocCell: React.FC<DocCellProps> = ({
           <ul className="flex flex-col">
             {attachments?.map((attachment) => (
               <li key={attachment.id}>
-                <AccessoryButton
-                  className={styles.accButton}
-                  label={attachment.name}
-                  icon={faTimes as IconProp}
-                  onClick={swallow(() => onSelectAttachment(attachment))}
-                  reverse={true}
-                />
+                {authenticated ? (
+                  <AccessoryButton
+                    className={styles.accButton}
+                    label={attachment.name}
+                    icon={faTimes as IconProp}
+                    onClick={swallow(() => onSelectAttachment(attachment))}
+                    reverse={true}
+                  />
+                ) : (
+                  <span className="mb-1 block text-sm font-semibold text-gray-700">
+                    {attachment.name}
+                  </span>
+                )}
               </li>
             ))}
           </ul>
         </div>
       </article>
-      <div className={styles.iconButton} ref={moreButtonRef}>
-        <IconButton
-          icon={faEllipsisV}
-          ariaLabel={'More options'}
-          onClick={handleMoreClick}
-          size={'text-2xl'}
-        />
-      </div>
+      {authenticated && (
+        <div className={styles.iconButton} ref={moreButtonRef}>
+          <IconButton
+            icon={faEllipsisV}
+            ariaLabel={'More options'}
+            onClick={handleMoreClick}
+            size={'text-2xl'}
+          />
+        </div>
+      )}
     </div>
   )
 }

@@ -4,6 +4,7 @@ import { capitalize } from '@mbari/utils'
 
 export interface DocsModalProps {
   vehicleName: string
+  authenticated?: boolean
   className?: string
   style?: React.CSSProperties
   onClose?: () => void
@@ -11,6 +12,7 @@ export interface DocsModalProps {
 
 export const DocsModal: React.FC<DocsModalProps> = ({
   vehicleName,
+  authenticated,
   className,
   style,
   onClose,
@@ -29,7 +31,7 @@ export const DocsModal: React.FC<DocsModalProps> = ({
       open
     >
       <div className="flex flex-grow flex-col rounded border border-stone-200">
-        <DocsSection vehicleName={vehicleName} />
+        <DocsSection vehicleName={vehicleName} authenticated={authenticated} />
       </div>
     </Modal>
   )

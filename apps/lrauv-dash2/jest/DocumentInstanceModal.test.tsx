@@ -24,6 +24,7 @@ jest.mock('@mbari/api-client', () => ({
   useCreateDocument: jest.fn(),
   useCreateDocumentInstance: jest.fn(),
   useDeleteDocumentInstance: jest.fn(),
+  useTethysApiContext: jest.fn(() => ({ authenticated: true })),
 }))
 
 // Avoid TipTap/ProseMirror in jsdom by stubbing DocEditor and DocViewer
@@ -73,6 +74,7 @@ import {
   useCreateDocument,
   useCreateDocumentInstance,
   useDeleteDocumentInstance,
+  useTethysApiContext,
 } from '@mbari/api-client'
 
 import DocumentInstanceModal from '../components/DocumentInstanceModal'
@@ -144,9 +146,38 @@ function setupMocks({
 
 beforeEach(() => {
   jest.clearAllMocks()
+  ;(useTethysApiContext as jest.Mock).mockReturnValue({ authenticated: true })
 })
 
 // ── Tests ─────────────────────────────────────────────────────────────────────
+
+describe('DocumentInstanceModal — auth gating (fix #786)', () => {
+  it('hides the Edit button when the user is not authenticated', async () => {
+    setupMocks()
+    ;(useTethysApiContext as jest.Mock).mockReturnValue({
+      authenticated: false,
+    })
+    render(<DocumentInstanceModal />)
+
+    await waitFor(() => {
+      expect(screen.getByTestId('doc-viewer')).toBeInTheDocument()
+    })
+    expect(
+      screen.queryByRole('button', { name: /^Edit$/i })
+    ).not.toBeInTheDocument()
+  })
+
+  it('shows the Edit button when the user is authenticated', async () => {
+    setupMocks()
+    render(<DocumentInstanceModal />)
+
+    await waitFor(() => {
+      expect(
+        screen.getByRole('button', { name: /^Edit$/i })
+      ).toBeInTheDocument()
+    })
+  })
+})
 
 describe('DocumentInstanceModal — last-editor attribution (fix #619 item 4)', () => {
   it('shows the last-saved user and timestamp when the API returns user info', async () => {
