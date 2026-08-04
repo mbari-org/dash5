@@ -269,7 +269,9 @@ git checkout -b feat/your-feature-name
 
 4. **All PRs need Karen's review and approval before merge.** Do not merge your own PR. Ping Karen when it's ready for review — she'll take a look and may have feedback or want to discuss the change before it goes in.
 
-5. Deployment is automatic:
+5. **Before requesting human review, add Copilot to the Reviewers list** (top right of the PR page). Address any Copilot comments yourself first, then request human review from Karen.
+
+6. Deployment is automatic:
    - Merges to `develop` → staging environment (automatic via Watchtower)
    - Merges to `main` → production (manual deploy step)
 
