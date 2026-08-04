@@ -359,7 +359,12 @@ const CommandModalBody: React.FC<CommandModalViewProps> = ({
     <Modal
       loading={loading}
       className={className}
-      style={style}
+      style={{
+        ...style,
+        height: 'calc(100vh - 6rem)',
+        minHeight: 'calc(100vh - 6rem)',
+        maxHeight: 'calc(100vh - 6rem)',
+      }}
       title={
         <StepProgress
           steps={steps}
