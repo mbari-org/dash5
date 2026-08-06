@@ -585,8 +585,6 @@ test('Cancel this Directive calls DELETE /commands/queue when confirmed', async 
       return res(ctx.status(200), ctx.json({ result: {} }))
     })
   )
-  jest.spyOn(window, 'confirm').mockReturnValueOnce(true)
-
   render(
     <MockProviders queryClient={new QueryClient()}>
       <ScheduleSection {...props} currentDeploymentId={1} />
@@ -599,6 +597,7 @@ test('Cancel this Directive calls DELETE /commands/queue when confirmed', async 
   })
   await user.click(moreButton)
   await user.click(await screen.findByText('Cancel this Directive'))
+  await user.click(await screen.findByRole('button', { name: 'Confirm' }))
 
   await waitFor(() => {
     expect(deleteCalled).toBe(true)
@@ -688,8 +687,6 @@ test('Cancel this Directive does not call DELETE when confirm is dismissed', asy
       res(ctx.status(200), ctx.json({ result: {} }))
     )
   )
-  jest.spyOn(window, 'confirm').mockReturnValueOnce(false)
-
   render(
     <MockProviders queryClient={new QueryClient()}>
       <ScheduleSection {...props} currentDeploymentId={1} />
@@ -702,10 +699,13 @@ test('Cancel this Directive does not call DELETE when confirm is dismissed', asy
   })
   await user.click(moreButton)
   await user.click(await screen.findByText('Cancel this Directive'))
+  await user.click(await screen.findByRole('button', { name: 'Cancel' }))
 
-  // Menu closes; confirm was dismissed so DELETE must never fire
+  // modal closes; confirm was dismissed so DELETE must never fire
   await waitFor(() =>
-    expect(screen.queryByText('Cancel this Directive')).not.toBeInTheDocument()
+    expect(
+      screen.queryByRole('button', { name: 'Cancel' })
+    ).not.toBeInTheDocument()
   )
   expect(deleteCalled).toBe(false)
 })
