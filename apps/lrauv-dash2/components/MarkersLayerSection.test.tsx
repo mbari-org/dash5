@@ -2,7 +2,8 @@ import '@testing-library/jest-dom'
 import React from 'react'
 import { render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
-import { MarkersLayerSection } from './MarkersLayerSection'
+import { MarkersLayerSection, VISIBILITY_TOOLTIP } from './MarkersLayerSection'
+import type { MarkerData } from './MarkerContext'
 
 const mockRemoveMarkerFromLayer = jest.fn()
 const mockRemoveAllMarkersFromLayer = jest.fn()
@@ -23,31 +24,18 @@ jest.mock('./MapCameraContext', () => ({
 
 const baseProps = {
   isFiltering: false,
-  filteredMarkers: [] as Array<{
-    id: number | string
-    label?: string
-    lat?: number
-    lng?: number
-    visible?: boolean
-    savedToLayer?: boolean
-  }>,
-  layerMarkers: [] as Array<{
-    id: number | string
-    label?: string
-    lat?: number
-    lng?: number
-    visible?: boolean
-    savedToLayer?: boolean
-  }>,
+  filteredMarkers: [] as MarkerData[],
+  layerMarkers: [] as MarkerData[],
   expandedSections: { markers: true },
   toggleExpanded: jest.fn(),
   handleToggleSelectAllMarkers: jest.fn(),
   toggleMarkerVisibility: jest.fn(),
 }
 
-const layerMarkers = [
+const layerMarkers: MarkerData[] = [
   {
     id: 1,
+    index: 0,
     label: 'Waypoint A',
     lat: 36.7,
     lng: -122.0,
@@ -57,6 +45,7 @@ const layerMarkers = [
   },
   {
     id: 2,
+    index: 1,
     label: 'Waypoint B',
     lat: 36.8,
     lng: -122.1,
@@ -186,10 +175,7 @@ describe('MarkersLayerSection', () => {
     await userEvent.click(checkboxes[1])
 
     expect(toggleMarkerVisibility).toHaveBeenCalledWith('1')
-    expect(checkboxes[1]).toHaveAttribute(
-      'title',
-      'Show/hide on map (stays in layer)'
-    )
+    expect(checkboxes[1]).toHaveAttribute('title', VISIBILITY_TOOLTIP)
   })
 
   test('centers the map on a marker when center is clicked', async () => {
@@ -208,6 +194,37 @@ describe('MarkersLayerSection', () => {
     expect(mockSetFlyToRequest).toHaveBeenCalledWith({
       lat: 36.7,
       lon: -122.0,
+    })
+  })
+
+  test('normalizes out-of-bounds coordinates before centering', async () => {
+    const wrappedMarkers: MarkerData[] = [
+      {
+        id: 3,
+        index: 0,
+        label: 'Wrapped',
+        lat: 95,
+        lng: 190,
+        visible: true,
+        savedToLayer: true,
+      },
+    ]
+
+    render(
+      <MarkersLayerSection
+        {...baseProps}
+        filteredMarkers={wrappedMarkers}
+        layerMarkers={wrappedMarkers}
+      />
+    )
+
+    await userEvent.click(
+      screen.getByRole('button', { name: 'Center map on Wrapped' })
+    )
+
+    expect(mockSetFlyToRequest).toHaveBeenCalledWith({
+      lat: 90,
+      lon: -170,
     })
   })
 

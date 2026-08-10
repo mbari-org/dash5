@@ -7,7 +7,7 @@ import React, {
 } from 'react'
 // Note: Backend markers API is not ready. Markers saved to map layers use
 // localStorage so they survive browser refreshes. API helpers stay commented
-// out until a backend markers endpoint is integrated.
+// out until a backend markers API is integrated.
 // import {
 //   getMarkers,
 //   createMarker,
@@ -18,7 +18,6 @@ import React, {
 // } from '@mbari/api-client'
 import toast from 'react-hot-toast'
 import { createLogger } from '@mbari/utils'
-import { useConfirm } from './ConfirmContext'
 
 const logger = createLogger('MarkerContext')
 
@@ -63,7 +62,6 @@ export interface MarkerContextType {
   saveMarkerToLayer: (id: string) => void
   removeMarkerFromLayer: (id: string) => void
   removeAllMarkersFromLayer: () => void
-  clearAllMarkers: () => void
   selectAllMarkers: () => void
   deselectAllMarkers: () => void
   setMarkers: React.Dispatch<React.SetStateAction<MarkerData[]>>
@@ -121,7 +119,6 @@ export const MarkerProvider: React.FC<{ children: React.ReactNode }> = ({
     setSelectedMarkers([])
   }, [])
   const [selectedMarkerId, setSelectedMarkerId] = useState<string | null>(null)
-  const confirm = useConfirm()
 
   // Load after mount so SSR/static export never persists an empty [] over storage
   useEffect(() => {
@@ -294,21 +291,6 @@ export const MarkerProvider: React.FC<{ children: React.ReactNode }> = ({
     })
   }, [])
 
-  // Permanently delete every marker from the map
-  const clearAllMarkers = useCallback(async () => {
-    const isConfirmed = await confirm({
-      title:
-        'Are you sure you want to remove all markers? This cannot be undone.',
-    })
-    if (isConfirmed) {
-      setMarkers([])
-      toast.success('All markers have been removed', {
-        duration: 3000,
-        className: 'blue-toast',
-      })
-    }
-  }, [])
-
   const addMarker = useCallback(
     (markerData: Omit<MarkerData, 'id'>) => {
       const newId =
@@ -413,7 +395,8 @@ export const MarkerProvider: React.FC<{ children: React.ReactNode }> = ({
       const marker = markers.find((m) => m.id === numericId)
       const markerLabel = marker?.label || 'Unnamed'
 
-      // Remove the marker from the array (persist effect updates localStorage)
+      // Removing from state triggers the persist effect, which rewrites
+      // localStorage with the remaining layer-saved markers.
       setMarkers((prev) => prev.filter((marker) => marker.id !== numericId))
 
       // If the deleted marker was selected, clear selection
@@ -509,7 +492,6 @@ export const MarkerProvider: React.FC<{ children: React.ReactNode }> = ({
     handleToggleMarkerMode,
     handleMarkersRequest,
     handleMarkerSave,
-    clearAllMarkers,
     addMarker,
     updateMarker,
     deleteMarker,
