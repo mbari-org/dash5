@@ -34,7 +34,6 @@ const TestComponent = () => {
     saveMarkerToLayer,
     removeMarkerFromLayer,
     removeAllMarkersFromLayer,
-    clearAllMarkers,
   } = useMarkers()
 
   return (
@@ -54,9 +53,6 @@ const TestComponent = () => {
         onClick={removeAllMarkersFromLayer}
       >
         Remove All From Layer
-      </button>
-      <button data-testid="clear-all" onClick={clearAllMarkers}>
-        Clear All
       </button>
       {markers.map((marker) => (
         <div key={marker.id} data-testid={`marker-${marker.id}`}>
@@ -212,40 +208,6 @@ describe('MarkerContext', () => {
     await userEvent.click(screen.getByTestId('remove-all-from-layer'))
 
     expect(screen.getByTestId('layer-1').textContent).toBe('In Layer')
-  })
-
-  test('clears all markers from the map when confirmed', async () => {
-    jest.spyOn(window, 'confirm').mockReturnValueOnce(true)
-
-    render(
-      <MarkerProvider>
-        <TestComponent />
-      </MarkerProvider>
-    )
-
-    await userEvent.click(screen.getByTestId('add-marker'))
-    await userEvent.click(screen.getByTestId('add-marker'))
-    expect(screen.getByTestId('marker-count').textContent).toBe('2')
-
-    await userEvent.click(screen.getByTestId('clear-all'))
-
-    expect(window.confirm).toHaveBeenCalled()
-    expect(screen.getByTestId('marker-count').textContent).toBe('0')
-  })
-
-  test('does not clear markers when clear-all is cancelled', async () => {
-    jest.spyOn(window, 'confirm').mockReturnValueOnce(false)
-
-    render(
-      <MarkerProvider>
-        <TestComponent />
-      </MarkerProvider>
-    )
-
-    await userEvent.click(screen.getByTestId('add-marker'))
-    await userEvent.click(screen.getByTestId('clear-all'))
-
-    expect(screen.getByTestId('marker-count').textContent).toBe('1')
   })
 
   test('restores layer-saved markers from localStorage on mount', async () => {

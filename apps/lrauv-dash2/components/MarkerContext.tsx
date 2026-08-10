@@ -5,7 +5,9 @@ import React, {
   useCallback,
   useEffect,
 } from 'react'
-// Temporarily comment out the API imports
+// Note: Backend markers API is not ready. Markers saved to map layers use
+// localStorage so they survive browser refreshes. API helpers stay commented
+// out until a backend markers API is integrated.
 // import {
 //   getMarkers,
 //   createMarker,
@@ -60,7 +62,6 @@ export interface MarkerContextType {
   saveMarkerToLayer: (id: string) => void
   removeMarkerFromLayer: (id: string) => void
   removeAllMarkersFromLayer: () => void
-  clearAllMarkers: () => void
   selectAllMarkers: () => void
   deselectAllMarkers: () => void
   setMarkers: React.Dispatch<React.SetStateAction<MarkerData[]>>
@@ -290,21 +291,6 @@ export const MarkerProvider: React.FC<{ children: React.ReactNode }> = ({
     })
   }, [])
 
-  // Permanently delete every marker from the map
-  const clearAllMarkers = useCallback(() => {
-    if (
-      window.confirm(
-        'Are you sure you want to delete all markers from the map? This cannot be undone.'
-      )
-    ) {
-      setMarkers([])
-      toast.success('All markers have been removed', {
-        duration: 3000,
-        className: 'blue-toast',
-      })
-    }
-  }, [])
-
   const addMarker = useCallback(
     (markerData: Omit<MarkerData, 'id'>) => {
       const newId =
@@ -409,7 +395,8 @@ export const MarkerProvider: React.FC<{ children: React.ReactNode }> = ({
       const marker = markers.find((m) => m.id === numericId)
       const markerLabel = marker?.label || 'Unnamed'
 
-      // Remove the marker from the array (persist effect updates localStorage)
+      // Removing from state triggers the persist effect, which rewrites
+      // localStorage with the remaining layer-saved markers.
       setMarkers((prev) => prev.filter((marker) => marker.id !== numericId))
 
       // If the deleted marker was selected, clear selection
@@ -505,7 +492,6 @@ export const MarkerProvider: React.FC<{ children: React.ReactNode }> = ({
     handleToggleMarkerMode,
     handleMarkersRequest,
     handleMarkerSave,
-    clearAllMarkers,
     addMarker,
     updateMarker,
     deleteMarker,

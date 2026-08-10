@@ -1,30 +1,33 @@
 import React from 'react'
 import { faMapMarkerAlt } from '@fortawesome/free-solid-svg-icons'
 import { TreeItem } from './MapLayersTreeItem'
-import { useMarkers } from './MarkerContext'
+import { MarkerData, useMarkers } from './MarkerContext'
 import { useMapCamera } from './MapCameraContext'
-
-interface MarkerItem {
-  id: number | string
-  label?: string
-  lat?: number
-  lng?: number
-  iconColor?: string
-  visible?: boolean
-  savedToLayer?: boolean
-}
 
 interface MarkersLayerSectionProps {
   isFiltering: boolean
-  filteredMarkers: MarkerItem[]
-  layerMarkers: MarkerItem[]
+  filteredMarkers: MarkerData[]
+  layerMarkers: MarkerData[]
   expandedSections: { markers: boolean }
   toggleExpanded: (section: 'markers') => void
   handleToggleSelectAllMarkers: () => void
   toggleMarkerVisibility: (id: string) => void
 }
 
-const VISIBILITY_TOOLTIP = 'Show/hide on map (stays in layer)'
+export const VISIBILITY_TOOLTIP = 'Show/hide on map (stays in layer)'
+export const VISIBILITY_ALL_TOOLTIP =
+  'Show/hide all markers on map (stay in layer)'
+
+/** Clamp latitude to ±90 and wrap longitude into ±180 for map display. */
+export const normalizeMapCoords = (
+  lat: number,
+  lng: number
+): { lat: number; lon: number } | null => {
+  if (!Number.isFinite(lat) || !Number.isFinite(lng)) return null
+  const normalizedLat = Math.max(-90, Math.min(90, lat))
+  const normalizedLon = ((((lng + 180) % 360) + 360) % 360) - 180
+  return { lat: normalizedLat, lon: normalizedLon }
+}
 
 export const MarkersLayerSection: React.FC<MarkersLayerSectionProps> = ({
   isFiltering,
@@ -53,9 +56,7 @@ export const MarkersLayerSection: React.FC<MarkersLayerSectionProps> = ({
         layerMarkers.length > 0 ? handleToggleSelectAllMarkers : undefined
       }
       checkTooltip={
-        layerMarkers.length > 0
-          ? 'Show/hide all markers on map (stay in layer)'
-          : undefined
+        layerMarkers.length > 0 ? VISIBILITY_ALL_TOOLTIP : undefined
       }
       icon={faMapMarkerAlt}
       iconColor="red"
@@ -63,8 +64,7 @@ export const MarkersLayerSection: React.FC<MarkersLayerSectionProps> = ({
     >
       {filteredMarkers.map((marker) => {
         const markerLabel = marker.label || `Marker ${marker.id}`
-        const hasValidCoords =
-          Number.isFinite(marker.lat) && Number.isFinite(marker.lng)
+        const mapCoords = normalizeMapCoords(marker.lat, marker.lng)
         return (
           <TreeItem
             key={`marker-${marker.id}`}
@@ -75,13 +75,7 @@ export const MarkersLayerSection: React.FC<MarkersLayerSectionProps> = ({
             icon={faMapMarkerAlt}
             iconColor={marker.iconColor || '#FF0000'}
             onCenterClick={
-              hasValidCoords
-                ? () =>
-                    setFlyToRequest({
-                      lat: marker.lat as number,
-                      lon: marker.lng as number,
-                    })
-                : undefined
+              mapCoords ? () => setFlyToRequest(mapCoords) : undefined
             }
             centerLabel={`Center map on ${markerLabel}`}
             onRemoveClick={() => {
@@ -97,7 +91,7 @@ export const MarkersLayerSection: React.FC<MarkersLayerSectionProps> = ({
           />
         )
       })}
-      {layerMarkers.length > 0 && (
+      {layerMarkers.length > 0 ? (
         <div className="flex justify-end py-2 pl-10 pr-2">
           <button
             type="button"
@@ -108,8 +102,7 @@ export const MarkersLayerSection: React.FC<MarkersLayerSectionProps> = ({
             Remove all from layer
           </button>
         </div>
-      )}
-      {layerMarkers.length === 0 && (
+      ) : (
         <div className="py-2 pl-10 text-sm italic text-gray-500">
           No markers saved to layer
         </div>
