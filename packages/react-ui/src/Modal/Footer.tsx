@@ -1,12 +1,13 @@
 import React from 'react'
 import clsx from 'clsx'
-import { Button, ButtonProps } from '../Navigation'
+import { Button, ButtonProps, ButtonAppearance } from '../Navigation'
 import { swallow } from '@mbari/utils'
 
 export interface FooterProps {
   className?: string
   style?: React.CSSProperties
   confirmButtonText?: string | JSX.Element
+  confirmButtonAppearance?: ButtonAppearance
   cancelButtonText?: string | JSX.Element
   extraButtons?: ExtraButton[]
   leftExtraButtons?: ExtraButton[]
@@ -31,6 +32,7 @@ const styles = {
 export const Footer: React.FC<FooterProps> = ({
   className,
   confirmButtonText = 'Confirm',
+  confirmButtonAppearance = 'primary',
   cancelButtonText = 'Cancel',
   extraButtons,
   leftExtraButtons,
@@ -59,7 +61,7 @@ export const Footer: React.FC<FooterProps> = ({
                 })
               : null}
             <Button
-              appearance="primary"
+              appearance={confirmButtonAppearance}
               onClick={handleConfirm ? swallow(handleConfirm) : undefined}
               disabled={disableConfirm}
               type={form ? 'submit' : 'button'}

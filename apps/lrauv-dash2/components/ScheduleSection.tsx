@@ -40,6 +40,7 @@ import {
   normalizeMissionPath,
 } from '../lib/missionUtils'
 import { toast } from 'react-hot-toast'
+import { useConfirm } from './ConfirmContext'
 
 export interface ScheduleSectionProps {
   className?: string
@@ -184,6 +185,7 @@ export const ScheduleSection: React.FC<ScheduleSectionProps> = ({
   deploymentStartTime,
   isRecovered,
 }) => {
+  const confirm = useConfirm()
   const { setGlobalModalId } = useGlobalModalId()
   const [scheduleFilter, setScheduleFilter] = useState<string>('')
   const [scheduleSearch, setScheduleSearch] = useState<string>('')
@@ -1334,50 +1336,48 @@ export const ScheduleSection: React.FC<ScheduleSectionProps> = ({
     eventId: number
     commandType: 'mission' | 'command'
   }) => {
-    if (
-      !confirm(
-        `Cancel this ${commandType} directive (event ID ${eventId})? This will remove it from the shore-side queue.`
-      )
-    ) {
-      return
-    }
-    try {
-      await deleteCommandQueueMutation.mutateAsync({
-        vehicle: vehicleName,
-        refEventId: eventId,
-      })
-    } catch (e) {
-      toast.error(
-        `Failed to cancel directive ${eventId}. It may have already been sent to the vehicle.`
-      )
-      return
-    }
+    const isConfirmed = await confirm({
+      title: `Are you sure you want to discard this ${commandType} directive (event ID ${eventId})? This will remove it from the shore-side queue.`,
+    })
+    if (isConfirmed) {
+      try {
+        await deleteCommandQueueMutation.mutateAsync({
+          vehicle: vehicleName,
+          refEventId: eventId,
+        })
+      } catch (e) {
+        toast.error(
+          `Failed to cancel directive ${eventId}. It may have already been sent to the vehicle.`
+        )
+        return
+      }
 
-    // Refresh schedule immediately after the DELETE succeeds, regardless of note outcome.
-    queryClient.invalidateQueries(['event', 'events'])
-    queryClient.invalidateQueries(['events'])
-    queryClient.invalidateQueries(['event', 'missionStarted'])
-
-    toast.success(`Cancelled directive ${eventId}.`)
-
-    const matchedResult = results.find((r) => r?.event.eventId === eventId)
-    const rawCommandText =
-      matchedResult?.event?.data ?? matchedResult?.event?.text ?? ''
-    const normalizedCommandText = rawCommandText.replace(/\s+/g, ' ').trim()
-    const commandText =
-      normalizedCommandText.length > 200
-        ? `${normalizedCommandText.slice(0, 200)}…`
-        : normalizedCommandText
-    try {
-      await createNoteMutation.mutateAsync({
-        vehicle: vehicleName,
-        note: `Cancelled request ${eventId} for '${vehicleName}': '${commandText}'`,
-      })
+      // Refresh schedule immediately after the DELETE succeeds, regardless of note outcome.
       queryClient.invalidateQueries(['event', 'events'])
-    } catch (e) {
-      toast.error(
-        `Directive ${eventId} was cancelled, but the cancellation note could not be recorded.`
-      )
+      queryClient.invalidateQueries(['events'])
+      queryClient.invalidateQueries(['event', 'missionStarted'])
+
+      toast.success(`Cancelled directive ${eventId}.`)
+
+      const matchedResult = results.find((r) => r?.event.eventId === eventId)
+      const rawCommandText =
+        matchedResult?.event?.data ?? matchedResult?.event?.text ?? ''
+      const normalizedCommandText = rawCommandText.replace(/\s+/g, ' ').trim()
+      const commandText =
+        normalizedCommandText.length > 200
+          ? `${normalizedCommandText.slice(0, 200)}…`
+          : normalizedCommandText
+      try {
+        await createNoteMutation.mutateAsync({
+          vehicle: vehicleName,
+          note: `Cancelled request ${eventId} for '${vehicleName}': '${commandText}'`,
+        })
+        queryClient.invalidateQueries(['event', 'events'])
+      } catch (e) {
+        toast.error(
+          `Directive ${eventId} was cancelled, but the cancellation note could not be recorded.`
+        )
+      }
     }
   }
 

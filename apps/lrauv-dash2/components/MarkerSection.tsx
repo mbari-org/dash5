@@ -1,10 +1,12 @@
 import React from 'react'
 import { useMarkers } from './MarkerContext'
 import { createLogger } from '@mbari/utils'
+import { useConfirm } from './ConfirmContext'
 
 const logger = createLogger('MarkerSection')
 
 export const MarkerSection: React.FC = () => {
+  const confirm = useConfirm()
   const {
     markers,
     toggleMarkerVisibility,
@@ -72,8 +74,11 @@ export const MarkerSection: React.FC = () => {
               </span>
             </button>
             <button
-              onClick={() => {
-                if (confirm('Remove this marker from map layers?')) {
+              onClick={async () => {
+                const isConfirmed = await confirm({
+                  title: 'Remove this marker from map layers?',
+                })
+                if (isConfirmed) {
                   removeMarkerFromLayer(marker.id.toString())
                 }
               }}

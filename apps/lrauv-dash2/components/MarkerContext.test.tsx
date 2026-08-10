@@ -2,6 +2,7 @@ import '@testing-library/jest-dom'
 import { render, screen, act, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { MarkerProvider, useMarkers } from './MarkerContext'
+import { ConfirmationProvider } from './ConfirmContext'
 
 // Mock localStorage
 const mockLocalStorage = (() => {
@@ -85,9 +86,11 @@ describe('MarkerContext', () => {
 
   test('adds a marker correctly', async () => {
     render(
-      <MarkerProvider>
-        <TestComponent />
-      </MarkerProvider>
+      <ConfirmationProvider>
+        <MarkerProvider>
+          <TestComponent />
+        </MarkerProvider>
+      </ConfirmationProvider>
     )
 
     expect(screen.getByTestId('marker-count').textContent).toBe('0')
@@ -100,9 +103,11 @@ describe('MarkerContext', () => {
 
   test('saves marker to layer', async () => {
     render(
-      <MarkerProvider>
-        <TestComponent />
-      </MarkerProvider>
+      <ConfirmationProvider>
+        <MarkerProvider>
+          <TestComponent />
+        </MarkerProvider>
+      </ConfirmationProvider>
     )
 
     await userEvent.click(screen.getByTestId('add-marker'))
@@ -121,9 +126,11 @@ describe('MarkerContext', () => {
 
   test('removes marker from layer', async () => {
     render(
-      <MarkerProvider>
-        <TestComponent />
-      </MarkerProvider>
+      <ConfirmationProvider>
+        <MarkerProvider>
+          <TestComponent />
+        </MarkerProvider>
+      </ConfirmationProvider>
     )
 
     await userEvent.click(screen.getByTestId('add-marker'))
@@ -143,9 +150,11 @@ describe('MarkerContext', () => {
 
   test('deletes marker correctly', async () => {
     render(
-      <MarkerProvider>
-        <TestComponent />
-      </MarkerProvider>
+      <ConfirmationProvider>
+        <MarkerProvider>
+          <TestComponent />
+        </MarkerProvider>
+      </ConfirmationProvider>
     )
 
     await userEvent.click(screen.getByTestId('add-marker'))
