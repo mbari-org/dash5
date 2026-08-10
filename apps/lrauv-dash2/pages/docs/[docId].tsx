@@ -1,14 +1,14 @@
 import { useRouter } from 'next/router'
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import {
   useCreateDocumentInstance,
   useDocumentInstance,
   useDocuments,
+  useTethysApiContext,
 } from '@mbari/api-client'
 import DocEditor from '../../components/docs/DocEditor'
 import { DocumentType } from '../../components/docs/types/docTypes'
 import DocInstanceSelect from '../../components/docs/DocInstanceSelect'
-import { useTethysApiContext } from '@mbari/api-client'
 
 function toDocType(s?: string): DocumentType {
   if (s === 'FORM' || s === 'TEMPLATE' || s === 'FILLED') return s
@@ -17,6 +17,7 @@ function toDocType(s?: string): DocumentType {
 
 export default function DocDispatchPage() {
   const router = useRouter()
+  const { authenticated, axiosInstance, token } = useTethysApiContext()
   const { docId } = router.query
   const [isEditing, setIsEditing] = useState(false)
   const queryDocInstanceId =
@@ -51,7 +52,6 @@ export default function DocDispatchPage() {
     { enabled: !!instanceId }
   )
   const createInstance = useCreateDocumentInstance()
-  const { axiosInstance, token } = useTethysApiContext()
 
   const docType: DocumentType = toDocType((docs ?? [])[0]?.docType)
   const withFormInputs = docType === 'FORM'
@@ -59,8 +59,14 @@ export default function DocDispatchPage() {
 
   const [fullHtml, setFullHtml] = useState(text)
 
+  useEffect(() => {
+    if (!authenticated && isEditing) {
+      setIsEditing(false)
+    }
+  }, [authenticated, isEditing])
+
   const handleSaveFull = async () => {
-    if (!docs?.[0]?.docId) return
+    if (!authenticated || !docs?.[0]?.docId) return
     await createInstance.mutateAsync({
       docId: docs[0].docId!,
       text: fullHtml,
@@ -69,7 +75,7 @@ export default function DocDispatchPage() {
   }
 
   const handleSaveFilled = async (updated: string) => {
-    if (!docs?.[0]?.docId) return
+    if (!authenticated || !docs?.[0]?.docId) return
     await createInstance.mutateAsync({
       docId: docs[0].docId!,
       text: updated,
@@ -78,7 +84,7 @@ export default function DocDispatchPage() {
   }
 
   const handleDeleteRevision = async () => {
-    if (!instanceId || !axiosInstance) return
+    if (!authenticated || !instanceId || !axiosInstance) return
     await axiosInstance.delete('/documents/instance', {
       params: { docInstanceId: instanceId },
       headers: { Authorization: `Bearer ${token}` },
@@ -105,18 +111,26 @@ export default function DocDispatchPage() {
               onChange={(v) => setSelectedInstanceId(v)}
             />
           ) : null}
-          {!isEditing ? (
-            <button type="button" onClick={() => setIsEditing(true)}>
-              {docType === 'FILLED' ? 'Fill in' : 'Edit'}
-            </button>
-          ) : docType === 'FILLED' ? null : (
-            <button type="button" onClick={handleSaveFull}>
-              Save
-            </button>
+          {authenticated ? (
+            <>
+              {!isEditing ? (
+                <button type="button" onClick={() => setIsEditing(true)}>
+                  {docType === 'FILLED' ? 'Fill in' : 'Edit'}
+                </button>
+              ) : docType === 'FILLED' ? null : (
+                <button type="button" onClick={handleSaveFull}>
+                  Save
+                </button>
+              )}
+              <button type="button" onClick={handleDeleteRevision}>
+                Delete revision
+              </button>
+            </>
+          ) : (
+            <span style={{ fontStyle: 'italic', color: '#57534e' }}>
+              Sign in to add or edit
+            </span>
           )}
-          <button type="button" onClick={handleDeleteRevision}>
-            Delete revision
-          </button>
         </div>
       </div>
 
@@ -125,7 +139,7 @@ export default function DocDispatchPage() {
       ) : (
         <DocEditor
           docType={docType}
-          isEditing={isEditing}
+          isEditing={!!authenticated && isEditing}
           html={text}
           onChange={setFullHtml}
           onSaveFilled={handleSaveFilled}

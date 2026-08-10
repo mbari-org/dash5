@@ -116,8 +116,10 @@ test('should also show the deployment date subtitle in the non-interactive headl
   render(
     <OverviewToolbar
       {...props}
+      authenticated={false}
       onSelectDeployment={undefined}
       onSelectNewDeployment={undefined}
+      deployments={[]}
     />
   )
 
@@ -136,11 +138,11 @@ test('should render the deployment dropdown when selecting the toggle', async ()
   expect(screen.getByText(/new brizo/i)).not.toHaveClass('opacity-30')
 })
 
-test('should disable the new deployment dropdown if no handler is present', async () => {
+test('should offer new deployment when authenticated even if handler is omitted', async () => {
   render(<OverviewToolbar {...props} onSelectNewDeployment={undefined} />)
 
   fireEvent.click(screen.getByTestId('deploymentToggle'))
-  expect(screen.getByText(/new brizo/i)).toHaveClass('opacity-30')
+  expect(screen.getByText(/new brizo/i)).toBeInTheDocument()
 })
 
 test('should render the icon1 hover popup', async () => {
@@ -161,12 +163,14 @@ test('should render the icon2 hover popup', async () => {
   expect(screen.queryByText(/icon2detail/i)).not.toBeInTheDocument()
 })
 
-test('should not render deployment list toggle to the screen if there are no deployments or handlers', async () => {
+test('should not render deployment list toggle when unauthenticated with no deployments', async () => {
   render(
     <OverviewToolbar
       {...props}
+      authenticated={false}
       onSelectDeployment={undefined}
       onSelectNewDeployment={undefined}
+      deployments={[]}
     />
   )
 
@@ -210,10 +214,10 @@ test('should render the mission button if the handler is present', async () => {
   expect(screen.getByTestId(/deploymentDetails/i)).toBeInTheDocument()
 })
 
-test('should not render the mission button if no handler is present', async () => {
+test('should render deployment details when authenticated even if handler is omitted', async () => {
   render(<OverviewToolbar {...props} onEditDeployment={undefined} />)
 
-  expect(screen.queryByTestId(/deploymentDetails/i)).not.toBeInTheDocument()
+  expect(screen.getByTestId(/deploymentDetails/i)).toBeInTheDocument()
 })
 
 test('should render the deployment toggle if the handler is present', async () => {
@@ -222,16 +226,17 @@ test('should render the deployment toggle if the handler is present', async () =
   expect(screen.getByTestId(/deploymenttoggle/i)).toBeInTheDocument()
 })
 
-test('should not render the deployment toggle if no handler is present', async () => {
+test('should render the deployment toggle when authenticated even without handlers', async () => {
   render(
     <OverviewToolbar
       {...props}
       onSelectDeployment={undefined}
       onSelectNewDeployment={undefined}
+      deployments={[]}
     />
   )
 
-  expect(screen.queryByTestId(/deploymenttoggle/i)).not.toBeInTheDocument()
+  expect(screen.getByTestId(/deploymenttoggle/i)).toBeInTheDocument()
 })
 
 test('should render the first support icon if the handler is present', async () => {
@@ -289,6 +294,33 @@ test('should not render the resources slot when unauthenticated', async () => {
     />
   )
   expect(screen.queryByTestId('resources-slot')).not.toBeInTheDocument()
+})
+
+test('should render deployment details when authenticated', async () => {
+  render(<OverviewToolbar {...props} authenticated />)
+  expect(screen.getByTestId('deploymentDetails')).toBeInTheDocument()
+})
+
+test('should not render deployment details when unauthenticated', async () => {
+  render(<OverviewToolbar {...props} authenticated={false} />)
+  expect(screen.queryByTestId('deploymentDetails')).not.toBeInTheDocument()
+})
+
+test('should not offer new deployment when unauthenticated', async () => {
+  render(<OverviewToolbar {...props} authenticated={false} />)
+  fireEvent.click(screen.getByTestId('deploymentToggle'))
+  expect(screen.queryByText(/New Brizo deployment/i)).not.toBeInTheDocument()
+})
+
+test('should keep deployment toggle when unauthenticated if deployments exist', async () => {
+  render(<OverviewToolbar {...props} authenticated={false} />)
+  expect(screen.getByTestId('deploymentToggle')).toBeInTheDocument()
+})
+
+test('should not show empty deployment toggle when unauthenticated with no deployments', async () => {
+  render(<OverviewToolbar {...props} authenticated={false} deployments={[]} />)
+  expect(screen.getByTestId('deploymentHeadline')).toBeInTheDocument()
+  expect(screen.queryByTestId('deploymentToggle')).not.toBeInTheDocument()
 })
 
 test('should render the Recovered pill when recovered is true', async () => {

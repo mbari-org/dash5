@@ -2,6 +2,7 @@ import React from 'react'
 import { QueryClient, QueryClientProvider } from 'react-query'
 import { TethysApiProvider } from '@mbari/api-client'
 import { RecoilRoot } from 'recoil'
+import { ConfirmationProvider } from './ConfirmContext'
 
 export const mockAuthResponse = {
   result: {
@@ -21,9 +22,11 @@ export const MockProviders: React.FC<{
 }> = ({ queryClient, testToken = '', children }) => (
   <RecoilRoot>
     <QueryClientProvider client={queryClient}>
-      <TethysApiProvider setSessionToken={() => ''} sessionToken={testToken}>
-        {children}
-      </TethysApiProvider>
+      <ConfirmationProvider>
+        <TethysApiProvider setSessionToken={() => ''} sessionToken={testToken}>
+          {children}
+        </TethysApiProvider>
+      </ConfirmationProvider>
     </QueryClientProvider>
   </RecoilRoot>
 )

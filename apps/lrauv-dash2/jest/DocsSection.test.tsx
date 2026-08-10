@@ -118,6 +118,34 @@ describe('DocsSection', () => {
     expect(screen.getByText(/add document/i)).toBeInTheDocument()
   })
 
+  test('should hide doc write controls when not authenticated', async () => {
+    render(
+      <MockProviders queryClient={new QueryClient()}>
+        <DocsSection vehicleName="pontus" />
+      </MockProviders>
+    )
+    await waitFor(() => {
+      screen.getByText(/Pontus 25 Predeployment/i)
+    })
+    expect(
+      screen.queryByRole('button', { name: /More options/i })
+    ).not.toBeInTheDocument()
+  })
+
+  test('should show doc more-options menu when authenticated', async () => {
+    render(
+      <MockProviders queryClient={new QueryClient()}>
+        <DocsSection vehicleName="pontus" authenticated />
+      </MockProviders>
+    )
+    await waitFor(() => {
+      screen.getByText(/Pontus 25 Predeployment/i)
+    })
+    expect(
+      screen.getAllByRole('button', { name: /More options/i }).length
+    ).toBeGreaterThan(0)
+  })
+
   test('should sort documents by latestRevision.unixTime descending', async () => {
     server.use(
       rest.get('/documents', (_req, res, ctx) => {

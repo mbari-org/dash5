@@ -1,17 +1,19 @@
 import { useState } from 'react'
 import { useRouter } from 'next/router'
-import { useCreateDocument } from '@mbari/api-client'
+import { useCreateDocument, useTethysApiContext } from '@mbari/api-client'
 import DocEditorTipTap from '../../components/docs/DocEditorTipTap'
 import { DocumentType } from '../../components/docs/types/docTypes'
 
 export default function NewDocPage() {
   const router = useRouter()
+  const { authenticated, loading: authLoading } = useTethysApiContext()
   const createDoc = useCreateDocument()
   const [name, setName] = useState('')
   const [docType, setDocType] = useState<DocumentType>('NORMAL')
   const [html, setHtml] = useState<string>('<p></p>')
 
   const handleCreate = async () => {
+    if (!authenticated) return
     const typeForCreate = docType === 'FILLED' ? 'FORM' : docType // cannot create FILLED directly
     const created = await createDoc.mutateAsync({
       name: name || 'Untitled',
@@ -21,6 +23,26 @@ export default function NewDocPage() {
     if (created?.docId) {
       router.push(`/docs/${created.docId}`)
     }
+  }
+
+  if (authLoading) {
+    return (
+      <div style={{ padding: 16 }}>
+        <h1>New Document</h1>
+        <div>Loading…</div>
+      </div>
+    )
+  }
+
+  if (!authenticated) {
+    return (
+      <div style={{ padding: 16 }}>
+        <h1>New Document</h1>
+        <p style={{ fontStyle: 'italic', color: '#57534e' }}>
+          Sign in to add or edit
+        </p>
+      </div>
+    )
   }
 
   return (

@@ -40,11 +40,13 @@ import {
   normalizeMissionPath,
 } from '../lib/missionUtils'
 import { toast } from 'react-hot-toast'
+import { useConfirm } from './ConfirmContext'
 
 export interface ScheduleSectionProps {
   className?: string
   style?: React.CSSProperties
-  authenticated?: boolean
+  /** Required so callers cannot silently omit auth and hide write controls. */
+  authenticated: boolean
   vehicleName: string
   currentDeploymentId?: number
   activeDeployment?: boolean
@@ -176,12 +178,14 @@ export const isConfigSetCommand = (
 }
 
 export const ScheduleSection: React.FC<ScheduleSectionProps> = ({
+  authenticated,
   currentDeploymentId,
   activeDeployment,
   vehicleName,
   deploymentStartTime,
   isRecovered,
 }) => {
+  const confirm = useConfirm()
   const { setGlobalModalId } = useGlobalModalId()
   const [scheduleFilter, setScheduleFilter] = useState<string>('')
   const [scheduleSearch, setScheduleSearch] = useState<string>('')
@@ -860,12 +864,14 @@ export const ScheduleSection: React.FC<ScheduleSectionProps> = ({
           <span className="my-auto mr-2 text-xs font-bold">
             Schedule is running
           </span>
-          <AccessoryButton
-            label={scheduleStatus === 'running' ? 'Stop All' : 'Resume All'}
-            className="my-auto"
-            onClick={toggleSchedule}
-            tight
-          />
+          {authenticated && (
+            <AccessoryButton
+              label={scheduleStatus === 'running' ? 'Stop All' : 'Resume All'}
+              className="my-auto"
+              onClick={toggleSchedule}
+              tight
+            />
+          )}
         </div>
       )
     }
@@ -1330,50 +1336,48 @@ export const ScheduleSection: React.FC<ScheduleSectionProps> = ({
     eventId: number
     commandType: 'mission' | 'command'
   }) => {
-    if (
-      !confirm(
-        `Cancel this ${commandType} directive (event ID ${eventId})? This will remove it from the shore-side queue.`
-      )
-    ) {
-      return
-    }
-    try {
-      await deleteCommandQueueMutation.mutateAsync({
-        vehicle: vehicleName,
-        refEventId: eventId,
-      })
-    } catch (e) {
-      toast.error(
-        `Failed to cancel directive ${eventId}. It may have already been sent to the vehicle.`
-      )
-      return
-    }
+    const isConfirmed = await confirm({
+      title: `Are you sure you want to discard this ${commandType} directive (event ID ${eventId})? This will remove it from the shore-side queue.`,
+    })
+    if (isConfirmed) {
+      try {
+        await deleteCommandQueueMutation.mutateAsync({
+          vehicle: vehicleName,
+          refEventId: eventId,
+        })
+      } catch (e) {
+        toast.error(
+          `Failed to cancel directive ${eventId}. It may have already been sent to the vehicle.`
+        )
+        return
+      }
 
-    // Refresh schedule immediately after the DELETE succeeds, regardless of note outcome.
-    queryClient.invalidateQueries(['event', 'events'])
-    queryClient.invalidateQueries(['events'])
-    queryClient.invalidateQueries(['event', 'missionStarted'])
-
-    toast.success(`Cancelled directive ${eventId}.`)
-
-    const matchedResult = results.find((r) => r?.event.eventId === eventId)
-    const rawCommandText =
-      matchedResult?.event?.data ?? matchedResult?.event?.text ?? ''
-    const normalizedCommandText = rawCommandText.replace(/\s+/g, ' ').trim()
-    const commandText =
-      normalizedCommandText.length > 200
-        ? `${normalizedCommandText.slice(0, 200)}…`
-        : normalizedCommandText
-    try {
-      await createNoteMutation.mutateAsync({
-        vehicle: vehicleName,
-        note: `Cancelled request ${eventId} for '${vehicleName}': '${commandText}'`,
-      })
+      // Refresh schedule immediately after the DELETE succeeds, regardless of note outcome.
       queryClient.invalidateQueries(['event', 'events'])
-    } catch (e) {
-      toast.error(
-        `Directive ${eventId} was cancelled, but the cancellation note could not be recorded.`
-      )
+      queryClient.invalidateQueries(['events'])
+      queryClient.invalidateQueries(['event', 'missionStarted'])
+
+      toast.success(`Cancelled directive ${eventId}.`)
+
+      const matchedResult = results.find((r) => r?.event.eventId === eventId)
+      const rawCommandText =
+        matchedResult?.event?.data ?? matchedResult?.event?.text ?? ''
+      const normalizedCommandText = rawCommandText.replace(/\s+/g, ' ').trim()
+      const commandText =
+        normalizedCommandText.length > 200
+          ? `${normalizedCommandText.slice(0, 200)}…`
+          : normalizedCommandText
+      try {
+        await createNoteMutation.mutateAsync({
+          vehicle: vehicleName,
+          note: `Cancelled request ${eventId} for '${vehicleName}': '${commandText}'`,
+        })
+        queryClient.invalidateQueries(['event', 'events'])
+      } catch (e) {
+        toast.error(
+          `Directive ${eventId} was cancelled, but the cancellation note could not be recorded.`
+        )
+      }
     }
   }
 
@@ -1415,32 +1419,38 @@ export const ScheduleSection: React.FC<ScheduleSectionProps> = ({
 
   return (
     <>
-      <header className="flex justify-between p-2">
-        <div className="flex">
-          <AccessoryButton
-            label="Mission"
-            icon={faPlus}
-            className="mx-2"
-            onClick={() => {
-              setGlobalModalId({ id: 'newMission' })
-            }}
-            tight
-          />
-          <AccessoryButton
-            label="Command"
-            icon={faPlus}
-            tight
-            onClick={() => {
-              setGlobalModalId({ id: 'newCommand' })
-            }}
+      <header className="flex flex-col p-2">
+        <div className="flex justify-between">
+          <div className="flex">
+            {authenticated && (
+              <>
+                <AccessoryButton
+                  label="Mission"
+                  icon={faPlus}
+                  className="mx-2"
+                  onClick={() => {
+                    setGlobalModalId({ id: 'newMission' })
+                  }}
+                  tight
+                />
+                <AccessoryButton
+                  label="Command"
+                  icon={faPlus}
+                  tight
+                  onClick={() => {
+                    setGlobalModalId({ id: 'newCommand' })
+                  }}
+                />
+              </>
+            )}
+          </div>
+          <LogsToolbar
+            deploymentLogsOnly={deploymentLogsOnly}
+            toggleDeploymentLogsOnly={toggleDeploymentLogsOnly}
+            disabled={isLoading || isFetching}
+            handleRefresh={handleRefresh}
           />
         </div>
-        <LogsToolbar
-          deploymentLogsOnly={deploymentLogsOnly}
-          toggleDeploymentLogsOnly={toggleDeploymentLogsOnly}
-          disabled={isLoading || isFetching}
-          handleRefresh={handleRefresh}
-        />
       </header>
       <AccordionCells cellAtIndex={cellAtIndex} count={totalCellCount} />
       {currentMoreMenu && (
@@ -1462,29 +1472,33 @@ export const ScheduleSection: React.FC<ScheduleSectionProps> = ({
             className="min-w-[240px]"
             onDismiss={closeMoreMenu}
             options={[
-              {
-                label: `Use for new ${currentMoreMenu.commandType}`,
-                onSelect: () => {
-                  handleDuplicate({
-                    eventId: currentMoreMenu?.eventId as number,
-                    commandType: currentMoreMenu?.commandType,
-                  })
-                  closeMoreMenu()
-                },
-              },
-              ...(!currentMoreMenu.isDefaultMission &&
-              currentMoreMenu.status === 'pending'
+              ...(authenticated
                 ? [
                     {
-                      label: 'Cancel this Directive',
+                      label: `Use for new ${currentMoreMenu.commandType}`,
                       onSelect: () => {
-                        handleDelete({
+                        handleDuplicate({
                           eventId: currentMoreMenu?.eventId as number,
                           commandType: currentMoreMenu?.commandType,
                         })
                         closeMoreMenu()
                       },
                     },
+                    ...(!currentMoreMenu.isDefaultMission &&
+                    currentMoreMenu.status === 'pending'
+                      ? [
+                          {
+                            label: 'Cancel this Directive',
+                            onSelect: () => {
+                              handleDelete({
+                                eventId: currentMoreMenu?.eventId as number,
+                                commandType: currentMoreMenu?.commandType,
+                              })
+                              closeMoreMenu()
+                            },
+                          },
+                        ]
+                      : []),
                   ]
                 : []),
               {
@@ -1497,34 +1511,36 @@ export const ScheduleSection: React.FC<ScheduleSectionProps> = ({
                   closeMoreMenu()
                 },
               },
-              ...[
-                {
-                  label: 'Move Up',
-                  onSelect: () => {
-                    handleMoveInQueue({
-                      eventId: currentMoreMenu?.eventId as number,
-                      commandType: currentMoreMenu?.commandType,
-                      direction: 'up',
-                    })
-                    closeMoreMenu()
-                  },
-                },
-                {
-                  label: 'Move Down',
-                  onSelect: () => {
-                    handleMoveInQueue({
-                      eventId: currentMoreMenu?.eventId as number,
-                      commandType: currentMoreMenu?.commandType,
-                      direction: 'down',
-                    })
-                    closeMoreMenu()
-                  },
-                },
-              ].filter(
-                () =>
-                  ['running', 'pending'].includes(currentMoreMenu.status) &&
-                  !currentMoreMenu.isDefaultMission
-              ),
+              ...(authenticated
+                ? [
+                    {
+                      label: 'Move Up',
+                      onSelect: () => {
+                        handleMoveInQueue({
+                          eventId: currentMoreMenu?.eventId as number,
+                          commandType: currentMoreMenu?.commandType,
+                          direction: 'up',
+                        })
+                        closeMoreMenu()
+                      },
+                    },
+                    {
+                      label: 'Move Down',
+                      onSelect: () => {
+                        handleMoveInQueue({
+                          eventId: currentMoreMenu?.eventId as number,
+                          commandType: currentMoreMenu?.commandType,
+                          direction: 'down',
+                        })
+                        closeMoreMenu()
+                      },
+                    },
+                  ].filter(
+                    () =>
+                      ['running', 'pending'].includes(currentMoreMenu.status) &&
+                      !currentMoreMenu.isDefaultMission
+                  )
+                : []),
             ]}
           />
         </div>

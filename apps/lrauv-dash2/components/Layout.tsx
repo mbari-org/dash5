@@ -37,7 +37,6 @@ import ServerHealthModal from './ServerHealthModal'
 import { WATCHBILL_URL } from '../lib/constants'
 
 const Layout: React.FC<{ children?: React.ReactNode }> = ({ children }) => {
-  const [showLogin, setLogin] = useState(false)
   useTethysSubscription()
   const router = useRouter()
   const [mounted, setMounted] = useState(false)
@@ -67,12 +66,6 @@ const Layout: React.FC<{ children?: React.ReactNode }> = ({ children }) => {
   const setModal = (newState: GlobalModalState | null) => () => {
     setGlobalModalId(newState)
   }
-
-  useEffect(() => {
-    if (authenticated && showLogin) {
-      setLogin(false)
-    }
-  }, [authenticated, setLogin, showLogin])
 
   const handleSelectOption = (option: string) => {
     if (option === 'Overview') {
@@ -198,12 +191,20 @@ const Layout: React.FC<{ children?: React.ReactNode }> = ({ children }) => {
       )}
       {globalModalId?.id === 'newDeployment' &&
         requireAuthentication(<NewDeployment onClose={setModal(null)} />)}
-      {globalModalId?.id === 'editDocument' && (
-        <DocumentInstanceModal onClose={setModal(null)} />
-      )}
-      {globalModalId?.id === 'addDocument' && (
-        <AddDocumentModal onClose={setModal(null)} />
-      )}
+      {globalModalId?.id === 'editDocument' &&
+        // Allow read-only viewing of existing docs while logged out.
+        // Create / duplicate flows always require login (they open in edit mode).
+        (globalModalId.meta?.duplicate ||
+        globalModalId.meta?.newDocRequest ||
+        !globalModalId.meta?.docInstanceId ? (
+          requireAuthentication(
+            <DocumentInstanceModal onClose={setModal(null)} />
+          )
+        ) : (
+          <DocumentInstanceModal onClose={setModal(null)} />
+        ))}
+      {globalModalId?.id === 'addDocument' &&
+        requireAuthentication(<AddDocumentModal onClose={setModal(null)} />)}
       {globalModalId?.id === 'reassign' &&
         requireAuthentication(<Reassignment vehicleNames={trackedVehicles} />)}
       {globalModalId?.id === 'sendNote' &&
@@ -240,6 +241,7 @@ const Layout: React.FC<{ children?: React.ReactNode }> = ({ children }) => {
         <DocsModal
           onClose={setModal(null)}
           vehicleName={vehicleName as string}
+          authenticated={authenticated}
         />
       )}
       {globalModalId?.id === 'espSamples' && vehicleName.length > 0 && (

@@ -25,6 +25,7 @@ const args: DocCellProps = {
   onMoreClick: (data, rect) => {
     console.log('More Clicked', data, rect)
   },
+  authenticated: true,
   docId: 1,
   docInstanceId: 100,
   time: '16:29:32',
