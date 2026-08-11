@@ -29,7 +29,10 @@ import useGlobalModalId from '../lib/useGlobalModalId'
 import { useParameterOverrides } from '../lib/useParameterOverrides'
 import { useWaypointCalculations } from '../lib/useWaypointCalculations'
 import { useInsertTempMission } from '../lib/useInsertTempMission'
-import { previewTextFromEventData } from '../lib/missionSendAgain'
+import {
+  previewTextFromEventData,
+  evaluateSendAgainGate,
+} from '../lib/missionSendAgain'
 
 export interface MissionModalProps {
   onClose: () => void
@@ -91,6 +94,7 @@ const MissionModal: React.FC<MissionModalProps> = ({
     recentRuns,
     allMissions: missions,
     selectedMissionData,
+    isSelectedMissionError,
     isRecentRunsLoading: recentRunsLoading,
     isFrequentRunsLoading: frequentRunsLoading,
     isMissionListLoading,
@@ -275,27 +279,68 @@ const MissionModal: React.FC<MissionModalProps> = ({
   const previewRequestIdRef = useRef(0)
 
   const sendAgain = Boolean(globalModalId?.meta?.sendAgain)
-  // Defer mounting the wizard until Send again has a selected mission + preview,
-  // so currentStepIndex=Send Command is applied on first paint.
+  // Defer mounting the wizard until Send again has a selected mission, script
+  // definition (for overrides), and preview — so currentStepIndex=Send Command
+  // is applied on first paint with the prior run's params, not template defaults.
   const [sendAgainReady, setSendAgainReady] = useState(!sendAgain)
+  const sendAgainAbortRef = useRef(false)
 
   useEffect(() => {
     if (!sendAgain) {
       setSendAgainReady(true)
+      sendAgainAbortRef.current = false
       return
     }
-    if (recentRunsLoading || frequentRunsLoading || isMissionListLoading) return
-    if (!selectedMission || !hasAutoSelectedRef.current) return
+    if (sendAgainAbortRef.current) return
+
+    const missionPath = globalModalId?.meta?.mission
+    const listsLoading =
+      recentRunsLoading || frequentRunsLoading || isMissionListLoading
+    const hasMatchingMission = Boolean(
+      missionPath &&
+        missionsWithTemporaryEntry?.some(
+          (m) => m.id === missionPath || m.missionPath === missionPath
+        )
+    )
+
+    const gate = evaluateSendAgainGate({
+      sendAgain,
+      listsLoading,
+      missionPath,
+      hasMatchingMission,
+      selectedMission,
+      hasAutoSelected: hasAutoSelectedRef.current,
+      hasSelectedMissionData: Boolean(selectedMissionData),
+      scriptError: isSelectedMissionError,
+    })
+
+    if (gate.action === 'wait') return
+
+    if (gate.action === 'abort') {
+      sendAgainAbortRef.current = true
+      toast.error(
+        gate.reason === 'script-error'
+          ? 'Could not load mission definition for Send again'
+          : 'Could not find that mission to send again'
+      )
+      onClose()
+      return
+    }
 
     setPreviewText(previewTextFromEventData(globalModalId?.meta?.eventData))
     setSendAgainReady(true)
   }, [
     sendAgain,
     selectedMission,
+    selectedMissionData,
+    isSelectedMissionError,
     recentRunsLoading,
     frequentRunsLoading,
     isMissionListLoading,
+    missionsWithTemporaryEntry,
+    globalModalId?.meta?.mission,
     globalModalId?.meta?.eventData,
+    onClose,
   ])
 
   const initialScheduleState = useMemo(() => {
@@ -395,8 +440,16 @@ const MissionModal: React.FC<MissionModalProps> = ({
     )
   }
 
-  if (!sendAgainReady) {
-    return null
+  if (sendAgain && !sendAgainReady) {
+    return (
+      <div
+        className="flex h-[calc(100vh-6rem)] items-center justify-center bg-white text-sm text-stone-600"
+        role="status"
+        aria-label="Loading mission to send again"
+      >
+        Loading mission…
+      </div>
+    )
   }
 
   return (
