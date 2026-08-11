@@ -30,6 +30,7 @@ import { ConfirmVehicleDialog } from './ConfirmVehicleDialog'
 import {
   ScheduleProvider,
   useScheduleContext,
+  ScheduleState,
 } from './MissionModalSteps/hooks/useSchedule'
 
 export type OnScheduleMissionHandler = (args: {
@@ -80,6 +81,8 @@ export interface MissionModalViewProps
   onSelectMissionCategory?: (category?: string) => void
   showAllVehicleMissions?: boolean
   onShowAllVehicleMissions?: (show: boolean) => void
+  /** Prefill Schedule step (e.g. via/timeout from a prior Send again). */
+  initialScheduleState?: Partial<ScheduleState>
 }
 
 export const MissionModalView: React.FC<MissionModalViewProps> = (props) => (
@@ -88,6 +91,7 @@ export const MissionModalView: React.FC<MissionModalViewProps> = (props) => (
       scheduleMethod: 'ASAP',
       alternateAddress: null,
       commType: 'cellsat',
+      ...props.initialScheduleState,
     }}
   >
     <MissionModalBody {...props} />
@@ -444,31 +448,65 @@ const MissionModalBody: React.FC<MissionModalViewProps> = ({
     }
   }, [editable, setWaypointsEditable, currentStep, steps, showSummary])
 
+  // Fixed frame for every step so short content cannot shrink the shell and
+  // expose Schedule (or other UI) underneath for accidental clicks.
+  // calc accounts for Modal's my-12 vertical margins.
+  const missionModalFrameStyle: React.CSSProperties = {
+    ...style,
+    height: 'calc(100vh - 6rem)',
+    minHeight: 'calc(100vh - 6rem)',
+    maxHeight: 'calc(100vh - 6rem)',
+  }
+  const missionModalFrame = {
+    className,
+    style: missionModalFrameStyle,
+    snapTo: 'top-right' as const,
+    extraWideModal: true,
+    bodyOverflowHidden: true,
+    allowPointerEventsOnChildren: true,
+    open: true,
+  }
+
   switch (currentStep) {
     case steps.indexOf('Confirm'):
       return (
         <ConfirmVehicleDialog
+          {...missionModalFrame}
           vehicle={vehicleName}
           vehicleList={vehicles ?? []}
           mission={selectedId ?? ''}
           onChangeVehicle={setConfirmedVehicle}
-          onCancel={handlePrevious}
+          // Cancel aborts the whole flow; Back returns to Schedule.
+          onCancel={onCancel}
           onConfirm={handleSchedule}
+          leftExtraButtons={[
+            {
+              buttonText: 'Back',
+              appearance: 'secondary',
+              onClick: handlePrevious,
+            },
+          ]}
         />
       )
 
     case steps.indexOf('Send Command'):
       return (
         <Modal
+          {...missionModalFrame}
           title="Review and Send Command"
           onConfirm={handleSchedule}
-          onCancel={handlePrevious}
-          onClose={handlePrevious}
+          onCancel={onCancel}
+          onClose={onCancel}
           loading={loading}
-          open
-          extraWideModal
+          leftExtraButtons={[
+            {
+              buttonText: 'Back',
+              appearance: 'secondary',
+              onClick: handlePrevious,
+            },
+          ]}
         >
-          <div className="flex flex-col">
+          <div className="flex h-full min-h-0 flex-col overflow-auto">
             <p className="mb-2 flex items-baseline justify-between gap-4">
               <span>
                 The following command will be sent to{' '}
@@ -502,8 +540,7 @@ const MissionModalBody: React.FC<MissionModalViewProps> = ({
     default:
       return (
         <Modal
-          className={className}
-          style={{ ...style, maxHeight: '95vh' }}
+          {...missionModalFrame}
           title={
             <StepProgress
               steps={steps.slice(0, steps.length - 1)}
@@ -517,11 +554,6 @@ const MissionModalBody: React.FC<MissionModalViewProps> = ({
           onClose={onCancel}
           confirmButtonText={confirmButtonText}
           extraButtons={extraButtons()}
-          snapTo="top-right"
-          extraWideModal
-          bodyOverflowHidden
-          allowPointerEventsOnChildren
-          open
         >
           {currentModalBody()}
         </Modal>

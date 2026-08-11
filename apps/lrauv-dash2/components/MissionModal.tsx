@@ -5,6 +5,7 @@ import {
   ParameterProps,
   useManagedWaypoints,
   WaypointTableProps,
+  MISSION_MODAL_SEND_COMMAND_STEP,
 } from '@mbari/react-ui'
 import { capitalize, makeOrdinal } from '@mbari/utils'
 import {
@@ -16,6 +17,8 @@ import {
   useTethysApiContext,
   getPreview,
   countPreviewSbdChunks,
+  getVia,
+  timeoutRegEx,
 } from '@mbari/api-client'
 import { useMissionData } from '../lib/useMissionData'
 import { useRouter } from 'next/router'
@@ -26,6 +29,11 @@ import useGlobalModalId from '../lib/useGlobalModalId'
 import { useParameterOverrides } from '../lib/useParameterOverrides'
 import { useWaypointCalculations } from '../lib/useWaypointCalculations'
 import { useInsertTempMission } from '../lib/useInsertTempMission'
+import {
+  previewTextFromEventData,
+  evaluateSendAgainGate,
+  isEventScopedTempMission,
+} from '../lib/missionSendAgain'
 
 export interface MissionModalProps {
   onClose: () => void
@@ -87,6 +95,7 @@ const MissionModal: React.FC<MissionModalProps> = ({
     recentRuns,
     allMissions: missions,
     selectedMissionData,
+    isSelectedMissionError,
     isRecentRunsLoading: recentRunsLoading,
     isFrequentRunsLoading: frequentRunsLoading,
     isMissionListLoading,
@@ -104,6 +113,7 @@ const MissionModal: React.FC<MissionModalProps> = ({
 
   // Track if we've already auto-selected to prevent re-selecting when user changes selection
   const hasAutoSelectedRef = useRef(false)
+  const sendAgain = Boolean(globalModalId?.meta?.sendAgain)
 
   // Auto-select mission from globalModalId meta if provided (only once on initial load)
   useEffect(() => {
@@ -123,40 +133,71 @@ const MissionModal: React.FC<MissionModalProps> = ({
     if (recentRunsLoading || frequentRunsLoading || isMissionListLoading) return
 
     if (
-      missionPath &&
-      missionsWithTemporaryEntry &&
-      missionsWithTemporaryEntry.length > 0 &&
-      !hasAutoSelectedRef.current
+      !missionPath ||
+      !missionsWithTemporaryEntry ||
+      missionsWithTemporaryEntry.length === 0
     ) {
-      // Find mission by id (temporary re-run entries) or missionPath (recent runs)
-      const matchingMission = missionsWithTemporaryEntry.find(
-        (m) => m.id === missionPath || m.missionPath === missionPath
-      )
+      return
+    }
 
-      if (matchingMission) {
-        // Set ref only after a confirmed match so the effect can still retry
-        // on later renders if template missions arrive after recent/frequent runs.
-        // Once all three loading flags are false and a match is found, all future
-        // re-renders (including Back navigation) will see the ref as true and skip.
-        hasAutoSelectedRef.current = true
-        setSelectedMission(matchingMission.id)
-        // If rerunning from schedule history (has eventData), always use 'Recent Runs'
-        if (eventData) {
+    // Send again with eventData: do not lock onto a same-path recent run before
+    // the event-scoped temp exists. Bootstrap a path selection so getScript can
+    // load, then lock only after the temp (description === eventData) is present.
+    if (sendAgain && eventData) {
+      const eventTemp = missionsWithTemporaryEntry.find((m) =>
+        isEventScopedTempMission(m, missionPath, eventData)
+      )
+      if (eventTemp) {
+        if (!hasAutoSelectedRef.current || selectedMission !== eventTemp.id) {
+          hasAutoSelectedRef.current = true
+          setSelectedMission(eventTemp.id)
           setSelectedMissionCategory('Recent Runs')
-        } else if (matchingMission.recentRun) {
+        }
+        return
+      }
+
+      if (!selectedMission) {
+        const pathMatch = missionsWithTemporaryEntry.find(
+          (m) => m.id === missionPath || m.missionPath === missionPath
+        )
+        if (pathMatch) {
+          setSelectedMission(pathMatch.id)
           setSelectedMissionCategory('Recent Runs')
-        } else if (matchingMission.frequentRun) {
-          setSelectedMissionCategory('Frequent Runs')
-        } else if (matchingMission.category) {
-          // Set category based on mission's category
-          const categoryId = missionCategories.find(
-            (c) =>
-              c.name === matchingMission.category ||
-              c.id === matchingMission.category
-          )?.id
-          if (categoryId) {
-            setSelectedMissionCategory(categoryId)
-          }
+        }
+      }
+      return
+    }
+
+    if (hasAutoSelectedRef.current) return
+
+    // Find mission by id (temporary re-run entries) or missionPath (recent runs)
+    const matchingMission = missionsWithTemporaryEntry.find(
+      (m) => m.id === missionPath || m.missionPath === missionPath
+    )
+
+    if (matchingMission) {
+      // Set ref only after a confirmed match so the effect can still retry
+      // on later renders if template missions arrive after recent/frequent runs.
+      // Once all three loading flags are false and a match is found, all future
+      // re-renders (including Back navigation) will see the ref as true and skip.
+      hasAutoSelectedRef.current = true
+      setSelectedMission(matchingMission.id)
+      // If rerunning from schedule history (has eventData), always use 'Recent Runs'
+      if (eventData) {
+        setSelectedMissionCategory('Recent Runs')
+      } else if (matchingMission.recentRun) {
+        setSelectedMissionCategory('Recent Runs')
+      } else if (matchingMission.frequentRun) {
+        setSelectedMissionCategory('Frequent Runs')
+      } else if (matchingMission.category) {
+        // Set category based on mission's category
+        const categoryId = missionCategories.find(
+          (c) =>
+            c.name === matchingMission.category ||
+            c.id === matchingMission.category
+        )?.id
+        if (categoryId) {
+          setSelectedMissionCategory(categoryId)
         }
       }
     }
@@ -169,6 +210,8 @@ const MissionModal: React.FC<MissionModalProps> = ({
     recentRunsLoading,
     frequentRunsLoading,
     isMissionListLoading,
+    sendAgain,
+    selectedMission,
   ])
 
   // Missions with parameter/waypoint overrides that should be applied.
@@ -269,6 +312,117 @@ const MissionModal: React.FC<MissionModalProps> = ({
   // Ignore stale getPreview responses when Confirm is clicked again before the
   // previous preview request finishes (vehicle / mission / overrides changed).
   const previewRequestIdRef = useRef(0)
+  // Defer mounting the wizard until Send again has a selected mission, script
+  // definition (for overrides), and preview — so currentStepIndex=Send Command
+  // is applied on first paint with the prior run's params, not template defaults.
+  const [sendAgainReady, setSendAgainReady] = useState(!sendAgain)
+  const sendAgainAbortRef = useRef(false)
+  // When meta changes while id stays `newMission` (second Send again without
+  // unmount), rebuild this key so the loading gate re-arms instead of reusing
+  // the previous selection / preview. Adjust state during render so the stale
+  // wizard cannot paint for even one frame.
+  const sendAgainSessionKey = sendAgain
+    ? `${globalModalId?.meta?.mission ?? ''}\0${
+        globalModalId?.meta?.eventData ?? ''
+      }`
+    : ''
+  const [armedSendAgainSessionKey, setArmedSendAgainSessionKey] =
+    useState(sendAgainSessionKey)
+  if (armedSendAgainSessionKey !== sendAgainSessionKey) {
+    setArmedSendAgainSessionKey(sendAgainSessionKey)
+    hasAutoSelectedRef.current = false
+    sendAgainAbortRef.current = false
+    setSelectedMission(undefined)
+    setPreviewText(undefined)
+    setPreviewSbdCount(undefined)
+    setSendAgainReady(!sendAgain)
+  }
+
+  useEffect(() => {
+    if (!sendAgain) {
+      setSendAgainReady(true)
+      sendAgainAbortRef.current = false
+      return
+    }
+    if (sendAgainAbortRef.current) return
+
+    const missionPath = globalModalId?.meta?.mission
+    const eventData = globalModalId?.meta?.eventData
+    const listsLoading =
+      recentRunsLoading || frequentRunsLoading || isMissionListLoading
+    const hasMatchingMission = Boolean(
+      missionPath &&
+        missionsWithTemporaryEntry?.some(
+          (m) => m.id === missionPath || m.missionPath === missionPath
+        )
+    )
+    const hasEventScopedTempSelected = Boolean(
+      eventData &&
+        missionPath &&
+        selectedMission &&
+        missionsWithTemporaryEntry?.some(
+          (m) =>
+            m.id === selectedMission &&
+            isEventScopedTempMission(m, missionPath, eventData)
+        )
+    )
+
+    const gate = evaluateSendAgainGate({
+      sendAgain,
+      listsLoading,
+      missionPath,
+      hasMatchingMission,
+      selectedMission,
+      hasAutoSelected: hasAutoSelectedRef.current,
+      hasSelectedMissionData: Boolean(selectedMissionData),
+      scriptError: isSelectedMissionError,
+      eventData,
+      hasEventScopedTempSelected,
+    })
+
+    if (gate.action === 'wait') return
+
+    if (gate.action === 'abort') {
+      sendAgainAbortRef.current = true
+      toast.error(
+        gate.reason === 'script-error'
+          ? 'Could not load mission definition for Send again'
+          : 'Could not find that mission to send again'
+      )
+      onClose()
+      return
+    }
+
+    setPreviewText(previewTextFromEventData(eventData))
+    setSendAgainReady(true)
+  }, [
+    sendAgain,
+    sendAgainSessionKey,
+    selectedMission,
+    selectedMissionData,
+    isSelectedMissionError,
+    recentRunsLoading,
+    frequentRunsLoading,
+    isMissionListLoading,
+    missionsWithTemporaryEntry,
+    globalModalId?.meta?.mission,
+    globalModalId?.meta?.eventData,
+    onClose,
+  ])
+
+  const initialScheduleState = useMemo(() => {
+    if (!sendAgain) return undefined
+    const note = globalModalId?.meta?.eventNote ?? undefined
+    const via = getVia(note)
+    const timeoutMin = note?.match(timeoutRegEx)?.[1]
+    return {
+      scheduleMethod: 'ASAP' as const,
+      alternateAddress: null,
+      commType: via ?? ('cellsat' as const),
+      timeout: timeoutMin ? parseInt(timeoutMin, 10) : 5,
+      confirmedVehicle: capitalize(vehicleName),
+    }
+  }, [sendAgain, globalModalId?.meta?.eventNote, vehicleName])
 
   const handleSchedule: MissionModalViewProps['onSchedule'] = async ({
     confirmedVehicle,
@@ -354,11 +508,28 @@ const MissionModal: React.FC<MissionModalProps> = ({
     )
   }
 
+  if (sendAgain && !sendAgainReady) {
+    return (
+      <div className="flex h-[calc(100vh-6rem)] flex-col items-center justify-center gap-3 bg-white text-sm text-stone-600">
+        <div role="status" aria-label="Loading mission to send again">
+          Loading mission…
+        </div>
+        <button
+          type="button"
+          className="rounded border border-stone-300 px-3 py-1 text-stone-700 hover:bg-stone-50"
+          onClick={onClose}
+        >
+          Cancel
+        </button>
+      </div>
+    )
+  }
+
   return (
     <MissionModalView
-      style={{ maxHeight: '80vh' }}
+      style={{ height: 'calc(100vh - 6rem)' }}
       alternativeAddresses={alternativeAddresses}
-      currentStepIndex={0}
+      currentStepIndex={sendAgain ? MISSION_MODAL_SEND_COMMAND_STEP : 0}
       vehicleName={capitalize(vehicleName)}
       bottomDepth="n/a"
       totalDistance={estDistance ? `${estDistance.toPrecision(4)}km` : 'n/a'}
@@ -394,6 +565,7 @@ const MissionModal: React.FC<MissionModalProps> = ({
       defaultSearchText={globalModalId?.meta?.mission ?? ''}
       showAllVehicleMissions={showAllVehicleMissions}
       onShowAllVehicleMissions={setShowAllVehicleMissions}
+      initialScheduleState={initialScheduleState}
       defaultOverrides={
         selectedMissionCategory === 'Recent Runs' ||
         selectedMissionCategory === 'Frequent Runs'

@@ -13,6 +13,9 @@ const steps = [
   'Send Command',
 ]
 
+/** Step index for Review & Send — used by Schedule "Send again" (#799). */
+export const MISSION_MODAL_SEND_COMMAND_STEP = steps.indexOf('Send Command')
+
 export interface UseMissionModalStepsProps {
   initialIndex: number
   defaultParameters: ParameterProps[]

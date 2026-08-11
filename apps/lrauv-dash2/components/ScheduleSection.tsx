@@ -1355,6 +1355,35 @@ export const ScheduleSection: React.FC<ScheduleSectionProps> = ({
     )
   }
 
+  const openMissionFromScheduleEvent = ({
+    eventId,
+    sendAgain = false,
+  }: {
+    eventId: number
+    sendAgain?: boolean
+  }) => {
+    const event = results.find((r) => r?.event.eventId === eventId)?.event
+    const missionPath =
+      rawMissionPathFromEventData(event?.data) ||
+      rawMissionPathFromEventData(event?.text) ||
+      ''
+    setGlobalModalId({
+      id: 'newMission',
+      meta: {
+        mission: missionPath,
+        eventId: eventId,
+        eventData: event?.data ?? event?.text ?? null,
+        eventUser: event?.user ?? null,
+        eventNote: event?.note ?? null,
+        eventIsoTime: event?.unixTime
+          ? new Date(event.unixTime).toISOString()
+          : null,
+        eventVehicleName: vehicleName,
+        sendAgain,
+      },
+    })
+  }
+
   const handleDuplicate = ({
     eventId,
     commandType,
@@ -1368,24 +1397,7 @@ export const ScheduleSection: React.FC<ScheduleSectionProps> = ({
     const isMission = isMissionCommand(event?.data, event?.text)
 
     if (commandType === 'mission' || isMission) {
-      const missionPath =
-        rawMissionPathFromEventData(event?.data) ||
-        rawMissionPathFromEventData(event?.text) ||
-        ''
-      setGlobalModalId({
-        id: 'newMission',
-        meta: {
-          mission: missionPath,
-          eventId: eventId,
-          eventData: event?.data ?? event?.text ?? null,
-          eventUser: event?.user ?? null,
-          eventNote: event?.note ?? null,
-          eventIsoTime: event?.unixTime
-            ? new Date(event.unixTime).toISOString()
-            : null,
-          eventVehicleName: vehicleName,
-        },
-      })
+      openMissionFromScheduleEvent({ eventId, sendAgain: false })
     } else {
       const mission = parseMissionCommand(event?.data ?? '')
       setGlobalModalId({
@@ -1397,6 +1409,11 @@ export const ScheduleSection: React.FC<ScheduleSectionProps> = ({
         },
       })
     }
+  }
+
+  /** Exact re-send: open Mission modal at Review & Send (#799). */
+  const handleSendAgain = ({ eventId }: { eventId: number }) => {
+    openMissionFromScheduleEvent({ eventId, sendAgain: true })
   }
 
   const queryClient = useQueryClient()
@@ -1548,6 +1565,20 @@ export const ScheduleSection: React.FC<ScheduleSectionProps> = ({
             options={[
               ...(authenticated
                 ? [
+                    ...(!currentMoreMenu.isDefaultMission &&
+                    currentMoreMenu.commandType === 'mission'
+                      ? [
+                          {
+                            label: 'Send again',
+                            onSelect: () => {
+                              handleSendAgain({
+                                eventId: currentMoreMenu?.eventId as number,
+                              })
+                              closeMoreMenu()
+                            },
+                          },
+                        ]
+                      : []),
                     {
                       label: `Use for new ${currentMoreMenu.commandType}`,
                       onSelect: () => {
