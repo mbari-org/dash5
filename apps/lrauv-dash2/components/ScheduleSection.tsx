@@ -191,7 +191,7 @@ export const ScheduleSection: React.FC<ScheduleSectionProps> = ({
 }) => {
   const confirm = useConfirm()
   const { setGlobalModalId } = useGlobalModalId()
-  const { axiosInstance } = useTethysApiContext()
+  const { axiosInstance, token } = useTethysApiContext()
   const [scheduleFilter, setScheduleFilter] = useState<string>('')
   const [scheduleSearch, setScheduleSearch] = useState<string>('')
   const [deploymentLogsOnly, setDeploymentLogsOnly] = useState(false)
@@ -822,9 +822,16 @@ export const ScheduleSection: React.FC<ScheduleSectionProps> = ({
   const scriptIdQueries = useQueries(
     pendingScriptPaths.map((path) => ({
       queryKey: ['commands', 'script', path],
-      queryFn: () => getScript({ path }, { instance: axiosInstance }),
+      queryFn: () =>
+        getScript(
+          { path },
+          {
+            instance: axiosInstance,
+            headers: { Authorization: `Bearer ${token}` },
+          }
+        ),
       staleTime: Infinity, // mission definitions don't change mid-deployment
-      enabled: !!axiosInstance && !!path && !!authenticated,
+      enabled: !!axiosInstance && !!path && !!token,
     }))
   )
 
