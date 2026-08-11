@@ -1,6 +1,7 @@
 import {
   previewTextFromEventData,
   evaluateSendAgainGate,
+  isEventScopedTempMission,
 } from './missionSendAgain'
 
 describe('previewTextFromEventData', () => {
@@ -21,6 +22,39 @@ describe('previewTextFromEventData', () => {
   })
 })
 
+describe('isEventScopedTempMission', () => {
+  const eventData =
+    'load Science/profile_station.tl;set profile_station.MissionTimeout 12 h;run'
+
+  it('matches temp entries keyed by path with event description', () => {
+    expect(
+      isEventScopedTempMission(
+        {
+          id: 'Science/profile_station.tl',
+          missionPath: 'Science/profile_station.tl',
+          description: eventData,
+        },
+        'Science/profile_station.tl',
+        eventData
+      )
+    ).toBe(true)
+  })
+
+  it('rejects same-path recent runs with a different description', () => {
+    expect(
+      isEventScopedTempMission(
+        {
+          id: 'run-other',
+          missionPath: 'Science/profile_station.tl',
+          description: 'load Science/profile_station.tl;run',
+        },
+        'Science/profile_station.tl',
+        eventData
+      )
+    ).toBe(false)
+  })
+})
+
 describe('evaluateSendAgainGate', () => {
   const readyBase = {
     sendAgain: true,
@@ -31,6 +65,8 @@ describe('evaluateSendAgainGate', () => {
     hasAutoSelected: true,
     hasSelectedMissionData: true,
     scriptError: false,
+    eventData: 'load Science/sci2.tl;run',
+    hasEventScopedTempSelected: true,
   }
 
   it('is not-applicable when sendAgain is false', () => {
@@ -53,6 +89,7 @@ describe('evaluateSendAgainGate', () => {
         hasAutoSelected: false,
         selectedMission: undefined,
         hasSelectedMissionData: false,
+        hasEventScopedTempSelected: false,
       })
     ).toEqual({ action: 'abort', reason: 'no-match' })
   })
@@ -74,6 +111,7 @@ describe('evaluateSendAgainGate', () => {
         hasAutoSelected: false,
         selectedMission: undefined,
         hasSelectedMissionData: false,
+        hasEventScopedTempSelected: false,
       })
     ).toEqual({ action: 'wait' })
   })
@@ -83,8 +121,28 @@ describe('evaluateSendAgainGate', () => {
       evaluateSendAgainGate({
         ...readyBase,
         hasSelectedMissionData: false,
+        hasEventScopedTempSelected: false,
       })
     ).toEqual({ action: 'wait' })
+  })
+
+  it('waits until the event-scoped temp is selected', () => {
+    expect(
+      evaluateSendAgainGate({
+        ...readyBase,
+        hasEventScopedTempSelected: false,
+      })
+    ).toEqual({ action: 'wait' })
+  })
+
+  it('does not require event temp when eventData is absent', () => {
+    expect(
+      evaluateSendAgainGate({
+        ...readyBase,
+        eventData: undefined,
+        hasEventScopedTempSelected: false,
+      })
+    ).toEqual({ action: 'ready' })
   })
 
   it('aborts when getScript fails', () => {
@@ -93,6 +151,7 @@ describe('evaluateSendAgainGate', () => {
         ...readyBase,
         hasSelectedMissionData: false,
         scriptError: true,
+        hasEventScopedTempSelected: false,
       })
     ).toEqual({ action: 'abort', reason: 'script-error' })
   })
