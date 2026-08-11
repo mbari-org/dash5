@@ -13,7 +13,7 @@ import {
 import { QueryClient } from 'react-query'
 import { rest } from 'msw'
 import { setupServer } from 'msw/node'
-import { MockProviders } from '../components/testHelpers'
+import { MockProviders, mockAuthResponse } from '../components/testHelpers'
 
 const props: ScheduleSectionProps = {
   authenticated: true,
@@ -1578,7 +1578,11 @@ test('pending row shows mission ID from getScript before vehicle telemetry arriv
   // profile_station_vt.tl declares mission ID "profile_station". The pending
   // row should display "profile_station" immediately — not the filename-derived
   // "profile_station_vt" — because getScript resolves the ID at queue time.
+  // getScript is gated on a session token, so hydrate auth via /user/token.
   server.use(
+    rest.get('/user/token', (_req, res, ctx) =>
+      res(ctx.status(200), ctx.json(mockAuthResponse))
+    ),
     rest.get('/events', (_req, res, ctx) =>
       res(
         ctx.status(200),
@@ -1609,7 +1613,10 @@ test('pending row shows mission ID from getScript before vehicle telemetry arriv
   )
 
   render(
-    <MockProviders queryClient={new QueryClient()}>
+    <MockProviders
+      queryClient={new QueryClient()}
+      testToken={mockAuthResponse.result.token}
+    >
       <ScheduleSection {...props} currentDeploymentId={1} />
     </MockProviders>
   )
