@@ -1,0 +1,168 @@
+import {
+  parseSbdChunkTotal,
+  countDeliveredSbdChunks,
+  buildSbdChunkProgress,
+  isSbdChunkDelivered,
+  clearSbdInTransitOnTimeout,
+} from './sbdChunkProgress'
+import { GetEventsResponse } from '../Event/getEvents'
+
+const send = (
+  eventId: number,
+  state: number,
+  refId = 1
+): GetEventsResponse => ({
+  isoTime: '2023-01-01T12:00:00Z',
+  eventId,
+  name: 'sbdSend',
+  note: '',
+  mtmsn: 0,
+  refId,
+  state,
+  vehicleName: 'triton',
+  unixTime: 1,
+  eventType: 'sbdSend',
+})
+
+describe('parseSbdChunkTotal', () => {
+  it('reads total from Mission Request part tags', () => {
+    const text = [
+      'sched asap "load x.tl;set a 1 m" 38kk8 1 3',
+      'sched asap "set b 2 m" 38kk8 2 3',
+      'sched asap "run" 38kk8 3 3',
+    ].join('\n')
+    expect(parseSbdChunkTotal(text)).toBe(3)
+  })
+
+  it('returns undefined for single-part or missing tags', () => {
+    expect(parseSbdChunkTotal('load Science/sci2.tl;run')).toBeUndefined()
+    expect(parseSbdChunkTotal('')).toBeUndefined()
+    expect(parseSbdChunkTotal(undefined)).toBeUndefined()
+  })
+})
+
+describe('isSbdChunkDelivered / countDeliveredSbdChunks', () => {
+  it('does not count cell state:2 by default (shore dispatch ≠ vehicle receipt)', () => {
+    const sends = [send(10, 2), send(11, 2), send(12, 2)]
+    expect(countDeliveredSbdChunks(sends, new Map(), new Map())).toBe(0)
+  })
+
+  it('counts cell state:2 only when countCellState2 is enabled', () => {
+    const sends = [send(10, 2), send(11, 0)]
+    expect(
+      countDeliveredSbdChunks(sends, new Map(), new Map(), undefined, {
+        countCellState2: true,
+      })
+    ).toBe(1)
+  })
+
+  it('counts sat receipt+receive as delivered', () => {
+    const s = send(20, 0)
+    const receipt: GetEventsResponse = {
+      ...send(21, 0),
+      eventType: 'sbdReceipt',
+      eventId: 21,
+      mtmsn: 99,
+      name: 'sbdReceipt',
+    }
+    const receive: GetEventsResponse = {
+      ...send(22, 0),
+      eventType: 'sbdReceive',
+      eventId: 22,
+      mtmsn: 99,
+    }
+    expect(
+      isSbdChunkDelivered(
+        s,
+        new Map([['20', receipt]]),
+        new Map([[99, receive]])
+      )
+    ).toBe(true)
+  })
+})
+
+describe('buildSbdChunkProgress', () => {
+  it('marks state:2 as in-transit (not delivered) for cellsat', () => {
+    const text = 'sched asap "load x.tl" id 1 3\nsched asap "run" id 2 3'
+    const progress = buildSbdChunkProgress(
+      text,
+      [send(1, 2), send(2, 2), send(3, 2)],
+      new Map(),
+      new Map()
+    )
+    expect(progress).toEqual({ delivered: 0, inTransit: 3, total: 3 })
+  })
+
+  it('freezes in-transit on timeout (partial greens stay, rest empty)', () => {
+    const text = 'sched asap "load x.tl" id 1 3\nsched asap "run" id 2 3'
+    const s1 = send(1, 0)
+    const receipt: GetEventsResponse = {
+      ...send(11, 0),
+      eventType: 'sbdReceipt',
+      eventId: 11,
+      mtmsn: 50,
+      name: 'sbdReceipt',
+    }
+    const receive: GetEventsResponse = {
+      ...send(12, 0),
+      eventType: 'sbdReceive',
+      eventId: 12,
+      mtmsn: 50,
+    }
+    const progress = buildSbdChunkProgress(
+      text,
+      [s1, send(2, 2), send(3, 2)],
+      new Map([['1', receipt]]),
+      new Map([[50, receive]]),
+      { freezeInTransit: true }
+    )
+    expect(progress).toEqual({ delivered: 1, inTransit: 0, total: 3 })
+  })
+
+  it('fills when sat receive confirms chunks', () => {
+    const text = 'sched asap "load x.tl" id 1 2\nsched asap "run" id 2 2'
+    const s1 = send(1, 0)
+    const receipt: GetEventsResponse = {
+      ...send(11, 0),
+      eventType: 'sbdReceipt',
+      eventId: 11,
+      mtmsn: 50,
+      name: 'sbdReceipt',
+    }
+    const receive: GetEventsResponse = {
+      ...send(12, 0),
+      eventType: 'sbdReceive',
+      eventId: 12,
+      mtmsn: 50,
+    }
+    // Receipt map is keyed by sbdSend.eventId in determineCommandStatus
+    const progress = buildSbdChunkProgress(
+      text,
+      [s1, send(2, 0)],
+      new Map([['1', receipt]]),
+      new Map([[50, receive]])
+    )
+    expect(progress).toEqual({ delivered: 1, inTransit: 1, total: 2 })
+  })
+})
+
+describe('clearSbdInTransitOnTimeout', () => {
+  const chunks = { delivered: 1, inTransit: 2, total: 4 }
+
+  it('zeros inTransit when status is timeout', () => {
+    expect(clearSbdInTransitOnTimeout('timeout', chunks)).toEqual({
+      delivered: 1,
+      inTransit: 0,
+      total: 4,
+    })
+  })
+
+  it('leaves chunks unchanged for non-timeout statuses', () => {
+    expect(clearSbdInTransitOnTimeout('sent', chunks)).toEqual(chunks)
+    expect(clearSbdInTransitOnTimeout('ack', chunks)).toEqual(chunks)
+  })
+
+  it('returns undefined when chunks are missing', () => {
+    expect(clearSbdInTransitOnTimeout('timeout', undefined)).toBeUndefined()
+  })
+})

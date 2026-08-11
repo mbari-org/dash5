@@ -540,6 +540,136 @@ describe('determineCommandStatus', () => {
     expect(result.momsn).toBeUndefined()
   })
 
+  // #797: multi-SBD — do not ACK until all parts are delivered.
+  it('should demote ack to sent when multi-SBD chunks are incomplete', () => {
+    const multiPartCommand: GetEventsResponse = {
+      ...baseCellCommand,
+      data: [
+        'sched asap "load x.tl;set a 1 m" tok 1 3',
+        'sched asap "set b 2 m" tok 2 3',
+        'sched asap "run" tok 3 3',
+      ].join('\n'),
+    }
+    // Only one of three chunks on cell — pure cell may count state:2, still < 3
+    const sbdSendMap = new Map<string, GetEventsResponse[]>([
+      [
+        String(multiPartCommand.eventId),
+        [
+          {
+            ...cellSbdSend,
+            eventId: 70,
+            refId: multiPartCommand.eventId,
+            state: 2,
+          },
+        ],
+      ],
+    ])
+
+    const result = determineCommandStatus(
+      multiPartCommand,
+      sbdSendMap,
+      new Map(),
+      new Map(),
+      new Map()
+    )
+
+    expect(result.status).toBe('sent')
+    expect(result.sbdChunks).toEqual({
+      delivered: 1,
+      inTransit: 0,
+      total: 3,
+    })
+  })
+
+  // #797: cellsat/timeout — cell state:2 must not paint boxes full.
+  it('should show 0/3 chunks on cellsat timeout despite state:2 sbdSends', () => {
+    const multiPartCellsat: GetEventsResponse = {
+      ...baseCellsatCommand,
+      data: [
+        'sched asap "load x.tl" tok 1 3',
+        'sched asap "set a 1 m" tok 2 3',
+        'sched asap "run" tok 3 3',
+      ].join('\n'),
+      note: 'command[via: cellsat, timeout:5min]',
+    }
+    const sbdSendMap = new Map<string, GetEventsResponse[]>([
+      [
+        String(multiPartCellsat.eventId),
+        [1, 2, 3].map((n) => ({
+          ...cellSbdSend,
+          eventId: 80 + n,
+          refId: multiPartCellsat.eventId,
+          state: 2,
+        })),
+      ],
+    ])
+    const timeoutMap = new Map<string, GetEventsResponse>([
+      [
+        String(multiPartCellsat.eventId),
+        {
+          ...baseTimeoutEvent,
+          note: `id=${multiPartCellsat.eventId}: Timeout while waiting`,
+        },
+      ],
+    ])
+
+    const result = determineCommandStatus(
+      multiPartCellsat,
+      sbdSendMap,
+      new Map(),
+      new Map(),
+      timeoutMap
+    )
+
+    expect(result.status).toBe('timeout')
+    expect(result.sbdChunks).toEqual({
+      delivered: 0,
+      inTransit: 0,
+      total: 3,
+    })
+  })
+
+  // #797: client-side timeout (no note) must also stop orange flash.
+  it('should clear inTransit on client-side timeout without a timeout note', () => {
+    const multiPartCellsat: GetEventsResponse = {
+      ...baseCellsatCommand,
+      unixTime: Date.now() - 20 * 60 * 1000, // well past 5min
+      data: [
+        'sched asap "load x.tl" tok 1 3',
+        'sched asap "set a 1 m" tok 2 3',
+        'sched asap "run" tok 3 3',
+      ].join('\n'),
+      note: 'command[via: cellsat, timeout:5min]',
+    }
+    const sbdSendMap = new Map<string, GetEventsResponse[]>([
+      [
+        String(multiPartCellsat.eventId),
+        [1, 2, 3].map((n) => ({
+          ...cellSbdSend,
+          eventId: 90 + n,
+          refId: multiPartCellsat.eventId,
+          state: 2,
+          unixTime: Date.now() - 20 * 60 * 1000,
+        })),
+      ],
+    ])
+
+    const result = determineCommandStatus(
+      multiPartCellsat,
+      sbdSendMap,
+      new Map(),
+      new Map(),
+      new Map() // no timeout note
+    )
+
+    expect(result.status).toBe('timeout')
+    expect(result.sbdChunks).toEqual({
+      delivered: 0,
+      inTransit: 0,
+      total: 3,
+    })
+  })
+
   // #798: once sat receive lands, cellsat may ACK (not stuck on sent forever).
   it('should return ack for cellsat with state:2 after sat receipt and receive', () => {
     const recentCellsatCommand: GetEventsResponse = {

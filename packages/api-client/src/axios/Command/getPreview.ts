@@ -18,6 +18,11 @@ export interface GetPreviewResponse {
   result: PreviewResult[]
 }
 
+/** Each preview line is one outgoing SBD fragment from the backend. */
+export const countPreviewSbdChunks = (
+  preview?: GetPreviewResponse | null
+): number => preview?.result?.length ?? 0
+
 export const getPreview = async (
   params: GetPreviewParams,
   { debug, instance = getInstance(), ...config }: RequestConfig = {}
@@ -28,8 +33,15 @@ export const getPreview = async (
     console.debug(`GET ${url}`)
   }
 
+  // Drop undefined/null query params (URLSearchParams stringifies them as "undefined")
+  const query = Object.fromEntries(
+    Object.entries(params).filter(
+      ([, v]) => v !== undefined && v !== null && v !== ''
+    )
+  ) as Record<string, string>
+
   const response = await instance.get(
-    `${url}?${new URLSearchParams({ ...params })}`,
+    `${url}?${new URLSearchParams(query)}`,
     config
   )
   return response.data as GetPreviewResponse

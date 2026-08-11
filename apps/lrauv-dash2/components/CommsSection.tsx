@@ -4,6 +4,7 @@ import {
   useCommsEvents,
   useEvents,
   timeoutExpiredRegEx,
+  clearSbdInTransitOnTimeout,
 } from '@mbari/api-client'
 import {
   AccordionCells,
@@ -161,6 +162,7 @@ const CommsSection: React.FC<CommsSectionProps> = ({
         timeout={item?.timeout}
         day={day}
         time={time}
+        sbdChunks={clearSbdInTransitOnTimeout(resolvedStatus, item?.sbdChunks)}
       />
     ) : (
       <span />

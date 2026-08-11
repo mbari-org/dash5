@@ -8,6 +8,7 @@ import { swallow, truncate } from '@mbari/utils'
 import { AcknowledgeIcon } from '../Icons/AcknowledgeIcon'
 import { ConnectedIcon } from '../Icons/ConnectedIcon'
 import { CommandType } from '../types'
+import { SbdChunkBoxes } from './SbdChunkBoxes'
 
 const getStatusTexts = (
   status: 'queued' | 'sent' | 'ack' | 'timeout',
@@ -70,6 +71,8 @@ export interface CommsCellProps {
   time: string
   status: 'queued' | 'sent' | 'ack' | 'timeout'
   commandType: CommandType
+  /** Multi-SBD progress; ACK icon is only honest when delivered === total (#797). */
+  sbdChunks?: { delivered: number; inTransit?: number; total: number }
   onSelect?: () => void
 }
 
@@ -96,6 +99,7 @@ export const CommsCell: React.FC<CommsCellProps> = ({
   time,
   status,
   commandType,
+  sbdChunks,
   onSelect,
 }) => {
   const regFontEntry = entry.slice(0, -3)
@@ -128,6 +132,15 @@ export const CommsCell: React.FC<CommsCellProps> = ({
           <li className="opacity-60" aria-label="owner name">
             {name}
           </li>
+          {sbdChunks && sbdChunks.total >= 2 && (
+            <li className="mt-1">
+              <SbdChunkBoxes
+                delivered={sbdChunks.delivered}
+                inTransit={sbdChunks.inTransit}
+                total={sbdChunks.total}
+              />
+            </li>
+          )}
         </ul>
         <div className={styles.icon}>{icon}</div>
 

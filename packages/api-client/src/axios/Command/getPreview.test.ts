@@ -1,6 +1,10 @@
 import { rest } from 'msw'
 import { setupServer } from 'msw/node'
-import { getPreview, GetPreviewParams } from './getPreview'
+import {
+  getPreview,
+  GetPreviewParams,
+  countPreviewSbdChunks,
+} from './getPreview'
 
 let params: GetPreviewParams = {
   vehicle: 'brizo',
@@ -28,6 +32,25 @@ const server = setupServer(
 beforeAll(() => server.listen())
 afterEach(() => server.resetHandlers())
 afterAll(() => server.close())
+
+describe('countPreviewSbdChunks', () => {
+  it('counts preview result lines as SBD fragments', () => {
+    expect(
+      countPreviewSbdChunks({
+        result: [
+          { line: 'chunk 1', href: '' },
+          { line: 'chunk 2', href: '' },
+          { line: 'chunk 3', href: '' },
+        ],
+      })
+    ).toBe(3)
+  })
+
+  it('returns 0 for empty or missing preview', () => {
+    expect(countPreviewSbdChunks(undefined)).toBe(0)
+    expect(countPreviewSbdChunks({ result: [] })).toBe(0)
+  })
+})
 
 describe('getPreview', () => {
   it('should return the mocked value when successful', async () => {
