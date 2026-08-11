@@ -318,6 +318,25 @@ const MissionModal: React.FC<MissionModalProps> = ({
   // is applied on first paint with the prior run's params, not template defaults.
   const [sendAgainReady, setSendAgainReady] = useState(!sendAgain)
   const sendAgainAbortRef = useRef(false)
+  // When meta changes while id stays `newMission` (second Send again without
+  // unmount), rebuild this key so the loading gate re-arms instead of reusing
+  // the previous selection / preview. Adjust state during render so the stale
+  // wizard cannot paint for even one frame.
+  const sendAgainSessionKey = sendAgain
+    ? `${globalModalId?.meta?.mission ?? ''}\0${
+        globalModalId?.meta?.eventData ?? ''
+      }`
+    : ''
+  const [armedSendAgainSessionKey, setArmedSendAgainSessionKey] =
+    useState(sendAgainSessionKey)
+  if (armedSendAgainSessionKey !== sendAgainSessionKey) {
+    setArmedSendAgainSessionKey(sendAgainSessionKey)
+    hasAutoSelectedRef.current = false
+    sendAgainAbortRef.current = false
+    setSelectedMission(undefined)
+    setPreviewText(undefined)
+    setSendAgainReady(!sendAgain)
+  }
 
   useEffect(() => {
     if (!sendAgain) {
@@ -378,6 +397,7 @@ const MissionModal: React.FC<MissionModalProps> = ({
     setSendAgainReady(true)
   }, [
     sendAgain,
+    sendAgainSessionKey,
     selectedMission,
     selectedMissionData,
     isSelectedMissionError,
