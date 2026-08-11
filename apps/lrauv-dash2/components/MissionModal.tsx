@@ -29,6 +29,7 @@ import { useInsertTempMission } from '../lib/useInsertTempMission'
 import {
   previewTextFromEventData,
   evaluateSendAgainGate,
+  isEventScopedTempMission,
 } from '../lib/missionSendAgain'
 
 export interface MissionModalProps {
@@ -108,6 +109,7 @@ const MissionModal: React.FC<MissionModalProps> = ({
 
   // Track if we've already auto-selected to prevent re-selecting when user changes selection
   const hasAutoSelectedRef = useRef(false)
+  const sendAgain = Boolean(globalModalId?.meta?.sendAgain)
 
   // Auto-select mission from globalModalId meta if provided (only once on initial load)
   useEffect(() => {
@@ -127,40 +129,71 @@ const MissionModal: React.FC<MissionModalProps> = ({
     if (recentRunsLoading || frequentRunsLoading || isMissionListLoading) return
 
     if (
-      missionPath &&
-      missionsWithTemporaryEntry &&
-      missionsWithTemporaryEntry.length > 0 &&
-      !hasAutoSelectedRef.current
+      !missionPath ||
+      !missionsWithTemporaryEntry ||
+      missionsWithTemporaryEntry.length === 0
     ) {
-      // Find mission by id (temporary re-run entries) or missionPath (recent runs)
-      const matchingMission = missionsWithTemporaryEntry.find(
-        (m) => m.id === missionPath || m.missionPath === missionPath
-      )
+      return
+    }
 
-      if (matchingMission) {
-        // Set ref only after a confirmed match so the effect can still retry
-        // on later renders if template missions arrive after recent/frequent runs.
-        // Once all three loading flags are false and a match is found, all future
-        // re-renders (including Back navigation) will see the ref as true and skip.
-        hasAutoSelectedRef.current = true
-        setSelectedMission(matchingMission.id)
-        // If rerunning from schedule history (has eventData), always use 'Recent Runs'
-        if (eventData) {
+    // Send again with eventData: do not lock onto a same-path recent run before
+    // the event-scoped temp exists. Bootstrap a path selection so getScript can
+    // load, then lock only after the temp (description === eventData) is present.
+    if (sendAgain && eventData) {
+      const eventTemp = missionsWithTemporaryEntry.find((m) =>
+        isEventScopedTempMission(m, missionPath, eventData)
+      )
+      if (eventTemp) {
+        if (!hasAutoSelectedRef.current || selectedMission !== eventTemp.id) {
+          hasAutoSelectedRef.current = true
+          setSelectedMission(eventTemp.id)
           setSelectedMissionCategory('Recent Runs')
-        } else if (matchingMission.recentRun) {
+        }
+        return
+      }
+
+      if (!selectedMission) {
+        const pathMatch = missionsWithTemporaryEntry.find(
+          (m) => m.id === missionPath || m.missionPath === missionPath
+        )
+        if (pathMatch) {
+          setSelectedMission(pathMatch.id)
           setSelectedMissionCategory('Recent Runs')
-        } else if (matchingMission.frequentRun) {
-          setSelectedMissionCategory('Frequent Runs')
-        } else if (matchingMission.category) {
-          // Set category based on mission's category
-          const categoryId = missionCategories.find(
-            (c) =>
-              c.name === matchingMission.category ||
-              c.id === matchingMission.category
-          )?.id
-          if (categoryId) {
-            setSelectedMissionCategory(categoryId)
-          }
+        }
+      }
+      return
+    }
+
+    if (hasAutoSelectedRef.current) return
+
+    // Find mission by id (temporary re-run entries) or missionPath (recent runs)
+    const matchingMission = missionsWithTemporaryEntry.find(
+      (m) => m.id === missionPath || m.missionPath === missionPath
+    )
+
+    if (matchingMission) {
+      // Set ref only after a confirmed match so the effect can still retry
+      // on later renders if template missions arrive after recent/frequent runs.
+      // Once all three loading flags are false and a match is found, all future
+      // re-renders (including Back navigation) will see the ref as true and skip.
+      hasAutoSelectedRef.current = true
+      setSelectedMission(matchingMission.id)
+      // If rerunning from schedule history (has eventData), always use 'Recent Runs'
+      if (eventData) {
+        setSelectedMissionCategory('Recent Runs')
+      } else if (matchingMission.recentRun) {
+        setSelectedMissionCategory('Recent Runs')
+      } else if (matchingMission.frequentRun) {
+        setSelectedMissionCategory('Frequent Runs')
+      } else if (matchingMission.category) {
+        // Set category based on mission's category
+        const categoryId = missionCategories.find(
+          (c) =>
+            c.name === matchingMission.category ||
+            c.id === matchingMission.category
+        )?.id
+        if (categoryId) {
+          setSelectedMissionCategory(categoryId)
         }
       }
     }
@@ -173,6 +206,8 @@ const MissionModal: React.FC<MissionModalProps> = ({
     recentRunsLoading,
     frequentRunsLoading,
     isMissionListLoading,
+    sendAgain,
+    selectedMission,
   ])
 
   // Missions with parameter/waypoint overrides that should be applied.
@@ -269,7 +304,6 @@ const MissionModal: React.FC<MissionModalProps> = ({
     })) ?? []
 
   const [previewText, setPreviewText] = useState<string | undefined>()
-  const sendAgain = Boolean(globalModalId?.meta?.sendAgain)
   // Defer mounting the wizard until Send again has a selected mission, script
   // definition (for overrides), and preview — so currentStepIndex=Send Command
   // is applied on first paint with the prior run's params, not template defaults.
@@ -285,12 +319,23 @@ const MissionModal: React.FC<MissionModalProps> = ({
     if (sendAgainAbortRef.current) return
 
     const missionPath = globalModalId?.meta?.mission
+    const eventData = globalModalId?.meta?.eventData
     const listsLoading =
       recentRunsLoading || frequentRunsLoading || isMissionListLoading
     const hasMatchingMission = Boolean(
       missionPath &&
         missionsWithTemporaryEntry?.some(
           (m) => m.id === missionPath || m.missionPath === missionPath
+        )
+    )
+    const hasEventScopedTempSelected = Boolean(
+      eventData &&
+        missionPath &&
+        selectedMission &&
+        missionsWithTemporaryEntry?.some(
+          (m) =>
+            m.id === selectedMission &&
+            isEventScopedTempMission(m, missionPath, eventData)
         )
     )
 
@@ -303,6 +348,8 @@ const MissionModal: React.FC<MissionModalProps> = ({
       hasAutoSelected: hasAutoSelectedRef.current,
       hasSelectedMissionData: Boolean(selectedMissionData),
       scriptError: isSelectedMissionError,
+      eventData,
+      hasEventScopedTempSelected,
     })
 
     if (gate.action === 'wait') return
@@ -318,7 +365,7 @@ const MissionModal: React.FC<MissionModalProps> = ({
       return
     }
 
-    setPreviewText(previewTextFromEventData(globalModalId?.meta?.eventData))
+    setPreviewText(previewTextFromEventData(eventData))
     setSendAgainReady(true)
   }, [
     sendAgain,
@@ -407,12 +454,17 @@ const MissionModal: React.FC<MissionModalProps> = ({
 
   if (sendAgain && !sendAgainReady) {
     return (
-      <div
-        className="flex h-[calc(100vh-6rem)] items-center justify-center bg-white text-sm text-stone-600"
-        role="status"
-        aria-label="Loading mission to send again"
-      >
-        Loading mission…
+      <div className="flex h-[calc(100vh-6rem)] flex-col items-center justify-center gap-3 bg-white text-sm text-stone-600">
+        <div role="status" aria-label="Loading mission to send again">
+          Loading mission…
+        </div>
+        <button
+          type="button"
+          className="rounded border border-stone-300 px-3 py-1 text-stone-700 hover:bg-stone-50"
+          onClick={onClose}
+        >
+          Cancel
+        </button>
       </div>
     )
   }
