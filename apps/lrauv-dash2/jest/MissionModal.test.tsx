@@ -253,6 +253,29 @@ test('Send again aborts when getScript fails', async () => {
   expect(onClose).toHaveBeenCalled()
 })
 
+test('Send again resets loading gate when event meta changes while mounted', async () => {
+  mockMissionData({ selectedMissionData: scriptData })
+  const { rerender } = render(<MissionModal onClose={jest.fn()} />)
+  await screen.findByTestId('mission-modal-view')
+
+  mockSendAgainModal({
+    sendAgain: true,
+    mission: MISSION_PATH,
+    eventData:
+      'load Science/profile_station.tl;set profile_station.Depth 50 m;run',
+  })
+  // Drop script data so the gate cannot immediately re-open after reset.
+  mockMissionData({ selectedMissionData: undefined })
+  rerender(<MissionModal onClose={jest.fn()} />)
+
+  expect(
+    await screen.findByRole('status', {
+      name: /loading mission to send again/i,
+    })
+  ).toBeInTheDocument()
+  expect(screen.queryByTestId('mission-modal-view')).not.toBeInTheDocument()
+})
+
 test('normal (non send-again) open mounts the wizard immediately', async () => {
   ;(useGlobalModalId as jest.Mock).mockReturnValue({
     globalModalId: { id: 'newMission', meta: {} },
