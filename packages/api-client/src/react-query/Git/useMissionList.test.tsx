@@ -61,4 +61,50 @@ describe('useMissionList', () => {
       firstMissionPath
     )
   })
+
+  it('keys cache by gitRef only and refetches on mount when reload=y', async () => {
+    const reloads: Array<string | null> = []
+    server.use(
+      rest.get('/git/missionList', (req, res, ctx) => {
+        reloads.push(req.url.searchParams.get('reload'))
+        return res(ctx.status(200), ctx.json(mockResponse))
+      })
+    )
+
+    const queryClient = new QueryClient({
+      defaultOptions: { queries: { retry: false } },
+    })
+
+    const Probe: React.FC<{ reload?: 'y' }> = ({ reload }) => {
+      const { data } = useMissionList(reload ? { reload } : {})
+      return <div>{data?.list[0]?.path ?? 'loading'}</div>
+    }
+
+    const { unmount } = render(
+      <MockProviders queryClient={queryClient}>
+        <Probe />
+      </MockProviders>
+    )
+    await waitFor(() => {
+      expect(screen.getByText('Default.xml')).toBeInTheDocument()
+    })
+    expect(reloads).toEqual([null])
+    expect(
+      queryClient.getQueryCache().findAll({ queryKey: ['git', 'missionList'] })
+    ).toHaveLength(1)
+
+    unmount()
+
+    render(
+      <MockProviders queryClient={queryClient}>
+        <Probe reload="y" />
+      </MockProviders>
+    )
+    await waitFor(() => {
+      expect(reloads).toEqual([null, 'y'])
+    })
+    expect(
+      queryClient.getQueryCache().findAll({ queryKey: ['git', 'missionList'] })
+    ).toHaveLength(1)
+  })
 })
