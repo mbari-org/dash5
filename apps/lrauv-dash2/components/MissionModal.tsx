@@ -284,6 +284,7 @@ const MissionModal: React.FC<MissionModalProps> = ({
       previewSbd,
     } = makeMissionCommand({
       mission: missionPathForCommand,
+      missionId: selectedMissionData?.id,
       parameterOverrides,
       scheduleMethod,
       specifiedLocalTime: specifiedTime ?? undefined,
