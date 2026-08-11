@@ -29,6 +29,7 @@ import {
   useCreateNote,
   timeoutExpiredRegEx,
   clearSbdInTransitOnTimeout,
+  SbdChunkProgress,
 } from '@mbari/api-client'
 import { useQueryClient } from 'react-query'
 import useGlobalModalId from '../lib/useGlobalModalId'
@@ -243,7 +244,7 @@ export const ScheduleSection: React.FC<ScheduleSectionProps> = ({
 
   // eventId → multi-SBD chunk progress for Schedule row boxes (#797)
   const commsSbdChunksLookup = useMemo(() => {
-    const map = new Map<number, { delivered: number; total: number }>()
+    const map = new Map<number, SbdChunkProgress>()
     commsEventsResponse.data.forEach((e) => {
       if (e.eventId != null && e.sbdChunks) {
         map.set(e.eventId, e.sbdChunks)
