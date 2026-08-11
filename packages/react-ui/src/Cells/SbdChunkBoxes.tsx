@@ -33,16 +33,22 @@ export const SbdChunkBoxes: React.FC<SbdChunkBoxesProps> = ({
   if (total < 2) return null
   const safeDelivered = Math.max(0, Math.min(delivered, total))
   const safeInTransit = Math.max(0, Math.min(inTransit, total - safeDelivered))
+  const pending = Math.max(0, total - safeDelivered - safeInTransit)
   const label = `SBD ${safeDelivered} of ${total}`
+  // Fact-only hover text — no forecast about next surface / session.
+  const detailParts = [
+    `${safeDelivered} delivered`,
+    safeInTransit > 0 ? `${safeInTransit} in transit` : null,
+    pending > 0 ? `${pending} pending` : null,
+  ].filter(Boolean)
+  const title = `${label}: ${detailParts.join(', ')}`
   const boxSize = size === 'md' ? 'h-3.5 w-3.5' : 'h-2.5 w-2.5'
 
   return (
     <div
       className={clsx('inline-flex items-center gap-2', className)}
-      aria-label={label}
-      title={
-        safeInTransit > 0 ? `${label} (${safeInTransit} in transit)` : label
-      }
+      aria-label={title}
+      title={title}
     >
       {showLabel && (
         <span className="whitespace-nowrap text-sm font-medium text-stone-700">
