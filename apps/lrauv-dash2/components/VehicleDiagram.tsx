@@ -94,7 +94,7 @@ const VehicleDiagram: React.FC<{
       })} ago`
     : vehicle?.text_commago
 
-  const formattedNextComm = nextCommsText ?? vehicle?.text_nextcomm
+  const formattedNextComm = vehicle?.text_nextcomm
 
   const { siteConfig } = useTethysApiContext()
 

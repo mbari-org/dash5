@@ -196,7 +196,7 @@ const ConnectedVehicleCellComponent: React.FC<{
     needCommsMinutes ?? 60,
     nowMs
   )
-  const formattedNextComm = nextCommsText ?? vehicle?.text_nextcomm
+  const formattedNextComm = vehicle?.text_nextcomm
 
   // Compute once; reused for vehicleProps.status and the recovered boolean.
   const derivedStatus = deriveVehiclePropsStatus({
