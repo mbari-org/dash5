@@ -60,7 +60,7 @@ export const makeCommand = ({
   }
 }
 
-// Accepts a local time string and returns a formatted UTC time string.
+// Builds a `load …; set …; run` mission command string.
 // `mission` is the file path for `load`. `missionId` is the script's mission
 // ID from GET /commands/script (used for `set`); falls back to the filename
 // stem when omitted (e.g. path and ID match).
