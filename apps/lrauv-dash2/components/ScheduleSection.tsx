@@ -28,8 +28,10 @@ import {
   useDeleteCommandQueue,
   useCreateNote,
   timeoutExpiredRegEx,
+  useTethysApiContext,
+  getScript,
 } from '@mbari/api-client'
-import { useQueryClient } from 'react-query'
+import { useQueryClient, useQueries } from 'react-query'
 import useGlobalModalId from '../lib/useGlobalModalId'
 import {
   missionNameFromStartedText,
@@ -187,6 +189,7 @@ export const ScheduleSection: React.FC<ScheduleSectionProps> = ({
 }) => {
   const confirm = useConfirm()
   const { setGlobalModalId } = useGlobalModalId()
+  const { axiosInstance, token } = useTethysApiContext()
   const [scheduleFilter, setScheduleFilter] = useState<string>('')
   const [scheduleSearch, setScheduleSearch] = useState<string>('')
   const [deploymentLogsOnly, setDeploymentLogsOnly] = useState(false)
@@ -786,6 +789,49 @@ export const ScheduleSection: React.FC<ScheduleSectionProps> = ({
   const staticFilterCellOffset = hasPastSchedule ? 1 : 0
 
   const results = [scheduledCells, historicCells].flat()
+
+  // Pre-fetch mission IDs for pending rows (no vehicle-reported missionId yet).
+  // Scoped to scheduledCells only — historic rows either already have a
+  // missionId from telemetry or are no longer actionable.
+  // useQueries runs all lookups in parallel and caches aggressively — mission
+  // definitions don't change during a deployment.
+  const pendingScriptPaths = useMemo(() => {
+    const paths = new Set<string>()
+    for (const m of scheduledCells ?? []) {
+      if (!m.missionId) {
+        const p = rawMissionPathFromEventData(m.event.data ?? m.event.text)
+        if (p) paths.add(p)
+      }
+    }
+    return Array.from(paths)
+  }, [scheduledCells])
+
+  const scriptIdQueries = useQueries(
+    pendingScriptPaths.map((path) => ({
+      queryKey: ['commands', 'script', path],
+      queryFn: () =>
+        getScript(
+          { path },
+          {
+            instance: axiosInstance,
+            headers: { Authorization: `Bearer ${token}` },
+          }
+        ),
+      staleTime: Infinity, // mission definitions don't change mid-deployment
+      enabled: !!axiosInstance && !!path && !!token,
+    }))
+  )
+
+  // Build a path → mission ID lookup for use in cellAtIndex.
+  const scriptIdByPath = useMemo(() => {
+    const map = new Map<string, string>()
+    pendingScriptPaths.forEach((path, i) => {
+      const id = scriptIdQueries[i]?.data?.id
+      if (id) map.set(path, id)
+    })
+    return map
+  }, [pendingScriptPaths, scriptIdQueries])
+
   // Show the "Previous Vehicle Directives" separator whenever there are
   // historic items, even if no commands are currently active above it.
   // Operators require a complete audit trail — timed-out or completed
@@ -995,15 +1041,18 @@ export const ScheduleSection: React.FC<ScheduleSectionProps> = ({
     const { name: parsedMissionName, parameters: missionParams } =
       parseMissionCommand(commandData)
     // Display name priority (|| so empty strings fall through to the next level):
-    // 1. missionId — vehicle-reported mission ID from missionStarted telemetry
-    //    (e.g. "keepstation", "follow_that_car"). Most accurate: it's what the
-    //    vehicle actually calls the mission, regardless of filename or _vt suffix.
-    // 2. missionNameFromEventData — filename without path/extension. Checked
-    //    against both data and text since commands can arrive in either field.
-    // 3. parsedMissionName from parseMissionCommand — last resort for edge cases
-    //    not covered by missionNameFromEventData (e.g. non-load command formats).
+    // 1. missionId — vehicle-reported ID from missionStarted telemetry. Most accurate.
+    // 2. scriptId — ID from getScript (GET /commands/script), resolved at queue time before
+    //    the vehicle reports back. Handles cases where filename ≠ mission ID (e.g. _vt files).
+    // 3. missionNameFromEventData — filename without path/extension. Fallback when
+    //    the script lookup is still loading or returns no result.
+    // 4. parsedMissionName — last resort for edge cases.
+    const scriptPath = rawMissionPathFromEventData(
+      mission?.event.data ?? mission?.event.text
+    )
     const missionName =
       mission?.missionId ||
+      (scriptPath ? scriptIdByPath.get(scriptPath) : undefined) ||
       missionNameFromEventData(mission?.event.data) ||
       missionNameFromEventData(mission?.event.text) ||
       parsedMissionName
