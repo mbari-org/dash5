@@ -266,6 +266,9 @@ const MissionModal: React.FC<MissionModalProps> = ({
 
   const [previewText, setPreviewText] = useState<string | undefined>()
   const [previewSbdCount, setPreviewSbdCount] = useState<number | undefined>()
+  // Ignore stale getPreview responses when Confirm is clicked again before the
+  // previous preview request finishes (vehicle / mission / overrides changed).
+  const previewRequestIdRef = useRef(0)
 
   const handleSchedule: MissionModalViewProps['onSchedule'] = async ({
     confirmedVehicle,
@@ -302,6 +305,7 @@ const MissionModal: React.FC<MissionModalProps> = ({
       setPreviewSbdCount(undefined)
       const vehicle = (confirmedVehicle ?? vehicleName ?? '').toLowerCase()
       if (vehicle && formattedCommandText) {
+        const requestId = ++previewRequestIdRef.current
         try {
           const previewResponse = await getPreview(
             {
@@ -314,9 +318,11 @@ const MissionModal: React.FC<MissionModalProps> = ({
               headers: token ? { Authorization: `Bearer ${token}` } : undefined,
             }
           )
+          if (requestId !== previewRequestIdRef.current) return
           setPreviewSbdCount(countPreviewSbdChunks(previewResponse))
         } catch {
           // Preview is informational only — keep Review usable without a count.
+          if (requestId !== previewRequestIdRef.current) return
           setPreviewSbdCount(undefined)
         }
       }
