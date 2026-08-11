@@ -33,19 +33,14 @@ export const useInsertTempMission = ({
     const eventIsoTime = globalModalMeta?.eventIsoTime
     const eventVehicleName = globalModalMeta?.eventVehicleName
 
-    if (
-      !eventData ||
-      !missionPath ||
-      !selectedMissionData?.latLonNamePairs ||
-      !missions
-    ) {
+    if (!eventData || !missionPath || !selectedMissionData || !missions) {
       return missions
     }
 
     // Extract overrides from eventData
     const { parameterOverrides, waypointOverrides } = extractOverrides(
       eventData,
-      selectedMissionData.latLonNamePairs
+      selectedMissionData.latLonNamePairs ?? []
     )
 
     // Always create temporary mission entry when rerunning from schedule history
