@@ -198,7 +198,11 @@ export const useMissionData = (params: {
   }, [allMissions, missionData?.list, selectedMission])
 
   // this gets the original mission template data (ie it would be the original sci2_flat_and_level mission, not a recent run of sci2_flat_and_level where the pilot has applied overrides)
-  const { data: selectedMissionData } = useScript(
+  const {
+    data: selectedMissionData,
+    isLoading: isSelectedMissionLoading,
+    isError: isSelectedMissionError,
+  } = useScript(
     {
       path: selectedScriptPath as string,
       gitRef: missionData?.gitRef ?? 'master',
@@ -208,6 +212,8 @@ export const useMissionData = (params: {
 
   return {
     selectedMissionData,
+    isSelectedMissionLoading,
+    isSelectedMissionError,
     recentRuns,
     frequentRuns,
     missionCategories,
