@@ -1,5 +1,5 @@
 import { useMemo, useState, useEffect } from 'react'
-import { useQuery } from 'react-query'
+import { useQuery, useQueryClient } from 'react-query'
 import { getDepthData } from '../../axios/Data/getDepthData'
 import { getEvents, EventType } from '../../axios'
 import { useTethysApiContext } from '../TethysApiProvider'
@@ -32,6 +32,7 @@ export const useDepthSparkline = (
   options?: SupportedQueryOptions
 ) => {
   const { axiosInstance } = useTethysApiContext()
+  const queryClient = useQueryClient()
 
   // Keep a stable query key per vehicle so React Query re-uses the cache entry
   // across re-renders. The rolling 8-hour window is computed fresh inside each
@@ -77,6 +78,42 @@ export const useDepthSparkline = (
       enabled: !!vehicle && options?.enabled !== false,
     }
   )
+
+  // When fallback mode activates (including mid-session after primary goes
+  // empty), force-refresh the long-dive cache. Prefetch data can be stale
+  // because long-dive polling stays off while the primary window has points.
+  // Arm `longDiveRefreshPending` during render (before paint) so we never emit
+  // the mount-time cache for a frame; the effect then runs the refresh.
+  const fallbackGateKey = primarySucceededEmpty
+    ? `${vehicle}:empty`
+    : `${vehicle}:active`
+  // null until first arm so a warm RQ cache that is already empty on mount
+  // still forces a refresh instead of painting stale prefetch immediately.
+  const [armedFallbackGateKey, setArmedFallbackGateKey] = useState<
+    string | null
+  >(null)
+  const [longDiveRefreshPending, setLongDiveRefreshPending] = useState(false)
+
+  if (armedFallbackGateKey !== fallbackGateKey) {
+    setArmedFallbackGateKey(fallbackGateKey)
+    setLongDiveRefreshPending(primarySucceededEmpty)
+  }
+
+  useEffect(() => {
+    if (!longDiveRefreshPending || !primarySucceededEmpty) return
+
+    let active = true
+    void queryClient
+      .refetchQueries({
+        queryKey: ['depthSparkline', 'depth', vehicle, 'longDive'],
+      })
+      .finally(() => {
+        if (active) setLongDiveRefreshPending(false)
+      })
+    return () => {
+      active = false
+    }
+  }, [longDiveRefreshPending, primarySucceededEmpty, vehicle, queryClient])
 
   const commsQuery = useQuery(
     ['depthSparkline', 'comms', vehicle],
@@ -128,8 +165,12 @@ export const useDepthSparkline = (
     // primary query has *completed* with zero points (vehicle submerged > 8 h).
     // Gating on isSuccess prevents the fallback from activating during initial
     // load (when data is still undefined) and causing a premature wide-window plot.
+    // Also wait out longDiveRefreshPending so we do not plot a stale prefetch
+    // while the forced mid-session refresh is still in flight.
     const usingFallback =
-      depthQuery.isSuccess && (depthQuery.data?.times ?? []).length === 0
+      depthQuery.isSuccess &&
+      (depthQuery.data?.times ?? []).length === 0 &&
+      !longDiveRefreshPending
     const rawTimes = usingFallback
       ? longDiveQuery.data?.times ?? []
       : depthQuery.data?.times ?? []
@@ -215,13 +256,21 @@ export const useDepthSparkline = (
       argoTimes,
       padded,
     }
-  }, [depthQuery.data, longDiveQuery.data, commsQuery.data, nowMinBucket])
+  }, [
+    depthQuery.data,
+    depthQuery.isSuccess,
+    longDiveQuery.data,
+    longDiveRefreshPending,
+    commsQuery.data,
+    nowMinBucket,
+  ])
 
   return {
     data,
     isLoading:
       depthQuery.isLoading ||
       commsQuery.isLoading ||
+      longDiveRefreshPending ||
       (primarySucceededEmpty && longDiveQuery.isLoading),
     isError:
       depthQuery.isError ||
