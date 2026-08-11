@@ -17,7 +17,6 @@ import { useVehicleColors } from './VehicleColorsContext'
 import {
   capitalize,
   formatCompactDuration,
-  calculateRelativeNextComm,
   decodeHtmlEntities,
 } from '@mbari/utils'
 import React, { useEffect, useMemo } from 'react'
@@ -28,7 +27,6 @@ import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { faCheck, faSync } from '@fortawesome/free-solid-svg-icons'
 import useGlobalModalId from '../lib/useGlobalModalId'
 import { useLastCommsTime } from '../lib/useLastCommsTime'
-import { useNeedCommsTime } from '../lib/useNeedCommsTime'
 import { useTick } from '../lib/useTick'
 import { useVehicleStatus } from '../lib/useVehicleStatus'
 import { deriveVehiclePropsStatus } from '../lib/deriveVehiclePropsStatus'
@@ -144,19 +142,9 @@ const ConnectedVehicleCellComponent: React.FC<{
 
   const deploymentStartTime = lastDeployment?.startEvent?.unixTime ?? 0
 
-  const missionStartTime =
-    missionStartedEvent?.[0]?.unixTime ?? deploymentStartTime
-
   const { lastSatCommsTime, lastCellCommsTime } = useLastCommsTime(
     name,
     deploymentStartTime
-  )
-  const { minutes: needCommsMinutes } = useNeedCommsTime(
-    name,
-    missionStartTime,
-    {
-      enabled: !!name && !!missionStartTime,
-    }
   )
   const nowMs = useTick(60_000)
   const { isLikelySurfaced } = useVehicleStatus({
@@ -190,12 +178,6 @@ const ConnectedVehicleCellComponent: React.FC<{
     ? `${formatCompactDuration(lastSatCommsDT, nowDT, { maxDays: 6 })} ago`
     : vehicle?.text_commago
 
-  const { text: nextCommsText } = calculateRelativeNextComm(
-    lastSatCommsTime,
-    lastCellCommsTime,
-    needCommsMinutes ?? 60,
-    nowMs
-  )
   const formattedNextComm = vehicle?.text_nextcomm
 
   // Compute once; reused for vehicleProps.status and the recovered boolean.

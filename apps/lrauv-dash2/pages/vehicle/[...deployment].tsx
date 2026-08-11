@@ -359,7 +359,6 @@ const Vehicle: NextPage = () => {
                 onBatteryClick={handleBatteryClick}
                 lastCellCommsTime={lastCellCommsDT}
                 lastSatCommsTime={lastSatCommsDT}
-                nextCommsText={nextCommsText}
               />
             )}
             {currentTab === 'depth' && startTime > 0 && (

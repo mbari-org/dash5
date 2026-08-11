@@ -34,7 +34,6 @@ const VehicleDiagram: React.FC<{
   onBatteryClick?: FullWidthVehicleDiagramProps['onBatteryClick']
   lastCellCommsTime?: DateTime | null
   lastSatCommsTime?: DateTime | null
-  nextCommsText?: string | null
 }> = ({
   name,
   className,
@@ -42,7 +41,6 @@ const VehicleDiagram: React.FC<{
   onBatteryClick: handleBatteryClick,
   lastCellCommsTime: lastCellCommsDT,
   lastSatCommsTime: lastSatCommsDT,
-  nextCommsText,
 }) => {
   const baseUrl = process.env.NEXT_PUBLIC_API_HOST
   const { data: vehicleInfo } = useVehicleInfo(
