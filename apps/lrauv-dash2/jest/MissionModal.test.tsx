@@ -1,5 +1,6 @@
 import React from 'react'
 import { render, screen, waitFor } from '@testing-library/react'
+import userEvent from '@testing-library/user-event'
 import '@testing-library/jest-dom'
 import toast from 'react-hot-toast'
 
@@ -72,7 +73,34 @@ jest.mock('../lib/useParameterOverrides', () => ({
 }))
 
 jest.mock('../lib/useInsertTempMission', () => ({
-  useInsertTempMission: ({ missions }: { missions: unknown[] }) => missions,
+  useInsertTempMission: ({
+    missions,
+    globalModalMeta,
+    selectedMissionData,
+  }: {
+    missions: Array<Record<string, unknown>>
+    globalModalMeta?: { eventData?: string; mission?: string }
+    selectedMissionData?: unknown
+  }) => {
+    if (
+      !globalModalMeta?.eventData ||
+      !globalModalMeta?.mission ||
+      !selectedMissionData
+    ) {
+      return missions
+    }
+    const missionPath = globalModalMeta.mission
+    const temp = {
+      id: missionPath,
+      missionPath,
+      description: globalModalMeta.eventData,
+      recentRun: true,
+      parameterOverrides: [{ name: 'MissionTimeout', value: '12' }],
+      category: 'Science',
+      name: 'profile_station',
+    }
+    return [temp, ...missions.filter((m) => m.id !== missionPath)]
+  },
 }))
 
 jest.mock('../lib/useMissionData')
@@ -83,14 +111,17 @@ import useGlobalModalId from '../lib/useGlobalModalId'
 import MissionModal from '../components/MissionModal'
 
 const MISSION_PATH = 'Science/profile_station.tl'
+const EVENT_DATA =
+  'load Science/profile_station.tl;set profile_station.MissionTimeout 12 h;run'
 
-const baseMission = {
-  id: MISSION_PATH,
+const olderSamePathRun = {
+  id: 'run-older',
   missionPath: MISSION_PATH,
   category: 'Science',
   name: 'profile_station',
   recentRun: true,
-  parameterOverrides: [{ name: 'MissionTimeout', value: '12' }],
+  description: 'load Science/profile_station.tl;run',
+  parameterOverrides: [{ name: 'MissionTimeout', value: '99' }],
 }
 
 const scriptData = {
@@ -102,8 +133,8 @@ const scriptData = {
 
 const mockMissionData = (overrides: Record<string, unknown> = {}) => {
   ;(useMissionData as jest.Mock).mockReturnValue({
-    recentRuns: [baseMission],
-    allMissions: [baseMission],
+    recentRuns: [olderSamePathRun],
+    allMissions: [olderSamePathRun],
     selectedMissionData: undefined,
     isSelectedMissionLoading: false,
     isSelectedMissionError: false,
@@ -120,8 +151,7 @@ const mockSendAgainModal = (
   meta: Record<string, unknown> = {
     sendAgain: true,
     mission: MISSION_PATH,
-    eventData:
-      'load Science/profile_station.tl;set profile_station.MissionTimeout 12 h;run',
+    eventData: EVENT_DATA,
   }
 ) => {
   ;(useGlobalModalId as jest.Mock).mockReturnValue({
@@ -147,11 +177,21 @@ test('Send again shows loading until getScript data is available', async () => {
       name: /loading mission to send again/i,
     })
   ).toBeInTheDocument()
+  expect(screen.getByRole('button', { name: /cancel/i })).toBeInTheDocument()
   expect(screen.queryByTestId('mission-modal-view')).not.toBeInTheDocument()
   expect(onClose).not.toHaveBeenCalled()
 })
 
-test('Send again mounts wizard on Send Command once script data loads', async () => {
+test('Send again loading Cancel dismisses the modal', async () => {
+  const onClose = jest.fn()
+  mockMissionData({ selectedMissionData: undefined })
+
+  render(<MissionModal onClose={onClose} />)
+  await userEvent.click(screen.getByRole('button', { name: /cancel/i }))
+  expect(onClose).toHaveBeenCalled()
+})
+
+test('Send again selects event-scoped temp, not an older same-path run', async () => {
   mockMissionData({ selectedMissionData: scriptData })
 
   render(<MissionModal onClose={jest.fn()} />)
@@ -159,7 +199,7 @@ test('Send again mounts wizard on Send Command once script data loads', async ()
   const view = await screen.findByTestId('mission-modal-view')
   expect(view).toHaveAttribute('data-step', '7')
   expect(view).toHaveAttribute('data-selected', MISSION_PATH)
-  expect(view.getAttribute('data-preview')).toMatch(/profile_station/)
+  expect(view.getAttribute('data-preview')).toContain(EVENT_DATA)
   expect(view).toHaveAttribute('data-has-overrides', 'true')
 })
 

@@ -11,6 +11,19 @@ export const previewTextFromEventData = (
   return `sched asap "${trimmed}"`
 }
 
+/** True when a list entry is the event-scoped temp from useInsertTempMission. */
+export const isEventScopedTempMission = (
+  mission: {
+    id: string
+    missionPath?: string
+    description?: string
+  },
+  missionPath: string,
+  eventData: string
+): boolean =>
+  (mission.id === missionPath || mission.missionPath === missionPath) &&
+  mission.description === eventData
+
 export type SendAgainGateResult =
   | { action: 'not-applicable' }
   | { action: 'wait' }
@@ -19,9 +32,9 @@ export type SendAgainGateResult =
 
 /**
  * Decide when Send again may mount the wizard on Send Command.
- * Must wait for getScript (`hasSelectedMissionData`) so defaultOverrides /
- * useInsertTempMission can derive prior-run params before confirm — otherwise
- * Review can show eventData while Send rebuilds from template defaults.
+ * Must wait for getScript and (when eventData is present) the event-scoped
+ * temp mission so defaultOverrides match the Review preview — not a different
+ * recent run that shares the same path.
  */
 export const evaluateSendAgainGate = (input: {
   sendAgain: boolean
@@ -32,19 +45,26 @@ export const evaluateSendAgainGate = (input: {
   hasAutoSelected: boolean
   hasSelectedMissionData: boolean
   scriptError: boolean
+  eventData?: string | null
+  hasEventScopedTempSelected: boolean
 }): SendAgainGateResult => {
   if (!input.sendAgain) return { action: 'not-applicable' }
   if (input.listsLoading) return { action: 'wait' }
   if (!input.missionPath || !input.hasMatchingMission) {
     return { action: 'abort', reason: 'no-match' }
   }
+  // Bootstrap selection may already be fetching getScript before the event temp
+  // locks hasAutoSelected — still abort if that script request fails.
+  if (input.scriptError && input.selectedMission) {
+    return { action: 'abort', reason: 'script-error' }
+  }
   if (!input.hasAutoSelected || !input.selectedMission) {
     return { action: 'wait' }
   }
-  if (input.scriptError) {
-    return { action: 'abort', reason: 'script-error' }
-  }
   if (!input.hasSelectedMissionData) {
+    return { action: 'wait' }
+  }
+  if (input.eventData?.trim() && !input.hasEventScopedTempSelected) {
     return { action: 'wait' }
   }
   return { action: 'ready' }
