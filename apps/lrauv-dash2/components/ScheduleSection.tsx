@@ -28,6 +28,7 @@ import {
   useDeleteCommandQueue,
   useCreateNote,
   timeoutExpiredRegEx,
+  clearSbdInTransitOnTimeout,
 } from '@mbari/api-client'
 import { useQueryClient } from 'react-query'
 import useGlobalModalId from '../lib/useGlobalModalId'
@@ -1123,11 +1124,12 @@ export const ScheduleSection: React.FC<ScheduleSectionProps> = ({
         statusTooltip={
           cellStatus === 'ack' ? `Received by ${vehicleName}` : undefined
         }
-        sbdChunks={
+        sbdChunks={clearSbdInTransitOnTimeout(
+          cellStatus,
           mission.event.eventId != null
             ? commsSbdChunksLookup.get(mission.event.eventId)
             : undefined
-        }
+        )}
         name={mission.event.user ?? 'Unknown'}
         scheduleStatus={
           (['pending', 'running'].includes(cellStatus) && scheduleStatus) ||
@@ -1282,10 +1284,12 @@ export const ScheduleSection: React.FC<ScheduleSectionProps> = ({
                 isLoadRunMission,
                 commsStatus: commsLookup.get(mission.event.eventId),
                 ...commsMsgIdLookup.get(mission.event.eventId),
-                sbdChunks:
+                sbdChunks: clearSbdInTransitOnTimeout(
+                  cellStatus,
                   mission.event.eventId != null
                     ? commsSbdChunksLookup.get(mission.event.eventId)
-                    : undefined,
+                    : undefined
+                ),
               },
             },
           })

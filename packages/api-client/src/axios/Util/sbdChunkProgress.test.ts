@@ -3,6 +3,7 @@ import {
   countDeliveredSbdChunks,
   buildSbdChunkProgress,
   isSbdChunkDelivered,
+  clearSbdInTransitOnTimeout,
 } from './sbdChunkProgress'
 import { GetEventsResponse } from '../Event/getEvents'
 
@@ -142,5 +143,26 @@ describe('buildSbdChunkProgress', () => {
       new Map([[50, receive]])
     )
     expect(progress).toEqual({ delivered: 1, inTransit: 1, total: 2 })
+  })
+})
+
+describe('clearSbdInTransitOnTimeout', () => {
+  const chunks = { delivered: 1, inTransit: 2, total: 4 }
+
+  it('zeros inTransit when status is timeout', () => {
+    expect(clearSbdInTransitOnTimeout('timeout', chunks)).toEqual({
+      delivered: 1,
+      inTransit: 0,
+      total: 4,
+    })
+  })
+
+  it('leaves chunks unchanged for non-timeout statuses', () => {
+    expect(clearSbdInTransitOnTimeout('sent', chunks)).toEqual(chunks)
+    expect(clearSbdInTransitOnTimeout('ack', chunks)).toEqual(chunks)
+  })
+
+  it('returns undefined when chunks are missing', () => {
+    expect(clearSbdInTransitOnTimeout('timeout', undefined)).toBeUndefined()
   })
 })
