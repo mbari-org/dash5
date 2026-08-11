@@ -51,13 +51,13 @@ export const useDepthSparkline = (
     }
   )
 
-  // Fallback: runs in parallel with the primary query. Fetches the most recent
-  // LONG_DIVE_MAXLEN points from a 7-day window so that if the 8-hour window
-  // returns no data (vehicle submerged > 8 h), the sparkline can immediately
-  // show the last known dive profile padded forward to now — no extra round-trip.
-  // Only refetches when the primary query has already succeeded with zero points
-  // (i.e. the vehicle is actually in a long-dive scenario) to avoid unnecessary
-  // 7-day API calls in the common case where the primary has data.
+  // Fallback: prefetched in parallel with the primary query. Fetches the most
+  // recent LONG_DIVE_MAXLEN points from a 7-day window so that if the 8-hour
+  // window returns no data (vehicle submerged > 8 h), the sparkline can show
+  // the last known dive profile immediately — no extra round-trip after the
+  // empty primary. The initial 7-day request runs whenever the hook is enabled;
+  // refetchInterval / focus / reconnect stay gated on primarySucceededEmpty so
+  // the common case (primary has data) does not keep polling the 7-day endpoint.
   const primarySucceededEmpty =
     depthQuery.isSuccess && (depthQuery.data?.times.length ?? 0) === 0
   const longDiveQuery = useQuery(
@@ -70,7 +70,7 @@ export const useDepthSparkline = (
     {
       staleTime: REFETCH_INTERVAL,
       refetchInterval: primarySucceededEmpty ? REFETCH_INTERVAL : false,
-      // Only refetch on focus/reconnect in long-dive mode — avoids spurious 7-day requests in the common case.
+      // Only refetch on focus/reconnect in long-dive mode — avoids spurious 7-day polls in the common case.
       refetchOnWindowFocus: primarySucceededEmpty,
       refetchOnReconnect: primarySucceededEmpty,
       ...options,
