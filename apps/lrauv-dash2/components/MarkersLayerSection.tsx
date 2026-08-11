@@ -1,5 +1,6 @@
 import React from 'react'
 import { faMapMarkerAlt } from '@fortawesome/free-solid-svg-icons'
+import { useTethysApiContext } from '@mbari/api-client'
 import { TreeItem } from './MapLayersTreeItem'
 import { MarkerData, useMarkers } from './MarkerContext'
 import { useMapCamera } from './MapCameraContext'
@@ -43,6 +44,8 @@ export const MarkersLayerSection: React.FC<MarkersLayerSectionProps> = ({
   const { removeMarkerFromLayer, removeAllMarkersFromLayer } = useMarkers()
   const { setFlyToRequest } = useMapCamera()
   const confirm = useConfirm()
+  const { authenticated } = useTethysApiContext()
+  const canEditMarkers = !!authenticated
 
   if (isFiltering && filteredMarkers.length === 0) return null
   return (
@@ -80,19 +83,25 @@ export const MarkersLayerSection: React.FC<MarkersLayerSectionProps> = ({
               mapCoords ? () => setFlyToRequest(mapCoords) : undefined
             }
             centerLabel={`Center map on ${markerLabel}`}
-            onRemoveClick={async () => {
-              const isConfirmed = await confirm({
-                title: `Remove "${markerLabel}" from layer? It will remain on the map.`,
-              })
-              if (isConfirmed) {
-                removeMarkerFromLayer(String(marker.id))
-              }
-            }}
-            removeLabel={`Remove ${markerLabel} from layer`}
+            onRemoveClick={
+              canEditMarkers
+                ? async () => {
+                    const isConfirmed = await confirm({
+                      title: `Remove "${markerLabel}" from layer? It will remain on the map.`,
+                    })
+                    if (isConfirmed) {
+                      removeMarkerFromLayer(String(marker.id))
+                    }
+                  }
+                : undefined
+            }
+            removeLabel={
+              canEditMarkers ? `Remove ${markerLabel} from layer` : undefined
+            }
           />
         )
       })}
-      {layerMarkers.length > 0 ? (
+      {canEditMarkers && layerMarkers.length > 0 ? (
         <div className="flex justify-end py-2 pl-10 pr-2">
           <button
             type="button"
@@ -106,9 +115,11 @@ export const MarkersLayerSection: React.FC<MarkersLayerSectionProps> = ({
           </button>
         </div>
       ) : (
-        <div className="py-2 pl-10 text-sm italic text-gray-500">
-          No markers saved to layer
-        </div>
+        layerMarkers.length === 0 && (
+          <div className="py-2 pl-10 text-sm italic text-gray-500">
+            No markers saved to layer
+          </div>
+        )
       )}
     </TreeItem>
   )

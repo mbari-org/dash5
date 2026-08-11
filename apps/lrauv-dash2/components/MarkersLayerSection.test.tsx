@@ -23,6 +23,12 @@ jest.mock('./MapCameraContext', () => ({
   }),
 }))
 
+jest.mock('@mbari/api-client', () => ({
+  useTethysApiContext: () => ({
+    authenticated: true,
+  }),
+}))
+
 const renderSection = (ui: React.ReactElement) =>
   render(<ConfirmationProvider>{ui}</ConfirmationProvider>)
 
