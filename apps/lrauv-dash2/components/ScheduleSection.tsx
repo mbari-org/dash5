@@ -104,6 +104,33 @@ const toScheduleCellStatus = (status: string): ScheduleCellStatus => {
 const isDefaultMissionName = (name?: string) =>
   name?.trim().toLowerCase() === 'default'
 
+// Resolve mission path from structured event fields, falling back to note as a
+// last resort (Dash4 commands store the mission filename in the note field).
+// TODO (medium-term): remove note fallback once Dash5 stores mission ID in
+// command metadata at submission time.
+const resolveMissionPath = (
+  event: Pick<GetEventsResponse, 'data' | 'text' | 'note'>
+): string | undefined =>
+  missionPathFromEventData(event.data) ||
+  missionPathFromEventData(event.text) ||
+  missionPathFromEventData(event.note) ||
+  undefined
+
+// Returns true if any of the event's mission path fields match targetPath.
+const missionMatchesPath = (
+  event: Pick<GetEventsResponse, 'data' | 'text' | 'note'>,
+  targetPath: string | undefined
+): boolean =>
+  missionKeysMatch(
+    missionPathFromEventData(event.data) ?? '',
+    targetPath ?? ''
+  ) ||
+  missionKeysMatch(
+    missionPathFromEventData(event.text) ?? '',
+    targetPath ?? ''
+  ) ||
+  missionKeysMatch(missionPathFromEventData(event.note) ?? '', targetPath ?? '')
+
 const missionKeysMatch = (leftPath: string, rightPath: string) => {
   if (!leftPath || !rightPath) return false
   const leftHasPath = leftPath.includes('/')
@@ -442,15 +469,7 @@ export const ScheduleSection: React.FC<ScheduleSectionProps> = ({
       const effectiveMatchWindowMs =
         sbdChunkTotal != null ? MULTI_SBD_MATCH_WINDOW_MS : MATCH_WINDOW_MS
 
-      // Extract mission path from structured fields first; fall back to note
-      // only as a last resort before Unknown — Dash4 commands store the full
-      // command text (including the mission filename) in the note field.
-      // TODO (medium-term): remove note fallback once Dash5 stores the mission
-      // ID in command metadata at submission time (see QUEUED_MISSION_MATCH_WINDOW_MS).
-      const missionPath =
-        missionPathFromEventData(item.event.data) ||
-        missionPathFromEventData(item.event.text) ||
-        missionPathFromEventData(item.event.note)
+      const missionPath = resolveMissionPath(item.event)
       if (!missionPath || item.event.unixTime == null) return item
 
       // Use scheduled time as reference if available, else fall back to send time
@@ -548,17 +567,7 @@ export const ScheduleSection: React.FC<ScheduleSectionProps> = ({
         )
 
       const matchingMissionIndex = enriched.reduce((bestIdx, item, idx) => {
-        const fromDataPath = missionPathFromEventData(item.event.data)
-        const fromTextPath = missionPathFromEventData(item.event.text)
-        // Last resort: check note field (Dash4 commands store mission path there).
-        // TODO (medium-term): remove once Dash5 stores mission ID in command metadata.
-        const fromNotePath = missionPathFromEventData(item.event.note)
-        if (
-          !missionKeysMatch(fromDataPath, currentMissionPath) &&
-          !missionKeysMatch(fromTextPath, currentMissionPath) &&
-          !missionKeysMatch(fromNotePath, currentMissionPath)
-        )
-          return bestIdx
+        if (!missionMatchesPath(item.event, currentMissionPath)) return bestIdx
         if (item.event.unixTime == null) return bestIdx
         // Don't repromote a row already confirmed-completed by interval
         // matching — it belongs to a prior run of this same mission, and
@@ -612,16 +621,7 @@ export const ScheduleSection: React.FC<ScheduleSectionProps> = ({
           if (i === matchingMissionIndex) continue
           const item = enriched[i]
           if (item.status !== 'running') continue
-          const fromDataPath = missionPathFromEventData(item.event.data)
-          const fromTextPath = missionPathFromEventData(item.event.text)
-          // Last resort: check note field (Dash4 commands store mission path there).
-          // TODO (medium-term): remove once Dash5 stores mission ID in command metadata.
-          const fromNotePath = missionPathFromEventData(item.event.note)
-          if (
-            missionKeysMatch(fromDataPath, currentMissionPath) ||
-            missionKeysMatch(fromTextPath, currentMissionPath) ||
-            missionKeysMatch(fromNotePath, currentMissionPath)
-          ) {
+          if (missionMatchesPath(item.event, currentMissionPath)) {
             // End time is inferred as when the newer run of this mission began.
             enriched[i] = {
               ...item,
