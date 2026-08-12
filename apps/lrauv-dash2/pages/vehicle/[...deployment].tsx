@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import axios from 'axios'
 import { NextPage } from 'next'
 import { useRouter } from 'next/router'
 import { DateTime } from 'luxon'
@@ -194,9 +195,11 @@ const Vehicle: NextPage = () => {
     ? DateTime.fromMillis(lastCellCommsTime)
     : null
 
+  const baseUrl = process.env.NEXT_PUBLIC_API_HOST
   const { data: vehicleInfo } = useVehicleInfo(
-    { vehicleName: vehicleName as string },
-    { enabled: !!vehicleName }
+    { name: vehicleName as string },
+    baseUrl ? axios.create({ baseURL: baseUrl, timeout: 5000 }) : undefined,
+    { enabled: !!vehicleName, staleTime: 0, refetchInterval: 30 * 1000 }
   )
   const vehicle =
     vehicleInfo?.not_found || !vehicleInfo
