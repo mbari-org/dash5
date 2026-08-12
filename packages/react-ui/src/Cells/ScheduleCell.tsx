@@ -54,6 +54,8 @@ export interface ScheduleCellProps {
   statusTooltip?: string
   /** Multi-SBD progress boxes; ACK only when delivered === total (#797). */
   sbdChunks?: { delivered: number; inTransit?: number; total: number }
+  /** Show the event ID below the operator name for cross-referencing logs and comms queue */
+  showEventId?: boolean
   onSelect: () => void
   onMoreClick: (
     id: {
@@ -108,6 +110,7 @@ export const ScheduleCell: React.FC<ScheduleCellProps> = ({
   scheduleStatus,
   statusTooltip,
   sbdChunks,
+  showEventId,
 }) => {
   const moreButtonRef = useRef<HTMLDivElement | null>(null)
 
@@ -247,6 +250,11 @@ export const ScheduleCell: React.FC<ScheduleCellProps> = ({
               )}
             >
               {name}
+            </li>
+          )}
+          {showEventId && eventId != null && (
+            <li className="flex truncate text-sm text-stone-500 font-mono">
+              Event ID: {eventId}
             </li>
           )}
         </ul>

@@ -395,6 +395,14 @@ export const ScheduleSection: React.FC<ScheduleSectionProps> = ({
     // executes. For a 4-chunk sat command this can exceed 60 minutes, pushing
     // past the default window. Use 60 min only for multi-SBD sends.
     const MULTI_SBD_MATCH_WINDOW_MS = 60 * 60 * 1000
+    // Queued missions start long after the command was sent (e.g. PAM queued
+    // behind CircleSample fires 6+ hours later). Allow up to 24 h look-ahead
+    // when the command was sent before the mission started.
+    // TODO (medium-term): when Dash5 submits a command, store the mission ID
+    // (available from GET api/command/script response) in the command metadata.
+    // A direct ID lookup would replace all time-window heuristics here and
+    // eliminate the need for note-field path extraction entirely.
+    const QUEUED_MISSION_MATCH_WINDOW_MS = 24 * 60 * 60 * 1000
     const SATELLITE_DELAY_WINDOW_MS = 30 * 60 * 1000
 
     const parseScheduledUnixTime = (
@@ -432,9 +440,15 @@ export const ScheduleSection: React.FC<ScheduleSectionProps> = ({
       const effectiveMatchWindowMs =
         sbdChunkTotal != null ? MULTI_SBD_MATCH_WINDOW_MS : MATCH_WINDOW_MS
 
+      // Extract mission path from structured fields first; fall back to note
+      // only as a last resort before Unknown — Dash4 commands store the full
+      // command text (including the mission filename) in the note field.
+      // TODO (medium-term): remove note fallback once Dash5 stores the mission
+      // ID in command metadata at submission time (see QUEUED_MISSION_MATCH_WINDOW_MS).
       const missionPath =
         missionPathFromEventData(item.event.data) ||
-        missionPathFromEventData(item.event.text)
+        missionPathFromEventData(item.event.text) ||
+        missionPathFromEventData(item.event.note)
       if (!missionPath || item.event.unixTime == null) return item
 
       // Use scheduled time as reference if available, else fall back to send time
@@ -499,8 +513,15 @@ export const ScheduleSection: React.FC<ScheduleSectionProps> = ({
       )
 
       // Only enrich if within the match window to avoid false positives.
-      if (Math.abs(best.startedAt - referenceTime) > effectiveMatchWindowMs)
-        return item
+      // For queued missions (command sent well before the mission starts, e.g.
+      // PAM queued behind CircleSample), use a 24-hour look-ahead window.
+      // Commands sent after the mission started use the tighter effectiveMatchWindowMs.
+      const gap = best.startedAt - referenceTime
+      const allowedWindow =
+        gap > effectiveMatchWindowMs
+          ? QUEUED_MISSION_MATCH_WINDOW_MS
+          : effectiveMatchWindowMs
+      if (Math.abs(gap) > allowedWindow) return item
 
       return {
         ...item,
@@ -527,9 +548,13 @@ export const ScheduleSection: React.FC<ScheduleSectionProps> = ({
       const matchingMissionIndex = enriched.reduce((bestIdx, item, idx) => {
         const fromDataPath = missionPathFromEventData(item.event.data)
         const fromTextPath = missionPathFromEventData(item.event.text)
+        // Last resort: check note field (Dash4 commands store mission path there).
+        // TODO (medium-term): remove once Dash5 stores mission ID in command metadata.
+        const fromNotePath = missionPathFromEventData(item.event.note)
         if (
           !missionKeysMatch(fromDataPath, currentMissionPath) &&
-          !missionKeysMatch(fromTextPath, currentMissionPath)
+          !missionKeysMatch(fromTextPath, currentMissionPath) &&
+          !missionKeysMatch(fromNotePath, currentMissionPath)
         )
           return bestIdx
         if (item.event.unixTime == null) return bestIdx
@@ -587,9 +612,13 @@ export const ScheduleSection: React.FC<ScheduleSectionProps> = ({
           if (item.status !== 'running') continue
           const fromDataPath = missionPathFromEventData(item.event.data)
           const fromTextPath = missionPathFromEventData(item.event.text)
+          // Last resort: check note field (Dash4 commands store mission path there).
+          // TODO (medium-term): remove once Dash5 stores mission ID in command metadata.
+          const fromNotePath = missionPathFromEventData(item.event.note)
           if (
             missionKeysMatch(fromDataPath, currentMissionPath) ||
-            missionKeysMatch(fromTextPath, currentMissionPath)
+            missionKeysMatch(fromTextPath, currentMissionPath) ||
+            missionKeysMatch(fromNotePath, currentMissionPath)
           ) {
             // End time is inferred as when the newer run of this mission began.
             enriched[i] = {
@@ -1155,6 +1184,7 @@ export const ScheduleSection: React.FC<ScheduleSectionProps> = ({
             : undefined
         )}
         name={mission.event.user ?? 'Unknown'}
+        showEventId={true}
         scheduleStatus={
           (['pending', 'running'].includes(cellStatus) && scheduleStatus) ||
           undefined
