@@ -103,3 +103,15 @@ test('should not display last plugged in time when not plugged in', async () => 
 
   expect(screen.queryByText(/Last plugged in/i)).not.toBeInTheDocument()
 })
+
+test('should display next comms text when nextCommsText is provided and not plugged in', async () => {
+  render(<VehicleInfoCell isPluggedIn={false} nextCommsText="in 2h 30m" />)
+
+  expect(screen.getByText(/Next comm: in 2h 30m/i)).toBeInTheDocument()
+})
+
+test('should not display next comms text when plugged in', async () => {
+  render(<VehicleInfoCell isPluggedIn={true} nextCommsText="in 2h 30m" />)
+
+  expect(screen.queryByText(/Next comm:/i)).not.toBeInTheDocument()
+})

@@ -1,12 +1,8 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useState } from 'react'
 import { NextPage } from 'next'
 import { useRouter } from 'next/router'
 import { DateTime } from 'luxon'
-import {
-  getAdjustedUnixTime,
-  createRoleLabel,
-  calculateRelativeNextComm,
-} from '@mbari/utils'
+import { getAdjustedUnixTime, createRoleLabel } from '@mbari/utils'
 
 import {
   Tab,
@@ -23,7 +19,8 @@ import {
   useDeployments,
   useTethysApiContext,
   useVehiclePicAndOnCall,
-  useMissionStartedEvent,
+  useVehicleInfo,
+  GetVehicleInfoResponse,
 } from '@mbari/api-client'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { faChevronDown, faChevronUp } from '@fortawesome/free-solid-svg-icons'
@@ -47,7 +44,6 @@ import { SelectedPolygonsProvider } from '../../components/SelectedPolygonsConte
 import { SelectedTileLayersProvider } from '../../components/SelectedTileLayersContext'
 import { SelectedKmlLayersProvider } from '../../components/SelectedKmlLayersContext'
 import { SelectedPlatformsProvider } from '../../components/SelectedPlatformContext'
-import { useNeedCommsTime } from '../../lib/useNeedCommsTime'
 import { useTick } from '../../lib/useTick'
 import { useVehicleStatus } from '../../lib/useVehicleStatus'
 import LrauvResourcesDropdown from '../../components/LrauvResourcesDropdown'
@@ -187,18 +183,6 @@ const Vehicle: NextPage = () => {
 
   // Get the actual mission start time (e.g., ballast_and_trim, transit, etc.)
   // instead of deployment start time
-  const { data: missionStartedEvent } = useMissionStartedEvent(
-    {
-      vehicle: vehicleName as string,
-      limit: 1,
-    },
-    {
-      enabled: !!vehicleName && !!deployment,
-      staleTime: 60 * 1000,
-    }
-  )
-  const missionStartTime = missionStartedEvent?.[0]?.unixTime ?? startTime
-
   const { lastSatCommsTime, lastCellCommsTime } = useLastCommsTime(
     vehicleName,
     startTime
@@ -210,25 +194,15 @@ const Vehicle: NextPage = () => {
     ? DateTime.fromMillis(lastCellCommsTime)
     : null
 
-  const { minutes: needCommsMinutes } = useNeedCommsTime(
-    vehicleName,
-    missionStartTime,
-    { enabled: !!vehicleName && !!missionStartTime }
+  const { data: vehicleInfo } = useVehicleInfo(
+    { vehicleName: vehicleName as string },
+    { enabled: !!vehicleName }
   )
+  const vehicle =
+    vehicleInfo?.not_found || !vehicleInfo
+      ? undefined
+      : (vehicleInfo as GetVehicleInfoResponse)
   const nowMs = useTick(60_000)
-  const { nextCommTimeMs, text: nextCommsText } = useMemo(
-    () =>
-      calculateRelativeNextComm(
-        lastSatCommsTime,
-        lastCellCommsTime,
-        needCommsMinutes ?? 60,
-        nowMs
-      ),
-    [lastSatCommsTime, lastCellCommsTime, needCommsMinutes, nowMs]
-  )
-  const nextCommsTime = nextCommTimeMs
-    ? DateTime.fromMillis(nextCommTimeMs)
-    : null
 
   // Use the selected deployment's recoverEvent when available. When viewing an
   // older deployment via deploymentId, deployment comes from useDeployments which
@@ -456,14 +430,14 @@ const Vehicle: NextPage = () => {
                                 pingEvent?.checkedAt
                               ).toRelative()) as string) ?? 'Not available'
                           }
-                          nextComms={nextCommsText ?? undefined}
+                          nextComms={vehicle?.text_nextcomm ?? undefined}
                         />
                       )}
                       onIcon2hover={() => (
                         <VehicleInfoCell
                           isPluggedIn={isPluggedIn}
                           isReachable={isLikelySurfaced}
-                          nextCommsTime={nextCommsTime}
+                          nextCommsText={vehicle?.text_nextcomm ?? undefined}
                           lastPluggedInTime={
                             lastDeployment?.recoverEvent?.unixTime
                               ? DateTime.fromMillis(

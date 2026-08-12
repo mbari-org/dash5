@@ -14,6 +14,7 @@ export interface VehicleInfoCellProps {
   lastSatCommsTime?: DateTime | null
   lastCellCommsTime?: DateTime | null
   nextCommsTime?: DateTime | null
+  nextCommsText?: string | null
   lastPluggedInTime?: DateTime | null
   onSelect?: () => void
 }
@@ -35,6 +36,7 @@ export const VehicleInfoCell: React.FC<VehicleInfoCellProps> = ({
   lastSatCommsTime,
   lastCellCommsTime,
   nextCommsTime,
+  nextCommsText,
   lastPluggedInTime,
   onSelect,
 }) => {
@@ -107,11 +109,13 @@ export const VehicleInfoCell: React.FC<VehicleInfoCellProps> = ({
     ? formatCompactDuration(nextCommsTime, now, { maxDays: 6 })
     : ''
   const estimate =
-    isPluggedIn || !nextCommsTime
+    isPluggedIn || (!nextCommsTime && !nextCommsText)
       ? undefined
+      : nextCommsText
+      ? `Next comm: ${nextCommsText}`
       : `Est. to surface ${isFutureEstimate ? 'in ' : ''}${estimateDuration}${
           isFutureEstimate ? '' : ' ago'
-        } at ~${nextCommsTime.toFormat('hh:mm')}`
+        } at ~${nextCommsTime?.toFormat('hh:mm')}`
 
   // Format last plugged in time if available and plugged in
   const lastPluggedIn =
