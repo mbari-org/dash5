@@ -182,8 +182,6 @@ const Vehicle: NextPage = () => {
     ? DateTime.utc().plus({ hours: 4 }).endOf('day').toMillis()
     : deployment?.endEvent?.unixTime ?? 0
 
-  // Get the actual mission start time (e.g., ballast_and_trim, transit, etc.)
-  // instead of deployment start time
   const { lastSatCommsTime, lastCellCommsTime } = useLastCommsTime(
     vehicleName,
     startTime
