@@ -112,7 +112,7 @@ export const VehicleInfoCell: React.FC<VehicleInfoCellProps> = ({
     isPluggedIn || (!nextCommsTime && !nextCommsText)
       ? undefined
       : nextCommsText
-      ? `Next comm: ${nextCommsText}`
+      ? `Est. time till next vehicle surface: ${nextCommsText}`
       : `Est. to surface ${isFutureEstimate ? 'in ' : ''}${estimateDuration}${
           isFutureEstimate ? '' : ' ago'
         } at ~${nextCommsTime?.toFormat('hh:mm')}`
