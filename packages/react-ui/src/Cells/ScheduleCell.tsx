@@ -253,7 +253,12 @@ export const ScheduleCell: React.FC<ScheduleCellProps> = ({
             </li>
           )}
           {showEventId && eventId != null && (
-            <li className="flex truncate text-sm text-stone-500 font-mono">
+            <li
+              className={clsx(
+                'flex truncate text-sm font-mono',
+                isOpen ? styles.text : styles.textLight
+              )}
+            >
               Event ID: {eventId}
             </li>
           )}

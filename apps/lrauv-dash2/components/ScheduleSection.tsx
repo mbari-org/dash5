@@ -1054,6 +1054,7 @@ export const ScheduleSection: React.FC<ScheduleSectionProps> = ({
           onMoreClick={(target, rect) =>
             openMoreMenu({ ...target, isDefaultMission: true }, rect)
           }
+          showEventId={true}
         />
       )
     }
