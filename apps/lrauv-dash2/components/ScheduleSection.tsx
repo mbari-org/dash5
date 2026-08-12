@@ -467,7 +467,9 @@ export const ScheduleSection: React.FC<ScheduleSectionProps> = ({
         item.event.data ?? item.event.text
       )
       const effectiveMatchWindowMs =
-        sbdChunkTotal != null ? MULTI_SBD_MATCH_WINDOW_MS : MATCH_WINDOW_MS
+        sbdChunkTotal != null && sbdChunkTotal > 1
+          ? MULTI_SBD_MATCH_WINDOW_MS
+          : MATCH_WINDOW_MS
 
       const missionPath = resolveMissionPath(item.event)
       if (!missionPath || item.event.unixTime == null) return item
