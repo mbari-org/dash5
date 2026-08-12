@@ -461,7 +461,7 @@ export const ScheduleSection: React.FC<ScheduleSectionProps> = ({
 
       // Widen the match window for multi-SBD commands: each chunk takes time
       // to deliver, so the mission start can lag the send time by > 10 min.
-      // Parse directly from command text — more reliable than commsSbdChunksLookup
+      // Parse directly from command text — more reliable than checking commsLookup,
       // which depends on commsEventsResponse pagination reaching this event.
       const sbdChunkTotal = parseSbdChunkTotal(
         item.event.data ?? item.event.text

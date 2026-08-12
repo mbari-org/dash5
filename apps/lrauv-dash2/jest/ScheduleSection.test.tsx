@@ -1534,6 +1534,186 @@ test('timed-out command enriched to "completed" via isRecovered still shows time
   })
 })
 
+// ── Operator matching regression tests (#825) ────────────────────────────────
+
+test('matches command to running mission when filename is snake_case but vehicle reports camelCase mission name', async () => {
+  // Regression for #825: missionKeysMatch failed because the vehicle reports
+  // "CircleSample" (camelCase) while the command file is "circle_sample.tl"
+  // (snake_case). The underscore-strip fallback must resolve this.
+  server.use(
+    rest.get('/events', (_req, res, ctx) =>
+      res(
+        ctx.status(200),
+        ctx.json({
+          result: [
+            {
+              data: 'load Science/circle_sample.tl;run',
+              unixTime: Date.now() - 60 * 1000,
+              eventId: 2001,
+              eventType: 'run',
+              text: null,
+              note: null,
+              user: 'test-operator',
+            },
+          ],
+        })
+      )
+    ),
+    rest.get('/events/mission-started', (_req, res, ctx) =>
+      res(
+        ctx.status(200),
+        ctx.json({
+          result: [
+            {
+              eventId: 2002,
+              eventType: 'missionStarted',
+              vehicleName: 'example',
+              unixTime: Date.now() - 50 * 1000,
+              isoTime: new Date(Date.now() - 50 * 1000).toISOString(),
+              fix: { latitude: 0, longitude: 0 },
+              state: 1,
+              dataLen: 0,
+              refId: 0,
+              index: 0,
+              component: '',
+              text: 'Started mission CircleSample',
+            },
+          ],
+        })
+      )
+    )
+  )
+
+  render(
+    <MockProviders queryClient={new QueryClient()}>
+      <ScheduleSection {...props} currentDeploymentId={1} />
+    </MockProviders>
+  )
+
+  await waitFor(() => {
+    expect(screen.getByText(/Ended:\s*TBD/i)).toBeInTheDocument()
+  })
+})
+
+test('matches command to running mission when command was sent hours before mission started (queued mission)', async () => {
+  // Regression for #825: PAM and other queued missions start long after the
+  // command was sent. The 24 h QUEUED_MISSION_MATCH_WINDOW_MS must catch them.
+  const SIX_HOURS_MS = 6 * 60 * 60 * 1000
+  server.use(
+    rest.get('/events', (_req, res, ctx) =>
+      res(
+        ctx.status(200),
+        ctx.json({
+          result: [
+            {
+              data: 'load Engineering/passive_acoustic_monitoring.tl;run',
+              unixTime: Date.now() - SIX_HOURS_MS - 60 * 1000,
+              eventId: 3001,
+              eventType: 'run',
+              text: null,
+              note: null,
+              user: 'test-operator',
+            },
+          ],
+        })
+      )
+    ),
+    rest.get('/events/mission-started', (_req, res, ctx) =>
+      res(
+        ctx.status(200),
+        ctx.json({
+          result: [
+            {
+              eventId: 3002,
+              eventType: 'missionStarted',
+              vehicleName: 'example',
+              unixTime: Date.now() - 60 * 1000,
+              isoTime: new Date(Date.now() - 60 * 1000).toISOString(),
+              fix: { latitude: 0, longitude: 0 },
+              state: 1,
+              dataLen: 0,
+              refId: 0,
+              index: 0,
+              component: '',
+              text: 'Started mission passive_acoustic_monitoring',
+            },
+          ],
+        })
+      )
+    )
+  )
+
+  render(
+    <MockProviders queryClient={new QueryClient()}>
+      <ScheduleSection {...props} currentDeploymentId={1} />
+    </MockProviders>
+  )
+
+  await waitFor(() => {
+    expect(screen.getByText(/Ended:\s*TBD/i)).toBeInTheDocument()
+  })
+})
+
+test('matches multi-SBD command to running mission when delivery delay exceeds the default 10-minute window', async () => {
+  // Regression for #825: multi-chunk sat commands take >10 min to deliver all
+  // chunks, pushing the mission start past the default window. A command with
+  // the "refId chunkNum total" SBD suffix must widen the window to 60 minutes.
+  server.use(
+    rest.get('/events', (_req, res, ctx) =>
+      res(
+        ctx.status(200),
+        ctx.json({
+          result: [
+            {
+              // Multi-SBD format: payload + "<refId> <chunkNum> <total>"
+              data: 'load Science/profile_station.tl;run abc12 1 3',
+              unixTime: Date.now() - 45 * 60 * 1000 - 60 * 1000,
+              eventId: 4001,
+              eventType: 'run',
+              text: null,
+              note: null,
+              user: 'test-operator',
+            },
+          ],
+        })
+      )
+    ),
+    rest.get('/events/mission-started', (_req, res, ctx) =>
+      res(
+        ctx.status(200),
+        ctx.json({
+          result: [
+            {
+              eventId: 4002,
+              eventType: 'missionStarted',
+              vehicleName: 'example',
+              unixTime: Date.now() - 60 * 1000,
+              isoTime: new Date(Date.now() - 60 * 1000).toISOString(),
+              fix: { latitude: 0, longitude: 0 },
+              state: 1,
+              dataLen: 0,
+              refId: 0,
+              index: 0,
+              component: '',
+              text: 'Started mission profile_station',
+            },
+          ],
+        })
+      )
+    )
+  )
+
+  render(
+    <MockProviders queryClient={new QueryClient()}>
+      <ScheduleSection {...props} currentDeploymentId={1} />
+    </MockProviders>
+  )
+
+  await waitFor(() => {
+    expect(screen.getByText(/Ended:\s*TBD/i)).toBeInTheDocument()
+  })
+})
+
 test('parses legacy sched YYYYMMDD}T timestamp for backwards compatibility', async () => {
   // Simulate an event stored before the makeCommand } fix was deployed.
   const legacyStamp = '20991231}T2359'
