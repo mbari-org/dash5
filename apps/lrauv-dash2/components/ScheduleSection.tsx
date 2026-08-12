@@ -30,6 +30,7 @@ import {
   timeoutExpiredRegEx,
   clearSbdInTransitOnTimeout,
   SbdChunkProgress,
+  parseSbdChunkTotal,
 } from '@mbari/api-client'
 import { useQueryClient } from 'react-query'
 import useGlobalModalId from '../lib/useGlobalModalId'
@@ -385,6 +386,10 @@ export const ScheduleSection: React.FC<ScheduleSectionProps> = ({
     // the vehicle doesn't receive and execute it until after the old mission
     // ends. We need a wider window to catch these transition commands.
     const MATCH_WINDOW_MS = 10 * 60 * 1000
+    // Multi-SBD commands require all chunks to be delivered before the vehicle
+    // executes. For a 4-chunk sat command this can exceed 60 minutes, pushing
+    // past the default window. Use 60 min only for multi-SBD sends.
+    const MULTI_SBD_MATCH_WINDOW_MS = 60 * 60 * 1000
     const SATELLITE_DELAY_WINDOW_MS = 30 * 60 * 1000
 
     const parseScheduledUnixTime = (
@@ -411,6 +416,17 @@ export const ScheduleSection: React.FC<ScheduleSectionProps> = ({
 
     const enriched = items.map((item) => {
       if (item.status !== 'TBD') return item
+
+      // Widen the match window for multi-SBD commands: each chunk takes time
+      // to deliver, so the mission start can lag the send time by > 10 min.
+      // Parse directly from command text — more reliable than commsSbdChunksLookup
+      // which depends on commsEventsResponse pagination reaching this event.
+      const sbdChunkTotal = parseSbdChunkTotal(
+        item.event.data ?? item.event.text
+      )
+      const effectiveMatchWindowMs =
+        sbdChunkTotal != null ? MULTI_SBD_MATCH_WINDOW_MS : MATCH_WINDOW_MS
+
       const missionPath =
         missionPathFromEventData(item.event.data) ||
         missionPathFromEventData(item.event.text)
@@ -478,7 +494,7 @@ export const ScheduleSection: React.FC<ScheduleSectionProps> = ({
       )
 
       // Only enrich if within the match window to avoid false positives.
-      if (Math.abs(best.startedAt - referenceTime) > MATCH_WINDOW_MS)
+      if (Math.abs(best.startedAt - referenceTime) > effectiveMatchWindowMs)
         return item
 
       return {
