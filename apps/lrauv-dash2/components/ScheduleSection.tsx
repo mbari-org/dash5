@@ -390,6 +390,8 @@ export const ScheduleSection: React.FC<ScheduleSectionProps> = ({
     // mission is still running (send time falls inside the old interval), but
     // the vehicle doesn't receive and execute it until after the old mission
     // ends. We need a wider window to catch these transition commands.
+    // Multi-SBD command text ends with "<refId> <chunkNum> <totalChunks>" e.g. "3y7e5 1 3".
+    // Returns the total chunk count, or null if the text doesn't match that pattern.
     const MATCH_WINDOW_MS = 10 * 60 * 1000
     // Multi-SBD commands require all chunks to be delivered before the vehicle
     // executes. For a 4-chunk sat command this can exceed 60 minutes, pushing
