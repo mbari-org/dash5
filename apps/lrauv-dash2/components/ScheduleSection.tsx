@@ -111,7 +111,12 @@ const missionKeysMatch = (leftPath: string, rightPath: string) => {
 
   if (leftHasPath && rightHasPath) return leftPath === rightPath
 
-  return normalizeMissionName(leftPath) === normalizeMissionName(rightPath)
+  const leftNorm = normalizeMissionName(leftPath)
+  const rightNorm = normalizeMissionName(rightPath)
+  if (leftNorm === rightNorm) return true
+  // Handle camelCase vs snake_case mismatch between filename (circle_sample.tl)
+  // and vehicle-reported mission name (CircleSample): strip underscores from both.
+  return leftNorm.replace(/_/g, '') === rightNorm.replace(/_/g, '')
 }
 
 export const parseMissionCommand = (name: string) => {
