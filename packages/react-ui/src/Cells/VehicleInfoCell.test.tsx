@@ -47,41 +47,19 @@ test('hides last sat comms time when plugged in', async () => {
   expect(screen.queryByText(/Last comms over sat:/i)).not.toBeInTheDocument()
 })
 
-test('displays est. to surface when nextCommsTime provided and not plugged in', async () => {
-  render(
-    <VehicleInfoCell
-      isPluggedIn={false}
-      nextCommsTime={DateTime.now().plus({ minutes: 30 })}
-    />
-  )
-
-  expect(screen.getByText(/Est\. to surface/i)).toBeInTheDocument()
-})
-
-test('hides est. to surface when plugged in', async () => {
-  render(
-    <VehicleInfoCell
-      isPluggedIn={true}
-      nextCommsTime={DateTime.now().plus({ minutes: 30 })}
-    />
-  )
-
-  expect(screen.queryByText(/Est\. to surface/i)).not.toBeInTheDocument()
-})
-
-test('displays est. time till next vehicle surface when nextCommsText provided and not plugged in', async () => {
+test('displays est. time to next vehicle surface when nextCommsText provided and not plugged in', async () => {
   render(<VehicleInfoCell isPluggedIn={false} nextCommsText="in 2h 30m" />)
 
   expect(
-    screen.getByText(/Est\. time till next vehicle surface: in 2h 30m/i)
+    screen.getByText(/Est\. time to next vehicle surface: in 2h 30m/i)
   ).toBeInTheDocument()
 })
 
-test('hides est. time till next vehicle surface when plugged in', async () => {
+test('hides est. time to next vehicle surface when plugged in', async () => {
   render(<VehicleInfoCell isPluggedIn={true} nextCommsText="in 2h 30m" />)
 
   expect(
-    screen.queryByText(/Est\. time till next vehicle surface:/i)
+    screen.queryByText(/Est\. time to next vehicle surface:/i)
   ).not.toBeInTheDocument()
 })
 
