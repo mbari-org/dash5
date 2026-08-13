@@ -4,7 +4,6 @@ import {
   useVehiclePos,
   useSiteConfig,
   useMissionStartedEvent,
-  GetVehicleInfoResponse,
 } from '@mbari/api-client'
 import {
   CellVirtualizer,
@@ -30,6 +29,7 @@ import { useLastCommsTime } from '../lib/useLastCommsTime'
 import { useTick } from '../lib/useTick'
 import { useVehicleStatus } from '../lib/useVehicleStatus'
 import { deriveVehiclePropsStatus } from '../lib/deriveVehiclePropsStatus'
+import { resolveVehicleInfo } from '../lib/resolveVehicleInfo'
 
 const parsePos = (pos: string | number) => parseFloat(`${pos}`).toFixed(3)
 const calcPosition = (lat?: number | string, long?: number | string) =>
@@ -135,10 +135,7 @@ const ConnectedVehicleCellComponent: React.FC<{
     externalHandleToggle(!isOpen, name)
   }
 
-  const vehicle =
-    vehicleInfo?.not_found || !vehicleInfo
-      ? undefined
-      : (vehicleInfo as GetVehicleInfoResponse)
+  const vehicle = resolveVehicleInfo(vehicleInfo)
 
   const deploymentStartTime = lastDeployment?.startEvent?.unixTime ?? 0
 

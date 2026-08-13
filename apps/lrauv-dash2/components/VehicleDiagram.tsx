@@ -19,6 +19,7 @@ import clsx from 'clsx'
 import { DateTime } from 'luxon'
 import { decodeHtmlEntities, formatCompactDuration } from '@mbari/utils'
 import { deriveVehiclePropsStatus } from '../lib/deriveVehiclePropsStatus'
+import { resolveVehicleInfo } from '../lib/resolveVehicleInfo'
 import { useTethysApiContext } from 'api-client'
 
 const DepthSparkline = dynamic(
@@ -34,6 +35,7 @@ const VehicleDiagram: React.FC<{
   onBatteryClick?: FullWidthVehicleDiagramProps['onBatteryClick']
   lastCellCommsTime?: DateTime | null
   lastSatCommsTime?: DateTime | null
+  vehicleInfo?: GetVehicleInfoResponse | { not_found: boolean }
 }> = ({
   name,
   className,
@@ -41,9 +43,10 @@ const VehicleDiagram: React.FC<{
   onBatteryClick: handleBatteryClick,
   lastCellCommsTime: lastCellCommsDT,
   lastSatCommsTime: lastSatCommsDT,
+  vehicleInfo: vehicleInfoProp,
 }) => {
   const baseUrl = process.env.NEXT_PUBLIC_API_HOST
-  const { data: vehicleInfo } = useVehicleInfo(
+  const { data: fetchedVehicleInfo } = useVehicleInfo(
     { name },
     baseUrl
       ? axios.create({
@@ -52,7 +55,7 @@ const VehicleDiagram: React.FC<{
         })
       : undefined,
     {
-      enabled: !!name,
+      enabled: !!name && vehicleInfoProp === undefined,
       staleTime: 0,
       refetchInterval: 30 * 1000,
     }
@@ -60,10 +63,8 @@ const VehicleDiagram: React.FC<{
 
   const now = DateTime.now()
 
-  const vehicle =
-    vehicleInfo?.not_found || !vehicleInfo
-      ? undefined
-      : (vehicleInfo as GetVehicleInfoResponse)
+  const vehicleInfo = vehicleInfoProp ?? fetchedVehicleInfo
+  const vehicle = resolveVehicleInfo(vehicleInfo)
 
   const missionText = vehicle?.text_mission ?? ''
 

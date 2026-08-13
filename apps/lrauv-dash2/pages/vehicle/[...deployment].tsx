@@ -21,7 +21,6 @@ import {
   useTethysApiContext,
   useVehiclePicAndOnCall,
   useVehicleInfo,
-  GetVehicleInfoResponse,
 } from '@mbari/api-client'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { faChevronDown, faChevronUp } from '@fortawesome/free-solid-svg-icons'
@@ -49,6 +48,7 @@ import { useTick } from '../../lib/useTick'
 import { useVehicleStatus } from '../../lib/useVehicleStatus'
 import LrauvResourcesDropdown from '../../components/LrauvResourcesDropdown'
 import { vehiclePhysicalStatusIcon } from '../../lib/vehiclePhysicalStatusIcon'
+import { resolveVehicleInfo } from '../../lib/resolveVehicleInfo'
 
 // Every flex parent of the map needs `min-h-0`
 // Without it, Leaflet sometimes shows gray tiles
@@ -199,10 +199,7 @@ const Vehicle: NextPage = () => {
     baseUrl ? axios.create({ baseURL: baseUrl, timeout: 5000 }) : undefined,
     { enabled: !!vehicleName, staleTime: 0, refetchInterval: 30 * 1000 }
   )
-  const vehicle =
-    vehicleInfo?.not_found || !vehicleInfo
-      ? undefined
-      : (vehicleInfo as GetVehicleInfoResponse)
+  const vehicle = resolveVehicleInfo(vehicleInfo)
   const nowMs = useTick(60_000)
 
   // Use the selected deployment's recoverEvent when available. When viewing an
@@ -334,6 +331,7 @@ const Vehicle: NextPage = () => {
                 onBatteryClick={handleBatteryClick}
                 lastCellCommsTime={lastCellCommsDT}
                 lastSatCommsTime={lastSatCommsDT}
+                vehicleInfo={vehicleInfo}
               />
             )}
             {currentTab === 'depth' && startTime > 0 && (
