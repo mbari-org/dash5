@@ -2,21 +2,24 @@ import '@testing-library/jest-dom'
 import React from 'react'
 import { render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
-import { MarkersLayerSection, VISIBILITY_TOOLTIP } from './MarkersLayerSection'
-import type { MarkerData } from './MarkerContext'
+import {
+  MarkersLayerSection,
+  VISIBILITY_TOOLTIP,
+} from '../components/MarkersLayerSection'
+import type { MarkerData } from '../components/MarkerContext'
 
 const mockRemoveMarkerFromLayer = jest.fn()
 const mockRemoveAllMarkersFromLayer = jest.fn()
 const mockSetFlyToRequest = jest.fn()
 
-jest.mock('./MarkerContext', () => ({
+jest.mock('../components/MarkerContext', () => ({
   useMarkers: () => ({
     removeMarkerFromLayer: mockRemoveMarkerFromLayer,
     removeAllMarkersFromLayer: mockRemoveAllMarkersFromLayer,
   }),
 }))
 
-jest.mock('./MapCameraContext', () => ({
+jest.mock('../components/MapCameraContext', () => ({
   useMapCamera: () => ({
     setFlyToRequest: mockSetFlyToRequest,
   }),

@@ -178,12 +178,12 @@ describe('MarkerContext', () => {
   })
 
   test('removes all markers from layer but keeps them on the map', async () => {
-    jest.spyOn(window, 'confirm').mockReturnValueOnce(true)
-
     render(
-      <MarkerProvider>
-        <TestComponent />
-      </MarkerProvider>
+      <ConfirmationProvider>
+        <MarkerProvider>
+          <TestComponent />
+        </MarkerProvider>
+      </ConfirmationProvider>
     )
 
     await userEvent.click(screen.getByTestId('add-marker'))
@@ -193,10 +193,8 @@ describe('MarkerContext', () => {
     expect(screen.getByTestId('layer-count').textContent).toBe('2')
 
     await userEvent.click(screen.getByTestId('remove-all-from-layer'))
+    await userEvent.click(screen.getByRole('button', { name: 'Confirm' }))
 
-    expect(window.confirm).toHaveBeenCalledWith(
-      'Remove all markers from layer? They will remain on the map.'
-    )
     expect(screen.getByTestId('marker-count').textContent).toBe('2')
     expect(screen.getByTestId('layer-count').textContent).toBe('0')
     expect(screen.getByTestId('layer-1').textContent).toBe('Not In Layer')
@@ -204,17 +202,18 @@ describe('MarkerContext', () => {
   })
 
   test('does not remove from layer when bulk remove is cancelled', async () => {
-    jest.spyOn(window, 'confirm').mockReturnValueOnce(false)
-
     render(
-      <MarkerProvider>
-        <TestComponent />
-      </MarkerProvider>
+      <ConfirmationProvider>
+        <MarkerProvider>
+          <TestComponent />
+        </MarkerProvider>
+      </ConfirmationProvider>
     )
 
     await userEvent.click(screen.getByTestId('add-marker'))
     await userEvent.click(screen.getByTestId('save-1'))
     await userEvent.click(screen.getByTestId('remove-all-from-layer'))
+    await userEvent.click(screen.getByRole('button', { name: 'Cancel' }))
 
     expect(screen.getByTestId('layer-1').textContent).toBe('In Layer')
   })
@@ -236,9 +235,11 @@ describe('MarkerContext', () => {
     )
 
     render(
-      <MarkerProvider>
-        <TestComponent />
-      </MarkerProvider>
+      <ConfirmationProvider>
+        <MarkerProvider>
+          <TestComponent />
+        </MarkerProvider>
+      </ConfirmationProvider>
     )
 
     await waitFor(() => {
@@ -250,9 +251,11 @@ describe('MarkerContext', () => {
 
   test('persists layer markers across remount and drops session-only markers', async () => {
     const { unmount } = render(
-      <MarkerProvider>
-        <TestComponent />
-      </MarkerProvider>
+      <ConfirmationProvider>
+        <MarkerProvider>
+          <TestComponent />
+        </MarkerProvider>
+      </ConfirmationProvider>
     )
 
     await userEvent.click(screen.getByTestId('add-marker'))
@@ -266,9 +269,11 @@ describe('MarkerContext', () => {
     unmount()
 
     render(
-      <MarkerProvider>
-        <TestComponent />
-      </MarkerProvider>
+      <ConfirmationProvider>
+        <MarkerProvider>
+          <TestComponent />
+        </MarkerProvider>
+      </ConfirmationProvider>
     )
 
     await waitFor(() => {

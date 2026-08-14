@@ -18,6 +18,7 @@ import React, {
 // } from '@mbari/api-client'
 import toast from 'react-hot-toast'
 import { createLogger } from '@mbari/utils'
+import { useConfirm } from './ConfirmContext'
 
 const logger = createLogger('MarkerContext')
 
@@ -61,7 +62,7 @@ export interface MarkerContextType {
   deleteMarker: (id: string) => void
   saveMarkerToLayer: (id: string) => void
   removeMarkerFromLayer: (id: string) => void
-  removeAllMarkersFromLayer: () => void
+  removeAllMarkersFromLayer: () => Promise<void>
   selectAllMarkers: () => void
   deselectAllMarkers: () => void
   setMarkers: React.Dispatch<React.SetStateAction<MarkerData[]>>
@@ -119,6 +120,7 @@ export const MarkerProvider: React.FC<{ children: React.ReactNode }> = ({
     setSelectedMarkers([])
   }, [])
   const [selectedMarkerId, setSelectedMarkerId] = useState<string | null>(null)
+  const confirm = useConfirm()
 
   // Load after mount so SSR/static export never persists an empty [] over storage
   useEffect(() => {
@@ -270,14 +272,11 @@ export const MarkerProvider: React.FC<{ children: React.ReactNode }> = ({
   }, [])
 
   // Remove all markers from layer; keep them on the map
-  const removeAllMarkersFromLayer = useCallback(() => {
-    if (
-      !window.confirm(
-        'Remove all markers from layer? They will remain on the map.'
-      )
-    ) {
-      return
-    }
+  const removeAllMarkersFromLayer = useCallback(async () => {
+    const isConfirmed = await confirm({
+      title: 'Remove all markers from layer? They will remain on the map.',
+    })
+    if (!isConfirmed) return
 
     setMarkers((prevMarkers) =>
       prevMarkers.map((marker) =>
@@ -289,7 +288,7 @@ export const MarkerProvider: React.FC<{ children: React.ReactNode }> = ({
       duration: 3000,
       className: 'blue-toast',
     })
-  }, [])
+  }, [confirm])
 
   const addMarker = useCallback(
     (markerData: Omit<MarkerData, 'id'>) => {
