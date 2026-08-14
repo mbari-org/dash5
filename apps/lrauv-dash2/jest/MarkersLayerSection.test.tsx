@@ -7,6 +7,10 @@ import {
   VISIBILITY_TOOLTIP,
 } from '../components/MarkersLayerSection'
 import type { MarkerData } from '../components/MarkerContext'
+import { ConfirmationProvider } from '../components/ConfirmContext'
+
+const renderWithConfirm = (ui: React.ReactElement) =>
+  render(<ConfirmationProvider>{ui}</ConfirmationProvider>)
 
 const mockRemoveMarkerFromLayer = jest.fn()
 const mockRemoveAllMarkersFromLayer = jest.fn()
@@ -68,7 +72,7 @@ describe('MarkersLayerSection', () => {
   })
 
   test('shows empty state when no markers are saved to layer', () => {
-    render(<MarkersLayerSection {...baseProps} />)
+    renderWithConfirm(<MarkersLayerSection {...baseProps} />)
 
     expect(screen.getByText('Markers')).toBeInTheDocument()
     expect(screen.getByText('No markers saved to layer')).toBeInTheDocument()
@@ -78,7 +82,7 @@ describe('MarkersLayerSection', () => {
   })
 
   test('returns null when filtering and no markers match', () => {
-    const { container } = render(
+    const { container } = renderWithConfirm(
       <MarkersLayerSection
         {...baseProps}
         isFiltering
@@ -91,7 +95,7 @@ describe('MarkersLayerSection', () => {
   })
 
   test('renders saved markers and remove-all-from-layer action', () => {
-    render(
+    renderWithConfirm(
       <MarkersLayerSection
         {...baseProps}
         filteredMarkers={layerMarkers}
@@ -107,9 +111,7 @@ describe('MarkersLayerSection', () => {
   })
 
   test('removes a marker from layer when remove is confirmed', async () => {
-    jest.spyOn(window, 'confirm').mockReturnValueOnce(true)
-
-    render(
+    renderWithConfirm(
       <MarkersLayerSection
         {...baseProps}
         filteredMarkers={layerMarkers}
@@ -120,17 +122,13 @@ describe('MarkersLayerSection', () => {
     await userEvent.click(
       screen.getByRole('button', { name: 'Remove Waypoint A from layer' })
     )
+    await userEvent.click(screen.getByRole('button', { name: 'Confirm' }))
 
-    expect(window.confirm).toHaveBeenCalledWith(
-      'Remove "Waypoint A" from layer? It will remain on the map.'
-    )
     expect(mockRemoveMarkerFromLayer).toHaveBeenCalledWith('1')
   })
 
   test('does not remove a marker when remove is cancelled', async () => {
-    jest.spyOn(window, 'confirm').mockReturnValueOnce(false)
-
-    render(
+    renderWithConfirm(
       <MarkersLayerSection
         {...baseProps}
         filteredMarkers={layerMarkers}
@@ -141,12 +139,13 @@ describe('MarkersLayerSection', () => {
     await userEvent.click(
       screen.getByRole('button', { name: 'Remove Waypoint A from layer' })
     )
+    await userEvent.click(screen.getByRole('button', { name: 'Cancel' }))
 
     expect(mockRemoveMarkerFromLayer).not.toHaveBeenCalled()
   })
 
   test('calls removeAllMarkersFromLayer when bulk remove is clicked', async () => {
-    render(
+    renderWithConfirm(
       <MarkersLayerSection
         {...baseProps}
         filteredMarkers={layerMarkers}
@@ -164,7 +163,7 @@ describe('MarkersLayerSection', () => {
   test('toggles marker visibility when checkbox is clicked', async () => {
     const toggleMarkerVisibility = jest.fn()
 
-    render(
+    renderWithConfirm(
       <MarkersLayerSection
         {...baseProps}
         filteredMarkers={layerMarkers}
@@ -182,7 +181,7 @@ describe('MarkersLayerSection', () => {
   })
 
   test('centers the map on a marker when center is clicked', async () => {
-    render(
+    renderWithConfirm(
       <MarkersLayerSection
         {...baseProps}
         filteredMarkers={layerMarkers}
@@ -213,7 +212,7 @@ describe('MarkersLayerSection', () => {
       },
     ]
 
-    render(
+    renderWithConfirm(
       <MarkersLayerSection
         {...baseProps}
         filteredMarkers={wrappedMarkers}
@@ -232,7 +231,7 @@ describe('MarkersLayerSection', () => {
   })
 
   test('uses each marker iconColor in the layers list', () => {
-    const { container } = render(
+    const { container } = renderWithConfirm(
       <MarkersLayerSection
         {...baseProps}
         filteredMarkers={layerMarkers}

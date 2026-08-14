@@ -1,8 +1,9 @@
-import React from 'react'
+import React, { useCallback } from 'react'
 import { faMapMarkerAlt } from '@fortawesome/free-solid-svg-icons'
 import { TreeItem } from './MapLayersTreeItem'
 import { MarkerData, useMarkers } from './MarkerContext'
 import { useMapCamera } from './MapCameraContext'
+import { useConfirm } from './ConfirmContext'
 
 interface MarkersLayerSectionProps {
   isFiltering: boolean
@@ -41,6 +42,17 @@ export const MarkersLayerSection: React.FC<MarkersLayerSectionProps> = ({
   // Call context hooks directly — same pattern as StationsLayerSection.
   const { removeMarkerFromLayer, removeAllMarkersFromLayer } = useMarkers()
   const { setFlyToRequest } = useMapCamera()
+  const confirm = useConfirm()
+
+  const handleRemoveFromLayer = useCallback(
+    async (id: string, label: string) => {
+      const isConfirmed = await confirm({
+        title: `Remove "${label}" from layer? It will remain on the map.`,
+      })
+      if (isConfirmed) removeMarkerFromLayer(id)
+    },
+    [confirm, removeMarkerFromLayer]
+  )
 
   if (isFiltering && filteredMarkers.length === 0) return null
   return (
@@ -78,15 +90,9 @@ export const MarkersLayerSection: React.FC<MarkersLayerSectionProps> = ({
               mapCoords ? () => setFlyToRequest(mapCoords) : undefined
             }
             centerLabel={`Center map on ${markerLabel}`}
-            onRemoveClick={() => {
-              if (
-                window.confirm(
-                  `Remove "${markerLabel}" from layer? It will remain on the map.`
-                )
-              ) {
-                removeMarkerFromLayer(String(marker.id))
-              }
-            }}
+            onRemoveClick={() =>
+              handleRemoveFromLayer(String(marker.id), markerLabel)
+            }
             removeLabel={`Remove ${markerLabel} from layer`}
           />
         )
