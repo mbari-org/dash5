@@ -5,7 +5,6 @@ import {
   WMSTileLayer,
   LayersControl,
   ScaleControl,
-  useMapEvents,
   useMap,
 } from 'react-leaflet'
 import ReactLeafletGoogleLayer from 'react-leaflet-google-layer'
@@ -32,7 +31,7 @@ import {
 import { faCircleXmark } from '@fortawesome/free-regular-svg-icons'
 import { Measurement } from './Measurement'
 import MovingDot from './MovingDot'
-import { AreaComponent, PathComponent, MeasurementProps } from './Measurement'
+import { AreaComponent, PathComponent } from './Measurement'
 import { CenterView } from './MapViews'
 import type { MapProps } from './Map.types'
 import { createLogger } from '@mbari/utils'
@@ -200,6 +199,7 @@ const Map = React.forwardRef<L.Map, MapProps>(
     >([])
 
     const [count, setCount] = useState(0)
+    const [isMeasurementClosed, setIsMeasurementClosed] = useState(false)
     const [isHovering, setIsHovering] = useState(false)
 
     const measStyle = {
@@ -241,25 +241,19 @@ const Map = React.forwardRef<L.Map, MapProps>(
     ///////////////////////////////////////////////////////////////
     // Clicking on and determining map coordinates and formatting
     //////////////////////////////////////////////////////////////
-    const MeasureEvents = () => {
-      useMapEvents({
-        click(e) {
-          let dir = true
-          mapCoord = e.latlng.lat.toFixed(6) + '  /  ' + e.latlng.lng.toFixed(6)
-          let latDMS = ConvertDEGToDMS(e.latlng.lat, dir)
-          dir = false
-          let lngDMS = ConvertDEGToDMS(e.latlng.lng, dir)
-          dmsCoord = latDMS + ' / ' + lngDMS
-          setCount(count + 1)
-        },
-      })
-      return (
-        <div hidden>
-          {dmsCoord}
-          {mapCoord}
-        </div>
-      )
-    }
+    const handleVertexAdded = useCallback((lat: number, lng: number) => {
+      let dir = true
+      mapCoord = lat.toFixed(6) + '  /  ' + lng.toFixed(6)
+      const latDMS = ConvertDEGToDMS(lat, dir)
+      dir = false
+      const lngDMS = ConvertDEGToDMS(lng, dir)
+      dmsCoord = latDMS + ' / ' + lngDMS
+      setCount((c) => c + 1)
+    }, [])
+
+    const handleMeasurementClosed = useCallback(() => {
+      setIsMeasurementClosed(true)
+    }, [])
 
     let element = <div></div>
     if (count == 0) {
@@ -305,6 +299,34 @@ const Map = React.forwardRef<L.Map, MapProps>(
           <br />
         </>
       )
+    } else if (count >= 3 && isMeasurementClosed) {
+      element = (
+        <>
+          Last Point
+          <br />
+          <div style={measStyle}>
+            {dmsCoord}
+            <br />
+            {mapCoord}
+          </div>
+          <hr className="hr-round"></hr>
+          <br />
+          Perimeter Distance
+          <br />
+          <div style={measStyle}>
+            <PathComponent />
+          </div>
+          <hr className="hr-round"></hr>
+          <br />
+          Area
+          <br />
+          <div style={measStyle}>
+            <AreaComponent />
+          </div>
+          <hr className="hr-round"></hr>
+          <br />
+        </>
+      )
     } else if (count >= 3) {
       element = (
         <>
@@ -324,12 +346,8 @@ const Map = React.forwardRef<L.Map, MapProps>(
           </div>
           <hr className="hr-round"></hr>
           <br />
-          Area
+          Click the orange start point to close a polygon
           <br />
-          <div style={measStyle}>
-            <AreaComponent />
-          </div>
-          <hr className="hr-round"></hr>
           <br />
         </>
       )
@@ -378,9 +396,11 @@ const Map = React.forwardRef<L.Map, MapProps>(
 
       if (mode === 'open') {
         setCount(0)
+        setIsMeasurementClosed(false)
       }
       if (mode === 'measuring') {
         setCount(0)
+        setIsMeasurementClosed(false)
         setMeasurements((prev) => [
           ...prev,
           {
@@ -402,7 +422,8 @@ const Map = React.forwardRef<L.Map, MapProps>(
       }
       if (mode === 'cancelled') {
         setCount(0)
-        setMeasurements((prev) => [])
+        setIsMeasurementClosed(false)
+        setMeasurements((prev) => prev.filter((p) => !p.editing))
       }
       setMeasureMode(mode)
     }
@@ -899,8 +920,10 @@ const Map = React.forwardRef<L.Map, MapProps>(
             <React.Fragment key={m.id}>
               <Measurement
                 editing={m.editing}
-                showPopup={m.showPopup} // Pass the flag here
+                showPopup={m.showPopup}
                 onDelete={removeMeasurement(m.id)}
+                onClose={handleMeasurementClosed}
+                onVertexAdded={handleVertexAdded}
               />
               <MovingDot editing={m.editing} />
             </React.Fragment>
@@ -1009,7 +1032,7 @@ const Map = React.forwardRef<L.Map, MapProps>(
                       position: 'relative',
                       zIndex: isHovering ? 900 : 10,
                     }}
-                    onClick={(e) => changeMeasureMode('closed')(e)}
+                    onClick={(e) => changeMeasureMode('cancelled')(e)}
                   >
                     <FontAwesomeIcon icon={faCircleXmark} /> Cancel
                   </button>
@@ -1080,7 +1103,6 @@ const Map = React.forwardRef<L.Map, MapProps>(
             </Tippy>
           ) : null}
         </Control>
-        <MeasureEvents />
       </MapContainer>
     )
   }

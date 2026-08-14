@@ -54,6 +54,14 @@ li:hover {
   color: #00008b !important;
   transition-delay: 0ms;
 }
+.measurement-capture-icon {
+  background: transparent !important;
+  border: none !important;
+  cursor: crosshair !important;
+}
+.measurement-capture-icon.measurement-capture-over-close {
+  cursor: pointer !important;
+}
 #coords {
   color: #00008b;
 }

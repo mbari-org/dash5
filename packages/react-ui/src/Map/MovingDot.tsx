@@ -39,6 +39,7 @@ const MovingDot: React.FC<MeasurementProps> = ({ editing }) => {
             height: 7,
             borderRadius: 5,
             backgroundColor: '#00ff00',
+            pointerEvents: 'none',
           }}
         />
       ) : null}
