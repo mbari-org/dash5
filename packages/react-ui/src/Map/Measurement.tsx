@@ -361,18 +361,19 @@ export const Measurement: React.FC<MeasurementProps> = ({
     [measurements, isClosed]
   )
   const sfcArea: number = useMemo(
-    () => (isClosed ? calculateSurfaceArea(measurements) : 0),
-    [measurements, isClosed]
+    () => (measurements.length >= 3 ? calculateSurfaceArea(measurements) : 0),
+    [measurements]
   )
 
   let m = (pathDist * 1000).toFixed(2)
   let km = pathDist.toFixed(2)
   let m2 = sfcArea.toFixed(2)
 
-  const showPolygon = isClosed || featureKind === 'area'
-  const showPoint =
-    !showPolygon && featureKind === 'point' && measurements.length === 1
-  const showLine = !showPolygon && !showPoint && measurements.length >= 2
+  // Show polygon fill as soon as 3+ points exist, matching Dash4 behavior.
+  const showPolygon = measurements.length >= 3
+  const showPoint = featureKind === 'point' && measurements.length === 1
+  // Keep the polyline visible for placed-edge borders even when polygon fill is shown.
+  const showLine = !isClosed && measurements.length >= 2
   const canClose = Boolean(editing && !isClosed && measurements.length >= 3)
 
   const ClickOptions = () => (
@@ -485,7 +486,16 @@ export const Measurement: React.FC<MeasurementProps> = ({
       ) : null}
 
       {showPolygon && measurements.length >= 3 ? (
-        <Polygon ref={polygonRef} positions={measurements} color={color}>
+        <Polygon
+          key={`polygon-${isClosed}`}
+          ref={polygonRef}
+          positions={measurements}
+          color={color}
+          fillColor={color}
+          fillOpacity={0.15}
+          stroke={isClosed}
+          weight={2}
+        >
           <Popup>
             <ul className="flex flex-col">
               <>

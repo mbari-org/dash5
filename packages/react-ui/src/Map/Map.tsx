@@ -346,8 +346,12 @@ const Map = React.forwardRef<L.Map, MapProps>(
           </div>
           <hr className="hr-round"></hr>
           <br />
-          Click the orange start point to close a polygon
+          Area
           <br />
+          <div style={measStyle}>
+            <AreaComponent />
+          </div>
+          <hr className="hr-round"></hr>
           <br />
         </>
       )
@@ -620,6 +624,14 @@ const Map = React.forwardRef<L.Map, MapProps>(
         }
       }
     }, [isAddingMarkers])
+
+    // Dismiss the "open" measurement card when the user clicks anywhere outside it
+    useEffect(() => {
+      if (measureMode !== 'open') return
+      const handleClickOutside = () => setMeasureMode('closed')
+      document.addEventListener('click', handleClickOutside)
+      return () => document.removeEventListener('click', handleClickOutside)
+    }, [measureMode])
 
     const esriApiKey = process.env.NEXT_PUBLIC_ESRI_API_KEY
 
@@ -932,8 +944,8 @@ const Map = React.forwardRef<L.Map, MapProps>(
           {measureMode === 'open' ? (
             <div
               id="measModeOpen"
-              className="leaflet-pointer rounded bg-white text-stone-500"
-              onDragStart={() => setCursor('pointer')}
+              className="rounded bg-white p-2 text-stone-500"
+              onClick={(e) => e.stopPropagation()}
               style={{
                 border: '2px solid rgba(0,0,0,0.2)',
                 backgroundClip: 'padding-box',
@@ -941,42 +953,26 @@ const Map = React.forwardRef<L.Map, MapProps>(
                 maxWidth: 250,
               }}
             >
-              <p className="measure-info" cursor-pointer>
-                <a
-                  id="createMeasLink"
-                  className="mousechange:hover cursor-pointer:onHover leaflet-pointer text-bg-blue-600 hover:text-bg-blue-800 w-full bg-white"
-                  onClick={(e) => changeMeasureMode('measuring')(e)}
-                >
-                  <FontAwesomeIcon
-                    icon={faCircleCheck}
-                    size="xl"
-                    id="circleCheck"
-                    style={{
-                      marginLeft: '.5rem',
-                      marginRight: '0.25rem',
-                    }}
-                  />
-                  {'    '} Create A New Measurement {'    '}
-                </a>
-                <button
-                  id="closeMeasBtn"
-                  className="mousechange:hover cursor-pointer:onHover p-1"
-                  aria-label="Close Measurement"
-                  onClick={(e) => changeMeasureMode('closed')(e)}
-                  onMouseOver={handleMouseOver}
-                  style={{
-                    position: 'relative',
-                    zIndex: isHovering ? 900 : 10,
-                  }}
-                >
-                  <FontAwesomeIcon
-                    icon={faCircleXmark}
-                    size="xl"
-                    id="xMark"
-                    style={{ marginLeft: '1rem' }}
-                  />
-                </button>
-              </p>
+              <h6>
+                <span className="font-bold text-blue-600">
+                  Measure Distances and Areas
+                </span>
+              </h6>
+              <br />
+              <hr className="hr-round" />
+              <br />
+              <button
+                id="createMeasBtn"
+                className="leaflet-pointer w-full rounded border bg-blue-600 p-1 text-white hover:bg-blue-800"
+                onMouseOver={handleMouseOver}
+                style={{
+                  position: 'relative',
+                  zIndex: isHovering ? 900 : 10,
+                }}
+                onClick={(e) => changeMeasureMode('measuring')(e)}
+              >
+                <FontAwesomeIcon icon={faCircleCheck} /> Create New Measurement
+              </button>
             </div>
           ) : null}
           {/* Measurement mode: MEASURING */}
