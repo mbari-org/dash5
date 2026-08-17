@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import React, { useState, useEffect } from 'react'
 import { MeasurementProps } from './Measurement'
 
 const MovingDot: React.FC<MeasurementProps> = ({ editing }) => {
