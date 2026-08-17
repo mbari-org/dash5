@@ -2,21 +2,17 @@ import { getInstance } from '../getInstance'
 import { RequestConfig } from '../types'
 
 /**
- * Adds an extra notification email address to a user account via PUT /user.
+ * Adds an extra notification recipient via PUT /user.
  *
- * This is intentionally separate from `updateUser` because the two calls
- * target different use-cases and return different response shapes:
- *   - `updateUser`          → updates profile fields, returns `{ token }`
- *   - `addExtraEmailToUser` → manages extra email addresses, returns the
- *                             full user object including `extraEmails[]`
- *
- * Merging them would require a union return type and make call-sites harder
- * to type-check correctly.
+ * TethysDash 4.99.102: send `addExtraEmail` (singular). The former
+ * `addExtraEmails` field is deprecated and must not be sent together
+ * with `addExtraEmail` (that combination returns 400). `code` is
+ * required when adding a recipient.
  */
 export interface AddExtraEmailToUserParams {
   email: string
-  addExtraEmails: string
-  code?: string
+  addExtraEmail: string
+  code: string
 }
 
 export interface AddExtraEmailToUserResponse {
@@ -24,7 +20,6 @@ export interface AddExtraEmailToUserResponse {
     email: string
     firstName?: string
     lastName?: string
-    extraEmails?: string[]
     roles?: string[]
   }
 }

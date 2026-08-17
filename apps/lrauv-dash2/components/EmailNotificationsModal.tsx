@@ -580,7 +580,7 @@ const EmailNotificationsModal: React.FC<EmailNotificationsModalProps> = ({
     makeDefault?: boolean
   ) => {
     addExtraEmail(
-      { email: accountEmail, addExtraEmails: newEmail, code },
+      { email: accountEmail, addExtraEmail: newEmail, code },
       {
         onSuccess: () => {
           setShowAddEmail(false)
