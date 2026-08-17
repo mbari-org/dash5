@@ -625,15 +625,22 @@ const Map = React.forwardRef<L.Map, MapProps>(
       }
     }, [isAddingMarkers])
 
-    // Dismiss the "open" measurement card when the user clicks anywhere outside it
+    // Dismiss the "open" measurement card on click-outside or Escape key
     useEffect(() => {
       if (measureMode !== 'open') return
-      const handleClickOutside = () => {
+      const dismiss = () => {
         setMeasureMode('closed')
         setIsMeasuring(false)
       }
-      document.addEventListener('click', handleClickOutside)
-      return () => document.removeEventListener('click', handleClickOutside)
+      const handleKeyDown = (e: KeyboardEvent) => {
+        if (e.key === 'Escape') dismiss()
+      }
+      document.addEventListener('click', dismiss)
+      document.addEventListener('keydown', handleKeyDown)
+      return () => {
+        document.removeEventListener('click', dismiss)
+        document.removeEventListener('keydown', handleKeyDown)
+      }
     }, [measureMode])
 
     const esriApiKey = process.env.NEXT_PUBLIC_ESRI_API_KEY
