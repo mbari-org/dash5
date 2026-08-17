@@ -102,7 +102,7 @@ const calculateSurfaceArea = (positions: L.LatLng[]): number => {
 }
 
 export const PathComponent = () => {
-  let pMeters = (perimeter * 1000).toFixed(0)
+  let pMeters = (perimeter * 1000).toFixed(2)
   pMeters = pMeters.toString().replace(regex, ',')
   let pKMeters = perimeter.toFixed(2)
   pKMeters = pKMeters.toString().replace(regex, ',')
@@ -114,11 +114,15 @@ export const PathComponent = () => {
   )
 }
 export const AreaComponent = () => {
-  let sfcAM2 = surfaceArea.toFixed(0)
+  let sfcAM2 = surfaceArea.toFixed(2)
   sfcAM2 = sfcAM2.toString().replace(regex, ',')
+  let sfcKm2 = (surfaceArea / 1_000_000).toFixed(2)
+  sfcKm2 = sfcKm2.toString().replace(regex, ',')
   return (
     <div>
-      {sfcAM2} Sq. Meters <br />
+      {sfcAM2} Sq. Meters
+      <br />({sfcKm2} Sq. Km)
+      <br />
     </div>
   )
 }
@@ -368,6 +372,7 @@ export const Measurement: React.FC<MeasurementProps> = ({
   let m = (pathDist * 1000).toFixed(2)
   let km = pathDist.toFixed(2)
   let m2 = sfcArea.toFixed(2)
+  let km2 = (sfcArea / 1_000_000).toFixed(2)
 
   // Show polygon fill as soon as 3+ points exist, matching Dash4 behavior.
   const showPolygon = measurements.length >= 3
@@ -524,7 +529,8 @@ export const Measurement: React.FC<MeasurementProps> = ({
                   <span className="text-gray-600">Area:</span>
                   <br />
                   <span style={measStyle}>
-                    {m2.toString().replace(regex, ',')} Sq. Meters{' '}
+                    {m2.toString().replace(regex, ',')} Sq. Meters
+                    <br />({km2.toString().replace(regex, ',')} Sq. Km)
                   </span>
                   <br />
                   <hr></hr>
