@@ -202,10 +202,20 @@ const CaptureMarker: React.FC<{
     el?.classList.toggle('measurement-capture-over-close', hoveringRef.current)
   }, [icon])
 
-  const latlngFromEvent = (e: L.LeafletMouseEvent) => {
+  const latlngFromEvent = (e: L.LeafletMouseEvent): L.LatLng | null => {
     const orig = e.originalEvent
-    if (!orig || !('clientX' in orig)) return null
-    return map.mouseEventToLatLng(orig as MouseEvent)
+    if (!orig) return null
+    // Mouse / pointer events carry clientX directly.
+    if ('clientX' in orig) return map.mouseEventToLatLng(orig as MouseEvent)
+    // Touch events carry coordinates on touches[0] / changedTouches[0].
+    if ('touches' in orig) {
+      const touch =
+        (orig as TouchEvent).touches[0] ??
+        (orig as TouchEvent).changedTouches[0]
+      if (!touch) return null
+      return map.mouseEventToLatLng(touch as unknown as MouseEvent)
+    }
+    return null
   }
 
   return (
@@ -353,7 +363,13 @@ export const Measurement: React.FC<MeasurementProps> = ({
       handlePointEvents(latlng)
       const next = [...prev, latlng]
       calculateDistance(next, false)
-      surfaceArea = 0
+      // Keep surfaceArea current so AreaComponent in Map.tsx reads the right
+      // value on this render cycle (parent renders before child useMemo runs).
+      if (next.length >= 3) {
+        calculateSurfaceArea(next)
+      } else {
+        surfaceArea = 0
+      }
       setMeasurements(next)
       handleVertexAddedRef.current?.(latlng.lat, latlng.lng)
     },

@@ -628,7 +628,10 @@ const Map = React.forwardRef<L.Map, MapProps>(
     // Dismiss the "open" measurement card when the user clicks anywhere outside it
     useEffect(() => {
       if (measureMode !== 'open') return
-      const handleClickOutside = () => setMeasureMode('closed')
+      const handleClickOutside = () => {
+        setMeasureMode('closed')
+        setIsMeasuring(false)
+      }
       document.addEventListener('click', handleClickOutside)
       return () => document.removeEventListener('click', handleClickOutside)
     }, [measureMode])
