@@ -374,8 +374,12 @@ export const Measurement: React.FC<MeasurementProps> = ({
   let m2 = sfcArea.toFixed(2)
   let km2 = (sfcArea / 1_000_000).toFixed(2)
 
-  // Show polygon fill as soon as 3+ points exist, matching Dash4 behavior.
-  const showPolygon = measurements.length >= 3
+  // Show polygon fill preview while editing as soon as 3+ points exist (Dash4 parity).
+  // Once finished, only keep the Polygon layer when the shape was explicitly closed
+  // as an area — open paths finished as lines shed the fill.
+  const showPolygon = editing
+    ? measurements.length >= 3
+    : featureKind === 'area'
   const showPoint = featureKind === 'point' && measurements.length === 1
   // Keep the polyline visible for placed-edge borders even when polygon fill is shown.
   const showLine = !isClosed && measurements.length >= 2
