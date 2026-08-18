@@ -1,5 +1,4 @@
 import { useEffect, useState } from 'react'
-import axios from 'axios'
 import { NextPage } from 'next'
 import { useRouter } from 'next/router'
 import { DateTime } from 'luxon'
@@ -21,6 +20,7 @@ import {
   useTethysApiContext,
   useVehiclePicAndOnCall,
   useVehicleInfo,
+  getInstance,
 } from '@mbari/api-client'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { faChevronDown, faChevronUp } from '@fortawesome/free-solid-svg-icons'
@@ -196,7 +196,7 @@ const Vehicle: NextPage = () => {
   const baseUrl = process.env.NEXT_PUBLIC_API_HOST
   const { data: vehicleInfo } = useVehicleInfo(
     { name: vehicleName as string },
-    baseUrl ? axios.create({ baseURL: baseUrl, timeout: 5000 }) : undefined,
+    baseUrl ? getInstance({ baseURL: baseUrl }) : undefined,
     { enabled: !!vehicleName, staleTime: 0, refetchInterval: 30 * 1000 }
   )
   const vehicle = resolveVehicleInfo(vehicleInfo)

@@ -4,6 +4,7 @@ import {
   useVehiclePos,
   useSiteConfig,
   useMissionStartedEvent,
+  getInstance,
 } from '@mbari/api-client'
 import {
   CellVirtualizer,
@@ -20,7 +21,6 @@ import {
 } from '@mbari/utils'
 import React, { useEffect, useMemo } from 'react'
 import useTrackedVehicles from '../lib/useTrackedVehicles'
-import axios from 'axios'
 import { DateTime } from 'luxon'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { faCheck, faSync } from '@fortawesome/free-solid-svg-icons'
@@ -99,12 +99,7 @@ const ConnectedVehicleCellComponent: React.FC<{
   const baseUrl = process.env.NEXT_PUBLIC_API_HOST
   const { data: vehicleInfo, isLoading: vehicleInfoLoading } = useVehicleInfo(
     { name },
-    baseUrl
-      ? axios.create({
-          baseURL: baseUrl,
-          timeout: 5000,
-        })
-      : undefined,
+    baseUrl ? getInstance({ baseURL: baseUrl }) : undefined,
     {
       enabled: !!name,
       staleTime: 0,

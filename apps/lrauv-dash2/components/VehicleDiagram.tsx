@@ -2,10 +2,10 @@ import {
   useVehicleInfo,
   GetVehicleInfoResponse,
   useDepthSparkline,
+  getInstance,
 } from '@mbari/api-client'
 import React from 'react'
 import dynamic from 'next/dynamic'
-import axios from 'axios'
 import {
   FullWidthVehicleDiagram,
   FullWidthVehicleDiagramProps,
@@ -48,12 +48,7 @@ const VehicleDiagram: React.FC<{
   const baseUrl = process.env.NEXT_PUBLIC_API_HOST
   const { data: fetchedVehicleInfo } = useVehicleInfo(
     { name },
-    baseUrl
-      ? axios.create({
-          baseURL: baseUrl,
-          timeout: 5000,
-        })
-      : undefined,
+    baseUrl ? getInstance({ baseURL: baseUrl }) : undefined,
     {
       enabled: !!name && vehicleInfoProp === undefined,
       staleTime: 0,
