@@ -202,13 +202,21 @@ const DraggableMarker: React.FC<DraggableMarkerProps> = ({
     }
   }, [effectiveEditMode])
 
-  // Newly added markers auto-enter edit mode when editing is allowed.
+  // Newly added markers auto-enter edit mode once. Do not re-enter after the
+  // user dismisses the popup — otherwise Close / Leaflet X cannot leave edit
+  // lock and add-marker stays blocked.
+  const didAutoEnterNewMarkerEdit = useRef(false)
   useEffect(() => {
-    if (isNew && canEdit && !editMode) {
+    if (!isNew) {
+      didAutoEnterNewMarkerEdit.current = false
+      return
+    }
+    if (canEdit && !didAutoEnterNewMarkerEdit.current) {
+      didAutoEnterNewMarkerEdit.current = true
       setEditMode(true)
       setShowColorOptions(false)
     }
-  }, [isNew, editMode, canEdit])
+  }, [isNew, canEdit])
 
   // Keep the latest parent callback without re-subscribing when parents pass
   // a new inline function each render (which would re-fire this effect).
@@ -494,17 +502,29 @@ const DraggableMarker: React.FC<DraggableMarkerProps> = ({
     [id, onRemoveFromLayer]
   )
 
-  //  Handle closing the popup
-  const handleClosePopup = useCallback((e: React.MouseEvent) => {
-    e.stopPropagation()
-    e.preventDefault()
+  // Leaving the popup means the edit session is over (Dash4: dismiss and
+  // continue). Discard unsaved draft fields; do not delete the marker.
+  const exitEditMode = useCallback(() => {
+    if (!editMode) return
+    handleEditModeToggle(false)
+    setInputValue(label)
+    setSelectedColor(iconColor || '#FF0000')
+    setShowColorOptions(false)
+  }, [editMode, handleEditModeToggle, label, iconColor])
 
-    // Get the marker's Leaflet instance and close its popup
-    const marker = markerRef.current
-    if (marker) {
-      marker.closePopup()
-    }
-  }, [])
+  const handlePopupClose = useCallback(() => {
+    exitEditMode()
+  }, [exitEditMode])
+
+  const handleClosePopup = useCallback(
+    (e: React.MouseEvent) => {
+      e.stopPropagation()
+      e.preventDefault()
+      exitEditMode()
+      markerRef.current?.closePopup()
+    },
+    [exitEditMode]
+  )
 
   return (
     <Marker
@@ -517,6 +537,7 @@ const DraggableMarker: React.FC<DraggableMarkerProps> = ({
           handleDragEnd()
         },
         click: () => onClick?.(),
+        popupclose: handlePopupClose,
       }}
     >
       <Tooltip direction="top" offset={[-3, -10]} opacity={0.75}>
