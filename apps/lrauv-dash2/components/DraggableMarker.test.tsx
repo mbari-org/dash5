@@ -1,16 +1,27 @@
 import '@testing-library/jest-dom'
 import React from 'react'
-import { render, screen } from '@testing-library/react'
+import { render, screen, waitFor, act } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
+
+let capturedPopupClose: (() => void) | undefined
 
 jest.mock('react-leaflet', () => {
   const mockReact = require('react')
   return {
     Marker: mockReact.forwardRef(
       (
-        { children }: { children?: React.ReactNode },
+        {
+          children,
+          eventHandlers,
+        }: {
+          children?: React.ReactNode
+          eventHandlers?: { popupclose?: () => void }
+        },
         _ref: React.Ref<HTMLDivElement>
-      ) => <div data-testid="leaflet-marker">{children}</div>
+      ) => {
+        capturedPopupClose = eventHandlers?.popupclose
+        return <div data-testid="leaflet-marker">{children}</div>
+      }
     ),
     Popup: mockReact.forwardRef(
       (
@@ -109,6 +120,49 @@ describe('DraggableMarker write controls', () => {
     onEditStateChange.mockClear()
     await user.click(screen.getByTitle('Edit marker'))
     expect(onEditStateChange).toHaveBeenCalledWith(true)
+  })
+
+  it('leaves edit mode when the popup is dismissed', async () => {
+    const user = userEvent.setup()
+    const onEditStateChange = jest.fn()
+    render(
+      <DraggableMarker
+        {...baseProps}
+        onEdit={jest.fn()}
+        onEditStateChange={onEditStateChange}
+      />
+    )
+
+    await user.click(screen.getByTitle('Edit marker'))
+    onEditStateChange.mockClear()
+    act(() => {
+      capturedPopupClose?.()
+    })
+    await waitFor(() => {
+      expect(onEditStateChange).toHaveBeenCalledWith(false)
+    })
+  })
+
+  it('leaves edit mode when a new marker popup is dismissed', async () => {
+    const onEditStateChange = jest.fn()
+    render(
+      <DraggableMarker
+        {...baseProps}
+        isNew
+        onEdit={jest.fn()}
+        onDelete={jest.fn()}
+        onEditStateChange={onEditStateChange}
+      />
+    )
+
+    await screen.findByTitle('Edit marker label')
+    onEditStateChange.mockClear()
+    act(() => {
+      capturedPopupClose?.()
+    })
+    await waitFor(() => {
+      expect(onEditStateChange).toHaveBeenCalledWith(false)
+    })
   })
 
   it('uses the latest label when entering edit mode after an external rename', async () => {
