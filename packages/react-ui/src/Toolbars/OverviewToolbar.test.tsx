@@ -62,7 +62,6 @@ const props: OverviewToolbarProps = {
     <VehicleInfoCell
       isReachable={false}
       lastSatCommsTime={DateTime.now().minus({ minutes: 47 })}
-      nextCommsTime={DateTime.now().plus({ minutes: 15 })}
       onSelect={() => {
         console.log('event fired')
       }}

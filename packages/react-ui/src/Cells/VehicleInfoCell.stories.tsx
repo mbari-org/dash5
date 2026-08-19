@@ -35,7 +35,7 @@ Surfaced.args = {
   isReachable: true,
   lastSatCommsTime: DateTime.now().minus({ minutes: 15 }),
   lastCellCommsTime: DateTime.now().minus({ minutes: 10 }),
-  nextCommsTime: DateTime.now().plus({ minutes: 25 }),
+  nextCommsText: 'in 25m',
   onSelect: () => {
     console.log('event fired')
   },
@@ -51,7 +51,7 @@ export const Underwater = Template.bind({})
 Underwater.args = {
   isReachable: false,
   lastSatCommsTime: DateTime.now().minus({ hours: 1 }),
-  nextCommsTime: DateTime.now().plus({ minutes: 30 }),
+  nextCommsText: 'in 30m',
   onSelect: () => {
     console.log('event fired')
   },

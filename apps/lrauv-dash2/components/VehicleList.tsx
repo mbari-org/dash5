@@ -4,7 +4,7 @@ import {
   useVehiclePos,
   useSiteConfig,
   useMissionStartedEvent,
-  GetVehicleInfoResponse,
+  getInstance,
 } from '@mbari/api-client'
 import {
   CellVirtualizer,
@@ -17,21 +17,19 @@ import { useVehicleColors } from './VehicleColorsContext'
 import {
   capitalize,
   formatCompactDuration,
-  calculateRelativeNextComm,
   decodeHtmlEntities,
 } from '@mbari/utils'
 import React, { useEffect, useMemo } from 'react'
 import useTrackedVehicles from '../lib/useTrackedVehicles'
-import axios from 'axios'
 import { DateTime } from 'luxon'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { faCheck, faSync } from '@fortawesome/free-solid-svg-icons'
 import useGlobalModalId from '../lib/useGlobalModalId'
 import { useLastCommsTime } from '../lib/useLastCommsTime'
-import { useNeedCommsTime } from '../lib/useNeedCommsTime'
 import { useTick } from '../lib/useTick'
 import { useVehicleStatus } from '../lib/useVehicleStatus'
 import { deriveVehiclePropsStatus } from '../lib/deriveVehiclePropsStatus'
+import { resolveVehicleInfo } from '../lib/resolveVehicleInfo'
 
 const parsePos = (pos: string | number) => parseFloat(`${pos}`).toFixed(3)
 const calcPosition = (lat?: number | string, long?: number | string) =>
@@ -101,12 +99,7 @@ const ConnectedVehicleCellComponent: React.FC<{
   const baseUrl = process.env.NEXT_PUBLIC_API_HOST
   const { data: vehicleInfo, isLoading: vehicleInfoLoading } = useVehicleInfo(
     { name },
-    baseUrl
-      ? axios.create({
-          baseURL: baseUrl,
-          timeout: 5000,
-        })
-      : undefined,
+    baseUrl ? getInstance({ baseURL: baseUrl }) : undefined,
     {
       enabled: !!name,
       staleTime: 0,
@@ -137,26 +130,13 @@ const ConnectedVehicleCellComponent: React.FC<{
     externalHandleToggle(!isOpen, name)
   }
 
-  const vehicle =
-    vehicleInfo?.not_found || !vehicleInfo
-      ? undefined
-      : (vehicleInfo as GetVehicleInfoResponse)
+  const vehicle = resolveVehicleInfo(vehicleInfo)
 
   const deploymentStartTime = lastDeployment?.startEvent?.unixTime ?? 0
-
-  const missionStartTime =
-    missionStartedEvent?.[0]?.unixTime ?? deploymentStartTime
 
   const { lastSatCommsTime, lastCellCommsTime } = useLastCommsTime(
     name,
     deploymentStartTime
-  )
-  const { minutes: needCommsMinutes } = useNeedCommsTime(
-    name,
-    missionStartTime,
-    {
-      enabled: !!name && !!missionStartTime,
-    }
   )
   const nowMs = useTick(60_000)
   const { isLikelySurfaced } = useVehicleStatus({
@@ -190,13 +170,7 @@ const ConnectedVehicleCellComponent: React.FC<{
     ? `${formatCompactDuration(lastSatCommsDT, nowDT, { maxDays: 6 })} ago`
     : vehicle?.text_commago
 
-  const { text: nextCommsText } = calculateRelativeNextComm(
-    lastSatCommsTime,
-    lastCellCommsTime,
-    needCommsMinutes ?? 60,
-    nowMs
-  )
-  const formattedNextComm = nextCommsText ?? vehicle?.text_nextcomm
+  const formattedNextComm = vehicle?.text_nextcomm
 
   // Compute once; reused for vehicleProps.status and the recovered boolean.
   const derivedStatus = deriveVehiclePropsStatus({

@@ -2,10 +2,10 @@ import {
   useVehicleInfo,
   GetVehicleInfoResponse,
   useDepthSparkline,
+  getInstance,
 } from '@mbari/api-client'
 import React from 'react'
 import dynamic from 'next/dynamic'
-import axios from 'axios'
 import {
   FullWidthVehicleDiagram,
   FullWidthVehicleDiagramProps,
@@ -19,6 +19,7 @@ import clsx from 'clsx'
 import { DateTime } from 'luxon'
 import { decodeHtmlEntities, formatCompactDuration } from '@mbari/utils'
 import { deriveVehiclePropsStatus } from '../lib/deriveVehiclePropsStatus'
+import { resolveVehicleInfo } from '../lib/resolveVehicleInfo'
 import { useTethysApiContext } from 'api-client'
 
 const DepthSparkline = dynamic(
@@ -34,7 +35,7 @@ const VehicleDiagram: React.FC<{
   onBatteryClick?: FullWidthVehicleDiagramProps['onBatteryClick']
   lastCellCommsTime?: DateTime | null
   lastSatCommsTime?: DateTime | null
-  nextCommsText?: string | null
+  vehicleInfo?: GetVehicleInfoResponse | { not_found: boolean }
 }> = ({
   name,
   className,
@@ -42,19 +43,14 @@ const VehicleDiagram: React.FC<{
   onBatteryClick: handleBatteryClick,
   lastCellCommsTime: lastCellCommsDT,
   lastSatCommsTime: lastSatCommsDT,
-  nextCommsText,
+  vehicleInfo: vehicleInfoProp,
 }) => {
   const baseUrl = process.env.NEXT_PUBLIC_API_HOST
-  const { data: vehicleInfo } = useVehicleInfo(
+  const { data: fetchedVehicleInfo } = useVehicleInfo(
     { name },
-    baseUrl
-      ? axios.create({
-          baseURL: baseUrl,
-          timeout: 5000,
-        })
-      : undefined,
+    baseUrl ? getInstance({ baseURL: baseUrl }) : undefined,
     {
-      enabled: !!name,
+      enabled: !!name && vehicleInfoProp === undefined,
       staleTime: 0,
       refetchInterval: 30 * 1000,
     }
@@ -62,10 +58,8 @@ const VehicleDiagram: React.FC<{
 
   const now = DateTime.now()
 
-  const vehicle =
-    vehicleInfo?.not_found || !vehicleInfo
-      ? undefined
-      : (vehicleInfo as GetVehicleInfoResponse)
+  const vehicleInfo = vehicleInfoProp ?? fetchedVehicleInfo
+  const vehicle = resolveVehicleInfo(vehicleInfo)
 
   const missionText = vehicle?.text_mission ?? ''
 
@@ -94,7 +88,7 @@ const VehicleDiagram: React.FC<{
       })} ago`
     : vehicle?.text_commago
 
-  const formattedNextComm = nextCommsText ?? vehicle?.text_nextcomm
+  const formattedNextComm = vehicle?.text_nextcomm
 
   const { siteConfig } = useTethysApiContext()
 
