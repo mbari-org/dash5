@@ -85,7 +85,7 @@ export const determineCommandStatus = (
     sbdReceiptMap,
     sbdReceiveMap,
     {
-      countCellState2: via === 'cell' && !hasTimeoutNote,
+      countCellState2: via !== 'cellsat' && !hasTimeoutNote,
       freezeInTransit: hasTimeoutNote,
     }
   )

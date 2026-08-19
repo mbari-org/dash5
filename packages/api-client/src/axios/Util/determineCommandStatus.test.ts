@@ -789,4 +789,48 @@ describe('determineCommandStatus', () => {
 
     expect(result.status).toBe('sent')
   })
+
+  // Regression: multi-part command with no `via` tag must ACK when all chunks
+  // are delivered via cell state:2. Previously `countCellState2` used
+  // `via === 'cell'` which evaluated to false for undefined, so sbdChunks
+  // reported 0/N delivered and withChunkGate permanently demoted ack → sent.
+  it('should return ack for multi-part command with no via when all chunks delivered via state:2', () => {
+    const noViaMultiPart: GetEventsResponse = {
+      ...baseCellCommand,
+      eventId: 200,
+      note: 'command[timeout:60min]', // no via tag
+      data: [
+        'sched asap "load x.tl;set a 1 m" tok 1 3',
+        'sched asap "set b 2 m" tok 2 3',
+        'sched asap "run" tok 3 3',
+      ].join('\n'),
+    }
+    const sbdSendMap = new Map<string, GetEventsResponse[]>([
+      [
+        String(noViaMultiPart.eventId),
+        [1, 2, 3].map((n) => ({
+          ...cellSbdSend,
+          eventId: 200 + n,
+          refId: noViaMultiPart.eventId,
+          state: 2,
+        })),
+      ],
+    ])
+
+    const result = determineCommandStatus(
+      noViaMultiPart,
+      sbdSendMap,
+      new Map(),
+      new Map(),
+      new Map()
+    )
+
+    expect(result.status).toBe('ack')
+    expect(result.via).toBeUndefined()
+    expect(result.sbdChunks).toEqual({
+      delivered: 3,
+      inTransit: 0,
+      total: 3,
+    })
+  })
 })
