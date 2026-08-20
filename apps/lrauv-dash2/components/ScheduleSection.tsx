@@ -28,6 +28,8 @@ import {
   useDeleteCommandQueue,
   useCreateNote,
   timeoutExpiredRegEx,
+  clearSbdInTransitOnTimeout,
+  SbdChunkProgress,
 } from '@mbari/api-client'
 import { useQueryClient } from 'react-query'
 import useGlobalModalId from '../lib/useGlobalModalId'
@@ -238,6 +240,17 @@ export const ScheduleSection: React.FC<ScheduleSectionProps> = ({
     const map = new Map<number, string>()
     commsEventsResponse.data.forEach((e) => {
       if (e.eventId != null) map.set(e.eventId, e.status)
+    })
+    return map
+  }, [commsEventsResponse.data])
+
+  // eventId → multi-SBD chunk progress for Schedule row boxes (#797)
+  const commsSbdChunksLookup = useMemo(() => {
+    const map = new Map<number, SbdChunkProgress>()
+    commsEventsResponse.data.forEach((e) => {
+      if (e.eventId != null && e.sbdChunks) {
+        map.set(e.eventId, e.sbdChunks)
+      }
     })
     return map
   }, [commsEventsResponse.data])
@@ -1114,6 +1127,12 @@ export const ScheduleSection: React.FC<ScheduleSectionProps> = ({
         statusTooltip={
           cellStatus === 'ack' ? `Received by ${vehicleName}` : undefined
         }
+        sbdChunks={clearSbdInTransitOnTimeout(
+          cellStatus,
+          mission.event.eventId != null
+            ? commsSbdChunksLookup.get(mission.event.eventId)
+            : undefined
+        )}
         name={mission.event.user ?? 'Unknown'}
         scheduleStatus={
           (['pending', 'running'].includes(cellStatus) && scheduleStatus) ||
@@ -1268,6 +1287,12 @@ export const ScheduleSection: React.FC<ScheduleSectionProps> = ({
                 isLoadRunMission,
                 commsStatus: commsLookup.get(mission.event.eventId),
                 ...commsMsgIdLookup.get(mission.event.eventId),
+                sbdChunks: clearSbdInTransitOnTimeout(
+                  cellStatus,
+                  mission.event.eventId != null
+                    ? commsSbdChunksLookup.get(mission.event.eventId)
+                    : undefined
+                ),
               },
             },
           })
