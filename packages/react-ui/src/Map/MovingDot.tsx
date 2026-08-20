@@ -1,49 +1,35 @@
-import React, { useState, useEffect, SetStateAction } from 'react'
+import React, { useState, useEffect } from 'react'
 import { MeasurementProps } from './Measurement'
 
 const MovingDot: React.FC<MeasurementProps> = ({ editing }) => {
   const [x, setX] = useState(0)
   const [y, setY] = useState(0)
-  const [dotVisible, setDotVisibility] = useState(
-    null as null | { editing: boolean }
-  )
-  const [dot, setDot] = useState(false)
 
   useEffect(() => {
-    const handleMouseMove = (event: {
-      clientX: SetStateAction<number>
-      clientY: SetStateAction<number>
-    }) => {
+    if (!editing) return
+    const handleMouseMove = (event: MouseEvent) => {
       setX(event.clientX)
       setY(event.clientY)
     }
-    if (editing) {
-      document.addEventListener('mousemove', handleMouseMove)
-      setDot(true)
-    } else {
-      // Return a function to remove the event listener when the component is unmounted
-      document.addEventListener('mousemove', handleMouseMove)
-      setDot(false)
-    }
+    document.addEventListener('mousemove', handleMouseMove)
+    return () => document.removeEventListener('mousemove', handleMouseMove)
   }, [editing])
-  return (
-    <>
-      {editing ? (
-        <div
-          style={{
-            cursor: 'pointer',
-            position: 'fixed',
-            top: y - 5,
-            left: x - 5,
-            width: 7,
-            height: 7,
-            borderRadius: 5,
-            backgroundColor: '#00ff00',
-          }}
-        />
-      ) : null}
-    </>
-  )
+
+  return editing ? (
+    <div
+      data-testid="moving-dot"
+      style={{
+        position: 'fixed',
+        top: y - 5,
+        left: x - 5,
+        width: 7,
+        height: 7,
+        borderRadius: 5,
+        backgroundColor: '#00ff00',
+        pointerEvents: 'none',
+      }}
+    />
+  ) : null
 }
 
 export default MovingDot

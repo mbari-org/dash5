@@ -5,7 +5,6 @@ import {
   WMSTileLayer,
   LayersControl,
   ScaleControl,
-  useMapEvents,
   useMap,
 } from 'react-leaflet'
 import ReactLeafletGoogleLayer from 'react-leaflet-google-layer'
@@ -32,7 +31,7 @@ import {
 import { faCircleXmark } from '@fortawesome/free-regular-svg-icons'
 import { Measurement } from './Measurement'
 import MovingDot from './MovingDot'
-import { AreaComponent, PathComponent, MeasurementProps } from './Measurement'
+import { AreaComponent, PathComponent } from './Measurement'
 import { CenterView } from './MapViews'
 import type { MapProps } from './Map.types'
 import { createLogger } from '@mbari/utils'
@@ -200,6 +199,7 @@ const Map = React.forwardRef<L.Map, MapProps>(
     >([])
 
     const [count, setCount] = useState(0)
+    const [isMeasurementClosed, setIsMeasurementClosed] = useState(false)
     const [isHovering, setIsHovering] = useState(false)
 
     const measStyle = {
@@ -241,25 +241,19 @@ const Map = React.forwardRef<L.Map, MapProps>(
     ///////////////////////////////////////////////////////////////
     // Clicking on and determining map coordinates and formatting
     //////////////////////////////////////////////////////////////
-    const MeasureEvents = () => {
-      useMapEvents({
-        click(e) {
-          let dir = true
-          mapCoord = e.latlng.lat.toFixed(6) + '  /  ' + e.latlng.lng.toFixed(6)
-          let latDMS = ConvertDEGToDMS(e.latlng.lat, dir)
-          dir = false
-          let lngDMS = ConvertDEGToDMS(e.latlng.lng, dir)
-          dmsCoord = latDMS + ' / ' + lngDMS
-          setCount(count + 1)
-        },
-      })
-      return (
-        <div hidden>
-          {dmsCoord}
-          {mapCoord}
-        </div>
-      )
-    }
+    const handleVertexAdded = useCallback((lat: number, lng: number) => {
+      let dir = true
+      mapCoord = lat.toFixed(6) + '  /  ' + lng.toFixed(6)
+      const latDMS = ConvertDEGToDMS(lat, dir)
+      dir = false
+      const lngDMS = ConvertDEGToDMS(lng, dir)
+      dmsCoord = latDMS + ' / ' + lngDMS
+      setCount((c) => c + 1)
+    }, [])
+
+    const handleMeasurementClosed = useCallback(() => {
+      setIsMeasurementClosed(true)
+    }, [])
 
     let element = <div></div>
     if (count == 0) {
@@ -306,6 +300,9 @@ const Map = React.forwardRef<L.Map, MapProps>(
         </>
       )
     } else if (count >= 3) {
+      const distanceLabel = isMeasurementClosed
+        ? 'Perimeter Distance'
+        : 'Path Distance'
       element = (
         <>
           Last Point
@@ -317,7 +314,7 @@ const Map = React.forwardRef<L.Map, MapProps>(
           </div>
           <hr className="hr-round"></hr>
           <br />
-          Path Distance
+          {distanceLabel}
           <br />
           <div style={measStyle}>
             <PathComponent />
@@ -378,9 +375,11 @@ const Map = React.forwardRef<L.Map, MapProps>(
 
       if (mode === 'open') {
         setCount(0)
+        setIsMeasurementClosed(false)
       }
       if (mode === 'measuring') {
         setCount(0)
+        setIsMeasurementClosed(false)
         setMeasurements((prev) => [
           ...prev,
           {
@@ -402,7 +401,8 @@ const Map = React.forwardRef<L.Map, MapProps>(
       }
       if (mode === 'cancelled') {
         setCount(0)
-        setMeasurements((prev) => [])
+        setIsMeasurementClosed(false)
+        setMeasurements((prev) => prev.filter((p) => !p.editing))
       }
       setMeasureMode(mode)
     }
@@ -599,6 +599,29 @@ const Map = React.forwardRef<L.Map, MapProps>(
         }
       }
     }, [isAddingMarkers])
+
+    // Dismiss the "open" measurement card on click-outside or Escape key
+    useEffect(() => {
+      if (measureMode !== 'open') return
+      const dismiss = () => {
+        setMeasureMode('closed')
+        setIsMeasuring(false)
+      }
+      const handleKeyDown = (e: KeyboardEvent) => {
+        if (e.key === 'Escape') dismiss()
+      }
+      // Defer registering the click listener by one tick so the click that
+      // opened this card doesn't immediately trigger dismiss via bubbling.
+      const timer = setTimeout(() => {
+        document.addEventListener('click', dismiss)
+      }, 0)
+      document.addEventListener('keydown', handleKeyDown)
+      return () => {
+        clearTimeout(timer)
+        document.removeEventListener('click', dismiss)
+        document.removeEventListener('keydown', handleKeyDown)
+      }
+    }, [measureMode])
 
     const esriApiKey = process.env.NEXT_PUBLIC_ESRI_API_KEY
 
@@ -899,8 +922,10 @@ const Map = React.forwardRef<L.Map, MapProps>(
             <React.Fragment key={m.id}>
               <Measurement
                 editing={m.editing}
-                showPopup={m.showPopup} // Pass the flag here
+                showPopup={m.showPopup}
                 onDelete={removeMeasurement(m.id)}
+                onClose={handleMeasurementClosed}
+                onVertexAdded={handleVertexAdded}
               />
               <MovingDot editing={m.editing} />
             </React.Fragment>
@@ -909,8 +934,8 @@ const Map = React.forwardRef<L.Map, MapProps>(
           {measureMode === 'open' ? (
             <div
               id="measModeOpen"
-              className="leaflet-pointer rounded bg-white text-stone-500"
-              onDragStart={() => setCursor('pointer')}
+              className="rounded bg-white p-2 text-stone-500"
+              onClick={(e) => e.stopPropagation()}
               style={{
                 border: '2px solid rgba(0,0,0,0.2)',
                 backgroundClip: 'padding-box',
@@ -918,42 +943,26 @@ const Map = React.forwardRef<L.Map, MapProps>(
                 maxWidth: 250,
               }}
             >
-              <p className="measure-info" cursor-pointer>
-                <a
-                  id="createMeasLink"
-                  className="mousechange:hover cursor-pointer:onHover leaflet-pointer text-bg-blue-600 hover:text-bg-blue-800 w-full bg-white"
-                  onClick={(e) => changeMeasureMode('measuring')(e)}
-                >
-                  <FontAwesomeIcon
-                    icon={faCircleCheck}
-                    size="xl"
-                    id="circleCheck"
-                    style={{
-                      marginLeft: '.5rem',
-                      marginRight: '0.25rem',
-                    }}
-                  />
-                  {'    '} Create A New Measurement {'    '}
-                </a>
-                <button
-                  id="closeMeasBtn"
-                  className="mousechange:hover cursor-pointer:onHover p-1"
-                  aria-label="Close Measurement"
-                  onClick={(e) => changeMeasureMode('closed')(e)}
-                  onMouseOver={handleMouseOver}
-                  style={{
-                    position: 'relative',
-                    zIndex: isHovering ? 900 : 10,
-                  }}
-                >
-                  <FontAwesomeIcon
-                    icon={faCircleXmark}
-                    size="xl"
-                    id="xMark"
-                    style={{ marginLeft: '1rem' }}
-                  />
-                </button>
-              </p>
+              <h6>
+                <span className="font-bold text-blue-600">
+                  Measure Distances and Areas
+                </span>
+              </h6>
+              <br />
+              <hr className="hr-round" />
+              <br />
+              <button
+                id="createMeasBtn"
+                className="leaflet-pointer w-full rounded border bg-blue-600 p-1 text-white hover:bg-blue-800"
+                onMouseOver={handleMouseOver}
+                style={{
+                  position: 'relative',
+                  zIndex: isHovering ? 900 : 10,
+                }}
+                onClick={(e) => changeMeasureMode('measuring')(e)}
+              >
+                <FontAwesomeIcon icon={faCircleCheck} /> Create New Measurement
+              </button>
             </div>
           ) : null}
           {/* Measurement mode: MEASURING */}
@@ -1009,7 +1018,7 @@ const Map = React.forwardRef<L.Map, MapProps>(
                       position: 'relative',
                       zIndex: isHovering ? 900 : 10,
                     }}
-                    onClick={(e) => changeMeasureMode('closed')(e)}
+                    onClick={(e) => changeMeasureMode('cancelled')(e)}
                   >
                     <FontAwesomeIcon icon={faCircleXmark} /> Cancel
                   </button>
@@ -1069,7 +1078,7 @@ const Map = React.forwardRef<L.Map, MapProps>(
                   width: 42,
                   height: 42,
                 }}
-                onClick={(e) => changeMeasureMode('closed')(e)}
+                onClick={(e) => changeMeasureMode('open')(e)}
               >
                 <FontAwesomeIcon
                   icon={faRulerCombined}
@@ -1080,7 +1089,6 @@ const Map = React.forwardRef<L.Map, MapProps>(
             </Tippy>
           ) : null}
         </Control>
-        <MeasureEvents />
       </MapContainer>
     )
   }

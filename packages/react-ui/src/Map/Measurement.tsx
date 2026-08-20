@@ -1,16 +1,23 @@
-import { useState, useMemo, useEffect, useRef, SetStateAction } from 'react'
+import React, { useState, useMemo, useEffect, useRef, useCallback } from 'react'
 import {
   Circle,
-  useMapEvents,
+  CircleMarker,
+  Marker,
   Popup,
   Polygon,
   useMap,
   Polyline,
+  Tooltip,
 } from 'react-leaflet'
-import L, { LatLng, LatLngExpression, latLng } from 'leaflet'
+import L from 'leaflet'
 import { point, distance, polygon, area } from '@turf/turf'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { faArrowsToCircle, faTrashAlt } from '@fortawesome/free-solid-svg-icons'
+import {
+  classifyMeasurement,
+  isNearFirstVertex,
+  SymbolFeature,
+} from './Measurement.utils'
 
 const color = '#00ff00'
 const regex = /\B(?=(\d{3})+(?!\d))/g
@@ -95,7 +102,7 @@ const calculateSurfaceArea = (positions: L.LatLng[]): number => {
 }
 
 export const PathComponent = () => {
-  let pMeters = (perimeter * 1000).toFixed(0)
+  let pMeters = (perimeter * 1000).toFixed(2)
   pMeters = pMeters.toString().replace(regex, ',')
   let pKMeters = perimeter.toFixed(2)
   pKMeters = pKMeters.toString().replace(regex, ',')
@@ -107,16 +114,138 @@ export const PathComponent = () => {
   )
 }
 export const AreaComponent = () => {
-  let sfcAM2 = surfaceArea.toFixed(0)
+  let sfcAM2 = surfaceArea.toFixed(2)
   sfcAM2 = sfcAM2.toString().replace(regex, ',')
+  let sfcKm2 = (surfaceArea / 1_000_000).toFixed(2)
+  sfcKm2 = sfcKm2.toString().replace(regex, ',')
   return (
     <div>
-      {sfcAM2} Sq. Meters <br />
+      {sfcAM2} Sq. Meters
+      <br />({sfcKm2} Sq. Km)
+      <br />
     </div>
   )
 }
 
-export type SymbolFeature = 'point' | 'line' | 'area'
+export type { SymbolFeature } from './Measurement.utils'
+export {
+  classifyMeasurement,
+  CLOSE_RADIUS_PX,
+  isNearFirstVertex,
+  isWithinCloseRadius,
+} from './Measurement.utils'
+
+const makeCaptureIcon = (map: L.Map) => {
+  const size = map.getSize()
+  const w = Math.max(size.x * 2, 1)
+  const h = Math.max(size.y * 2, 1)
+  return L.divIcon({
+    className: 'measurement-capture-icon',
+    iconSize: [w, h],
+    iconAnchor: [size.x, size.y],
+    html: '<div style="width:100%;height:100%"></div>',
+  })
+}
+
+const VERTEX_RADIUS_PX = 3
+const CLOSE_VERTEX_RADIUS_PX = 5
+const CLOSE_VERTEX_HOVER_RADIUS_PX = 7
+
+// Invisible overlay matching leaflet-measure: clicks hit this marker, not the map.
+const CaptureMarker: React.FC<{
+  onClick: (latlng: L.LatLng) => void
+  closeTarget: L.LatLng | null
+  onHoverClose: (hovering: boolean) => void
+}> = ({ onClick, closeTarget, onHoverClose }) => {
+  const map = useMap()
+  const markerRef = useRef<L.Marker | null>(null)
+  const closeTargetRef = useRef(closeTarget)
+  const onHoverCloseRef = useRef(onHoverClose)
+  const hoveringRef = useRef(false)
+  const [center, setCenter] = useState(() => map.getCenter())
+  const [icon, setIcon] = useState(() => makeCaptureIcon(map))
+
+  useEffect(() => {
+    closeTargetRef.current = closeTarget
+  }, [closeTarget])
+  useEffect(() => {
+    onHoverCloseRef.current = onHoverClose
+  }, [onHoverClose])
+
+  const setHovering = (hovering: boolean) => {
+    if (hoveringRef.current === hovering) return
+    hoveringRef.current = hovering
+    const el = markerRef.current?.getElement()
+    el?.classList.toggle('measurement-capture-over-close', hovering)
+    onHoverCloseRef.current(hovering)
+  }
+
+  useEffect(() => {
+    if (!closeTarget) setHovering(false)
+  }, [closeTarget])
+
+  useEffect(() => {
+    const reposition = () => {
+      setCenter(map.getCenter())
+      setIcon(makeCaptureIcon(map))
+    }
+    map.on('move', reposition)
+    map.on('resize', reposition)
+    return () => {
+      map.off('move', reposition)
+      map.off('resize', reposition)
+    }
+  }, [map])
+
+  useEffect(() => {
+    const el = markerRef.current?.getElement()
+    el?.classList.toggle('measurement-capture-over-close', hoveringRef.current)
+  }, [icon])
+
+  const latlngFromEvent = (e: L.LeafletMouseEvent): L.LatLng | null => {
+    const orig = e.originalEvent
+    if (!orig) return null
+    // Mouse / pointer events carry clientX directly.
+    if ('clientX' in orig) return map.mouseEventToLatLng(orig as MouseEvent)
+    // Touch events carry coordinates on touches[0] / changedTouches[0].
+    if ('touches' in orig) {
+      const touch =
+        (orig as TouchEvent).touches[0] ??
+        (orig as TouchEvent).changedTouches[0]
+      if (!touch) return null
+      return map.mouseEventToLatLng(touch as unknown as MouseEvent)
+    }
+    return null
+  }
+
+  return (
+    <Marker
+      ref={markerRef}
+      position={center}
+      icon={icon}
+      opacity={0}
+      zIndexOffset={10000}
+      interactive
+      eventHandlers={{
+        click: (e) => {
+          L.DomEvent.stop(e)
+          const latlng = latlngFromEvent(e)
+          if (latlng) onClick(latlng)
+        },
+        mousemove: (e) => {
+          const target = closeTargetRef.current
+          const latlng = latlngFromEvent(e)
+          if (!target || !latlng) {
+            setHovering(false)
+            return
+          }
+          setHovering(isNearFirstVertex(latlng, target, map))
+        },
+        mouseout: () => setHovering(false),
+      }}
+    />
+  )
+}
 
 // MeasurementProps to be exported as interface
 export interface MeasurementProps {
@@ -124,6 +253,8 @@ export interface MeasurementProps {
   editing?: boolean
   showPopup?: boolean
   onDelete?: () => void
+  onClose?: () => void
+  onVertexAdded?: (lat: number, lng: number) => void
 }
 
 ////////////////////////////////////////////////////////
@@ -133,256 +264,142 @@ export const Measurement: React.FC<MeasurementProps> = ({
   editing,
   showPopup = false,
   onDelete: handleDelete,
+  onClose: handleClose,
+  onVertexAdded: handleVertexAdded,
 }) => {
   const map = useMap()
-  const feature = useRef('')
-  const isLine = useRef(false)
-  const isPoint = useRef(false)
-  // Create refs for each component type
   const circleRef = useRef<L.Circle | null>(null)
   const polylineRef = useRef<L.Polyline | null>(null)
   const polygonRef = useRef<L.Polygon | null>(null)
 
-  const clickCounter = useRef(0)
-  // Construct measurements into an array
   const [measurements, setMeasurements] = useState([] as L.LatLng[])
-  // Construct point measurement and the popup for the point measurement
-  const [pointCoords, setPointCoords] = useState([] as L.LatLngExpression[])
-  const [isPopupOpen, setIsPopupOpen] = useState(false)
-  // Construct a Click Counter
-  const [counter, setCounter] = useState(1)
-  let countArray: string | SetStateAction<number> = 0
+  const [isClosed, setIsClosed] = useState(false)
+  const [featureKind, setFeatureKind] = useState<SymbolFeature | ''>('')
+  const [closeTargetHovered, setCloseTargetHovered] = useState(false)
 
-  // Add an effect to handle popup opening
+  const measurementsRef = useRef(measurements)
+  const isClosedRef = useRef(isClosed)
+  const handleCloseRef = useRef(handleClose)
+  const handleVertexAddedRef = useRef(handleVertexAdded)
   useEffect(() => {
-    // If popup should be shown and we're not in edit mode
-    if (showPopup && !editing && measurements.length > 0) {
-      setTimeout(() => {
-        // Open popup on the appropriate component
-        if (isPoint.current && circleRef.current) {
+    measurementsRef.current = measurements
+  }, [measurements])
+  useEffect(() => {
+    isClosedRef.current = isClosed
+  }, [isClosed])
+  useEffect(() => {
+    handleCloseRef.current = handleClose
+  }, [handleClose])
+  useEffect(() => {
+    handleVertexAddedRef.current = handleVertexAdded
+  }, [handleVertexAdded])
+
+  useEffect(() => {
+    if (showPopup && !editing && measurements.length > 0 && featureKind) {
+      const timer = setTimeout(() => {
+        if (featureKind === 'point' && circleRef.current) {
           circleRef.current.openPopup()
-        } else if (isLine.current && polylineRef.current) {
+        } else if (featureKind === 'line' && polylineRef.current) {
           polylineRef.current.openPopup()
-        } else if (feature.current === 'area' && polygonRef.current) {
+        } else if (featureKind === 'area' && polygonRef.current) {
           polygonRef.current.openPopup()
         }
-      }, 100) // Small delay to ensure component is mounted
-
-      // Set local state so we know popup is open
-      setIsPopupOpen(true)
+      }, 100)
+      return () => clearTimeout(timer)
     }
-  }, [showPopup, editing, measurements, isPoint, isLine, feature])
+    return undefined
+  }, [showPopup, editing, measurements, featureKind])
 
-  // Remove the last measurement when editing is toggled to false as the useMapEvent handler
-  // will fire when the user clicks the done button on the map control.
   const wasEditing = useRef(editing)
-  const shouldShowPopupRef = useRef(showPopup)
 
-  // Update the ref when prop changes
-  useEffect(() => {
-    shouldShowPopupRef.current = showPopup
-  }, [showPopup])
-
-  // Finished Measuring
   useEffect(() => {
     if (!editing && wasEditing.current) {
-      // Your existing code for determining measurement type
-      clickCounter.current = clickCounter.current - 1
-      if (clickCounter.current === 1) {
-        isPoint.current = true
-        isLine.current = false
-        feature.current = 'point'
-      } else if (clickCounter.current === 2) {
-        isLine.current = true
-        isPoint.current = false
-        feature.current = 'line'
-      } else if (clickCounter.current >= 3) {
-        isLine.current = false
-        isPoint.current = false
-        feature.current = 'area'
-      }
+      setFeatureKind(
+        classifyMeasurement(measurementsRef.current.length, isClosedRef.current)
+      )
+    }
+    wasEditing.current = editing
+  }, [editing])
 
-      const finalMeasurements = [...measurements]
-      setMeasurements(finalMeasurements)
-      countArray == 0
-      finalMeasurements.pop()
-
-      // Auto-open popup when measurement is finished and showPopup is true
-      if (shouldShowPopupRef.current) {
-        setIsPopupOpen(true)
+  useEffect(() => {
+    if (editing && !isClosed) {
+      map.dragging.disable()
+      return () => {
+        map.dragging.enable()
       }
     }
+    return undefined
+  }, [editing, isClosed, map])
 
-    wasEditing.current = editing
-  }, [countArray, editing, map, measurements, setMeasurements])
-
-  // Center on Bounds
   const handleCenterClick = () => {
     map.fitBounds(
       measurements.map((fb) => [fb.lat, fb.lng]) as [number, number][]
     )
   }
 
-  // Measuring
-  useMapEvents({
-    mouseup(event) {
-      if (!editing) return
-      countArray = measurements.length
-      setCounter((prevCount) => prevCount + 1)
-      setMeasurements([...measurements, event.latlng])
-      clickCounter.current = countArray + 1 // !!!!Need to draw lines and areas. Will remove at end.
-      handlePointEvents(event.latlng)
-    },
-  })
-
   const handlePointEvents = (e: L.LatLng) => {
-    let lat = e.lat
-    let lng = e.lng
     let dir = true
     mapC = e.lat.toFixed(6) + '  /  ' + e.lng.toFixed(6)
-    let dmsLat = ConvertDEGToDMS(e.lat, dir)
+    const dmsLat = ConvertDEGToDMS(e.lat, dir)
     dir = false
-    let dmsLng = ConvertDEGToDMS(e.lng, dir)
+    const dmsLng = ConvertDEGToDMS(e.lng, dir)
     dmsC = dmsLat + ' / ' + dmsLng
-    return (
-      <div hidden>
-        {lat} {lng}
-        {dmsC}
-        <br />
-        {mapC}
-      </div>
-    )
   }
-  // Distance based on measurements.
-  // Treat as a closed polygon whenever there are 3+ points — this covers
-  // both active area measurement and the finished state, fixing the bug
-  // where feature.current is only set after the user finishes measuring.
-  const pathDist: number = useMemo(
-    () => calculateDistance(measurements, measurements.length >= 3),
-    [measurements]
+
+  const handleCaptureClick = useCallback(
+    (latlng: L.LatLng) => {
+      if (!editing || isClosedRef.current) return
+      const prev = measurementsRef.current
+      if (prev.length >= 3 && isNearFirstVertex(latlng, prev[0], map)) {
+        isClosedRef.current = true
+        calculateDistance(prev, true)
+        calculateSurfaceArea(prev)
+        setIsClosed(true)
+        setCloseTargetHovered(false)
+        handleCloseRef.current?.()
+        return
+      }
+      if (prev.length > 0 && prev[prev.length - 1].equals(latlng)) return
+      handlePointEvents(latlng)
+      const next = [...prev, latlng]
+      calculateDistance(next, false)
+      // Keep surfaceArea current so AreaComponent in Map.tsx reads the right
+      // value on this render cycle (parent renders before child useMemo runs).
+      if (next.length >= 3) {
+        calculateSurfaceArea(next)
+      } else {
+        surfaceArea = 0
+      }
+      setMeasurements(next)
+      handleVertexAddedRef.current?.(latlng.lat, latlng.lng)
+    },
+    [editing, map]
   )
-  // Area based on measurements
+
+  const pathDist: number = useMemo(
+    () => calculateDistance(measurements, isClosed),
+    [measurements, isClosed]
+  )
   const sfcArea: number = useMemo(
-    () => calculateSurfaceArea(measurements),
+    () => (measurements.length >= 3 ? calculateSurfaceArea(measurements) : 0),
     [measurements]
   )
 
   let m = (pathDist * 1000).toFixed(2)
   let km = pathDist.toFixed(2)
   let m2 = sfcArea.toFixed(2)
+  let km2 = (sfcArea / 1_000_000).toFixed(2)
 
-  // Point Component
-  const PointComponent = () => (
-    <Circle center={measurements[0]} radius={25} color={color}>
-      <Popup>
-        <ul className="flex flex-col">
-          <>
-            <h6>
-              <span
-                className="width=100% text-align=center font-bold text-blue-800"
-                justify-content="center"
-              >
-                Point Location
-              </span>
-            </h6>
-            <br />
-            <hr />
-            <br />
-            <li>
-              Point Coordinate:
-              <br />
-              <span style={measStyle}>
-                {dmsC}
-                <br />
-                {mapC}
-                <br />
-              </span>
-              <br />
-              <hr></hr>
-              <br />
-            </li>
-          </>
-          <ClickOptions />
-        </ul>
-      </Popup>
-    </Circle>
-  )
-  // Polyline Component
-  const PolylineComponent = () => (
-    <Polyline positions={measurements} color={color}>
-      <Popup>
-        <ul className="flex flex-col">
-          <>
-            <h6>
-              <span
-                className="width=100% text-align=center font-bold text-blue-800"
-                justify-content="center"
-              >
-                Linear Measurement
-              </span>
-            </h6>
-            <br />
-            <hr />
-            <br />
-            <li>
-              Path Distance:
-              <br />
-              <span style={measStyle}>
-                {m.toString().replace(regex, ',')} Meters ({km} Kilometers)
-              </span>
-              <br />
-              <hr></hr>
-              <br />
-            </li>
-          </>
-          <ClickOptions />
-        </ul>
-      </Popup>
-    </Polyline>
-  )
-  // Polygon Component
-  const PolygonComponent = () => (
-    <Polygon ref={polygonRef} positions={measurements} color={color}>
-      <Popup>
-        <ul className="flex flex-col">
-          <>
-            <h6>
-              <span
-                className="width=100% text-align=center font-bold text-blue-800"
-                justify-content="center"
-              >
-                Area Measurement
-              </span>
-            </h6>
-            <br />
-            <hr />
-            <br />
-            <li>
-              <span className="text-gray-600">Perimeter Distance:</span>
-              <br />
-              <span style={measStyle}>
-                {m.toString().replace(regex, ',')} Meters ({km} Kilometers)
-              </span>
-              <br />
-              <hr></hr>
-              <br />
-            </li>
-            <li>
-              <span className="text-gray-600">Area:</span>
-              <br />
-              <span style={measStyle}>
-                {m2.toString().replace(regex, ',')} Sq. Meters{' '}
-              </span>
-              <br />
-              <hr></hr>
-              <br />
-            </li>
-          </>
-          <ClickOptions />
-        </ul>
-      </Popup>
-    </Polygon>
-  )
+  // Show polygon fill preview while editing as soon as 3+ points exist (Dash4 parity).
+  // Once finished, only keep the Polygon layer when the shape was explicitly closed
+  // as an area — open paths finished as lines shed the fill.
+  const showPolygon = editing
+    ? measurements.length >= 3
+    : featureKind === 'area'
+  const showPoint = featureKind === 'point' && measurements.length === 1
+  // Keep the polyline visible for placed-edge borders even when polygon fill is shown.
+  const showLine = !isClosed && measurements.length >= 2
+  const canClose = Boolean(editing && !isClosed && measurements.length >= 3)
 
   const ClickOptions = () => (
     <li>
@@ -393,7 +410,7 @@ export const Measurement: React.FC<MeasurementProps> = ({
           className="hover:text-blue-200"
         >
           <FontAwesomeIcon icon={faArrowsToCircle} /> Center on this{' '}
-          {feature.current}
+          {featureKind}
           &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
         </a>
       ) : null}
@@ -409,172 +426,172 @@ export const Measurement: React.FC<MeasurementProps> = ({
     </li>
   )
 
-  // Modify your component rendering to use the isPopupOpen state directly
   return (
     <>
-      {measurements.map((m) => (
-        <>
-          <Circle
-            center={{
-              lat: m.lat,
-              lng: m.lng,
-            }}
-            fillColor={color}
-            fillOpacity={1}
-            color={color}
-            radius={25}
-            eventHandlers={{
-              click: () => {
-                setIsPopupOpen(true)
-              },
-            }}
-          />
-        </>
-      ))}
+      {editing && !isClosed ? (
+        <CaptureMarker
+          onClick={handleCaptureClick}
+          closeTarget={canClose ? measurements[0] : null}
+          onHoverClose={setCloseTargetHovered}
+        />
+      ) : null}
 
-      {isPoint.current ? (
-        <>
-          <Circle
-            ref={circleRef}
-            center={measurements[0]}
-            radius={25}
-            color={color}
-            eventHandlers={{
-              click: () => {
-                setIsPopupOpen(true)
-              },
+      {showPoint ? (
+        <Circle
+          ref={circleRef}
+          center={measurements[0]}
+          radius={25}
+          color={color}
+        >
+          <Popup>
+            <ul className="flex flex-col">
+              <>
+                <h6>
+                  <span
+                    className="width=100% text-align=center font-bold text-blue-800"
+                    justify-content="center"
+                  >
+                    Point Location
+                  </span>
+                </h6>
+                <br />
+                <hr />
+                <br />
+                <li>
+                  Point Coordinate:
+                  <br />
+                  <span style={measStyle}>
+                    {dmsC}
+                    <br />
+                    {mapC}
+                    <br />
+                  </span>
+                  <br />
+                  <hr></hr>
+                  <br />
+                </li>
+              </>
+              <ClickOptions />
+            </ul>
+          </Popup>
+        </Circle>
+      ) : null}
+
+      {showLine ? (
+        <Polyline ref={polylineRef} positions={measurements} color={color}>
+          <Popup>
+            <ul className="flex flex-col">
+              <>
+                <h6>
+                  <span
+                    className="width=100% text-align=center font-bold text-blue-800"
+                    justify-content="center"
+                  >
+                    Linear Measurement
+                  </span>
+                </h6>
+                <br />
+                <hr />
+                <br />
+                <li>
+                  Path Distance:
+                  <br />
+                  <span style={measStyle}>
+                    {m.toString().replace(regex, ',')} Meters ({km} Kilometers)
+                  </span>
+                  <br />
+                  <hr></hr>
+                  <br />
+                </li>
+              </>
+              <ClickOptions />
+            </ul>
+          </Popup>
+        </Polyline>
+      ) : null}
+
+      {showPolygon && measurements.length >= 3 ? (
+        <Polygon
+          key={`polygon-${isClosed}`}
+          ref={polygonRef}
+          positions={measurements}
+          color={color}
+          fillColor={color}
+          fillOpacity={0.15}
+          stroke={isClosed}
+          weight={2}
+        >
+          <Popup>
+            <ul className="flex flex-col">
+              <>
+                <h6>
+                  <span
+                    className="width=100% text-align=center font-bold text-blue-800"
+                    justify-content="center"
+                  >
+                    Area Measurement
+                  </span>
+                </h6>
+                <br />
+                <hr />
+                <br />
+                <li>
+                  <span className="text-gray-600">Perimeter Distance:</span>
+                  <br />
+                  <span style={measStyle}>
+                    {m.toString().replace(regex, ',')} Meters ({km} Kilometers)
+                  </span>
+                  <br />
+                  <hr></hr>
+                  <br />
+                </li>
+                <li>
+                  <span className="text-gray-600">Area:</span>
+                  <br />
+                  <span style={measStyle}>
+                    {m2.toString().replace(regex, ',')} Sq. Meters
+                    <br />({km2.toString().replace(regex, ',')} Sq. Km)
+                  </span>
+                  <br />
+                  <hr></hr>
+                  <br />
+                </li>
+              </>
+              <ClickOptions />
+            </ul>
+          </Popup>
+        </Polygon>
+      ) : null}
+
+      {measurements.map((vertex, i) => {
+        const isFirstClosable = canClose && i === 0
+        return (
+          <CircleMarker
+            key={`${vertex.lat}-${vertex.lng}-${i}`}
+            center={vertex}
+            interactive={false}
+            radius={
+              isFirstClosable
+                ? closeTargetHovered
+                  ? CLOSE_VERTEX_HOVER_RADIUS_PX
+                  : CLOSE_VERTEX_RADIUS_PX
+                : VERTEX_RADIUS_PX
+            }
+            pathOptions={{
+              fillColor: isFirstClosable ? '#f97316' : color,
+              fillOpacity: isFirstClosable ? 1 : 0.85,
+              color: isFirstClosable ? '#7c2d12' : color,
+              weight: isFirstClosable ? 2 : 1,
             }}
           >
-            <Popup>
-              <ul className="flex flex-col">
-                <>
-                  <h6>
-                    <span
-                      className="width=100% text-align=center font-bold text-blue-800"
-                      justify-content="center"
-                    >
-                      Point Location
-                    </span>
-                  </h6>
-                  <br />
-                  <hr />
-                  <br />
-                  <li>
-                    Point Coordinate:
-                    <br />
-                    <span style={measStyle}>
-                      {dmsC}
-                      <br />
-                      {mapC}
-                      <br />
-                    </span>
-                    <br />
-                    <hr></hr>
-                    <br />
-                  </li>
-                </>
-                <ClickOptions />
-              </ul>
-            </Popup>
-          </Circle>
-        </>
-      ) : isLine.current ? (
-        <>
-          <Polyline
-            ref={polylineRef}
-            positions={measurements}
-            color={color}
-            eventHandlers={{
-              click: () => {
-                setIsPopupOpen(true)
-              },
-            }}
-          >
-            <Popup>
-              <ul className="flex flex-col">
-                <>
-                  <h6>
-                    <span
-                      className="width=100% text-align=center font-bold text-blue-800"
-                      justify-content="center"
-                    >
-                      Linear Measurement
-                    </span>
-                  </h6>
-                  <br />
-                  <hr />
-                  <br />
-                  <li>
-                    Path Distance:
-                    <br />
-                    <span style={measStyle}>
-                      {m.toString().replace(regex, ',')} Meters ({km}{' '}
-                      Kilometers)
-                    </span>
-                    <br />
-                    <hr></hr>
-                    <br />
-                  </li>
-                </>
-                <ClickOptions />
-              </ul>
-            </Popup>
-          </Polyline>
-        </>
-      ) : (
-        <>
-          <Polygon
-            ref={polygonRef}
-            positions={measurements}
-            color={color}
-            eventHandlers={{
-              click: () => {
-                setIsPopupOpen(true)
-              },
-            }}
-          >
-            <Popup>
-              <ul className="flex flex-col">
-                <>
-                  <h6>
-                    <span
-                      className="width=100% text-align=center font-bold text-blue-800"
-                      justify-content="center"
-                    >
-                      Area Measurement
-                    </span>
-                  </h6>
-                  <br />
-                  <hr />
-                  <br />
-                  <li>
-                    <span className="text-gray-600">Perimeter Distance:</span>
-                    <br />
-                    <span style={measStyle}>
-                      {m.toString().replace(regex, ',')} Meters ({km}{' '}
-                      Kilometers)
-                    </span>
-                    <br />
-                    <hr></hr>
-                    <br />
-                  </li>
-                  <li>
-                    <span className="text-gray-600">Area:</span>
-                    <br />
-                    <span style={measStyle}>
-                      {m2.toString().replace(regex, ',')} Sq. Meters{' '}
-                    </span>
-                    <br />
-                    <hr></hr>
-                    <br />
-                  </li>
-                </>
-                <ClickOptions />
-              </ul>
-            </Popup>
-          </Polygon>
-        </>
-      )}
+            {isFirstClosable ? (
+              <Tooltip permanent direction="top">
+                Click to close polygon
+              </Tooltip>
+            ) : null}
+          </CircleMarker>
+        )
+      })}
     </>
   )
 }
