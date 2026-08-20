@@ -464,6 +464,136 @@ describe('determineCommandStatus', () => {
     expect(result.momsn).toBeUndefined()
   })
 
+  // #798: cellsat + cell state:2 must not show Received while sat may still
+  // be delivering remaining SBD chunks.
+  it('should return sent (not ack) for cellsat with state:2 sbdSend and no sat receive', () => {
+    const recentCellsatCommand: GetEventsResponse = {
+      ...baseCellsatCommand,
+      unixTime: Date.now() - 30 * 1000,
+      note: 'command[via: cellsat, timeout:5min]',
+    }
+    const cellsatCellSend: GetEventsResponse = {
+      ...cellSbdSend,
+      eventId: 52,
+      refId: recentCellsatCommand.eventId,
+      state: 2,
+      unixTime: Date.now() - 20 * 1000,
+      isoTime: new Date(Date.now() - 20 * 1000).toISOString(),
+    }
+    const sbdSendMap = new Map<string, GetEventsResponse>([
+      [String(recentCellsatCommand.eventId), cellsatCellSend],
+    ])
+
+    const result = determineCommandStatus(
+      recentCellsatCommand,
+      sbdSendMap,
+      new Map(),
+      new Map(),
+      new Map()
+    )
+
+    expect(result.status).toBe('sent')
+    expect(result.via).toBe('cellsat')
+    expect(result.commsIsoTime).toBe(cellsatCellSend.isoTime)
+  })
+
+  // #798: receipt without receive — still in flight on sat.
+  it('should return sent for cellsat with state:2 when sat receipt exists but no receive', () => {
+    const recentCellsatCommand: GetEventsResponse = {
+      ...baseCellsatCommand,
+      unixTime: Date.now() - 30 * 1000,
+      note: 'command[via: cellsat, timeout:5min]',
+    }
+    const cellsatCellSend: GetEventsResponse = {
+      ...cellSbdSend,
+      eventId: 53,
+      refId: recentCellsatCommand.eventId,
+      state: 2,
+      unixTime: Date.now() - 20 * 1000,
+      isoTime: new Date(Date.now() - 20 * 1000).toISOString(),
+    }
+    const cellsatReceipt: GetEventsResponse = {
+      ...baseSbdReceipt,
+      eventId: 54,
+      name: 'sbdReceipt',
+      refId: cellsatCellSend.eventId,
+      mtmsn: 456,
+    }
+    const sbdSendMap = new Map<string, GetEventsResponse>([
+      [String(recentCellsatCommand.eventId), cellsatCellSend],
+    ])
+    const sbdReceiptMap = new Map<string, GetEventsResponse>([
+      [String(cellsatCellSend.eventId), cellsatReceipt],
+    ])
+
+    const result = determineCommandStatus(
+      recentCellsatCommand,
+      sbdSendMap,
+      sbdReceiptMap,
+      new Map(),
+      new Map()
+    )
+
+    expect(result.status).toBe('sent')
+    expect(result.via).toBe('cellsat')
+    expect(result.mtmsn).toBe(456)
+    expect(result.momsn).toBeUndefined()
+  })
+
+  // #798: once sat receive lands, cellsat may ACK (not stuck on sent forever).
+  it('should return ack for cellsat with state:2 after sat receipt and receive', () => {
+    const recentCellsatCommand: GetEventsResponse = {
+      ...baseCellsatCommand,
+      unixTime: Date.now() - 30 * 1000,
+      note: 'command[via: cellsat, timeout:5min]',
+    }
+    const cellsatCellSend: GetEventsResponse = {
+      ...cellSbdSend,
+      eventId: 55,
+      refId: recentCellsatCommand.eventId,
+      state: 2,
+      unixTime: Date.now() - 20 * 1000,
+      isoTime: new Date(Date.now() - 20 * 1000).toISOString(),
+    }
+    const cellsatReceipt: GetEventsResponse = {
+      ...baseSbdReceipt,
+      eventId: 56,
+      name: 'sbdReceipt',
+      refId: cellsatCellSend.eventId,
+      mtmsn: 789,
+    }
+    const cellsatReceive: GetEventsResponse = {
+      ...baseSbdReceive,
+      eventId: 57,
+      mtmsn: 789,
+      momsn: 1011,
+      isoTime: new Date(Date.now() - 5 * 1000).toISOString(),
+    }
+    const sbdSendMap = new Map<string, GetEventsResponse>([
+      [String(recentCellsatCommand.eventId), cellsatCellSend],
+    ])
+    const sbdReceiptMap = new Map<string, GetEventsResponse>([
+      [String(cellsatCellSend.eventId), cellsatReceipt],
+    ])
+    const sbdReceiveMap = new Map<number, GetEventsResponse>([
+      [789, cellsatReceive],
+    ])
+
+    const result = determineCommandStatus(
+      recentCellsatCommand,
+      sbdSendMap,
+      sbdReceiptMap,
+      sbdReceiveMap,
+      new Map()
+    )
+
+    expect(result.status).toBe('ack')
+    expect(result.via).toBe('cellsat')
+    expect(result.mtmsn).toBe(789)
+    expect(result.momsn).toBe(1011)
+    expect(result.commsIsoTime).toBe(cellsatReceive.isoTime)
+  })
+
   it('should return timeout (not sent) for sat command with sbdSend state:1 when timeout note exists', () => {
     // Regression for #604: sat comms bypass the original cell-only timeout guard and
     // fall through to 'sent' (sbdSend exists, no sbdReceive). A timeout note is ground

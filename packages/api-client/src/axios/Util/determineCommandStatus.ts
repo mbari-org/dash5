@@ -88,8 +88,10 @@ export const determineCommandStatus = (
   }
 
   // A state of 2 indicates cell comms (direct socket delivery).
-  // Cell comms are considered ACKed when sent since an open socket means delivery.
-  if (matchingSbdSend?.state === 2 || via === undefined) {
+  // Pure cell: ACK when sent — an open socket means delivery.
+  // cellsat: do NOT ACK on cell alone (#798). Sat may still be delivering
+  // remaining SBD chunks; fall through to sat receipt/receive (or 'sent').
+  if (via !== 'cellsat' && (matchingSbdSend.state === 2 || via === undefined)) {
     // Explicitly clear mtmsn/momsn — cell comms do not carry Iridium SBD IDs.
     return {
       ...command,
