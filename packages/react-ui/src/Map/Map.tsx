@@ -299,35 +299,10 @@ const Map = React.forwardRef<L.Map, MapProps>(
           <br />
         </>
       )
-    } else if (count >= 3 && isMeasurementClosed) {
-      element = (
-        <>
-          Last Point
-          <br />
-          <div style={measStyle}>
-            {dmsCoord}
-            <br />
-            {mapCoord}
-          </div>
-          <hr className="hr-round"></hr>
-          <br />
-          Perimeter Distance
-          <br />
-          <div style={measStyle}>
-            <PathComponent />
-          </div>
-          <hr className="hr-round"></hr>
-          <br />
-          Area
-          <br />
-          <div style={measStyle}>
-            <AreaComponent />
-          </div>
-          <hr className="hr-round"></hr>
-          <br />
-        </>
-      )
     } else if (count >= 3) {
+      const distanceLabel = isMeasurementClosed
+        ? 'Perimeter Distance'
+        : 'Path Distance'
       element = (
         <>
           Last Point
@@ -339,7 +314,7 @@ const Map = React.forwardRef<L.Map, MapProps>(
           </div>
           <hr className="hr-round"></hr>
           <br />
-          Path Distance
+          {distanceLabel}
           <br />
           <div style={measStyle}>
             <PathComponent />
@@ -635,9 +610,14 @@ const Map = React.forwardRef<L.Map, MapProps>(
       const handleKeyDown = (e: KeyboardEvent) => {
         if (e.key === 'Escape') dismiss()
       }
-      document.addEventListener('click', dismiss)
+      // Defer registering the click listener by one tick so the click that
+      // opened this card doesn't immediately trigger dismiss via bubbling.
+      const timer = setTimeout(() => {
+        document.addEventListener('click', dismiss)
+      }, 0)
       document.addEventListener('keydown', handleKeyDown)
       return () => {
+        clearTimeout(timer)
         document.removeEventListener('click', dismiss)
         document.removeEventListener('keydown', handleKeyDown)
       }
@@ -1098,7 +1078,7 @@ const Map = React.forwardRef<L.Map, MapProps>(
                   width: 42,
                   height: 42,
                 }}
-                onClick={(e) => changeMeasureMode('closed')(e)}
+                onClick={(e) => changeMeasureMode('open')(e)}
               >
                 <FontAwesomeIcon
                   icon={faRulerCombined}
