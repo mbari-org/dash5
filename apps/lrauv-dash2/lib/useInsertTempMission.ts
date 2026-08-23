@@ -77,7 +77,7 @@ export const useInsertTempMission = ({
     globalModalMeta?.eventNote,
     globalModalMeta?.eventIsoTime,
     globalModalMeta?.eventVehicleName,
-    selectedMissionData?.latLonNamePairs,
+    selectedMissionData,
     missions,
     recentRuns,
     vehicleName,

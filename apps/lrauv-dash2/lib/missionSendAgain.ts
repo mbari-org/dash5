@@ -44,6 +44,7 @@ export const evaluateSendAgainGate = (input: {
   selectedMission?: string
   hasAutoSelected: boolean
   hasSelectedMissionData: boolean
+  scriptLoading: boolean
   scriptError: boolean
   eventData?: string | null
   hasEventScopedTempSelected: boolean
@@ -55,6 +56,7 @@ export const evaluateSendAgainGate = (input: {
   }
   // Bootstrap selection may already be fetching getScript before the event temp
   // locks hasAutoSelected — still abort if that script request fails.
+  if (input.scriptLoading) return { action: 'wait' }
   if (input.scriptError && input.selectedMission) {
     return { action: 'abort', reason: 'script-error' }
   }
