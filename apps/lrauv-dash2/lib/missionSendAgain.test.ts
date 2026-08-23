@@ -64,6 +64,7 @@ describe('evaluateSendAgainGate', () => {
     selectedMission: 'Science/sci2.tl',
     hasAutoSelected: true,
     hasSelectedMissionData: true,
+    scriptLoading: false,
     scriptError: false,
     eventData: 'load Science/sci2.tl;run',
     hasEventScopedTempSelected: true,
@@ -143,6 +144,16 @@ describe('evaluateSendAgainGate', () => {
         hasEventScopedTempSelected: false,
       })
     ).toEqual({ action: 'ready' })
+  })
+
+  it('waits while getScript is still loading (prevents false abort on cached error)', () => {
+    expect(
+      evaluateSendAgainGate({
+        ...readyBase,
+        scriptLoading: true,
+        scriptError: false,
+      })
+    ).toEqual({ action: 'wait' })
   })
 
   it('aborts when getScript fails', () => {
