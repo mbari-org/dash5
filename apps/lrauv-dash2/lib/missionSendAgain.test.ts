@@ -156,7 +156,7 @@ describe('evaluateSendAgainGate', () => {
     ).toEqual({ action: 'wait' })
   })
 
-  it('aborts when getScript fails', () => {
+  it('aborts when getScript fails and no cached data is available', () => {
     expect(
       evaluateSendAgainGate({
         ...readyBase,
@@ -165,6 +165,16 @@ describe('evaluateSendAgainGate', () => {
         hasEventScopedTempSelected: false,
       })
     ).toEqual({ action: 'abort', reason: 'script-error' })
+  })
+
+  it('does not abort when getScript fails but cached data is already present', () => {
+    expect(
+      evaluateSendAgainGate({
+        ...readyBase,
+        hasSelectedMissionData: true,
+        scriptError: true,
+      })
+    ).toEqual({ action: 'ready' })
   })
 
   it('is ready when mission is selected and script data is loaded', () => {
