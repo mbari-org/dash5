@@ -406,28 +406,27 @@ const MissionModal: React.FC<MissionModalProps> = ({
         previewTextFromEventData(innerCommandFromEventData(eventData))
       )
       setSendAgainReady(true)
-    }
-    // Trigger SBD preview so the chunk count appears immediately on the
-    // Review step without the user having to navigate through step 6 first.
-    // Use the stripped inner command to match what handleSchedule sends.
-    const innerCmd = innerCommandFromEventData(eventData)
-    if (innerCmd && vehicleName && axiosInstance) {
-      const requestId = ++previewRequestIdRef.current
-      getPreview(
-        { vehicle: vehicleName.toLowerCase(), commandText: innerCmd },
-        {
-          instance: axiosInstance,
-          headers: token ? { Authorization: `Bearer ${token}` } : undefined,
-        }
-      )
-        .then((resp) => {
-          if (requestId !== previewRequestIdRef.current) return
-          setPreviewSbdCount(countPreviewSbdChunks(resp))
-        })
-        .catch(() => {
-          if (requestId !== previewRequestIdRef.current) return
-          setPreviewSbdCount(undefined)
-        })
+      // Trigger SBD preview so the chunk count appears immediately on the
+      // Review step without the user having to navigate through step 6 first.
+      const innerCmd = innerCommandFromEventData(eventData)
+      if (innerCmd && vehicleName && axiosInstance) {
+        const requestId = ++previewRequestIdRef.current
+        getPreview(
+          { vehicle: vehicleName.toLowerCase(), commandText: innerCmd },
+          {
+            instance: axiosInstance,
+            headers: token ? { Authorization: `Bearer ${token}` } : undefined,
+          }
+        )
+          .then((resp) => {
+            if (requestId !== previewRequestIdRef.current) return
+            setPreviewSbdCount(countPreviewSbdChunks(resp))
+          })
+          .catch(() => {
+            if (requestId !== previewRequestIdRef.current) return
+            setPreviewSbdCount(undefined)
+          })
+      }
     }
   }, [
     sendAgain,
@@ -565,17 +564,19 @@ const MissionModal: React.FC<MissionModalProps> = ({
 
   if (sendAgain && !sendAgainReady) {
     return (
-      <div className="flex h-[calc(100vh-6rem)] flex-col items-center justify-center gap-3 bg-white text-sm text-stone-600">
-        <div role="status" aria-label="Loading mission to send again">
-          Loading mission…
+      <div className="fixed inset-0 z-50 flex h-screen w-screen flex-col items-center justify-center gap-3 bg-black/20 font-display backdrop-blur-sm">
+        <div className="flex flex-col items-center gap-3 rounded-md border bg-white px-8 py-6 text-sm text-stone-600">
+          <div role="status" aria-label="Loading mission to send again">
+            Loading mission…
+          </div>
+          <button
+            type="button"
+            className="rounded border border-stone-300 px-3 py-1 text-stone-700 hover:bg-stone-50"
+            onClick={onClose}
+          >
+            Cancel
+          </button>
         </div>
-        <button
-          type="button"
-          className="rounded border border-stone-300 px-3 py-1 text-stone-700 hover:bg-stone-50"
-          onClick={onClose}
-        >
-          Cancel
-        </button>
       </div>
     )
   }
