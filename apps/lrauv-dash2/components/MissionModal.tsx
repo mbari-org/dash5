@@ -336,6 +336,7 @@ const MissionModal: React.FC<MissionModalProps> = ({
     sendAgainAbortRef.current = false
     setSelectedMission(undefined)
     setPreviewText(undefined)
+    setPreviewSbdCount(undefined)
     setSendAgainReady(!sendAgain)
   }
 
@@ -484,7 +485,7 @@ const MissionModal: React.FC<MissionModalProps> = ({
     const sendAgainEventData = sendAgain
       ? globalModalId?.meta?.eventData
       : undefined
-    const formattedCommandText = sendAgainEventData ?? rebuiltCommandText
+    const formattedCommandText = sendAgainEventData || rebuiltCommandText
 
     setPreviewText(
       sendAgainEventData
