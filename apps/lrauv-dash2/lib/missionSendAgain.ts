@@ -11,6 +11,20 @@ export const previewTextFromEventData = (
   return `sched asap "${trimmed}"`
 }
 
+/**
+ * Return the raw inner command from event data, stripping any `sched … "…"`
+ * wrapper. This is what createCommand's commandText param expects — the
+ * backend handles scheduling separately via schedDate.
+ */
+export const innerCommandFromEventData = (
+  eventData?: string | null
+): string | undefined => {
+  if (!eventData?.trim()) return undefined
+  const trimmed = eventData.trim()
+  const match = trimmed.match(/^sched\s+\S+\s+"([\s\S]+)"$/i)
+  return match ? match[1] : trimmed
+}
+
 /** True when a list entry is the event-scoped temp from useInsertTempMission. */
 export const isEventScopedTempMission = (
   mission: {
