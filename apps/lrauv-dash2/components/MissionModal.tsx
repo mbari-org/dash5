@@ -399,11 +399,11 @@ const MissionModal: React.FC<MissionModalProps> = ({
     setSendAgainReady(true)
     // Trigger SBD preview so the chunk count appears immediately on the
     // Review step without the user having to navigate through step 6 first.
+    // Use raw eventData (not sched-wrapped) to match what handleSchedule sends.
     if (eventData && vehicleName && axiosInstance) {
       const requestId = ++previewRequestIdRef.current
-      const command = previewTextFromEventData(eventData) ?? ''
       getPreview(
-        { vehicle: vehicleName.toLowerCase(), commandText: command },
+        { vehicle: vehicleName.toLowerCase(), commandText: eventData },
         {
           instance: axiosInstance,
           headers: token ? { Authorization: `Bearer ${token}` } : undefined,
