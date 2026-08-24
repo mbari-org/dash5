@@ -30,6 +30,9 @@ export const innerCommandFromEventData = (
     .find((l) => l.trim())
     ?.trim()
   if (!firstLine) return undefined
+  // All tok-fragment lines in a multi-chunk SBD payload carry the same inner
+  // command — the tok N M suffix is a transmission-layer concern. Extracting
+  // from the first line is both correct and complete.
   const match = firstLine.match(/^sched\s+\S+\s+"([\s\S]+?)"(?:\s.*)?$/i)
   return match ? match[1] : firstLine
 }
