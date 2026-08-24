@@ -171,15 +171,18 @@ const DraggableMarker: React.FC<DraggableMarkerProps> = ({
       return
     }
 
-    // Use nested timeouts for proper sequencing
-    setTimeout(() => {
+    // Use nested timeouts for proper sequencing; clear both on cleanup so
+    // logout or an early unmount cannot retroactively reopen the popup.
+    let outerTimer: ReturnType<typeof setTimeout>
+    let innerTimer: ReturnType<typeof setTimeout>
+
+    outerTimer = setTimeout(() => {
       try {
         marker.openPopup()
         setEditMode(true)
         setShowColorOptions(false)
 
-        // Focus the input field
-        setTimeout(() => {
+        innerTimer = setTimeout(() => {
           if (inputRef.current) {
             inputRef.current.focus()
             inputRef.current.select()
@@ -190,7 +193,12 @@ const DraggableMarker: React.FC<DraggableMarkerProps> = ({
       } catch (err) {
         toast.error(`Error opening popup: ${(err as Error)?.message || err}`)
       }
-    }, 100) // Slightly longer delay
+    }, 100)
+
+    return () => {
+      clearTimeout(outerTimer)
+      clearTimeout(innerTimer)
+    }
   }, [isNew, id, canEdit])
 
   // Keep the popup open while actively editing
