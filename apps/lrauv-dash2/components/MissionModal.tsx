@@ -479,12 +479,12 @@ const MissionModal: React.FC<MissionModalProps> = ({
 
     // For Send again, use the original event command verbatim so the text
     // shown on Review matches exactly what is sent to TethysDash.
+    // commandText (sent to createCommand) uses the raw inner payload;
+    // previewTextFromEventData wraps it in "sched asap" for display only.
     const sendAgainEventData = sendAgain
       ? globalModalId?.meta?.eventData
       : undefined
-    const formattedCommandText = sendAgainEventData
-      ? previewTextFromEventData(sendAgainEventData) ?? rebuiltCommandText
-      : rebuiltCommandText
+    const formattedCommandText = sendAgainEventData ?? rebuiltCommandText
 
     setPreviewText(
       sendAgainEventData
