@@ -397,6 +397,27 @@ const MissionModal: React.FC<MissionModalProps> = ({
 
     setPreviewText(previewTextFromEventData(eventData))
     setSendAgainReady(true)
+    // Trigger SBD preview so the chunk count appears immediately on the
+    // Review step without the user having to navigate through step 6 first.
+    if (eventData && vehicleName && axiosInstance) {
+      const requestId = ++previewRequestIdRef.current
+      const command = previewTextFromEventData(eventData) ?? ''
+      getPreview(
+        { vehicle: vehicleName.toLowerCase(), commandText: command },
+        {
+          instance: axiosInstance,
+          headers: token ? { Authorization: `Bearer ${token}` } : undefined,
+        }
+      )
+        .then((resp) => {
+          if (requestId !== previewRequestIdRef.current) return
+          setPreviewSbdCount(countPreviewSbdChunks(resp))
+        })
+        .catch(() => {
+          if (requestId !== previewRequestIdRef.current) return
+          setPreviewSbdCount(undefined)
+        })
+    }
   }, [
     sendAgain,
     sendAgainSessionKey,
@@ -404,6 +425,7 @@ const MissionModal: React.FC<MissionModalProps> = ({
     selectedMissionData,
     isSelectedMissionLoading,
     isSelectedMissionError,
+    recentRunsLoading,
     frequentRunsLoading,
     isMissionListLoading,
     missionsWithTemporaryEntry,
@@ -443,7 +465,7 @@ const MissionModal: React.FC<MissionModalProps> = ({
         ?.missionPath ?? (selectedMissionId as string)
 
     const {
-      commandText: formattedCommandText,
+      commandText: rebuiltCommandText,
       schedDate,
       previewSbd,
     } = makeMissionCommand({
@@ -454,7 +476,20 @@ const MissionModal: React.FC<MissionModalProps> = ({
       units: unitsData,
     })
 
-    setPreviewText(previewSbd)
+    // For Send again, use the original event command verbatim so the text
+    // shown on Review matches exactly what is sent to TethysDash.
+    const sendAgainEventData = sendAgain
+      ? globalModalId?.meta?.eventData
+      : undefined
+    const formattedCommandText = sendAgainEventData
+      ? previewTextFromEventData(sendAgainEventData) ?? rebuiltCommandText
+      : rebuiltCommandText
+
+    setPreviewText(
+      sendAgainEventData
+        ? previewTextFromEventData(sendAgainEventData)
+        : previewSbd
+    )
 
     if (preview) {
       // Ask the backend how many SBD fragments this payload becomes (#797).
