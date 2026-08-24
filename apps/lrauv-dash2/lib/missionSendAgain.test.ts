@@ -31,6 +31,17 @@ describe('innerCommandFromEventData', () => {
     ).toBe('load Science/sci2.tl;run')
   })
 
+  it('handles multi-line SBD chunked payloads (same inner command on each line)', () => {
+    const multiLine = [
+      'sched asap "load Science/sci2.tl;run" tok 1 3',
+      'sched asap "load Science/sci2.tl;run" tok 2 3',
+      'sched asap "load Science/sci2.tl;run" tok 3 3',
+    ].join('\n')
+    expect(innerCommandFromEventData(multiLine)).toBe(
+      'load Science/sci2.tl;run'
+    )
+  })
+
   it('returns bare command unchanged', () => {
     expect(innerCommandFromEventData('load Science/sci2.tl;run')).toBe(
       'load Science/sci2.tl;run'
