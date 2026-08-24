@@ -17,6 +17,12 @@ describe('innerCommandFromEventData', () => {
     ).toBe('load Science/sci2.tl;run')
   })
 
+  it('strips sched asap wrapper with SBD tok suffix', () => {
+    expect(
+      innerCommandFromEventData('sched asap "load Science/sci2.tl;run" tok 1 3')
+    ).toBe('load Science/sci2.tl;run')
+  })
+
   it('strips sched with explicit date wrapper', () => {
     expect(
       innerCommandFromEventData(
