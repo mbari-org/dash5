@@ -30,6 +30,7 @@ import { useParameterOverrides } from '../lib/useParameterOverrides'
 import { useWaypointCalculations } from '../lib/useWaypointCalculations'
 import { useInsertTempMission } from '../lib/useInsertTempMission'
 import {
+  previewTextFromEventData,
   innerCommandFromEventData,
   evaluateSendAgainGate,
   isEventScopedTempMission,
@@ -396,12 +397,16 @@ const MissionModal: React.FC<MissionModalProps> = ({
       return
     }
 
-    // Seed the Review step preview. handleSchedule({ preview: true }) will
-    // replace this with the correct scheduling envelope when the user reaches
-    // step 6, but seeding here avoids a brief blank state.
-    const inner = innerCommandFromEventData(eventData) ?? ''
-    setPreviewText(inner ? `sched asap "${inner}"` : undefined)
-    setSendAgainReady(true)
+    // Seed the Review step preview on the first readiness transition only.
+    // Guarding on !sendAgainReady prevents a dependency-triggered re-run from
+    // overwriting a preview the operator already confirmed via Back + Continue.
+    // handleSchedule({ preview: true }) will replace this on step 6 entry.
+    if (!sendAgainReady) {
+      setPreviewText(
+        previewTextFromEventData(innerCommandFromEventData(eventData))
+      )
+      setSendAgainReady(true)
+    }
     // Trigger SBD preview so the chunk count appears immediately on the
     // Review step without the user having to navigate through step 6 first.
     // Use the stripped inner command to match what handleSchedule sends.
@@ -437,6 +442,7 @@ const MissionModal: React.FC<MissionModalProps> = ({
     missionsWithTemporaryEntry,
     globalModalId?.meta?.mission,
     globalModalId?.meta?.eventData,
+    sendAgainReady,
     onClose,
   ])
 
