@@ -478,3 +478,19 @@ test('hides SBD chunk note for single-part previews', () => {
   )
   expect(screen.queryByText(/SBD chunk/i)).not.toBeInTheDocument()
 })
+
+test('Send Command Cancel dismisses the modal instead of stepping back', () => {
+  const onCancel = jest.fn()
+  render(
+    <RecoilRoot>
+      <MissionModalView
+        {...props}
+        currentStepIndex={7}
+        previewText={'sched asap "load Science/sci2.tl;run"'}
+        onCancel={onCancel}
+      />
+    </RecoilRoot>
+  )
+  fireEvent.click(screen.getByRole('button', { name: /^Cancel$/i }))
+  expect(onCancel).toHaveBeenCalledTimes(1)
+})

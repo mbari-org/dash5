@@ -1,4 +1,10 @@
-import React, { useState, useRef, useMemo, useEffect } from 'react'
+import React, {
+  useState,
+  useRef,
+  useMemo,
+  useEffect,
+  useLayoutEffect,
+} from 'react'
 import {
   AccessoryButton,
   AccordionCells,
@@ -820,6 +826,7 @@ export const ScheduleSection: React.FC<ScheduleSectionProps> = ({
   const totalCellCount = baseTotalCellCount + (showLoadMore ? 1 : 0)
 
   const menuRef = useRef<HTMLDivElement | null>(null)
+  const [menuHeight, setMenuHeight] = useState(0)
   const [currentMoreMenu, setCurrentMoreMenu] = useState<{
     eventId?: number
     commandType: 'mission' | 'command'
@@ -838,6 +845,14 @@ export const ScheduleSection: React.FC<ScheduleSectionProps> = ({
       setCurrentMoreMenu({ ...target, rect })
     }
   }
+
+  useLayoutEffect(() => {
+    if (currentMoreMenu && menuRef.current) {
+      setMenuHeight(menuRef.current.offsetHeight)
+    } else if (!currentMoreMenu) {
+      setMenuHeight(0)
+    }
+  }, [currentMoreMenu])
 
   const scheduleStatus: ScheduleCellProps['scheduleStatus'] | null =
     // Find the most recent sched pause/resume command rather than relying on
@@ -1306,6 +1321,35 @@ export const ScheduleSection: React.FC<ScheduleSectionProps> = ({
     )
   }
 
+  const openMissionFromScheduleEvent = ({
+    eventId,
+    sendAgain = false,
+  }: {
+    eventId: number
+    sendAgain?: boolean
+  }) => {
+    const event = results.find((r) => r?.event.eventId === eventId)?.event
+    const missionPath =
+      rawMissionPathFromEventData(event?.data) ||
+      rawMissionPathFromEventData(event?.text) ||
+      ''
+    setGlobalModalId({
+      id: 'newMission',
+      meta: {
+        mission: missionPath,
+        eventId: eventId,
+        eventData: event?.data ?? event?.text ?? null,
+        eventUser: event?.user ?? null,
+        eventNote: event?.note ?? null,
+        eventIsoTime: event?.unixTime
+          ? new Date(event.unixTime).toISOString()
+          : null,
+        eventVehicleName: vehicleName,
+        sendAgain,
+      },
+    })
+  }
+
   const handleDuplicate = ({
     eventId,
     commandType,
@@ -1319,24 +1363,7 @@ export const ScheduleSection: React.FC<ScheduleSectionProps> = ({
     const isMission = isMissionCommand(event?.data, event?.text)
 
     if (commandType === 'mission' || isMission) {
-      const missionPath =
-        rawMissionPathFromEventData(event?.data) ||
-        rawMissionPathFromEventData(event?.text) ||
-        ''
-      setGlobalModalId({
-        id: 'newMission',
-        meta: {
-          mission: missionPath,
-          eventId: eventId,
-          eventData: event?.data ?? event?.text ?? null,
-          eventUser: event?.user ?? null,
-          eventNote: event?.note ?? null,
-          eventIsoTime: event?.unixTime
-            ? new Date(event.unixTime).toISOString()
-            : null,
-          eventVehicleName: vehicleName,
-        },
-      })
+      openMissionFromScheduleEvent({ eventId, sendAgain: false })
     } else {
       const mission = parseMissionCommand(event?.data ?? '')
       setGlobalModalId({
@@ -1348,6 +1375,11 @@ export const ScheduleSection: React.FC<ScheduleSectionProps> = ({
         },
       })
     }
+  }
+
+  /** Exact re-send: open Mission modal at Review & Send (#799). */
+  const handleSendAgain = ({ eventId }: { eventId: number }) => {
+    openMissionFromScheduleEvent({ eventId, sendAgain: true })
   }
 
   const queryClient = useQueryClient()
@@ -1427,17 +1459,6 @@ export const ScheduleSection: React.FC<ScheduleSectionProps> = ({
     element.remove()
   }
 
-  const handleMoveInQueue = ({
-    eventId,
-    commandType,
-  }: {
-    eventId: number
-    commandType: string
-    direction: 'up' | 'down'
-  }) => {
-    console.log('should move in queue:', eventId, commandType)
-  }
-
   const handleRefresh = () => {
     refetch()
   }
@@ -1483,9 +1504,7 @@ export const ScheduleSection: React.FC<ScheduleSectionProps> = ({
           className="fixed mr-2 mb-2 min-w-[140px] whitespace-nowrap"
           ref={menuRef}
           style={{
-            top:
-              (currentMoreMenu?.rect?.top ?? 0) -
-              (menuRef.current?.offsetHeight ?? 0),
+            top: (currentMoreMenu?.rect?.top ?? 0) - menuHeight,
             right:
               typeof window !== 'undefined'
                 ? window.innerWidth - (currentMoreMenu?.rect?.right ?? 0)
@@ -1499,6 +1518,20 @@ export const ScheduleSection: React.FC<ScheduleSectionProps> = ({
             options={[
               ...(authenticated
                 ? [
+                    ...(!currentMoreMenu.isDefaultMission &&
+                    currentMoreMenu.commandType === 'mission'
+                      ? [
+                          {
+                            label: 'Send again',
+                            onSelect: () => {
+                              handleSendAgain({
+                                eventId: currentMoreMenu?.eventId as number,
+                              })
+                              closeMoreMenu()
+                            },
+                          },
+                        ]
+                      : []),
                     {
                       label: `Use for new ${currentMoreMenu.commandType}`,
                       onSelect: () => {
@@ -1536,36 +1569,6 @@ export const ScheduleSection: React.FC<ScheduleSectionProps> = ({
                   closeMoreMenu()
                 },
               },
-              ...(authenticated
-                ? [
-                    {
-                      label: 'Move Up',
-                      onSelect: () => {
-                        handleMoveInQueue({
-                          eventId: currentMoreMenu?.eventId as number,
-                          commandType: currentMoreMenu?.commandType,
-                          direction: 'up',
-                        })
-                        closeMoreMenu()
-                      },
-                    },
-                    {
-                      label: 'Move Down',
-                      onSelect: () => {
-                        handleMoveInQueue({
-                          eventId: currentMoreMenu?.eventId as number,
-                          commandType: currentMoreMenu?.commandType,
-                          direction: 'down',
-                        })
-                        closeMoreMenu()
-                      },
-                    },
-                  ].filter(
-                    () =>
-                      ['running', 'pending'].includes(currentMoreMenu.status) &&
-                      !currentMoreMenu.isDefaultMission
-                  )
-                : []),
             ]}
           />
         </div>
