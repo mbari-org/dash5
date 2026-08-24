@@ -13,7 +13,8 @@ export const previewTextFromEventData = (
 
 /**
  * Return the raw inner command from event data, stripping any `sched … "…"`
- * wrapper (including optional trailing SBD part tokens, e.g. `tok 1 3`).
+ * wrapper (including optional trailing SBD part tokens, e.g. `tok 1 3`, and
+ * multi-line chunked payloads where each line carries the same inner command).
  * This is what createCommand's commandText param expects — the backend
  * handles scheduling separately via schedDate.
  */
@@ -21,9 +22,16 @@ export const innerCommandFromEventData = (
   eventData?: string | null
 ): string | undefined => {
   if (!eventData?.trim()) return undefined
-  const trimmed = eventData.trim()
-  const match = trimmed.match(/^sched\s+\S+\s+"([\s\S]+?)"(?:\s.*)?$/i)
-  return match ? match[1] : trimmed
+  // For multi-line SBD payloads all lines carry the same inner command —
+  // operate on the first non-empty line only.
+  const firstLine = eventData
+    .trim()
+    .split(/\r?\n/)
+    .find((l) => l.trim())
+    ?.trim()
+  if (!firstLine) return undefined
+  const match = firstLine.match(/^sched\s+\S+\s+"([\s\S]+?)"(?:\s.*)?$/i)
+  return match ? match[1] : firstLine
 }
 
 /** True when a list entry is the event-scoped temp from useInsertTempMission. */
