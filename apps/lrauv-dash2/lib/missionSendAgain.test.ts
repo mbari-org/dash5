@@ -1,8 +1,36 @@
 import {
   previewTextFromEventData,
+  innerCommandFromEventData,
   evaluateSendAgainGate,
   isEventScopedTempMission,
 } from './missionSendAgain'
+
+describe('innerCommandFromEventData', () => {
+  it('returns undefined for empty input', () => {
+    expect(innerCommandFromEventData(undefined)).toBeUndefined()
+    expect(innerCommandFromEventData('')).toBeUndefined()
+  })
+
+  it('strips sched asap wrapper', () => {
+    expect(
+      innerCommandFromEventData('sched asap "load Science/sci2.tl;run"')
+    ).toBe('load Science/sci2.tl;run')
+  })
+
+  it('strips sched with explicit date wrapper', () => {
+    expect(
+      innerCommandFromEventData(
+        'sched 2026-08-24T10:00:00Z "load Science/sci2.tl;run"'
+      )
+    ).toBe('load Science/sci2.tl;run')
+  })
+
+  it('returns bare command unchanged', () => {
+    expect(innerCommandFromEventData('load Science/sci2.tl;run')).toBe(
+      'load Science/sci2.tl;run'
+    )
+  })
+})
 
 describe('previewTextFromEventData', () => {
   it('returns undefined for empty input', () => {

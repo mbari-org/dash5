@@ -31,6 +31,7 @@ import { useWaypointCalculations } from '../lib/useWaypointCalculations'
 import { useInsertTempMission } from '../lib/useInsertTempMission'
 import {
   previewTextFromEventData,
+  innerCommandFromEventData,
   evaluateSendAgainGate,
   isEventScopedTempMission,
 } from '../lib/missionSendAgain'
@@ -400,11 +401,12 @@ const MissionModal: React.FC<MissionModalProps> = ({
     setSendAgainReady(true)
     // Trigger SBD preview so the chunk count appears immediately on the
     // Review step without the user having to navigate through step 6 first.
-    // Use raw eventData (not sched-wrapped) to match what handleSchedule sends.
-    if (eventData && vehicleName && axiosInstance) {
+    // Use the stripped inner command to match what handleSchedule sends.
+    const innerCmd = innerCommandFromEventData(eventData)
+    if (innerCmd && vehicleName && axiosInstance) {
       const requestId = ++previewRequestIdRef.current
       getPreview(
-        { vehicle: vehicleName.toLowerCase(), commandText: eventData },
+        { vehicle: vehicleName.toLowerCase(), commandText: innerCmd },
         {
           instance: axiosInstance,
           headers: token ? { Authorization: `Bearer ${token}` } : undefined,
@@ -478,14 +480,17 @@ const MissionModal: React.FC<MissionModalProps> = ({
       units: unitsData,
     })
 
-    // For Send again, use the original event command verbatim so the text
-    // shown on Review matches exactly what is sent to TethysDash.
-    // commandText (sent to createCommand) uses the raw inner payload;
-    // previewTextFromEventData wraps it in "sched asap" for display only.
+    // For Send again, strip any sched wrapper from eventData — createCommand
+    // expects the raw inner payload (e.g. "load Science/sci2.tl;run") and
+    // handles scheduling separately via schedDate. previewTextFromEventData
+    // adds the sched wrapper back for display only.
     const sendAgainEventData = sendAgain
       ? globalModalId?.meta?.eventData
       : undefined
-    const formattedCommandText = sendAgainEventData || rebuiltCommandText
+    const formattedCommandText =
+      (sendAgainEventData
+        ? innerCommandFromEventData(sendAgainEventData)
+        : undefined) || rebuiltCommandText
 
     setPreviewText(
       sendAgainEventData
