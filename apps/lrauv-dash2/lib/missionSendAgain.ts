@@ -55,9 +55,14 @@ export const evaluateSendAgainGate = (input: {
     return { action: 'abort', reason: 'no-match' }
   }
   // Bootstrap selection may already be fetching getScript before the event temp
-  // locks hasAutoSelected — still abort if that script request fails.
+  // locks hasAutoSelected — still abort if that script request fails, but only
+  // when there is no cached script data already available to proceed with.
   if (input.scriptLoading) return { action: 'wait' }
-  if (input.scriptError && input.selectedMission) {
+  if (
+    input.scriptError &&
+    input.selectedMission &&
+    !input.hasSelectedMissionData
+  ) {
     return { action: 'abort', reason: 'script-error' }
   }
   if (!input.hasAutoSelected || !input.selectedMission) {
