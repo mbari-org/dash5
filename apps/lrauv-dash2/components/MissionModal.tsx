@@ -493,7 +493,12 @@ const MissionModal: React.FC<MissionModalProps> = ({
 
     setPreviewText(
       sendAgainEventData
-        ? previewTextFromEventData(sendAgainEventData)
+        ? (() => {
+            const inner = innerCommandFromEventData(sendAgainEventData) ?? ''
+            return schedDate
+              ? `sched ${schedDate} "${inner}"`
+              : `sched asap "${inner}"`
+          })()
         : previewSbd
     )
 
