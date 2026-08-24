@@ -48,6 +48,9 @@ jest.mock('@mbari/api-client', () => ({
   useSbdOutgoingAlternativeAddresses: () => ({ data: [] }),
   useCreateCommand: () => ({ mutate: jest.fn(), isLoading: false }),
   useSiteConfig: () => ({ data: { vehicleNames: ['daphne'] } }),
+  useTethysApiContext: () => ({ axiosInstance: null, token: null }),
+  getPreview: jest.fn().mockResolvedValue({}),
+  countPreviewSbdChunks: jest.fn().mockReturnValue(undefined),
   getVia: () => 'cellsat',
   timeoutRegEx: /timeout\s+(\d+)/i,
 }))
