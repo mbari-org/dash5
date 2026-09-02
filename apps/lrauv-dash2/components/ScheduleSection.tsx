@@ -803,25 +803,27 @@ export const ScheduleSection: React.FC<ScheduleSectionProps> = ({
 
   const results = [scheduledCells, historicCells].flat()
 
-  // Pre-fetch mission IDs for pending rows (no vehicle-reported missionId yet).
-  // Scoped to scheduledCells only — historic rows either already have a
-  // missionId from telemetry or are no longer actionable.
+  // Pre-fetch mission IDs for all rows without a vehicle-reported missionId.
+  // Includes historic rows so the resolved ID persists if a pending row is
+  // demoted to history before telemetry arrives (e.g. timeout, cancel).
   // useQueries runs all lookups in parallel and caches aggressively — mission
   // definitions don't change during a deployment.
   const pendingScriptPaths = useMemo(() => {
     const paths = new Set<string>()
-    for (const m of scheduledCells ?? []) {
+    for (const m of results ?? []) {
       if (!m.missionId) {
         const p = rawMissionPathFromEventData(m.event.data ?? m.event.text)
         if (p) paths.add(p)
       }
     }
     return Array.from(paths)
-  }, [scheduledCells])
+  }, [results])
 
   const scriptIdQueries = useQueries(
     pendingScriptPaths.map((path) => ({
-      queryKey: ['commands', 'script', path],
+      // Key matches useScript's shape (['commands', 'script', params]) so the
+      // cache is shared with CommandModal and useMissionData lookups.
+      queryKey: ['commands', 'script', { path }],
       queryFn: () =>
         getScript(
           { path },
