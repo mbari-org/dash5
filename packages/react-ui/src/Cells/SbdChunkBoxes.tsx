@@ -47,7 +47,10 @@ export const SbdChunkBoxes: React.FC<SbdChunkBoxesProps> = ({
   return (
     <div
       className={clsx('inline-flex items-center gap-2', className)}
-      aria-label={title}
+      // aria-label uses the short label (e.g. "SBD 2 of 4") for a concise accessible name.
+      // title carries the full delivered/in-transit/pending detail for the hover tooltip.
+      // Do not change aria-label to title — the longer string breaks getByLabelText in tests.
+      aria-label={label}
       title={title}
     >
       {showLabel && (
