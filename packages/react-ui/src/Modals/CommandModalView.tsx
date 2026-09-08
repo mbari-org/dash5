@@ -349,12 +349,7 @@ const CommandModalBody: React.FC<CommandModalViewProps> = ({
     <ConfirmVehicleDialog
       loading={loading}
       className={className}
-      style={{
-        ...style,
-        height: 'calc(100vh - 6rem)',
-        minHeight: 'calc(100vh - 6rem)',
-        maxHeight: 'calc(100vh - 6rem)',
-      }}
+      style={style}
       snapTo="top-right"
       extraWideModal
       bodyOverflowHidden
@@ -369,12 +364,7 @@ const CommandModalBody: React.FC<CommandModalViewProps> = ({
     <Modal
       loading={loading}
       className={className}
-      style={{
-        ...style,
-        height: 'calc(100vh - 6rem)',
-        minHeight: 'calc(100vh - 6rem)',
-        maxHeight: 'calc(100vh - 6rem)',
-      }}
+      style={style}
       title={
         <StepProgress
           steps={steps}

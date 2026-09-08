@@ -444,18 +444,9 @@ const MissionModalBody: React.FC<MissionModalViewProps> = ({
     }
   }, [editable, setWaypointsEditable, currentStep, steps, showSummary])
 
-  // Fixed frame for every step so short content cannot shrink the shell and
-  // expose Schedule (or other UI) underneath for accidental clicks.
-  // calc accounts for Modal's my-12 vertical margins.
-  const missionModalFrameStyle: React.CSSProperties = {
-    ...style,
-    height: 'calc(100vh - 6rem)',
-    minHeight: 'calc(100vh - 6rem)',
-    maxHeight: 'calc(100vh - 6rem)',
-  }
   const missionModalFrame = {
     className,
-    style: missionModalFrameStyle,
+    style,
     snapTo: 'top-right' as const,
     extraWideModal: true,
     bodyOverflowHidden: true,
