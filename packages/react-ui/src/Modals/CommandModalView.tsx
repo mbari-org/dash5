@@ -348,6 +348,11 @@ const CommandModalBody: React.FC<CommandModalViewProps> = ({
   return currentStep === 3 ? (
     <ConfirmVehicleDialog
       loading={loading}
+      className={className}
+      style={style}
+      snapTo="top-right"
+      extraWideModal
+      bodyOverflowHidden
       vehicle={vehicleName}
       vehicleList={vehicles ?? [vehicleName]}
       command={commandText ?? ''}
@@ -397,77 +402,79 @@ const CommandModalBody: React.FC<CommandModalViewProps> = ({
       snapTo="top-right"
       open
     >
-      {currentStep === 0 && (
-        <SelectCommandStep
-          selectedId={selectedCommandId}
-          commands={commands}
-          recentCommands={recentCommands}
-          frequentCommands={frequentCommands}
-          onSelectCommandId={handleSelectCommandId}
-          onMoreInfo={handleMoreInfo}
-          vehicleName={vehicleName}
-          showAdvanced={showAdvanced}
-          onToggleAdvanced={handleToggleAdvanced}
-        />
-      )}
-
-      {currentStep === 1 &&
-        (useTemplateStep ? (
-          <BuildTemplatedCommandStep
-            selectedCommandName={selectedCommandName ?? 'unknown command'}
-            syntaxVariations={syntaxVariations}
-            units={units}
-            moduleNames={moduleNames}
-            onUpdateField={handleTemplateParameterChange}
-            selectedSyntax={selectedSyntax}
-            onSelectSyntax={setSelectedSyntax}
-            selectedParameters={selectedParameters}
-            serviceTypes={serviceTypes}
-            variableTypes={variableTypes}
-            missions={missions}
-            universals={universals}
-            decimationTypes={decimationTypes}
-            commands={[
-              {
-                name: 'Command',
-                options: commands.map((c) => c.id),
-              },
-            ]}
-            onCommandTextChange={setCommandText}
-          />
-        ) : (
-          <BuildFreeformCommandStep
-            command={commandText ?? selectedCommandName ?? ''}
-            onCommandTextChange={setCommandText}
-          />
-        ))}
-
-      {currentStep === 2 &&
-        (selectedCommandId || commandText || selectedCommandName) &&
-        (showAlternateAddress ? (
-          <AlternativeAddressStep
+      <div className="flex h-full min-h-0 flex-col overflow-auto">
+        {currentStep === 0 && (
+          <SelectCommandStep
+            selectedId={selectedCommandId}
+            commands={commands}
+            recentCommands={recentCommands}
+            frequentCommands={frequentCommands}
+            onSelectCommandId={handleSelectCommandId}
+            onMoreInfo={handleMoreInfo}
             vehicleName={vehicleName}
-            mission={
-              commandText ??
-              getCommandNameById(selectedCommandId ?? '') ??
-              selectedCommandName ??
-              ''
-            }
-            commandDescriptor="command"
-            alternativeAddresses={alternativeAddresses}
+            showAdvanced={showAdvanced}
+            onToggleAdvanced={handleToggleAdvanced}
           />
-        ) : (
-          <ScheduleStep
-            vehicleName={vehicleName}
-            commandText={
-              commandText ??
-              getCommandNameById(selectedCommandId ?? '') ??
-              selectedCommandName ??
-              ''
-            }
-            commandDescriptor="command"
-          />
-        ))}
+        )}
+
+        {currentStep === 1 &&
+          (useTemplateStep ? (
+            <BuildTemplatedCommandStep
+              selectedCommandName={selectedCommandName ?? 'unknown command'}
+              syntaxVariations={syntaxVariations}
+              units={units}
+              moduleNames={moduleNames}
+              onUpdateField={handleTemplateParameterChange}
+              selectedSyntax={selectedSyntax}
+              onSelectSyntax={setSelectedSyntax}
+              selectedParameters={selectedParameters}
+              serviceTypes={serviceTypes}
+              variableTypes={variableTypes}
+              missions={missions}
+              universals={universals}
+              decimationTypes={decimationTypes}
+              commands={[
+                {
+                  name: 'Command',
+                  options: commands.map((c) => c.id),
+                },
+              ]}
+              onCommandTextChange={setCommandText}
+            />
+          ) : (
+            <BuildFreeformCommandStep
+              command={commandText ?? selectedCommandName ?? ''}
+              onCommandTextChange={setCommandText}
+            />
+          ))}
+
+        {currentStep === 2 &&
+          (selectedCommandId || commandText || selectedCommandName) &&
+          (showAlternateAddress ? (
+            <AlternativeAddressStep
+              vehicleName={vehicleName}
+              mission={
+                commandText ??
+                getCommandNameById(selectedCommandId ?? '') ??
+                selectedCommandName ??
+                ''
+              }
+              commandDescriptor="command"
+              alternativeAddresses={alternativeAddresses}
+            />
+          ) : (
+            <ScheduleStep
+              vehicleName={vehicleName}
+              commandText={
+                commandText ??
+                getCommandNameById(selectedCommandId ?? '') ??
+                selectedCommandName ??
+                ''
+              }
+              commandDescriptor="command"
+            />
+          ))}
+      </div>
     </Modal>
   )
 }
