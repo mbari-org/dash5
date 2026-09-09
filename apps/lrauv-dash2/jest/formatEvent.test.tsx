@@ -234,6 +234,22 @@ describe('formatEvent', () => {
       const wrapper = container.firstElementChild as HTMLElement
       expect(wrapper).toHaveStyle({ color: 'purple' })
     })
+
+    it('keeps by/id meta and each SBD stack on full-width rows', () => {
+      const multi: GetEventsResponse = {
+        ...event,
+        data: 'sched asap "load x.tl" tok 1 2\nsched asap "run" tok 2 2',
+      } as GetEventsResponse
+      const { container } = render(formatEvent(multi, DASH_URL))
+      const meta = container.querySelector('p') as HTMLElement
+      expect(meta).toHaveClass('basis-full')
+      const stacks = container.querySelectorAll('pre')
+      expect(stacks).toHaveLength(2)
+      stacks.forEach((pre) => {
+        expect(pre).toHaveClass('basis-full')
+        expect(pre).toHaveClass('w-full')
+      })
+    })
   })
 
   describe('logImportant startedMission / defaultMission text-base styling', () => {
