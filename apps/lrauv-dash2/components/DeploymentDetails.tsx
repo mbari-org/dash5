@@ -1,14 +1,17 @@
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import {
   useTags,
   useUpdateDeployment,
   useAlterDeployment,
+  useCreateCommand,
 } from '@mbari/api-client'
 import { DeploymentDetailsPopUp, AlterableEventType } from '@mbari/react-ui'
 import type { DeploymentDetails as DeploymentDetailsType } from '@mbari/react-ui'
 import { DateTime } from 'luxon'
 import useCurrentDeployment from '../lib/useCurrentDeployment'
+import useGlobalModalId from '../lib/useGlobalModalId'
 import toast from 'react-hot-toast'
+import { LaunchCommandDialog, SendVia } from './LaunchCommandDialog'
 
 const useAlterDeploymentWithEffects = (onSuccess?: () => void) => {
   const {
@@ -40,6 +43,11 @@ const DeploymentDetails: React.FC<{
   const { deployment } = useCurrentDeployment()
   const { mutate: updateDeployment } = useUpdateDeployment()
   const alterDeployment = useAlterDeploymentWithEffects()
+  const { mutate: createCommand } = useCreateCommand()
+  const { setGlobalModalId } = useGlobalModalId()
+
+  const [pendingLaunchEvent, setPendingLaunchEvent] =
+    useState<AlterableEventType | null>(null)
 
   const { data: tags } = useTags({ limit: 30 })
   const getISODate = (time?: number) =>
@@ -79,46 +87,111 @@ const DeploymentDetails: React.FC<{
   }
 
   const handleSetDeploymentTime = (event: AlterableEventType) => {
-    let note = ''
-    switch (event) {
-      case 'launch':
-        note = 'Vehicle in water'
-        break
-      case 'recover':
-        note = 'Vehicle recovered'
-        break
-      default:
-        note = ''
+    if (event === 'launch' || event === 'recover') {
+      // Show command dialog before recording the event (Dash4 parity)
+      setPendingLaunchEvent(event)
+      return
     }
+    // 'end' records immediately with no command dialog
     if (deployment?.deploymentId) {
       alterDeployment({
         deploymentId: deployment.deploymentId as number,
         date: DateTime.now().toISO(),
         deploymentType: event,
-        note,
+        note: '',
       })
     }
   }
 
+  const recordLaunchEvent = (event: AlterableEventType) => {
+    if (!deployment?.deploymentId) return
+    const note = event === 'launch' ? 'Vehicle in water' : 'Vehicle recovered'
+    alterDeployment({
+      deploymentId: deployment.deploymentId as number,
+      date: DateTime.now().toISO(),
+      deploymentType: event,
+      note,
+    })
+  }
+
+  const handleDialogConfirmWithCommand = (
+    command: string,
+    via: SendVia,
+    timeout?: number
+  ) => {
+    if (!deployment?.deploymentId || !pendingLaunchEvent) return
+    const vehicle = deployment.vehicleName?.toLowerCase() ?? ''
+    const note =
+      pendingLaunchEvent === 'launch' ? 'Vehicle in water' : 'Vehicle recovered'
+    createCommand(
+      {
+        vehicle,
+        commandText: command,
+        commandNote: note,
+        schedDate: 'asap',
+        runCommand: 'n',
+        via,
+        ...(timeout !== undefined ? { timeout } : {}),
+      },
+      {
+        onSuccess: () => {
+          recordLaunchEvent(pendingLaunchEvent)
+        },
+        onError: () => {
+          toast.error('Could not send command. Launch event not recorded.')
+        },
+      }
+    )
+    setPendingLaunchEvent(null)
+  }
+
+  const handleDialogConfirmNoCommand = () => {
+    if (!pendingLaunchEvent) return
+    recordLaunchEvent(pendingLaunchEvent)
+    setPendingLaunchEvent(null)
+  }
+
+  const handleDialogConfirmWithMission = () => {
+    if (!pendingLaunchEvent) return
+    recordLaunchEvent(pendingLaunchEvent)
+    setPendingLaunchEvent(null)
+    setGlobalModalId({ id: 'newMission' })
+  }
+
+  const handleDialogCancel = () => {
+    setPendingLaunchEvent(null)
+  }
+
   return (
-    <DeploymentDetailsPopUp
-      onClose={handleClose}
-      name={deployment?.name ?? ''}
-      complete={!!deployment?.endEvent}
-      tagOptions={tags?.map(({ tag }) => ({ id: tag, name: tag })) ?? []}
-      queueSize={0}
-      gitTag={deployment?.path ?? ''}
-      logFiles={logFiles}
-      directoryListFilepath={deployment?.dlistResult?.path}
-      startDate={getISODate(deployment?.startEvent?.unixTime)}
-      launchDate={getISODate(deployment?.launchEvent?.unixTime)}
-      recoverDate={getISODate(deployment?.recoverEvent?.unixTime)}
-      endDate={getISODate(deployment?.endEvent?.unixTime)}
-      onChangeGitTag={handleSaveGitTag}
-      onSaveChanges={handleSaveDeployment}
-      onSetDeploymentEventToCurrentTime={handleSetDeploymentTime}
-      open
-    />
+    <>
+      {pendingLaunchEvent && (
+        <LaunchCommandDialog
+          event={pendingLaunchEvent}
+          onConfirmWithCommand={handleDialogConfirmWithCommand}
+          onConfirmWithMission={handleDialogConfirmWithMission}
+          onConfirmNoCommand={handleDialogConfirmNoCommand}
+          onCancel={handleDialogCancel}
+        />
+      )}
+      <DeploymentDetailsPopUp
+        onClose={handleClose}
+        name={deployment?.name ?? ''}
+        complete={!!deployment?.endEvent}
+        tagOptions={tags?.map(({ tag }) => ({ id: tag, name: tag })) ?? []}
+        queueSize={0}
+        gitTag={deployment?.path ?? ''}
+        logFiles={logFiles}
+        directoryListFilepath={deployment?.dlistResult?.path}
+        startDate={getISODate(deployment?.startEvent?.unixTime)}
+        launchDate={getISODate(deployment?.launchEvent?.unixTime)}
+        recoverDate={getISODate(deployment?.recoverEvent?.unixTime)}
+        endDate={getISODate(deployment?.endEvent?.unixTime)}
+        onChangeGitTag={handleSaveGitTag}
+        onSaveChanges={handleSaveDeployment}
+        onSetDeploymentEventToCurrentTime={handleSetDeploymentTime}
+        open
+      />
+    </>
   )
 }
 
