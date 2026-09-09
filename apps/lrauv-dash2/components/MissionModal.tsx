@@ -358,8 +358,6 @@ const MissionModal: React.FC<MissionModalProps> = ({
     <MissionModalView
       style={{
         height: 'calc(100vh - 6rem)',
-        minHeight: 'calc(100vh - 6rem)',
-        maxHeight: 'calc(100vh - 6rem)',
       }}
       alternativeAddresses={alternativeAddresses}
       currentStepIndex={0}

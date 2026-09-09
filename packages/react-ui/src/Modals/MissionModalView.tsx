@@ -450,7 +450,6 @@ const MissionModalBody: React.FC<MissionModalViewProps> = ({
     snapTo: 'top-right' as const,
     extraWideModal: true,
     bodyOverflowHidden: true,
-    allowPointerEventsOnChildren: true,
     open: true,
   }
 
@@ -513,6 +512,7 @@ const MissionModalBody: React.FC<MissionModalViewProps> = ({
       return (
         <Modal
           {...missionModalFrame}
+          allowPointerEventsOnChildren
           title={
             <StepProgress
               steps={steps.slice(0, steps.length - 1)}
