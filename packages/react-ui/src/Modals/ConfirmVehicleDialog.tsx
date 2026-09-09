@@ -15,8 +15,8 @@ export interface ConfirmVehicleDialogProps
       | 'snapTo'
       | 'bodyOverflowHidden'
       | 'allowPointerEventsOnChildren'
-      | 'open'
     > {
+  open?: boolean
   loading?: boolean
   vehicle: string
   vehicleList: string[]
@@ -44,6 +44,7 @@ export const ConfirmVehicleDialog: React.FC<ConfirmVehicleDialogProps> = ({
   onCancel,
   onSubmit,
   loading,
+  open = true,
   ...dialogProps
 }) => {
   const [differentVehicle, setDifferentVehicle] = useState<string | undefined>(
@@ -133,7 +134,7 @@ export const ConfirmVehicleDialog: React.FC<ConfirmVehicleDialogProps> = ({
   return (
     <Dialog
       loading={loading}
-      open
+      open={open}
       title={title}
       message={message}
       onConfirm={onSubmit ? handleConfirm : onConfirm}
