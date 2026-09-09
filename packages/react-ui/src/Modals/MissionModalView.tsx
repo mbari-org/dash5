@@ -446,7 +446,7 @@ const MissionModalBody: React.FC<MissionModalViewProps> = ({
 
   const missionModalFrame = {
     className,
-    style,
+    style: { maxHeight: '95vh', ...style },
     snapTo: 'top-right' as const,
     extraWideModal: true,
     bodyOverflowHidden: true,

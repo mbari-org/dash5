@@ -15,6 +15,7 @@ export interface ConfirmVehicleDialogProps
       | 'snapTo'
       | 'bodyOverflowHidden'
       | 'allowPointerEventsOnChildren'
+      | 'open'
     > {
   loading?: boolean
   vehicle: string
