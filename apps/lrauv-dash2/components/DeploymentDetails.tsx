@@ -46,8 +46,9 @@ const DeploymentDetails: React.FC<{
   const { mutate: createCommand } = useCreateCommand()
   const { setGlobalModalId } = useGlobalModalId()
 
-  const [pendingLaunchEvent, setPendingLaunchEvent] =
-    useState<AlterableEventType | null>(null)
+  const [pendingLaunchEvent, setPendingLaunchEvent] = useState<
+    'launch' | 'recover' | null
+  >(null)
 
   const { data: tags } = useTags({ limit: 30 })
   const getISODate = (time?: number) =>
