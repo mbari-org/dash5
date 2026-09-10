@@ -2,7 +2,7 @@ import dynamic from 'next/dynamic'
 import React, { useCallback, useState, useRef, useEffect, useMemo } from 'react'
 import { useManagedWaypoints } from '@mbari/react-ui'
 import useGoogleElevator from '../lib/useGoogleElevator'
-import { VPosDetail, useStations } from '@mbari/api-client'
+import { VPosDetail, useStations, useTethysApiContext } from '@mbari/api-client'
 import { MapLayersListModal } from '../components/MapLayersListModal'
 import { useSelectedStations } from './SelectedStationContext'
 import { useMarkers } from './MarkerContext'
@@ -13,6 +13,8 @@ import VehicleColorsModal from './VehicleColorsModal'
 import { MapRefreshButton } from './MapRefreshButton'
 import useTrackedVehicles from '../lib/useTrackedVehicles'
 import { useRefreshPositions } from '../lib/useRefreshPositions'
+import { useClearMarkerEditModeWhenLoggedOut } from '../lib/useClearMarkerEditModeWhenLoggedOut'
+import { getDraggableMarkerEditProps } from '../lib/getDraggableMarkerEditProps'
 
 // This is a tricky workaround to prevent leaflet from crashing next.js
 // SSR. If we don't do this, the leaflet map will be loaded server side
@@ -235,6 +237,16 @@ const DeploymentMap: React.FC<DeploymentMapProps> = ({
     setActiveEditMarkerId,
     setMarkers,
   } = useMarkers()
+  const { authenticated } = useTethysApiContext()
+  const canEditMarkers = !!authenticated
+
+  useClearMarkerEditModeWhenLoggedOut({
+    canEditMarkers,
+    isAddingMarkers,
+    activeEditMarkerId,
+    setIsAddingMarkers,
+    setActiveEditMarkerId,
+  })
 
   const latestVehicle = useRef(vehicleName)
   useEffect(() => {
@@ -690,19 +702,21 @@ const DeploymentMap: React.FC<DeploymentMapProps> = ({
           onRequestFitBounds={handleFitBoundsRequest}
           onRequestStations={handleLayersRequest}
           onRequestVehicleColors={handleVehicleColorRequest}
-          isAddingMarkers={isAddingMarkers}
-          onToggleMarkerMode={handleToggleMarkerMode}
+          isAddingMarkers={canEditMarkers && isAddingMarkers}
+          onToggleMarkerMode={
+            canEditMarkers ? handleToggleMarkerMode : undefined
+          }
           onRequestMarkers={handleMarkersRequest}
           renderMapClickHandler={() => (
             <MapClickHandler
-              isAddingMarkers={isAddingMarkers}
-              isEditingMarker={false}
+              isAddingMarkers={canEditMarkers && isAddingMarkers}
+              isEditingMarker={!!activeEditMarkerId}
               onAddMarker={handleAddMarker}
             />
           )}
           renderCustomMarkerSet={() => (
             <CustomMarkerSet
-              isAddingMarkers={isAddingMarkers}
+              isAddingMarkers={canEditMarkers && isAddingMarkers}
               setIsAddingMarkers={(value) => setIsAddingMarkers(value)}
             />
           )}
@@ -717,29 +731,30 @@ const DeploymentMap: React.FC<DeploymentMapProps> = ({
                     position={[marker.lat, marker.lng]}
                     index={marker.index}
                     label={marker.label}
-                    draggable={true}
                     isSelected={selectedMarkerId === marker.id.toString()}
                     isNew={marker.isNew}
                     savedToLayer={marker.savedToLayer}
                     iconColor={marker.iconColor || defaultMarkerColor}
                     onClick={() => handleMarkerClick(marker.id.toString())}
-                    onDragEnd={(newPos) =>
-                      handleMarkerPositionChange(marker.id.toString(), newPos)
-                    }
-                    onEditStateChange={(isEditing) => {
-                      setActiveEditMarkerId(
-                        isEditing ? marker.id.toString() : null
-                      )
-                    }}
-                    onEdit={() => handleEditMarker(marker.id.toString())}
-                    onDelete={() => handleDeleteMarker(marker.id.toString())}
-                    onColorChange={(color) =>
-                      handleMarkerColorChange(marker.id.toString(), color)
-                    }
-                    onSaveToLayer={handleSaveMarkerToLayer}
-                    onRemoveFromLayer={(id) =>
-                      handleSaveMarkerToLayer(id, false)
-                    }
+                    {...getDraggableMarkerEditProps(canEditMarkers, {
+                      onDragEnd: (newPos) =>
+                        handleMarkerPositionChange(
+                          marker.id.toString(),
+                          newPos
+                        ),
+                      onEditStateChange: (isEditing) => {
+                        setActiveEditMarkerId(
+                          isEditing ? marker.id.toString() : null
+                        )
+                      },
+                      onEdit: () => handleEditMarker(marker.id.toString()),
+                      onDelete: () => handleDeleteMarker(marker.id.toString()),
+                      onColorChange: (color) =>
+                        handleMarkerColorChange(marker.id.toString(), color),
+                      onSaveToLayer: handleSaveMarkerToLayer,
+                      onRemoveFromLayer: (id) =>
+                        handleSaveMarkerToLayer(id, false),
+                    })}
                   />
                 )
             )
