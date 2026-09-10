@@ -19,6 +19,7 @@ export const useAlterDeployment = () => {
           'deployments',
           data?.vehicle,
         ])
+        queryClient.invalidateQueries(['deployment', 'last', data?.vehicle])
       },
     }
   )
