@@ -40,7 +40,7 @@ const useAlterDeploymentWithEffects = (onSuccess?: () => void) => {
 const DeploymentDetails: React.FC<{
   onClose?: () => void
 }> = ({ onClose: handleClose }) => {
-  const { deployment } = useCurrentDeployment()
+  const { deployment, vehicle } = useCurrentDeployment()
   const { mutate: updateDeployment } = useUpdateDeployment()
   const alterDeployment = useAlterDeploymentWithEffects()
   const { mutate: createCommand } = useCreateCommand()
@@ -128,13 +128,13 @@ const DeploymentDetails: React.FC<{
     timeout?: number
   ) => {
     if (!deployment?.deploymentId || !pendingLaunchEvent) return
-    const vehicle = deployment.vehicleName?.toLowerCase() ?? ''
+    const vehicleName = vehicle?.toLowerCase() ?? ''
     const eventType = pendingLaunchEvent
     const note =
       eventType === 'launch' ? 'Vehicle in water' : 'Vehicle recovered'
     createCommand(
       {
-        vehicle,
+        vehicle: vehicleName,
         commandText: command,
         commandNote: note,
         schedDate: 'asap',
