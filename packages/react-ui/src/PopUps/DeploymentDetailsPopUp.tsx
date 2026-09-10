@@ -109,6 +109,18 @@ export const DeploymentDetailsPopUp: React.FC<DeploymentDetailsPopUpProps> = ({
   const [deployment, setDeployment] = useState<DeploymentDetails>(
     initialDeploymentValues
   )
+
+  // Sync alterable event dates (launch, recover, end) from props into local
+  // state when they change — necessary because local state is not updated
+  // optimistically for these events (to prevent stale timestamps on cancel).
+  useEffect(() => {
+    setDeployment((prev) => ({
+      ...prev,
+      launchDate: launchDate || prev.launchDate,
+      recoverDate: recoverDate || prev.recoverDate,
+      endDate: endDate || prev.endDate,
+    }))
+  }, [launchDate, recoverDate, endDate])
   const [isSelectDateMode, setIsSelectDateMode] = useState(false)
   const [isSelectTagMode, setIsSelectTagMode] = useState(false)
   const [isSelectTimezoneMode, setIsSelectTimezoneMode] = useState(false)
@@ -137,13 +149,16 @@ export const DeploymentDetailsPopUp: React.FC<DeploymentDetailsPopUpProps> = ({
     const handleSetCurrentTime = () => {
       const now = DateTime.now().toISO()
       const updated = { ...deployment, [`${type}Date`]: now }
-      setDeployment(updated)
       if (type === 'start') {
         // 'start' must go through onSaveChanges (updateDeployment) — not
         // alterDeployment which only accepts 'launch' | 'recover' | 'end'.
         // Sanitize to avoid sending empty strings for unset date fields.
+        setDeployment(updated)
         onSaveChanges(sanitizeDeployment(updated))
       } else {
+        // For alterable events (launch, recover, end), do NOT update local
+        // state here — the caller may show a dialog before confirming. Local
+        // state will update via prop changes after a successful API call.
         onSetDeploymentEventToCurrentTime(type)
       }
     }

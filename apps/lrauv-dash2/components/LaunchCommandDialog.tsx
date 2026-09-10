@@ -4,6 +4,7 @@ export type SendVia = 'cellsat' | 'cell' | 'sat'
 export type LaunchAction = 'command' | 'mission' | 'none'
 
 export interface LaunchCommandDialogProps {
+  event: 'launch' | 'recover'
   onConfirmWithCommand: (
     command: string,
     via: SendVia,
@@ -38,6 +39,7 @@ const styles = {
 }
 
 export const LaunchCommandDialog: React.FC<LaunchCommandDialogProps> = ({
+  event,
   onConfirmWithCommand,
   onConfirmWithMission,
   onConfirmNoCommand,
@@ -49,6 +51,7 @@ export const LaunchCommandDialog: React.FC<LaunchCommandDialogProps> = ({
   const [timeout, setTimeout] = useState(5)
 
   const showTimeout = via === 'cellsat' || via === 'cell'
+  const eventLabel = event === 'launch' ? 'Launch' : 'Recover'
   const canSubmit = action !== 'command' || command.trim().length > 0
 
   const handleSubmit = () => {
@@ -69,7 +72,7 @@ export const LaunchCommandDialog: React.FC<LaunchCommandDialogProps> = ({
     <div className={styles.overlay} style={{ zIndex: 1100 }}>
       <div className={styles.card}>
         <div className={styles.header}>
-          <span className={styles.title}>Record Launch Event</span>
+          <span className={styles.title}>Record {eventLabel} Event</span>{' '}
         </div>
 
         <div className={styles.body}>
@@ -132,18 +135,20 @@ export const LaunchCommandDialog: React.FC<LaunchCommandDialogProps> = ({
             </>
           )}
 
-          {/* Option 2: Send a mission */}
-          <label className={styles.radioRow}>
-            <input
-              type="radio"
-              name="launchAction"
-              value="mission"
-              checked={action === 'mission'}
-              onChange={() => setAction('mission')}
-              className="accent-indigo-600"
-            />
-            Also send a mission
-          </label>
+          {/* Option 2: Send a mission (launch only) */}
+          {event === 'launch' && (
+            <label className={styles.radioRow}>
+              <input
+                type="radio"
+                name="launchAction"
+                value="mission"
+                checked={action === 'mission'}
+                onChange={() => setAction('mission')}
+                className="accent-indigo-600"
+              />
+              Also send a mission
+            </label>
+          )}
 
           {/* Option 3: No command */}
           <label className={styles.radioRow}>

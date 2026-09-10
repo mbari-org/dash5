@@ -87,25 +87,27 @@ const DeploymentDetails: React.FC<{
   }
 
   const handleSetDeploymentTime = (event: AlterableEventType) => {
-    if (event === 'launch') {
-      // Show command dialog before recording the event (Dash4 parity — launch only)
+    if (event === 'launch' || event === 'recover') {
+      // Show command dialog before recording the event (Dash4 parity)
+      // Launch: command, mission, or none; Recover: command or none only
       setPendingLaunchEvent(event)
       return
     }
-    // 'recover' and 'end' record immediately with no command dialog
+    // 'end' records immediately with no command dialog
     if (deployment?.deploymentId) {
       alterDeployment({
         deploymentId: deployment.deploymentId as number,
         date: DateTime.now().toISO(),
         deploymentType: event,
-        note: event === 'recover' ? 'Vehicle recovered' : '',
+        note: '',
       })
     }
   }
 
   const recordLaunchEvent = (
     event: AlterableEventType,
-    onSuccess?: () => void
+    onSuccess?: () => void,
+    onError?: () => void
   ) => {
     if (!deployment?.deploymentId) return
     const note = event === 'launch' ? 'Vehicle in water' : 'Vehicle recovered'
@@ -116,7 +118,7 @@ const DeploymentDetails: React.FC<{
         deploymentType: event,
         note,
       },
-      { onSuccess }
+      { onSuccess, onError }
     )
   }
 
@@ -142,21 +144,26 @@ const DeploymentDetails: React.FC<{
       },
       {
         onSuccess: () => {
+          setPendingLaunchEvent(null)
           recordLaunchEvent(eventType)
         },
         onError: () => {
+          setPendingLaunchEvent(null)
           const label = eventType === 'launch' ? 'Launch' : 'Recover'
           toast.error(`Could not send command. ${label} event not recorded.`)
         },
       }
     )
-    setPendingLaunchEvent(null)
   }
 
   const handleDialogConfirmNoCommand = () => {
     if (!pendingLaunchEvent) return
-    recordLaunchEvent(pendingLaunchEvent)
-    setPendingLaunchEvent(null)
+    const eventType = pendingLaunchEvent
+    recordLaunchEvent(
+      eventType,
+      () => setPendingLaunchEvent(null),
+      () => setPendingLaunchEvent(null)
+    )
   }
 
   const handleDialogConfirmWithMission = () => {
@@ -176,6 +183,7 @@ const DeploymentDetails: React.FC<{
     <>
       {pendingLaunchEvent && (
         <LaunchCommandDialog
+          event={pendingLaunchEvent}
           onConfirmWithCommand={handleDialogConfirmWithCommand}
           onConfirmWithMission={handleDialogConfirmWithMission}
           onConfirmNoCommand={handleDialogConfirmNoCommand}
