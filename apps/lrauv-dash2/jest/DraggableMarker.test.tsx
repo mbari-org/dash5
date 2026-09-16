@@ -60,7 +60,7 @@ jest.mock('@mbari/utils', () => ({
   })),
 }))
 
-jest.mock('./MarkerContext', () => ({
+jest.mock('../components/MarkerContext', () => ({
   useMarkers: () => ({
     handleMarkerSave: jest.fn(),
     saveMarkerToLayer: jest.fn(),
@@ -68,7 +68,7 @@ jest.mock('./MarkerContext', () => ({
   }),
 }))
 
-import DraggableMarker from './DraggableMarker'
+import DraggableMarker from '../components/DraggableMarker'
 
 const baseProps = {
   id: '1',

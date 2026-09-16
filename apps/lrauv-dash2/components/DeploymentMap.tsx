@@ -236,16 +236,14 @@ const DeploymentMap: React.FC<DeploymentMapProps> = ({
     activeEditMarkerId,
     setActiveEditMarkerId,
     setMarkers,
+    clearMarkerEditSession,
   } = useMarkers()
   const { authenticated } = useTethysApiContext()
   const canEditMarkers = !!authenticated
 
   useClearMarkerEditModeWhenLoggedOut({
     canEditMarkers,
-    isAddingMarkers,
-    activeEditMarkerId,
-    setIsAddingMarkers,
-    setActiveEditMarkerId,
+    clearMarkerEditSession,
   })
 
   const latestVehicle = useRef(vehicleName)

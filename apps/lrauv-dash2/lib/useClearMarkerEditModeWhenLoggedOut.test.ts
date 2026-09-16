@@ -2,87 +2,65 @@ import { renderHook } from '@testing-library/react'
 import { useClearMarkerEditModeWhenLoggedOut } from './useClearMarkerEditModeWhenLoggedOut'
 
 describe('useClearMarkerEditModeWhenLoggedOut', () => {
-  it('clears add and edit mode when canEditMarkers becomes false', () => {
-    const setIsAddingMarkers = jest.fn()
-    const setActiveEditMarkerId = jest.fn()
+  it('clears the edit session when canEditMarkers becomes false', () => {
+    const clearMarkerEditSession = jest.fn()
 
     const { rerender } = renderHook(
       ({ canEditMarkers }) =>
         useClearMarkerEditModeWhenLoggedOut({
           canEditMarkers,
-          isAddingMarkers: true,
-          activeEditMarkerId: '42',
-          setIsAddingMarkers,
-          setActiveEditMarkerId,
+          clearMarkerEditSession,
         }),
       { initialProps: { canEditMarkers: true } }
     )
 
-    expect(setIsAddingMarkers).not.toHaveBeenCalled()
-    expect(setActiveEditMarkerId).not.toHaveBeenCalled()
+    expect(clearMarkerEditSession).not.toHaveBeenCalled()
 
     rerender({ canEditMarkers: false })
 
-    expect(setIsAddingMarkers).toHaveBeenCalledWith(false)
-    expect(setActiveEditMarkerId).toHaveBeenCalledWith(null)
+    expect(clearMarkerEditSession).toHaveBeenCalledTimes(1)
   })
 
-  it('does not clear when already idle and canEditMarkers is false', () => {
-    const setIsAddingMarkers = jest.fn()
-    const setActiveEditMarkerId = jest.fn()
+  it('clears the edit session on mount when canEditMarkers is already false', () => {
+    const clearMarkerEditSession = jest.fn()
 
     renderHook(() =>
       useClearMarkerEditModeWhenLoggedOut({
         canEditMarkers: false,
-        isAddingMarkers: false,
-        activeEditMarkerId: null,
-        setIsAddingMarkers,
-        setActiveEditMarkerId,
+        clearMarkerEditSession,
       })
     )
 
-    expect(setIsAddingMarkers).not.toHaveBeenCalled()
-    expect(setActiveEditMarkerId).not.toHaveBeenCalled()
+    expect(clearMarkerEditSession).toHaveBeenCalledTimes(1)
   })
 
   it('does not clear while canEditMarkers stays true', () => {
-    const setIsAddingMarkers = jest.fn()
-    const setActiveEditMarkerId = jest.fn()
+    const clearMarkerEditSession = jest.fn()
 
     renderHook(() =>
       useClearMarkerEditModeWhenLoggedOut({
         canEditMarkers: true,
-        isAddingMarkers: true,
-        activeEditMarkerId: '7',
-        setIsAddingMarkers,
-        setActiveEditMarkerId,
+        clearMarkerEditSession,
       })
     )
 
-    expect(setIsAddingMarkers).not.toHaveBeenCalled()
-    expect(setActiveEditMarkerId).not.toHaveBeenCalled()
+    expect(clearMarkerEditSession).not.toHaveBeenCalled()
   })
 
-  it('clears add and edit mode when the map view unmounts', () => {
-    const setIsAddingMarkers = jest.fn()
-    const setActiveEditMarkerId = jest.fn()
+  it('clears the edit session when the map view unmounts', () => {
+    const clearMarkerEditSession = jest.fn()
 
     const { unmount } = renderHook(() =>
       useClearMarkerEditModeWhenLoggedOut({
         canEditMarkers: true,
-        isAddingMarkers: true,
-        activeEditMarkerId: '42',
-        setIsAddingMarkers,
-        setActiveEditMarkerId,
+        clearMarkerEditSession,
       })
     )
 
-    expect(setIsAddingMarkers).not.toHaveBeenCalled()
-    expect(setActiveEditMarkerId).not.toHaveBeenCalled()
+    expect(clearMarkerEditSession).not.toHaveBeenCalled()
 
     unmount()
 
-    expect(setIsAddingMarkers).toHaveBeenCalledWith(false)
-    expect(setActiveEditMarkerId).toHaveBeenCalledWith(null)
+    expect(clearMarkerEditSession).toHaveBeenCalledTimes(1)
   })
 })

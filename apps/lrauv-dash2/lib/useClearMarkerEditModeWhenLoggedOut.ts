@@ -1,41 +1,30 @@
 import { useEffect } from 'react'
 
 /**
- * Clears add/edit marker mode on logout and when the map view unmounts.
- * MarkerProvider is app-wide, so edit state must not persist across routes.
+ * Ends the in-progress add/edit session on logout and when the map view
+ * unmounts.
+ *
+ * This does not remove markers. Markers live in MarkerProvider (app-wide), so
+ * they remain visible when switching Overview and vehicle maps. The session
+ * reset covers add-marker mode, the active-edit id, and the isNew flag so a
+ * half-finished new-marker popup cannot reopen on the next map or block
+ * adding another pin ("Please finish editing current marker first").
  */
 export const useClearMarkerEditModeWhenLoggedOut = (params: {
   canEditMarkers: boolean
-  isAddingMarkers: boolean
-  activeEditMarkerId: string | null
-  setIsAddingMarkers: (value: boolean) => void
-  setActiveEditMarkerId: (id: string | null) => void
+  clearMarkerEditSession: () => void
 }) => {
-  const {
-    canEditMarkers,
-    isAddingMarkers,
-    activeEditMarkerId,
-    setIsAddingMarkers,
-    setActiveEditMarkerId,
-  } = params
+  const { canEditMarkers, clearMarkerEditSession } = params
 
   useEffect(() => {
     if (!canEditMarkers) {
-      if (isAddingMarkers) setIsAddingMarkers(false)
-      if (activeEditMarkerId) setActiveEditMarkerId(null)
+      clearMarkerEditSession()
     }
-  }, [
-    canEditMarkers,
-    isAddingMarkers,
-    activeEditMarkerId,
-    setIsAddingMarkers,
-    setActiveEditMarkerId,
-  ])
+  }, [canEditMarkers, clearMarkerEditSession])
 
   useEffect(() => {
     return () => {
-      setIsAddingMarkers(false)
-      setActiveEditMarkerId(null)
+      clearMarkerEditSession()
     }
-  }, [setIsAddingMarkers, setActiveEditMarkerId])
+  }, [clearMarkerEditSession])
 }

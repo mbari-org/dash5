@@ -1,7 +1,5 @@
-type LatLng = [number, number]
-
 export type DraggableMarkerEditHandlers = {
-  onDragEnd: (pos: LatLng) => void
+  onDragEnd: (pos: [number, number]) => void
   onEditStateChange: (isEditing: boolean) => void
   onEdit: (newLabel: string) => void
   onDelete: () => void

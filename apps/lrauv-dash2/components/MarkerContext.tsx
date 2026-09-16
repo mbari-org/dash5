@@ -66,6 +66,7 @@ export interface MarkerContextType {
   selectAllMarkers: () => void
   deselectAllMarkers: () => void
   setMarkers: React.Dispatch<React.SetStateAction<MarkerData[]>>
+  clearMarkerEditSession: () => void
 }
 
 // Storage key for localStorage — only markers with savedToLayer persist
@@ -136,6 +137,21 @@ export const MarkerProvider: React.FC<{ children: React.ReactNode }> = ({
 
   const handleToggleMarkerMode = useCallback(() => {
     setIsAddingMarkers((prev) => !prev)
+  }, [])
+
+  // End add/edit session without deleting pins. Used on logout and when a map
+  // view unmounts so an unsaved new marker does not reopen its edit popup on
+  // the next map (Overview and vehicle).
+  const clearMarkerEditSession = useCallback(() => {
+    setIsAddingMarkers(false)
+    setActiveEditMarkerId(null)
+    setMarkers((prev) =>
+      prev.some((marker) => marker.isNew)
+        ? prev.map((marker) =>
+            marker.isNew ? { ...marker, isNew: false } : marker
+          )
+        : prev
+    )
   }, [])
 
   const handleMarkersRequest = useCallback(() => {
@@ -501,6 +517,7 @@ export const MarkerProvider: React.FC<{ children: React.ReactNode }> = ({
     selectAllMarkers,
     deselectAllMarkers,
     setMarkers,
+    clearMarkerEditSession,
   }
 
   return (

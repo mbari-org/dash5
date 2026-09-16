@@ -147,8 +147,9 @@ const DraggableMarker: React.FC<DraggableMarkerProps> = ({
   }
 
   const canEdit = !!onEdit
-  // Immediate view-only when handlers disappear (logout) — do not wait for
-  // the cleanup effect below to clear editMode after paint.
+  // Immediate view-only when handlers disappear (logout). The effect below
+  // clears editMode on the next render; this keeps the popup view-only on
+  // the current render.
   const effectiveEditMode = editMode && canEdit
 
   // Defense in depth: clear stale editMode once write handlers are gone.
@@ -520,10 +521,13 @@ const DraggableMarker: React.FC<DraggableMarkerProps> = ({
     setShowColorOptions(false)
   }, [editMode, handleEditModeToggle, label, iconColor])
 
+  // Exit edit mode when the default Leaflet 'x' is clicked within the popup.
   const handlePopupClose = useCallback(() => {
     exitEditMode()
   }, [exitEditMode])
 
+  // Additional cleanup when the custom blue Close button is clicked. Removing
+  // that extra button is tracked in #794; keep both handlers until then.
   const handleClosePopup = useCallback(
     (e: React.MouseEvent) => {
       e.stopPropagation()

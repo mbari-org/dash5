@@ -228,16 +228,14 @@ const OverViewMap: React.FC<{
     activeEditMarkerId,
     setActiveEditMarkerId,
     setMarkers,
+    clearMarkerEditSession,
   } = useMarkers()
   const { authenticated } = useTethysApiContext()
   const canEditMarkers = !!authenticated
 
   useClearMarkerEditModeWhenLoggedOut({
     canEditMarkers,
-    isAddingMarkers,
-    activeEditMarkerId,
-    setIsAddingMarkers,
-    setActiveEditMarkerId,
+    clearMarkerEditSession,
   })
 
   const uniqueTrackedVehicles = Array.from(new Set(trackedVehicles))
