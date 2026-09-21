@@ -1534,7 +1534,7 @@ test('timed-out command enriched to "completed" via isRecovered still shows time
   })
 })
 
-test('cancelled directive stays cancelled after the original timeout expires (#868)', async () => {
+test('cancelled directive stays cancelled after the original timeout expires', async () => {
   // After Cancel this Directive, the row is cancelled. When the original send
   // window later expires, determineCommandStatus infers timeout and/or a
   // timeout note appears. Cancel must still win over both sources.

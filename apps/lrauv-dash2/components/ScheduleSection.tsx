@@ -1051,7 +1051,7 @@ export const ScheduleSection: React.FC<ScheduleSectionProps> = ({
       const raw = toScheduleCellStatus(mission?.status ?? '')
       // Operator cancel outranks timeout. The original send window can still
       // expire (client-side inference or a backend timeout note) after Cancel
-      // this Directive — the row must stay cancelled (#868).
+      // this Directive — the row must stay cancelled.
       if (
         raw === 'cancelled' ||
         (mission.event.eventId != null &&
