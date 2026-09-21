@@ -11,3 +11,9 @@ export const WATCHBILL_URL =
  *  can import them without pulling Leaflet into PlatformPaths' initial bundle. */
 export const PLATFORM_PANE = 'platformsPane'
 export const PLATFORM_PANE_Z = 450
+
+/** How far back to search TrackDB for a platform position when no explicit
+ *  window is given. 365 days keeps infrequently-updated fixed platforms
+ *  (e.g. CA offshore structures that may not report for months) findable
+ *  for both map tracks and Center Map fly-to. */
+export const PLATFORM_LOOKBACK_DAYS = 365

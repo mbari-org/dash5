@@ -1,10 +1,58 @@
-import React, { useState, useCallback, useMemo, useEffect } from 'react'
-import { usePlatforms, GetPlatformsResponse } from '@mbari/api-client'
+import React, { useState, useCallback, useMemo, useEffect, useRef } from 'react'
+import {
+  usePlatforms,
+  GetPlatformsResponse,
+  getPlatformPositions,
+  useTethysApiContext,
+} from '@mbari/api-client'
+import { createLogger } from '@mbari/utils'
 import { Modal } from '@mbari/react-ui'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { faCaretRight, faCheckCircle } from '@fortawesome/free-solid-svg-icons'
+import { useQueryClient, QueryClient } from 'react-query'
 import { usePlatformSelectionWorkflow } from '../lib/usePlatformSelectionWorkflow'
 import { PlatformSection } from './PlatformSection'
+import { useMapCamera } from './MapCameraContext'
+
+const logger = createLogger('PlatformsListModal')
+
+const TRACKDB_POSITIONS_KEY = ['trackdb', 'platforms'] as const
+
+type PositionFix = { lat: number; lon: number; timeMs: number }
+type PositionsPayload = { positions?: PositionFix[] }
+
+const latestFinitePosition = (
+  data: PositionsPayload | undefined
+): { lat: number; lon: number } | null => {
+  const positions = data?.positions
+  if (!positions?.length) return null
+
+  let latest: PositionFix | null = null
+  for (const pos of positions) {
+    if (!Number.isFinite(pos.lat) || !Number.isFinite(pos.lon)) continue
+    if (!latest || pos.timeMs > latest.timeMs) latest = pos
+  }
+  return latest ? { lat: latest.lat, lon: latest.lon } : null
+}
+
+const latestFixQueryKey = (platformId: string) =>
+  [...TRACKDB_POSITIONS_KEY, platformId, 'positions', 1] as const
+
+const cachedLatestPosition = (
+  queryClient: QueryClient,
+  platformId: string
+): { lat: number; lon: number } | null => {
+  const cached = queryClient.getQueriesData<PositionsPayload>([
+    ...TRACKDB_POSITIONS_KEY,
+    platformId,
+    'positions',
+  ])
+  for (const [, data] of cached) {
+    const fromCache = latestFinitePosition(data)
+    if (fromCache) return fromCache
+  }
+  return null
+}
 
 export interface PlatformsListModalProps {
   onClose: () => void
@@ -30,6 +78,87 @@ export const PlatformsListModal: React.FC<PlatformsListModalProps> = ({
     isLoading: platformsLoading,
     refetch: refetchPlatforms,
   } = usePlatforms({ refresh: true })
+
+  const { axiosInstance, siteConfig } = useTethysApiContext()
+  const { setFlyToRequest } = useMapCamera()
+  const queryClient = useQueryClient()
+  const inflightPositions = useRef(new Map<string, Promise<PositionsPayload>>())
+
+  const fetchLatestPosition = useCallback(
+    (platformId: string) => {
+      const pending = inflightPositions.current.get(platformId)
+      if (pending) return pending
+
+      const odss2dashApi = siteConfig?.appConfig?.odss2dashApi
+      if (!odss2dashApi) {
+        return Promise.reject(new Error('odss2dashApi is not configured'))
+      }
+
+      // lastNumberOfFixes: 1 with no date window — latest fix regardless of
+      // age, without scanning a long time range on every click.
+      const request = getPlatformPositions(
+        {
+          platformId,
+          lastNumberOfFixes: 1,
+        },
+        { instance: axiosInstance, baseURL: odss2dashApi }
+      )
+        .then((data) => {
+          queryClient.setQueryData(latestFixQueryKey(platformId), data)
+          return data
+        })
+        .finally(() => {
+          inflightPositions.current.delete(platformId)
+        })
+
+      inflightPositions.current.set(platformId, request)
+      return request
+    },
+    [axiosInstance, queryClient, siteConfig]
+  )
+
+  const handlePrefetchPlatform = useCallback(
+    (platformId: string) => {
+      if (cachedLatestPosition(queryClient, platformId)) return
+      if (
+        queryClient.getQueryData(latestFixQueryKey(platformId)) !== undefined
+      ) {
+        return
+      }
+      if (!siteConfig?.appConfig?.odss2dashApi) return
+      void fetchLatestPosition(platformId).catch(() => {
+        // Hover prefetch is best-effort; click path logs failures.
+      })
+    },
+    [fetchLatestPosition, queryClient, siteConfig]
+  )
+
+  const handleCenterOnPlatform = useCallback(
+    async (platformId: string) => {
+      const cached = cachedLatestPosition(queryClient, platformId)
+      if (cached) {
+        setFlyToRequest(cached)
+        return
+      }
+      if (
+        queryClient.getQueryData(latestFixQueryKey(platformId)) !== undefined
+      ) {
+        return
+      }
+
+      if (!siteConfig?.appConfig?.odss2dashApi) return
+      try {
+        const data = await fetchLatestPosition(platformId)
+        const latest = latestFinitePosition(data)
+        if (latest) {
+          setFlyToRequest(latest)
+        }
+      } catch (err) {
+        logger.warn(`Failed to fetch position for platform ${platformId}:`, err)
+      }
+    },
+    [fetchLatestPosition, queryClient, setFlyToRequest, siteConfig]
+  )
 
   const [filterText, setFilterText] = useState('')
   const [onlySelected, setOnlySelected] = useState(false)
@@ -242,6 +371,8 @@ export const PlatformsListModal: React.FC<PlatformsListModalProps> = ({
                       onToggleExpand={() => toggleGroupExpanded(groupName)}
                       filterText={filterText}
                       onlySelected={onlySelected}
+                      onCenterClick={handleCenterOnPlatform}
+                      onCenterHover={handlePrefetchPlatform}
                     />
                   ))
                 )}
