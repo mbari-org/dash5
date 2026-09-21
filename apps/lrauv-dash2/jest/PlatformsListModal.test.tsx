@@ -132,6 +132,34 @@ describe('PlatformsListModal fly-to', () => {
     })
   })
 
+  it('flies to the newest cached fix when track and last-1 caches disagree', async () => {
+    const client = createClient()
+    client.setQueryData(
+      ['trackdb', 'platforms', 'plat-paragon', 'positions', 20],
+      {
+        positions: [{ timeMs: 1000, lat: 36.0, lon: -122.0 }],
+      }
+    )
+    client.setQueryData(
+      ['trackdb', 'platforms', 'plat-paragon', 'positions', 1],
+      {
+        positions: [{ timeMs: 9000, lat: 37.5, lon: -122.5 }],
+      }
+    )
+
+    renderModal(client)
+
+    await userEvent.click(
+      screen.getByRole('button', { name: 'Center map on R/V Paragon' })
+    )
+
+    expect(mockGetPlatformPositions).not.toHaveBeenCalled()
+    expect(mockSetFlyToRequest).toHaveBeenCalledWith({
+      lat: 37.5,
+      lon: -122.5,
+    })
+  })
+
   it('fetches only the latest fix with no date window', async () => {
     mockGetPlatformPositions.mockResolvedValue({
       positions: [{ timeMs: 1, lat: 36.8, lon: -122.0 }],

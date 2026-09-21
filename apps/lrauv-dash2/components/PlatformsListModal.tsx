@@ -21,9 +21,9 @@ const TRACKDB_POSITIONS_KEY = ['trackdb', 'platforms'] as const
 type PositionFix = { lat: number; lon: number; timeMs: number }
 type PositionsPayload = { positions?: PositionFix[] }
 
-const latestFinitePosition = (
+const latestFiniteFix = (
   data: PositionsPayload | undefined
-): { lat: number; lon: number } | null => {
+): PositionFix | null => {
   const positions = data?.positions
   if (!positions?.length) return null
 
@@ -32,7 +32,7 @@ const latestFinitePosition = (
     if (!Number.isFinite(pos.lat) || !Number.isFinite(pos.lon)) continue
     if (!latest || pos.timeMs > latest.timeMs) latest = pos
   }
-  return latest ? { lat: latest.lat, lon: latest.lon } : null
+  return latest
 }
 
 const latestFixQueryKey = (platformId: string) =>
@@ -47,11 +47,14 @@ const cachedLatestPosition = (
     platformId,
     'positions',
   ])
+  let latest: PositionFix | null = null
   for (const [, data] of cached) {
-    const fromCache = latestFinitePosition(data)
-    if (fromCache) return fromCache
+    const fromCache = latestFiniteFix(data)
+    if (fromCache && (!latest || fromCache.timeMs > latest.timeMs)) {
+      latest = fromCache
+    }
   }
-  return null
+  return latest ? { lat: latest.lat, lon: latest.lon } : null
 }
 
 export interface PlatformsListModalProps {
@@ -149,9 +152,9 @@ export const PlatformsListModal: React.FC<PlatformsListModalProps> = ({
       if (!siteConfig?.appConfig?.odss2dashApi) return
       try {
         const data = await fetchLatestPosition(platformId)
-        const latest = latestFinitePosition(data)
+        const latest = latestFiniteFix(data)
         if (latest) {
-          setFlyToRequest(latest)
+          setFlyToRequest({ lat: latest.lat, lon: latest.lon })
         }
       } catch (err) {
         logger.warn(`Failed to fetch position for platform ${platformId}:`, err)
