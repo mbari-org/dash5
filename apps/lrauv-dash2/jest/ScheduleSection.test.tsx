@@ -1598,7 +1598,9 @@ test('cancelled directive stays cancelled after the original timeout expires', a
 
   await waitFor(() => {
     expect(screen.getByTitle('cancelled')).toBeInTheDocument()
+    expect(screen.getByText(/^Cancelled\b/)).toBeInTheDocument()
     expect(screen.queryByTitle(/timeout/i)).not.toBeInTheDocument()
+    expect(screen.queryByText(/^Timed out/)).not.toBeInTheDocument()
   })
 })
 
