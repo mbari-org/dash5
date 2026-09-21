@@ -1048,6 +1048,16 @@ export const ScheduleSection: React.FC<ScheduleSectionProps> = ({
       ? schedDateMatch[1]
       : undefined
     const cellStatus: ScheduleCellStatus = (() => {
+      const raw = toScheduleCellStatus(mission?.status ?? '')
+      // Operator cancel outranks timeout. The original send window can still
+      // expire (client-side inference or a backend timeout note) after Cancel
+      // this Directive — the row must stay cancelled (#868).
+      if (
+        raw === 'cancelled' ||
+        (mission.event.eventId != null &&
+          cancelledEventIds.has(mission.event.eventId))
+      )
+        return 'cancelled'
       if (isParam || isConfigSet) {
         // Dispatched one-shots — use comms lookup to upgrade to ack/timeout.
         const commsStatus = commsLookup.get(mission.event.eventId)
@@ -1060,12 +1070,9 @@ export const ScheduleSection: React.FC<ScheduleSectionProps> = ({
           return 'timeout'
         return 'sent'
       }
-      const raw = toScheduleCellStatus(mission?.status ?? '')
-      // A timeout note is ground truth regardless of the API-reported status
-      // (pending, completed, etc.) or scheduled timestamp. Check it first so
-      // the pill always shows correctly for any comms type.
-      // timedOutEventIds covers the full history; commsLookup covers the current
-      // window — either source is sufficient to declare a timeout.
+      // A timeout note is ground truth versus pending/completed/etc., but not
+      // versus an operator cancel (handled above). timedOutEventIds covers
+      // full history; commsLookup covers the current window.
       const commsStatusForTimeout = commsLookup.get(mission.event.eventId)
       if (
         commsStatusForTimeout === 'timeout' ||
@@ -1209,6 +1216,8 @@ export const ScheduleSection: React.FC<ScheduleSectionProps> = ({
                 'Received'
               : cellStatus === 'timeout'
               ? 'Timed out'
+              : cellStatus === 'cancelled'
+              ? 'Cancelled'
               : cellStatus === 'sent'
               ? 'Sent'
               : isMission
