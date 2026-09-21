@@ -1604,6 +1604,64 @@ test('cancelled directive stays cancelled after the original timeout expires', a
   })
 })
 
+test('cancelled configSet row shows Cancelled text, not Sent', async () => {
+  // Param/configSet one-shots used to hardcode verb 'Sent' before checking
+  // cancelled, so a cancelled configSet kept the cancelled icon but read Sent.
+  const eventId = 86810
+  const sentAt = Date.now() - 20 * 60 * 1000
+  const configEvent = {
+    data: 'configSet VerticalControl.massDefault -16 millimeter persist',
+    unixTime: sentAt,
+    eventId,
+    eventType: 'command',
+    text: null,
+    note: '[[via:cell, timeout:5min]]',
+    user: 'test-engineer',
+  }
+  const cancellationNote = {
+    eventId: 86811,
+    eventType: 'note',
+    unixTime: sentAt + 60 * 1000,
+    isoTime: new Date(sentAt + 60 * 1000).toISOString(),
+    data: null,
+    text: null,
+    note: `Cancelled request ${eventId} for 'example': 'configSet VerticalControl.massDefault -16 millimeter persist'`,
+    user: 'test-engineer',
+  }
+  server.use(
+    rest.get('/events', (req, res, ctx) => {
+      const eventTypes = req.url.searchParams.get('eventTypes') ?? ''
+      const isNoteQuery = eventTypes === 'note'
+      const isCommsQuery = eventTypes.includes('sbdSend')
+      const result = isNoteQuery
+        ? [cancellationNote]
+        : isCommsQuery
+        ? [configEvent]
+        : [configEvent]
+      return res(ctx.status(200), ctx.json({ result }))
+    }),
+    rest.get('/events/mission-started', (_req, res, ctx) =>
+      res(ctx.status(200), ctx.json({ result: [] }))
+    )
+  )
+
+  render(
+    <MockProviders queryClient={new QueryClient()}>
+      <ScheduleSection
+        {...props}
+        currentDeploymentId={1}
+        deploymentStartTime={Date.now() - 3600 * 1000}
+      />
+    </MockProviders>
+  )
+
+  await waitFor(() => {
+    expect(screen.getByTitle('cancelled')).toBeInTheDocument()
+    expect(screen.getByText(/^Cancelled\b/)).toBeInTheDocument()
+    expect(screen.queryByText(/^Sent /i)).not.toBeInTheDocument()
+  })
+})
+
 test('parses legacy sched YYYYMMDD}T timestamp for backwards compatibility', async () => {
   // Simulate an event stored before the makeCommand } fix was deployed.
   const legacyStamp = '20991231}T2359'

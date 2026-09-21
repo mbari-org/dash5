@@ -1200,7 +1200,11 @@ export const ScheduleSection: React.FC<ScheduleSectionProps> = ({
             ? dt.toFormat('H:mm')
             : dt.toFormat('MMM d, H:mm')
           const verb =
-            isParam || isConfigSet
+            cellStatus === 'cancelled'
+              ? 'Cancelled'
+              : cellStatus === 'timeout'
+              ? 'Timed out'
+              : isParam || isConfigSet
               ? 'Sent'
               : cellStatus === 'pending'
               ? scheduleDate && scheduleDate !== 'asap'
@@ -1214,10 +1218,6 @@ export const ScheduleSection: React.FC<ScheduleSectionProps> = ({
               ? // Comms ACK means the vehicle received the command via comms
                 // (cell or sat) — not that the mission started executing.
                 'Received'
-              : cellStatus === 'timeout'
-              ? 'Timed out'
-              : cellStatus === 'cancelled'
-              ? 'Cancelled'
               : cellStatus === 'sent'
               ? 'Sent'
               : isMission
