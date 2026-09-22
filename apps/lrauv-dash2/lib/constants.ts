@@ -12,8 +12,8 @@ export const WATCHBILL_URL =
 export const PLATFORM_PANE = 'platformsPane'
 export const PLATFORM_PANE_Z = 450
 
-/** How far back to search TrackDB for a platform position when no explicit
- *  window is given. 365 days keeps infrequently-updated fixed platforms
- *  (e.g. CA offshore structures that may not report for months) findable
- *  for both map tracks and Center Map fly-to. */
+/** How far back to search TrackDB for map-track positions. 365 days keeps
+ *  infrequently-updated fixed platforms (e.g. CA offshore structures that may
+ *  not report for months) visible on the map. Center Map fly-to sends no date
+ *  window and does not use this constant. */
 export const PLATFORM_LOOKBACK_DAYS = 365
