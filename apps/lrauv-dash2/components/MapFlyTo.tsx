@@ -42,9 +42,13 @@ const MapFlyTo: React.FC = () => {
     } else {
       // Animated flyTo fires zoomanim, which GoogleMutant uses to copy tiles.
       // Instant setView skips that and leaves a hole in the viewport.
-      map.flyTo([flyToRequest.lat, flyToRequest.lon], FLY_TO_ZOOM, {
-        duration: 0.45,
-      })
+      map.flyTo(
+        [flyToRequest.lat, flyToRequest.lon],
+        Math.max(map.getZoom(), FLY_TO_ZOOM),
+        {
+          duration: 0.45,
+        }
+      )
     }
 
     syncGoogleMutant(map)
