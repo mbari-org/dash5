@@ -1,14 +1,16 @@
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import {
   useTags,
   useUpdateDeployment,
   useAlterDeployment,
+  useCreateCommand,
 } from '@mbari/api-client'
 import { DeploymentDetailsPopUp, AlterableEventType } from '@mbari/react-ui'
 import type { DeploymentDetails as DeploymentDetailsType } from '@mbari/react-ui'
 import { DateTime } from 'luxon'
 import useCurrentDeployment from '../lib/useCurrentDeployment'
 import toast from 'react-hot-toast'
+import { LaunchCommandDialog, SendVia } from './LaunchCommandDialog'
 
 const useAlterDeploymentWithEffects = (onSuccess?: () => void) => {
   const {
@@ -37,9 +39,36 @@ const useAlterDeploymentWithEffects = (onSuccess?: () => void) => {
 const DeploymentDetails: React.FC<{
   onClose?: () => void
 }> = ({ onClose: handleClose }) => {
-  const { deployment } = useCurrentDeployment()
+  const { deployment, vehicle } = useCurrentDeployment()
   const { mutate: updateDeployment } = useUpdateDeployment()
   const alterDeployment = useAlterDeploymentWithEffects()
+  const { mutate: createCommand } = useCreateCommand()
+
+  const [pendingLaunchEvent, setPendingLaunchEvent] = useState<
+    'launch' | 'recover' | null
+  >(null)
+  const [isDialogSubmitting, setIsDialogSubmitting] = useState(false)
+
+  // Optimistic dates: set only on confirmed alter success to hide the "Mark X
+  // time now" button immediately, before the query refetch delivers real props.
+  // Cleared once real prop arrives via DeploymentDetailsPopUp's useEffect sync.
+  const [optimisticLaunchDate, setOptimisticLaunchDate] = useState<
+    string | undefined
+  >()
+  const [optimisticRecoverDate, setOptimisticRecoverDate] = useState<
+    string | undefined
+  >()
+  const [optimisticEndDate, setOptimisticEndDate] = useState<
+    string | undefined
+  >()
+
+  // Reset optimistic dates whenever the active deployment changes so stale
+  // timestamps from a previous deployment never bleed into the new one.
+  useEffect(() => {
+    setOptimisticLaunchDate(undefined)
+    setOptimisticRecoverDate(undefined)
+    setOptimisticEndDate(undefined)
+  }, [deployment?.deploymentId])
 
   const { data: tags } = useTags({ limit: 30 })
   const getISODate = (time?: number) =>
@@ -78,47 +107,179 @@ const DeploymentDetails: React.FC<{
     }
   }
 
+  // Helper: stamp the correct optimistic date after a successful launch/recover.
+  const setOptimisticEventDate = (
+    eventType: 'launch' | 'recover',
+    date: string
+  ) => {
+    if (eventType === 'launch') setOptimisticLaunchDate(date)
+    else setOptimisticRecoverDate(date)
+  }
+
   const handleSetDeploymentTime = (event: AlterableEventType) => {
-    let note = ''
-    switch (event) {
-      case 'launch':
-        note = 'Vehicle in water'
-        break
-      case 'recover':
-        note = 'Vehicle recovered'
-        break
-      default:
-        note = ''
+    if (event === 'launch' || event === 'recover') {
+      // Guard: same check as the end path — no dialog without a valid deployment
+      // and vehicle. Checking here prevents hasSubmittedRef from locking Submit
+      // if the parent handler would otherwise return early with no feedback.
+      if (!deployment?.deploymentId || !vehicle?.toLowerCase()) return
+      // Show command dialog before recording the event (Dash4 parity)
+      setPendingLaunchEvent(event)
+      return
     }
+    // 'end' records immediately with no command dialog
     if (deployment?.deploymentId) {
-      alterDeployment({
-        deploymentId: deployment.deploymentId as number,
-        date: DateTime.now().toISO(),
-        deploymentType: event,
-        note,
-      })
+      const endedAt = DateTime.now().toISO()
+      alterDeployment(
+        {
+          deploymentId: deployment.deploymentId as number,
+          date: endedAt,
+          deploymentType: event,
+          note: '',
+        },
+        {
+          onSuccess: () => setOptimisticEndDate(endedAt),
+        }
+      )
     }
   }
 
+  const recordLaunchEvent = (
+    event: AlterableEventType,
+    date: string,
+    onSuccess?: () => void,
+    onError?: () => void
+  ) => {
+    if (!deployment?.deploymentId) {
+      onError?.()
+      return
+    }
+    const note = event === 'launch' ? 'Vehicle in water' : 'Vehicle recovered'
+    alterDeployment(
+      {
+        deploymentId: deployment.deploymentId as number,
+        date,
+        deploymentType: event,
+        note,
+      },
+      { onSuccess, onError }
+    )
+  }
+
+  const handleDialogConfirmWithCommand = (
+    command: string,
+    via: SendVia,
+    timeout?: number
+  ) => {
+    if (!deployment?.deploymentId || !pendingLaunchEvent) return
+    const vehicleName = vehicle?.toLowerCase() ?? ''
+    const eventType = pendingLaunchEvent
+    const confirmedAt = DateTime.now().toISO()
+    const note =
+      eventType === 'launch' ? 'Vehicle in water' : 'Vehicle recovered'
+    setIsDialogSubmitting(true)
+    // Record the event first (Dash4 order: event → command). This ensures the
+    // deployment is stamped even if the command send fails, and eliminates the
+    // risk of duplicate commands when a user retries after a failed alter.
+    recordLaunchEvent(
+      eventType,
+      confirmedAt,
+      () => {
+        createCommand(
+          {
+            vehicle: vehicleName,
+            commandText: command,
+            commandNote: note,
+            schedDate: 'asap',
+            runCommand: 'n',
+            via,
+            ...(timeout !== undefined ? { timeout } : {}),
+          },
+          {
+            onSuccess: () => {
+              setIsDialogSubmitting(false)
+              setPendingLaunchEvent(null)
+              setOptimisticEventDate(eventType, confirmedAt)
+            },
+            onError: () => {
+              setIsDialogSubmitting(false)
+              setPendingLaunchEvent(null)
+              setOptimisticEventDate(eventType, confirmedAt)
+              const label = eventType === 'launch' ? 'Launch' : 'Recover'
+              toast.error(
+                `${label} recorded but command failed to send. Retry the command manually.`
+              )
+            },
+          }
+        )
+      },
+      () => {
+        setIsDialogSubmitting(false)
+        setPendingLaunchEvent(null)
+      }
+    )
+  }
+
+  const handleDialogConfirmNoCommand = () => {
+    if (!pendingLaunchEvent) return
+    const eventType = pendingLaunchEvent
+    const confirmedAt = DateTime.now().toISO()
+    setIsDialogSubmitting(true)
+    recordLaunchEvent(
+      eventType,
+      confirmedAt,
+      () => {
+        setIsDialogSubmitting(false)
+        setPendingLaunchEvent(null)
+        setOptimisticEventDate(eventType, confirmedAt)
+      },
+      () => {
+        setIsDialogSubmitting(false)
+        setPendingLaunchEvent(null)
+      }
+    )
+  }
+
+  const handleDialogCancel = () => {
+    setPendingLaunchEvent(null)
+  }
+
   return (
-    <DeploymentDetailsPopUp
-      onClose={handleClose}
-      name={deployment?.name ?? ''}
-      complete={!!deployment?.endEvent}
-      tagOptions={tags?.map(({ tag }) => ({ id: tag, name: tag })) ?? []}
-      queueSize={0}
-      gitTag={deployment?.path ?? ''}
-      logFiles={logFiles}
-      directoryListFilepath={deployment?.dlistResult?.path}
-      startDate={getISODate(deployment?.startEvent?.unixTime)}
-      launchDate={getISODate(deployment?.launchEvent?.unixTime)}
-      recoverDate={getISODate(deployment?.recoverEvent?.unixTime)}
-      endDate={getISODate(deployment?.endEvent?.unixTime)}
-      onChangeGitTag={handleSaveGitTag}
-      onSaveChanges={handleSaveDeployment}
-      onSetDeploymentEventToCurrentTime={handleSetDeploymentTime}
-      open
-    />
+    <>
+      {pendingLaunchEvent && (
+        <LaunchCommandDialog
+          event={pendingLaunchEvent}
+          isSubmitting={isDialogSubmitting}
+          onConfirmWithCommand={handleDialogConfirmWithCommand}
+          onConfirmNoCommand={handleDialogConfirmNoCommand}
+          onCancel={handleDialogCancel}
+        />
+      )}
+      <DeploymentDetailsPopUp
+        onClose={handleClose}
+        name={deployment?.name ?? ''}
+        complete={!!deployment?.endEvent || !!optimisticEndDate}
+        tagOptions={tags?.map(({ tag }) => ({ id: tag, name: tag })) ?? []}
+        queueSize={0}
+        gitTag={deployment?.path ?? ''}
+        logFiles={logFiles}
+        directoryListFilepath={deployment?.dlistResult?.path}
+        startDate={getISODate(deployment?.startEvent?.unixTime)}
+        launchDate={
+          getISODate(deployment?.launchEvent?.unixTime) ?? optimisticLaunchDate
+        }
+        recoverDate={
+          getISODate(deployment?.recoverEvent?.unixTime) ??
+          optimisticRecoverDate
+        }
+        endDate={
+          getISODate(deployment?.endEvent?.unixTime) ?? optimisticEndDate
+        }
+        onChangeGitTag={handleSaveGitTag}
+        onSaveChanges={handleSaveDeployment}
+        onSetDeploymentEventToCurrentTime={handleSetDeploymentTime}
+        open
+      />
+    </>
   )
 }
 

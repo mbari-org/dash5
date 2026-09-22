@@ -54,4 +54,31 @@ describe('useAlterDeployment', () => {
       mockResponse.result.vehicle
     )
   })
+
+  it('should invalidate deployment last query after successful mutation', async () => {
+    const queryClient = new QueryClient()
+    const invalidateQueriesSpy = jest.spyOn(queryClient, 'invalidateQueries')
+
+    render(
+      <MockProviders queryClient={queryClient}>
+        <MockAlterAction />
+      </MockProviders>
+    )
+
+    fireEvent.click(screen.getByText('Alter Deployment'))
+    await waitFor(() => screen.getByText(mockResponse.result.vehicle))
+
+    const lastDeploymentCall = invalidateQueriesSpy.mock.calls.find(
+      (call) =>
+        Array.isArray(call[0]) &&
+        call[0][0] === 'deployment' &&
+        call[0][1] === 'last'
+    )
+    expect(lastDeploymentCall).toBeDefined()
+    expect(lastDeploymentCall![0]).toEqual([
+      'deployment',
+      'last',
+      mockResponse.result.vehicle,
+    ])
+  })
 })

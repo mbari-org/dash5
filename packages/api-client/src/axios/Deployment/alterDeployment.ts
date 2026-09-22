@@ -32,8 +32,15 @@ export const alterDeployment = async (
     console.debug(`POST ${url}`)
   }
 
-  console.log('POSTING TO', url)
+  // /deployments/end does not accept a note param — only send it for launch/recover
+  const queryParams =
+    deploymentType === 'end'
+      ? { deploymentId: params.deploymentId, date: params.date }
+      : params
 
-  const response = await instance.post(url, undefined, { ...config, params })
+  const response = await instance.post(url, undefined, {
+    ...config,
+    params: queryParams,
+  })
   return response.data.result as AlterDeploymentResponse
 }
