@@ -77,6 +77,7 @@ export const useDepthSparkline = (
       staleTime: REFETCH_INTERVAL * 5,
       refetchInterval: REFETCH_INTERVAL * 5,
       retry: false,
+      ...options,
       enabled: fallbackEnabled,
     }
   )
