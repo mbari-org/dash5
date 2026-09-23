@@ -161,3 +161,15 @@ test('should not render a name row when name is empty string', () => {
   const fullLiCount = fullContainer.querySelectorAll('li').length
   expect(liCount).toBeLessThan(fullLiCount)
 })
+
+test('displays event ID below operator name when showEventId is true', () => {
+  render(<ScheduleCell {...props} showEventId={true} />)
+
+  expect(screen.getByText('Event ID: 123')).toBeInTheDocument()
+})
+
+test('does not display event ID when showEventId is omitted', () => {
+  render(<ScheduleCell {...props} />)
+
+  expect(screen.queryByText(/Event ID:/i)).not.toBeInTheDocument()
+})
