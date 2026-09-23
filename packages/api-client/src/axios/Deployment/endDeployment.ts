@@ -21,6 +21,13 @@ export const endDeployment = async (
     console.debug(`POST ${url}`)
   }
 
-  const response = await instance.post(url, params, config)
+  const response = await instance.post(
+    `${url}?${new URLSearchParams({
+      deploymentId: params.deploymentId,
+      date: params.date,
+    })}`,
+    undefined,
+    config
+  )
   return response.data as EndDeploymentResponse
 }
