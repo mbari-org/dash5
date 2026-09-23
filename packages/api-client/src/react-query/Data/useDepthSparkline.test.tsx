@@ -158,6 +158,41 @@ describe('useDepthSparkline', () => {
     expect(screen.getByTestId('padded')).toHaveTextContent('true')
   })
 
+  it('activates the fallback query when the primary returns an empty dataset', async () => {
+    const fallbackTimes = [
+      (NOW_MIN - 20) * 60000, // surface
+      (NOW_MIN - 15) * 60000,
+      (NOW_MIN - 10) * 60000,
+    ]
+    const fallbackValues = [2, 30, 60]
+
+    server.use(
+      rest.get('/data/depth', (req, res, ctx) => {
+        // Primary (with `from` param) → 200 but empty; fallback (no `from`) → 200 with data
+        if (req.url.searchParams.has('from')) {
+          return res(ctx.status(200), ctx.json({ times: [], values: [] }))
+        }
+        return res(
+          ctx.status(200),
+          ctx.json({ times: fallbackTimes, values: fallbackValues })
+        )
+      })
+    )
+
+    render(
+      <MockProviders queryClient={makeClient()}>
+        <SparklineConsumer vehicle="brizo" />
+      </MockProviders>
+    )
+
+    // Same result as the 404 path — fallback fires and renders trimmed + padded data.
+    await waitFor(() =>
+      expect(screen.getByTestId('depthLen')).not.toHaveTextContent('0')
+    )
+    expect(screen.getByTestId('depthLen')).toHaveTextContent('6')
+    expect(screen.getByTestId('padded')).toHaveTextContent('true')
+  })
+
   it('trims fallback data to the current dive (after last surface point)', async () => {
     // Two dives: older dive (deep), surface, current dive (shallow)
     const fallbackTimes = [
