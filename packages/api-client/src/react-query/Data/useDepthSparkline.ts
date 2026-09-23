@@ -6,6 +6,13 @@ import { useTethysApiContext } from '../TethysApiProvider'
 import { SupportedQueryOptions } from '../types'
 
 const EIGHT_HOURS_MS = 8 * 60 * 60 * 1000
+// Depth values at or below this threshold are treated as "at surface."
+// Used to find the start of the current dive in fallback data.
+const SURFACE_DEPTH_M = 5
+// Number of depth points to fetch for the fallback query. 480 points at
+// the default 1-per-minute sampling rate covers 8 hours; for vehicles that
+// sample less often this gives roughly 24–48 h of history.
+const FALLBACK_MAXLEN = 480
 
 export interface DepthSparklineData {
   depthTimes: number[] // minutes since epoch
@@ -29,6 +36,9 @@ export const useDepthSparkline = (
   // Default interval is 2 minutes; callers can override via options.
   const REFETCH_INTERVAL = 2 * 60 * 1000
 
+  // Primary query: last 8 hours. The API returns 404 when there are no depth
+  // points in the window (vehicle submerged > 8 h without a surface event).
+  // retry: false lets it fail immediately so the fallback can activate.
   const depthQuery = useQuery(
     ['depthSparkline', 'depth', vehicle],
     () =>
@@ -39,8 +49,35 @@ export const useDepthSparkline = (
     {
       staleTime: REFETCH_INTERVAL,
       refetchInterval: REFETCH_INTERVAL,
+      retry: false,
       ...options,
       enabled: !!vehicle && options?.enabled !== false,
+    }
+  )
+
+  // Fallback query: last FALLBACK_MAXLEN depth points with no time window.
+  // Activates when the primary query errors (404 — no data in 8 h) or returns
+  // an empty dataset. Refetches less aggressively since the vehicle is likely
+  // deep and not transmitting.
+  const primaryEmpty =
+    depthQuery.isSuccess && (depthQuery.data?.times?.length ?? 0) === 0
+  const fallbackEnabled =
+    !!vehicle &&
+    options?.enabled !== false &&
+    (depthQuery.isError || primaryEmpty)
+
+  const fallbackQuery = useQuery(
+    ['depthSparkline', 'depth', 'fallback', vehicle],
+    () =>
+      getDepthData(
+        { vehicle, maxlen: FALLBACK_MAXLEN },
+        { instance: axiosInstance }
+      ),
+    {
+      staleTime: REFETCH_INTERVAL * 5,
+      refetchInterval: REFETCH_INTERVAL * 5,
+      retry: false,
+      enabled: fallbackEnabled,
     }
   )
 
@@ -90,19 +127,45 @@ export const useDepthSparkline = (
     const windowStart = (nowMin - 8 * 60) * 60000 // ms epoch for windowStart
     const windowStartMin = nowMin - 8 * 60
 
-    // Clamp depth data to the rolling 8-hour window and keep times/values aligned.
-    // The API is asked for the same window on each refetch, but cached data can lag
-    // by up to staleTime (2 min) so we trim defensively here as well.
-    const rawTimes = depthQuery.data?.times ?? []
-    const rawValues = depthQuery.data?.values ?? []
-    const safeLen = Math.min(rawTimes.length, rawValues.length)
+    const useFallback = fallbackEnabled && fallbackQuery.isSuccess
+
     const depthTimesMin: number[] = []
     const clampedValues: number[] = []
-    for (let i = 0; i < safeLen; i++) {
-      const tMin = Math.floor(rawTimes[i] / 60000)
-      if (tMin >= windowStartMin) {
-        depthTimesMin.push(tMin)
-        clampedValues.push(rawValues[i])
+
+    if (useFallback) {
+      // Fallback path: trim the dataset to the current dive by finding the
+      // most recent point where the vehicle was at or near the surface
+      // (depth ≤ SURFACE_DEPTH_M). Points before that surfacing belong to a
+      // prior dive and would distort the depth scale — matching Dash4 behavior.
+      const fbTimes = fallbackQuery.data?.times ?? []
+      const fbValues = fallbackQuery.data?.values ?? []
+      const safeLen = Math.min(fbTimes.length, fbValues.length)
+
+      let lastSurfaceIdx = -1
+      for (let i = safeLen - 1; i >= 0; i--) {
+        if (fbValues[i] <= SURFACE_DEPTH_M) {
+          lastSurfaceIdx = i
+          break
+        }
+      }
+      const startIdx = lastSurfaceIdx >= 0 ? lastSurfaceIdx : 0
+      for (let i = startIdx; i < safeLen; i++) {
+        depthTimesMin.push(Math.floor(fbTimes[i] / 60000))
+        clampedValues.push(fbValues[i])
+      }
+    } else {
+      // Primary path: clamp depth data to the rolling 8-hour window.
+      // The API is asked for the same window on each refetch, but cached data
+      // can lag by up to staleTime (2 min) so we trim defensively here as well.
+      const rawTimes = depthQuery.data?.times ?? []
+      const rawValues = depthQuery.data?.values ?? []
+      const safeLen = Math.min(rawTimes.length, rawValues.length)
+      for (let i = 0; i < safeLen; i++) {
+        const tMin = Math.floor(rawTimes[i] / 60000)
+        if (tMin >= windowStartMin) {
+          depthTimesMin.push(tMin)
+          clampedValues.push(rawValues[i])
+        }
       }
     }
 
@@ -150,11 +213,26 @@ export const useDepthSparkline = (
       argoTimes,
       padded,
     }
-  }, [depthQuery.data, commsQuery.data, nowMinBucket])
+  }, [
+    depthQuery.data,
+    fallbackQuery.data,
+    fallbackQuery.isSuccess,
+    fallbackEnabled,
+    commsQuery.data,
+    nowMinBucket,
+  ])
+
+  // Only surface an error when the relevant active query has failed.
+  // If the primary 404s but the fallback succeeds, isError stays false.
+  const depthIsError = fallbackEnabled
+    ? fallbackQuery.isError
+    : depthQuery.isError
+  const depthIsLoading =
+    depthQuery.isLoading || (fallbackEnabled && fallbackQuery.isLoading)
 
   return {
     data,
-    isLoading: depthQuery.isLoading || commsQuery.isLoading,
-    isError: depthQuery.isError || commsQuery.isError,
+    isLoading: depthIsLoading || commsQuery.isLoading,
+    isError: depthIsError || commsQuery.isError,
   }
 }
