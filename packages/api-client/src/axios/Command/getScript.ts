@@ -3,7 +3,7 @@ import { getInstance } from '../getInstance'
 import { RequestConfig } from '../types'
 
 export interface GetScriptParams {
-  gitRef: string
+  gitRef?: string
   path: string
 }
 

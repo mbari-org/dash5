@@ -13,7 +13,7 @@ import {
 import { QueryClient } from 'react-query'
 import { rest } from 'msw'
 import { setupServer } from 'msw/node'
-import { MockProviders } from '../components/testHelpers'
+import { MockProviders, mockAuthResponse } from '../components/testHelpers'
 
 const props: ScheduleSectionProps = {
   authenticated: true,
@@ -1572,4 +1572,57 @@ test('parses legacy sched YYYYMMDD}T timestamp for backwards compatibility', asy
   await waitFor(() => {
     expect(screen.getByText(/Sent and Queued for .+ UTC/)).toBeInTheDocument()
   })
+})
+
+test('pending row shows mission ID from getScript before vehicle telemetry arrives', async () => {
+  // profile_station_vt.tl declares mission ID "profile_station". The pending
+  // row should display "profile_station" immediately — not the filename-derived
+  // "profile_station_vt" — because getScript resolves the ID at queue time.
+  // getScript is gated on a session token, so hydrate auth via /user/token.
+  server.use(
+    rest.get('/user/token', (_req, res, ctx) =>
+      res(ctx.status(200), ctx.json(mockAuthResponse))
+    ),
+    rest.get('/events', (_req, res, ctx) =>
+      res(
+        ctx.status(200),
+        ctx.json({
+          result: [
+            {
+              data: 'load Science/profile_station_vt.tl;set profile_station.MissionTimeout 12 h;run',
+              unixTime: Date.now() - 30 * 1000,
+              eventId: 501,
+              eventType: 'run',
+              text: null,
+              note: null,
+              user: 'test-operator',
+            },
+          ],
+        })
+      )
+    ),
+    rest.get('/events/mission-started', (_req, res, ctx) =>
+      res(ctx.status(200), ctx.json({ result: [] }))
+    ),
+    rest.get('/commands/script', (_req, res, ctx) =>
+      res(
+        ctx.status(200),
+        ctx.json({ result: { id: 'profile_station', scriptArgs: [] } })
+      )
+    )
+  )
+
+  render(
+    <MockProviders
+      queryClient={new QueryClient()}
+      testToken={mockAuthResponse.result.token}
+    >
+      <ScheduleSection {...props} currentDeploymentId={1} />
+    </MockProviders>
+  )
+
+  await waitFor(() => {
+    expect(screen.getByText('profile_station')).toBeInTheDocument()
+  })
+  expect(screen.queryByText('profile_station_vt')).not.toBeInTheDocument()
 })
