@@ -525,3 +525,67 @@ test('should not render actionButton when vehicle is recovered', async () => {
   )
   expect(screen.queryByLabelText('test action')).not.toBeInTheDocument()
 })
+
+test('should display Argos last-good text when textArgoAgo is provided', async () => {
+  render(<FullWidthVehicleDiagram {...props} textArgoAgo="Last good: NA" />)
+  expect(screen.queryByLabelText('argos ago')).toHaveTextContent(
+    'Last good: NA'
+  )
+})
+
+test('should display UBAT and Flow labels when provided', async () => {
+  render(
+    <FullWidthVehicleDiagram
+      {...props}
+      ubatColor="st4"
+      colorFlow="st3"
+      textUbat="UBAT"
+      textFlowLabel="Flow"
+    />
+  )
+  expect(screen.queryByLabelText('ubat')).toHaveClass('st4')
+  expect(screen.queryByLabelText('flow')).toHaveClass('st3')
+  expect(screen.queryByLabelText('ubat label')).toHaveTextContent('UBAT')
+  expect(screen.queryByLabelText('flow label')).toHaveTextContent('Flow')
+})
+
+test('should hide UBAT and Flow labels when docked', async () => {
+  render(
+    <FullWidthVehicleDiagram
+      {...props}
+      status="pluggedIn"
+      textUbat="UBAT"
+      textFlowLabel="Flow"
+    />
+  )
+  expect(screen.queryByLabelText('ubat label')).not.toBeInTheDocument()
+  expect(screen.queryByLabelText('flow label')).not.toBeInTheDocument()
+})
+
+test('should apply dock_line class to the dock pole', async () => {
+  render(<FullWidthVehicleDiagram {...props} dockLine="stbuoyline" />)
+  expect(screen.queryByTestId('dock line')).toHaveClass('stbuoyline')
+})
+
+test('should display BAD BATT overlay with stick count', async () => {
+  render(
+    <FullWidthVehicleDiagram {...props} showBadBattery textBadBattery="12x" />
+  )
+  expect(screen.queryByLabelText('bad battery overlay')).toBeInTheDocument()
+  expect(screen.queryByLabelText('bad battery label')).toHaveTextContent('BAD')
+  expect(screen.queryByLabelText('bad battery count')).toHaveTextContent('12x')
+  expect(screen.queryByLabelText('bad battery count')).toHaveClass('stbadcount')
+  expect(screen.queryByLabelText('bad battery count')).toHaveAttribute(
+    'transform',
+    'matrix(1 0 0 1 276.5 245.5)'
+  )
+  expect(screen.queryByLabelText('bad battery label')).toHaveAttribute(
+    'transform',
+    'matrix(1 0 0 1 287.0 242)'
+  )
+})
+
+test('should not display BAD BATT overlay by default', async () => {
+  render(<FullWidthVehicleDiagram {...props} />)
+  expect(screen.queryByLabelText('bad battery overlay')).not.toBeInTheDocument()
+})

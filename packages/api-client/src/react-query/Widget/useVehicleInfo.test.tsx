@@ -32,6 +32,8 @@ const mockResponse = {
   color_missionago: 'st4',
   text_gps: '13:57',
   color_gps: 'st4',
+  color_argo: 'st26',
+  text_argoago: 'Last good: NA',
   color_sw: 'st3',
   text_flowago: '',
   text_currentdist: '',

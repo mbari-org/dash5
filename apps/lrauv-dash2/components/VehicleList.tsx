@@ -30,6 +30,7 @@ import { useTick } from '../lib/useTick'
 import { useVehicleStatus } from '../lib/useVehicleStatus'
 import { deriveVehiclePropsStatus } from '../lib/deriveVehiclePropsStatus'
 import { resolveVehicleInfo } from '../lib/resolveVehicleInfo'
+import { useBadBatteryFault } from '../lib/useBadBatteryFault'
 
 const parsePos = (pos: string | number) => parseFloat(`${pos}`).toFixed(3)
 const calcPosition = (lat?: number | string, long?: number | string) =>
@@ -131,6 +132,7 @@ const ConnectedVehicleCellComponent: React.FC<{
   }
 
   const vehicle = resolveVehicleInfo(vehicleInfo)
+  const { data: badBattery } = useBadBatteryFault(name)
 
   const deploymentStartTime = lastDeployment?.startEvent?.unixTime ?? 0
 
@@ -193,7 +195,7 @@ const ConnectedVehicleCellComponent: React.FC<{
         textCriticalError: vehicle.text_criticalerror,
         textTimeout: vehicle.text_timeout,
         colorSatComm: vehicle.color_satcomm,
-        colorNextComm: vehicle.color_satcomm,
+        colorNextComm: vehicle.color_commago,
         colorSmallCable: vehicle.color_smallcable,
         textNote: vehicle.text_note,
         textArriveStation: vehicle.text_arrivestation,
@@ -221,12 +223,16 @@ const ConnectedVehicleCellComponent: React.FC<{
         dockTri: vehicle.dock_tri,
         textGf: vehicle.text_gf,
         colorFlow: vehicle.color_flow,
+        ubatColor: vehicle.color_ubat,
+        textUbat: name.toLowerCase() === 'pontus' ? 'UBAT' : undefined,
+        textFlowLabel: name.toLowerCase() === 'pontus' ? 'Flow' : undefined,
         colorWavecolor: vehicle.color_wavecolor,
         textAmps: vehicle.text_amps,
         colorAmps: vehicle.color_amps,
         colorDvl: vehicle.color_dvl,
         textGpsAgo: vehicle.text_gpsago,
         colorArgo: vehicle.color_argo,
+        textArgoAgo: vehicle.text_argoago,
         textCellAgo: formattedCellAgo,
         textNoteTime: vehicle.text_notetime,
         textArrow: vehicle.text_arrow,
@@ -275,6 +281,8 @@ const ConnectedVehicleCellComponent: React.FC<{
         textBatteryDuration: vehicle.text_batteryduration,
         textBatteryUnits: vehicle.text_batteryunits,
         textCurrent: vehicle.text_current,
+        showBadBattery: badBattery?.show,
+        textBadBattery: badBattery?.text,
         textNeedsComms: vehicle.text_needcomms,
         textMissionAgo: vehicle.text_missionago,
         textVersion: vehicle.text_version,
