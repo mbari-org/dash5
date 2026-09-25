@@ -30,6 +30,7 @@ import { ConfirmVehicleDialog } from './ConfirmVehicleDialog'
 import {
   ScheduleProvider,
   useScheduleContext,
+  ScheduleState,
 } from './MissionModalSteps/hooks/useSchedule'
 
 export type OnScheduleMissionHandler = (args: {
@@ -80,6 +81,8 @@ export interface MissionModalViewProps
   onSelectMissionCategory?: (category?: string) => void
   showAllVehicleMissions?: boolean
   onShowAllVehicleMissions?: (show: boolean) => void
+  /** Prefill Schedule step (e.g. via/timeout from a prior Send again). */
+  initialScheduleState?: Partial<ScheduleState>
 }
 
 export const MissionModalView: React.FC<MissionModalViewProps> = (props) => (
@@ -88,6 +91,7 @@ export const MissionModalView: React.FC<MissionModalViewProps> = (props) => (
       scheduleMethod: 'ASAP',
       alternateAddress: null,
       commType: 'cellsat',
+      ...props.initialScheduleState,
     }}
   >
     <MissionModalBody {...props} />
