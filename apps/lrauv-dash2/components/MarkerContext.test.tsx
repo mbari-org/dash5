@@ -35,6 +35,7 @@ const TestComponent = () => {
     saveMarkerToLayer,
     removeMarkerFromLayer,
     removeAllMarkersFromLayer,
+    clearMarkerEditSession,
   } = useMarkers()
 
   return (
@@ -48,6 +49,9 @@ const TestComponent = () => {
         onClick={() => handleAddMarker(37.5, -122.1)}
       >
         Add Marker
+      </button>
+      <button data-testid="clear-session" onClick={clearMarkerEditSession}>
+        Clear session
       </button>
       <button
         data-testid="remove-all-from-layer"
@@ -63,6 +67,9 @@ const TestComponent = () => {
           </span>
           <span data-testid={`layer-${marker.id}`}>
             {marker.savedToLayer ? 'In Layer' : 'Not In Layer'}
+          </span>
+          <span data-testid={`new-${marker.id}`}>
+            {marker.isNew ? 'new' : 'committed'}
           </span>
           <button
             data-testid={`save-${marker.id}`}
@@ -113,6 +120,24 @@ describe('MarkerContext', () => {
 
     expect(screen.getByTestId('marker-count').textContent).toBe('1')
     expect(screen.getByTestId('marker-1')).toBeInTheDocument()
+  })
+
+  test('clearMarkerEditSession keeps the pin and drops the new-marker edit flag', async () => {
+    render(
+      <ConfirmationProvider>
+        <MarkerProvider>
+          <TestComponent />
+        </MarkerProvider>
+      </ConfirmationProvider>
+    )
+
+    await userEvent.click(screen.getByTestId('add-marker'))
+    expect(screen.getByTestId('new-1')).toHaveTextContent('new')
+
+    await userEvent.click(screen.getByTestId('clear-session'))
+
+    expect(screen.getByTestId('marker-count')).toHaveTextContent('1')
+    expect(screen.getByTestId('new-1')).toHaveTextContent('committed')
   })
 
   test('saves marker to layer', async () => {
