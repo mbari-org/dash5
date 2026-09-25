@@ -2,9 +2,12 @@ import { EventType, GetEventsResponse } from '@mbari/api-client'
 import { humanize } from '@mbari/utils'
 
 const styles = {
-  code: 'border border-slate-100 bg-slate-50 p-2 font-mono my-1',
+  // basis-full: in compact LogCell, description root is forced to flex-row+wrap;
+  // full basis keeps each SBD stack on its own row below the by/id line.
+  code: 'border border-slate-100 bg-slate-50 p-2 font-mono my-1 w-full basis-full',
   error: 'font-bold text-red-700',
   mtmsn: 'font-mono text-red-800',
+  metaLine: 'w-full basis-full shrink-0',
 }
 
 export interface EventFilter {
@@ -123,16 +126,16 @@ const formatEvent = (
 
     case 'command':
       return (
-        <p className="flex flex-col">
-          <span className="text-green-800">
+        <div className="flex w-full flex-col">
+          <p className={`${styles.metaLine} text-green-800`}>
             by {user ?? 'unknown'} , id: {event.eventId}, {note}
-          </span>
+          </p>
           {data?.split('\n').map((line, i) => (
             <pre key={`${event.eventId}${i}`} className={styles.code}>
               {line}
             </pre>
           ))}
-        </p>
+        </div>
       )
 
     case 'dataProcessed':
@@ -301,8 +304,8 @@ const formatEvent = (
 
     case 'run':
       return (
-        <div className="flex flex-col" style={{ color: 'purple' }}>
-          <p>
+        <div className="flex w-full flex-col" style={{ color: 'purple' }}>
+          <p className={styles.metaLine}>
             <span className="font-bold">by {user ?? 'unknown'},</span> id:{' '}
             {event.eventId}, {note}
           </p>
