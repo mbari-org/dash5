@@ -400,6 +400,7 @@ const ScienceDataSection: React.FC<{
           <AccordionCells
             cellAtIndex={cellAtIndex}
             count={charts?.length}
+            overscan={charts?.length}
             loading={isLoading}
           />
         </div>

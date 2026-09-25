@@ -12,6 +12,8 @@ export interface AccordionCellsProps {
   header?: React.ReactNode
   maxHeight?: string
   hideBottomFade?: boolean
+  /** Passed through to CellVirtualizer. Pass `count` to keep all cells mounted. */
+  overscan?: number
 }
 
 export const AccordionCells: React.FC<AccordionCellsProps> = ({
@@ -23,6 +25,7 @@ export const AccordionCells: React.FC<AccordionCellsProps> = ({
   header,
   maxHeight,
   hideBottomFade = false,
+  overscan,
 }) => {
   return (
     <div
@@ -36,6 +39,7 @@ export const AccordionCells: React.FC<AccordionCellsProps> = ({
       <CellVirtualizer
         cellAtIndex={cellAtIndex}
         count={count}
+        overscan={overscan}
         className={clsx(
           'w-full',
           maxHeight ? ['overflow-y-auto', maxHeight] : 'absolute inset-0'

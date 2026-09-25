@@ -11,6 +11,9 @@ export interface CellVirtualizerProps {
   count: number
   estimateSize?: (index: number) => number
   header?: React.ReactNode
+  /** Number of items to pre-render outside the viewport. Defaults to 5.
+   *  Pass `count` to keep all items mounted (effectively disables virtualization). */
+  overscan?: number
 }
 
 export const CellVirtualizer: React.FC<CellVirtualizerProps> = ({
@@ -20,6 +23,7 @@ export const CellVirtualizer: React.FC<CellVirtualizerProps> = ({
   count,
   estimateSize = () => 100,
   header,
+  overscan = 5,
 }) => {
   // The scrollable element for your list
   const parentRef = React.useRef(null)
@@ -29,6 +33,10 @@ export const CellVirtualizer: React.FC<CellVirtualizerProps> = ({
     count,
     getScrollElement: () => parentRef.current,
     estimateSize,
+    // Pre-render cells above and below the viewport so charts are already
+    // mounted before the user scrolls to them, preventing the reload-on-scroll
+    // behavior caused by ScienceCell's ready/setTimeout resetting on remount.
+    overscan,
   })
 
   return (
