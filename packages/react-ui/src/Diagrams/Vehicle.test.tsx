@@ -107,6 +107,11 @@ test('should display the cell comms color as provided color', async () => {
   expect(screen.getByTestId('cell')).toHaveClass('st6')
 })
 
+test('should place the cell comms box at the Dash4 y so Last good is not covered', async () => {
+  render(<Vehicle {...props} />)
+  expect(screen.getByTestId('cell')).toHaveAttribute('y', '206')
+})
+
 test('should display sat comms text when provided', async () => {
   render(<Vehicle {...props} textSat="10:28" />)
   expect(screen.queryByText(/10:28/i)).toBeInTheDocument()
@@ -444,4 +449,47 @@ test('should apply redled class to red LED indicator when provided', async () =>
 test('should NOT render planktivore body when neither textLM nor textHM is provided', async () => {
   render(<Vehicle {...props} />)
   expect(screen.queryByLabelText('planktivore body')).not.toBeInTheDocument()
+})
+
+test('should display Argos last-good text when textArgoAgo is provided', async () => {
+  render(<Vehicle {...props} textArgoAgo="Last good: NA" />)
+  expect(screen.queryByLabelText('argos ago')).toHaveTextContent(
+    'Last good: NA'
+  )
+})
+
+test('should display UBAT and Flow labels when provided', async () => {
+  render(
+    <Vehicle
+      {...props}
+      ubatColor="st4"
+      colorFlow="st3"
+      textUbat="UBAT"
+      textFlowLabel="Flow"
+    />
+  )
+  expect(screen.queryByLabelText('ubat')).toHaveClass('st4')
+  expect(screen.queryByLabelText('flow')).toHaveClass('st3')
+  expect(screen.queryByLabelText('ubat label')).toHaveTextContent('UBAT')
+  expect(screen.queryByLabelText('flow label')).toHaveTextContent('Flow')
+})
+
+test('should apply dock_line class to the dock pole', async () => {
+  render(<Vehicle {...props} dockLine="stbuoyline" />)
+  expect(screen.queryByTestId('dock line')).toHaveClass('stbuoyline')
+})
+
+test('should display BAD BATT overlay with stick count', async () => {
+  render(<Vehicle {...props} showBadBattery textBadBattery="12x" />)
+  expect(screen.queryByLabelText('bad battery overlay')).toBeInTheDocument()
+  expect(screen.queryByLabelText('bad battery count')).toHaveTextContent('12x')
+  expect(screen.queryByLabelText('bad battery count')).toHaveClass('stbadcount')
+  expect(screen.queryByLabelText('bad battery count')).toHaveAttribute(
+    'transform',
+    'matrix(1 0 0 1 276.5 245.5)'
+  )
+  expect(screen.queryByLabelText('bad battery label')).toHaveAttribute(
+    'transform',
+    'matrix(1 0 0 1 287.0 242)'
+  )
 })
