@@ -13,6 +13,7 @@ import { useSharedPath } from './SharedPathContextProvider'
 import { parseISO, getTime } from 'date-fns'
 import { formatElapsedTime } from '@mbari/utils'
 import { useVehicleColors } from './VehicleColorsContext'
+import { useSelectedLrauvsOptional } from './SelectedLrauvsContext'
 import {
   deduplicateFixesByUnixTime,
   countDisplayedPositions,
@@ -151,6 +152,7 @@ const VehiclePath: React.FC<VehiclePathProps> = ({
 
   // Path/Point Stylization
   const { vehicleColors } = useVehicleColors()
+  const { isLeafChecked, registerVehicleCounts } = useSelectedLrauvsOptional()
   const customColors: Record<string, string> = useMemo(() => ({}), [])
   const [color, setColor] = useState(
     vehicleColors[name] || customColors[name] || '#ccc'
@@ -204,6 +206,18 @@ const VehiclePath: React.FC<VehiclePathProps> = ({
     hasNotifiedDataLoaded.current = true
     onPositionDataLoaded()
   }, [vehiclePosition?.gpsFixes, onPositionDataLoaded])
+
+  // Register position counts with the layer context so LrauvsLayerSection
+  // can display accurate leaf labels (e.g. "GPS fixes (12)").
+  useEffect(() => {
+    if (!vehiclePosition) return
+    registerVehicleCounts(name, {
+      gpsFixes: vehiclePosition.gpsFixes?.length ?? 0,
+      argos: vehiclePosition.argoReceives?.length ?? 0,
+      reachedWaypoints: vehiclePosition.reachedWaypoints?.length ?? 0,
+      emergencies: vehiclePosition.emergencies?.length ?? 0,
+    })
+  }, [name, vehiclePosition, registerVehicleCounts])
 
   const timeout = useRef<ReturnType<typeof setTimeout> | null>(null)
   const [mapHoverFix, setMapHoverFix] = useState<VPosDetail | null>(null)
@@ -510,13 +524,19 @@ const VehiclePath: React.FC<VehiclePathProps> = ({
     ? formatElapsedTime(Date.now() - getTime(parseISO(latestTimeFix)))
     : ''
 
-  return route?.length ? (
+  const showGpsFixes = isLeafChecked(name, 'gpsFixes')
+  const showWaypoints = isLeafChecked(name, 'waypoints')
+  const showArgos = isLeafChecked(name, 'argos')
+  const showReachedWaypoints = isLeafChecked(name, 'reachedWaypoints')
+  const showEmergencies = isLeafChecked(name, 'emergencies')
+
+  const gpsSection = route?.length ? (
     <>
       {/* When split mode is active (dimTime set) only render the past segment.
           If there are no past fixes yet (before first GPS fix), render nothing
           rather than falling back to the full route which would double-draw
           under the dashed future segment. */}
-      {(!dimTime || activeRoute) && (
+      {showGpsFixes && (!dimTime || activeRoute) && (
         <Polyline
           pathOptions={lineStyle}
           positions={activeRoute ?? route}
@@ -532,7 +552,7 @@ const VehiclePath: React.FC<VehiclePathProps> = ({
         />
       )}
       {/* dashed future waypoint trajectory */}
-      {futureRoute && (
+      {showWaypoints && futureRoute && (
         <Polyline
           positions={futureRoute}
           pathOptions={{ color, weight: 5, opacity: 0.6, dashArray: '5, 10' }}
@@ -540,7 +560,8 @@ const VehiclePath: React.FC<VehiclePathProps> = ({
       )}
 
       {/* small dotted circles around future waypoint positions (exclude latest position) */}
-      {futureRoute &&
+      {showWaypoints &&
+        futureRoute &&
         futureRoute.slice(1).map((p, i) => (
           <Circle
             key={`${name}:future-ring:${i}:${p.join()}`}
@@ -559,24 +580,25 @@ const VehiclePath: React.FC<VehiclePathProps> = ({
           current position marker so the latest dot always appears on top when
           positions overlap. Non-interactive so HitCircles retain pointer priority
           for scrub/hover. Per-fix details are shown via the mapHoverFix tooltip. */}
-      {displayedFixes.map((fix, index) =>
-        index === 0 ? null : (
-          <CircleMarker
-            key={`${name}:surfacing:${fix.eventId ?? fix.unixTime}`}
-            center={{ lat: fix.latitude, lng: fix.longitude }}
-            radius={2}
-            color={color}
-            fillColor={color}
-            fillOpacity={0.7}
-            weight={1}
-            interactive={false}
-          />
-        )
-      )}
+      {showGpsFixes &&
+        displayedFixes.map((fix, index) =>
+          index === 0 ? null : (
+            <CircleMarker
+              key={`${name}:surfacing:${fix.eventId ?? fix.unixTime}`}
+              center={{ lat: fix.latitude, lng: fix.longitude }}
+              radius={2}
+              color={color}
+              fillColor={color}
+              fillOpacity={0.7}
+              weight={1}
+              interactive={false}
+            />
+          )
+        )}
       {/* Current vehicle position — solid filled dot with a contrasting white
           border ring. Rendered after surfacing dots so it always appears on top.
           Matches Dash4's l-circle-marker approach (radius=6, solid). */}
-      {latest && (
+      {showGpsFixes && latest && (
         <CircleMarker
           data-vehicle-point={`${name}-latest`}
           center={{ lat: latest.latitude, lng: latest.longitude }}
@@ -599,22 +621,24 @@ const VehiclePath: React.FC<VehiclePathProps> = ({
       )}
       {/* Scrub indicator dot — shown for any scrub source (depth chart, timeline)
           unless the map-hover highlight is already visible at that position */}
-      {indicatorCoord && mapHoverFix?.unixTime !== indicatorCoord.unixTime && (
-        <CircleMarker
-          center={{
-            lat: indicatorCoord.latitude,
-            lng: indicatorCoord.longitude,
-          }}
-          interactive={false}
-          pathOptions={{
-            color,
-            fillColor: color,
-            fillOpacity: 0.85,
-            weight: 2,
-          }}
-          radius={8}
-        />
-      )}
+      {showGpsFixes &&
+        indicatorCoord &&
+        mapHoverFix?.unixTime !== indicatorCoord.unixTime && (
+          <CircleMarker
+            center={{
+              lat: indicatorCoord.latitude,
+              lng: indicatorCoord.longitude,
+            }}
+            interactive={false}
+            pathOptions={{
+              color,
+              fillColor: color,
+              fillOpacity: 0.85,
+              weight: 2,
+            }}
+            radius={8}
+          />
+        )}
       {/* Crumb trail dots — only shown while the timeline bar is being hovered */}
       {activeRoute &&
         activeRoute.map((r, i) => (
@@ -630,7 +654,7 @@ const VehiclePath: React.FC<VehiclePathProps> = ({
           />
         ))}
       {/* Hover highlight — grows at the nearest fix when hovering the map track */}
-      {mapHoverFix && (
+      {showGpsFixes && mapHoverFix && (
         <CircleMarker
           center={{ lat: mapHoverFix.latitude, lng: mapHoverFix.longitude }}
           interactive={false}
@@ -700,18 +724,20 @@ const VehiclePath: React.FC<VehiclePathProps> = ({
 
       {/* Memoized hit targets — isolated from VehiclePath re-renders to
           prevent spurious mouseout/mouseover events causing tooltip flicker. */}
-      <HitCircles
-        name={name}
-        grouped={grouped}
-        route={route}
-        color={color}
-        onCoord={handleCoord}
-        onMouseOut={handleMouseOut}
-      />
+      {showGpsFixes && (
+        <HitCircles
+          name={name}
+          grouped={grouped}
+          route={route}
+          color={color}
+          onCoord={handleCoord}
+          onMouseOut={handleMouseOut}
+        />
+      )}
       {/* Invisible hit target for the latest-position tooltip — rendered AFTER
           HitCircles so it sits on top and its tooltip is reliably reachable.
           Shows "Position before waypoint trajectory" when a future route exists. */}
-      {latest && (
+      {showGpsFixes && latest && (
         <CircleMarker
           center={{ lat: latest.latitude, lng: latest.longitude }}
           radius={12}
@@ -757,6 +783,129 @@ const VehiclePath: React.FC<VehiclePathProps> = ({
       )}
     </>
   ) : null
+
+  return (
+    <>
+      {gpsSection}
+
+      {/* ===== Argos positions ===== */}
+      {showArgos &&
+        vehiclePosition?.argoReceives?.map((point, index) => {
+          const lcValue = point.note
+            ? parseInt(point.note.replace('LC=', ''), 10)
+            : 0
+          const accuracyRadii: Record<number, number> = {
+            1: 1000,
+            2: 2000,
+            3: 3000,
+          }
+          const radiusMeters = accuracyRadii[lcValue] ?? 0
+          return (
+            <React.Fragment
+              key={`${name}:argo:${point.eventId ?? point.unixTime}`}
+            >
+              <CircleMarker
+                center={{ lat: point.latitude, lng: point.longitude }}
+                radius={4}
+                color={color}
+                fillColor={color}
+                fillOpacity={0.7}
+                weight={2}
+              >
+                <Tooltip direction="right" offset={[10, 0]} opacity={0.9}>
+                  <div className="text-xs leading-snug">
+                    <div className="font-bold">{name} Argos position</div>
+                    <div>
+                      {point.latitude.toFixed(5)}, {point.longitude.toFixed(5)}
+                    </div>
+                    {point.note && <div>{point.note}</div>}
+                    {point.text && <div>{point.text}</div>}
+                    <div>
+                      {point.isoTime.replace('T', ' ').replace('Z', ' UTC')}{' '}
+                      <span className="text-[10px] italic text-gray-500">
+                        -{formatElapsedTime(Date.now() - point.unixTime)}
+                      </span>
+                    </div>
+                  </div>
+                </Tooltip>
+              </CircleMarker>
+              {radiusMeters > 0 && (
+                <Circle
+                  center={{ lat: point.latitude, lng: point.longitude }}
+                  radius={radiusMeters}
+                  pathOptions={{
+                    color,
+                    weight: 2,
+                    opacity: 0.5,
+                    fillOpacity: 0,
+                    dashArray: '5 7',
+                  }}
+                />
+              )}
+            </React.Fragment>
+          )
+        })}
+
+      {/* ===== Reached waypoints ===== */}
+      {showReachedWaypoints &&
+        vehiclePosition?.reachedWaypoints?.map((point, index) => (
+          <CircleMarker
+            key={`${name}:rwp:${point.eventId ?? point.unixTime}`}
+            center={{ lat: point.latitude, lng: point.longitude }}
+            radius={4}
+            color={color}
+            fillColor={color}
+            fillOpacity={0.7}
+            weight={2}
+          >
+            <Tooltip direction="right" offset={[10, 0]} opacity={0.9}>
+              <div className="text-xs leading-snug">
+                <div className="font-bold">{name}</div>
+                <div>Reached waypoint</div>
+                <div>
+                  {point.latitude.toFixed(5)}, {point.longitude.toFixed(5)}
+                </div>
+                <div>
+                  {point.isoTime.replace('T', ' ').replace('Z', ' UTC')}{' '}
+                  <span className="text-[10px] italic text-gray-500">
+                    -{formatElapsedTime(Date.now() - point.unixTime)}
+                  </span>
+                </div>
+              </div>
+            </Tooltip>
+          </CircleMarker>
+        ))}
+
+      {/* ===== Emergencies ===== */}
+      {showEmergencies &&
+        vehiclePosition?.emergencies?.map((point, index) => (
+          <CircleMarker
+            key={`${name}:emergency:${point.eventId ?? point.unixTime}`}
+            center={{ lat: point.latitude, lng: point.longitude }}
+            radius={10}
+            color="red"
+            fillColor="red"
+            fillOpacity={0.8}
+            weight={3}
+          >
+            <Tooltip direction="right" offset={[10, 0]} opacity={0.9}>
+              <div className="text-xs leading-snug">
+                <div className="font-bold text-red-600">{name} Emergency</div>
+                <div>
+                  {point.latitude.toFixed(5)}, {point.longitude.toFixed(5)}
+                </div>
+                <div>
+                  {point.isoTime.replace('T', ' ').replace('Z', ' UTC')}{' '}
+                  <span className="text-[10px] italic text-gray-500">
+                    -{formatElapsedTime(Date.now() - point.unixTime)}
+                  </span>
+                </div>
+              </div>
+            </Tooltip>
+          </CircleMarker>
+        ))}
+    </>
+  )
 }
 
 export default VehiclePath

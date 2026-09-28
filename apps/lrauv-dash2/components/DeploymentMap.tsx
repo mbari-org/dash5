@@ -657,6 +657,7 @@ const DeploymentMap: React.FC<DeploymentMapProps> = ({
         <MapLayersListModal
           onClose={handleCloseLayers}
           anchorPosition={layersModalPosition}
+          vehicleNames={modalTrackedVehicles as string[]}
         />
       ) : null}
       {showPlatformsModal ? (

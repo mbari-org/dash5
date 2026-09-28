@@ -9,8 +9,8 @@ interface MarkersLayerSectionProps {
   isFiltering: boolean
   filteredMarkers: MarkerData[]
   layerMarkers: MarkerData[]
-  expandedSections: { markers: boolean }
-  toggleExpanded: (section: 'markers') => void
+  expandedSections: Record<string, boolean>
+  toggleExpanded: (section: string) => void
   handleToggleSelectAllMarkers: () => void
   toggleMarkerVisibility: (id: string) => void
 }

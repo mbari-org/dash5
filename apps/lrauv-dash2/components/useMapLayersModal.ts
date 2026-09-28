@@ -14,11 +14,13 @@ import { useSelectedKmlLayers } from './SelectedKmlLayersContext'
 import { useMarkers } from './MarkerContext'
 
 type SectionName =
+  | 'lrauvs'
   | 'stations'
   | 'markers'
   | 'polygons'
   | 'tileLayers'
   | 'kmlLayers'
+  | `lrauv-${string}`
   | `station-${string}`
 
 const EXPANDED_STORAGE_KEY = 'mapLayersExpandedSections'
@@ -26,9 +28,11 @@ const EXPANDED_STORAGE_KEY = 'mapLayersExpandedSections'
 export const useMapLayersModal = ({
   onClose,
   anchorPosition,
+  vehicleNames = [],
 }: {
   onClose: () => void
   anchorPosition?: { top: number; left: number }
+  vehicleNames?: string[]
 }) => {
   const { data: stations } = useStations()
   const {
@@ -103,7 +107,7 @@ export const useMapLayersModal = ({
   }, [polygons])
 
   const [expandedSections, setExpandedSections] = useState<
-    Record<SectionName, boolean>
+    Record<string, boolean>
   >(() => {
     try {
       const stored =
@@ -114,6 +118,7 @@ export const useMapLayersModal = ({
         const parsed = JSON.parse(stored)
         if (typeof parsed === 'object' && parsed !== null) {
           return {
+            lrauvs: parsed.lrauvs ?? true,
             stations: parsed.stations ?? false,
             markers: parsed.markers ?? false,
             polygons: parsed.polygons ?? false,
@@ -126,6 +131,7 @@ export const useMapLayersModal = ({
       // fall through to defaults
     }
     return {
+      lrauvs: true,
       stations: false,
       markers: false,
       polygons: false,
@@ -241,7 +247,7 @@ export const useMapLayersModal = ({
     setModalPosition({ top, left })
   }, [anchorPosition])
 
-  const toggleExpanded = useCallback((section: SectionName) => {
+  const toggleExpanded = useCallback((section: string) => {
     setExpandedSections((prev) => {
       const next = { ...prev, [section]: !prev[section] }
       try {
@@ -352,6 +358,11 @@ export const useMapLayersModal = ({
   const isFiltering = searchQuery.trim() !== '' || showSelectedOnly
   const q = searchQuery.trim().toLowerCase()
 
+  const filteredVehicleNames = useMemo(() => {
+    if (!isFiltering) return vehicleNames
+    return vehicleNames.filter((n) => n.toLowerCase().includes(q))
+  }, [vehicleNames, isFiltering, q])
+
   const filteredStations = useMemo(() => {
     let list = sortedStations
     if (showSelectedOnly)
@@ -412,6 +423,7 @@ export const useMapLayersModal = ({
     if (!isFiltering) return
     setExpandedSections((prev) => ({
       ...prev,
+      lrauvs: filteredVehicleNames.length > 0 ? true : prev.lrauvs,
       markers: filteredMarkers.length > 0 ? true : prev.markers,
       stations: filteredStations.length > 0 ? true : prev.stations,
       polygons: filteredPolygons.length > 0 ? true : prev.polygons,
@@ -420,6 +432,7 @@ export const useMapLayersModal = ({
     }))
   }, [
     isFiltering,
+    filteredVehicleNames.length,
     filteredMarkers.length,
     filteredStations.length,
     filteredPolygons.length,
@@ -443,6 +456,9 @@ export const useMapLayersModal = ({
     showSelectedOnly,
     setShowSelectedOnly,
     isFiltering,
+    // lrauvs
+    vehicleNames,
+    filteredVehicleNames,
     // stations
     stations,
     sortedStations,
