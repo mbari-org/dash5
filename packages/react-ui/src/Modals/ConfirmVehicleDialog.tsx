@@ -6,7 +6,10 @@ import { FooterProps } from '../Modal/Footer'
 import type { ModalViewProps } from '../Modal/Modal'
 
 export interface ConfirmVehicleDialogProps
-  extends Pick<FooterProps, 'onConfirm' | 'onCancel' | 'leftExtraButtons'>,
+  extends Pick<
+      FooterProps,
+      'onConfirm' | 'onCancel' | 'leftExtraButtons' | 'extraButtons'
+    >,
     Pick<
       ModalViewProps,
       | 'style'

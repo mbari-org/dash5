@@ -465,7 +465,7 @@ const MissionModalBody: React.FC<MissionModalViewProps> = ({
           // Cancel aborts the whole flow; Back returns to Schedule.
           onCancel={onCancel}
           onConfirm={handleSchedule}
-          leftExtraButtons={[
+          extraButtons={[
             {
               buttonText: 'Back',
               appearance: 'secondary',
@@ -484,7 +484,7 @@ const MissionModalBody: React.FC<MissionModalViewProps> = ({
           onCancel={onCancel}
           onClose={onCancel}
           loading={loading}
-          leftExtraButtons={[
+          extraButtons={[
             {
               buttonText: 'Back',
               appearance: 'secondary',

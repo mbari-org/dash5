@@ -479,6 +479,40 @@ test('hides SBD chunk note for single-part previews', () => {
   expect(screen.queryByText(/SBD chunk/i)).not.toBeInTheDocument()
 })
 
+const expectBackBesidePrimary = (primaryName: RegExp) => {
+  const back = screen.getByRole('button', { name: 'Back' })
+  const primary = screen.getByRole('button', { name: primaryName })
+  const cancel = screen.getByRole('button', { name: /^Cancel$/i })
+  expect(back.closest('li')).toBe(primary.closest('li'))
+  expect(cancel.closest('li')).not.toBe(back.closest('li'))
+}
+
+test('Confirm Cancel dismisses and Back sits beside Confirm', () => {
+  const onCancel = jest.fn()
+  render(
+    <RecoilRoot>
+      <MissionModalView {...props} currentStepIndex={6} onCancel={onCancel} />
+    </RecoilRoot>
+  )
+  expect(screen.getByText(/is that right/i)).toBeInTheDocument()
+  expectBackBesidePrimary(/^Confirm$/i)
+  fireEvent.click(screen.getByRole('button', { name: /^Cancel$/i }))
+  expect(onCancel).toHaveBeenCalledTimes(1)
+})
+
+test('Confirm Back returns to Schedule and does not dismiss', () => {
+  const onCancel = jest.fn()
+  render(
+    <RecoilRoot>
+      <MissionModalView {...props} currentStepIndex={6} onCancel={onCancel} />
+    </RecoilRoot>
+  )
+  fireEvent.click(screen.getByRole('button', { name: 'Back' }))
+  expect(onCancel).not.toHaveBeenCalled()
+  expect(screen.queryByText(/is that right/i)).not.toBeInTheDocument()
+  expect(screen.getAllByText(/6\. Schedule/i).length).toBeGreaterThan(0)
+})
+
 test('Send Command Cancel dismisses the modal instead of stepping back', () => {
   const onCancel = jest.fn()
   render(
@@ -491,6 +525,24 @@ test('Send Command Cancel dismisses the modal instead of stepping back', () => {
       />
     </RecoilRoot>
   )
+  expectBackBesidePrimary(/^Confirm$/i)
   fireEvent.click(screen.getByRole('button', { name: /^Cancel$/i }))
   expect(onCancel).toHaveBeenCalledTimes(1)
+})
+
+test('Send Command Back returns to Confirm and does not dismiss', () => {
+  const onCancel = jest.fn()
+  render(
+    <RecoilRoot>
+      <MissionModalView
+        {...props}
+        currentStepIndex={7}
+        previewText={'sched asap "load Science/sci2.tl;run"'}
+        onCancel={onCancel}
+      />
+    </RecoilRoot>
+  )
+  fireEvent.click(screen.getByRole('button', { name: 'Back' }))
+  expect(onCancel).not.toHaveBeenCalled()
+  expect(screen.getByText(/is that right/i)).toBeInTheDocument()
 })
