@@ -11,7 +11,6 @@ const MapFlyTo: React.FC = () => {
       if (flyToRequest.bounds) {
         map.fitBounds(flyToRequest.bounds, {
           padding: [20, 20],
-          maxZoom: 13,
           animate: false,
         })
       } else {
