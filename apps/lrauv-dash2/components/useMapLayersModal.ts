@@ -12,16 +12,11 @@ import { useSelectedPolygons } from './SelectedPolygonsContext'
 import { useSelectedTileLayers } from './SelectedTileLayersContext'
 import { useSelectedKmlLayers } from './SelectedKmlLayersContext'
 import { useMarkers } from './MarkerContext'
-
-type SectionName =
-  | 'lrauvs'
-  | 'stations'
-  | 'markers'
-  | 'polygons'
-  | 'tileLayers'
-  | 'kmlLayers'
-  | `lrauv-${string}`
-  | `station-${string}`
+import {
+  useSelectedLrauvsOptional,
+  ORDERED_LEAF_KEYS,
+  CONDITIONAL_LEAVES,
+} from './SelectedLrauvsContext'
 
 const EXPANDED_STORAGE_KEY = 'mapLayersExpandedSections'
 
@@ -55,6 +50,8 @@ export const useMapLayersModal = ({
   const { data: polygons } = usePolygons()
   const { data: tileLayers } = useTileLayers()
   const { data: kmlLayers } = useKmlLayers()
+  const { isLeafChecked: isLrauvLeafChecked, vehicleCounts: lrauvCounts } =
+    useSelectedLrauvsOptional()
 
   // Memoize polygon bounding boxes — avoids re-walking all GeoJSON coordinates
   // on every render (can be expensive for large datasets like US Shipping Lanes).
@@ -118,6 +115,10 @@ export const useMapLayersModal = ({
         const parsed = JSON.parse(stored)
         if (typeof parsed === 'object' && parsed !== null) {
           return {
+            // Spread all stored keys first so lrauv-<vehicle> expanded states
+            // from a previous open in this session are restored (vehicle
+            // sub-trees that were expanded stay expanded on re-open).
+            ...parsed,
             lrauvs: parsed.lrauvs ?? true,
             stations: parsed.stations ?? false,
             markers: parsed.markers ?? false,
@@ -360,8 +361,30 @@ export const useMapLayersModal = ({
 
   const filteredVehicleNames = useMemo(() => {
     if (!isFiltering) return vehicleNames
-    return vehicleNames.filter((n) => n.toLowerCase().includes(q))
-  }, [vehicleNames, isFiltering, q])
+    let list = vehicleNames
+    if (showSelectedOnly) {
+      list = list.filter((vn) => {
+        const vCounts = lrauvCounts[vn]
+        return ORDERED_LEAF_KEYS.some((leaf) => {
+          if (
+            CONDITIONAL_LEAVES.includes(leaf) &&
+            (vCounts?.[leaf as keyof typeof vCounts] ?? 0) === 0
+          )
+            return false
+          return isLrauvLeafChecked(vn, leaf)
+        })
+      })
+    }
+    if (q) list = list.filter((n) => n.toLowerCase().includes(q))
+    return list
+  }, [
+    vehicleNames,
+    isFiltering,
+    showSelectedOnly,
+    q,
+    lrauvCounts,
+    isLrauvLeafChecked,
+  ])
 
   const filteredStations = useMemo(() => {
     let list = sortedStations

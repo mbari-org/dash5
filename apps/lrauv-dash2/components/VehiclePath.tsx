@@ -13,11 +13,17 @@ import { useSharedPath } from './SharedPathContextProvider'
 import { parseISO, getTime } from 'date-fns'
 import { formatElapsedTime } from '@mbari/utils'
 import { useVehicleColors } from './VehicleColorsContext'
-import { useSelectedLrauvsOptional } from './SelectedLrauvsContext'
+import {
+  useSelectedLrauvsOptional,
+  LRAUVS_ROOT_HOVER,
+} from './SelectedLrauvsContext'
 import {
   deduplicateFixesByUnixTime,
   countDisplayedPositions,
+  recentPositionsWithinWindow,
+  lrauvsRootHoverPositions,
 } from '../lib/vehiclePathUtils'
+import { GPS_FIXES_DISPLAY_CAP } from './LrauvsLayerSection'
 
 const getDistance = (a: VPosDetail, b: LatLng) =>
   distance([a.longitude, a.latitude], [b.lng, b.lat])
@@ -152,7 +158,12 @@ const VehiclePath: React.FC<VehiclePathProps> = ({
 
   // Path/Point Stylization
   const { vehicleColors } = useVehicleColors()
-  const { isLeafChecked, registerVehicleCounts } = useSelectedLrauvsOptional()
+  const {
+    isLeafChecked,
+    registerVehicleCounts,
+    registerVehiclePositions,
+    hoverState,
+  } = useSelectedLrauvsOptional()
   const customColors: Record<string, string> = useMemo(() => ({}), [])
   const [color, setColor] = useState(
     vehicleColors[name] || customColors[name] || '#ccc'
@@ -207,17 +218,84 @@ const VehiclePath: React.FC<VehiclePathProps> = ({
     onPositionDataLoaded()
   }, [vehiclePosition?.gpsFixes, onPositionDataLoaded])
 
-  // Register position counts with the layer context so LrauvsLayerSection
-  // can display accurate leaf labels (e.g. "GPS fixes (12)").
+  // Argos, Navigating to WPs, and Reached WPs follow Dash4:
+  // last 24 hours, 20 is only the ceiling.
+  const recentArgos = useMemo(
+    () =>
+      recentPositionsWithinWindow(vehiclePosition?.argoReceives, Date.now()),
+    [vehiclePosition?.argoReceives]
+  )
+  const recentNavigatingToWaypoints = useMemo(
+    () =>
+      recentPositionsWithinWindow(
+        vehiclePosition?.navigatingToWaypoints,
+        Date.now()
+      ),
+    [vehiclePosition?.navigatingToWaypoints]
+  )
+  const recentReachedWaypoints = useMemo(
+    () =>
+      recentPositionsWithinWindow(
+        vehiclePosition?.reachedWaypoints,
+        Date.now()
+      ),
+    [vehiclePosition?.reachedWaypoints]
+  )
+
+  // Register position counts and per-leaf position arrays with the layer context.
+  // Counts drive tree labels; positions enable center-on-layer.
   useEffect(() => {
     if (!vehiclePosition) return
     registerVehicleCounts(name, {
       gpsFixes: vehiclePosition.gpsFixes?.length ?? 0,
-      argos: vehiclePosition.argoReceives?.length ?? 0,
-      reachedWaypoints: vehiclePosition.reachedWaypoints?.length ?? 0,
+      argos: recentArgos.length,
+      navigatingToWaypoints: recentNavigatingToWaypoints.length,
+      reachedWaypoints: recentReachedWaypoints.length,
       emergencies: vehiclePosition.emergencies?.length ?? 0,
     })
-  }, [name, vehiclePosition, registerVehicleCounts])
+    registerVehiclePositions(name, {
+      gpsFixes: (vehiclePosition.gpsFixes ?? []).map(
+        (p) => [p.latitude, p.longitude] as [number, number]
+      ),
+      waypoints: [
+        // Dash4 parity: prepend latestPosition (vehicle's current pos per /wp)
+        // before the planned waypoints so the center-on bounds include the
+        // vehicle's actual location even when it's between waypoints.
+        ...(futureWaypoints?.latestPosition
+          ? [
+              [
+                futureWaypoints.latestPosition.lat,
+                futureWaypoints.latestPosition.lon,
+              ] as [number, number],
+            ]
+          : []),
+        ...(futureWaypoints?.points ?? []).map(
+          (p) => [p.lat, p.lon] as [number, number]
+        ),
+      ],
+      argos: recentArgos.map(
+        (p) => [p.latitude, p.longitude] as [number, number]
+      ),
+      navigatingToWaypoints: recentNavigatingToWaypoints.map(
+        (p) => [p.latitude, p.longitude] as [number, number]
+      ),
+      reachedWaypoints: recentReachedWaypoints.map(
+        (p) => [p.latitude, p.longitude] as [number, number]
+      ),
+      emergencies: (vehiclePosition.emergencies ?? []).map(
+        (p) => [p.latitude, p.longitude] as [number, number]
+      ),
+    })
+  }, [
+    name,
+    vehiclePosition,
+    futureWaypoints,
+    recentArgos,
+    recentNavigatingToWaypoints,
+    recentReachedWaypoints,
+    registerVehicleCounts,
+    registerVehiclePositions,
+  ])
 
   const timeout = useRef<ReturnType<typeof setTimeout> | null>(null)
   const [mapHoverFix, setMapHoverFix] = useState<VPosDetail | null>(null)
@@ -527,6 +605,7 @@ const VehiclePath: React.FC<VehiclePathProps> = ({
   const showGpsFixes = isLeafChecked(name, 'gpsFixes')
   const showWaypoints = isLeafChecked(name, 'waypoints')
   const showArgos = isLeafChecked(name, 'argos')
+  const showNavigatingToWaypoints = isLeafChecked(name, 'navigatingToWaypoints')
   const showReachedWaypoints = isLeafChecked(name, 'reachedWaypoints')
   const showEmergencies = isLeafChecked(name, 'emergencies')
 
@@ -536,7 +615,9 @@ const VehiclePath: React.FC<VehiclePathProps> = ({
           If there are no past fixes yet (before first GPS fix), render nothing
           rather than falling back to the full route which would double-draw
           under the dashed future segment. */}
-      {showGpsFixes && (!dimTime || activeRoute) && (
+      {/* Main GPS track polyline — always visible regardless of GPS fixes
+          leaf state. The leaf controls supplementary position markers only. */}
+      {(!dimTime || activeRoute) && (
         <Polyline
           pathOptions={lineStyle}
           positions={activeRoute ?? route}
@@ -576,29 +657,29 @@ const VehiclePath: React.FC<VehiclePathProps> = ({
             radius={20}
           />
         ))}
-      {/* GPS surfacing dots along the full deployment track — rendered before the
-          current position marker so the latest dot always appears on top when
-          positions overlap. Non-interactive so HitCircles retain pointer priority
-          for scrub/hover. Per-fix details are shown via the mapHoverFix tooltip. */}
+      {/* GPS surfacing dots — the most recent GPS_FIXES_DISPLAY_CAP fixes.
+          Index 0 is the latest position and is rendered separately as the
+          solid current-position dot; skip it here. Non-interactive. */}
       {showGpsFixes &&
-        displayedFixes.map((fix, index) =>
-          index === 0 ? null : (
-            <CircleMarker
-              key={`${name}:surfacing:${fix.eventId ?? fix.unixTime}`}
-              center={{ lat: fix.latitude, lng: fix.longitude }}
-              radius={2}
-              color={color}
-              fillColor={color}
-              fillOpacity={0.7}
-              weight={1}
-              interactive={false}
-            />
-          )
-        )}
-      {/* Current vehicle position — solid filled dot with a contrasting white
-          border ring. Rendered after surfacing dots so it always appears on top.
-          Matches Dash4's l-circle-marker approach (radius=6, solid). */}
-      {showGpsFixes && latest && (
+        displayedFixes
+          .slice(0, GPS_FIXES_DISPLAY_CAP)
+          .map((fix, index) =>
+            index === 0 ? null : (
+              <CircleMarker
+                key={`${name}:surfacing:${fix.eventId ?? fix.unixTime}`}
+                center={{ lat: fix.latitude, lng: fix.longitude }}
+                radius={2}
+                color={color}
+                fillColor={color}
+                fillOpacity={0.7}
+                weight={1}
+                interactive={false}
+              />
+            )
+          )}
+      {/* Current vehicle position — always visible (fundamental "where is
+          this vehicle" indicator). */}
+      {latest && (
         <CircleMarker
           data-vehicle-point={`${name}-latest`}
           center={{ lat: latest.latitude, lng: latest.longitude }}
@@ -640,7 +721,8 @@ const VehiclePath: React.FC<VehiclePathProps> = ({
           />
         )}
       {/* Crumb trail dots — only shown while the timeline bar is being hovered */}
-      {activeRoute &&
+      {showGpsFixes &&
+        activeRoute &&
         activeRoute.map((r, i) => (
           <VehiclePoint
             key={`${name}:${
@@ -698,13 +780,16 @@ const VehiclePath: React.FC<VehiclePathProps> = ({
           </Tooltip>
         </CircleMarker>
       )}
+      {/* Dashed inactive/future track segment — always visible as part of the
+          track line. The individual preview dots below are gated on showGpsFixes. */}
       {dedupedInactiveRoute && (
         <Polyline
           pathOptions={{ color, weight: 2, opacity: 0.5, dashArray: '4, 6' }}
           positions={dedupedInactiveRoute}
         />
       )}
-      {dedupedInactiveRoute &&
+      {showGpsFixes &&
+        dedupedInactiveRoute &&
         dedupedInactiveRoute.map((r, i) => (
           <CircleMarker
             key={`${name}:${
@@ -734,10 +819,10 @@ const VehiclePath: React.FC<VehiclePathProps> = ({
           onMouseOut={handleMouseOut}
         />
       )}
-      {/* Invisible hit target for the latest-position tooltip — rendered AFTER
-          HitCircles so it sits on top and its tooltip is reliably reachable.
-          Shows "Position before waypoint trajectory" when a future route exists. */}
-      {showGpsFixes && latest && (
+      {/* Invisible hit target for the latest-position tooltip — always
+          rendered so the position tooltip is always reachable, even when
+          the GPS fixes leaf is unchecked. */}
+      {latest && (
         <CircleMarker
           center={{ lat: latest.latitude, lng: latest.longitude }}
           radius={12}
@@ -790,16 +875,21 @@ const VehiclePath: React.FC<VehiclePathProps> = ({
 
       {/* ===== Argos positions ===== */}
       {showArgos &&
-        vehiclePosition?.argoReceives?.map((point, index) => {
-          const lcValue = point.note
-            ? parseInt(point.note.replace('LC=', ''), 10)
-            : 0
+        recentArgos.map((point) => {
+          // note stores the bare LC integer ("3", "2", "1", "0"); text may carry
+          // an error description. Matches Dash4's qualForArgo / point[3] shape.
+          const lcValue = point.note ? parseInt(point.note, 10) : NaN
+          const hasError = !!point.text && !Number.isFinite(lcValue)
+          const lcLabel = Number.isFinite(lcValue) ? `LC=${lcValue}` : undefined
           const accuracyRadii: Record<number, number> = {
             1: 1000,
             2: 2000,
             3: 3000,
           }
-          const radiusMeters = accuracyRadii[lcValue] ?? 0
+          const radiusMeters = Number.isFinite(lcValue)
+            ? accuracyRadii[lcValue] ?? 0
+            : 0
+          const argoColor = hasError ? 'red' : color
           return (
             <React.Fragment
               key={`${name}:argo:${point.eventId ?? point.unixTime}`}
@@ -807,10 +897,10 @@ const VehiclePath: React.FC<VehiclePathProps> = ({
               <CircleMarker
                 center={{ lat: point.latitude, lng: point.longitude }}
                 radius={4}
-                color={color}
-                fillColor={color}
+                color={argoColor}
+                fillColor={argoColor}
                 fillOpacity={0.7}
-                weight={2}
+                weight={5}
               >
                 <Tooltip direction="right" offset={[10, 0]} opacity={0.9}>
                   <div className="text-xs leading-snug">
@@ -818,8 +908,11 @@ const VehiclePath: React.FC<VehiclePathProps> = ({
                     <div>
                       {point.latitude.toFixed(5)}, {point.longitude.toFixed(5)}
                     </div>
-                    {point.note && <div>{point.note}</div>}
-                    {point.text && <div>{point.text}</div>}
+                    {lcLabel && <div>{lcLabel}</div>}
+                    {hasError && (
+                      <div className="font-bold text-red-600">{point.text}</div>
+                    )}
+                    {!hasError && point.text && <div>{point.text}</div>}
                     <div>
                       {point.isoTime.replace('T', ' ').replace('Z', ' UTC')}{' '}
                       <span className="text-[10px] italic text-gray-500">
@@ -834,8 +927,8 @@ const VehiclePath: React.FC<VehiclePathProps> = ({
                   center={{ lat: point.latitude, lng: point.longitude }}
                   radius={radiusMeters}
                   pathOptions={{
-                    color,
-                    weight: 2,
+                    color: argoColor,
+                    weight: hasError ? 7 : 3,
                     opacity: 0.5,
                     fillOpacity: 0,
                     dashArray: '5 7',
@@ -848,7 +941,7 @@ const VehiclePath: React.FC<VehiclePathProps> = ({
 
       {/* ===== Reached waypoints ===== */}
       {showReachedWaypoints &&
-        vehiclePosition?.reachedWaypoints?.map((point, index) => (
+        recentReachedWaypoints.map((point) => (
           <CircleMarker
             key={`${name}:rwp:${point.eventId ?? point.unixTime}`}
             center={{ lat: point.latitude, lng: point.longitude }}
@@ -876,17 +969,47 @@ const VehiclePath: React.FC<VehiclePathProps> = ({
           </CircleMarker>
         ))}
 
+      {/* ===== Navigating to waypoints ===== */}
+      {showNavigatingToWaypoints &&
+        recentNavigatingToWaypoints.map((point) => (
+          <CircleMarker
+            key={`${name}:n2wp:${point.eventId ?? point.unixTime}`}
+            center={{ lat: point.latitude, lng: point.longitude }}
+            radius={4}
+            color={color}
+            fillColor={color}
+            fillOpacity={0}
+            weight={2}
+            pathOptions={{ dashArray: '1 3' }}
+          >
+            <Tooltip direction="right" offset={[10, 0]} opacity={0.9}>
+              <div className="text-xs leading-snug">
+                <div className="font-bold">{name}</div>
+                <div>Navigating to waypoint</div>
+                <div>
+                  {point.latitude.toFixed(5)}, {point.longitude.toFixed(5)}
+                </div>
+                <div>
+                  {point.isoTime.replace('T', ' ').replace('Z', ' UTC')}{' '}
+                  <span className="text-[10px] italic text-gray-500">
+                    -{formatElapsedTime(Date.now() - point.unixTime)}
+                  </span>
+                </div>
+              </div>
+            </Tooltip>
+          </CircleMarker>
+        ))}
+
       {/* ===== Emergencies ===== */}
       {showEmergencies &&
-        vehiclePosition?.emergencies?.map((point, index) => (
+        vehiclePosition?.emergencies?.map((point) => (
           <CircleMarker
             key={`${name}:emergency:${point.eventId ?? point.unixTime}`}
             center={{ lat: point.latitude, lng: point.longitude }}
             radius={10}
             color="red"
-            fillColor="red"
-            fillOpacity={0.8}
-            weight={3}
+            fillOpacity={0}
+            weight={7}
           >
             <Tooltip direction="right" offset={[10, 0]} opacity={0.9}>
               <div className="text-xs leading-snug">
@@ -904,6 +1027,156 @@ const VehiclePath: React.FC<VehiclePathProps> = ({
             </Tooltip>
           </CircleMarker>
         ))}
+
+      {/* ===== Layer hover overlay (generic-points-marker parity) =====
+          Rules:
+          - Leaf row hover → only if that leaf is checked; show circles at
+            that leaf's positions (waypoints capped at 20); permanent lat/lon
+            tooltips at each point, plus a connecting line.
+          - Vehicle row hover → yellow ring at the current location only.
+          - LRAUVs root hover → yellow rings at every loaded point for this
+            vehicle, including unchecked leaves. No line and no labels.
+          - Every one of these hovers draws Dash4's small red center dot.
+          - If no points are visible for the hovered scope, render nothing. */}
+      {(() => {
+        const { vehicleName: hoveredVehicle, leaf: hoveredLeaf } = hoverState
+        const isHovered =
+          hoveredVehicle === name || hoveredVehicle === LRAUVS_ROOT_HOVER
+        if (!isHovered) return null
+
+        const isLeafHover = hoveredLeaf !== null
+        const isRootHover = hoveredVehicle === LRAUVS_ROOT_HOVER
+
+        // Leaf hover: skip entirely when that leaf is not checked
+        if (isLeafHover && !isLeafChecked(name, hoveredLeaf!)) return null
+
+        let pts: [number, number][] = []
+        const withTooltip = isLeafHover
+
+        if (isLeafHover) {
+          switch (hoveredLeaf) {
+            case 'gpsFixes':
+              // Show the most recent GPS_FIXES_DISPLAY_CAP fixes — same cap
+              // as the dot markers so tooltips and dots are always in sync.
+              pts = (vehiclePosition?.gpsFixes ?? [])
+                .slice(0, GPS_FIXES_DISPLAY_CAP)
+                .map((p) => [p.latitude, p.longitude] as [number, number])
+              break
+            case 'waypoints':
+              // Dash4 parity: allPoints = latestPosition + planned points.
+              // Include the vehicle's current position as the first ring.
+              pts = [
+                ...(futureWaypoints?.latestPosition
+                  ? [
+                      [
+                        futureWaypoints.latestPosition.lat,
+                        futureWaypoints.latestPosition.lon,
+                      ] as [number, number],
+                    ]
+                  : []),
+                ...(futureWaypoints?.points ?? [])
+                  .slice(0, 20)
+                  .map((p) => [p.lat, p.lon] as [number, number]),
+              ]
+              break
+            case 'argos':
+              pts = recentArgos.map(
+                (p) => [p.latitude, p.longitude] as [number, number]
+              )
+              break
+            case 'navigatingToWaypoints':
+              pts = recentNavigatingToWaypoints.map(
+                (p) => [p.latitude, p.longitude] as [number, number]
+              )
+              break
+            case 'reachedWaypoints':
+              pts = recentReachedWaypoints.map(
+                (p) => [p.latitude, p.longitude] as [number, number]
+              )
+              break
+            case 'emergencies':
+              pts = (vehiclePosition?.emergencies ?? []).map(
+                (p) => [p.latitude, p.longitude] as [number, number]
+              )
+              break
+          }
+        } else if (isRootHover) {
+          pts = lrauvsRootHoverPositions({
+            gpsFixes: vehiclePosition?.gpsFixes,
+            argos: vehiclePosition?.argoReceives,
+            navigatingToWaypoints: vehiclePosition?.navigatingToWaypoints,
+            reachedWaypoints: vehiclePosition?.reachedWaypoints,
+            emergencies: vehiclePosition?.emergencies,
+            latestWaypointPosition: futureWaypoints?.latestPosition,
+            waypoints: futureWaypoints?.points,
+            now: Date.now(),
+          })
+        } else {
+          // Vehicle name — current location only.
+          const latestFix = vehiclePosition?.gpsFixes?.[0]
+          if (latestFix) {
+            pts.push([latestFix.latitude, latestFix.longitude])
+          }
+        }
+
+        if (pts.length === 0) return null
+
+        return (
+          <>
+            {/* Dash4 parity: yellow dashed connecting line through the leaf's
+                points in sequence. Only drawn for leaf hovers. Rendered first
+                so ring circles draw on top. */}
+            {isLeafHover && pts.length > 1 && (
+              <Polyline
+                positions={pts.map((pt) => ({ lat: pt[0], lng: pt[1] }))}
+                pathOptions={{
+                  color: 'yellow',
+                  weight: 4,
+                  opacity: 0.9,
+                  dashArray: '8 10',
+                  interactive: false,
+                }}
+              />
+            )}
+            {pts.map((pt, i) => (
+              <CircleMarker
+                key={`${name}:hover-overlay:${i}`}
+                center={{ lat: pt[0], lng: pt[1] }}
+                radius={12}
+                pathOptions={{
+                  color: 'yellow',
+                  weight: 2,
+                  fillOpacity: 0,
+                  dashArray: '5 4',
+                  interactive: false,
+                }}
+              >
+                {withTooltip && (
+                  <Tooltip permanent direction="top" offset={[0, -14]}>
+                    {`${pt[0].toFixed(3)}, ${pt[1].toFixed(3)}`}
+                  </Tooltip>
+                )}
+              </CircleMarker>
+            ))}
+            {/* Dash4 sets this marker's radius to 0. Leaflet still strokes
+                it, which reads as a red center dot on every hover ring. */}
+            {pts.map((pt, i) => (
+              <CircleMarker
+                key={`${name}:hover-center:${i}`}
+                center={{ lat: pt[0], lng: pt[1] }}
+                radius={0}
+                pathOptions={{
+                  color: 'red',
+                  weight: 3,
+                  fillOpacity: 0,
+                  dashArray: '14 6',
+                  interactive: false,
+                }}
+              />
+            ))}
+          </>
+        )
+      })()}
     </>
   )
 }

@@ -12,6 +12,7 @@ export type VehicleLeafKey =
   | 'gpsFixes'
   | 'waypoints'
   | 'argos'
+  | 'navigatingToWaypoints'
   | 'reachedWaypoints'
   | 'emergencies'
 
@@ -22,29 +23,63 @@ export type LrauvsCheckedState = Record<string, VehicleLeafState>
 export interface VehicleLeafCounts {
   gpsFixes: number
   argos: number
+  navigatingToWaypoints: number
   reachedWaypoints: number
   emergencies: number
 }
 
 export type LrauvsCountsState = Record<string, VehicleLeafCounts>
 
-const STORAGE_KEY = 'lrauvsCheckedState'
+/** Vehicle name sentinel used to represent the LRAUVs root row on hover. */
+export const LRAUVS_ROOT_HOVER = '__ALL__'
 
-export const DEFAULT_LEAF_STATE: VehicleLeafState = {
-  gpsFixes: true,
-  waypoints: true,
-  argos: false,
-  reachedWaypoints: true,
-  emergencies: true,
+export interface LrauvsHoverState {
+  /** Vehicle name, or LRAUVS_ROOT_HOVER for the root row. */
+  vehicleName: string | null
+  /** Which leaf is hovered; null means vehicle row or root row. */
+  leaf: VehicleLeafKey | null
 }
 
-const ALL_LEAF_KEYS: VehicleLeafKey[] = [
-  'gpsFixes',
-  'waypoints',
+const STORAGE_KEY = 'lrauvsCheckedState'
+
+// Leaves shown only when their count > 0 (Dash4 parity)
+export const CONDITIONAL_LEAVES: VehicleLeafKey[] = [
   'argos',
+  'navigatingToWaypoints',
   'reachedWaypoints',
   'emergencies',
 ]
+
+export const DEFAULT_LEAF_STATE: VehicleLeafState = {
+  gpsFixes: false,
+  waypoints: false,
+  argos: false,
+  navigatingToWaypoints: false,
+  reachedWaypoints: false,
+  emergencies: false,
+}
+
+// Leaves that turn ON automatically when a vehicle row is first checked.
+// Argos and Navigating to WPs are intentionally excluded — they are noisy
+// and must be explicitly enabled by the operator.
+export const DEFAULT_ON_LEAVES: VehicleLeafKey[] = [
+  'gpsFixes',
+  'waypoints',
+  'reachedWaypoints',
+  'emergencies',
+]
+
+// Ordered to match Dash4: GPS fixes → Waypoints → Argos → N2WPs → Reached WPs → Emergencies
+export const ORDERED_LEAF_KEYS: VehicleLeafKey[] = [
+  'gpsFixes',
+  'waypoints',
+  'argos',
+  'navigatingToWaypoints',
+  'reachedWaypoints',
+  'emergencies',
+]
+
+export type VehicleLeafPositions = Record<VehicleLeafKey, [number, number][]>
 
 export interface SelectedLrauvsContextProps {
   isLeafChecked: (vehicleName: string, leaf: VehicleLeafKey) => boolean
@@ -61,6 +96,19 @@ export interface SelectedLrauvsContextProps {
     vehicleName: string,
     counts: VehicleLeafCounts
   ) => void
+  hoverState: LrauvsHoverState
+  setHover: (vehicleName: string, leaf: VehicleLeafKey | null) => void
+  clearHover: () => void
+  /** Register per-vehicle per-leaf position arrays. Stored in a ref so
+   *  updates do not trigger re-renders. Used by LrauvsLayerSection for
+   *  the center-on-layer buttons. */
+  registerVehiclePositions: (
+    vehicleName: string,
+    positions: VehicleLeafPositions
+  ) => void
+  getVehicleLeafPositions: (
+    vehicleName: string
+  ) => VehicleLeafPositions | undefined
 }
 
 const SelectedLrauvsContext = createContext<
@@ -81,10 +129,29 @@ export const SelectedLrauvsProvider: React.FC<{
     }
   })
 
-  // In-memory only — populated by VehiclePath after data loads
   const [vehicleCounts, setVehicleCounts] = useState<LrauvsCountsState>({})
 
-  // Persist checked state to localStorage on every change
+  const [hoverState, setHoverState] = useState<LrauvsHoverState>({
+    vehicleName: null,
+    leaf: null,
+  })
+
+  // Stored as a ref so position updates don't re-render the tree.
+  const vehiclePositionsRef = useRef<Record<string, VehicleLeafPositions>>({})
+
+  const registerVehiclePositions = useCallback(
+    (vehicleName: string, positions: VehicleLeafPositions) => {
+      vehiclePositionsRef.current[vehicleName] = positions
+    },
+    []
+  )
+
+  const getVehicleLeafPositions = useCallback(
+    (vehicleName: string): VehicleLeafPositions | undefined =>
+      vehiclePositionsRef.current[vehicleName],
+    []
+  )
+
   useEffect(() => {
     if (typeof window === 'undefined') return
     try {
@@ -95,16 +162,14 @@ export const SelectedLrauvsProvider: React.FC<{
   }, [checkedState])
 
   const getLeafState = useCallback(
-    (vehicleName: string): VehicleLeafState => {
-      return checkedState[vehicleName] ?? DEFAULT_LEAF_STATE
-    },
+    (vehicleName: string): VehicleLeafState =>
+      checkedState[vehicleName] ?? DEFAULT_LEAF_STATE,
     [checkedState]
   )
 
   const isLeafChecked = useCallback(
-    (vehicleName: string, leaf: VehicleLeafKey): boolean => {
-      return getLeafState(vehicleName)[leaf]
-    },
+    (vehicleName: string, leaf: VehicleLeafKey): boolean =>
+      getLeafState(vehicleName)[leaf],
     [getLeafState]
   )
 
@@ -134,29 +199,68 @@ export const SelectedLrauvsProvider: React.FC<{
     []
   )
 
+  const vehicleCountsRef = useRef(vehicleCounts)
+  vehicleCountsRef.current = vehicleCounts
+
   const toggleVehicle = useCallback((vehicleName: string) => {
     setCheckedState((prev) => {
       const current = prev[vehicleName] ?? DEFAULT_LEAF_STATE
-      // If all visible leaves are on, turn all off; otherwise turn all on.
-      const allOn = ALL_LEAF_KEYS.every((k) => current[k])
-      const next = Object.fromEntries(
-        ALL_LEAF_KEYS.map((k) => [k, !allOn])
-      ) as VehicleLeafState
-      return { ...prev, [vehicleName]: next }
+      const counts = vehicleCountsRef.current[vehicleName]
+      const visibleLeaves = ORDERED_LEAF_KEYS.filter(
+        (leaf) =>
+          !CONDITIONAL_LEAVES.includes(leaf) ||
+          (counts?.[leaf as keyof typeof counts] ?? 0) > 0
+      )
+      const anyOn = visibleLeaves.some((k) => current[k])
+      const updated = { ...current }
+      if (anyOn) {
+        // Any leaves on → turn everything off
+        visibleLeaves.forEach((k) => {
+          updated[k] = false
+        })
+      } else {
+        // All off → turn on only the default-on leaves that are also visible
+        DEFAULT_ON_LEAVES.forEach((k) => {
+          if (visibleLeaves.includes(k)) updated[k] = true
+        })
+      }
+      return { ...prev, [vehicleName]: updated }
     })
   }, [])
 
   const toggleAll = useCallback((vehicleNames: string[]) => {
     setCheckedState((prev) => {
-      const allOn = vehicleNames.every((vn) => {
+      const counts = vehicleCountsRef.current
+      const anyOn = vehicleNames.some((vn) => {
         const state = prev[vn] ?? DEFAULT_LEAF_STATE
-        return ALL_LEAF_KEYS.every((k) => state[k])
+        const vCounts = counts[vn]
+        const visibleLeaves = ORDERED_LEAF_KEYS.filter(
+          (leaf) =>
+            !CONDITIONAL_LEAVES.includes(leaf) ||
+            (vCounts?.[leaf as keyof typeof vCounts] ?? 0) > 0
+        )
+        return visibleLeaves.some((k) => state[k])
       })
       const next = { ...prev }
       vehicleNames.forEach((vn) => {
-        next[vn] = Object.fromEntries(
-          ALL_LEAF_KEYS.map((k) => [k, !allOn])
-        ) as VehicleLeafState
+        const vCounts = counts[vn]
+        const visibleLeaves = ORDERED_LEAF_KEYS.filter(
+          (leaf) =>
+            !CONDITIONAL_LEAVES.includes(leaf) ||
+            (vCounts?.[leaf as keyof typeof vCounts] ?? 0) > 0
+        )
+        const current = next[vn] ?? DEFAULT_LEAF_STATE
+        const updated = { ...current }
+        if (anyOn) {
+          visibleLeaves.forEach((k) => {
+            updated[k] = false
+          })
+        } else {
+          DEFAULT_ON_LEAVES.forEach((k) => {
+            if (visibleLeaves.includes(k)) updated[k] = true
+          })
+        }
+        next[vn] = updated as VehicleLeafState
       })
       return next
     })
@@ -170,6 +274,7 @@ export const SelectedLrauvsProvider: React.FC<{
           existing &&
           existing.gpsFixes === counts.gpsFixes &&
           existing.argos === counts.argos &&
+          existing.navigatingToWaypoints === counts.navigatingToWaypoints &&
           existing.reachedWaypoints === counts.reachedWaypoints &&
           existing.emergencies === counts.emergencies
         ) {
@@ -181,6 +286,17 @@ export const SelectedLrauvsProvider: React.FC<{
     []
   )
 
+  const setHover = useCallback(
+    (vehicleName: string, leaf: VehicleLeafKey | null) => {
+      setHoverState({ vehicleName, leaf })
+    },
+    []
+  )
+
+  const clearHover = useCallback(() => {
+    setHoverState({ vehicleName: null, leaf: null })
+  }, [])
+
   const value = useMemo(
     () => ({
       isLeafChecked,
@@ -190,6 +306,11 @@ export const SelectedLrauvsProvider: React.FC<{
       toggleAll,
       vehicleCounts,
       registerVehicleCounts,
+      hoverState,
+      setHover,
+      clearHover,
+      registerVehiclePositions,
+      getVehicleLeafPositions,
     }),
     [
       isLeafChecked,
@@ -199,6 +320,11 @@ export const SelectedLrauvsProvider: React.FC<{
       toggleAll,
       vehicleCounts,
       registerVehicleCounts,
+      hoverState,
+      setHover,
+      clearHover,
+      registerVehiclePositions,
+      getVehicleLeafPositions,
     ]
   )
 
@@ -219,6 +345,8 @@ export const useSelectedLrauvs = (): SelectedLrauvsContextProps => {
   return context
 }
 
+const NO_OP_HOVER: LrauvsHoverState = { vehicleName: null, leaf: null }
+
 /** Safe version — returns all-visible defaults when no provider is present.
  *  Used in VehiclePath so the vehicle detail page (no layers modal) is unaffected. */
 export const useSelectedLrauvsOptional = (): SelectedLrauvsContextProps => {
@@ -231,6 +359,11 @@ export const useSelectedLrauvsOptional = (): SelectedLrauvsContextProps => {
     toggleAll: () => undefined,
     vehicleCounts: {},
     registerVehicleCounts: () => undefined,
+    hoverState: NO_OP_HOVER,
+    setHover: () => undefined,
+    clearHover: () => undefined,
+    registerVehiclePositions: () => undefined,
+    getVehicleLeafPositions: () => undefined,
   })
   return context ?? noopRef.current
 }
