@@ -357,8 +357,15 @@ const CommandModalBody: React.FC<CommandModalViewProps> = ({
       vehicleList={vehicles ?? [vehicleName]}
       command={commandText ?? ''}
       onChangeVehicle={setConfirmedVehicle}
-      onCancel={handlePrevious}
+      onCancel={onCancel}
       onConfirm={handleSchedule}
+      extraButtons={[
+        {
+          buttonText: 'Back',
+          appearance: 'secondary',
+          onClick: handlePrevious,
+        },
+      ]}
     />
   ) : (
     <Modal
