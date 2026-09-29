@@ -530,6 +530,22 @@ test('Send Command Cancel dismisses the modal instead of stepping back', () => {
   expect(onCancel).toHaveBeenCalledTimes(1)
 })
 
+test('Send Command close button dismisses the modal', () => {
+  const onCancel = jest.fn()
+  render(
+    <RecoilRoot>
+      <MissionModalView
+        {...props}
+        currentStepIndex={7}
+        previewText={'sched asap "load Science/sci2.tl;run"'}
+        onCancel={onCancel}
+      />
+    </RecoilRoot>
+  )
+  fireEvent.click(screen.getByRole('button', { name: 'close' }))
+  expect(onCancel).toHaveBeenCalledTimes(1)
+})
+
 test('Send Command Back returns to Confirm and does not dismiss', () => {
   const onCancel = jest.fn()
   render(
