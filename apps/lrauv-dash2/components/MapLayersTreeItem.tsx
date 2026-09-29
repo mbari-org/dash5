@@ -1,4 +1,4 @@
-import React from 'react'
+import React, { useEffect, useRef } from 'react'
 import clsx from 'clsx'
 import Tippy from '@tippyjs/react'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
@@ -13,9 +13,13 @@ import {
 } from '@fortawesome/free-solid-svg-icons'
 
 export interface TreeItemProps {
-  label: string
+  label: React.ReactNode
   isExpanded?: boolean
   isChecked?: boolean
+  /** When true the checkbox renders in the browser-native indeterminate state
+   *  (dash/minus icon). Used by parent rows when some but not all children
+   *  are checked. `isChecked` should be false when this is true. */
+  indeterminate?: boolean
   onToggleExpand?: () => void
   onToggleCheck?: () => void
   icon?: IconProp
@@ -29,6 +33,8 @@ export interface TreeItemProps {
   onMouseLeaveStar?: () => void
   onCenterClick?: () => void
   centerLabel?: string
+  /** Fires on the row itself, not the block that contains child rows. */
+  onRowMouseEnter?: () => void
   onRemoveClick?: () => void
   removeLabel?: string
   removeIcon?: IconProp
@@ -54,6 +60,7 @@ export const TreeItem: React.FC<TreeItemProps> = ({
   label,
   isExpanded = true,
   isChecked = false,
+  indeterminate = false,
   onToggleExpand,
   onToggleCheck,
   icon,
@@ -67,6 +74,7 @@ export const TreeItem: React.FC<TreeItemProps> = ({
   onMouseLeaveStar,
   onCenterClick,
   centerLabel = 'Center map on this item',
+  onRowMouseEnter,
   onRemoveClick,
   removeLabel = 'Remove from layer',
   removeIcon = faLinkSlash,
@@ -81,9 +89,21 @@ export const TreeItem: React.FC<TreeItemProps> = ({
   const hasEverExpanded = React.useRef(isExpanded)
   if (isExpanded) hasEverExpanded.current = true
 
+  // The indeterminate state is a DOM property, not an HTML attribute, so it
+  // must be applied via a ref after render.
+  const checkboxRef = useRef<HTMLInputElement>(null)
+  useEffect(() => {
+    if (checkboxRef.current) {
+      checkboxRef.current.indeterminate = indeterminate ?? false
+    }
+  }, [indeterminate])
+
   return (
     <article className="tree-item">
-      <div className="flex items-center py-2 pl-2">
+      <div
+        className="flex items-center py-2 pl-2"
+        onMouseEnter={onRowMouseEnter}
+      >
         {hasChildren ? (
           <button
             onClick={onToggleExpand}
@@ -115,6 +135,7 @@ export const TreeItem: React.FC<TreeItemProps> = ({
           title={disabled ? disabledTitle ?? 'Not available' : undefined}
         >
           <input
+            ref={checkboxRef}
             type="checkbox"
             checked={isChecked}
             onChange={onToggleCheck}

@@ -645,10 +645,10 @@ const DeploymentMap: React.FC<DeploymentMapProps> = ({
   }, [])
 
   const modalTrackedVehicles = React.useMemo(() => {
-    if (!vehicleName) return trackedVehicles
-
-    // Create a new array with the current vehicle
-    return Array.from(new Set([...trackedVehicles, vehicleName]))
+    // On the deployment page only the current vehicle's VehiclePath is
+    // mounted, so only show that vehicle in the layers modal.
+    if (vehicleName) return [vehicleName]
+    return trackedVehicles
   }, [trackedVehicles, vehicleName])
 
   return (
@@ -657,6 +657,7 @@ const DeploymentMap: React.FC<DeploymentMapProps> = ({
         <MapLayersListModal
           onClose={handleCloseLayers}
           anchorPosition={layersModalPosition}
+          vehicleNames={modalTrackedVehicles as string[]}
         />
       ) : null}
       {showPlatformsModal ? (

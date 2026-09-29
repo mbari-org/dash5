@@ -39,6 +39,7 @@ import 'allotment/dist/style.css'
 import { useGoogleMaps } from '../../lib/useGoogleMaps'
 import { useSidebarSizes } from '../../lib/useSidebarSizes'
 import { SelectedStationsProvider } from '../../components/SelectedStationContext'
+import { SelectedLrauvsProvider } from '../../components/SelectedLrauvsContext'
 import { MapCameraProvider } from '../../components/MapCameraContext'
 import { SelectedPolygonsProvider } from '../../components/SelectedPolygonsContext'
 import { SelectedTileLayersProvider } from '../../components/SelectedTileLayersContext'
@@ -371,147 +372,149 @@ const Vehicle: NextPage = () => {
   return (
     <SelectedPlatformsProvider>
       <SelectedStationsProvider>
-        <MapCameraProvider>
-          <SelectedPolygonsProvider>
-            <SelectedTileLayersProvider>
-              <SelectedKmlLayersProvider>
-                <div className={styles.content}>
-                  <Layout>
-                    <OverviewToolbar
-                      vehicleName={vehicleName}
-                      currentUserName={currentUserName}
-                      pics={pics}
-                      onCalls={onCalls}
-                      deployment={
-                        isLoading
-                          ? { name: '...', id: '0' }
-                          : {
-                              name: (deployment?.name ?? '...') as string,
-                              id: (deployment?.deploymentId as string) ?? '0',
-                              unixTime: deployment?.startEvent?.unixTime,
+        <SelectedLrauvsProvider>
+          <MapCameraProvider>
+            <SelectedPolygonsProvider>
+              <SelectedTileLayersProvider>
+                <SelectedKmlLayersProvider>
+                  <div className={styles.content}>
+                    <Layout>
+                      <OverviewToolbar
+                        vehicleName={vehicleName}
+                        currentUserName={currentUserName}
+                        pics={pics}
+                        onCalls={onCalls}
+                        deployment={
+                          isLoading
+                            ? { name: '...', id: '0' }
+                            : {
+                                name: (deployment?.name ?? '...') as string,
+                                id: (deployment?.deploymentId as string) ?? '0',
+                                unixTime: deployment?.startEvent?.unixTime,
+                              }
+                        }
+                        onRoleReassign={handleRoleReassign}
+                        loadingPicAndOnCall={loadingPicAndOnCall || authLoading}
+                        recovered={isRecovered}
+                        recoveredAt={recoveredAt}
+                        resourcesSlot={
+                          <LrauvResourcesDropdown isAdmin={isAdmin} />
+                        }
+                        supportIcon1={
+                          cellPingReachable ? (
+                            <ConnectedIcon />
+                          ) : (
+                            <NotConnectedIcon />
+                          )
+                        }
+                        supportIcon2={vehicleStatusIcon}
+                        onSelectNewDeployment={handleNewDeployment}
+                        deployments={deployments}
+                        onEditDeployment={handleEditDeployment}
+                        onSelectDeployment={handleSelectDeployment}
+                        onIcon1hover={() => (
+                          <VehicleCommsCell
+                            icon={
+                              cellPingReachable ? (
+                                <ConnectedIcon />
+                              ) : (
+                                <NotConnectedIcon />
+                              )
                             }
-                      }
-                      onRoleReassign={handleRoleReassign}
-                      loadingPicAndOnCall={loadingPicAndOnCall || authLoading}
-                      recovered={isRecovered}
-                      recoveredAt={recoveredAt}
-                      resourcesSlot={
-                        <LrauvResourcesDropdown isAdmin={isAdmin} />
-                      }
-                      supportIcon1={
-                        cellPingReachable ? (
-                          <ConnectedIcon />
-                        ) : (
-                          <NotConnectedIcon />
-                        )
-                      }
-                      supportIcon2={vehicleStatusIcon}
-                      onSelectNewDeployment={handleNewDeployment}
-                      deployments={deployments}
-                      onEditDeployment={handleEditDeployment}
-                      onSelectDeployment={handleSelectDeployment}
-                      onIcon1hover={() => (
-                        <VehicleCommsCell
-                          icon={
-                            cellPingReachable ? (
-                              <ConnectedIcon />
-                            ) : (
-                              <NotConnectedIcon />
-                            )
-                          }
-                          headline={`Cell Comms: ${
-                            cellPingReachable ? 'Connected' : 'Not Connected'
-                          }`}
-                          host={pingEvent?.hostName ?? 'Not available'}
-                          lastPing={
-                            ((pingEvent?.checkedAt &&
-                              DateTime.fromMillis(
-                                pingEvent?.checkedAt
-                              ).toRelative()) as string) ?? 'Not available'
-                          }
-                          nextComms={vehicle?.text_nextcomm ?? undefined}
-                        />
-                      )}
-                      onIcon2hover={() => (
-                        <VehicleInfoCell
-                          isPluggedIn={isPluggedIn}
-                          isReachable={isLikelySurfaced}
-                          nextCommsText={vehicle?.text_nextcomm ?? undefined}
-                          lastPluggedInTime={
-                            lastDeployment?.recoverEvent?.unixTime
-                              ? DateTime.fromMillis(
-                                  lastDeployment.recoverEvent.unixTime
-                                )
-                              : null
-                          }
-                          lastSatCommsTime={lastSatCommsDT}
-                          lastCellCommsTime={lastCellCommsDT}
-                        />
-                      )}
-                      authenticated={authenticated}
-                    />
+                            headline={`Cell Comms: ${
+                              cellPingReachable ? 'Connected' : 'Not Connected'
+                            }`}
+                            host={pingEvent?.hostName ?? 'Not available'}
+                            lastPing={
+                              ((pingEvent?.checkedAt &&
+                                DateTime.fromMillis(
+                                  pingEvent?.checkedAt
+                                ).toRelative()) as string) ?? 'Not available'
+                            }
+                            nextComms={vehicle?.text_nextcomm ?? undefined}
+                          />
+                        )}
+                        onIcon2hover={() => (
+                          <VehicleInfoCell
+                            isPluggedIn={isPluggedIn}
+                            isReachable={isLikelySurfaced}
+                            nextCommsText={vehicle?.text_nextcomm ?? undefined}
+                            lastPluggedInTime={
+                              lastDeployment?.recoverEvent?.unixTime
+                                ? DateTime.fromMillis(
+                                    lastDeployment.recoverEvent.unixTime
+                                  )
+                                : null
+                            }
+                            lastSatCommsTime={lastSatCommsDT}
+                            lastCellCommsTime={lastCellCommsDT}
+                          />
+                        )}
+                        authenticated={authenticated}
+                      />
 
-                    {/* Single map instance: render one layout to avoid duplicate controls */}
-                    {isDesktop ? (
-                      <div className="flex min-h-0 flex-1">
-                        <div className={styles.content}>
-                          <Allotment
-                            separator
-                            defaultSizes={defaultSizes}
-                            className="min-h-0"
-                            onChange={onSidebarChange}
-                          >
-                            <Allotment.Pane minSize={720}>
-                              {primarySection}
-                            </Allotment.Pane>
-                            <Allotment.Pane minSize={512}>
-                              {secondarySection}
-                            </Allotment.Pane>
-                          </Allotment>
+                      {/* Single map instance: render one layout to avoid duplicate controls */}
+                      {isDesktop ? (
+                        <div className="flex min-h-0 flex-1">
+                          <div className={styles.content}>
+                            <Allotment
+                              separator
+                              defaultSizes={defaultSizes}
+                              className="min-h-0"
+                              onChange={onSidebarChange}
+                            >
+                              <Allotment.Pane minSize={720}>
+                                {primarySection}
+                              </Allotment.Pane>
+                              <Allotment.Pane minSize={512}>
+                                {secondarySection}
+                              </Allotment.Pane>
+                            </Allotment>
+                          </div>
                         </div>
-                      </div>
-                    ) : (
-                      <div className="flex min-h-0 flex-1 flex-col">
-                        <div className="flex shrink-0 items-center gap-2 border-b border-slate-200 bg-white px-4 py-2">
-                          <button
-                            type="button"
-                            onClick={() => setMobileView('main')}
-                            className={clsx(
-                              'rounded px-3 py-1 text-sm font-bold',
-                              mobileView === 'main'
-                                ? 'bg-secondary-300/60 text-black'
-                                : 'text-slate-600'
-                            )}
-                          >
-                            Map
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() => setMobileView('sidebar')}
-                            className={clsx(
-                              'rounded px-3 py-1 text-sm font-bold',
-                              mobileView === 'sidebar'
-                                ? 'bg-secondary-300/60 text-black'
-                                : 'text-slate-600'
-                            )}
-                          >
-                            Details
-                          </button>
-                        </div>
+                      ) : (
+                        <div className="flex min-h-0 flex-1 flex-col">
+                          <div className="flex shrink-0 items-center gap-2 border-b border-slate-200 bg-white px-4 py-2">
+                            <button
+                              type="button"
+                              onClick={() => setMobileView('main')}
+                              className={clsx(
+                                'rounded px-3 py-1 text-sm font-bold',
+                                mobileView === 'main'
+                                  ? 'bg-secondary-300/60 text-black'
+                                  : 'text-slate-600'
+                              )}
+                            >
+                              Map
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => setMobileView('sidebar')}
+                              className={clsx(
+                                'rounded px-3 py-1 text-sm font-bold',
+                                mobileView === 'sidebar'
+                                  ? 'bg-secondary-300/60 text-black'
+                                  : 'text-slate-600'
+                              )}
+                            >
+                              Details
+                            </button>
+                          </div>
 
-                        <div className="min-h-0 flex-1 overflow-hidden">
-                          {mobileView === 'main'
-                            ? primarySection
-                            : secondarySection}
+                          <div className="min-h-0 flex-1 overflow-hidden">
+                            {mobileView === 'main'
+                              ? primarySection
+                              : secondarySection}
+                          </div>
                         </div>
-                      </div>
-                    )}
-                  </Layout>
-                </div>
-              </SelectedKmlLayersProvider>
-            </SelectedTileLayersProvider>
-          </SelectedPolygonsProvider>
-        </MapCameraProvider>
+                      )}
+                    </Layout>
+                  </div>
+                </SelectedKmlLayersProvider>
+              </SelectedTileLayersProvider>
+            </SelectedPolygonsProvider>
+          </MapCameraProvider>
+        </SelectedLrauvsProvider>
       </SelectedStationsProvider>
     </SelectedPlatformsProvider>
   )

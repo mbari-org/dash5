@@ -12,8 +12,8 @@ interface KmlLayersSectionProps {
   filteredKmlLayers: KmlLayerItem[]
   kmlLayers: KmlLayerItem[] | undefined
   selectedKmlLayers: string[]
-  expandedSections: { kmlLayers: boolean }
-  toggleExpanded: (section: 'kmlLayers') => void
+  expandedSections: Record<string, boolean>
+  toggleExpanded: (section: string) => void
   setSelectedKmlLayers: (
     updater: string[] | ((prev: string[]) => string[])
   ) => void
