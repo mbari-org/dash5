@@ -91,11 +91,14 @@ export const LrauvsLayerSection: React.FC<LrauvsLayerSectionProps> = ({
     (vehicleName: string, leaf: VehicleLeafKey) => {
       const positions = getVehicleLeafPositions(vehicleName)
       const raw = positions?.[leaf] ?? []
-      // GPS fixes and waypoints are both capped at GPS_FIXES_DISPLAY_CAP on
-      // the map, so fit bounds to that same visible subset.
+      // GPS fixes are capped at GPS_FIXES_DISPLAY_CAP on the map.
+      // Waypoints: the registered array is [latestPosition, ...points],
+      // and the hover shows latestPosition + up to 20 planned points (21 total).
       const pts =
-        leaf === 'gpsFixes' || leaf === 'waypoints'
+        leaf === 'gpsFixes'
           ? raw.slice(0, GPS_FIXES_DISPLAY_CAP)
+          : leaf === 'waypoints'
+          ? raw.slice(0, GPS_FIXES_DISPLAY_CAP + 1)
           : raw
       const bounds = computeBounds(pts)
       if (bounds) setFlyToRequest({ lat: 0, lon: 0, bounds })

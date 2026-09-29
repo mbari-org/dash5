@@ -268,22 +268,39 @@ export const SelectedLrauvsProvider: React.FC<{
 
   const registerVehicleCounts = useCallback(
     (vehicleName: string, counts: VehicleLeafCounts) => {
-      // Seed default-on leaves the first time a vehicle is registered so
-      // GPS fixes, Waypoints, Reached WPs, and Emergencies are visible on
-      // first load even when there is no persisted localStorage entry.
+      // Seed default-on leaves the first time a vehicle is registered, and
+      // also turn on any DEFAULT_ON_LEAVES conditional leaf the moment it
+      // gets its first data point (e.g. first emergency arrives mid-deployment).
       setCheckedState((prev) => {
-        if (prev[vehicleName] !== undefined) return prev
-        const seed = { ...DEFAULT_LEAF_STATE }
+        const isNew = prev[vehicleName] === undefined
+        const current = prev[vehicleName] ?? DEFAULT_LEAF_STATE
+        const seed = { ...current }
+        let changed = isNew
+
         DEFAULT_ON_LEAVES.forEach((k) => {
-          // Only turn on conditional leaves when they actually have data.
-          if (
-            !CONDITIONAL_LEAVES.includes(k) ||
-            (counts[k as keyof typeof counts] ?? 0) > 0
-          ) {
-            seed[k] = true
+          if (!CONDITIONAL_LEAVES.includes(k)) {
+            // Non-conditional leaf: only set on the very first registration.
+            if (isNew) seed[k] = true
+          } else {
+            // Conditional leaf: turn on the first time it has data,
+            // but never force it back off once the operator unchecks it.
+            const hadData = isNew
+              ? false
+              : (vehicleCountsRef.current[vehicleName]?.[
+                  k as keyof VehicleLeafCounts
+                ] ?? 0) > 0
+            const nowHasData = (counts[k as keyof typeof counts] ?? 0) > 0
+            if (!hadData && nowHasData && !current[k]) {
+              seed[k] = true
+              changed = true
+            } else if (isNew && nowHasData) {
+              seed[k] = true
+              changed = true
+            }
           }
         })
-        return { ...prev, [vehicleName]: seed }
+
+        return changed ? { ...prev, [vehicleName]: seed } : prev
       })
       setVehicleCounts((prev) => {
         const existing = prev[vehicleName]
