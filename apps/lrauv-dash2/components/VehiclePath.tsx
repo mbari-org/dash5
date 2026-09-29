@@ -220,26 +220,37 @@ const VehiclePath: React.FC<VehiclePathProps> = ({
 
   // Argos, Navigating to WPs, and Reached WPs follow Dash4:
   // last 24 hours, 20 is only the ceiling.
+  // Tick once per minute so the window advances while the page stays mounted.
+  const [minuteTick, setMinuteTick] = useState(() => Date.now())
+  useEffect(() => {
+    const id = setInterval(() => setMinuteTick(Date.now()), 60_000)
+    return () => clearInterval(id)
+  }, [])
+
   const recentArgos = useMemo(
     () =>
-      recentPositionsWithinWindow(vehiclePosition?.argoReceives, Date.now()),
-    [vehiclePosition?.argoReceives]
+      recentPositionsWithinWindow(vehiclePosition?.argoReceives, minuteTick),
+    [vehiclePosition?.argoReceives, minuteTick]
   )
   const recentNavigatingToWaypoints = useMemo(
     () =>
       recentPositionsWithinWindow(
         vehiclePosition?.navigatingToWaypoints,
-        Date.now()
+        minuteTick
       ),
-    [vehiclePosition?.navigatingToWaypoints]
+    [vehiclePosition?.navigatingToWaypoints, minuteTick]
   )
   const recentReachedWaypoints = useMemo(
     () =>
       recentPositionsWithinWindow(
         vehiclePosition?.reachedWaypoints,
-        Date.now()
+        minuteTick
       ),
-    [vehiclePosition?.reachedWaypoints]
+    [vehiclePosition?.reachedWaypoints, minuteTick]
+  )
+  const recentEmergencies = useMemo(
+    () => recentPositionsWithinWindow(vehiclePosition?.emergencies, minuteTick),
+    [vehiclePosition?.emergencies, minuteTick]
   )
 
   // Register position counts and per-leaf position arrays with the layer context.
@@ -251,7 +262,7 @@ const VehiclePath: React.FC<VehiclePathProps> = ({
       argos: recentArgos.length,
       navigatingToWaypoints: recentNavigatingToWaypoints.length,
       reachedWaypoints: recentReachedWaypoints.length,
-      emergencies: vehiclePosition.emergencies?.length ?? 0,
+      emergencies: recentEmergencies.length,
     })
     registerVehiclePositions(name, {
       gpsFixes: (vehiclePosition.gpsFixes ?? []).map(
@@ -282,7 +293,7 @@ const VehiclePath: React.FC<VehiclePathProps> = ({
       reachedWaypoints: recentReachedWaypoints.map(
         (p) => [p.latitude, p.longitude] as [number, number]
       ),
-      emergencies: (vehiclePosition.emergencies ?? []).map(
+      emergencies: recentEmergencies.map(
         (p) => [p.latitude, p.longitude] as [number, number]
       ),
     })
@@ -293,6 +304,7 @@ const VehiclePath: React.FC<VehiclePathProps> = ({
     recentArgos,
     recentNavigatingToWaypoints,
     recentReachedWaypoints,
+    recentEmergencies,
     registerVehicleCounts,
     registerVehiclePositions,
   ])
@@ -1002,7 +1014,7 @@ const VehiclePath: React.FC<VehiclePathProps> = ({
 
       {/* ===== Emergencies ===== */}
       {showEmergencies &&
-        vehiclePosition?.emergencies?.map((point) => (
+        recentEmergencies.map((point) => (
           <CircleMarker
             key={`${name}:emergency:${point.eventId ?? point.unixTime}`}
             center={{ lat: point.latitude, lng: point.longitude }}
@@ -1095,7 +1107,7 @@ const VehiclePath: React.FC<VehiclePathProps> = ({
               )
               break
             case 'emergencies':
-              pts = (vehiclePosition?.emergencies ?? []).map(
+              pts = recentEmergencies.map(
                 (p) => [p.latitude, p.longitude] as [number, number]
               )
               break
@@ -1106,10 +1118,10 @@ const VehiclePath: React.FC<VehiclePathProps> = ({
             argos: vehiclePosition?.argoReceives,
             navigatingToWaypoints: vehiclePosition?.navigatingToWaypoints,
             reachedWaypoints: vehiclePosition?.reachedWaypoints,
-            emergencies: vehiclePosition?.emergencies,
+            emergencies: recentEmergencies,
             latestWaypointPosition: futureWaypoints?.latestPosition,
             waypoints: futureWaypoints?.points,
-            now: Date.now(),
+            now: minuteTick,
           })
         } else {
           // Vehicle name — current location only.
