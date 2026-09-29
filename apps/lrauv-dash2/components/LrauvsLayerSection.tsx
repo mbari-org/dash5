@@ -3,7 +3,6 @@ import { faRoute } from '@fortawesome/free-solid-svg-icons'
 import { TreeItem } from './MapLayersTreeItem'
 import {
   CONDITIONAL_LEAVES,
-  DEFAULT_LEAF_STATE,
   LRAUVS_ROOT_HOVER,
   ORDERED_LEAF_KEYS,
   VehicleLeafKey,
@@ -92,8 +91,12 @@ export const LrauvsLayerSection: React.FC<LrauvsLayerSectionProps> = ({
     (vehicleName: string, leaf: VehicleLeafKey) => {
       const positions = getVehicleLeafPositions(vehicleName)
       const raw = positions?.[leaf] ?? []
+      // GPS fixes and waypoints are both capped at GPS_FIXES_DISPLAY_CAP on
+      // the map, so fit bounds to that same visible subset.
       const pts =
-        leaf === 'waypoints' ? raw.slice(0, GPS_FIXES_DISPLAY_CAP) : raw
+        leaf === 'gpsFixes' || leaf === 'waypoints'
+          ? raw.slice(0, GPS_FIXES_DISPLAY_CAP)
+          : raw
       const bounds = computeBounds(pts)
       if (bounds) setFlyToRequest({ lat: 0, lon: 0, bounds })
     },
@@ -254,10 +257,7 @@ export const LrauvsLayerSection: React.FC<LrauvsLayerSectionProps> = ({
                       ) : null}
                     </>
                   )
-                  const checked =
-                    counts !== undefined
-                      ? isLeafChecked(vehicleName, leaf)
-                      : DEFAULT_LEAF_STATE[leaf]
+                  const checked = isLeafChecked(vehicleName, leaf)
 
                   return (
                     <div key={`lrauv-${vehicleName}-${leaf}`}>

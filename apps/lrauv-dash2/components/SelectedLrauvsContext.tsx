@@ -268,6 +268,23 @@ export const SelectedLrauvsProvider: React.FC<{
 
   const registerVehicleCounts = useCallback(
     (vehicleName: string, counts: VehicleLeafCounts) => {
+      // Seed default-on leaves the first time a vehicle is registered so
+      // GPS fixes, Waypoints, Reached WPs, and Emergencies are visible on
+      // first load even when there is no persisted localStorage entry.
+      setCheckedState((prev) => {
+        if (prev[vehicleName] !== undefined) return prev
+        const seed = { ...DEFAULT_LEAF_STATE }
+        DEFAULT_ON_LEAVES.forEach((k) => {
+          // Only turn on conditional leaves when they actually have data.
+          if (
+            !CONDITIONAL_LEAVES.includes(k) ||
+            (counts[k as keyof typeof counts] ?? 0) > 0
+          ) {
+            seed[k] = true
+          }
+        })
+        return { ...prev, [vehicleName]: seed }
+      })
       setVehicleCounts((prev) => {
         const existing = prev[vehicleName]
         if (

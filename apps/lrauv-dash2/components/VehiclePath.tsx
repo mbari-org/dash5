@@ -1056,9 +1056,9 @@ const VehiclePath: React.FC<VehiclePathProps> = ({
         if (isLeafHover) {
           switch (hoveredLeaf) {
             case 'gpsFixes':
-              // Show the most recent GPS_FIXES_DISPLAY_CAP fixes — same cap
-              // as the dot markers so tooltips and dots are always in sync.
-              pts = (vehiclePosition?.gpsFixes ?? [])
+              // Use displayedFixes (deduplicated, same set as the visible dots)
+              // so hover rings and dots are always in sync.
+              pts = displayedFixes
                 .slice(0, GPS_FIXES_DISPLAY_CAP)
                 .map((p) => [p.latitude, p.longitude] as [number, number])
               break
