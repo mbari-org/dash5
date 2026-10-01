@@ -1,5 +1,6 @@
 import React, { useCallback } from 'react'
 import { faMapMarkerAlt } from '@fortawesome/free-solid-svg-icons'
+import { useTethysApiContext } from '@mbari/api-client'
 import { TreeItem } from './MapLayersTreeItem'
 import { MarkerData, useMarkers } from './MarkerContext'
 import { useMapCamera } from './MapCameraContext'
@@ -43,6 +44,8 @@ export const MarkersLayerSection: React.FC<MarkersLayerSectionProps> = ({
   const { removeMarkerFromLayer, removeAllMarkersFromLayer } = useMarkers()
   const { setFlyToRequest } = useMapCamera()
   const confirm = useConfirm()
+  const { authenticated } = useTethysApiContext()
+  const canEditMarkers = !!authenticated
 
   const handleRemoveFromLayer = useCallback(
     async (id: string, label: string) => {
@@ -90,24 +93,30 @@ export const MarkersLayerSection: React.FC<MarkersLayerSectionProps> = ({
               mapCoords ? () => setFlyToRequest(mapCoords) : undefined
             }
             centerLabel={`Center map on ${markerLabel}`}
-            onRemoveClick={() =>
-              handleRemoveFromLayer(String(marker.id), markerLabel)
+            onRemoveClick={
+              canEditMarkers
+                ? () => handleRemoveFromLayer(String(marker.id), markerLabel)
+                : undefined
             }
-            removeLabel={`Remove ${markerLabel} from layer`}
+            removeLabel={
+              canEditMarkers ? `Remove ${markerLabel} from layer` : undefined
+            }
           />
         )
       })}
       {layerMarkers.length > 0 ? (
-        <div className="flex justify-end py-2 pl-10 pr-2">
-          <button
-            type="button"
-            onClick={removeAllMarkersFromLayer}
-            className="text-sm font-medium text-red-600 hover:text-red-800 hover:underline"
-            aria-label="Remove all from layer"
-          >
-            Remove all from layer
-          </button>
-        </div>
+        canEditMarkers ? (
+          <div className="flex justify-end py-2 pl-10 pr-2">
+            <button
+              type="button"
+              onClick={removeAllMarkersFromLayer}
+              className="text-sm font-medium text-red-600 hover:text-red-800 hover:underline"
+              aria-label="Remove all from layer"
+            >
+              Remove all from layer
+            </button>
+          </div>
+        ) : null
       ) : (
         <div className="py-2 pl-10 text-sm italic text-gray-500">
           No markers saved to layer
