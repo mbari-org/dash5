@@ -170,8 +170,19 @@ export const SelectedLrauvsProvider: React.FC<{
   }, [checkedState])
 
   const getLeafState = useCallback(
-    (vehicleName: string): VehicleLeafState =>
-      checkedState[vehicleName] ?? DEFAULT_LEAF_STATE,
+    (vehicleName: string): VehicleLeafState => {
+      if (checkedState[vehicleName] !== undefined)
+        return checkedState[vehicleName]
+      // No saved entry yet — return default-on state so overlays are visible
+      // on the first paint (Dash4 parity). registerVehicleCounts will write
+      // the real seeds once data arrives, but non-conditional leaves should
+      // never flash off on cache hits.
+      const firstPaint = { ...DEFAULT_LEAF_STATE }
+      DEFAULT_ON_LEAVES.forEach((k) => {
+        if (!CONDITIONAL_LEAVES.includes(k)) firstPaint[k] = true
+      })
+      return firstPaint
+    },
     [checkedState]
   )
 
