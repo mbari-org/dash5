@@ -270,7 +270,7 @@ const VehiclePath: React.FC<VehiclePathProps> = ({
         latest?.latitude != null && latest?.longitude != null
           ? [latest.latitude, latest.longitude]
           : undefined,
-      gpsFixes: (vehiclePosition.gpsFixes ?? []).map(
+      gpsFixes: deduplicateFixesByUnixTime(vehiclePosition.gpsFixes ?? []).map(
         (p) => [p.latitude, p.longitude] as [number, number]
       ),
       waypoints: [
@@ -947,7 +947,10 @@ const VehiclePath: React.FC<VehiclePathProps> = ({
                     weight: hasError ? 7 : 2,
                     opacity: 0.6,
                     dashArray: '5 7',
-                    fillColor: argoColor,
+                    // Dash4 parity: fill is a fixed light blue regardless of
+                    // vehicle color — both Pontus (orange) and Aku (orange) show
+                    // the same blue fill in Dash4 screenshots.
+                    fillColor: '#3388ff',
                     fillOpacity: 0.15,
                   }}
                 />

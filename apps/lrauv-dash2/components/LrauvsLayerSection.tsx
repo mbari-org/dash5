@@ -129,8 +129,10 @@ export const LrauvsLayerSection: React.FC<LrauvsLayerSectionProps> = ({
 
   const handleCenterAll = useCallback(() => {
     // Dash4 parity: only include positions from checked (visible) leaves.
-    // GPS fixes are capped at GPS_FIXES_DISPLAY_CAP to match what the map
-    // actually draws — otherwise bounds extend beyond visible dots on long deployments.
+    // GPS fixes are capped at GPS_FIXES_DISPLAY_CAP to match rendered dots.
+    // Waypoints are capped at 1 (latestPosition) + 20 planned points,
+    // matching the per-leaf hover and center-on-vehicle behavior.
+    const WAYPOINTS_CAP = GPS_FIXES_DISPLAY_CAP + 1
     const pts: [number, number][] = []
     vehicleNames.forEach((vn) => {
       const positions = getVehicleLeafPositions(vn)
@@ -139,7 +141,11 @@ export const LrauvsLayerSection: React.FC<LrauvsLayerSectionProps> = ({
           if (isLeafChecked(vn, leaf)) {
             const raw = positions[leaf] ?? []
             const capped =
-              leaf === 'gpsFixes' ? raw.slice(0, GPS_FIXES_DISPLAY_CAP) : raw
+              leaf === 'gpsFixes'
+                ? raw.slice(0, GPS_FIXES_DISPLAY_CAP)
+                : leaf === 'waypoints'
+                ? raw.slice(0, WAYPOINTS_CAP)
+                : raw
             pts.push(...capped)
           }
         })
