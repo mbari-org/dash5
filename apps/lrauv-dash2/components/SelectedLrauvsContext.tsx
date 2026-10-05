@@ -69,6 +69,19 @@ export const DEFAULT_ON_LEAVES: VehicleLeafKey[] = [
   'emergencies',
 ]
 
+/** Leaf state for a vehicle that has never been persisted.
+ *  Non-conditional DEFAULT_ON_LEAVES start true so overlays are visible on
+ *  the first paint (Dash4 parity). Conditional leaves stay false until data
+ *  arrives. Used as the ?? fallback everywhere to keep isLeafChecked and all
+ *  toggle/setter callbacks in sync. */
+export const FIRST_PAINT_LEAF_STATE: VehicleLeafState = (() => {
+  const s = { ...DEFAULT_LEAF_STATE }
+  DEFAULT_ON_LEAVES.forEach((k) => {
+    if (!CONDITIONAL_LEAVES.includes(k)) s[k] = true
+  })
+  return s
+})()
+
 // Ordered to match Dash4: GPS fixes → Waypoints → Argos → N2WPs → Reached WPs → Emergencies
 export const ORDERED_LEAF_KEYS: VehicleLeafKey[] = [
   'gpsFixes',
@@ -170,19 +183,8 @@ export const SelectedLrauvsProvider: React.FC<{
   }, [checkedState])
 
   const getLeafState = useCallback(
-    (vehicleName: string): VehicleLeafState => {
-      if (checkedState[vehicleName] !== undefined)
-        return checkedState[vehicleName]
-      // No saved entry yet — return default-on state so overlays are visible
-      // on the first paint (Dash4 parity). registerVehicleCounts will write
-      // the real seeds once data arrives, but non-conditional leaves should
-      // never flash off on cache hits.
-      const firstPaint = { ...DEFAULT_LEAF_STATE }
-      DEFAULT_ON_LEAVES.forEach((k) => {
-        if (!CONDITIONAL_LEAVES.includes(k)) firstPaint[k] = true
-      })
-      return firstPaint
-    },
+    (vehicleName: string): VehicleLeafState =>
+      checkedState[vehicleName] ?? FIRST_PAINT_LEAF_STATE,
     [checkedState]
   )
 
@@ -197,7 +199,7 @@ export const SelectedLrauvsProvider: React.FC<{
       setCheckedState((prev) => ({
         ...prev,
         [vehicleName]: {
-          ...(prev[vehicleName] ?? DEFAULT_LEAF_STATE),
+          ...(prev[vehicleName] ?? FIRST_PAINT_LEAF_STATE),
           [leaf]: value,
         },
       }))
@@ -208,7 +210,7 @@ export const SelectedLrauvsProvider: React.FC<{
   const toggleLeaf = useCallback(
     (vehicleName: string, leaf: VehicleLeafKey) => {
       setCheckedState((prev) => {
-        const current = prev[vehicleName] ?? DEFAULT_LEAF_STATE
+        const current = prev[vehicleName] ?? FIRST_PAINT_LEAF_STATE
         return {
           ...prev,
           [vehicleName]: { ...current, [leaf]: !current[leaf] },
@@ -230,7 +232,7 @@ export const SelectedLrauvsProvider: React.FC<{
 
   const toggleVehicle = useCallback((vehicleName: string) => {
     setCheckedState((prev) => {
-      const current = prev[vehicleName] ?? DEFAULT_LEAF_STATE
+      const current = prev[vehicleName] ?? FIRST_PAINT_LEAF_STATE
       const counts = vehicleCountsRef.current[vehicleName]
       const visibleLeaves = ORDERED_LEAF_KEYS.filter(
         (leaf) =>
@@ -269,7 +271,7 @@ export const SelectedLrauvsProvider: React.FC<{
       const counts = vehicleCountsRef.current
       // Three-state toggle: all on → all off; mixed → all on; all off → defaults.
       const allOn = vehicleNames.every((vn) => {
-        const state = prev[vn] ?? DEFAULT_LEAF_STATE
+        const state = prev[vn] ?? FIRST_PAINT_LEAF_STATE
         const vCounts = counts[vn]
         const visibleLeaves = ORDERED_LEAF_KEYS.filter(
           (leaf) =>
@@ -279,7 +281,7 @@ export const SelectedLrauvsProvider: React.FC<{
         return visibleLeaves.every((k) => state[k])
       })
       const someOn = vehicleNames.some((vn) => {
-        const state = prev[vn] ?? DEFAULT_LEAF_STATE
+        const state = prev[vn] ?? FIRST_PAINT_LEAF_STATE
         const vCounts = counts[vn]
         const visibleLeaves = ORDERED_LEAF_KEYS.filter(
           (leaf) =>
@@ -296,7 +298,7 @@ export const SelectedLrauvsProvider: React.FC<{
             !CONDITIONAL_LEAVES.includes(leaf) ||
             (vCounts?.[leaf as keyof typeof vCounts] ?? 0) > 0
         )
-        const current = next[vn] ?? DEFAULT_LEAF_STATE
+        const current = next[vn] ?? FIRST_PAINT_LEAF_STATE
         const updated = { ...current }
         if (allOn) {
           visibleLeaves.forEach((k) => {
@@ -329,7 +331,7 @@ export const SelectedLrauvsProvider: React.FC<{
 
       setCheckedState((prev) => {
         const isNew = prev[vehicleName] === undefined
-        const current = prev[vehicleName] ?? DEFAULT_LEAF_STATE
+        const current = prev[vehicleName] ?? FIRST_PAINT_LEAF_STATE
         const seed = { ...current }
         let changed = isNew
 
