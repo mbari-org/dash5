@@ -264,7 +264,12 @@ const VehiclePath: React.FC<VehiclePathProps> = ({
       reachedWaypoints: recentReachedWaypoints.length,
       emergencies: recentEmergencies.length,
     })
+    const latest = vehiclePosition?.gpsFixes?.[0]
     registerVehiclePositions(name, {
+      markerPosition:
+        latest?.latitude != null && latest?.longitude != null
+          ? [latest.latitude, latest.longitude]
+          : undefined,
       gpsFixes: (vehiclePosition.gpsFixes ?? []).map(
         (p) => [p.latitude, p.longitude] as [number, number]
       ),
@@ -713,25 +718,25 @@ const VehiclePath: React.FC<VehiclePathProps> = ({
         </CircleMarker>
       )}
       {/* Scrub indicator dot — shown for any scrub source (depth chart, timeline)
-          unless the map-hover highlight is already visible at that position */}
-      {showGpsFixes &&
-        indicatorCoord &&
-        mapHoverFix?.unixTime !== indicatorCoord.unixTime && (
-          <CircleMarker
-            center={{
-              lat: indicatorCoord.latitude,
-              lng: indicatorCoord.longitude,
-            }}
-            interactive={false}
-            pathOptions={{
-              color,
-              fillColor: color,
-              fillOpacity: 0.85,
-              weight: 2,
-            }}
-            radius={8}
-          />
-        )}
+          unless the map-hover highlight is already visible at that position.
+          Rendered regardless of whether the GPS fixes leaf is checked so that
+          scrubbing always shows where on the track the selected time falls. */}
+      {indicatorCoord && mapHoverFix?.unixTime !== indicatorCoord.unixTime && (
+        <CircleMarker
+          center={{
+            lat: indicatorCoord.latitude,
+            lng: indicatorCoord.longitude,
+          }}
+          interactive={false}
+          pathOptions={{
+            color,
+            fillColor: color,
+            fillOpacity: 0.85,
+            weight: 2,
+          }}
+          radius={8}
+        />
+      )}
       {/* Crumb trail dots — only shown while the timeline bar is being hovered */}
       {showGpsFixes &&
         activeRoute &&

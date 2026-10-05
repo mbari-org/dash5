@@ -79,7 +79,15 @@ export const ORDERED_LEAF_KEYS: VehicleLeafKey[] = [
   'emergencies',
 ]
 
-export type VehicleLeafPositions = Record<VehicleLeafKey, [number, number][]>
+export type VehicleLeafPositions = Record<
+  VehicleLeafKey,
+  [number, number][]
+> & {
+  /** Vehicle dot marker position — the same point VehiclePath uses to render
+   *  the vehicle's current location on the map. Always set when the vehicle
+   *  has any known position (including docked vehicles with no active fixes). */
+  markerPosition?: [number, number]
+}
 
 export interface SelectedLrauvsContextProps {
   isLeafChecked: (vehicleName: string, leaf: VehicleLeafKey) => boolean
@@ -202,6 +210,13 @@ export const SelectedLrauvsProvider: React.FC<{
   const vehicleCountsRef = useRef(vehicleCounts)
   vehicleCountsRef.current = vehicleCounts
 
+  // Tracks which vehicles have been registered at least once this session.
+  // Used to distinguish a truly-new vehicle from a persisted-from-localStorage
+  // vehicle on its first registerVehicleCounts call (when vehicleCountsRef is
+  // still empty), so we don't accidentally re-enable a leaf the operator
+  // previously unchecked.
+  const registeredVehiclesRef = useRef<Set<string>>(new Set())
+
   const toggleVehicle = useCallback((vehicleName: string) => {
     setCheckedState((prev) => {
       const current = prev[vehicleName] ?? DEFAULT_LEAF_STATE
@@ -211,15 +226,25 @@ export const SelectedLrauvsProvider: React.FC<{
           !CONDITIONAL_LEAVES.includes(leaf) ||
           (counts?.[leaf as keyof typeof counts] ?? 0) > 0
       )
-      const anyOn = visibleLeaves.some((k) => current[k])
+      // Three-state toggle matching standard indeterminate checkbox behaviour:
+      //   All on  → all off
+      //   Mixed   → all on  (operator sees fully-selected state after one click)
+      //   All off → default-on leaves on (first-use default)
+      const allOn = visibleLeaves.every((k) => current[k])
+      const someOn = visibleLeaves.some((k) => current[k])
       const updated = { ...current }
-      if (anyOn) {
-        // Any leaves on → turn everything off
+      if (allOn) {
+        // All leaves on → turn everything off
         visibleLeaves.forEach((k) => {
           updated[k] = false
         })
+      } else if (someOn) {
+        // Mixed (indeterminate) → turn ALL visible leaves on
+        visibleLeaves.forEach((k) => {
+          updated[k] = true
+        })
       } else {
-        // All off → turn on only the default-on leaves that are also visible
+        // All off → restore default-on leaves that are visible
         DEFAULT_ON_LEAVES.forEach((k) => {
           if (visibleLeaves.includes(k)) updated[k] = true
         })
@@ -231,7 +256,18 @@ export const SelectedLrauvsProvider: React.FC<{
   const toggleAll = useCallback((vehicleNames: string[]) => {
     setCheckedState((prev) => {
       const counts = vehicleCountsRef.current
-      const anyOn = vehicleNames.some((vn) => {
+      // Three-state toggle: all on → all off; mixed → all on; all off → defaults.
+      const allOn = vehicleNames.every((vn) => {
+        const state = prev[vn] ?? DEFAULT_LEAF_STATE
+        const vCounts = counts[vn]
+        const visibleLeaves = ORDERED_LEAF_KEYS.filter(
+          (leaf) =>
+            !CONDITIONAL_LEAVES.includes(leaf) ||
+            (vCounts?.[leaf as keyof typeof vCounts] ?? 0) > 0
+        )
+        return visibleLeaves.every((k) => state[k])
+      })
+      const someOn = vehicleNames.some((vn) => {
         const state = prev[vn] ?? DEFAULT_LEAF_STATE
         const vCounts = counts[vn]
         const visibleLeaves = ORDERED_LEAF_KEYS.filter(
@@ -251,9 +287,14 @@ export const SelectedLrauvsProvider: React.FC<{
         )
         const current = next[vn] ?? DEFAULT_LEAF_STATE
         const updated = { ...current }
-        if (anyOn) {
+        if (allOn) {
           visibleLeaves.forEach((k) => {
             updated[k] = false
+          })
+        } else if (someOn) {
+          // Mixed → select all
+          visibleLeaves.forEach((k) => {
+            updated[k] = true
           })
         } else {
           DEFAULT_ON_LEAVES.forEach((k) => {
@@ -271,6 +312,10 @@ export const SelectedLrauvsProvider: React.FC<{
       // Seed default-on leaves the first time a vehicle is registered, and
       // also turn on any DEFAULT_ON_LEAVES conditional leaf the moment it
       // gets its first data point (e.g. first emergency arrives mid-deployment).
+      const isFirstRegistration =
+        !registeredVehiclesRef.current.has(vehicleName)
+      registeredVehiclesRef.current.add(vehicleName)
+
       setCheckedState((prev) => {
         const isNew = prev[vehicleName] === undefined
         const current = prev[vehicleName] ?? DEFAULT_LEAF_STATE
@@ -284,8 +329,17 @@ export const SelectedLrauvsProvider: React.FC<{
           } else {
             // Conditional leaf: turn on the first time it has data,
             // but never force it back off once the operator unchecks it.
+            //
+            // For a persisted vehicle (isNew=false), vehicleCountsRef is still
+            // empty on the first registerVehicleCounts call this session, so
+            // hadData would wrongly be false — causing a previously-unchecked
+            // leaf to be re-enabled as soon as data arrives. Treat the first
+            // registration of a persisted vehicle as "had data" so the
+            // auto-enable is skipped; subsequent calls use the real count.
             const hadData = isNew
               ? false
+              : isFirstRegistration
+              ? true
               : (vehicleCountsRef.current[vehicleName]?.[
                   k as keyof VehicleLeafCounts
                 ] ?? 0) > 0

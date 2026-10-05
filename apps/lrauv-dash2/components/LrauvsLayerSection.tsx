@@ -110,28 +110,37 @@ export const LrauvsLayerSection: React.FC<LrauvsLayerSectionProps> = ({
     (vehicleName: string) => {
       const positions = getVehicleLeafPositions(vehicleName)
       if (!positions) return
-      // Dash4 parity: only include positions from checked (visible) leaves
-      const pts: [number, number][] = []
-      ORDERED_LEAF_KEYS.forEach((leaf) => {
-        if (isLeafChecked(vehicleName, leaf)) {
-          pts.push(...(positions[leaf] ?? []))
-        }
-      })
-      const bounds = computeBounds(pts)
-      if (bounds) setFlyToRequest({ lat: 0, lon: 0, bounds })
+      // Fly to the vehicle's current location using the best available source:
+      // 1. markerPosition = the same point used to draw the vehicle dot on the map
+      // 2. waypoints[0]   = latestPosition from /wp (active vehicles)
+      // 3. gpsFixes[0]    = most recent GPS fix
+      // 4. reachedWaypoints / navigatingToWaypoints / argos as last resorts
+      const current =
+        positions.markerPosition ??
+        positions.waypoints[0] ??
+        positions.gpsFixes[0] ??
+        positions.navigatingToWaypoints[0] ??
+        positions.reachedWaypoints[0] ??
+        positions.argos[0]
+      if (current) setFlyToRequest({ lat: current[0], lon: current[1] })
     },
-    [getVehicleLeafPositions, isLeafChecked, computeBounds, setFlyToRequest]
+    [getVehicleLeafPositions, setFlyToRequest]
   )
 
   const handleCenterAll = useCallback(() => {
-    // Dash4 parity: only include positions from checked (visible) leaves
+    // Dash4 parity: only include positions from checked (visible) leaves.
+    // GPS fixes are capped at GPS_FIXES_DISPLAY_CAP to match what the map
+    // actually draws — otherwise bounds extend beyond visible dots on long deployments.
     const pts: [number, number][] = []
     vehicleNames.forEach((vn) => {
       const positions = getVehicleLeafPositions(vn)
       if (positions) {
         ORDERED_LEAF_KEYS.forEach((leaf) => {
           if (isLeafChecked(vn, leaf)) {
-            pts.push(...(positions[leaf] ?? []))
+            const raw = positions[leaf] ?? []
+            const capped =
+              leaf === 'gpsFixes' ? raw.slice(0, GPS_FIXES_DISPLAY_CAP) : raw
+            pts.push(...capped)
           }
         })
       }
