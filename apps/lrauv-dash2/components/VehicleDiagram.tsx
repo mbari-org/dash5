@@ -20,6 +20,7 @@ import { DateTime } from 'luxon'
 import { decodeHtmlEntities, formatCompactDuration } from '@mbari/utils'
 import { deriveVehiclePropsStatus } from '../lib/deriveVehiclePropsStatus'
 import { resolveVehicleInfo } from '../lib/resolveVehicleInfo'
+import { useBadBatteryFault } from '../lib/useBadBatteryFault'
 import { useTethysApiContext } from 'api-client'
 
 const DepthSparkline = dynamic(
@@ -60,6 +61,8 @@ const VehicleDiagram: React.FC<{
 
   const vehicleInfo = vehicleInfoProp ?? fetchedVehicleInfo
   const vehicle = resolveVehicleInfo(vehicleInfo)
+
+  const { data: badBattery } = useBadBatteryFault(name)
 
   const missionText = vehicle?.text_mission ?? ''
 
@@ -133,7 +136,7 @@ const VehicleDiagram: React.FC<{
     textCriticalError: vehicle?.text_criticalerror,
     textTimeout: vehicle?.text_timeout,
     colorSatComm: vehicle?.color_satcomm,
-    colorNextComm: vehicle?.color_satcomm,
+    colorNextComm: vehicle?.color_commago,
     colorSmallCable: vehicle?.color_smallcable,
     textNote: vehicle?.text_note,
     textArriveStation: vehicle?.text_arrivestation,
@@ -161,12 +164,16 @@ const VehicleDiagram: React.FC<{
     dockTri: vehicle?.dock_tri,
     textGf: vehicle?.text_gf,
     colorFlow: vehicle?.color_flow,
+    ubatColor: vehicle?.color_ubat,
+    textUbat: name.toLowerCase() === 'pontus' ? 'UBAT' : undefined,
+    textFlowLabel: name.toLowerCase() === 'pontus' ? 'Flow' : undefined,
     colorWavecolor: vehicle?.color_wavecolor ?? 'st0',
     textAmps: vehicle?.text_amps,
     colorAmps: vehicle?.color_amps,
     colorDvl: vehicle?.color_dvl,
     textGpsAgo: vehicle?.text_gpsago,
     colorArgo: vehicle?.color_argo,
+    textArgoAgo: vehicle?.text_argoago,
     textCellAgo: formattedCellAgo,
     textNoteTime: vehicle?.text_notetime,
     textArrow: vehicle?.text_arrow,
@@ -222,6 +229,8 @@ const VehicleDiagram: React.FC<{
     textBatteryDuration: vehicle?.text_batteryduration,
     textBatteryUnits: vehicle?.text_batteryunits,
     textCurrent: vehicle?.text_current,
+    showBadBattery: badBattery?.show,
+    textBadBattery: badBattery?.text,
     textNeedsComms: vehicle?.text_needcomms,
     textMissionAgo: vehicle?.text_missionago,
     textVersion: vehicle?.text_version,
