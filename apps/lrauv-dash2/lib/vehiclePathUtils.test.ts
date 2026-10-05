@@ -137,7 +137,7 @@ describe('lrauvsRootHoverPositions', () => {
     expect(lrauvsRootHoverPositions({ now })).toEqual([])
   })
 
-  it('keeps recent points from every position leaf and drops older ones', () => {
+  it('keeps recent points from other position leaves and drops older ones', () => {
     const recent = now - 60_000
     const older = now - RECENT_POSITION_WINDOW_MS - 1
     const result = lrauvsRootHoverPositions({
@@ -153,6 +153,17 @@ describe('lrauvsRootHoverPositions', () => {
       [5, 6],
       [7, 8],
     ])
+  })
+
+  it('includes GPS fixes older than 24h to match map rendering (cap-only, no time window)', () => {
+    const older = now - RECENT_POSITION_WINDOW_MS - 1
+    const result = lrauvsRootHoverPositions({
+      now,
+      gpsFixes: [fix(older, { latitude: 1, longitude: 2 })],
+      argos: [fix(older, { latitude: 3, longitude: 4 })],
+    })
+    // GPS fixes are included (no time window); Argos is dropped (24h window)
+    expect(result).toEqual([[1, 2]])
   })
 
   it('includes the latest waypoint position and every waypoint', () => {

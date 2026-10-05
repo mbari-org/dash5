@@ -59,8 +59,10 @@ type LatLonTime = { latitude: number; longitude: number; unixTime: number }
 
 /**
  * Points highlighted when the pointer is on the LRAUVs row.
- * Dash4 includes every leaf, checked or not. Position leaves use the
- * last-24-hour window. Waypoints are the latest position plus the full list.
+ * Dash4 includes every leaf, checked or not. GPS fixes use the same
+ * newest-20-deduped slice that VehiclePath renders, so hover rings always
+ * match the visible surfacing dots. Other position leaves use the last-24-hour
+ * window (Dash4 parity). Waypoints are the latest position plus the full list.
  */
 export function lrauvsRootHoverPositions(args: {
   gpsFixes?: LatLonTime[]
@@ -72,6 +74,12 @@ export function lrauvsRootHoverPositions(args: {
   waypoints?: { lat: number; lon: number }[]
   now: number
 }): [number, number][] {
+  // GPS fixes: match VehiclePath rendering (newest 20 deduped, no time window)
+  const gpsWindowed = (points?: LatLonTime[]): [number, number][] =>
+    deduplicateFixesByUnixTime(points ?? [])
+      .slice(0, RECENT_POSITION_CAP)
+      .map((point) => [point.latitude, point.longitude])
+  // Other position leaves: last-24-hour window, cap 20 (Dash4 parity)
   const windowed = (points?: LatLonTime[]): [number, number][] =>
     recentPositionsWithinWindow(points, args.now).map((point) => [
       point.latitude,
@@ -90,7 +98,7 @@ export function lrauvsRootHoverPositions(args: {
   }
 
   return [
-    ...windowed(args.gpsFixes),
+    ...gpsWindowed(args.gpsFixes),
     ...waypointPts,
     ...windowed(args.argos),
     ...windowed(args.navigatingToWaypoints),
