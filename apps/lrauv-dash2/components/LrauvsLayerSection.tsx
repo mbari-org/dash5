@@ -238,35 +238,16 @@ export const LrauvsLayerSection: React.FC<LrauvsLayerSectionProps> = ({
                     return null
                   }
 
-                  // GPS fixes draw at most GPS_FIXES_DISPLAY_CAP points.
-                  // When the total is larger, say so: "last 20/435".
-                  // Argos, Navigating to WPs, and Reached WPs already count
-                  // only the last 24 hours, so their label is that count.
-                  const isCappedLeaf = leaf === 'gpsFixes'
-                  const displayedCount =
-                    isCappedLeaf &&
-                    count !== null &&
-                    count > GPS_FIXES_DISPLAY_CAP
-                      ? GPS_FIXES_DISPLAY_CAP
-                      : count
-                  const countSuffix =
-                    count !== null
-                      ? displayedCount !== count
-                        ? ` (${displayedCount}/${count})`
-                        : ` (${count})`
-                      : ''
+                  // GPS fixes: all deduplicated surfacing dots are rendered across
+                  // the full deployment. Show the total count in the label.
+                  // (GPS_FIXES_DISPLAY_CAP still limits center-on bounds so the
+                  // map doesn't fly out to the oldest fix on a long deployment.)
+                  const countSuffix = count !== null ? ` (${count})` : ''
 
                   const label = (
                     <>
                       {LEAF_LABELS[leaf]}
-                      {isCappedLeaf && displayedCount !== count ? (
-                        <>
-                          {' '}
-                          (<em>last</em> {displayedCount}/{count})
-                        </>
-                      ) : countSuffix ? (
-                        countSuffix
-                      ) : null}
+                      {countSuffix || null}
                     </>
                   )
                   const checked = isLeafChecked(vehicleName, leaf)
