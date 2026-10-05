@@ -619,7 +619,9 @@ const VehiclePath: React.FC<VehiclePathProps> = ({
     ? formatElapsedTime(Date.now() - getTime(parseISO(latestTimeFix)))
     : ''
 
-  const showGpsFixes = isLeafChecked(name, 'gpsFixes')
+  // showGpsFixes intentionally removed — GPS track dots, crumb trail,
+  // hover highlight, and HitCircles are always rendered (Dash4 parity).
+  // The GPS Fixes leaf only gates the layer-panel hover overlay rings.
   const showWaypoints = isLeafChecked(name, 'waypoints')
   const showArgos = isLeafChecked(name, 'argos')
   const showNavigatingToWaypoints = isLeafChecked(name, 'navigatingToWaypoints')
@@ -674,26 +676,25 @@ const VehiclePath: React.FC<VehiclePathProps> = ({
             radius={20}
           />
         ))}
-      {/* GPS surfacing dots — the most recent GPS_FIXES_DISPLAY_CAP fixes.
-          Index 0 is the latest position and is rendered separately as the
-          solid current-position dot; skip it here. Non-interactive. */}
-      {showGpsFixes &&
-        displayedFixes
-          .slice(0, GPS_FIXES_DISPLAY_CAP)
-          .map((fix, index) =>
-            index === 0 ? null : (
-              <CircleMarker
-                key={`${name}:surfacing:${fix.eventId ?? fix.unixTime}`}
-                center={{ lat: fix.latitude, lng: fix.longitude }}
-                radius={2}
-                color={color}
-                fillColor={color}
-                fillOpacity={0.7}
-                weight={1}
-                interactive={false}
-              />
-            )
-          )}
+      {/* GPS surfacing dots — always visible across the full deployment
+          (Dash4 parity). Index 0 is the latest position rendered separately
+          as the solid current-position dot; skip it here. Non-interactive.
+          The GPS Fixes leaf checkbox controls the layer-panel hover overlay
+          rings only — not these dots. */}
+      {displayedFixes.map((fix, index) =>
+        index === 0 ? null : (
+          <CircleMarker
+            key={`${name}:surfacing:${fix.eventId ?? fix.unixTime}`}
+            center={{ lat: fix.latitude, lng: fix.longitude }}
+            radius={2}
+            color={color}
+            fillColor={color}
+            fillOpacity={0.7}
+            weight={1}
+            interactive={false}
+          />
+        )
+      )}
       {/* Current vehicle position — always visible (fundamental "where is
           this vehicle" indicator). */}
       {latest && (
@@ -738,8 +739,7 @@ const VehiclePath: React.FC<VehiclePathProps> = ({
         />
       )}
       {/* Crumb trail dots — only shown while the timeline bar is being hovered */}
-      {showGpsFixes &&
-        activeRoute &&
+      {activeRoute &&
         activeRoute.map((r, i) => (
           <VehiclePoint
             key={`${name}:${
@@ -753,7 +753,7 @@ const VehiclePath: React.FC<VehiclePathProps> = ({
           />
         ))}
       {/* Hover highlight — grows at the nearest fix when hovering the map track */}
-      {showGpsFixes && mapHoverFix && (
+      {mapHoverFix && (
         <CircleMarker
           center={{ lat: mapHoverFix.latitude, lng: mapHoverFix.longitude }}
           interactive={false}
@@ -798,15 +798,14 @@ const VehiclePath: React.FC<VehiclePathProps> = ({
         </CircleMarker>
       )}
       {/* Dashed inactive/future track segment — always visible as part of the
-          track line. The individual preview dots below are gated on showGpsFixes. */}
+          track line. The individual preview dots below are also always rendered. */}
       {dedupedInactiveRoute && (
         <Polyline
           pathOptions={{ color, weight: 2, opacity: 0.5, dashArray: '4, 6' }}
           positions={dedupedInactiveRoute}
         />
       )}
-      {showGpsFixes &&
-        dedupedInactiveRoute &&
+      {dedupedInactiveRoute &&
         dedupedInactiveRoute.map((r, i) => (
           <CircleMarker
             key={`${name}:${
@@ -826,7 +825,7 @@ const VehiclePath: React.FC<VehiclePathProps> = ({
 
       {/* Memoized hit targets — isolated from VehiclePath re-renders to
           prevent spurious mouseout/mouseover events causing tooltip flicker. */}
-      {showGpsFixes && (
+      {
         <HitCircles
           name={name}
           grouped={grouped}
@@ -835,7 +834,7 @@ const VehiclePath: React.FC<VehiclePathProps> = ({
           onCoord={handleCoord}
           onMouseOut={handleMouseOut}
         />
-      )}
+      }
       {/* Invisible hit target for the latest-position tooltip — always
           rendered so the position tooltip is always reachable, even when
           the GPS fixes leaf is unchecked. */}
