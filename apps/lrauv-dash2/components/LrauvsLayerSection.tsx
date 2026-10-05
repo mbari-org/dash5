@@ -238,16 +238,32 @@ export const LrauvsLayerSection: React.FC<LrauvsLayerSectionProps> = ({
                     return null
                   }
 
-                  // GPS fixes: all deduplicated surfacing dots are rendered across
-                  // the full deployment. Show the total count in the label.
-                  // (GPS_FIXES_DISPLAY_CAP still limits center-on bounds so the
-                  // map doesn't fly out to the oldest fix on a long deployment.)
+                  // GPS fixes: the layer section represents only the last
+                  // GPS_FIXES_DISPLAY_CAP fixes (Dash4 parity) — that is
+                  // what center-on and hover-overlay use. When the full
+                  // deployment has more, show "last 20/N" so the operator
+                  // knows the layer tracks the most recent subset.
+                  // (The trackline itself always renders all surfacing dots.)
+                  const isCappedLeaf = leaf === 'gpsFixes'
+                  const layerCount =
+                    isCappedLeaf && count !== null
+                      ? Math.min(count, GPS_FIXES_DISPLAY_CAP)
+                      : count
                   const countSuffix = count !== null ? ` (${count})` : ''
 
                   const label = (
                     <>
                       {LEAF_LABELS[leaf]}
-                      {countSuffix || null}
+                      {isCappedLeaf &&
+                      count !== null &&
+                      count > GPS_FIXES_DISPLAY_CAP ? (
+                        <>
+                          {' '}
+                          (<em>last</em> {layerCount}/{count})
+                        </>
+                      ) : countSuffix ? (
+                        countSuffix
+                      ) : null}
                     </>
                   )
                   const checked = isLeafChecked(vehicleName, leaf)
