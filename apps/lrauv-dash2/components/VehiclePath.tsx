@@ -944,10 +944,11 @@ const VehiclePath: React.FC<VehiclePathProps> = ({
                   radius={radiusMeters}
                   pathOptions={{
                     color: argoColor,
-                    weight: hasError ? 7 : 3,
-                    opacity: 0.5,
-                    fillOpacity: 0,
+                    weight: hasError ? 7 : 2,
+                    opacity: 0.6,
                     dashArray: '5 7',
+                    fillColor: argoColor,
+                    fillOpacity: 0.15,
                   }}
                 />
               )}
