@@ -1129,11 +1129,12 @@ const VehiclePath: React.FC<VehiclePathProps> = ({
             now: minuteTick,
           })
         } else {
-          // Vehicle name — current location only.
-          const latestFix = vehiclePosition?.gpsFixes?.[0]
-          if (latestFix) {
-            pts.push([latestFix.latitude, latestFix.longitude])
-          }
+          // Vehicle name hover: yellow rings at all last-20 GPS positions
+          // (Dash4 parity). No tooltips, no connecting line (withTooltip=false,
+          // isLeafHover=false). Same set as the GPS Fixes leaf hover.
+          pts = displayedFixes
+            .slice(0, GPS_FIXES_DISPLAY_CAP)
+            .map((p) => [p.latitude, p.longitude] as [number, number])
         }
 
         if (pts.length === 0) return null
