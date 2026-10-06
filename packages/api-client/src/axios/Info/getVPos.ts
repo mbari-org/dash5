@@ -26,6 +26,8 @@ export interface GetVPosResponse {
   gpsFixes: VPosDetail[]
   argoReceives: VPosDetail[]
   emergencies: VPosDetail[]
+  iridiumPositions: VPosDetail[]
+  navigatingToWaypoints: VPosDetail[]
   reachedWaypoints: VPosDetail[]
 }
 

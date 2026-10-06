@@ -54,8 +54,8 @@ interface TileLayersSectionProps {
   filteredTileLayers: TileLayerItem[]
   tileLayers: TileLayerItem[] | undefined
   selectedTileLayers: string[]
-  expandedSections: { tileLayers: boolean }
-  toggleExpanded: (section: 'tileLayers') => void
+  expandedSections: Record<string, boolean>
+  toggleExpanded: (section: string) => void
   setSelectedTileLayers: (
     updater: string[] | ((prev: string[]) => string[])
   ) => void
