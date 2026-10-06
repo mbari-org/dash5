@@ -199,7 +199,11 @@ export const LrauvsLayerSection: React.FC<LrauvsLayerSectionProps> = ({
           vehicleNames.length > 0 ? () => toggleAll(vehicleNames) : undefined
         }
         onCenterClick={vehicleNames.length > 0 ? handleCenterAll : undefined}
-        centerLabel="Center map on all LRAUVs"
+        centerLabel={
+          vehicleNames.length === 1
+            ? `Center map on ${vehicleNames[0]}`
+            : 'Center map on all LRAUVs'
+        }
         iconNode={
           <img
             src="/lrauv-icon.svg"
