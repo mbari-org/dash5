@@ -343,7 +343,7 @@ const MissionModal: React.FC<MissionModalProps> = ({
       },
       {
         onSuccess: () => {
-          toast.success('Command sent')
+          toast.success('Mission sent')
           onClose()
         },
         onError: (error) => {
