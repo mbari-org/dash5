@@ -1373,39 +1373,21 @@ export const ScheduleSection: React.FC<ScheduleSectionProps> = ({
     const isConfirmed = await confirm({
       title: `Are you sure you want to discard this ${commandType} directive (event ID ${eventId})? This will remove it from the shore-side queue.`,
     })
-    if (isConfirmed) {
-      try {
-        await deleteCommandQueueMutation.mutateAsync({
-          vehicle: vehicleName,
-          refEventId: eventId,
-        })
-      } catch (e) {
-        toast.error(
-          `Failed to cancel directive ${eventId}. It may have already been sent to the vehicle.`
-        )
-        return
-      }
+    if (!isConfirmed) return
 
-      // Refresh schedule immediately after the DELETE succeeds, regardless of note outcome.
-      queryClient.invalidateQueries(['event', 'events'])
-      queryClient.invalidateQueries(['events'])
-      queryClient.invalidateQueries(['event', 'missionStarted'])
-
-      toast.success(`Cancelled directive ${eventId}.`)
-
+    const getCommandText = () => {
       const matchedResult = results.find((r) => r?.event.eventId === eventId)
       const rawCommandText =
         matchedResult?.event?.data ?? matchedResult?.event?.text ?? ''
       const normalizedCommandText = rawCommandText.replace(/\s+/g, ' ').trim()
-      const commandText =
-        normalizedCommandText.length > 200
-          ? `${normalizedCommandText.slice(0, 200)}…`
-          : normalizedCommandText
+      return normalizedCommandText.length > 200
+        ? `${normalizedCommandText.slice(0, 200)}…`
+        : normalizedCommandText
+    }
+
+    const writeNote = async (note: string) => {
       try {
-        await createNoteMutation.mutateAsync({
-          vehicle: vehicleName,
-          note: `Cancelled request ${eventId} for '${vehicleName}': '${commandText}'`,
-        })
+        await createNoteMutation.mutateAsync({ vehicle: vehicleName, note })
         queryClient.invalidateQueries(['event', 'events'])
       } catch (e) {
         toast.error(
@@ -1413,6 +1395,72 @@ export const ScheduleSection: React.FC<ScheduleSectionProps> = ({
         )
       }
     }
+
+    const invalidateSchedule = () => {
+      queryClient.invalidateQueries(['event', 'events'])
+      queryClient.invalidateQueries(['events'])
+      queryClient.invalidateQueries(['event', 'missionStarted'])
+    }
+
+    let data
+    try {
+      data = await deleteCommandQueueMutation.mutateAsync({
+        vehicle: vehicleName,
+        refEventId: eventId,
+      })
+    } catch (e) {
+      toast.error(
+        `Failed to cancel directive ${eventId}. It may have already been sent to the vehicle.`
+      )
+      return
+    }
+
+    if (data?.error) {
+      // TethysDash refused the cancel — command already dispatched/sent to the vehicle.
+      toast.error(
+        `This directive has already been sent to the vehicle. Use "Discard anyway" to force-remove it.`
+      )
+
+      const shouldForce = await confirm({
+        title: `Directive ${eventId} has already been sent to the vehicle and may have been run. Discard it anyway?`,
+      })
+      if (!shouldForce) return
+
+      let forceData
+      try {
+        forceData = await deleteCommandQueueMutation.mutateAsync({
+          vehicle: vehicleName,
+          refEventId: eventId,
+          force: true,
+        })
+      } catch (e) {
+        toast.error(`Failed to force-discard directive ${eventId}.`)
+        return
+      }
+
+      if (forceData?.error) {
+        toast.error(
+          `Could not force-discard directive ${eventId}: ${forceData.error}`
+        )
+        return
+      }
+
+      invalidateSchedule()
+      toast.success(
+        `Directive ${eventId} discarded. Note: the vehicle may have already run this command.`
+      )
+      await writeNote(
+        `Force-discarded request ${eventId} for '${vehicleName}' (vehicle may have already run this command): '${getCommandText()}'`
+      )
+      return
+    }
+
+    // Normal success — cancel was accepted by TethysDash.
+    invalidateSchedule()
+    toast.success(`Cancelled directive ${eventId}.`)
+    await writeNote(
+      `Cancelled request ${eventId} for '${vehicleName}': '${getCommandText()}'`
+    )
   }
 
   const handleDownload = ({
