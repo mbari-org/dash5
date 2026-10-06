@@ -24,6 +24,8 @@ export interface TreeItemProps {
   onToggleCheck?: () => void
   icon?: IconProp
   iconColor?: string
+  /** Renders an arbitrary React node in place of the FontAwesome icon. */
+  iconNode?: React.ReactNode
   children?: React.ReactNode
   disabled?: boolean
   disabledTitle?: string
@@ -65,6 +67,7 @@ export const TreeItem: React.FC<TreeItemProps> = ({
   onToggleCheck,
   icon,
   iconColor,
+  iconNode,
   children,
   disabled = false,
   disabledTitle,
@@ -147,7 +150,9 @@ export const TreeItem: React.FC<TreeItemProps> = ({
               cursor: disabled || !onToggleCheck ? 'not-allowed' : 'pointer',
             }}
           />
-          {icon ? (
+          {iconNode ? (
+            iconNode
+          ) : icon ? (
             icon === faCircle && iconColor === 'white' ? (
               <CustomCircleIcon />
             ) : (

@@ -1,5 +1,4 @@
 import React, { useEffect, useCallback } from 'react'
-import { faRoute } from '@fortawesome/free-solid-svg-icons'
 import { TreeItem } from './MapLayersTreeItem'
 import {
   CONDITIONAL_LEAVES,
@@ -201,8 +200,14 @@ export const LrauvsLayerSection: React.FC<LrauvsLayerSectionProps> = ({
         }
         onCenterClick={vehicleNames.length > 0 ? handleCenterAll : undefined}
         centerLabel="Center map on all LRAUVs"
-        icon={faRoute}
-        iconColor="#60a5fa"
+        iconNode={
+          <img
+            src="/lrauv-icon.svg"
+            alt="LRAUV"
+            className="mr-2"
+            style={{ width: '26px', height: '14px', flexShrink: 0 }}
+          />
+        }
         disabled={vehicleNames.length === 0}
       >
         {filteredVehicleNames.map((vehicleName) => {
