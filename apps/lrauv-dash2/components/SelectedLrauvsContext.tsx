@@ -160,6 +160,13 @@ export const SelectedLrauvsProvider: React.FC<{
   // Stored as a ref so position updates don't re-render the tree.
   const vehiclePositionsRef = useRef<Record<string, VehicleLeafPositions>>({})
 
+  // Tracks which conditional leaves have ever had data for each vehicle.
+  // Prevents auto-re-enabling a leaf the user explicitly unchecked after
+  // data ages out and returns.
+  const hadEverHadDataRef = useRef<
+    Record<string, Partial<Record<VehicleLeafKey, boolean>>>
+  >({})
+
   const registerVehiclePositions = useCallback(
     (vehicleName: string, positions: VehicleLeafPositions) => {
       vehiclePositionsRef.current[vehicleName] = positions
@@ -257,9 +264,10 @@ export const SelectedLrauvsProvider: React.FC<{
           updated[k] = true
         })
       } else {
-        // All off → restore default-on leaves that are visible
-        DEFAULT_ON_LEAVES.forEach((k) => {
-          if (visibleLeaves.includes(k)) updated[k] = true
+        // All off → turn all visible leaves back on.
+        // Default-on distinction applies only to first paint, not explicit re-check.
+        visibleLeaves.forEach((k) => {
+          updated[k] = true
         })
       }
       return { ...prev, [vehicleName]: updated }
@@ -310,8 +318,10 @@ export const SelectedLrauvsProvider: React.FC<{
             updated[k] = true
           })
         } else {
-          DEFAULT_ON_LEAVES.forEach((k) => {
-            if (visibleLeaves.includes(k)) updated[k] = true
+          // All off → turn all visible leaves back on.
+          // Default-on distinction applies only to first paint, not explicit re-check.
+          visibleLeaves.forEach((k) => {
+            updated[k] = true
           })
         }
         next[vn] = updated as VehicleLeafState
@@ -357,7 +367,17 @@ export const SelectedLrauvsProvider: React.FC<{
                   k as keyof VehicleLeafCounts
                 ] ?? 0) > 0
             const nowHasData = (counts[k as keyof typeof counts] ?? 0) > 0
-            if (!hadData && nowHasData && !current[k]) {
+            // Auto-enable only if this leaf has never previously had data.
+            // If data returns after aging out, respect any explicit user choice.
+            const everHadData =
+              hadEverHadDataRef.current[vehicleName]?.[k as VehicleLeafKey] ??
+              false
+            if (nowHasData) {
+              if (!hadEverHadDataRef.current[vehicleName])
+                hadEverHadDataRef.current[vehicleName] = {}
+              hadEverHadDataRef.current[vehicleName][k as VehicleLeafKey] = true
+            }
+            if (!hadData && nowHasData && !current[k] && !everHadData) {
               seed[k] = true
               changed = true
             } else if (isNew && nowHasData) {
