@@ -345,6 +345,19 @@ export const SelectedLrauvsProvider: React.FC<{
         const seed = { ...current }
         let changed = isNew
 
+        // For a persisted vehicle (state already in localStorage), mark all
+        // conditional leaves as seen on the first registration this session.
+        // This prevents data returning after a reload from re-enabling a leaf
+        // the operator explicitly unchecked in a previous session.
+        if (!isNew && isFirstRegistration) {
+          if (!hadEverHadDataRef.current[vehicleName]) {
+            hadEverHadDataRef.current[vehicleName] = {}
+          }
+          CONDITIONAL_LEAVES.forEach((k) => {
+            hadEverHadDataRef.current[vehicleName][k] = true
+          })
+        }
+
         DEFAULT_ON_LEAVES.forEach((k) => {
           if (!CONDITIONAL_LEAVES.includes(k)) {
             // Non-conditional leaf: only set on the very first registration.
