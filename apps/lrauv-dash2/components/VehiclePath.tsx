@@ -863,13 +863,13 @@ const VehiclePath: React.FC<VehiclePathProps> = ({
                 />
                 {name}
               </div>
-              {futureRoute && (
+              {showWaypoints && futureRoute && (
                 <div className="text-gray-500 italic">
                   Position before waypoint trajectory
                 </div>
               )}
               <div className="mt-0.5">
-                {futureRoute ? 'Lat/Lon:' : 'Latest position:'}{' '}
+                {showWaypoints && futureRoute ? 'Lat/Lon:' : 'Latest position:'}{' '}
                 {latest.latitude.toFixed(5)}, {latest.longitude.toFixed(5)}
               </div>
               <div>
