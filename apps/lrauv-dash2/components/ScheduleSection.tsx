@@ -1385,13 +1385,18 @@ export const ScheduleSection: React.FC<ScheduleSectionProps> = ({
         : normalizedCommandText
     }
 
-    const writeNote = async (note: string) => {
+    const writeNote = async (
+      note: string,
+      action: 'cancel' | 'discard' = 'cancel'
+    ) => {
       try {
         await createNoteMutation.mutateAsync({ vehicle: vehicleName, note })
         queryClient.invalidateQueries(['event', 'events'])
       } catch (e) {
         toast.error(
-          `Directive ${eventId} was cancelled, but the cancellation note could not be recorded.`
+          action === 'discard'
+            ? `Directive ${eventId} was discarded, but the discard note could not be recorded.`
+            : `Directive ${eventId} was cancelled, but the cancellation note could not be recorded.`
         )
       }
     }
@@ -1450,7 +1455,8 @@ export const ScheduleSection: React.FC<ScheduleSectionProps> = ({
         `Directive ${eventId} discarded. Note: the vehicle may have already run this command.`
       )
       await writeNote(
-        `Force-discarded request ${eventId} for '${vehicleName}' (vehicle may have already run this command): '${getCommandText()}'`
+        `Force-discarded request ${eventId} for '${vehicleName}' (vehicle may have already run this command): '${getCommandText()}'`,
+        'discard'
       )
       return
     }
