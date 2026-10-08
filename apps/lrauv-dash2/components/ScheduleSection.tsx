@@ -1575,7 +1575,7 @@ export const ScheduleSection: React.FC<ScheduleSectionProps> = ({
                       },
                     },
                     ...(!currentMoreMenu.isDefaultMission &&
-                    currentMoreMenu.status === 'pending'
+                    ['pending', 'sent', 'ack'].includes(currentMoreMenu.status)
                       ? [
                           {
                             label: 'Cancel this Directive',
