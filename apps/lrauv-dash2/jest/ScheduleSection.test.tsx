@@ -15,6 +15,15 @@ import { rest } from 'msw'
 import { setupServer } from 'msw/node'
 import { MockProviders } from '../components/testHelpers'
 
+jest.mock('react-hot-toast', () => ({
+  toast: {
+    error: jest.fn(),
+    success: jest.fn(),
+  },
+  Toaster: () => null,
+}))
+import { toast } from 'react-hot-toast'
+
 const props: ScheduleSectionProps = {
   authenticated: true,
   vehicleName: 'example',
@@ -125,6 +134,7 @@ beforeAll(() => server.listen())
 afterEach(() => {
   server.resetHandlers()
   jest.restoreAllMocks()
+  jest.clearAllMocks()
 })
 afterAll(() => server.close())
 
@@ -788,6 +798,14 @@ test('refused cancel shows error toast and triggers force-discard flow when conf
     expect(forceCalled).toBe(true)
     // Note records the force-discard (not a cancellation)
     expect(noteText).toMatch(/Force-discarded request 99010/)
+    // Error toast fired after the refused cancel
+    expect(toast.error).toHaveBeenCalledWith(
+      expect.stringMatching(/already been sent to the vehicle/i)
+    )
+    // Success toast fired after the force-discard completes
+    expect(toast.success).toHaveBeenCalledWith(
+      expect.stringMatching(/Directive 99010 discarded/i)
+    )
   })
 })
 
