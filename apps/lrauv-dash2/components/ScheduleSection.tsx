@@ -302,7 +302,9 @@ export const ScheduleSection: React.FC<ScheduleSectionProps> = ({
   const cancelledEventIds = useMemo(() => {
     const ids = new Set<number>()
     cancellationNotesResponse.data?.forEach((note) => {
-      const match = note.note?.match(/Cancelled request (\d+)/)
+      const match = note.note?.match(
+        /(?:Cancelled|Force-discarded) request (\d+)/
+      )
       if (match) ids.add(parseInt(match[1], 10))
     })
     return ids

@@ -710,6 +710,153 @@ test('Cancel this Directive does not call DELETE when confirm is dismissed', asy
   expect(deleteCalled).toBe(false)
 })
 
+test('refused cancel shows error toast and triggers force-discard flow when confirmed', async () => {
+  // Regression for #878: TethysDash returns HTTP 200 with { error } when the
+  // vehicle already has the command. The old code ignored that field and showed
+  // success. This test verifies the refused path and the full force-discard flow.
+  let deleteCallCount = 0
+  let forceCalled = false
+  let noteText = ''
+  server.use(
+    rest.get('/events', (_req, res, ctx) =>
+      res(
+        ctx.status(200),
+        ctx.json({
+          result: [
+            {
+              data: 'load Science/profiles.xml run',
+              unixTime: Date.now() - 60 * 1000,
+              eventId: 99010,
+              eventType: 'run',
+              text: null,
+              note: null,
+              user: 'test-user',
+            },
+          ],
+        })
+      )
+    ),
+    rest.get('/events/mission-started', (_req, res, ctx) =>
+      res(ctx.status(200), ctx.json({ result: [] }))
+    ),
+    rest.delete('/commands/queue', (req, res, ctx) => {
+      deleteCallCount++
+      const force = req.url.searchParams.get('force')
+      if (force === 'true') {
+        forceCalled = true
+        return res(ctx.status(200), ctx.json({ result: { ok: true } }))
+      }
+      // First attempt: TethysDash refuses
+      return res(
+        ctx.status(200),
+        ctx.json({ error: 'Command already dispatched to vehicle' })
+      )
+    }),
+    rest.post('/events/note', async (req, res, ctx) => {
+      noteText = req.url.searchParams.get('note') ?? ''
+      return res(ctx.status(200), ctx.json({ result: {} }))
+    })
+  )
+
+  render(
+    <MockProviders queryClient={new QueryClient()}>
+      <ScheduleSection {...props} currentDeploymentId={1} />
+    </MockProviders>
+  )
+
+  const user = userEvent.setup()
+
+  // Open the row menu and click Cancel
+  const moreButton = await screen.findByRole('button', {
+    name: /more options/i,
+  })
+  await user.click(moreButton)
+  await user.click(await screen.findByText('Cancel this Directive'))
+
+  // Confirm the first cancel dialog
+  await user.click(await screen.findByRole('button', { name: 'Confirm' }))
+
+  // TethysDash refused — a second "Discard anyway?" dialog must appear
+  await screen.findByText(/Discard it anyway/i)
+
+  // Confirm the force-discard
+  await user.click(await screen.findByRole('button', { name: 'Confirm' }))
+
+  await waitFor(() => {
+    // Both DELETE calls fired: first refused, second forced
+    expect(deleteCallCount).toBe(2)
+    expect(forceCalled).toBe(true)
+    // Note records the force-discard (not a cancellation)
+    expect(noteText).toMatch(/Force-discarded request 99010/)
+  })
+})
+
+test('refused cancel does not force-discard when the second confirm is dismissed', async () => {
+  let forceCalled = false
+  server.use(
+    rest.get('/events', (_req, res, ctx) =>
+      res(
+        ctx.status(200),
+        ctx.json({
+          result: [
+            {
+              data: 'load Science/profiles.xml run',
+              unixTime: Date.now() - 60 * 1000,
+              eventId: 99011,
+              eventType: 'run',
+              text: null,
+              note: null,
+              user: 'test-user',
+            },
+          ],
+        })
+      )
+    ),
+    rest.get('/events/mission-started', (_req, res, ctx) =>
+      res(ctx.status(200), ctx.json({ result: [] }))
+    ),
+    rest.delete('/commands/queue', (req, res, ctx) => {
+      const force = req.url.searchParams.get('force')
+      if (force === 'true') {
+        forceCalled = true
+        return res(ctx.status(200), ctx.json({ result: { ok: true } }))
+      }
+      return res(
+        ctx.status(200),
+        ctx.json({ error: 'Command already dispatched to vehicle' })
+      )
+    }),
+    rest.post('/events/note', (_req, res, ctx) =>
+      res(ctx.status(200), ctx.json({ result: {} }))
+    )
+  )
+
+  render(
+    <MockProviders queryClient={new QueryClient()}>
+      <ScheduleSection {...props} currentDeploymentId={1} />
+    </MockProviders>
+  )
+
+  const user = userEvent.setup()
+
+  const moreButton = await screen.findByRole('button', {
+    name: /more options/i,
+  })
+  await user.click(moreButton)
+  await user.click(await screen.findByText('Cancel this Directive'))
+  await user.click(await screen.findByRole('button', { name: 'Confirm' }))
+
+  // Discard anyway? dialog appears — dismiss it
+  await screen.findByText(/Discard it anyway/i)
+  await user.click(await screen.findByRole('button', { name: 'Cancel' }))
+
+  // Dialog closes; no force-discard must have fired
+  await waitFor(() =>
+    expect(screen.queryByText(/Discard it anyway/i)).not.toBeInTheDocument()
+  )
+  expect(forceCalled).toBe(false)
+})
+
 // ── isParamCommand unit tests ────────────────────────────────────────────────
 
 test('isParamCommand returns true for "set <mission>.<param> <value>"', () => {
