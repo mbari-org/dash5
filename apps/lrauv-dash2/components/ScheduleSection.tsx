@@ -115,14 +115,15 @@ const missionKeysMatch = (leftPath: string, rightPath: string) => {
 
 export const parseMissionCommand = (name: string) => {
   const keywords = new Set(['run', 'sched', 'asap'])
-  // Strip sched <timestamp_or_asap> prefix so scheduled missions parse cleanly
-  // (e.g. "sched 20250616T0415 load ...;run" → "load ...;run").
+  // Strip sched [repeat N] <timestamp_or_asap> so scheduled missions parse cleanly
+  // (e.g. "sched 20250616T0415 load ...;run" → "load ...;run",
+  //  "sched repeat 3 20261001T0900 load ...;run" → "load ...;run").
   // Also extract the payload from surrounding quotes when present — the
   // chunked cell-comms form wraps each chunk in quotes:
   //   sched 20250616T0415 "load ...;set ...;run" 41tnk 1 6
   // The quoted content is extracted so the chunk ID suffix is discarded.
   let cleaned = name
-    .replace(/^sched\s+(?:\d{8}}?T\d{2,4}|asap)?\s*/i, '')
+    .replace(/^sched\s+(?:repeat\s+\d+\s+)?(?:\d{8}}?T\d{2,4}|asap)?\s*/i, '')
     .trim()
   const quoted = cleaned.match(/^"([\s\S]*)"/)
   if (quoted) cleaned = quoted[1].trim()
@@ -394,7 +395,9 @@ export const ScheduleSection: React.FC<ScheduleSectionProps> = ({
       const raw = data ?? text ?? ''
       // Format: 20260331T18 or 20260331T1800 (UTC). Also accept the legacy
       // }T format emitted by older makeCommand builds until old events age out.
-      const m = raw.match(/sched\s+(\d{4})(\d{2})(\d{2})}?T(\d{2})(\d{2})?/)
+      const m = raw.match(
+        /sched\s+(?:repeat\s+\d+\s+)?(\d{4})(\d{2})(\d{2})}?T(\d{2})(\d{2})?/
+      )
       if (!m) return undefined
       const dt = DateTime.fromObject(
         {
@@ -746,7 +749,9 @@ export const ScheduleSection: React.FC<ScheduleSectionProps> = ({
       if (commsLookup.get(v.event.eventId) === 'timeout') return false
     }
 
-    const schedDateMatch = rawText.match(/sched\s+(\d{8}}?T\d{2,4})/i)
+    const schedDateMatch = rawText.match(
+      /sched\s+(?:repeat\s+\d+\s+)?(\d{8}}?T\d{2,4})/i
+    )
     const scheduleDate = rawText.match(/sched\s+asap/i)
       ? 'asap'
       : schedDateMatch
@@ -1041,7 +1046,9 @@ export const ScheduleSection: React.FC<ScheduleSectionProps> = ({
       : 'command'
     const rawText = mission?.event.data ?? mission?.event.text ?? ''
     // Also accept the legacy }T format for historical events in the database.
-    const schedDateMatch = rawText.match(/sched\s+(\d{8}}?T\d{2,4})/i)
+    const schedDateMatch = rawText.match(
+      /sched\s+(?:repeat\s+\d+\s+)?(\d{8}}?T\d{2,4})/i
+    )
     const scheduleDate = rawText.match(/sched\s+asap/i)
       ? 'asap'
       : schedDateMatch
@@ -1104,14 +1111,15 @@ export const ScheduleSection: React.FC<ScheduleSectionProps> = ({
     //   sched 20260505T1844 "cmd1;cmd2"  →  cmd1 · cmd2
     //   sched asap "restart logs"        →  restart logs
     //   sched "restart logs"             →  restart logs
+    //   sched repeat 3 20261001T0900 "restart logs" → restart logs
     // Only strip `sched` when it is acting as a scheduling wrapper (followed
     // by a timestamp, `asap`, or a quoted payload). Bare `sched <subcommand>`
     // forms (e.g. `sched pause`, `sched resume`) are scheduler-control
     // commands where `sched` is the verb — leave those intact so they display
     // as "sched pause" / "sched resume" rather than just "pause" / "resume".
     const commandPayload = rawText
-      .replace(/^sched\s+(?:\d{8}}?T\d{2,4}|asap)\s*/i, '')
-      .replace(/^sched\s+(?=")/i, '')
+      .replace(/^sched\s+(?:repeat\s+\d+\s+)?(?:\d{8}}?T\d{2,4}|asap)\s*/i, '')
+      .replace(/^sched\s+(?:repeat\s+\d+\s+)?(?=")/i, '')
       .replace(/^"([\s\S]*)"$/, '$1')
       .trim()
     const commandLabel = isMission

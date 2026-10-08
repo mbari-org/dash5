@@ -9,6 +9,7 @@ import {
   ScheduleMethod,
   ScheduleStep,
   CommType,
+  scheduleRepeatToSend,
 } from './MissionModalSteps/ScheduleStep'
 import { AlternativeAddressStep } from './MissionModalSteps/AlternativeAddressStep'
 
@@ -37,6 +38,8 @@ export type OnScheduleCommandHandler = (args: {
   notes?: string | null
   scheduleMethod?: ScheduleMethod
   scheduleId?: string | null
+  /** Total days when Repeat is on. Omitted for ASAP and end-of-schedule. */
+  schedRepeat?: number
   confirmedVehicle?: string | null
   preview?: boolean
   commType?: CommType
@@ -141,6 +144,8 @@ const CommandModalBody: React.FC<CommandModalViewProps> = ({
       showAlternateAddress,
       scheduleMethod,
       customScheduleId,
+      repeatEnabled,
+      repeatDays,
       notes,
       specifiedTime,
       commType,
@@ -338,6 +343,11 @@ const CommandModalBody: React.FC<CommandModalViewProps> = ({
       alternateAddress,
       scheduleId: customScheduleId,
       scheduleMethod,
+      schedRepeat: scheduleRepeatToSend(
+        scheduleMethod ?? 'ASAP',
+        repeatEnabled,
+        repeatDays
+      ),
       confirmedVehicle: confirmedVehicle ?? vehicleName,
       notes,
       commType,
@@ -408,6 +418,15 @@ const CommandModalBody: React.FC<CommandModalViewProps> = ({
       bodyOverflowHidden
       snapTo="top-right"
       open
+      disableConfirm={
+        currentStep === 2 &&
+        !showAlternateAddress &&
+        scheduleMethod === 'time' &&
+        (!specifiedTime ||
+          (repeatEnabled &&
+            scheduleRepeatToSend(scheduleMethod, repeatEnabled, repeatDays) ==
+              null))
+      }
     >
       <div className="flex h-full min-h-0 flex-col overflow-auto">
         {currentStep === 0 && (

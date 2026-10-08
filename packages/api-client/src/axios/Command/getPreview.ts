@@ -7,6 +7,8 @@ export interface GetPreviewParams {
   commandText: string
   schedId?: string
   schedDate?: string
+  /** Days to run at schedDate's clock time, including that date. Requires a dated schedDate. */
+  schedRepeat?: number
 }
 
 interface PreviewResult {
@@ -35,10 +37,10 @@ export const getPreview = async (
 
   // Drop undefined/null query params (URLSearchParams stringifies them as "undefined")
   const query = Object.fromEntries(
-    Object.entries(params).filter(
-      ([, v]) => v !== undefined && v !== null && v !== ''
-    )
-  ) as Record<string, string>
+    Object.entries(params)
+      .filter(([, v]) => v !== undefined && v !== null && v !== '')
+      .map(([key, value]) => [key, String(value)])
+  )
 
   const response = await instance.get(
     `${url}?${new URLSearchParams(query)}`,

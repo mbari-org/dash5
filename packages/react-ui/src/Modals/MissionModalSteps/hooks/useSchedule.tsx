@@ -13,6 +13,10 @@ export interface ScheduleState {
   showAlternateAddress: boolean
   scheduleMethod: ScheduleMethod
   customScheduleId: string | null
+  /** When true with schedule method `time`, run at that clock time for `repeatDays` days. */
+  repeatEnabled: boolean
+  /** Total days, including the first. Vehicle maximum is 30. */
+  repeatDays: number
   notes: string | null
   specifiedTime: string | null
   commType: CommType
@@ -25,6 +29,8 @@ export interface ScheduleActions {
   setShowAlternateAddress: (v: boolean) => void
   setScheduleMethod: (v: ScheduleMethod) => void
   setCustomScheduleId: (v: string | null) => void
+  setRepeatEnabled: (v: boolean) => void
+  setRepeatDays: (v: number) => void
   setNotes: (v: string | null) => void
   setSpecifiedTime: (v: string | null) => void
   setCommType: (v: CommType) => void
@@ -55,6 +61,10 @@ function useScheduleState(
   const [customScheduleId, setCustomScheduleId] = useState<string | null>(
     initial?.customScheduleId ?? null
   )
+  const [repeatEnabled, setRepeatEnabled] = useState(
+    initial?.repeatEnabled ?? false
+  )
+  const [repeatDays, setRepeatDays] = useState(initial?.repeatDays ?? 2)
   const [notes, setNotes] = useState<string | null>(initial?.notes ?? null)
   const [specifiedTime, setSpecifiedTime] = useState<string | null>(
     initial?.specifiedTime ?? null
@@ -72,6 +82,8 @@ function useScheduleState(
     showAlternateAddress,
     scheduleMethod,
     customScheduleId,
+    repeatEnabled,
+    repeatDays,
     notes,
     specifiedTime,
     commType,
@@ -84,6 +96,8 @@ function useScheduleState(
     setShowAlternateAddress,
     setScheduleMethod,
     setCustomScheduleId,
+    setRepeatEnabled,
+    setRepeatDays,
     setNotes,
     setSpecifiedTime,
     setCommType,
