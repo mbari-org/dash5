@@ -101,7 +101,9 @@ export const ScheduleStep: React.FC<ScheduleProps> = ({
   }
 
   const handleTimeoutChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const value = e.target.value ? parseInt(e.target.value, 10) : undefined
+    const value = e.target.value
+      ? Math.max(1, parseInt(e.target.value, 10))
+      : undefined
     setTimeout(value)
   }
 
@@ -131,9 +133,11 @@ export const ScheduleStep: React.FC<ScheduleProps> = ({
       repeatDays
     ) ? (
     <>
-      {`Runs at this time on this date for the next ${
-        repeatDays - 1 === 1 ? 'day' : `${repeatDays - 1} days`
-      }`}
+      {'Runs once daily on this date/time then repeats ('}
+      <span className="font-medium text-teal-600">
+        {`+${repeatDays - 1} ${repeatDays - 1 === 1 ? 'day' : 'days'}`}
+      </span>
+      {')'}
       <br />
       {'(Max 30 days)'}
     </>
@@ -155,7 +159,7 @@ export const ScheduleStep: React.FC<ScheduleProps> = ({
         {overrideSummary}
       </section>
       <section className="flex">
-        <ul className="ml-4 flex max-h-full flex-col">
+        <ul className="ml-4 w-[400px] flex-none flex-col">
           {SCHEDULE_OPTIONS.map(({ value, label }) => (
             <li className="mr-4 flex items-center" key={value}>
               <label
@@ -251,7 +255,7 @@ export const ScheduleStep: React.FC<ScheduleProps> = ({
             )}
           </li>
         </ul>
-        <ul className="flex max-h-full flex-col">
+        <ul className="w-[300px] flex-none flex-col">
           {COMM_TYPE_OPTIONS.map(({ value, label }) => (
             <li className="mr-4 flex items-start" key={value}>
               <label
@@ -264,7 +268,7 @@ export const ScheduleStep: React.FC<ScheduleProps> = ({
                   value={value}
                   name="commType"
                   checked={commType === value}
-                  className="mr-2 mt-0.5 shrink-0"
+                  className="mr-2 mt-1 shrink-0"
                 />
                 {label}
               </label>
@@ -281,8 +285,9 @@ export const ScheduleStep: React.FC<ScheduleProps> = ({
           <Input
             name="timeout"
             type="number"
+            min={1}
             disabled={commType === 'sat'}
-            className="h-fit w-20"
+            className="h-fit w-16"
             value={timeout?.toString() ?? '5'}
             onChange={handleTimeoutChange}
           />
