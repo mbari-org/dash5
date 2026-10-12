@@ -244,6 +244,7 @@ export const DateField = React.forwardRef<HTMLInputElement, DateFieldProps>(
                   className="rounded bg-teal-500 px-4 py-1 text-sm text-white hover:bg-teal-600"
                   onMouseDown={(e) => {
                     e.preventDefault()
+                    setInteracting(false)
                     setFocus(false)
                   }}
                 >
