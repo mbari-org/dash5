@@ -420,7 +420,6 @@ const CommandModalBody: React.FC<CommandModalViewProps> = ({
       open
       disableConfirm={
         currentStep === 2 &&
-        !showAlternateAddress &&
         scheduleMethod === 'time' &&
         (!specifiedTime ||
           (repeatEnabled &&
