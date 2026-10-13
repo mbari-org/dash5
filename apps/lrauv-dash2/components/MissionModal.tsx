@@ -276,6 +276,7 @@ const MissionModal: React.FC<MissionModalProps> = ({
     selectedMissionId,
     scheduleMethod,
     specifiedTime,
+    schedRepeat,
     alternateAddress,
     notes,
     preview,
@@ -289,6 +290,7 @@ const MissionModal: React.FC<MissionModalProps> = ({
     const {
       commandText: formattedCommandText,
       schedDate,
+      schedRepeat: schedRepeatForApi,
       previewSbd,
     } = makeMissionCommand({
       mission: missionPathForCommand,
@@ -296,6 +298,7 @@ const MissionModal: React.FC<MissionModalProps> = ({
       parameterOverrides,
       scheduleMethod,
       specifiedLocalTime: specifiedTime ?? undefined,
+      schedRepeat,
       units: unitsData,
     })
 
@@ -313,6 +316,7 @@ const MissionModal: React.FC<MissionModalProps> = ({
               vehicle,
               commandText: formattedCommandText,
               schedDate: schedDate || undefined,
+              schedRepeat: schedRepeatForApi,
             },
             {
               instance: axiosInstance,
@@ -336,6 +340,7 @@ const MissionModal: React.FC<MissionModalProps> = ({
         commandNote: notes ?? '',
         runCommand: 'y',
         schedDate,
+        schedRepeat: schedRepeatForApi,
         destinationAddress: alternateAddress ?? undefined,
         commandText: formattedCommandText ?? '',
         via: commType,

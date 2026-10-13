@@ -1,5 +1,7 @@
 import { render, screen } from '@testing-library/react'
 import '@testing-library/jest-dom'
+import { MuiPickersUtilsProvider } from '@material-ui/pickers'
+import LuxonUtils from '@date-io/luxon'
 import { CommandModalView, CommandModalViewProps } from './CommandModalView'
 import { syntaxVariations, commands } from './CommandModalView.sampleProps'
 import userEvent from '@testing-library/user-event'
@@ -186,4 +188,25 @@ test('command confirmation Back returns to Schedule and does not dismiss', async
   expect(
     screen.getByRole('button', { name: `Schedule ${props.vehicleName}` })
   ).toBeInTheDocument()
+})
+
+test('Schedule step shows Repeat checkbox only for specific time and disables Schedule button until time is entered', async () => {
+  const user = userEvent.setup()
+  render(
+    <MuiPickersUtilsProvider utils={LuxonUtils}>
+      <CommandModalView {...props} currentStepIndex={2} />
+    </MuiPickersUtilsProvider>
+  )
+
+  // ASAP is default — no Repeat checkbox
+  expect(
+    screen.queryByRole('checkbox', { name: 'Repeat' })
+  ).not.toBeInTheDocument()
+
+  // Switch to specific time — Repeat checkbox appears; Schedule button is disabled
+  await user.click(screen.getByText('For specific time:'))
+  expect(screen.getByRole('checkbox', { name: 'Repeat' })).toBeInTheDocument()
+  expect(
+    screen.getByRole('button', { name: `Schedule ${props.vehicleName}` })
+  ).toBeDisabled()
 })

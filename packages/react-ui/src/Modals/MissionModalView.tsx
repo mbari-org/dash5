@@ -19,6 +19,7 @@ import {
   ScheduleMethod,
   ScheduleStep,
   CommType,
+  scheduleRepeatToSend,
 } from './MissionModalSteps/ScheduleStep'
 import { AlternativeAddressStep } from './MissionModalSteps/AlternativeAddressStep'
 import makeWaypointOverrides from './MissionModalSteps/helpers/makeWaypointOverrides'
@@ -40,6 +41,8 @@ export type OnScheduleMissionHandler = (args: {
   notes?: string | null
   scheduleMethod: ScheduleMethod
   scheduleId?: string | null
+  /** Total days when Repeat is on. Omitted for ASAP and end-of-schedule. */
+  schedRepeat?: number
   confirmedVehicle?: string | null
   preview?: boolean
   commType?: CommType
@@ -137,6 +140,8 @@ const MissionModalBody: React.FC<MissionModalViewProps> = ({
       showAlternateAddress,
       scheduleMethod,
       customScheduleId,
+      repeatEnabled,
+      repeatDays,
       notes,
       specifiedTime,
       commType,
@@ -266,6 +271,10 @@ const MissionModalBody: React.FC<MissionModalViewProps> = ({
         return (
           !scheduleMethod ||
           (scheduleMethod === 'time' && !specifiedTime) ||
+          (scheduleMethod === 'time' &&
+            repeatEnabled &&
+            scheduleRepeatToSend(scheduleMethod, repeatEnabled, repeatDays) ==
+              null) ||
           (showAlternateAddress && !alternateAddress)
         )
       default:
@@ -420,6 +429,11 @@ const MissionModalBody: React.FC<MissionModalViewProps> = ({
       alternateAddress,
       scheduleId: customScheduleId,
       scheduleMethod,
+      schedRepeat: scheduleRepeatToSend(
+        scheduleMethod,
+        repeatEnabled,
+        repeatDays
+      ),
       confirmedVehicle: confirmedVehicle ?? vehicleName,
       preview,
       commType,

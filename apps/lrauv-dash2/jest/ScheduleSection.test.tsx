@@ -890,6 +890,120 @@ test('single-segment non-mission command renders label without separator', async
   expect(labelEl!.closest('ul')?.textContent).not.toContain('·')
 })
 
+test('sched repeat command strips the wrapper and shows the command', async () => {
+  server.use(
+    rest.get('/events', (_req, res, ctx) =>
+      res(
+        ctx.status(200),
+        ctx.json({
+          result: [
+            {
+              data: 'sched repeat 15 20261003T1600 "restart logs"',
+              unixTime: Date.now() - 60 * 1000,
+              eventId: 503,
+              eventType: 'command',
+              text: null,
+              note: '[[via:cellsat, timeout:5min]]',
+              user: 'test-operator',
+            },
+          ],
+        })
+      )
+    ),
+    rest.get('/events/mission-started', (_req, res, ctx) =>
+      res(ctx.status(200), ctx.json({ result: [] }))
+    )
+  )
+
+  render(
+    <MockProviders queryClient={new QueryClient()}>
+      <ScheduleSection {...props} currentDeploymentId={1} />
+    </MockProviders>
+  )
+
+  await waitFor(() => {
+    expect(screen.getByText('restart logs')).toBeInTheDocument()
+  })
+  expect(screen.queryByText(/sched repeat/)).not.toBeInTheDocument()
+})
+
+test('chunked sched repeat command strips wrapper and chunk suffix, shows command', async () => {
+  server.use(
+    rest.get('/events', (_req, res, ctx) =>
+      res(
+        ctx.status(200),
+        ctx.json({
+          result: [
+            {
+              data: 'sched repeat 3 20261001T0900 "restart logs" 41tnk 1 6',
+              unixTime: Date.now() - 60 * 1000,
+              eventId: 504,
+              eventType: 'command',
+              text: null,
+              note: '[[via:cellsat, timeout:5min]]',
+              user: 'test-operator',
+            },
+          ],
+        })
+      )
+    ),
+    rest.get('/events/mission-started', (_req, res, ctx) =>
+      res(ctx.status(200), ctx.json({ result: [] }))
+    )
+  )
+
+  render(
+    <MockProviders queryClient={new QueryClient()}>
+      <ScheduleSection {...props} currentDeploymentId={1} />
+    </MockProviders>
+  )
+
+  await waitFor(() => {
+    expect(screen.getByText('restart logs')).toBeInTheDocument()
+  })
+  expect(screen.queryByText(/41tnk/)).not.toBeInTheDocument()
+  expect(screen.queryByText(/sched repeat/)).not.toBeInTheDocument()
+})
+
+test('chunked sched repeat with quoted template arg shows full command, not truncated', async () => {
+  server.use(
+    rest.get('/events', (_req, res, ctx) =>
+      res(
+        ctx.status(200),
+        ctx.json({
+          result: [
+            {
+              data: 'sched repeat 3 20261001T0900 "set arg "myvalue";run" 41tnk 1 6',
+              unixTime: Date.now() - 60 * 1000,
+              eventId: 505,
+              eventType: 'command',
+              text: null,
+              note: '[[via:cellsat, timeout:5min]]',
+              user: 'test-operator',
+            },
+          ],
+        })
+      )
+    ),
+    rest.get('/events/mission-started', (_req, res, ctx) =>
+      res(ctx.status(200), ctx.json({ result: [] }))
+    )
+  )
+
+  render(
+    <MockProviders queryClient={new QueryClient()}>
+      <ScheduleSection {...props} currentDeploymentId={1} />
+    </MockProviders>
+  )
+
+  await waitFor(() => {
+    // Full command visible — not truncated at the inner quote
+    expect(screen.getByText(/set arg/)).toBeInTheDocument()
+    expect(screen.getByText(/myvalue/)).toBeInTheDocument()
+  })
+  expect(screen.queryByText(/41tnk/)).not.toBeInTheDocument()
+})
+
 test('sched-prefixed quoted command strips sched wrapper and shows full label', async () => {
   server.use(
     rest.get('/events', (_req, res, ctx) =>
@@ -1117,6 +1231,17 @@ test('parseMissionCommand strips sched timestamp prefix', () => {
   expect(
     parseMissionCommand(
       'sched 20250616T0415 load Science/profile_station.tl;run'
+    )
+  ).toEqual({
+    name: 'load Science/profile_station.tl',
+    parameters: undefined,
+  })
+})
+
+test('parseMissionCommand strips sched repeat and keeps the mission payload', () => {
+  expect(
+    parseMissionCommand(
+      'sched repeat 3 20261001T0900 "load Science/profile_station.tl;run" 1fpxm 1 2'
     )
   ).toEqual({
     name: 'load Science/profile_station.tl',

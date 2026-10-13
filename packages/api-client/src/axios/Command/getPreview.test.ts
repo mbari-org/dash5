@@ -58,6 +58,24 @@ describe('getPreview', () => {
     expect(response).toEqual({ ...mockResponse, ...params })
   })
 
+  it('sends schedRepeat when a dated command repeats', async () => {
+    let repeat: string | null = null
+    server.use(
+      rest.get('/commands/preview', (req, res, ctx) => {
+        repeat = req.url.searchParams.get('schedRepeat')
+        return res(ctx.status(200), ctx.json({ result: [] }))
+      })
+    )
+
+    await getPreview({
+      vehicle: 'brizo',
+      commandText: 'failc',
+      schedDate: '20261001T1600',
+      schedRepeat: 3,
+    })
+    expect(repeat).toBe('3')
+  })
+
   it('should throw when unsuccessful', async () => {
     server.use(
       rest.get('/commands/preview', (_req, res, ctx) => {
