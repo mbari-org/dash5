@@ -123,9 +123,7 @@ export const ScheduleStep: React.FC<ScheduleProps> = ({
   )
 
   const handleRepeatDaysChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const value = e.target.value
-      ? parseInt(e.target.value, 10)
-      : SCHEDULE_REPEAT_MIN
+    const value = e.target.value ? Number(e.target.value) : SCHEDULE_REPEAT_MIN
     setRepeatDays(value)
   }
 

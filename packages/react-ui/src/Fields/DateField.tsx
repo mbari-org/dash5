@@ -241,11 +241,13 @@ export const DateField = React.forwardRef<HTMLInputElement, DateFieldProps>(
               </div>
               <div className="flex justify-end border-t border-stone-200 px-2 pt-2">
                 <button
+                  type="button"
                   className="rounded bg-teal-500 px-4 py-1 text-sm text-white hover:bg-teal-600"
                   onMouseDown={(e) => {
                     e.preventDefault()
                     setInteracting(false)
                     setFocus(false)
+                    inputRef.current?.blur()
                   }}
                 >
                   Done
