@@ -186,7 +186,7 @@ const CommsSection: React.FC<CommsSectionProps> = ({
       <AccordionCells
         cellAtIndex={cellAtIndex}
         count={totalCount}
-        loading={isLoading || isFetching}
+        loading={isLoading}
       />
     </>
   )
