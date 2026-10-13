@@ -927,6 +927,44 @@ test('sched repeat command strips the wrapper and shows the command', async () =
   expect(screen.queryByText(/sched repeat/)).not.toBeInTheDocument()
 })
 
+test('chunked sched repeat command strips wrapper and chunk suffix, shows command', async () => {
+  server.use(
+    rest.get('/events', (_req, res, ctx) =>
+      res(
+        ctx.status(200),
+        ctx.json({
+          result: [
+            {
+              data: 'sched repeat 3 20261001T0900 "restart logs" 41tnk 1 6',
+              unixTime: Date.now() - 60 * 1000,
+              eventId: 504,
+              eventType: 'command',
+              text: null,
+              note: '[[via:cellsat, timeout:5min]]',
+              user: 'test-operator',
+            },
+          ],
+        })
+      )
+    ),
+    rest.get('/events/mission-started', (_req, res, ctx) =>
+      res(ctx.status(200), ctx.json({ result: [] }))
+    )
+  )
+
+  render(
+    <MockProviders queryClient={new QueryClient()}>
+      <ScheduleSection {...props} currentDeploymentId={1} />
+    </MockProviders>
+  )
+
+  await waitFor(() => {
+    expect(screen.getByText('restart logs')).toBeInTheDocument()
+  })
+  expect(screen.queryByText(/41tnk/)).not.toBeInTheDocument()
+  expect(screen.queryByText(/sched repeat/)).not.toBeInTheDocument()
+})
+
 test('sched-prefixed quoted command strips sched wrapper and shows full label', async () => {
   server.use(
     rest.get('/events', (_req, res, ctx) =>

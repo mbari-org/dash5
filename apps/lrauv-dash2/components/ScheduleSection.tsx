@@ -1117,11 +1117,19 @@ export const ScheduleSection: React.FC<ScheduleSectionProps> = ({
     // forms (e.g. `sched pause`, `sched resume`) are scheduler-control
     // commands where `sched` is the verb — leave those intact so they display
     // as "sched pause" / "sched resume" rather than just "pause" / "resume".
-    const commandPayload = rawText
-      .replace(/^sched\s+(?:repeat\s+\d+\s+)?(?:\d{8}}?T\d{2,4}|asap)\s*/i, '')
-      .replace(/^sched\s+(?:repeat\s+\d+\s+)?(?=")/i, '')
-      .replace(/^"([\s\S]*)"$/, '$1')
-      .trim()
+    const commandPayload = (() => {
+      const stripped = rawText
+        .replace(
+          /^sched\s+(?:repeat\s+\d+\s+)?(?:\d{8}}?T\d{2,4}|asap)\s*/i,
+          ''
+        )
+        .replace(/^sched\s+(?:repeat\s+\d+\s+)?(?=")/i, '')
+        .trim()
+      // Extract the first quoted payload, ignoring any trailing chunk suffix
+      // e.g. `"restart logs" 41tnk 1 6` → `restart logs`
+      const quoted = stripped.match(/^"([^"]*)"/)
+      return quoted ? quoted[1] : stripped
+    })()
     const commandLabel = isMission
       ? missionName ?? 'Unknown'
       : commandPayload
