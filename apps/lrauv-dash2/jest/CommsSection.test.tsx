@@ -1,6 +1,6 @@
 import '@testing-library/jest-dom'
 import React from 'react'
-import { render, screen, waitFor } from '@testing-library/react'
+import { act, fireEvent, render, screen, waitFor } from '@testing-library/react'
 import CommsSection from '../components/CommsSection'
 import { QueryClient } from 'react-query'
 import { rest } from 'msw'
@@ -109,32 +109,28 @@ test('Comms overlay spinner appears on empty initial load', async () => {
   })
 })
 
-test('Comms overlay spinner does not appear once rows are visible', async () => {
-  // A successful load populates a row. isLoading becomes false and the overlay
-  // must not cover the existing rows.
+const commsEvent = {
+  eventId: 55001,
+  vehicleName: 'makai',
+  unixTime: Date.now() - 60 * 1000,
+  isoTime: new Date(Date.now() - 60 * 1000).toISOString(),
+  eventType: 'command',
+  user: 'test-operator',
+  data: 'restart app',
+  text: 'restart app',
+  note: '[[via:cell, timeout:5min]]',
+}
+
+test('Comms overlay spinner does not appear during a background refetch with visible rows', async () => {
+  // First load: row appears, isLoading → false.
+  // Second load (triggered by clicking reload): isFetching → true while the
+  // row is still visible. The overlay must not cover it.
   server.use(
     rest.get('/events', (req, res, ctx) => {
       if (req.url.searchParams.get('noteMatches') === 'Timeout while waiting') {
         return res(ctx.status(200), ctx.json({ result: [] }))
       }
-      return res(
-        ctx.status(200),
-        ctx.json({
-          result: [
-            {
-              eventId: 55001,
-              vehicleName: 'makai',
-              unixTime: Date.now() - 60 * 1000,
-              isoTime: new Date(Date.now() - 60 * 1000).toISOString(),
-              eventType: 'command',
-              user: 'test-operator',
-              data: 'restart app',
-              text: 'restart app',
-              note: '[[via:cell, timeout:5min]]',
-            },
-          ],
-        })
-      )
+      return res(ctx.status(200), ctx.json({ result: [commsEvent] }))
     })
   )
   render(
@@ -145,5 +141,16 @@ test('Comms overlay spinner does not appear once rows are visible', async () => 
   await waitFor(() => {
     expect(screen.getByText(/restart app/i)).toBeInTheDocument()
   })
+
+  // Hold the next request pending so isFetching stays true.
+  server.use(
+    rest.get('/events', (_req, res, ctx) => res(ctx.delay('infinite')))
+  )
+  act(() => {
+    fireEvent.click(screen.getByRole('button', { name: /reload/i }))
+  })
+
+  // Row remains visible and no overlay spinner appears while refetch is in flight.
+  expect(screen.getByText(/restart app/i)).toBeInTheDocument()
   expect(document.querySelector('.animate-spin')).not.toBeInTheDocument()
 })

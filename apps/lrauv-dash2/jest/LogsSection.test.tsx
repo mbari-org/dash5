@@ -1,6 +1,6 @@
 import '@testing-library/jest-dom'
 import React from 'react'
-import { fireEvent, render, screen, waitFor } from '@testing-library/react'
+import { act, fireEvent, render, screen, waitFor } from '@testing-library/react'
 import LogsSection from '../components/LogsSection'
 import { QueryClient } from 'react-query'
 import { rest } from 'msw'
@@ -295,12 +295,24 @@ test('Logs overlay spinner appears on empty initial load', async () => {
   })
 })
 
-test('Logs overlay spinner does not appear once rows are visible', async () => {
-  // A successful load populates rows. isLoading becomes false and the overlay
-  // must not reappear even if isFetching were to go true again.
+test('Logs overlay spinner does not appear during a background refetch with visible rows', async () => {
+  // First load: rows appear, isLoading → false.
+  // Second load (triggered by clicking reload): isFetching → true while rows
+  // are still visible. The overlay must not cover those rows.
   renderLogs([makeTimeoutNote(1, 1)])
   await waitFor(() => {
     expect(screen.getByText(/Note/i)).toBeInTheDocument()
   })
+
+  // Hold the next request pending indefinitely so isFetching stays true.
+  server.use(
+    rest.get('/events', (_req, res, ctx) => res(ctx.delay('infinite')))
+  )
+  act(() => {
+    fireEvent.click(screen.getByRole('button', { name: /reload/i }))
+  })
+
+  // Rows remain visible and no overlay spinner appears while the refetch is in flight.
+  expect(screen.getByText(/Note/i)).toBeInTheDocument()
   expect(document.querySelector('.animate-spin')).not.toBeInTheDocument()
 })
