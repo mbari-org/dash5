@@ -1,5 +1,5 @@
 import '@testing-library/jest-dom'
-import { makeMissionCommand } from './makeCommand'
+import { makeCommand, makeMissionCommand } from './makeCommand'
 
 describe('makeMissionCommand', () => {
   it('should return a command to load a mission', () => {
@@ -144,5 +144,38 @@ describe('makeMissionCommand', () => {
     expect(outOfRange.previewSbd).toBe(
       'sched 20240320T2100 "load Science/test.xml;run"'
     )
+  })
+})
+
+describe('makeCommand', () => {
+  it('passes schedRepeat through to the output for a timed command', () => {
+    const { commandText, schedDate, schedRepeat, previewSbd } = makeCommand({
+      commandText: 'failComponent',
+      scheduleMethod: 'time',
+      specifiedLocalTime: '2024-03-20T14:00:00-07:00',
+      schedRepeat: 3,
+    })
+
+    expect(schedDate).toBe('20240320T2100')
+    expect(schedRepeat).toBe(3)
+    expect(previewSbd).toBe('sched repeat 3 20240320T2100 "failComponent"')
+    expect(commandText).toBe('failComponent')
+  })
+
+  it('ignores schedRepeat for ASAP and end-of-schedule commands', () => {
+    const asap = makeCommand({
+      commandText: 'failComponent',
+      scheduleMethod: 'ASAP',
+      schedRepeat: 3,
+    })
+    expect(asap.schedRepeat).toBeUndefined()
+    expect(asap.previewSbd).toBe('sched asap "failComponent"')
+
+    const end = makeCommand({
+      commandText: 'failComponent',
+      scheduleMethod: 'end',
+      schedRepeat: 3,
+    })
+    expect(end.schedRepeat).toBeUndefined()
   })
 })
