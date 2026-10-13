@@ -249,6 +249,11 @@ export const DateField = React.forwardRef<HTMLInputElement, DateFieldProps>(
                     setFocus(false)
                     inputRef.current?.blur()
                   }}
+                  onClick={() => {
+                    setInteracting(false)
+                    setFocus(false)
+                    inputRef.current?.blur()
+                  }}
                 >
                   Done
                 </button>
