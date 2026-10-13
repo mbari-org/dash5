@@ -16,6 +16,12 @@ const mockRemoveMarkerFromLayer = jest.fn()
 const mockRemoveAllMarkersFromLayer = jest.fn()
 const mockSetFlyToRequest = jest.fn()
 
+const mockUseTethysApiContext = jest.fn(() => ({ authenticated: true }))
+
+jest.mock('@mbari/api-client', () => ({
+  useTethysApiContext: () => mockUseTethysApiContext(),
+}))
+
 jest.mock('../components/MarkerContext', () => ({
   useMarkers: () => ({
     removeMarkerFromLayer: mockRemoveMarkerFromLayer,
@@ -65,6 +71,7 @@ const layerMarkers: MarkerData[] = [
 describe('MarkersLayerSection', () => {
   beforeEach(() => {
     jest.clearAllMocks()
+    mockUseTethysApiContext.mockReturnValue({ authenticated: true })
   })
 
   afterEach(() => {
@@ -158,6 +165,27 @@ describe('MarkersLayerSection', () => {
     )
 
     expect(mockRemoveAllMarkersFromLayer).toHaveBeenCalledTimes(1)
+  })
+
+  test('hides remove actions when logged out and keeps visibility checkboxes', () => {
+    mockUseTethysApiContext.mockReturnValue({ authenticated: false })
+
+    renderWithConfirm(
+      <MarkersLayerSection
+        {...baseProps}
+        filteredMarkers={layerMarkers}
+        layerMarkers={layerMarkers}
+      />
+    )
+
+    expect(screen.getByText('Waypoint A')).toBeInTheDocument()
+    expect(
+      screen.queryByRole('button', { name: 'Remove Waypoint A from layer' })
+    ).not.toBeInTheDocument()
+    expect(
+      screen.queryByRole('button', { name: 'Remove all from layer' })
+    ).not.toBeInTheDocument()
+    expect(screen.getAllByRole('checkbox').length).toBeGreaterThan(0)
   })
 
   test('toggles marker visibility when checkbox is clicked', async () => {
