@@ -39,7 +39,7 @@ export const getPreview = async (
   const query = Object.fromEntries(
     Object.entries(params)
       .filter(([, v]) => v !== undefined && v !== null && v !== '')
-      .map(([key, value]) => [key, String(value)])
+      .map(([key, value]) => [key, String(value)] as [string, string])
   )
 
   const response = await instance.get(
