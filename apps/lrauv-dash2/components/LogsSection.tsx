@@ -359,7 +359,7 @@ const LogsSection: React.FC<LogsSectionProps> = ({
 
   const dataCount = processedData?.length ?? 0
   const totalCount = hasNextPage ? dataCount + 1 : dataCount
-  const listLoading = hasSelection && (isLoading || isFetching)
+  const listLoading = hasSelection && isLoading
   const showNoFiltersMessage = !hasSelection && !listLoading
   const accordionCount = showNoFiltersMessage ? 0 : totalCount
   const showNoMatchingEventsMessage =

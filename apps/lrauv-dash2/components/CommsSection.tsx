@@ -106,6 +106,7 @@ const CommsSection: React.FC<CommsSectionProps> = ({
     data = [],
     isLoading,
     isFetching,
+    isFetchingMore,
     hasNextPage,
     refetch,
     fetchMore,
@@ -123,7 +124,10 @@ const CommsSection: React.FC<CommsSectionProps> = ({
       return (
         <LoadMoreButton
           onClick={handleLoadMore}
-          isLoading={isFetching}
+          isLoading={isFetchingMore}
+          disabled={
+            !isFetchingMore && (isFetching || (isLoading && dataCount > 0))
+          }
           label="Load more logs"
         />
       )
@@ -186,7 +190,7 @@ const CommsSection: React.FC<CommsSectionProps> = ({
       <AccordionCells
         cellAtIndex={cellAtIndex}
         count={totalCount}
-        loading={isLoading || isFetching}
+        loading={isLoading && dataCount === 0}
       />
     </>
   )
