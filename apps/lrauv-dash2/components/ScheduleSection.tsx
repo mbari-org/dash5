@@ -1125,9 +1125,11 @@ export const ScheduleSection: React.FC<ScheduleSectionProps> = ({
         )
         .replace(/^sched\s+(?:repeat\s+\d+\s+)?(?=")/i, '')
         .trim()
-      // Extract the first quoted payload, ignoring any trailing chunk suffix
-      // e.g. `"restart logs" 41tnk 1 6` → `restart logs`
-      const quoted = stripped.match(/^"([^"]*)"/)
+      // Extract the outer quoted payload, ignoring any trailing chunk suffix
+      // e.g. `"restart logs" 41tnk 1 6`   → `restart logs`
+      // e.g. `"set arg "val";run" 41tnk 1 6` → `set arg "val";run`
+      // Greedy .* matches everything up to the last `"` before the suffix or EOL.
+      const quoted = stripped.match(/^"(.*)"(?:\s+\S+\s+\d+\s+\d+\s*)?$/)
       return quoted ? quoted[1] : stripped
     })()
     const commandLabel = isMission
