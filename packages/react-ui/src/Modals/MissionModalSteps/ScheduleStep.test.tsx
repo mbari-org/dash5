@@ -30,12 +30,13 @@ test('Repeat checkbox is hidden for ASAP and disabled until a time is entered', 
     screen.queryByRole('checkbox', { name: 'Repeat' })
   ).not.toBeInTheDocument()
 
-  // Switch to specific time — checkbox appears but days input is disabled
+  // Switch to specific time — checkbox appears; days input not yet shown
   await user.click(screen.getByText('For specific time:'))
   const repeat = screen.getByRole('checkbox', { name: 'Repeat' })
-  const days = screen.getByRole('spinbutton', { name: 'Repeat days' })
   expect(repeat).not.toBeChecked()
-  expect(days).toBeDisabled()
+  expect(
+    screen.queryByRole('spinbutton', { name: 'Repeat days' })
+  ).not.toBeInTheDocument()
 })
 
 test('Repeat checkbox enables days input and shows hint when a time is pre-set', async () => {
@@ -56,14 +57,16 @@ test('Repeat checkbox enables days input and shows hint when a time is pre-set',
   )
 
   const repeat = screen.getByRole('checkbox', { name: 'Repeat' })
-  const days = screen.getByRole('spinbutton', { name: 'Repeat days' })
 
-  // Checkbox enabled once time is set; days input still disabled until checked
+  // Days input not visible until Repeat is checked
   expect(repeat).not.toBeChecked()
-  expect(days).toBeDisabled()
+  expect(
+    screen.queryByRole('spinbutton', { name: 'Repeat days' })
+  ).not.toBeInTheDocument()
 
   await user.click(repeat)
   expect(repeat).toBeChecked()
+  const days = screen.getByRole('spinbutton', { name: 'Repeat days' })
   expect(days).toBeEnabled()
   expect(days).toHaveValue(2)
 

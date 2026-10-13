@@ -227,23 +227,24 @@ export const ScheduleStep: React.FC<ScheduleProps> = ({
                       )}
                     </div>
                     <div className="w-16 shrink-0">
-                      <Input
-                        name="repeatDays"
-                        type="number"
-                        min={SCHEDULE_REPEAT_MIN}
-                        max={SCHEDULE_REPEAT_MAX}
-                        disabled={!repeatEnabled}
-                        className="h-fit"
-                        value={
-                          Number.isFinite(repeatDays) ? String(repeatDays) : ''
-                        }
-                        onChange={handleRepeatDaysChange}
-                        aria-label="Repeat days"
-                      />
+                      {repeatEnabled && (
+                        <Input
+                          name="repeatDays"
+                          type="number"
+                          min={SCHEDULE_REPEAT_MIN}
+                          max={SCHEDULE_REPEAT_MAX}
+                          className="h-fit"
+                          value={
+                            Number.isFinite(repeatDays)
+                              ? String(repeatDays)
+                              : ''
+                          }
+                          onChange={handleRepeatDaysChange}
+                          aria-label="Repeat days"
+                        />
+                      )}
                     </div>
-                    <span className={clsx(repeatEnabled ? '' : 'opacity-40')}>
-                      days
-                    </span>
+                    {repeatEnabled && <span>days</span>}
                   </div>
                 </div>
                 {repeatEnabled && (
