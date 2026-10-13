@@ -90,3 +90,60 @@ describe('CommsSection timeout override', () => {
     )
   })
 })
+
+// ── Loading-state regression tests (#887) ─────────────────────────────────────
+
+test('Comms overlay spinner appears on empty initial load', async () => {
+  // The server never responds — isLoading stays true and dataCount is 0.
+  // The AbsoluteOverlay (animate-spin) must be visible.
+  server.use(
+    rest.get('/events', (_req, res, ctx) => res(ctx.delay('infinite')))
+  )
+  render(
+    <MockProviders queryClient={new QueryClient()}>
+      <CommsSection vehicleName="makai" from={0} />
+    </MockProviders>
+  )
+  await waitFor(() => {
+    expect(document.querySelector('.animate-spin')).toBeInTheDocument()
+  })
+})
+
+test('Comms overlay spinner does not appear once rows are visible', async () => {
+  // A successful load populates a row. isLoading becomes false and the overlay
+  // must not cover the existing rows.
+  server.use(
+    rest.get('/events', (req, res, ctx) => {
+      if (req.url.searchParams.get('noteMatches') === 'Timeout while waiting') {
+        return res(ctx.status(200), ctx.json({ result: [] }))
+      }
+      return res(
+        ctx.status(200),
+        ctx.json({
+          result: [
+            {
+              eventId: 55001,
+              vehicleName: 'makai',
+              unixTime: Date.now() - 60 * 1000,
+              isoTime: new Date(Date.now() - 60 * 1000).toISOString(),
+              eventType: 'command',
+              user: 'test-operator',
+              data: 'restart app',
+              text: 'restart app',
+              note: '[[via:cell, timeout:5min]]',
+            },
+          ],
+        })
+      )
+    })
+  )
+  render(
+    <MockProviders queryClient={new QueryClient()}>
+      <CommsSection vehicleName="makai" from={0} />
+    </MockProviders>
+  )
+  await waitFor(() => {
+    expect(screen.getByText(/restart app/i)).toBeInTheDocument()
+  })
+  expect(document.querySelector('.animate-spin')).not.toBeInTheDocument()
+})

@@ -270,3 +270,37 @@ test('timeout notes for same event ID outside the time window are NOT grouped', 
     expect(screen.queryByText(/timeout notes/i)).not.toBeInTheDocument()
   })
 })
+
+// ── Loading-state regression tests (#887) ─────────────────────────────────────
+
+test('Logs overlay spinner appears on empty initial load', async () => {
+  // The server never responds — isLoading stays true and no rows exist.
+  // The AbsoluteOverlay (animate-spin) must be visible.
+  server.use(
+    rest.get('/events', (_req, res, ctx) => res(ctx.delay('infinite')))
+  )
+  render(
+    <MockProviders queryClient={new QueryClient()}>
+      <LogsSection
+        vehicleName="triton"
+        from={0}
+        deploymentLogsOnly={false}
+        setDeploymentLogsOnly={() => {}}
+      />
+    </MockProviders>
+  )
+  // The spinner is the animate-spin element inside AbsoluteOverlay
+  await waitFor(() => {
+    expect(document.querySelector('.animate-spin')).toBeInTheDocument()
+  })
+})
+
+test('Logs overlay spinner does not appear once rows are visible', async () => {
+  // A successful load populates rows. isLoading becomes false and the overlay
+  // must not reappear even if isFetching were to go true again.
+  renderLogs([makeTimeoutNote(1, 1)])
+  await waitFor(() => {
+    expect(screen.getByText(/Note/i)).toBeInTheDocument()
+  })
+  expect(document.querySelector('.animate-spin')).not.toBeInTheDocument()
+})

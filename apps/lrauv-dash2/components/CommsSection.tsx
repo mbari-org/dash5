@@ -125,6 +125,9 @@ const CommsSection: React.FC<CommsSectionProps> = ({
         <LoadMoreButton
           onClick={handleLoadMore}
           isLoading={isFetchingMore}
+          disabled={
+            !isFetchingMore && (isFetching || (isLoading && dataCount > 0))
+          }
           label="Load more logs"
         />
       )
