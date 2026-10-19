@@ -1,5 +1,6 @@
 import useManagedWaypoints from './MissionModalSteps/hooks/useManagedWaypoints'
 import { useScheduleContext } from './MissionModalSteps/hooks/useSchedule'
+export { MISSION_MODAL_SEND_COMMAND_STEP } from './MissionModalSteps/hooks/useMissionModalSteps'
 
 export * from './CommandModalView'
 export * from './ConfirmStopModal'
