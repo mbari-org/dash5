@@ -490,7 +490,7 @@ export const CommandModal: React.FC<CommandModalProps> = ({
   return (
     <CommandModalView
       className={className}
-      style={style}
+      style={{ ...style, height: 'calc(100vh - 6rem)' }}
       commands={commands}
       recentCommands={recentCommands}
       frequentCommands={frequentCommands}

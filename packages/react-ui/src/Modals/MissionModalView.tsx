@@ -444,31 +444,55 @@ const MissionModalBody: React.FC<MissionModalViewProps> = ({
     }
   }, [editable, setWaypointsEditable, currentStep, steps, showSummary])
 
+  const missionModalFrame = {
+    className,
+    style: { maxHeight: '95vh', ...style },
+    snapTo: 'top-right' as const,
+    extraWideModal: true,
+    bodyOverflowHidden: true,
+    open: true,
+  }
+
   switch (currentStep) {
     case steps.indexOf('Confirm'):
       return (
         <ConfirmVehicleDialog
+          {...missionModalFrame}
           vehicle={vehicleName}
           vehicleList={vehicles ?? []}
           mission={selectedId ?? ''}
           onChangeVehicle={setConfirmedVehicle}
-          onCancel={handlePrevious}
+          // Cancel aborts the whole flow; Back returns to Schedule.
+          onCancel={onCancel}
           onConfirm={handleSchedule}
+          extraButtons={[
+            {
+              buttonText: 'Back',
+              appearance: 'secondary',
+              onClick: handlePrevious,
+            },
+          ]}
         />
       )
 
     case steps.indexOf('Send Command'):
       return (
         <Modal
+          {...missionModalFrame}
           title="Review and Send Command"
           onConfirm={handleSchedule}
-          onCancel={handlePrevious}
-          onClose={handlePrevious}
+          onCancel={onCancel}
+          onClose={onCancel}
           loading={loading}
-          open
-          extraWideModal
+          extraButtons={[
+            {
+              buttonText: 'Back',
+              appearance: 'secondary',
+              onClick: handlePrevious,
+            },
+          ]}
         >
-          <div className="flex flex-col">
+          <div className="flex h-full min-h-0 flex-col overflow-auto">
             <p className="mb-2 flex items-baseline justify-between gap-4">
               <span>
                 The following command will be sent to{' '}
@@ -502,8 +526,8 @@ const MissionModalBody: React.FC<MissionModalViewProps> = ({
     default:
       return (
         <Modal
-          className={className}
-          style={{ ...style, maxHeight: '95vh' }}
+          {...missionModalFrame}
+          allowPointerEventsOnChildren
           title={
             <StepProgress
               steps={steps.slice(0, steps.length - 1)}
@@ -517,11 +541,6 @@ const MissionModalBody: React.FC<MissionModalViewProps> = ({
           onClose={onCancel}
           confirmButtonText={confirmButtonText}
           extraButtons={extraButtons()}
-          snapTo="top-right"
-          extraWideModal
-          bodyOverflowHidden
-          allowPointerEventsOnChildren
-          open
         >
           {currentModalBody()}
         </Modal>

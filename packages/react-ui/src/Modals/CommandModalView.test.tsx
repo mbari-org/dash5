@@ -155,3 +155,35 @@ test('should schedule a complete command without making any changes to the defau
   await user.click(screen.getByText(/confirm/i).closest('button') as Element)
   expect(commandText).toBe('failComponent')
 })
+
+test('command confirmation Cancel dismisses and Back sits beside Confirm', async () => {
+  const user = userEvent.setup()
+  const onCancel = jest.fn()
+  render(
+    <CommandModalView {...props} currentStepIndex={3} onCancel={onCancel} />
+  )
+
+  const back = screen.getByRole('button', { name: 'Back' })
+  const confirm = screen.getByRole('button', { name: /^Confirm$/i })
+  const cancel = screen.getByRole('button', { name: /^Cancel$/i })
+  expect(back.closest('li')).toBe(confirm.closest('li'))
+  expect(cancel.closest('li')).not.toBe(back.closest('li'))
+
+  await user.click(cancel)
+  expect(onCancel).toHaveBeenCalledTimes(1)
+})
+
+test('command confirmation Back returns to Schedule and does not dismiss', async () => {
+  const user = userEvent.setup()
+  const onCancel = jest.fn()
+  render(
+    <CommandModalView {...props} currentStepIndex={3} onCancel={onCancel} />
+  )
+
+  await user.click(screen.getByRole('button', { name: 'Back' }))
+  expect(onCancel).not.toHaveBeenCalled()
+  expect(screen.queryByText(/is that right/i)).not.toBeInTheDocument()
+  expect(
+    screen.getByRole('button', { name: `Schedule ${props.vehicleName}` })
+  ).toBeInTheDocument()
+})

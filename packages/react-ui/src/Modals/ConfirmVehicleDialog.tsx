@@ -3,8 +3,23 @@ import React, { useState } from 'react'
 import { SelectField } from '../Fields'
 import { Dialog } from '../Modal/Dialog'
 import { FooterProps } from '../Modal/Footer'
+import type { ModalViewProps } from '../Modal/Modal'
 
-export interface ConfirmVehicleDialogProps extends FooterProps {
+export interface ConfirmVehicleDialogProps
+  extends Pick<
+      FooterProps,
+      'onConfirm' | 'onCancel' | 'leftExtraButtons' | 'extraButtons'
+    >,
+    Pick<
+      ModalViewProps,
+      | 'style'
+      | 'className'
+      | 'extraWideModal'
+      | 'snapTo'
+      | 'bodyOverflowHidden'
+      | 'allowPointerEventsOnChildren'
+    > {
+  open?: boolean
   loading?: boolean
   vehicle: string
   vehicleList: string[]
@@ -32,6 +47,8 @@ export const ConfirmVehicleDialog: React.FC<ConfirmVehicleDialogProps> = ({
   onCancel,
   onSubmit,
   loading,
+  open = true,
+  ...dialogProps
 }) => {
   const [differentVehicle, setDifferentVehicle] = useState<string | undefined>(
     undefined
@@ -120,12 +137,13 @@ export const ConfirmVehicleDialog: React.FC<ConfirmVehicleDialogProps> = ({
   return (
     <Dialog
       loading={loading}
-      open
+      open={open}
       title={title}
       message={message}
       onConfirm={onSubmit ? handleConfirm : onConfirm}
       onCancel={onCancel}
       disableConfirm={!isCorrectVehicle && !differentVehicle}
+      {...dialogProps}
     />
   )
 }

@@ -86,7 +86,8 @@ const styles = {
   dragButton:
     'cursor-move flex flex-grow bg-opacity-50 hover:bg-stone-100 ml-1 my-1 rounded transition-colors duration-100 ease-out',
   closeButton: 'my-1 mr-2 text-stone-400',
-  modalBody: 'flex flex-col flex-grow text-base font-normal',
+  // min-h-0 lets flex children scroll inside a fixed-height modal
+  modalBody: 'flex min-h-0 flex-col flex-grow text-base font-normal',
   modalScroll: 'overflow-auto',
   bodyMarginAndPadding: 'mb-6 px-4 py-4',
   notDragging: 'shadow-xl border-stone-100',
