@@ -15,7 +15,7 @@ export interface ScheduleOption {
 
 export interface CommTypeOption {
   value: CommType
-  label: string
+  label: React.ReactNode
 }
 
 export interface ScheduleProps {
@@ -32,10 +32,31 @@ const SCHEDULE_OPTIONS: ScheduleOption[] = [
   { value: 'time', label: 'For specific time:' },
 ]
 
+const SCHEDULE_REPEAT_MIN = 2
+const SCHEDULE_REPEAT_MAX = 30
+
+const isScheduleRepeatDays = (n: number) =>
+  Number.isInteger(n) && n >= SCHEDULE_REPEAT_MIN && n <= SCHEDULE_REPEAT_MAX
+
+export const scheduleRepeatToSend = (
+  scheduleMethod: ScheduleMethod,
+  repeatEnabled: boolean,
+  repeatDays: number
+): number | undefined => {
+  if (scheduleMethod !== 'time' || !repeatEnabled) return undefined
+  return isScheduleRepeatDays(repeatDays) ? repeatDays : undefined
+}
+
 const COMM_TYPE_OPTIONS: CommTypeOption[] = [
   {
     value: 'cellsat',
-    label: 'Attempt via cell until timeout, then send via sat',
+    label: (
+      <span>
+        Attempt via cell until timeout,
+        <br />
+        then send via sat
+      </span>
+    ),
   },
   { value: 'cell', label: 'Attempt via cell until timeout' },
   { value: 'sat', label: 'Send via sat' },
@@ -56,6 +77,8 @@ export const ScheduleStep: React.FC<ScheduleProps> = ({
       specifiedTime,
       commType,
       timeout,
+      repeatEnabled,
+      repeatDays,
     },
     actions: {
       setScheduleMethod,
@@ -64,6 +87,8 @@ export const ScheduleStep: React.FC<ScheduleProps> = ({
       setSpecifiedTime,
       setCommType,
       setTimeout,
+      setRepeatEnabled,
+      setRepeatDays,
     },
   } = useScheduleContext()
 
@@ -76,7 +101,9 @@ export const ScheduleStep: React.FC<ScheduleProps> = ({
   }
 
   const handleTimeoutChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const value = e.target.value ? parseInt(e.target.value, 10) : undefined
+    const value = e.target.value
+      ? Math.max(1, parseInt(e.target.value, 10))
+      : undefined
     setTimeout(value)
   }
 
@@ -95,6 +122,27 @@ export const ScheduleStep: React.FC<ScheduleProps> = ({
     [setSpecifiedTime]
   )
 
+  const handleRepeatDaysChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value ? Number(e.target.value) : SCHEDULE_REPEAT_MIN
+    setRepeatDays(value)
+  }
+
+  const repeatHint = !repeatEnabled ? null : isScheduleRepeatDays(
+      repeatDays
+    ) ? (
+    <>
+      {'Runs once daily on this date/time then repeats ('}
+      <span className="font-medium text-teal-600">
+        {`+${repeatDays - 1} ${repeatDays - 1 === 1 ? 'day' : 'days'}`}
+      </span>
+      {')'}
+      <br />
+      {'(Max 30 days)'}
+    </>
+  ) : (
+    `Enter a whole number from ${SCHEDULE_REPEAT_MIN} to ${SCHEDULE_REPEAT_MAX}.`
+  )
+
   return (
     <article className="h-full">
       <section className="mx-4 mb-4">
@@ -109,7 +157,7 @@ export const ScheduleStep: React.FC<ScheduleProps> = ({
         {overrideSummary}
       </section>
       <section className="flex">
-        <ul className="ml-4 flex max-h-full flex-col">
+        <ul className="ml-4 w-[400px] flex-none flex-col">
           {SCHEDULE_OPTIONS.map(({ value, label }) => (
             <li className="mr-4 flex items-center" key={value}>
               <label
@@ -125,31 +173,93 @@ export const ScheduleStep: React.FC<ScheduleProps> = ({
                   className="mr-2"
                 />
                 {label}
+                {value === 'time' && (
+                  <span className="ml-1 text-sm italic text-teal-500">
+                    (repeat option)
+                  </span>
+                )}
               </label>
             </li>
           ))}
           <li
             className={clsx(
-              'ml-4 flex items-center',
+              'ml-4',
               scheduleMethod === 'time' ? 'visible' : 'invisible'
             )}
           >
             {scheduleMethod === 'time' && (
-              <DateField
-                onChange={handleDateChange}
-                value={specifiedTime ?? ''}
-                name="specifiedTime"
-                className="w-64"
-              />
+              <>
+                <div className="flex flex-col gap-y-2">
+                  <DateField
+                    onChange={handleDateChange}
+                    value={specifiedTime ?? ''}
+                    name="specifiedTime"
+                    className="w-64"
+                  />
+                  <div className="flex flex-wrap items-center gap-x-3">
+                    <div className="flex items-center">
+                      <div
+                        className={clsx(
+                          'flex items-center',
+                          !specifiedTime && 'opacity-40'
+                        )}
+                      >
+                        <label
+                          htmlFor="scheduleRepeat"
+                          className="flex items-center py-1"
+                        >
+                          <input
+                            id="scheduleRepeat"
+                            type="checkbox"
+                            name="scheduleRepeat"
+                            checked={repeatEnabled}
+                            disabled={!specifiedTime}
+                            className="mr-2 h-4 w-4"
+                            onChange={(e) => setRepeatEnabled(e.target.checked)}
+                          />
+                          Repeat
+                        </label>
+                      </div>
+                      {!specifiedTime && (
+                        <span className="ml-2 text-sm italic text-teal-500">
+                          (enter a time first)
+                        </span>
+                      )}
+                    </div>
+                    <div className="w-16 shrink-0">
+                      {repeatEnabled && (
+                        <Input
+                          name="repeatDays"
+                          type="number"
+                          min={SCHEDULE_REPEAT_MIN}
+                          max={SCHEDULE_REPEAT_MAX}
+                          className="h-fit"
+                          value={
+                            Number.isFinite(repeatDays)
+                              ? String(repeatDays)
+                              : ''
+                          }
+                          onChange={handleRepeatDaysChange}
+                          aria-label="Repeat days"
+                        />
+                      )}
+                    </div>
+                    {repeatEnabled && <span>days</span>}
+                  </div>
+                </div>
+                {repeatEnabled && (
+                  <p className="mt-1 text-sm opacity-70">{repeatHint}</p>
+                )}
+              </>
             )}
           </li>
         </ul>
-        <ul className="flex max-h-full flex-col">
+        <ul className="w-[300px] flex-none flex-col">
           {COMM_TYPE_OPTIONS.map(({ value, label }) => (
-            <li className="mr-4 flex items-center" key={value}>
+            <li className="mr-4 flex items-start" key={value}>
               <label
                 htmlFor="commType"
-                className="flex items-center py-1"
+                className="flex items-start py-1"
                 onClick={() => setCommType(value)}
               >
                 <input
@@ -157,7 +267,7 @@ export const ScheduleStep: React.FC<ScheduleProps> = ({
                   value={value}
                   name="commType"
                   checked={commType === value}
-                  className="mr-2"
+                  className="mr-2 mt-1 shrink-0"
                 />
                 {label}
               </label>
@@ -174,8 +284,9 @@ export const ScheduleStep: React.FC<ScheduleProps> = ({
           <Input
             name="timeout"
             type="number"
+            min={1}
             disabled={commType === 'sat'}
-            className="h-fit w-20"
+            className="h-fit w-16"
             value={timeout?.toString() ?? '5'}
             onChange={handleTimeoutChange}
           />

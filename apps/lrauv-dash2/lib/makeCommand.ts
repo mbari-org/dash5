@@ -13,21 +13,47 @@ const printUnit = (p: ParameterProps) => {
 }
 
 // Accepts a local time string and returns a formatted UTC time string
+const SCHEDULE_REPEAT_MIN = 2
+const SCHEDULE_REPEAT_MAX = 30
+
+/** Repeat count the backend will accept with a dated schedDate. */
+export const schedRepeatForApi = (
+  scheduleMethod: ScheduleMethod | undefined,
+  schedRepeat?: number
+): number | undefined =>
+  scheduleMethod === 'time' &&
+  typeof schedRepeat === 'number' &&
+  Number.isInteger(schedRepeat) &&
+  schedRepeat >= SCHEDULE_REPEAT_MIN &&
+  schedRepeat <= SCHEDULE_REPEAT_MAX
+    ? schedRepeat
+    : undefined
+
 export const makeCommand = ({
   commandText,
   scheduleMethod = 'end',
   specifiedLocalTime,
+  schedRepeat,
   units,
 }: {
   commandText: string
   scheduleMethod?: ScheduleMethod
   specifiedLocalTime?: string | null
+  /** Total days, including the first. Ignored unless scheduling at a specific time. */
+  schedRepeat?: number
   units?: { name: string; abbreviation: string }[]
-}) => {
+}): {
+  commandText: string
+  schedDate: string
+  previewSbd: string
+  schedRepeat?: number
+} => {
   // Convert any full unit names in the provided command text to their abbreviations
   const resolvedCommandText = units
     ? abbreviateUnitsInCommand(commandText, units)
     : commandText
+
+  const repeat = schedRepeatForApi(scheduleMethod, schedRepeat)
 
   switch (scheduleMethod) {
     case 'ASAP':
@@ -49,7 +75,10 @@ export const makeCommand = ({
       return {
         commandText: resolvedCommandText,
         schedDate,
-        previewSbd: `sched ${schedDate} "${resolvedCommandText}"`,
+        schedRepeat: repeat,
+        previewSbd: repeat
+          ? `sched repeat ${repeat} ${schedDate} "${resolvedCommandText}"`
+          : `sched ${schedDate} "${resolvedCommandText}"`,
       }
     default:
       return {
@@ -70,6 +99,7 @@ export const makeMissionCommand = ({
   parameterOverrides,
   scheduleMethod,
   specifiedLocalTime,
+  schedRepeat,
   units,
 }: {
   parameterOverrides: ParameterProps[]
@@ -78,6 +108,7 @@ export const makeMissionCommand = ({
   missionId?: string
   scheduleMethod: ScheduleMethod
   specifiedLocalTime?: string
+  schedRepeat?: number
   units?: { name: string; abbreviation: string }[]
 }) => {
   const missionName =
@@ -95,6 +126,7 @@ export const makeMissionCommand = ({
     commandText: commands.join(';'),
     scheduleMethod,
     specifiedLocalTime,
+    schedRepeat,
     units,
   })
 }

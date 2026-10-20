@@ -176,7 +176,7 @@ export const DateField = React.forwardRef<HTMLInputElement, DateFieldProps>(
           />
           {focused && (
             <div
-              className="fixed z-50 mt-2 flex border border-stone-200 bg-white p-2 shadow-lg"
+              className="fixed z-50 mt-2 flex flex-col border border-stone-200 bg-white p-2 shadow-lg"
               style={calendarStyles}
               onMouseEnter={handleInteraction(true)}
               onMouseLeave={handleInteraction(false)}
@@ -184,58 +184,79 @@ export const DateField = React.forwardRef<HTMLInputElement, DateFieldProps>(
               role="button"
               tabIndex={0}
             >
-              <div className="relative w-1/2 flex-grow overflow-hidden px-2">
-                <Calendar
-                  date={selectedDate ?? DateTime.local()}
-                  onChange={handleDateChange}
-                  onMonthChange={handleDateChange}
-                />
-              </div>
-              <div className="relative w-1/2 flex-grow overflow-hidden px-2">
-                <div className="flex justify-center">
-                  <button
-                    onClick={handleTimeMode('hours')}
-                    className={clsx(
-                      styles.timeButton,
-                      timeMode === 'hours' && 'border-teal-300'
-                    )}
-                  >
-                    {selectedDate?.toFormat('hh') ?? '00'}
-                  </button>
-                  <span className="my-auto px-1">:</span>
-                  <button
-                    onClick={handleTimeMode('minutes')}
-                    className={clsx(
-                      styles.timeButton,
-                      timeMode === 'minutes' && 'border-teal-300'
-                    )}
-                  >
-                    {selectedDate?.toFormat('mm') ?? '00'}
-                  </button>
-                  <span className="my-auto px-1">:</span>
-                  <button
-                    onClick={handleTimeMode('seconds')}
-                    className={clsx(
-                      styles.timeButton,
-                      timeMode === 'seconds' && 'border-teal-300'
-                    )}
-                  >
-                    {selectedDate?.toFormat('ss') ?? '00'}
-                  </button>
-                  <button
-                    onClick={toggleAmPm}
-                    className={clsx(styles.timeButton, 'ml-2')}
-                  >
-                    {selectedDate?.toFormat('a') ?? 'AM'}
-                  </button>
+              <div className="flex">
+                <div className="relative w-1/2 flex-grow overflow-hidden px-2">
+                  <Calendar
+                    date={selectedDate ?? DateTime.local()}
+                    onChange={handleDateChange}
+                    onMonthChange={handleDateChange}
+                  />
                 </div>
-                <ClockView
-                  date={selectedDate ?? DateTime.local()}
-                  type={timeMode}
-                  onHourChange={handleDateChange}
-                  onMinutesChange={handleDateChange}
-                  onSecondsChange={handleDateChange}
-                />
+                <div className="relative w-1/2 flex-grow overflow-hidden px-2">
+                  <div className="flex justify-center">
+                    <button
+                      onClick={handleTimeMode('hours')}
+                      className={clsx(
+                        styles.timeButton,
+                        timeMode === 'hours' && 'border-teal-300'
+                      )}
+                    >
+                      {selectedDate?.toFormat('hh') ?? '00'}
+                    </button>
+                    <span className="my-auto px-1">:</span>
+                    <button
+                      onClick={handleTimeMode('minutes')}
+                      className={clsx(
+                        styles.timeButton,
+                        timeMode === 'minutes' && 'border-teal-300'
+                      )}
+                    >
+                      {selectedDate?.toFormat('mm') ?? '00'}
+                    </button>
+                    <span className="my-auto px-1">:</span>
+                    <button
+                      onClick={handleTimeMode('seconds')}
+                      className={clsx(
+                        styles.timeButton,
+                        timeMode === 'seconds' && 'border-teal-300'
+                      )}
+                    >
+                      {selectedDate?.toFormat('ss') ?? '00'}
+                    </button>
+                    <button
+                      onClick={toggleAmPm}
+                      className={clsx(styles.timeButton, 'ml-2')}
+                    >
+                      {selectedDate?.toFormat('a') ?? 'AM'}
+                    </button>
+                  </div>
+                  <ClockView
+                    date={selectedDate ?? DateTime.local()}
+                    type={timeMode}
+                    onHourChange={handleDateChange}
+                    onMinutesChange={handleDateChange}
+                    onSecondsChange={handleDateChange}
+                  />
+                </div>
+              </div>
+              <div className="flex justify-end border-t border-stone-200 px-2 pt-2">
+                <button
+                  type="button"
+                  className="rounded bg-teal-500 px-4 py-1 text-sm text-white hover:bg-teal-600"
+                  onMouseDown={(e) => {
+                    e.preventDefault()
+                    setInteracting(false)
+                    setFocus(false)
+                    inputRef.current?.blur()
+                  }}
+                  onClick={() => {
+                    setInteracting(false)
+                    setFocus(false)
+                    inputRef.current?.blur()
+                  }}
+                >
+                  Done
+                </button>
               </div>
             </div>
           )}
