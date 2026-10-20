@@ -4,9 +4,13 @@ import { RequestConfig } from '../types'
 export interface DeleteCommandQueueParams {
   vehicle: string
   refEventId: number
+  force?: boolean
 }
 
-export type DeleteCommandQueueResponse = string
+export interface DeleteCommandQueueResponse {
+  result?: Record<string, unknown>
+  error?: string
+}
 
 export const deleteCommandQueue = async (
   params: DeleteCommandQueueParams,
@@ -22,5 +26,5 @@ export const deleteCommandQueue = async (
     ...config,
     params,
   })
-  return response.data.result as DeleteCommandQueueResponse
+  return response.data as DeleteCommandQueueResponse
 }
