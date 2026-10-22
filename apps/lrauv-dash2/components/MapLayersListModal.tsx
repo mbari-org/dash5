@@ -3,6 +3,7 @@ import { Modal } from '@mbari/react-ui'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { faXmark } from '@fortawesome/free-solid-svg-icons'
 import { useMapLayersModal } from './useMapLayersModal'
+import { LrauvsLayerSection } from './LrauvsLayerSection'
 import { MarkersLayerSection } from './MarkersLayerSection'
 import { StationsLayerSection } from './StationsLayerSection'
 import { PolygonsLayerSection } from './PolygonsLayerSection'
@@ -12,7 +13,8 @@ import { KmlLayersSection } from './KmlLayersSection'
 export const MapLayersListModal: React.FC<{
   onClose: () => void
   anchorPosition?: { top: number; left: number }
-}> = ({ onClose, anchorPosition }) => {
+  vehicleNames?: string[]
+}> = ({ onClose, anchorPosition, vehicleNames = [] }) => {
   const {
     modalRef,
     dialogRef,
@@ -26,6 +28,7 @@ export const MapLayersListModal: React.FC<{
     showSelectedOnly,
     setShowSelectedOnly,
     isFiltering,
+    filteredVehicleNames,
     stations,
     filteredStations,
     validStations,
@@ -54,7 +57,7 @@ export const MapLayersListModal: React.FC<{
     filteredKmlLayers,
     selectedKmlLayers,
     setSelectedKmlLayers,
-  } = useMapLayersModal({ onClose, anchorPosition })
+  } = useMapLayersModal({ onClose, anchorPosition, vehicleNames })
 
   return (
     <>
@@ -150,6 +153,13 @@ export const MapLayersListModal: React.FC<{
             }}
           >
             <div className="tree-view">
+              <LrauvsLayerSection
+                vehicleNames={vehicleNames}
+                filteredVehicleNames={filteredVehicleNames}
+                isFiltering={isFiltering}
+                expandedSections={expandedSections}
+                toggleExpanded={toggleExpanded}
+              />
               <MarkersLayerSection
                 isFiltering={isFiltering}
                 filteredMarkers={filteredMarkers}

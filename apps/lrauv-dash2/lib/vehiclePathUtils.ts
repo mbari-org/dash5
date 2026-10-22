@@ -32,3 +32,77 @@ export function countDisplayedPositions<T extends { unixTime: number }>(
   if (!dimTime || dimTime <= 0) return displayedFixes.length
   return displayedFixes.filter((fix) => fix.unixTime <= dimTime).length
 }
+
+/** Dash4 position window: last 24 hours, 20 is only the ceiling. */
+export const RECENT_POSITION_WINDOW_MS = 24 * 60 * 60 * 1000
+export const RECENT_POSITION_CAP = 20
+
+/**
+ * Newest positions inside the last `windowMs`, at most `cap`.
+ * A point a few minutes ahead of `now` is kept. Older points are dropped.
+ */
+export function recentPositionsWithinWindow<T extends { unixTime: number }>(
+  points: T[] | undefined,
+  now: number,
+  windowMs = RECENT_POSITION_WINDOW_MS,
+  cap = RECENT_POSITION_CAP
+): T[] {
+  if (!points?.length || cap <= 0) return []
+  const cutoff = now - windowMs
+  return points
+    .filter((point) => point.unixTime >= cutoff)
+    .sort((a, b) => b.unixTime - a.unixTime)
+    .slice(0, cap)
+}
+
+type LatLonTime = { latitude: number; longitude: number; unixTime: number }
+
+/**
+ * Points highlighted when the pointer is on the LRAUVs row.
+ * Dash4 includes every leaf, checked or not. GPS fixes use the same
+ * newest-20-deduped slice that VehiclePath renders, so hover rings always
+ * match the visible surfacing dots. Other position leaves use the last-24-hour
+ * window (Dash4 parity). Waypoints are the latest position plus the full list.
+ */
+export function lrauvsRootHoverPositions(args: {
+  gpsFixes?: LatLonTime[]
+  argos?: LatLonTime[]
+  navigatingToWaypoints?: LatLonTime[]
+  reachedWaypoints?: LatLonTime[]
+  emergencies?: LatLonTime[]
+  latestWaypointPosition?: { lat: number; lon: number } | null
+  waypoints?: { lat: number; lon: number }[]
+  now: number
+}): [number, number][] {
+  // GPS fixes: match VehiclePath rendering (newest 20 deduped, no time window)
+  const gpsWindowed = (points?: LatLonTime[]): [number, number][] =>
+    deduplicateFixesByUnixTime(points ?? [])
+      .slice(0, RECENT_POSITION_CAP)
+      .map((point) => [point.latitude, point.longitude])
+  // Other position leaves: last-24-hour window, cap 20 (Dash4 parity)
+  const windowed = (points?: LatLonTime[]): [number, number][] =>
+    recentPositionsWithinWindow(points, args.now).map((point) => [
+      point.latitude,
+      point.longitude,
+    ])
+
+  const waypointPts: [number, number][] = []
+  if (args.latestWaypointPosition) {
+    waypointPts.push([
+      args.latestWaypointPosition.lat,
+      args.latestWaypointPosition.lon,
+    ])
+  }
+  for (const point of args.waypoints ?? []) {
+    waypointPts.push([point.lat, point.lon])
+  }
+
+  return [
+    ...gpsWindowed(args.gpsFixes),
+    ...waypointPts,
+    ...windowed(args.argos),
+    ...windowed(args.navigatingToWaypoints),
+    ...windowed(args.reachedWaypoints),
+    ...windowed(args.emergencies),
+  ]
+}
