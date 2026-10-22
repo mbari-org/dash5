@@ -4,18 +4,13 @@ import L from 'leaflet'
 import { usePlatformPositions } from '@mbari/api-client'
 import { createLogger } from '@mbari/utils'
 import { useTick } from '../lib/useTick'
-import { PLATFORM_PANE } from '../lib/constants'
+import { PLATFORM_PANE, PLATFORM_LOOKBACK_DAYS } from '../lib/constants'
 
 const logger = createLogger('PlatformPath')
 
 /** Exported for testing — true only for genuine network timeout errors. */
 export const isTimeoutError = (error: unknown): boolean =>
   error instanceof Error && !!error.message?.toLowerCase().includes('timeout')
-
-// How far back to search for position fixes when no explicit window is given.
-// 365 days ensures infrequently-updated fixed platforms (e.g. CA offshore
-// structures that may not report for months) are still found.
-const DEFAULT_LOOKBACK_DAYS = 365
 
 export interface PlatformPathProps {
   platformId: string
@@ -59,7 +54,7 @@ export const PlatformPath: React.FC<PlatformPathProps> = ({
       return { startDate, endDate }
     }
     const end = nowMs
-    const start = end - DEFAULT_LOOKBACK_DAYS * 24 * 60 * 60 * 1000
+    const start = end - PLATFORM_LOOKBACK_DAYS * 24 * 60 * 60 * 1000
     return {
       startDate: new Date(start).toISOString(),
       endDate: new Date(end).toISOString(),

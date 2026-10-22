@@ -5,6 +5,7 @@ import { faCaretRight } from '@fortawesome/free-solid-svg-icons'
 import Image from 'next/image'
 import { GetPlatformsResponse } from '@mbari/api-client'
 import { ODSS_BASE_URL } from '../lib/constants'
+import { CenterMapButton } from './MapLayersTreeItem'
 
 export interface PlatformSectionProps {
   name: string
@@ -16,6 +17,8 @@ export interface PlatformSectionProps {
   filterText?: string
   onlySelected?: boolean
   headerRight?: React.ReactNode
+  onCenterClick?: (platformId: string) => void
+  onCenterHover?: (platformId: string) => void
 }
 
 export const PlatformSection: React.FC<PlatformSectionProps> = ({
@@ -28,6 +31,8 @@ export const PlatformSection: React.FC<PlatformSectionProps> = ({
   filterText,
   onlySelected,
   headerRight,
+  onCenterClick,
+  onCenterHover,
 }) => {
   const filteredItems = useMemo(() => {
     let filtered = items
@@ -109,33 +114,47 @@ export const PlatformSection: React.FC<PlatformSectionProps> = ({
                   <div className="tree-connector-wrapper ml-4 flex items-center">
                     <span className="tree-connector -ml-9 mr-2 inline-block h-0.5 w-7 rounded bg-stone-400" />
                   </div>
-                  <label className="flex w-full cursor-pointer items-center">
-                    <input
-                      type="checkbox"
-                      checked={selectedIds.includes(item._id)}
-                      onChange={() => onToggleSelect(item._id)}
-                      className="mr-2 h-5 w-5 cursor-pointer accent-blue-600"
-                    />
-                    {item.iconUrl && (
-                      <Image
-                        src={`${ODSS_BASE_URL}/${item.iconUrl}`}
-                        width={16}
-                        height={16}
-                        className="mr-2 h-4 w-auto"
-                        alt={`${item.name} - ${item.typeName} icon`}
-                        onError={(e) => {
-                          ;(e.currentTarget as HTMLImageElement).style.display =
-                            'none'
-                        }}
+                  <div className="flex w-full items-center">
+                    <label className="flex min-w-0 flex-1 cursor-pointer items-center">
+                      <input
+                        type="checkbox"
+                        checked={selectedIds.includes(item._id)}
+                        onChange={() => onToggleSelect(item._id)}
+                        className="mr-2 h-5 w-5 cursor-pointer accent-blue-600"
+                      />
+                      {item.iconUrl && (
+                        <Image
+                          src={`${ODSS_BASE_URL}/${item.iconUrl}`}
+                          width={16}
+                          height={16}
+                          className="mr-2 h-4 w-auto"
+                          alt={`${item.name} - ${item.typeName} icon`}
+                          onError={(e) => {
+                            ;(
+                              e.currentTarget as HTMLImageElement
+                            ).style.display = 'none'
+                          }}
+                        />
+                      )}
+                      <span className="text-sm font-medium">
+                        {item.name}{' '}
+                        <span className="text-sm text-stone-400">
+                          ({item.abbreviation})
+                        </span>
+                      </span>
+                    </label>
+                    {onCenterClick !== undefined && (
+                      <CenterMapButton
+                        label={`Center map on ${item.name}`}
+                        onClick={() => onCenterClick(item._id)}
+                        onMouseEnter={
+                          onCenterHover
+                            ? () => onCenterHover(item._id)
+                            : undefined
+                        }
                       />
                     )}
-                    <span className="text-sm font-medium">
-                      {item.name}{' '}
-                      <span className="text-sm text-stone-400">
-                        ({item.abbreviation})
-                      </span>
-                    </span>
-                  </label>
+                  </div>
                 </li>
               ))
             )}
