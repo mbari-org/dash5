@@ -45,6 +45,7 @@ export interface VehicleProps {
   colorGps?: string
   textGpsAgo?: string
   colorArgo?: string
+  textArgoAgo?: string
   textSat?: string
   textCommAgo?: string
   colorSatComm?: string
@@ -97,10 +98,12 @@ export interface VehicleProps {
   textCriticalError?: string
   textCriticalTime?: string
   ubatColor?: string
+  textUbat?: string
   textNote?: string
   textNoteTime?: string
   colorFlow?: string
   textFlow?: string
+  textFlowLabel?: string
   colorLeak?: string
   textLeak?: string
   textLeakAgo?: string
@@ -120,6 +123,8 @@ export interface VehicleProps {
   textBatteryDuration?: number | string
   textBatteryUnits?: string
   textCurrent?: number | string
+  showBadBattery?: boolean
+  textBadBattery?: string
   textNeedsComms?: string
   textMissionAgo?: string
   textVersion?: string
@@ -163,6 +168,7 @@ export const Vehicle: React.FC<VehicleProps> = ({
   colorGps = 'st3',
   textGpsAgo,
   colorArgo = 'st18',
+  textArgoAgo,
   textSat,
   textCommAgo,
   colorSatComm = 'st3',
@@ -216,10 +222,12 @@ export const Vehicle: React.FC<VehicleProps> = ({
   textCriticalError,
   textCriticalTime,
   ubatColor = 'st18',
+  textUbat,
   textNote,
   textNoteTime,
   colorFlow = 'st18',
   textFlow,
+  textFlowLabel,
   colorCtd,
   colorCameraBody,
   colorCameraLens,
@@ -230,6 +238,8 @@ export const Vehicle: React.FC<VehicleProps> = ({
   textBatteryDuration,
   textBatteryUnits,
   textCurrent,
+  showBadBattery,
+  textBadBattery,
   textNeedsComms,
   textMissionAgo,
   textVersion,
@@ -351,9 +361,14 @@ export const Vehicle: React.FC<VehicleProps> = ({
           textCurrent={textCurrent}
           svgCurrent={svgCurrent}
           colorDuration={colorDuration}
+          showBadBattery={showBadBattery}
+          textBadBattery={textBadBattery}
         />
 
-        <ArgosBatteryIndicator colorArgo={colorArgo} />
+        <ArgosBatteryIndicator
+          colorArgo={colorArgo}
+          textArgoAgo={textArgoAgo}
+        />
 
         <MissionLabel
           textMission={textMission}
@@ -408,6 +423,7 @@ export const Vehicle: React.FC<VehicleProps> = ({
             (inside CtdIndicator) paints on top and covers them — matching Dash4 SVG order. */}
         <circle
           name="UBAT"
+          aria-label="ubat"
           className={isDocked ? 'st3' : ubatColor}
           cx="544"
           cy="251"
@@ -415,11 +431,30 @@ export const Vehicle: React.FC<VehicleProps> = ({
         />
         <circle
           name="flow"
+          aria-label="flow"
           className={isDocked ? 'st3' : colorFlow}
           cx="544"
           cy="261"
           r="4"
         />
+        {!isDocked && textUbat && (
+          <text
+            aria-label="ubat label"
+            transform="matrix(1 0 0 1 551.3628 254.5)"
+            className="st9 st10"
+          >
+            {textUbat}
+          </text>
+        )}
+        {!isDocked && textFlowLabel && (
+          <text
+            aria-label="flow label"
+            transform="matrix(1 0 0 1 551.3628 264.5)"
+            className="st9 st10"
+          >
+            {textFlowLabel}
+          </text>
+        )}
         <text
           name="text_flowago"
           transform="matrix(1 0 0 1 541.0 272.0)"

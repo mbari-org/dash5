@@ -81,6 +81,7 @@ export interface GetVehicleInfoResponse {
   text_volts: string
   color_volts: string
   color_argo?: string
+  text_argoago?: string
   color_ot?: string
   color_ctd?: string
   color_camerabody?: string
