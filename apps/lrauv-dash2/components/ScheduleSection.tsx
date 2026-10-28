@@ -535,7 +535,50 @@ export const ScheduleSection: React.FC<ScheduleSectionProps> = ({
           itemScheduledTime > currentMissionEntry.startedAt
         )
           return bestIdx
+        // Skip commands from prior runs: only consider commands whose reference
+        // time (scheduled time if present, else command send time) falls within
+        // the satellite delay window before the current mission started.
+        // TBD commands from earlier runs of the same mission have reference times
+        // anchored to those older runs — they cannot have initiated the current
+        // run and must not be promoted as the running row. The TBD-to-completed
+        // promotion that would normally catch these runs AFTER matchingMissionIndex,
+        // so this guard prevents them from being selected in the first place.
+        //
+        // Exception: skip the guard when the interval match has already confirmed
+        // this command belongs to the current run (item.startedAt ===
+        // currentMissionEntry.startedAt). This preserves queued-mission support
+        // (e.g. a PAM command sent 6+ hours before the mission fires) where the
+        // enrichment phase's wider match window correctly sets startedAt before
+        // this reducer runs (#825).
+        //
+        // startedAtMatchesCurrent is shared by both guards below so they stay
+        // in sync with the same confirmed-current-run definition.
+        const startedAtMatchesCurrent =
+          item.startedAt != null &&
+          item.startedAt === currentMissionEntry.startedAt
+        if (!startedAtMatchesCurrent) {
+          const itemReferenceTime =
+            itemScheduledTime ?? item.event.unixTime ?? 0
+          if (
+            currentMissionEntry.startedAt != null &&
+            itemReferenceTime <
+              currentMissionEntry.startedAt - SATELLITE_DELAY_WINDOW_MS
+          )
+            return bestIdx
+        }
         if (bestIdx === -1) return idx
+        // Prefer a command already confirmed for the current run by the interval
+        // match (status 'running', startedAt === current mission's startedAt)
+        // over a TBD candidate. The interval match is a stronger signal than
+        // the heuristic window-guard and must not be displaced by a more-recently-
+        // sent but unconfirmed item.
+        const itemMatchedCurrentRun =
+          item.status === 'running' && startedAtMatchesCurrent
+        const bestMatchedCurrentRun =
+          enriched[bestIdx].status === 'running' &&
+          enriched[bestIdx].startedAt === currentMissionEntry.startedAt
+        if (itemMatchedCurrentRun && !bestMatchedCurrentRun) return idx
+        if (!itemMatchedCurrentRun && bestMatchedCurrentRun) return bestIdx
         // Prefer the most recently SENT command: when the same mission is
         // retried (re-sent without a future sched timestamp), the newest
         // ack'd command is the active one.

@@ -1702,6 +1702,98 @@ test('parses legacy sched YYYYMMDD}T timestamp for backwards compatibility', asy
   })
 })
 
+test('does not promote a prior-run command as running when the current mission has no matching command in loaded events', async () => {
+  // Regression for #881: incorrect matching logic in Schedule row.
+  //
+  // When a mission (e.g. sci2_i2map_deep) has been run many times, older
+  // missionStarted events fall off the 50-entry useMissionStartedEvent window.
+  // The orphaned prior-run command events remain TBD at the time
+  // matchingMissionIndex runs (the TBD→completed promotion is AFTER it), so
+  // the most-recently-sent orphan could displace the current run's command —
+  // or be promoted as running when no current-run command exists in the loaded
+  // events — showing the wrong Operator, Event ID, and payload in the modal.
+  //
+  // The fix adds a reference-time window guard: only commands sent within
+  // SATELLITE_DELAY_WINDOW_MS (30 min) before the current mission started are
+  // eligible candidates. Prior-run commands are filtered out and the running
+  // row falls back to synthetic injection, which at least shows correct timing.
+  const currentMissionStart = Date.now() - 60 * 60 * 1000 // started 1 hour ago
+
+  server.use(
+    rest.get('/events', (_req, res, ctx) =>
+      res(
+        ctx.status(200),
+        ctx.json({
+          result: [
+            // Two prior-run commands whose missionStarted events are outside
+            // the 50-entry timeline window (not in missionStartedResponse).
+            // Both are TBD after the first enrichment pass.
+            {
+              data: 'load Science/sci2_i2map_deep.tl;run',
+              unixTime: Date.now() - 2 * 60 * 60 * 1000, // sent 2h ago
+              eventId: 101,
+              eventType: 'run',
+              text: null,
+              note: null,
+              user: 'old-operator',
+            },
+            {
+              data: 'load Science/sci2_i2map_deep.tl;run',
+              unixTime: Date.now() - 3 * 60 * 60 * 1000, // sent 3h ago
+              eventId: 102,
+              eventType: 'run',
+              text: null,
+              note: null,
+              user: 'old-operator',
+            },
+          ],
+        })
+      )
+    ),
+    rest.get('/events/mission-started', (_req, res, ctx) =>
+      res(
+        ctx.status(200),
+        ctx.json({
+          result: [
+            {
+              eventId: 201,
+              eventType: 'missionStarted',
+              vehicleName: 'example',
+              unixTime: currentMissionStart,
+              isoTime: new Date(currentMissionStart).toISOString(),
+              fix: { latitude: 0, longitude: 0 },
+              state: 1,
+              dataLen: 0,
+              refId: 0,
+              index: 0,
+              component: '',
+              text: 'Started mission sci2_i2map_deep',
+            },
+          ],
+        })
+      )
+    )
+  )
+
+  render(
+    <MockProviders queryClient={new QueryClient()}>
+      <ScheduleSection {...props} currentDeploymentId={1} />
+    </MockProviders>
+  )
+
+  // Running row must be present (synthetic injection takes over).
+  await waitFor(() => {
+    expect(screen.getByText(/Ended:\s*TBD/i)).toBeInTheDocument()
+  })
+
+  // With the fix, matchingMissionIndex returns -1 for the prior-run commands
+  // (they are outside the satellite delay window) → synthetic injection creates
+  // the running row with no user → name falls back to 'Unknown'.
+  // With the bug, the prior-run command is promoted as running and
+  // its user 'old-operator' appears as the running row's operator instead.
+  expect(screen.getByText('Unknown')).toBeInTheDocument()
+})
+
 test('pending row shows mission ID from getScript before vehicle telemetry arrives', async () => {
   // profile_station_vt.tl declares mission ID "profile_station". The pending
   // row should display "profile_station" immediately — not the filename-derived
