@@ -32,6 +32,7 @@ import {
   SbdChunkProgress,
   useTethysApiContext,
   getScript,
+  createLimiter,
 } from '@mbari/api-client'
 import { useQueryClient, useQueries } from 'react-query'
 import useGlobalModalId from '../lib/useGlobalModalId'
@@ -387,18 +388,26 @@ export const ScheduleSection: React.FC<ScheduleSectionProps> = ({
     return Array.from(paths)
   }, [allLogsResponse.data, deploymentResponse.data])
 
+  // Bound concurrent getScript requests to 3 so opening a Schedule with a
+  // large event history does not fan out hundreds of simultaneous requests
+  // to TethysDash. staleTime: Infinity ensures each path is only fetched once
+  // per session regardless of how many times useQueries re-evaluates.
+  const scriptFetchLimiter = useRef(createLimiter(3))
+
   const scriptIdQueries = useQueries(
     allMissionPaths.map((path) => ({
       // Key matches useScript's shape (['commands', 'script', params]) so the
       // cache is shared with CommandModal and useMissionData lookups.
       queryKey: ['commands', 'script', { path }],
       queryFn: () =>
-        getScript(
-          { path },
-          {
-            instance: axiosInstance,
-            headers: { Authorization: `Bearer ${token}` },
-          }
+        scriptFetchLimiter.current(() =>
+          getScript(
+            { path },
+            {
+              instance: axiosInstance,
+              headers: { Authorization: `Bearer ${token}` },
+            }
+          )
         ),
       staleTime: Infinity, // mission definitions don't change mid-deployment
       enabled: !!axiosInstance && !!path && !!token,
