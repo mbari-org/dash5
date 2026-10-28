@@ -381,7 +381,7 @@ export const ScheduleSection: React.FC<ScheduleSectionProps> = ({
       .forEach((evt: GetEventsResponse) =>
         addPathsFromFields(evt.data, evt.text)
       )
-    // deploymentLogsOnly path: pre-statusted items from the deployment query
+    // deploymentLogsOnly path: command-status items from the deployment query
     deploymentResponse.data?.commandStatuses?.forEach((cs) =>
       addPathsFromFields(cs.event.data, cs.event.text)
     )
