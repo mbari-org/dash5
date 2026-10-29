@@ -671,6 +671,7 @@ export const ScheduleSection: React.FC<ScheduleSectionProps> = ({
                 eventId: currentRawEvent.eventId,
                 eventType: 'run',
                 text: currentRawEvent.text,
+                user: sourceEvent?.event.user ?? currentRawEvent.user,
               },
               status: 'running',
               endedAt: undefined,

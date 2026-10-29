@@ -1842,6 +1842,51 @@ test('matches multi-SBD command to running mission when delivery delay exceeds t
   })
 })
 
+test('shows operator name (not Unknown) on synthetic running row when no command event matches', async () => {
+  // Regression for #825: when matchingMissionIndex is -1 and a synthetic row is
+  // injected, the operator was hardcoded to "Unknown" because the event object
+  // had no user field. The fix carries user from the missionStarted event.
+  server.use(
+    rest.get('/events', (_req, res, ctx) =>
+      res(ctx.status(200), ctx.json({ result: [] }))
+    ),
+    rest.get('/events/mission-started', (_req, res, ctx) =>
+      res(
+        ctx.status(200),
+        ctx.json({
+          result: [
+            {
+              eventId: 5001,
+              eventType: 'missionStarted',
+              vehicleName: 'example',
+              unixTime: Date.now() - 60 * 1000,
+              isoTime: new Date(Date.now() - 60 * 1000).toISOString(),
+              fix: { latitude: 0, longitude: 0 },
+              state: 1,
+              dataLen: 0,
+              refId: 0,
+              index: 0,
+              component: '',
+              text: 'Started mission keepstation',
+              user: 'paul',
+            },
+          ],
+        })
+      )
+    )
+  )
+
+  render(
+    <MockProviders queryClient={new QueryClient()}>
+      <ScheduleSection {...props} currentDeploymentId={1} />
+    </MockProviders>
+  )
+
+  await waitFor(() => {
+    expect(screen.getByText('paul')).toBeInTheDocument()
+  })
+})
+
 test('parses legacy sched YYYYMMDD}T timestamp for backwards compatibility', async () => {
   // Simulate an event stored before the makeCommand } fix was deployed.
   const legacyStamp = '20991231}T2359'
