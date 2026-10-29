@@ -1416,18 +1416,24 @@ export const ScheduleSection: React.FC<ScheduleSectionProps> = ({
         refEventId: eventId,
       })
     } catch (e) {
-      toast.error(
-        `Failed to cancel directive ${eventId}. It may have already been sent to the vehicle.`
-      )
+      toast.error(`Failed to cancel directive ${eventId}.`)
       return
     }
 
     if (data?.error) {
-      // TethysDash refused the cancel — command already dispatched/sent to the vehicle.
-      toast.error(
-        `This directive has already been sent to the vehicle. Use "Discard anyway" to force-remove it.`
-      )
+      // TethysDash returns "Command already dispatched to vehicle" when the
+      // command has been sent and is awaiting ACK — the only state where
+      // force=true succeeds. Any other refusal (e.g. timed out) means force
+      // would also fail, so we surface a terminal message instead.
+      const isDispatched = data.error.toLowerCase().includes('dispatched')
 
+      if (!isDispatched) {
+        // Timed-out or otherwise non-cancellable — force would also be refused.
+        toast.error(`This directive can no longer be cancelled.`)
+        return
+      }
+
+      // Command was dispatched (sent to vehicle, awaiting ACK) — force=true can remove it.
       const shouldForce = await confirm({
         title: `Directive ${eventId} has already been sent to the vehicle and may have been run. Discard it anyway?`,
       })

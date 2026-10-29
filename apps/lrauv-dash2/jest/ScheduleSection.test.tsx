@@ -798,14 +798,79 @@ test('refused cancel shows error toast and triggers force-discard flow when conf
     expect(forceCalled).toBe(true)
     // Note records the force-discard (not a cancellation)
     expect(noteText).toMatch(/Force-discarded request 99010/)
-    // Error toast fired after the refused cancel
-    expect(toast.error).toHaveBeenCalledWith(
+    // No error toast for the dispatched case — confirm dialog handles the messaging
+    expect(toast.error).not.toHaveBeenCalledWith(
       expect.stringMatching(/already been sent to the vehicle/i)
     )
     // Success toast fired after the force-discard completes
     expect(toast.success).toHaveBeenCalledWith(
       expect.stringMatching(/Directive 99010 discarded/i)
     )
+  })
+})
+
+test('timed-out directive shows "can no longer be cancelled" toast with no discard option', async () => {
+  // Regression for #883: a timed-out directive returns a non-dispatched error.
+  // "Discard anyway?" must not appear — force=true would also be refused.
+  let forceCalled = false
+  server.use(
+    rest.get('/events', (_req, res, ctx) =>
+      res(
+        ctx.status(200),
+        ctx.json({
+          result: [
+            {
+              data: 'load Science/profiles.xml run',
+              unixTime: Date.now() - 60 * 60 * 1000,
+              eventId: 99020,
+              eventType: 'run',
+              text: null,
+              note: null,
+              user: 'test-user',
+            },
+          ],
+        })
+      )
+    ),
+    rest.get('/events/mission-started', (_req, res, ctx) =>
+      res(ctx.status(200), ctx.json({ result: [] }))
+    ),
+    rest.delete('/commands/queue', (_req, res, ctx) =>
+      res(ctx.status(200), ctx.json({ error: 'Command has already timed out' }))
+    )
+  )
+
+  server.use(
+    rest.delete('/commands/queue', (req, res, ctx) => {
+      if (req.url.searchParams.get('force') === 'true') forceCalled = true
+      return res(
+        ctx.status(200),
+        ctx.json({ error: 'Command has already timed out' })
+      )
+    })
+  )
+
+  render(
+    <MockProviders queryClient={new QueryClient()}>
+      <ScheduleSection {...props} currentDeploymentId={1} />
+    </MockProviders>
+  )
+
+  const user = userEvent.setup()
+
+  const moreButton = await screen.findByRole('button', {
+    name: /more options/i,
+  })
+  await user.click(moreButton)
+  await user.click(await screen.findByText('Cancel this Directive'))
+  await user.click(await screen.findByRole('button', { name: 'Confirm' }))
+
+  await waitFor(() => {
+    expect(toast.error).toHaveBeenCalledWith(
+      'This directive can no longer be cancelled.'
+    )
+    expect(screen.queryByText(/Discard it anyway/i)).not.toBeInTheDocument()
+    expect(forceCalled).toBe(false)
   })
 })
 
@@ -873,6 +938,58 @@ test('refused cancel does not force-discard when the second confirm is dismissed
     expect(screen.queryByText(/Discard it anyway/i)).not.toBeInTheDocument()
   )
   expect(forceCalled).toBe(false)
+})
+
+test('Force-discarded note in notes response renders the row as cancelled', async () => {
+  // Regression for #878/#883: cancelledEventIds regex matches both
+  // "Cancelled request" and "Force-discarded request". A pre-existing
+  // Force-discarded note must mark the row as cancelled on load.
+  const eventId = 99030
+  const sentAt = Date.now() - 10 * 60 * 1000
+  server.use(
+    rest.get('/events', (req, res, ctx) => {
+      const eventTypes = req.url.searchParams.get('eventTypes') ?? ''
+      const isNoteQuery = eventTypes === 'note'
+      const result = isNoteQuery
+        ? [
+            {
+              eventId: 99031,
+              eventType: 'note',
+              unixTime: sentAt + 60 * 1000,
+              isoTime: new Date(sentAt + 60 * 1000).toISOString(),
+              data: null,
+              text: null,
+              note: `Force-discarded request ${eventId} for 'example' (vehicle may have already run this command): 'load Science/profiles.xml run'`,
+              user: 'test-user',
+            },
+          ]
+        : [
+            {
+              data: 'load Science/profiles.xml run',
+              unixTime: sentAt,
+              eventId,
+              eventType: 'run',
+              text: null,
+              note: null,
+              user: 'test-user',
+            },
+          ]
+      return res(ctx.status(200), ctx.json({ result }))
+    }),
+    rest.get('/events/mission-started', (_req, res, ctx) =>
+      res(ctx.status(200), ctx.json({ result: [] }))
+    )
+  )
+
+  render(
+    <MockProviders queryClient={new QueryClient()}>
+      <ScheduleSection {...props} currentDeploymentId={1} />
+    </MockProviders>
+  )
+
+  await waitFor(() => {
+    expect(screen.getByTitle('cancelled')).toBeInTheDocument()
+  })
 })
 
 // ── isParamCommand unit tests ────────────────────────────────────────────────
