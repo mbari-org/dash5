@@ -284,10 +284,11 @@ export const ScheduleSection: React.FC<ScheduleSectionProps> = ({
     { enabled: !!vehicleName, staleTime: 15 * 1000, refetchInterval: 30 * 1000 }
   )
 
-  // Fetch note events that record operator cancellations so we can stamp
-  // schedule items as 'cancelled' instead of incorrectly showing 'completed'.
-  // The TethysDash backend writes a note with text matching:
+  // Fetch note events that record operator cancellations and force-discards so
+  // we can stamp schedule items as 'cancelled' instead of incorrectly showing
+  // 'completed'. The TethysDash backend writes notes with text matching:
   //   "Cancelled request {eventId} for '{vehicle}': ..."
+  //   "Force-discarded request {eventId} for '{vehicle}' ..."
   const cancellationNotesResponse = useEvents(
     {
       vehicles: [vehicleName],
