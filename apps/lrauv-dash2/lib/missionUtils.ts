@@ -3,15 +3,7 @@ export const normalizeMissionName = (missionName?: string): string => {
   const trimmed = missionName.trim()
   if (!trimmed) return ''
   const filename = trimmed.split('/').pop() ?? ''
-  // Explicit fallback: strip the MBARI vehicle-tailored suffix (_vt) so that
-  // a file named "profile_station_vt.tl" still matches telemetry that reports
-  // "Started mission profile_station" when the getScript lookup has not yet
-  // resolved.  Callers that have a scriptIdByPath entry will use the canonical
-  // script ID directly and never reach this strip.
-  return filename
-    .replace(/\.(xml|tl)$/i, '')
-    .replace(/_vt$/i, '')
-    .toLowerCase()
+  return filename.replace(/\.(xml|tl)$/i, '').toLowerCase()
 }
 
 export const normalizeMissionPath = (missionName?: string): string => {

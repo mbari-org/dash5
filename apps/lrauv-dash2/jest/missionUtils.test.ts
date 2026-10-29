@@ -91,19 +91,6 @@ describe('normalizeMissionName', () => {
     expect(normalizeMissionName('Long-Range/Default.xml')).toBe('default')
   })
 
-  test('strips _vt suffix (explicit fallback — used when getScript lookup has not resolved)', () => {
-    // Primary path: ScheduleSection resolves profile_station_vt.tl to
-    // "profile_station" via scriptIdByPath before calling normalizeMissionName.
-    // This regex strip is the safety net for the window before that resolves.
-    expect(normalizeMissionName('Science/profile_station_vt.tl')).toBe(
-      'profile_station'
-    )
-  })
-
-  test('strips _vt suffix when no directory prefix (explicit fallback)', () => {
-    expect(normalizeMissionName('profile_station_vt')).toBe('profile_station')
-  })
-
   test('returns empty string for undefined', () => {
     expect(normalizeMissionName(undefined)).toBe('')
   })

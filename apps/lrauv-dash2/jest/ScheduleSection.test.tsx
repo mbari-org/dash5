@@ -1878,9 +1878,12 @@ test('_vt command row is promoted to running when script ID matches vehicle tele
   expect(screen.queryByText('profile_station_vt')).not.toBeInTheDocument()
 })
 
-test('_vt row label uses normalizeMissionName fallback when getScript is unavailable', async () => {
+test('_vt row label shows raw filename when getScript is unavailable (no token)', async () => {
   // No token → getScript is disabled (enabled: !!token is false).
-  // normalizeMissionName strips _vt so the row still shows "profile_station".
+  // Without the _vt regex strip, the label falls back to the raw filename
+  // "profile_station_vt". This is accurate — it is the actual file name.
+  // Once a token is present and getScript resolves, the label becomes
+  // "profile_station" via scriptIdByPath.
   server.use(
     rest.get('/events', (_req, res, ctx) =>
       res(
@@ -1903,7 +1906,7 @@ test('_vt row label uses normalizeMissionName fallback when getScript is unavail
     rest.get('/events/mission-started', (_req, res, ctx) =>
       res(ctx.status(200), ctx.json({ result: [] }))
     )
-    // No /commands/script mock — getScript must not be relied on here
+    // No /commands/script mock — getScript must not be called without a token
   )
 
   // Render without a token so getScript is disabled
@@ -1913,11 +1916,11 @@ test('_vt row label uses normalizeMissionName fallback when getScript is unavail
     </MockProviders>
   )
 
-  // normalizeMissionName(rawPath) strips _vt → label shows "profile_station"
+  // Without a token, label shows the raw filename (no _vt strip)
   await waitFor(() => {
-    expect(screen.getByText('profile_station')).toBeInTheDocument()
+    expect(screen.getByText('profile_station_vt')).toBeInTheDocument()
   })
-  expect(screen.queryByText('profile_station_vt')).not.toBeInTheDocument()
+  expect(screen.queryByText('profile_station')).not.toBeInTheDocument()
 })
 
 test('deploymentLogsOnly: _vt mission in commandStatuses is resolved via getScript', async () => {
