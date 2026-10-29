@@ -835,12 +835,6 @@ test('timed-out directive shows "can no longer be cancelled" toast with no disca
     rest.get('/events/mission-started', (_req, res, ctx) =>
       res(ctx.status(200), ctx.json({ result: [] }))
     ),
-    rest.delete('/commands/queue', (_req, res, ctx) =>
-      res(ctx.status(200), ctx.json({ error: 'Command has already timed out' }))
-    )
-  )
-
-  server.use(
     rest.delete('/commands/queue', (req, res, ctx) => {
       if (req.url.searchParams.get('force') === 'true') forceCalled = true
       return res(
