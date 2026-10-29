@@ -488,13 +488,15 @@ export const ScheduleSection: React.FC<ScheduleSectionProps> = ({
     }
 
     // Resolve the canonical path for missionKeysMatch comparisons.
-    // Prefers the getScript-resolved ID (e.g. "profile_station" for
-    // profile_station_vt.tl) over the normalized filename.  Falls back to
-    // the normalized filename; the _vt strip in normalizeMissionName covers
-    // the window before the script lookup resolves.
-    const resolveFromEventField = (field: string | undefined): string =>
-      scriptIdFromEventField(field, scriptIdByPath) ||
-      missionPathFromEventData(field)
+    // Primary: getScript canonical ID (e.g. "profile_station" for profile_station_vt.tl).
+    // Fallback: normalized path with _vt stripped, so the path still matches
+    // vehicle telemetry that omits the suffix before getScript resolves or
+    // when no token is available.
+    const resolveFromEventField = (field: string | undefined): string => {
+      const scriptId = scriptIdFromEventField(field, scriptIdByPath)
+      if (scriptId) return scriptId
+      return missionPathFromEventData(field).replace(/_vt$/i, '')
+    }
 
     const enriched = items.map((item) => {
       if (item.status !== 'TBD') return item
