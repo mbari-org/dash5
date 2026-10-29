@@ -55,6 +55,28 @@ describe('useDeleteCommandQueue', () => {
     expect(screen.getByTestId('result')).toHaveTextContent('cancelled')
   })
 
+  it('should skip cache invalidation when TethysDash returns HTTP 200 with an error body', async () => {
+    server.use(
+      rest.delete('/commands/queue', (_req, res, ctx) =>
+        res.once(
+          ctx.status(200),
+          ctx.json({ error: 'Command already dispatched to vehicle' })
+        )
+      )
+    )
+    const queryClient = new QueryClient()
+    const invalidateSpy = jest.spyOn(queryClient, 'invalidateQueries')
+    render(
+      <MockProviders queryClient={queryClient}>
+        <MockDeleteAction />
+      </MockProviders>
+    )
+    fireEvent.click(screen.getByText('Cancel Directive'))
+    // Mutation still resolves (HTTP 200) so isSuccess becomes true
+    await waitFor(() => screen.getByTestId('result'))
+    expect(invalidateSpy).not.toHaveBeenCalled()
+  })
+
   it('should not show success result on server error', async () => {
     server.use(
       rest.delete('/commands/queue', (_req, res, ctx) => {
