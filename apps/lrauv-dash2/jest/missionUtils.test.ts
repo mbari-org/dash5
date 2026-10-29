@@ -5,6 +5,7 @@ import {
   normalizeMissionPath,
   missionPathFromEventData,
   rawMissionPathFromEventData,
+  scriptIdFromEventField,
 } from '../lib/missionUtils'
 
 describe('missionNameFromStartedText', () => {
@@ -56,6 +57,12 @@ describe('missionNameFromEventData', () => {
     )
   })
 
+  test('handles extensionless load path', () => {
+    expect(missionNameFromEventData('load Maintenance/calibration;run')).toBe(
+      'calibration'
+    )
+  })
+
   test('returns empty string when no mission file path is present', () => {
     expect(missionNameFromEventData('stop')).toBe('')
   })
@@ -82,16 +89,6 @@ describe('normalizeMissionName', () => {
 
   test('handles name with dashes', () => {
     expect(normalizeMissionName('Long-Range/Default.xml')).toBe('default')
-  })
-
-  test('strips _vt vehicle-tailored suffix so it matches telemetry name', () => {
-    expect(normalizeMissionName('Science/profile_station_vt.tl')).toBe(
-      'profile_station'
-    )
-  })
-
-  test('strips _vt suffix when no directory prefix', () => {
-    expect(normalizeMissionName('profile_station_vt')).toBe('profile_station')
   })
 
   test('returns empty string for undefined', () => {
@@ -134,6 +131,12 @@ describe('missionPathFromEventData', () => {
     )
   })
 
+  test('handles extensionless load path', () => {
+    expect(missionPathFromEventData('load Maintenance/calibration;run')).toBe(
+      'maintenance/calibration'
+    )
+  })
+
   test('returns empty string when no mission path found', () => {
     expect(missionPathFromEventData('stop')).toBe('')
   })
@@ -156,11 +159,56 @@ describe('rawMissionPathFromEventData', () => {
     )
   })
 
+  test('returns extensionless path without modification', () => {
+    expect(
+      rawMissionPathFromEventData('load Maintenance/calibration;run')
+    ).toBe('Maintenance/calibration')
+  })
+
   test('returns empty string when no path found', () => {
     expect(rawMissionPathFromEventData('stop')).toBe('')
   })
 
   test('returns empty string for undefined', () => {
     expect(rawMissionPathFromEventData(undefined)).toBe('')
+  })
+})
+
+describe('scriptIdFromEventField', () => {
+  const map = new Map<string, string>([
+    ['Science/profile_station_vt.tl', 'profile_station'],
+    ['Science/keepstation.tl', 'keepstation'],
+  ])
+
+  test('returns canonical script ID when path is in the map', () => {
+    expect(
+      scriptIdFromEventField(
+        'load Science/profile_station_vt.tl;set foo 1;run',
+        map
+      )
+    ).toBe('profile_station')
+  })
+
+  test('returns undefined when path is not in the map', () => {
+    expect(
+      scriptIdFromEventField('load Science/circle_acoustic_contact.tl;run', map)
+    ).toBeUndefined()
+  })
+
+  test('returns undefined when field has no mission path', () => {
+    expect(scriptIdFromEventField('stop', map)).toBeUndefined()
+  })
+
+  test('returns undefined for undefined field', () => {
+    expect(scriptIdFromEventField(undefined, map)).toBeUndefined()
+  })
+
+  test('returns undefined for empty map', () => {
+    expect(
+      scriptIdFromEventField(
+        'load Science/profile_station_vt.tl;run',
+        new Map()
+      )
+    ).toBeUndefined()
   })
 })

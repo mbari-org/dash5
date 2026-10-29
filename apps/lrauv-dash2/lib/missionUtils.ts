@@ -3,13 +3,7 @@ export const normalizeMissionName = (missionName?: string): string => {
   const trimmed = missionName.trim()
   if (!trimmed) return ''
   const filename = trimmed.split('/').pop() ?? ''
-  // Strip the MBARI vehicle-tailored suffix (_vt) before comparing so that
-  // a file named "profile_station_vt.tl" matches telemetry that reports
-  // "Started mission profile_station" (the vehicle omits the suffix).
-  return filename
-    .replace(/\.(xml|tl)$/i, '')
-    .replace(/_vt$/i, '')
-    .toLowerCase()
+  return filename.replace(/\.(xml|tl)$/i, '').toLowerCase()
 }
 
 export const normalizeMissionPath = (missionName?: string): string => {
@@ -27,51 +21,61 @@ export const missionNameFromStartedText = (text: string): string =>
   text.replace(/^Started mission\s+/i, '').trim()
 
 /**
+ * Extracts the raw mission path from a run/command event data string,
+ * preserving original case and file extension.
+ * e.g. "load Science/profile_station_vt.tl;run" → "Science/profile_station_vt.tl"
+ * e.g. "load Maintenance/calibration;run"       → "Maintenance/calibration"
+ *
+ * This is the single source of truth for path extraction. All other event-data
+ * helpers delegate to it so the regex only lives in one place.
+ */
+export const rawMissionPathFromEventData = (data?: string): string => {
+  const withExtension = data?.match(/[A-Za-z0-9_/.-]+\.(?:xml|tl)/i)?.[0]
+  if (withExtension) return withExtension
+
+  // Fallback for extensionless loads, e.g. "load Maintenance/calibration;run"
+  const loadMatch = data?.match(/\bload\s+([A-Za-z0-9_/.-]+)\b/i)?.[1]
+  return loadMatch ?? ''
+}
+
+/**
  * Extracts the bare mission name from a run/command event data string.
  * e.g. "load Science/circle_acoustic_contact.tl;set ...;run" → "circle_acoustic_contact"
+ * e.g. "load Maintenance/calibration;run"                    → "calibration"
  */
 export const missionNameFromEventData = (data?: string): string => {
-  const withExtension = data?.match(/[A-Za-z0-9_/.-]+\.(?:xml|tl)/i)?.[0]
-  if (withExtension) {
-    return (
-      withExtension
-        .split('/')
-        .pop()
-        ?.replace(/\.(xml|tl)$/i, '') ?? ''
-    )
-  }
-
-  // Fallback for mission loads with no extension, e.g. "load Maintenance/calibration;run"
-  const loadMatch = data?.match(/\bload\s+([A-Za-z0-9_/.-]+)\b/i)?.[1]
-  if (!loadMatch) return ''
+  const raw = rawMissionPathFromEventData(data)
+  if (!raw) return ''
   return (
-    loadMatch
+    raw
       .split('/')
       .pop()
       ?.replace(/\.(xml|tl)$/i, '') ?? ''
   )
 }
 
+/**
+ * Extracts and normalizes the mission path for internal matching.
+ * e.g. "load Science/Profile_Station.tl;run"   → "science/profile_station"
+ * e.g. "load Maintenance/calibration;run"       → "maintenance/calibration"
+ */
 export const missionPathFromEventData = (data?: string): string => {
-  const withExtension = data?.match(/[A-Za-z0-9_/.-]+\.(?:xml|tl)/i)?.[0]
-  if (withExtension) return normalizeMissionPath(withExtension)
-
-  // Fallback for mission loads with no extension, e.g. "load Maintenance/calibration;run"
-  const loadMatch = data?.match(/\bload\s+([A-Za-z0-9_/.-]+)\b/i)?.[1]
-  if (!loadMatch) return ''
-  return normalizeMissionPath(loadMatch)
+  const raw = rawMissionPathFromEventData(data)
+  return raw ? normalizeMissionPath(raw) : ''
 }
 
 /**
- * Extracts the raw mission path from a run/command event data string,
- * preserving original case and file extension for use as a modal pre-fill
- * value (e.g. "Science/profile_station.tl"). Use missionPathFromEventData
- * for internal matching, which normalizes case and strips the extension.
+ * Given a raw event field string (e.g. "load Science/profile_station_vt.tl;run"),
+ * extracts the mission file path and looks it up in the provided scriptIdByPath map.
+ * Returns the canonical script ID (e.g. "profile_station") or undefined if not found.
+ *
+ * Used by both the mission-correlation (matching) path and the display-name chain so
+ * the two callers stay in sync automatically.
  */
-export const rawMissionPathFromEventData = (data?: string): string => {
-  const withExtension = data?.match(/[A-Za-z0-9_/.-]+\.(?:xml|tl)/i)?.[0]
-  if (withExtension) return withExtension
-
-  const loadMatch = data?.match(/\bload\s+([A-Za-z0-9_/.-]+)\b/i)?.[1]
-  return loadMatch ?? ''
+export const scriptIdFromEventField = (
+  field: string | undefined,
+  scriptIdByPath: Map<string, string>
+): string | undefined => {
+  const raw = rawMissionPathFromEventData(field)
+  return raw ? scriptIdByPath.get(raw) : undefined
 }

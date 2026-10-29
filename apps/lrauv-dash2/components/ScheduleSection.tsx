@@ -32,6 +32,7 @@ import {
   SbdChunkProgress,
   useTethysApiContext,
   getScript,
+  createLimiter,
 } from '@mbari/api-client'
 import { useQueryClient, useQueries } from 'react-query'
 import useGlobalModalId from '../lib/useGlobalModalId'
@@ -42,6 +43,7 @@ import {
   rawMissionPathFromEventData,
   normalizeMissionName,
   normalizeMissionPath,
+  scriptIdFromEventField,
 } from '../lib/missionUtils'
 import { toast } from 'react-hot-toast'
 import { useConfirm } from './ConfirmContext'
@@ -350,6 +352,79 @@ export const ScheduleSection: React.FC<ScheduleSectionProps> = ({
     }))
   }, [missionStartedResponse.data])
 
+  // Pre-fetch getScript for every mission path visible in raw events — BEFORE
+  // the enrichment pass — so that missions like profile_station_vt.tl (whose
+  // vehicle-reported ID is "profile_station") can be correlated by their
+  // canonical script ID rather than relying on the _vt regex alone.
+  //
+  // Reading from raw sources (pre-enrichment) breaks the circular dependency
+  // that would exist if this block read from `results` instead.  Both the
+  // normal infinite-scroll path and the deploymentLogsOnly path are covered.
+  const allMissionPaths = useMemo(() => {
+    const paths = new Set<string>()
+    // Both data and text are checked independently — a coalesced `data ?? text`
+    // would miss the case where data is non-null but path-free and the path
+    // lives only in text.
+    const addPathsFromFields = (
+      data: string | undefined,
+      text: string | undefined
+    ) => {
+      const p1 = rawMissionPathFromEventData(data)
+      const p2 = rawMissionPathFromEventData(text)
+      if (p1) paths.add(p1)
+      if (p2) paths.add(p2)
+    }
+    // Normal path: raw events from the infinite-scroll query
+    const pages = allLogsResponse.data?.pages ?? []
+    pages
+      .flat()
+      .forEach((evt: GetEventsResponse) =>
+        addPathsFromFields(evt.data, evt.text)
+      )
+    // deploymentLogsOnly path: command-status items from the deployment query
+    deploymentResponse.data?.commandStatuses?.forEach((cs) =>
+      addPathsFromFields(cs.event.data, cs.event.text)
+    )
+    return Array.from(paths)
+  }, [allLogsResponse.data, deploymentResponse.data])
+
+  // Bound concurrent getScript requests to 3 so opening a Schedule with a
+  // large event history does not fan out hundreds of simultaneous requests
+  // to TethysDash. staleTime: Infinity ensures each path is only fetched once
+  // per session regardless of how many times useQueries re-evaluates.
+  const scriptFetchLimiter = useRef(createLimiter(3))
+
+  const scriptIdQueries = useQueries(
+    allMissionPaths.map((path) => ({
+      // Key matches useScript's shape (['commands', 'script', params]) so the
+      // cache is shared with CommandModal and useMissionData lookups.
+      queryKey: ['commands', 'script', { path }],
+      queryFn: () =>
+        scriptFetchLimiter.current(() =>
+          getScript(
+            { path },
+            {
+              instance: axiosInstance,
+              headers: { Authorization: `Bearer ${token}` },
+            }
+          )
+        ),
+      staleTime: Infinity, // mission definitions don't change mid-deployment
+      enabled: !!axiosInstance && !!path && !!token,
+    }))
+  )
+
+  // path → canonical mission ID
+  // e.g. "Science/profile_station_vt.tl" → "profile_station"
+  const scriptIdByPath = useMemo(() => {
+    const map = new Map<string, string>()
+    allMissionPaths.forEach((path, i) => {
+      const id = scriptIdQueries[i]?.data?.id
+      if (id) map.set(path, id)
+    })
+    return map
+  }, [allMissionPaths, scriptIdQueries])
+
   const missions: CommandStatusItem[] = useMemo(() => {
     let items: CommandStatusItem[]
 
@@ -412,11 +487,22 @@ export const ScheduleSection: React.FC<ScheduleSectionProps> = ({
       return dt.isValid ? dt.toMillis() : undefined
     }
 
+    // Resolve the canonical path for missionKeysMatch comparisons.
+    // Primary: getScript canonical ID (e.g. "profile_station" for profile_station_vt.tl).
+    // Fallback: normalized path with _vt stripped, so the path still matches
+    // vehicle telemetry that omits the suffix before getScript resolves or
+    // when no token is available.
+    const resolveFromEventField = (field: string | undefined): string => {
+      const scriptId = scriptIdFromEventField(field, scriptIdByPath)
+      if (scriptId) return scriptId
+      return missionPathFromEventData(field).replace(/_vt$/i, '')
+    }
+
     const enriched = items.map((item) => {
       if (item.status !== 'TBD') return item
       const missionPath =
-        missionPathFromEventData(item.event.data) ||
-        missionPathFromEventData(item.event.text)
+        resolveFromEventField(item.event.data) ||
+        resolveFromEventField(item.event.text)
       if (!missionPath || item.event.unixTime == null) return item
 
       // Use scheduled time as reference if available, else fall back to send time
@@ -507,8 +593,8 @@ export const ScheduleSection: React.FC<ScheduleSectionProps> = ({
         )
 
       const matchingMissionIndex = enriched.reduce((bestIdx, item, idx) => {
-        const fromDataPath = missionPathFromEventData(item.event.data)
-        const fromTextPath = missionPathFromEventData(item.event.text)
+        const fromDataPath = resolveFromEventField(item.event.data)
+        const fromTextPath = resolveFromEventField(item.event.text)
         if (
           !missionKeysMatch(fromDataPath, currentMissionPath) &&
           !missionKeysMatch(fromTextPath, currentMissionPath)
@@ -567,8 +653,8 @@ export const ScheduleSection: React.FC<ScheduleSectionProps> = ({
           if (i === matchingMissionIndex) continue
           const item = enriched[i]
           if (item.status !== 'running') continue
-          const fromDataPath = missionPathFromEventData(item.event.data)
-          const fromTextPath = missionPathFromEventData(item.event.text)
+          const fromDataPath = resolveFromEventField(item.event.data)
+          const fromTextPath = resolveFromEventField(item.event.text)
           if (
             missionKeysMatch(fromDataPath, currentMissionPath) ||
             missionKeysMatch(fromTextPath, currentMissionPath)
@@ -719,6 +805,7 @@ export const ScheduleSection: React.FC<ScheduleSectionProps> = ({
     missionStartedResponse.data,
     isRecovered,
     cancelledEventIds,
+    scriptIdByPath,
   ])
 
   const scheduledTypes = ['pending', 'running']
@@ -802,50 +889,6 @@ export const ScheduleSection: React.FC<ScheduleSectionProps> = ({
   const staticFilterCellOffset = hasPastSchedule ? 1 : 0
 
   const results = [scheduledCells, historicCells].flat()
-
-  // Pre-fetch mission IDs for all rows without a vehicle-reported missionId.
-  // Includes historic rows so the resolved ID persists if a pending row is
-  // demoted to history before telemetry arrives (e.g. timeout, cancel).
-  // useQueries runs all lookups in parallel and caches aggressively — mission
-  // definitions don't change during a deployment.
-  const pendingScriptPaths = useMemo(() => {
-    const paths = new Set<string>()
-    for (const m of results ?? []) {
-      if (!m.missionId) {
-        const p = rawMissionPathFromEventData(m.event.data ?? m.event.text)
-        if (p) paths.add(p)
-      }
-    }
-    return Array.from(paths)
-  }, [results])
-
-  const scriptIdQueries = useQueries(
-    pendingScriptPaths.map((path) => ({
-      // Key matches useScript's shape (['commands', 'script', params]) so the
-      // cache is shared with CommandModal and useMissionData lookups.
-      queryKey: ['commands', 'script', { path }],
-      queryFn: () =>
-        getScript(
-          { path },
-          {
-            instance: axiosInstance,
-            headers: { Authorization: `Bearer ${token}` },
-          }
-        ),
-      staleTime: Infinity, // mission definitions don't change mid-deployment
-      enabled: !!axiosInstance && !!path && !!token,
-    }))
-  )
-
-  // Build a path → mission ID lookup for use in cellAtIndex.
-  const scriptIdByPath = useMemo(() => {
-    const map = new Map<string, string>()
-    pendingScriptPaths.forEach((path, i) => {
-      const id = scriptIdQueries[i]?.data?.id
-      if (id) map.set(path, id)
-    })
-    return map
-  }, [pendingScriptPaths, scriptIdQueries])
 
   // Show the "Previous Vehicle Directives" separator whenever there are
   // historic items, even if no commands are currently active above it.
@@ -1052,22 +1095,32 @@ export const ScheduleSection: React.FC<ScheduleSectionProps> = ({
       )
     }
 
-    const commandData = mission?.event.data ?? mission?.event.text ?? ''
-    const { name: parsedMissionName, parameters: missionParams } =
-      parseMissionCommand(commandData)
+    // Try data first; if it yields no mission name, fall back to text.
+    // (Same dual-field pattern as the scriptPath lookups below.)
+    const { name: parsedMissionName, parameters: missionParams } = (() => {
+      const fromData = parseMissionCommand(mission?.event.data ?? '')
+      return fromData.name
+        ? fromData
+        : parseMissionCommand(mission?.event.text ?? '')
+    })()
     // Display name priority (|| so empty strings fall through to the next level):
     // 1. missionId — vehicle-reported ID from missionStarted telemetry. Most accurate.
     // 2. scriptId — ID from getScript (GET /commands/script), resolved at queue time before
     //    the vehicle reports back. Handles cases where filename ≠ mission ID (e.g. _vt files).
-    // 3. missionNameFromEventData — filename without path/extension. Fallback when
-    //    the script lookup is still loading or returns no result.
-    // 4. parsedMissionName — last resort for edge cases.
-    const scriptPath = rawMissionPathFromEventData(
-      mission?.event.data ?? mission?.event.text
-    )
+    // 3. normalizeMissionName — strips _vt suffix so the label stays correct while
+    //    the getScript query is still loading or when no token is available.
+    // 4. missionNameFromEventData — filename without path/extension. General fallback.
+    // 5. parsedMissionName — last resort for edge cases.
+    // Check data and text independently — a coalesced `data ?? text` would miss
+    // the case where data is non-null but path-free and the path lives in text.
+    const scriptPathFromData = rawMissionPathFromEventData(mission?.event.data)
+    const scriptPathFromText = rawMissionPathFromEventData(mission?.event.text)
     const missionName =
       mission?.missionId ||
-      (scriptPath ? scriptIdByPath.get(scriptPath) : undefined) ||
+      scriptIdFromEventField(mission?.event.data, scriptIdByPath) ||
+      scriptIdFromEventField(mission?.event.text, scriptIdByPath) ||
+      normalizeMissionName(scriptPathFromData) ||
+      normalizeMissionName(scriptPathFromText) ||
       missionNameFromEventData(mission?.event.data) ||
       missionNameFromEventData(mission?.event.text) ||
       parsedMissionName
