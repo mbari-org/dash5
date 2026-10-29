@@ -50,4 +50,25 @@ describe('alterDeployment', () => {
       expect(error).toBeDefined()
     }
   })
+
+  it('should send deploymentId and date but not note for end events', async () => {
+    const mockPost = jest.fn().mockResolvedValue({ data: mockResponse })
+    const mockInstance = { post: mockPost } as any
+
+    await alterDeployment(
+      {
+        deploymentId: 12345,
+        date: '2024-01-01T00:00:00.000Z',
+        note: 'should be stripped',
+        deploymentType: 'end',
+      },
+      { instance: mockInstance }
+    )
+
+    expect(mockPost).toHaveBeenCalledTimes(1)
+    const [, , config] = mockPost.mock.calls[0]
+    expect(config.params.deploymentId).toBe(12345)
+    expect(config.params.date).toBe('2024-01-01T00:00:00.000Z')
+    expect(config.params.note).toBeUndefined()
+  })
 })
