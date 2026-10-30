@@ -1794,24 +1794,23 @@ test('does not promote a prior-run command as running when the current mission h
   expect(screen.getByText('Unknown')).toBeInTheDocument()
 })
 
-test('satellite-delayed sched-asap command matches the new run even when the old mission ran for more than 30 minutes after the command was sent', async () => {
-  // Regression for enrichment-redirect upper-bound: a sched asap command sent
-  // via satellite while the old mission was running is matched to the completed
-  // old interval during enrichment. The redirect to the new run previously
-  // required the new run to start within SATELLITE_DELAY_WINDOW_MS (30 min) of
-  // the command's send time. If the old mission ran for >30 min after the
-  // command was sent, the redirect silently failed, the command stayed pinned
-  // to the old completed interval, and the window guard in the selection loop
-  // then filtered it out — so the running row fell back to synthetic injection
-  // ('Unknown' operator) instead of showing the correct operator.
+test('satellite-delayed sched-asap command matches the new run when its ACK arrived after the old run ended', async () => {
+  // Regression for PR #889 (Brian Hobson's direction): a sched asap command
+  // sent via satellite while the old mission was running is matched to the
+  // completed old interval during enrichment. The redirect to the new run now
+  // uses the vehicle ACK receipt time as the signal — no time window. If the
+  // ACK (satellite receive at shore) arrived AFTER the old run ended, the
+  // vehicle received the command too late to execute during the old run and
+  // used it to start a new run instead.
   //
-  // The fix removes the upper bound: redirect to the nearest newer run that
-  // started at or after the command's reference time, regardless of how long
-  // the old mission continued.
+  // Without the ACK arriving after the old interval end, the redirect does not
+  // fire and the running row falls back to a synthetic 'Unknown' injection.
+  // This test confirms the ACK-gated redirect picks the correct operator.
   const oldMissionStart = Date.now() - 2 * 60 * 60 * 1000 // started 2h ago
   const commandSentTime = Date.now() - 90 * 60 * 1000 // sent 1.5h ago (inside old run)
-  const newMissionStart = Date.now() - 40 * 60 * 1000 // started 40min ago
-  // new run started 50 min after command was sent — exceeds the old 30-min upper bound
+  const newMissionStart = Date.now() - 40 * 60 * 1000 // started 40min ago — old run ended here
+  // ACK arrived 5 min after the new mission started (i.e. 5 min after old run ended)
+  const ackArrivalTime = Date.now() - 35 * 60 * 1000
 
   server.use(
     rest.get('/events', (_req, res, ctx) =>
@@ -1827,6 +1826,19 @@ test('satellite-delayed sched-asap command matches the new run even when the old
               text: null,
               note: null,
               user: 'correct-operator',
+            },
+            // sbdSend with refId === command eventId causes determineCommandStatus
+            // to return status: 'ack' with commsIsoTime = isoTime below (via === undefined
+            // path in determineCommandStatus). ackedTimeMap then stores
+            // ackArrivalTime for eventId 101 so the enrichment redirect can
+            // verify the ACK came in after the old run ended.
+            {
+              eventType: 'sbdSend',
+              eventId: 501,
+              refId: 101,
+              unixTime: commandSentTime,
+              isoTime: new Date(ackArrivalTime).toISOString(),
+              state: 1,
             },
           ],
         })
@@ -1878,12 +1890,16 @@ test('satellite-delayed sched-asap command matches the new run even when the old
   )
 
   // The command's reference time (T-90min) falls inside the old completed
-  // keepstation interval (T-2h → T-40min). After the enrichment-redirect fix,
-  // the command is redirected to the new run (T-40min), which started 50 min
-  // after the command was sent. The correct operator is shown on the running row.
+  // keepstation interval (T-2h → T-40min). The ACK arrived at T-35min —
+  // after the old run ended at T-40min — so confirmedSatelliteDelayed is
+  // true. The command is redirected to the new run and the correct operator
+  // appears on the running row (not a synthetic 'Unknown').
   await waitFor(() => {
     expect(screen.getByText('correct-operator')).toBeInTheDocument()
   })
+  // Verify the running row itself shows the correct operator, not a synthetic
+  // injection (which would display 'Unknown' when no matching command is found).
+  expect(screen.queryByText('Unknown')).not.toBeInTheDocument()
 })
 
 test('pending row shows mission ID from getScript before vehicle telemetry arrives', async () => {
