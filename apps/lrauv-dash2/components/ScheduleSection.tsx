@@ -503,9 +503,14 @@ export const ScheduleSection: React.FC<ScheduleSectionProps> = ({
             }
             // ACK confirms the command was satellite-delayed but the new
             // missionStarted event has not arrived in the timeline yet.
-            // Leave the row TBD rather than pinning it to the completed old
-            // run — it will redirect correctly on the next missionStarted poll.
-            return { ...item }
+            // Return 'pending' (not TBD) so the TBD→completed promotion pass
+            // below does not stamp this row as completed in history. TBD rows
+            // whose referenceTime predates the current run are promoted to
+            // completed — but this command belongs to the incoming new run,
+            // not the old one. Using 'pending' skips that pass (it only
+            // checks status === 'TBD') and leaves the row in the scheduled
+            // queue until the next missionStarted poll confirms the new run.
+            return { ...item, status: 'pending' as const }
           }
         }
         return {
