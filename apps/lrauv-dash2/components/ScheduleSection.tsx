@@ -441,16 +441,16 @@ export const ScheduleSection: React.FC<ScheduleSectionProps> = ({
         // command may actually be a satellite-delayed transition command —
         // sent while the old mission was running, but received and executed
         // by the vehicle only after the old mission ended (triggering a new
-        // run). If a newer run of the same mission starts within the
-        // satellite delay window (~30 min) after the command was sent,
-        // redirect the match to that new run instead.
+        // run). Redirect to the nearest newer run that started at or after
+        // the command's reference time. No upper-bound window: the vehicle
+        // starts the new run as soon as it receives the command regardless
+        // of how long the old mission continued to run.
         if (inInterval.status === 'completed') {
           const newerRun = candidates
             .filter(
               (c) =>
                 c.startedAt > inInterval.startedAt &&
-                c.startedAt - referenceTime >= 0 &&
-                c.startedAt - referenceTime <= SATELLITE_DELAY_WINDOW_MS
+                c.startedAt - referenceTime >= 0
             )
             .sort((a, b) => a.startedAt - b.startedAt)[0]
           if (newerRun) {
@@ -549,16 +549,17 @@ export const ScheduleSection: React.FC<ScheduleSectionProps> = ({
         // currentMissionEntry.startedAt). This preserves queued-mission support
         // (e.g. a PAM command sent 6+ hours before the mission fires) where the
         // enrichment phase's wider match window correctly sets startedAt before
-        // this reducer runs (#825).
+        // this reducer runs (#825). After the enrichment-redirect fix (no
+        // upper-bound window), a satellite-delayed sched-asap command is also
+        // redirected to the new run here regardless of how long the old mission ran.
         //
         // startedAtMatchesCurrent is shared by both guards below so they stay
         // in sync with the same confirmed-current-run definition.
+        const itemReferenceTime = itemScheduledTime ?? item.event.unixTime ?? 0
         const startedAtMatchesCurrent =
           item.startedAt != null &&
           item.startedAt === currentMissionEntry.startedAt
         if (!startedAtMatchesCurrent) {
-          const itemReferenceTime =
-            itemScheduledTime ?? item.event.unixTime ?? 0
           if (
             currentMissionEntry.startedAt != null &&
             itemReferenceTime <

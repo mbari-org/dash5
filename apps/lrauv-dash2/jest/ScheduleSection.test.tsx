@@ -1794,6 +1794,98 @@ test('does not promote a prior-run command as running when the current mission h
   expect(screen.getByText('Unknown')).toBeInTheDocument()
 })
 
+test('satellite-delayed sched-asap command matches the new run even when the old mission ran for more than 30 minutes after the command was sent', async () => {
+  // Regression for enrichment-redirect upper-bound: a sched asap command sent
+  // via satellite while the old mission was running is matched to the completed
+  // old interval during enrichment. The redirect to the new run previously
+  // required the new run to start within SATELLITE_DELAY_WINDOW_MS (30 min) of
+  // the command's send time. If the old mission ran for >30 min after the
+  // command was sent, the redirect silently failed, the command stayed pinned
+  // to the old completed interval, and the window guard in the selection loop
+  // then filtered it out — so the running row fell back to synthetic injection
+  // ('Unknown' operator) instead of showing the correct operator.
+  //
+  // The fix removes the upper bound: redirect to the nearest newer run that
+  // started at or after the command's reference time, regardless of how long
+  // the old mission continued.
+  const oldMissionStart = Date.now() - 2 * 60 * 60 * 1000 // started 2h ago
+  const commandSentTime = Date.now() - 90 * 60 * 1000 // sent 1.5h ago (inside old run)
+  const newMissionStart = Date.now() - 40 * 60 * 1000 // started 40min ago
+  // new run started 50 min after command was sent — exceeds the old 30-min upper bound
+
+  server.use(
+    rest.get('/events', (_req, res, ctx) =>
+      res(
+        ctx.status(200),
+        ctx.json({
+          result: [
+            {
+              data: 'load Science/keepstation.tl;run',
+              unixTime: commandSentTime,
+              eventId: 101,
+              eventType: 'run',
+              text: null,
+              note: null,
+              user: 'correct-operator',
+            },
+          ],
+        })
+      )
+    ),
+    rest.get('/events/mission-started', (_req, res, ctx) =>
+      res(
+        ctx.status(200),
+        ctx.json({
+          result: [
+            {
+              eventId: 301,
+              eventType: 'missionStarted',
+              vehicleName: 'example',
+              unixTime: newMissionStart,
+              isoTime: new Date(newMissionStart).toISOString(),
+              fix: { latitude: 0, longitude: 0 },
+              state: 1,
+              dataLen: 0,
+              refId: 0,
+              index: 0,
+              component: '',
+              text: 'Started mission keepstation',
+            },
+            {
+              eventId: 201,
+              eventType: 'missionStarted',
+              vehicleName: 'example',
+              unixTime: oldMissionStart,
+              isoTime: new Date(oldMissionStart).toISOString(),
+              fix: { latitude: 0, longitude: 0 },
+              state: 1,
+              dataLen: 0,
+              refId: 0,
+              index: 0,
+              component: '',
+              text: 'Started mission keepstation',
+            },
+          ],
+        })
+      )
+    )
+  )
+
+  render(
+    <MockProviders queryClient={new QueryClient()}>
+      <ScheduleSection {...props} currentDeploymentId={1} />
+    </MockProviders>
+  )
+
+  // The command's reference time (T-90min) falls inside the old completed
+  // keepstation interval (T-2h → T-40min). After the enrichment-redirect fix,
+  // the command is redirected to the new run (T-40min), which started 50 min
+  // after the command was sent. The correct operator is shown on the running row.
+  await waitFor(() => {
+    expect(screen.getByText('correct-operator')).toBeInTheDocument()
+  })
+})
+
 test('pending row shows mission ID from getScript before vehicle telemetry arrives', async () => {
   // profile_station_vt.tl declares mission ID "profile_station". The pending
   // row should display "profile_station" immediately — not the filename-derived
