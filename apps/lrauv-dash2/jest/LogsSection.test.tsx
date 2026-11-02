@@ -1,6 +1,6 @@
 import '@testing-library/jest-dom'
 import React from 'react'
-import { fireEvent, render, screen, waitFor } from '@testing-library/react'
+import { act, fireEvent, render, screen, waitFor } from '@testing-library/react'
 import LogsSection from '../components/LogsSection'
 import { QueryClient } from 'react-query'
 import { rest } from 'msw'
@@ -269,4 +269,50 @@ test('timeout notes for same event ID outside the time window are NOT grouped', 
     // No group badge should appear
     expect(screen.queryByText(/timeout notes/i)).not.toBeInTheDocument()
   })
+})
+
+// ── Loading-state regression tests (#887) ─────────────────────────────────────
+
+test('Logs overlay spinner appears on empty initial load', async () => {
+  // The server never responds — isLoading stays true and no rows exist.
+  // The AbsoluteOverlay (animate-spin) must be visible.
+  server.use(
+    rest.get('/events', (_req, res, ctx) => res(ctx.delay('infinite')))
+  )
+  render(
+    <MockProviders queryClient={new QueryClient()}>
+      <LogsSection
+        vehicleName="triton"
+        from={0}
+        deploymentLogsOnly={false}
+        setDeploymentLogsOnly={() => {}}
+      />
+    </MockProviders>
+  )
+  // The spinner is the animate-spin element inside AbsoluteOverlay
+  await waitFor(() => {
+    expect(document.querySelector('.animate-spin')).toBeInTheDocument()
+  })
+})
+
+test('Logs overlay spinner does not appear during a background refetch with visible rows', async () => {
+  // First load: rows appear, isLoading → false.
+  // Second load (triggered by clicking reload): isFetching → true while rows
+  // are still visible. The overlay must not cover those rows.
+  renderLogs([makeTimeoutNote(1, 1)])
+  await waitFor(() => {
+    expect(screen.getByText(/Note/i)).toBeInTheDocument()
+  })
+
+  // Hold the next request pending indefinitely so isFetching stays true.
+  server.use(
+    rest.get('/events', (_req, res, ctx) => res(ctx.delay('infinite')))
+  )
+  act(() => {
+    fireEvent.click(screen.getByRole('button', { name: /reload/i }))
+  })
+
+  // Rows remain visible and no overlay spinner appears while the refetch is in flight.
+  expect(screen.getByText(/Note/i)).toBeInTheDocument()
+  expect(document.querySelector('.animate-spin')).not.toBeInTheDocument()
 })
