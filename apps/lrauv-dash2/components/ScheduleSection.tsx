@@ -249,7 +249,7 @@ export const ScheduleSection: React.FC<ScheduleSectionProps> = ({
 
   // eventId → ACK receipt time (ms) — the isoTime of the satellite receive
   // event (or cell send for direct comms) at which the vehicle confirmed it
-  // received the command. This is the vehicle signal Brian Hobson requested:
+  // received the command. This is the vehicle signal Brian Kieft requested:
   // rather than relying on any time window to decide if a command was
   // satellite-delayed, we look at WHEN the vehicle actually acknowledged it.
   // If the ACK arrived after a completed interval ended, the command was
@@ -258,7 +258,7 @@ export const ScheduleSection: React.FC<ScheduleSectionProps> = ({
   // still active stay associated with that completed run.
   //
   // "Let's remove the 30 minute timeout and not rely on timeouts at all for
-  //  a mission that might be running." — Brian Hobson, PR #889
+  //  a mission that might be running." — Brian Kieft, PR #889
   const ackedTimeMap = useMemo(() => {
     const map = new Map<number, number>()
     commsEventsResponse.data.forEach((e) => {
@@ -465,7 +465,7 @@ export const ScheduleSection: React.FC<ScheduleSectionProps> = ({
         // the old mission was running, but received and executed by the
         // vehicle only after the old mission ended (triggering a new run).
         //
-        // Per Brian Hobson's direction (PR #889): do NOT use a time window
+        // Per Brian Kieft's direction (PR #889): do NOT use a time window
         // to decide if the command is satellite-delayed. Instead, use the
         // vehicle ACK as the signal. If the ACK (the satellite receive event
         // at shore) arrived AFTER the old run ended, the vehicle received the
@@ -473,11 +473,15 @@ export const ScheduleSection: React.FC<ScheduleSectionProps> = ({
         // If the ACK arrived while the old run was still active, the command
         // was executed then and belongs to the completed interval.
         //
-        // If there is no ACK in the current query window, we cannot confirm
-        // direction and leave the command with the completed interval.
+        // If the ACK is not in the current query window yet, check whether the
+        // comms send is still in flight. If it is, the command may still be
+        // satellite-delayed — hold it as pending so the next ACK poll can
+        // evaluate confirmedSatelliteDelayed and redirect correctly. Commands
+        // with no comms entry at all executed via direct comms or are from
+        // outside the deployment window and fall through to completed normally.
         //
         // "Let's remove the 30 minute timeout and not rely on timeouts at all
-        //  for a mission that might be running." — Brian Hobson, PR #889
+        //  for a mission that might be running." — Brian Kieft, PR #889
         if (inInterval.status === 'completed') {
           const ackTime = ackedTimeMap.get(item.event.eventId)
           const confirmedSatelliteDelayed =
@@ -510,6 +514,17 @@ export const ScheduleSection: React.FC<ScheduleSectionProps> = ({
             // not the old one. Using 'pending' skips that pass (it only
             // checks status === 'TBD') and leaves the row in the scheduled
             // queue until the next missionStarted poll confirms the new run.
+            return { ...item, status: 'pending' as const }
+          }
+          // No ACK yet — check whether a satellite send is in flight.
+          // 'sent' means sbdSend was dispatched but sbdReceive has not arrived;
+          // the vehicle may still be receiving the command via satellite.
+          // 'queued' means no sbdSend at all (cell/direct delivery, or not yet
+          // dispatched) — those commands are not satellite in-flight and should
+          // not be held pending. Commands with no comms entry ran during the old
+          // mission or are outside the deployment window; leave those completed.
+          const commsStatus = commsLookup.get(item.event.eventId)
+          if (commsStatus === 'sent') {
             return { ...item, status: 'pending' as const }
           }
         }
@@ -600,7 +615,7 @@ export const ScheduleSection: React.FC<ScheduleSectionProps> = ({
         // queued-mission support (e.g. a PAM command sent 6+ hours before the
         // mission fires) where the enrichment phase's wider match window
         // correctly sets startedAt before this reducer runs (#825). After the
-        // ACK-gated enrichment redirect (PR #889, Brian Hobson's direction), a
+        // ACK-gated enrichment redirect (PR #889, Brian Kieft's direction), a
         // satellite-delayed sched-asap command whose ACK arrived after the old
         // run ended is also redirected here, confirming it belongs to the new run.
         //
@@ -815,6 +830,7 @@ export const ScheduleSection: React.FC<ScheduleSectionProps> = ({
     isRecovered,
     cancelledEventIds,
     ackedTimeMap,
+    commsLookup,
   ])
 
   const scheduledTypes = ['pending', 'running']
