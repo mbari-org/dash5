@@ -154,3 +154,100 @@ test('Comms overlay spinner does not appear during a background refetch with vis
   expect(screen.getByText(/restart app/i)).toBeInTheDocument()
   expect(document.querySelector('.animate-spin')).not.toBeInTheDocument()
 })
+
+test('Load more button shows Loading during manual pagination without an overlay spinner', async () => {
+  // Give the virtualizer a real height so tanstack-virtual renders all 11 items
+  // (10 command rows + the Load more button at index 10).
+  // useVirtualizer drives layout through ResizeObserver — override it to fire
+  // immediately with a tall rect so the virtual window covers index 10.
+  const OriginalResizeObserver = global.ResizeObserver
+  global.ResizeObserver = class {
+    private cb: ResizeObserverCallback
+    constructor(cb: ResizeObserverCallback) {
+      this.cb = cb
+    }
+    observe(el: Element) {
+      this.cb(
+        [
+          {
+            contentRect: { width: 300, height: 1200 } as DOMRectReadOnly,
+            target: el,
+          },
+        ],
+        this as unknown as ResizeObserver
+      )
+    }
+    unobserve() {}
+    disconnect() {}
+  }
+
+  const baseTime = Date.now() - 60_000
+  // 10 command rows — fills minCommandEvents (10) so the hook does not
+  // auto-fetch another page. 490 note events pad the page to 500 so
+  // hasNextPage becomes true and the Load more button renders.
+  const firstPageEvents = [
+    ...Array.from({ length: 10 }, (_, i) => ({
+      eventId: 58000 + i,
+      vehicleName: 'makai',
+      unixTime: baseTime - i * 1000,
+      isoTime: new Date(baseTime - i * 1000).toISOString(),
+      eventType: 'command',
+      user: 'test-operator',
+      data: `paginate-cmd-${i}`,
+      text: `paginate-cmd-${i}`,
+      note: null,
+    })),
+    ...Array.from({ length: 490 }, (_, i) => ({
+      eventId: 59000 + i,
+      vehicleName: 'makai',
+      unixTime: baseTime - (i + 10) * 1000,
+      isoTime: new Date(baseTime - (i + 10) * 1000).toISOString(),
+      eventType: 'note',
+      user: 'system',
+      note: `background note ${i}`,
+    })),
+  ]
+
+  server.use(
+    rest.get('/events', (req, res, ctx) => {
+      if (req.url.searchParams.get('noteMatches') === 'Timeout while waiting') {
+        return res(ctx.status(200), ctx.json({ result: [] }))
+      }
+      return res(ctx.status(200), ctx.json({ result: firstPageEvents }))
+    })
+  )
+  render(
+    <MockProviders queryClient={new QueryClient()}>
+      <CommsSection vehicleName="makai" from={0} />
+    </MockProviders>
+  )
+
+  // Wait for initial rows and the Load more button to appear.
+  await waitFor(
+    () => {
+      expect(
+        screen.getByRole('button', { name: /Load more/i })
+      ).toBeInTheDocument()
+    },
+    { timeout: 5000 }
+  )
+
+  // Hold all subsequent requests so isFetchingMore stays true after the click.
+  server.use(
+    rest.get('/events', (_req, res, ctx) => res(ctx.delay('infinite')))
+  )
+  act(() => {
+    fireEvent.click(screen.getByRole('button', { name: /Load more/i }))
+  })
+
+  // Button transitions to "Loading…" (isFetchingMore=true) and no overlay
+  // spinner covers the existing rows.
+  await waitFor(() => {
+    expect(
+      screen.getByRole('button', { name: /Load more/i })
+    ).toHaveTextContent('Loading…')
+  })
+  expect(document.querySelector('.animate-spin')).not.toBeInTheDocument()
+
+  global.ResizeObserver = OriginalResizeObserver
+})

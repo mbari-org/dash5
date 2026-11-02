@@ -366,6 +366,7 @@ const LogsSection: React.FC<LogsSectionProps> = ({
     hasSelection && !listLoading && dataCount === 0
 
   const handleLoadMore = () => {
+    if (isFetching || isFetchingNextPage) return
     fetchNextPage()
   }
 
@@ -383,6 +384,7 @@ const LogsSection: React.FC<LogsSectionProps> = ({
         <LoadMoreButton
           onClick={handleLoadMore}
           isLoading={isFetchingNextPage}
+          disabled={!isFetchingNextPage && isFetching}
           label="Load more logs"
         />
       )
