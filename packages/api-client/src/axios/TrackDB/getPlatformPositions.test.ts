@@ -3,6 +3,7 @@ import { setupServer } from 'msw/node'
 import {
   getPlatformPositions,
   GetPlatformPositionsParams,
+  TRACKDB_POSITIONS_TIMEOUT_MS,
 } from './getPlatformPositions'
 
 const mockResponse = {
@@ -87,7 +88,27 @@ describe('getPlatformPositions', () => {
     expect(capturedParams.get('endDate')).toBeNull()
   })
 
+  it('should pass a 15-second timeout on the request (issue #837)', async () => {
+    // Pass a mock instance so we can assert the exact timeout value rather than
+    // relying on a slow MSW delay that would only prove "> 5 s".
+    const mockInstance = {
+      get: jest.fn().mockResolvedValue({ data: mockResponse }),
+    } as any
+
+    const params: GetPlatformPositionsParams = {
+      platformId: '54065b5560d0e168c88d4012',
+    }
+
+    await getPlatformPositions(params, { instance: mockInstance })
+
+    expect(mockInstance.get).toHaveBeenCalledWith(
+      expect.any(String),
+      expect.objectContaining({ timeout: TRACKDB_POSITIONS_TIMEOUT_MS })
+    )
+  })
+
   it('should throw when unsuccessful', async () => {
+    expect.assertions(1)
     server.use(
       rest.get('/trackdb/platforms/:platformId/positions', (_req, res, ctx) => {
         return res.once(ctx.status(500))
@@ -98,10 +119,6 @@ describe('getPlatformPositions', () => {
       platformId: '54065b5560d0e168c88d4012',
     }
 
-    try {
-      await getPlatformPositions(params)
-    } catch (error) {
-      expect(error).toBeDefined()
-    }
+    await expect(getPlatformPositions(params)).rejects.toThrow()
   })
 })
