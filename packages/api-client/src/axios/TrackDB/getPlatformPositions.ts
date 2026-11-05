@@ -20,6 +20,11 @@ export interface GetPlatformPositionsResponse {
   positions: PlatformPosition[]
 }
 
+// Matches Dash4's Axios timeout (src/boot/axios.js). AIS platform position
+// queries (e.g. D_PACKARD, ShanaRae) can be slow; the old 5-s default caused
+// them to cancel, making assets temporarily disappear from the map (#837).
+export const TRACKDB_POSITIONS_TIMEOUT_MS = 15000
+
 export const getPlatformPositions = async (
   params: GetPlatformPositionsParams,
   {
@@ -46,10 +51,6 @@ export const getPlatformPositions = async (
     queryParams.endDate = params.endDate
   }
 
-  // Matches Dash4's Axios timeout (src/boot/axios.js). AIS platform position
-  // queries (e.g. D_PACKARD, ShanaRae) can be slow; the old 5-s default caused
-  // them to cancel, making assets temporarily disappear from the map (#837).
-  const TRACKDB_POSITIONS_TIMEOUT_MS = 15000
   const response = await instance.get(url, {
     ...config,
     params: queryParams,

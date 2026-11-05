@@ -3,6 +3,7 @@ import { setupServer } from 'msw/node'
 import {
   getPlatformPositions,
   GetPlatformPositionsParams,
+  TRACKDB_POSITIONS_TIMEOUT_MS,
 } from './getPlatformPositions'
 
 const mockResponse = {
@@ -102,7 +103,7 @@ describe('getPlatformPositions', () => {
 
     expect(mockInstance.get).toHaveBeenCalledWith(
       expect.any(String),
-      expect.objectContaining({ timeout: 15000 })
+      expect.objectContaining({ timeout: TRACKDB_POSITIONS_TIMEOUT_MS })
     )
   })
 
