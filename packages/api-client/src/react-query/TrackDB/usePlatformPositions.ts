@@ -28,7 +28,11 @@ export const usePlatformPositions = (
       })
     },
     {
-      staleTime: 5 * 60 * 1000,
+      // 1-minute staleTime matches Dash4's position refresh cadence and aligns
+      // with PlatformPath's 1-minute useTick interval. The old 5-minute value
+      // stacked with the 5-minute tick to leave positions up to ~10 min stale
+      // (#857).
+      staleTime: 60 * 1000,
       ...options,
       // Don't retry on timeout — getPlatformPositions uses a 15-s timeout to
       // match Dash4 (#837). Default React Query retries (3×) would mean up to
