@@ -3,6 +3,11 @@ import { getPlatformPositions, GetPlatformPositionsParams } from '../../axios'
 import { useTethysApiContext } from '../TethysApiProvider'
 import { SupportedQueryOptions } from '../types'
 
+// 1-minute cadence matches Dash4's position refresh rate. Exported so
+// PlatformPath can use the same value as its useTick interval, keeping
+// the tick cadence and staleTime in sync (#857).
+export const TRACKDB_POSITION_REFRESH_MS = 60_000
+
 export const usePlatformPositions = (
   params: GetPlatformPositionsParams,
   options?: SupportedQueryOptions
@@ -28,11 +33,7 @@ export const usePlatformPositions = (
       })
     },
     {
-      // 1-minute staleTime matches Dash4's position refresh cadence and aligns
-      // with PlatformPath's 1-minute useTick interval. The old 5-minute value
-      // stacked with the 5-minute tick to leave positions up to ~10 min stale
-      // (#857).
-      staleTime: 60 * 1000,
+      staleTime: TRACKDB_POSITION_REFRESH_MS,
       ...options,
     }
   )

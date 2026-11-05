@@ -1,7 +1,10 @@
 import React, { useMemo, useState, useEffect, useCallback } from 'react'
 import { Marker, Polyline, Tooltip, CircleMarker } from 'react-leaflet'
 import L from 'leaflet'
-import { usePlatformPositions } from '@mbari/api-client'
+import {
+  usePlatformPositions,
+  TRACKDB_POSITION_REFRESH_MS,
+} from '@mbari/api-client'
 import { createLogger } from '@mbari/utils'
 import { useTick } from '../lib/useTick'
 import { PLATFORM_PANE } from '../lib/constants'
@@ -38,10 +41,7 @@ export const PlatformPath: React.FC<PlatformPathProps> = ({
   startDate,
   endDate,
   limitPositions = 20,
-  // 1-minute default matches Dash4's position refresh cadence. The old 5-minute
-  // default stacked with a 5-minute staleTime to leave positions up to ~10
-  // minutes behind real time (#857).
-  refreshIntervalMs = 60_000,
+  refreshIntervalMs = TRACKDB_POSITION_REFRESH_MS,
 }) => {
   const [hovered, setHovered] = useState(false)
   const [currentPosHovered, setCurrentPosHovered] = useState(false)
@@ -141,7 +141,11 @@ export const PlatformPath: React.FC<PlatformPathProps> = ({
     })
   }, [iconUrl, iconFailed, displayName, handleIconError])
 
-  if (isLoading) {
+  // Only hide on the very first load (no data yet). Background refreshes — which
+  // happen on every useTick interval — should keep the existing track visible
+  // rather than flickering the platform off the map while the new fetch runs
+  // (#857: 1-minute ticks would otherwise cause a blink every minute).
+  if (!positionData && isLoading) {
     return null
   }
 
