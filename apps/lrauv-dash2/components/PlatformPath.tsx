@@ -38,7 +38,10 @@ export const PlatformPath: React.FC<PlatformPathProps> = ({
   startDate,
   endDate,
   limitPositions = 20,
-  refreshIntervalMs = 5 * 60_000,
+  // 1-minute default matches Dash4's position refresh cadence. The old 5-minute
+  // default stacked with a 5-minute staleTime to leave positions up to ~10
+  // minutes behind real time (#857).
+  refreshIntervalMs = 60_000,
 }) => {
   const [hovered, setHovered] = useState(false)
   const [currentPosHovered, setCurrentPosHovered] = useState(false)
