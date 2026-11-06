@@ -1702,6 +1702,275 @@ test('parses legacy sched YYYYMMDD}T timestamp for backwards compatibility', asy
   })
 })
 
+test('does not promote a prior-run command as running when the current mission has no matching command in loaded events', async () => {
+  // Regression for #881: incorrect matching logic in Schedule row.
+  //
+  // When a mission (e.g. sci2_i2map_deep) has been run many times, older
+  // missionStarted events fall off the 50-entry useMissionStartedEvent window.
+  // The orphaned prior-run command events remain TBD at the time
+  // matchingMissionIndex runs (the TBD→completed promotion is AFTER it), so
+  // the most-recently-sent orphan could displace the current run's command —
+  // or be promoted as running when no current-run command exists in the loaded
+  // events — showing the wrong Operator, Event ID, and payload in the modal.
+  //
+  // The fix adds a reference-time window guard: only commands sent within
+  // SATELLITE_DELAY_WINDOW_MS (30 min) before the current mission started are
+  // eligible candidates. Prior-run commands are filtered out and the running
+  // row falls back to synthetic injection, which at least shows correct timing.
+  const currentMissionStart = Date.now() - 60 * 60 * 1000 // started 1 hour ago
+
+  server.use(
+    rest.get('/events', (_req, res, ctx) =>
+      res(
+        ctx.status(200),
+        ctx.json({
+          result: [
+            // Two prior-run commands whose missionStarted events are outside
+            // the 50-entry timeline window (not in missionStartedResponse).
+            // Both are TBD after the first enrichment pass.
+            {
+              data: 'load Science/sci2_i2map_deep.tl;run',
+              unixTime: Date.now() - 2 * 60 * 60 * 1000, // sent 2h ago
+              eventId: 101,
+              eventType: 'run',
+              text: null,
+              note: null,
+              user: 'old-operator',
+            },
+            {
+              data: 'load Science/sci2_i2map_deep.tl;run',
+              unixTime: Date.now() - 3 * 60 * 60 * 1000, // sent 3h ago
+              eventId: 102,
+              eventType: 'run',
+              text: null,
+              note: null,
+              user: 'old-operator',
+            },
+          ],
+        })
+      )
+    ),
+    rest.get('/events/mission-started', (_req, res, ctx) =>
+      res(
+        ctx.status(200),
+        ctx.json({
+          result: [
+            {
+              eventId: 201,
+              eventType: 'missionStarted',
+              vehicleName: 'example',
+              unixTime: currentMissionStart,
+              isoTime: new Date(currentMissionStart).toISOString(),
+              fix: { latitude: 0, longitude: 0 },
+              state: 1,
+              dataLen: 0,
+              refId: 0,
+              index: 0,
+              component: '',
+              text: 'Started mission sci2_i2map_deep',
+            },
+          ],
+        })
+      )
+    )
+  )
+
+  render(
+    <MockProviders queryClient={new QueryClient()}>
+      <ScheduleSection {...props} currentDeploymentId={1} />
+    </MockProviders>
+  )
+
+  // Running row must be present (synthetic injection takes over).
+  await waitFor(() => {
+    expect(screen.getByText(/Ended:\s*TBD/i)).toBeInTheDocument()
+  })
+
+  // With the fix, matchingMissionIndex returns -1 for the prior-run commands
+  // (they are outside the satellite delay window) → synthetic injection creates
+  // the running row with no user → name falls back to 'Unknown'.
+  // With the bug, the prior-run command is promoted as running and
+  // its user 'old-operator' appears as the running row's operator instead.
+  expect(screen.getByText('Unknown')).toBeInTheDocument()
+})
+
+// Shared fixture for the two ACK-gated redirect tests below. The /events
+// handler is param-aware: only the comms query (eventTypes includes sbdSend)
+// receives the sat delivery chain. allLogsResponse only gets the command event,
+// which avoids extra 'Unknown' history rows from sbdSend/sbdReceipt/sbdReceive
+// being mapped into the missions list.
+//
+// Satellite delivery chain used by both tests:
+//   command (eventId 101, note: 'via: sat,')
+//     → sbdSend  (eventId 501, refId 101, mtmsn 2001)
+//     → sbdReceipt (name '501', mtmsn 2001)          ← links send to receive
+//     → sbdReceive (mtmsn 2001, isoTime = ackTime)   ← vehicle ACK at shore
+//
+// determineCommandStatus follows this chain and returns:
+//   status: 'ack', commsIsoTime: sbdReceive.isoTime
+// so ackedTimeMap.get(101) === ackTime (ms).
+const makeAckChainHandler = (ackTime: number) =>
+  rest.get('/events', (req, res, ctx) => {
+    const isCommsQuery =
+      req.url.searchParams.get('eventTypes')?.includes('sbdSend') ?? false
+    return res(
+      ctx.status(200),
+      ctx.json({
+        result: [
+          {
+            data: 'load Science/keepstation.tl;run',
+            unixTime: Date.now() - 90 * 60 * 1000,
+            eventId: 101,
+            eventType: 'run',
+            text: null,
+            // 'via: sat,' triggers the sat-delivery path in determineCommandStatus
+            // instead of the via === undefined cell-comms shortcut.
+            note: 'via: sat,',
+            user: 'correct-operator',
+          },
+          ...(isCommsQuery
+            ? [
+                {
+                  eventType: 'sbdSend',
+                  eventId: 501,
+                  refId: 101,
+                  unixTime: Date.now() - 90 * 60 * 1000,
+                  isoTime: new Date(Date.now() - 90 * 60 * 1000).toISOString(),
+                  state: 1,
+                  mtmsn: 2001,
+                },
+                {
+                  eventType: 'sbdReceipt',
+                  eventId: 502,
+                  // name digits are matched against sbdSend.eventId (501)
+                  name: '501',
+                  mtmsn: 2001,
+                },
+                {
+                  eventType: 'sbdReceive',
+                  eventId: 503,
+                  mtmsn: 2001,
+                  momsn: 3001,
+                  isoTime: new Date(ackTime).toISOString(),
+                },
+              ]
+            : []),
+        ],
+      })
+    )
+  })
+
+const makeKeeperMissionStartedHandler = (
+  oldMissionStart: number,
+  newMissionStart: number
+) =>
+  rest.get('/events/mission-started', (_req, res, ctx) =>
+    res(
+      ctx.status(200),
+      ctx.json({
+        result: [
+          {
+            eventId: 301,
+            eventType: 'missionStarted',
+            vehicleName: 'example',
+            unixTime: newMissionStart,
+            isoTime: new Date(newMissionStart).toISOString(),
+            fix: { latitude: 0, longitude: 0 },
+            state: 1,
+            dataLen: 0,
+            refId: 0,
+            index: 0,
+            component: '',
+            text: 'Started mission keepstation',
+          },
+          {
+            eventId: 201,
+            eventType: 'missionStarted',
+            vehicleName: 'example',
+            unixTime: oldMissionStart,
+            isoTime: new Date(oldMissionStart).toISOString(),
+            fix: { latitude: 0, longitude: 0 },
+            state: 1,
+            dataLen: 0,
+            refId: 0,
+            index: 0,
+            component: '',
+            text: 'Started mission keepstation',
+          },
+        ],
+      })
+    )
+  )
+
+test('satellite-delayed sched-asap command matches the new run when its ACK arrived after the old run ended', async () => {
+  // Regression for PR #889 (Brian Kieft's direction): the enrichment redirect
+  // is now gated on the vehicle ACK receipt time. If the ACK arrived at shore
+  // AFTER the old run ended, the command belongs to the new run.
+  //
+  // The ACK path exercised here is the full satellite delivery chain:
+  // sbdSend → sbdReceipt → sbdReceive. determineCommandStatus returns
+  // status: 'ack' with commsIsoTime = sbdReceive.isoTime, which ackedTimeMap
+  // stores as the vehicle receipt timestamp.
+  const oldMissionStart = Date.now() - 2 * 60 * 60 * 1000 // started 2h ago
+  const newMissionStart = Date.now() - 40 * 60 * 1000 // started 40min ago — old run ended here
+  // ACK arrived 5 min after the new mission started (after old run ended)
+  const ackArrivalTime = Date.now() - 35 * 60 * 1000
+
+  server.use(
+    makeAckChainHandler(ackArrivalTime),
+    makeKeeperMissionStartedHandler(oldMissionStart, newMissionStart)
+  )
+
+  render(
+    <MockProviders queryClient={new QueryClient()}>
+      <ScheduleSection {...props} currentDeploymentId={1} />
+    </MockProviders>
+  )
+
+  // ackArrivalTime (T-35min) >= inInterval.endedAt (newMissionStart, T-40min)
+  // → confirmedSatelliteDelayed = true → redirect to new run → correct operator.
+  await waitFor(() => {
+    expect(screen.getByText('correct-operator')).toBeInTheDocument()
+  })
+  // The running row must show the correct operator, not a synthetic injection
+  // ('Unknown'). Without the ACK gate this test would still pass because the
+  // unbounded redirect fires unconditionally — the negative test below proves
+  // the gate is necessary.
+  expect(screen.queryByText('Unknown')).not.toBeInTheDocument()
+})
+
+test('satellite-delayed sched-asap redirect does not fire when ACK arrived before the old run ended', async () => {
+  // Negative case for the ACK gate: if the ACK arrived while the old run was
+  // still active, the command was executed during that run — do not redirect
+  // it to the new run. Without this gate, the unbounded redirect would
+  // incorrectly attribute any command inside the completed interval to the
+  // next run.
+  const oldMissionStart = Date.now() - 2 * 60 * 60 * 1000
+  const newMissionStart = Date.now() - 40 * 60 * 1000 // old run ended here
+  // ACK arrived 5 min BEFORE the old run ended — vehicle received the command
+  // while the old mission was still active.
+  const ackArrivalTime = Date.now() - 45 * 60 * 1000
+
+  server.use(
+    makeAckChainHandler(ackArrivalTime),
+    makeKeeperMissionStartedHandler(oldMissionStart, newMissionStart)
+  )
+
+  render(
+    <MockProviders queryClient={new QueryClient()}>
+      <ScheduleSection {...props} currentDeploymentId={1} />
+    </MockProviders>
+  )
+
+  // ackArrivalTime (T-45min) < inInterval.endedAt (newMissionStart, T-40min)
+  // → confirmedSatelliteDelayed = false → no redirect → command stays with
+  // the completed old interval → selection loop skips it → synthetic injection.
+  await waitFor(() => {
+    expect(screen.getByText(/Ended:\s*TBD/i)).toBeInTheDocument()
+  })
+  expect(screen.getByText('Unknown')).toBeInTheDocument()
+})
+
 test('pending row shows mission ID from getScript before vehicle telemetry arrives', async () => {
   // profile_station_vt.tl declares mission ID "profile_station". The pending
   // row should display "profile_station" immediately — not the filename-derived
