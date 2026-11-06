@@ -32,6 +32,7 @@ import {
   SbdChunkProgress,
   useTethysApiContext,
   getScript,
+  useMissionList,
 } from '@mbari/api-client'
 import { useQueryClient, useQueries } from 'react-query'
 import useGlobalModalId from '../lib/useGlobalModalId'
@@ -192,6 +193,11 @@ export const ScheduleSection: React.FC<ScheduleSectionProps> = ({
   const confirm = useConfirm()
   const { setGlobalModalId } = useGlobalModalId()
   const { axiosInstance, token } = useTethysApiContext()
+  // gitRef scopes getScript lookups to the deployment's script tree so the
+  // resolved mission ID matches what the vehicle actually runs (consistent
+  // with CommandModal and useMissionData which both pass gitRef).
+  const { data: missionListData } = useMissionList({ reload: 'y' })
+  const gitRef = missionListData?.gitRef ?? 'master'
   const [scheduleFilter, setScheduleFilter] = useState<string>('')
   const [scheduleSearch, setScheduleSearch] = useState<string>('')
   const [deploymentLogsOnly, setDeploymentLogsOnly] = useState(false)
@@ -738,6 +744,25 @@ export const ScheduleSection: React.FC<ScheduleSectionProps> = ({
                 startedAt: currentMissionEntry.startedAt,
                 missionId: currentMissionEntry.name,
               }
+              // Demote any other rows for the same mission still marked running
+              // (same guard as the matchingMissionIndex path above).
+              for (let i = 0; i < enriched.length; i++) {
+                if (i === sourceEventIdx) continue
+                const item = enriched[i]
+                if (item.status !== 'running') continue
+                const fromDataPath = missionPathFromEventData(item.event.data)
+                const fromTextPath = missionPathFromEventData(item.event.text)
+                if (
+                  missionKeysMatch(fromDataPath, currentMissionPath) ||
+                  missionKeysMatch(fromTextPath, currentMissionPath)
+                ) {
+                  enriched[i] = {
+                    ...item,
+                    status: 'completed',
+                    endedAt: currentMissionEntry.startedAt,
+                  }
+                }
+              }
             } else {
               // No matching command event — inject a synthetic running row.
               enriched.unshift({
@@ -956,10 +981,10 @@ export const ScheduleSection: React.FC<ScheduleSectionProps> = ({
     pendingScriptPaths.map((path) => ({
       // Key matches useScript's shape (['commands', 'script', params]) so the
       // cache is shared with CommandModal and useMissionData lookups.
-      queryKey: ['commands', 'script', { path }],
+      queryKey: ['commands', 'script', { path, gitRef }],
       queryFn: () =>
         getScript(
-          { path },
+          { path, gitRef },
           {
             instance: axiosInstance,
             headers: { Authorization: `Bearer ${token}` },
