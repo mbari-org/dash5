@@ -703,35 +703,56 @@ export const ScheduleSection: React.FC<ScheduleSectionProps> = ({
             // mission ID in parameter names (e.g. "set follow_that_car.Timeout").
             // That event carries the real file path needed by "Use for new mission".
             // Fall back to a synthetic load string only when no such event exists.
-            const missionParamPrefix = `${currentMissionEntry.name}.`
-            const missionParamColon = `${currentMissionEntry.name}:`
-            const sourceEvent = enriched.find((item) => {
-              const d = item.event.data ?? item.event.text ?? ''
+            // Check for "set <missionName>." or "set <missionName>:" in the
+            // command data — present when the run command also sets a mission
+            // parameter (e.g. "set follow_that_car.MissionTimeout 3 h"). This
+            // is more precise than checking for "<missionName>." alone, which
+            // would false-match the filename ("keepstation.tl" contains
+            // "keepstation.").
+            const setDot = `set ${currentMissionEntry.name}.`
+            const setColon = `set ${currentMissionEntry.name}:`
+            const sourceEventIdx = enriched.findIndex((item) => {
+              const d = (item.event.data ?? item.event.text ?? '').toLowerCase()
               // Only accept candidates that carry an actual mission file path
               // (load <file>;run) — a standalone set <missionId>.* param update
               // would match the prefix check but contains no loadable path and
               // would produce an empty "Use for new mission" pre-fill.
               return (
                 isMissionCommand(item.event.data, item.event.text) &&
-                (d.includes(missionParamPrefix) ||
-                  d.includes(missionParamColon))
+                (d.includes(setDot.toLowerCase()) ||
+                  d.includes(setColon.toLowerCase()))
               )
             })
-            enriched.unshift({
-              event: {
-                data:
-                  sourceEvent?.event.data ??
-                  sourceEvent?.event.text ??
-                  `load ${currentMissionEntry.name};run`,
-                unixTime: currentRawEvent.unixTime,
-                eventId: currentRawEvent.eventId,
-                eventType: 'run',
-                text: currentRawEvent.text,
-              },
-              status: 'running',
-              endedAt: undefined,
-              missionId: currentMissionEntry.name,
-            })
+            if (sourceEventIdx >= 0) {
+              // The original command event references this mission by its
+              // vehicle-reported ID in a parameter name (e.g.
+              // "set follow_that_car.MissionTimeout 3 h"). Promote it in-place
+              // to the running row so no duplicate history entry appears. This
+              // covers the case where the .tl filename differs from the
+              // vehicle-reported mission name (e.g. tail_acoustic_contact.tl
+              // declares "mission follow_that_car").
+              enriched[sourceEventIdx] = {
+                ...enriched[sourceEventIdx],
+                status: 'running',
+                endedAt: undefined,
+                startedAt: currentMissionEntry.startedAt,
+                missionId: currentMissionEntry.name,
+              }
+            } else {
+              // No matching command event — inject a synthetic running row.
+              enriched.unshift({
+                event: {
+                  data: `load ${currentMissionEntry.name};run`,
+                  unixTime: currentRawEvent.unixTime,
+                  eventId: currentRawEvent.eventId,
+                  eventType: 'run',
+                  text: currentRawEvent.text,
+                },
+                status: 'running',
+                endedAt: undefined,
+                missionId: currentMissionEntry.name,
+              })
+            }
           }
         }
       }
