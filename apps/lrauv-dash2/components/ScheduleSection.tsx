@@ -638,6 +638,13 @@ export const ScheduleSection: React.FC<ScheduleSectionProps> = ({
               currentMissionEntry.startedAt - SATELLITE_DELAY_WINDOW_MS
           )
             return bestIdx
+          // Exclude unacknowledged in-flight satellite commands from running
+          // row selection until the ACK-gated enrichment redirect confirms
+          // they belong to the current run (by setting startedAt to match).
+          // Without this guard a pending command from a completed interval can
+          // be promoted to running before its ACK arrives, showing stale
+          // operator/event data for the new run.
+          if (item.status === 'pending') return bestIdx
         }
         if (bestIdx === -1) return idx
         // Prefer a command already confirmed for the current run by the interval
@@ -723,11 +730,30 @@ export const ScheduleSection: React.FC<ScheduleSectionProps> = ({
               // (load <file>;run) — a standalone set <missionId>.* param update
               // would match the prefix check but contains no loadable path and
               // would produce an empty "Use for new mission" pre-fill.
-              return (
-                isMissionCommand(item.event.data, item.event.text) &&
-                (d.includes(setDot.toLowerCase()) ||
-                  d.includes(setColon.toLowerCase()))
+              if (
+                !isMissionCommand(item.event.data, item.event.text) ||
+                (!d.includes(setDot.toLowerCase()) &&
+                  !d.includes(setColon.toLowerCase()))
               )
+                return false
+              // Only promote commands that have not already been matched to a
+              // prior interval — a completed row belongs to an old run and must
+              // not be brought back as running.
+              if (item.status !== 'TBD' && item.status !== 'pending')
+                return false
+              // Accept if ACK evidence confirms this command triggered the
+              // current run (ACK arrived at or after the current run started),
+              // consistent with Brian Kieft's direction to use the vehicle ACK
+              // rather than a time window.
+              const itemAckTime = ackedTimeMap.get(item.event.eventId)
+              const ackConfirmedForCurrentRun =
+                itemAckTime != null &&
+                currentMissionEntry.startedAt != null &&
+                itemAckTime >= currentMissionEntry.startedAt
+              if (ackConfirmedForCurrentRun) return true
+              // No ACK yet but status is pending → command is still in-flight
+              // to the vehicle right now → include it.
+              return item.status === 'pending'
             })
             if (sourceEventIdx >= 0) {
               // The original command event references this mission by its
