@@ -1721,6 +1721,7 @@ test('matches command to running mission when filename is snake_case but vehicle
   await waitFor(() => {
     expect(screen.getByText(/Ended:\s*TBD/i)).toBeInTheDocument()
   })
+  expect(screen.getByText('test-operator')).toBeInTheDocument()
 })
 
 test('matches command to running mission when command was sent hours before mission started (queued mission)', async () => {
@@ -1780,6 +1781,7 @@ test('matches command to running mission when command was sent hours before miss
   await waitFor(() => {
     expect(screen.getByText(/Ended:\s*TBD/i)).toBeInTheDocument()
   })
+  expect(screen.getByText('test-operator')).toBeInTheDocument()
 })
 
 test('matches multi-SBD command to running mission when delivery delay exceeds the default 10-minute window', async () => {
@@ -1840,15 +1842,33 @@ test('matches multi-SBD command to running mission when delivery delay exceeds t
   await waitFor(() => {
     expect(screen.getByText(/Ended:\s*TBD/i)).toBeInTheDocument()
   })
+  expect(screen.getByText('test-operator')).toBeInTheDocument()
 })
 
 test('shows operator name (not Unknown) on synthetic running row when no command event matches', async () => {
   // Regression for #825: when matchingMissionIndex is -1 and a synthetic row is
-  // injected, the operator was hardcoded to "Unknown" because the event object
-  // had no user field. The fix carries user from the missionStarted event.
+  // injected, the operator should be sourced from the nearest run command in
+  // /events (missionStarted events do not carry a user field in production).
+  // The prior-run command is outside the 30-min window so matchingMissionIndex
+  // returns -1, but the enriched lookup still finds it for the operator field.
   server.use(
     rest.get('/events', (_req, res, ctx) =>
-      res(ctx.status(200), ctx.json({ result: [] }))
+      res(
+        ctx.status(200),
+        ctx.json({
+          result: [
+            {
+              data: 'load Science/keepstation.tl;run',
+              unixTime: Date.now() - 90 * 60 * 1000, // 90 min ago — outside window
+              eventId: 5000,
+              eventType: 'run',
+              text: null,
+              note: null,
+              user: 'paul',
+            },
+          ],
+        })
+      )
     ),
     rest.get('/events/mission-started', (_req, res, ctx) =>
       res(
@@ -1868,7 +1888,6 @@ test('shows operator name (not Unknown) on synthetic running row when no command
               index: 0,
               component: '',
               text: 'Started mission keepstation',
-              user: 'paul',
             },
           ],
         })

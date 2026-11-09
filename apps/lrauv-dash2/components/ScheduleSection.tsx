@@ -661,6 +661,20 @@ export const ScheduleSection: React.FC<ScheduleSectionProps> = ({
                   d.includes(missionParamColon))
               )
             })
+            // Find the most recent run command for this mission to carry its
+            // operator onto the synthetic row (missionStarted has no user field).
+            const operatorUser =
+              sourceEvent?.event.user ??
+              enriched
+                .filter(
+                  (item) =>
+                    isMissionCommand(item.event.data, item.event.text) &&
+                    missionMatchesPath(item.event, currentMissionPath) &&
+                    item.event.user != null
+                )
+                .sort(
+                  (a, b) => (b.event.unixTime ?? 0) - (a.event.unixTime ?? 0)
+                )[0]?.event.user
             enriched.unshift({
               event: {
                 data:
@@ -668,10 +682,10 @@ export const ScheduleSection: React.FC<ScheduleSectionProps> = ({
                   sourceEvent?.event.text ??
                   `load ${currentMissionEntry.name};run`,
                 unixTime: currentRawEvent.unixTime,
-                eventId: currentRawEvent.eventId,
+                eventId: sourceEvent?.event.eventId,
                 eventType: 'run',
                 text: currentRawEvent.text,
-                user: sourceEvent?.event.user ?? currentRawEvent.user,
+                user: operatorUser,
               },
               status: 'running',
               endedAt: undefined,
@@ -738,7 +752,7 @@ export const ScheduleSection: React.FC<ScheduleSectionProps> = ({
         event: {
           data: '__default_mission__',
           unixTime: defaultEntry.startedAt,
-          eventId: rawEvent?.eventId ?? -1,
+          eventId: rawEvent?.eventId,
           eventType: 'run',
           text: rawEvent?.text ?? 'Started mission Default',
         },
