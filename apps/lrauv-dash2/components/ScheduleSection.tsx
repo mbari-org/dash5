@@ -111,27 +111,20 @@ const isDefaultMissionName = (name?: string) =>
 // TODO (medium-term): remove note fallback once Dash5 stores mission ID in
 // command metadata at submission time.
 const resolveMissionPath = (
-  event: Pick<GetEventsResponse, 'data' | 'text' | 'note'>
+  event: Pick<GetEventsResponse, 'data' | 'text'>
 ): string | undefined =>
-  missionPathFromEventData(event.data) ||
-  missionPathFromEventData(event.text) ||
-  missionPathFromEventData(event.note) ||
-  undefined
+  missionPathFromEventData(event.data) || missionPathFromEventData(event.text)
 
 // Returns true if any of the event's mission path fields match targetPath.
 const missionMatchesPath = (
-  event: Pick<GetEventsResponse, 'data' | 'text' | 'note'>,
+  event: Pick<GetEventsResponse, 'data' | 'text'>,
   targetPath: string | undefined
 ): boolean =>
   missionKeysMatch(
     missionPathFromEventData(event.data) ?? '',
     targetPath ?? ''
   ) ||
-  missionKeysMatch(
-    missionPathFromEventData(event.text) ?? '',
-    targetPath ?? ''
-  ) ||
-  missionKeysMatch(missionPathFromEventData(event.note) ?? '', targetPath ?? '')
+  missionKeysMatch(missionPathFromEventData(event.text) ?? '', targetPath ?? '')
 
 const missionKeysMatch = (leftPath: string, rightPath: string) => {
   if (!leftPath || !rightPath) return false
@@ -530,24 +523,24 @@ export const ScheduleSection: React.FC<ScheduleSectionProps> = ({
         }
       }
 
-      // Fallback: pick nearest timeline entry by start time.
-      const best = candidates.reduce((prev, curr) =>
+      // Fallback: pick nearest timeline entry within the applicable window.
+      // Commands sent before the start get the 24h queued look-ahead;
+      // commands sent near the start use the tighter effectiveMatchWindowMs.
+      // Filtering all candidates first ensures repeated missions are handled
+      // correctly — the nearest run may be from a prior execution.
+      const eligible = candidates.filter((c) => {
+        const g = c.startedAt - referenceTime
+        if (g >= 0 && g <= QUEUED_MISSION_MATCH_WINDOW_MS) return true
+        return Math.abs(g) <= effectiveMatchWindowMs
+      })
+      if (eligible.length === 0) return item
+
+      const best = eligible.reduce((prev, curr) =>
         Math.abs(curr.startedAt - referenceTime) <
         Math.abs(prev.startedAt - referenceTime)
           ? curr
           : prev
       )
-
-      // Only enrich if within the match window to avoid false positives.
-      // For queued missions (command sent well before the mission starts, e.g.
-      // PAM queued behind CircleSample), use a 24-hour look-ahead window.
-      // Commands sent after the mission started use the tighter effectiveMatchWindowMs.
-      const gap = best.startedAt - referenceTime
-      const allowedWindow =
-        gap > effectiveMatchWindowMs
-          ? QUEUED_MISSION_MATCH_WINDOW_MS
-          : effectiveMatchWindowMs
-      if (Math.abs(gap) > allowedWindow) return item
 
       return {
         ...item,
@@ -682,7 +675,7 @@ export const ScheduleSection: React.FC<ScheduleSectionProps> = ({
                   sourceEvent?.event.text ??
                   `load ${currentMissionEntry.name};run`,
                 unixTime: currentRawEvent.unixTime,
-                eventId: sourceEvent?.event.eventId,
+                eventId: sourceEvent?.event.eventId ?? currentRawEvent.eventId,
                 eventType: 'run',
                 text: currentRawEvent.text,
                 user: operatorUser,
@@ -752,7 +745,7 @@ export const ScheduleSection: React.FC<ScheduleSectionProps> = ({
         event: {
           data: '__default_mission__',
           unixTime: defaultEntry.startedAt,
-          eventId: rawEvent?.eventId,
+          eventId: rawEvent?.eventId ?? -1,
           eventType: 'run',
           text: rawEvent?.text ?? 'Started mission Default',
         },
@@ -1117,7 +1110,7 @@ export const ScheduleSection: React.FC<ScheduleSectionProps> = ({
           onMoreClick={(target, rect) =>
             openMoreMenu({ ...target, isDefaultMission: true }, rect)
           }
-          showEventId={true}
+          showEventId={mission.event.eventId >= 0}
         />
       )
     }
