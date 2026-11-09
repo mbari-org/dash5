@@ -107,6 +107,12 @@ const server = setupServer(
   rest.get('/deployments', (_req, res, ctx) => {
     return res(ctx.status(200), ctx.json(mockResponse))
   }),
+  rest.get('/git/missionList', (_req, res, ctx) => {
+    return res(
+      ctx.status(200),
+      ctx.json({ result: { gitRef: 'master', missions: [] } })
+    )
+  }),
   rest.get('/events/mission-started', (_req, res, ctx) => {
     return res(ctx.status(200), ctx.json({ result: [] }))
   }),
@@ -1046,6 +1052,62 @@ test('running mission label uses vehicle-reported missionId over filename when t
   // Must not show the filename-derived label or raw command text
   expect(screen.queryByText('tail_acoustic_contact')).not.toBeInTheDocument()
   expect(screen.queryByText(/load Engineering/)).not.toBeInTheDocument()
+})
+
+test('does not promote a prior-run command as running when filename differs from missionId', async () => {
+  // tail_acoustic_contact.tl declares "mission follow_that_car".
+  // A prior-run command with "set follow_that_car.X" was sent 90 min ago —
+  // outside the 30-min satellite delay window. The current run started 55s ago
+  // with no matching command in the loaded events.
+  // sourceEventIdx must reject the prior-run command (window guard) and fall
+  // back to synthetic injection showing "Unknown", not 'old-operator'.
+  server.use(
+    rest.get('/events', (_req, res, ctx) =>
+      res(
+        ctx.status(200),
+        ctx.json({
+          result: [
+            {
+              data: 'load Engineering/tail_acoustic_contact.tl;set follow_that_car.MissionTimeout 3 h;run',
+              unixTime: Date.now() - 90 * 60 * 1000, // 90 min ago — outside window
+              eventId: 402,
+              eventType: 'run',
+              text: null,
+              note: null,
+              user: 'old-operator',
+            },
+          ],
+        })
+      )
+    ),
+    rest.get('/events/mission-started', (_req, res, ctx) =>
+      res(
+        ctx.status(200),
+        ctx.json({
+          result: [
+            {
+              text: 'Started mission follow_that_car',
+              unixTime: Date.now() - 55 * 1000,
+              eventId: 403,
+            },
+          ],
+        })
+      )
+    )
+  )
+
+  render(
+    <MockProviders queryClient={new QueryClient()}>
+      <ScheduleSection {...props} currentDeploymentId={1} />
+    </MockProviders>
+  )
+
+  // Synthetic row is injected — running row shows Unknown, not old-operator.
+  // (old-operator may appear in the completed history row; that is correct.)
+  await waitFor(() => {
+    expect(screen.getByText(/Ended:\s*TBD/i)).toBeInTheDocument()
+  })
+  expect(screen.getByText('Unknown')).toBeInTheDocument()
 })
 
 test('mission command row shows "No parameters" secondary text when no params set', async () => {
