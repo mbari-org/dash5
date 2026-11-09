@@ -106,10 +106,7 @@ const toScheduleCellStatus = (status: string): ScheduleCellStatus => {
 const isDefaultMissionName = (name?: string) =>
   name?.trim().toLowerCase() === 'default'
 
-// Resolve mission path from structured event fields, falling back to note as a
-// last resort (Dash4 commands store the mission filename in the note field).
-// TODO (medium-term): remove note fallback once Dash5 stores mission ID in
-// command metadata at submission time.
+// Resolve mission path from structured event fields.
 const resolveMissionPath = (
   event: Pick<GetEventsResponse, 'data' | 'text'>
 ): string | undefined =>
@@ -654,10 +651,12 @@ export const ScheduleSection: React.FC<ScheduleSectionProps> = ({
                   d.includes(missionParamColon))
               )
             })
-            // Find the most recent run command for this mission to carry its
-            // operator onto the synthetic row (missionStarted has no user field).
-            const operatorUser =
-              sourceEvent?.event.user ??
+            // Find the nearest run command for this mission to carry its
+            // operator and event ID onto the synthetic row (missionStarted
+            // has no user field and its event ID is not useful for logs/comms
+            // cross-reference).
+            const nearestRunCommand =
+              sourceEvent ??
               enriched
                 .filter(
                   (item) =>
@@ -667,18 +666,19 @@ export const ScheduleSection: React.FC<ScheduleSectionProps> = ({
                 )
                 .sort(
                   (a, b) => (b.event.unixTime ?? 0) - (a.event.unixTime ?? 0)
-                )[0]?.event.user
+                )[0]
             enriched.unshift({
               event: {
                 data:
-                  sourceEvent?.event.data ??
-                  sourceEvent?.event.text ??
+                  nearestRunCommand?.event.data ??
+                  nearestRunCommand?.event.text ??
                   `load ${currentMissionEntry.name};run`,
                 unixTime: currentRawEvent.unixTime,
-                eventId: sourceEvent?.event.eventId ?? currentRawEvent.eventId,
+                eventId:
+                  nearestRunCommand?.event.eventId ?? currentRawEvent.eventId,
                 eventType: 'run',
                 text: currentRawEvent.text,
-                user: operatorUser,
+                user: nearestRunCommand?.event.user,
               },
               status: 'running',
               endedAt: undefined,

@@ -1859,7 +1859,7 @@ test('shows operator name (not Unknown) on synthetic running row when no command
           result: [
             {
               data: 'load Science/keepstation.tl;run',
-              unixTime: Date.now() - 90 * 60 * 1000, // 90 min ago — outside window
+              unixTime: Date.now() - 25 * 60 * 60 * 1000, // 25 hours ago — outside 24h queued window
               eventId: 5000,
               eventType: 'run',
               text: null,
@@ -1903,6 +1903,8 @@ test('shows operator name (not Unknown) on synthetic running row when no command
 
   await waitFor(() => {
     expect(screen.getByText('paul')).toBeInTheDocument()
+    // Event ID must come from the run command (5000), not missionStarted (5001).
+    expect(screen.getByText('Event ID: 5000')).toBeInTheDocument()
   })
 })
 
