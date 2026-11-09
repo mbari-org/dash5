@@ -889,7 +889,7 @@ export const ScheduleSection: React.FC<ScheduleSectionProps> = ({
         ),
       staleTime: Infinity, // mission definitions don't change mid-deployment
       enabled:
-        !!missionListData?.gitRef && !!axiosInstance && !!path && !!token,
+        missionListData !== undefined && !!axiosInstance && !!path && !!token,
     }))
   )
 
