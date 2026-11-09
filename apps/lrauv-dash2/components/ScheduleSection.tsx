@@ -182,7 +182,8 @@ export const isConfigSetCommand = (
   return /^\s*configSet\s+\S+/i.test(text)
 }
 
-// Parses the scheduled UTC start time from "sched YYYYMMDDTHHMM ..." commands.
+// Parses the scheduled UTC start time from "sched YYYYMMDDTHHMM" (or hour-only
+// YYYYMMDDTHH, or legacy YYYYMMDD}THHMM) command strings.
 const parseScheduledUnixTime = (
   data?: string,
   text?: string
@@ -222,7 +223,9 @@ export const ScheduleSection: React.FC<ScheduleSectionProps> = ({
   const { setGlobalModalId } = useGlobalModalId()
   const { axiosInstance, token } = useTethysApiContext()
   // gitRef scopes script lookups to the deployment's branch.
-  const { data: missionListData } = useMissionList({ reload: 'y' })
+  const { data: missionListData, isError: missionListError } = useMissionList({
+    reload: 'y',
+  })
   const gitRef = missionListData?.gitRef ?? 'master'
   const [scheduleFilter, setScheduleFilter] = useState<string>('')
   const [scheduleSearch, setScheduleSearch] = useState<string>('')
@@ -456,11 +459,7 @@ export const ScheduleSection: React.FC<ScheduleSectionProps> = ({
             ackTime >= inInterval.endedAt
           if (confirmedSatelliteDelayed) {
             const newerRun = candidates
-              .filter(
-                (c) =>
-                  c.startedAt > inInterval.startedAt &&
-                  c.startedAt - referenceTime >= 0
-              )
+              .filter((c) => c.startedAt >= (inInterval.endedAt as number))
               .sort((a, b) => a.startedAt - b.startedAt)[0]
             if (newerRun) {
               return {
@@ -889,7 +888,10 @@ export const ScheduleSection: React.FC<ScheduleSectionProps> = ({
         ),
       staleTime: Infinity, // mission definitions don't change mid-deployment
       enabled:
-        missionListData !== undefined && !!axiosInstance && !!path && !!token,
+        (missionListData !== undefined || missionListError) &&
+        !!axiosInstance &&
+        !!path &&
+        !!token,
     }))
   )
 
