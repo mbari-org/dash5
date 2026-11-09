@@ -182,9 +182,7 @@ export const isConfigSetCommand = (
   return /^\s*configSet\s+\S+/i.test(text)
 }
 
-// Extracts the scheduled UTC start time from a command string of the form
-// "sched YYYYMMDDTHHMM ..." (or the legacy "sched YYYYMMDD}THHMM" variant).
-// Returns undefined when no timestamp is present (e.g. "sched asap").
+// Parses the scheduled UTC start time from "sched YYYYMMDDTHHMM ..." commands.
 const parseScheduledUnixTime = (
   data?: string,
   text?: string
@@ -205,9 +203,7 @@ const parseScheduledUnixTime = (
   return dt.isValid ? dt.toMillis() : undefined
 }
 
-// Returns true when refTime is older than SATELLITE_DELAY_WINDOW_MS before
-// missionStartedAt, meaning the command could not have triggered the current
-// run even accounting for the satellite delivery delay.
+// True when refTime predates the satellite delivery window for a given mission start.
 const SATELLITE_DELAY_WINDOW_MS = 30 * 60 * 1000
 const isOutsideSatelliteWindow = (
   refTime: number,
@@ -225,9 +221,7 @@ export const ScheduleSection: React.FC<ScheduleSectionProps> = ({
   const confirm = useConfirm()
   const { setGlobalModalId } = useGlobalModalId()
   const { axiosInstance, token } = useTethysApiContext()
-  // gitRef scopes getScript lookups to the deployment's script tree so the
-  // resolved mission ID matches what the vehicle actually runs (consistent
-  // with CommandModal and useMissionData which both pass gitRef).
+  // gitRef scopes script lookups to the deployment's branch.
   const { data: missionListData } = useMissionList({ reload: 'y' })
   const gitRef = missionListData?.gitRef ?? 'master'
   const [scheduleFilter, setScheduleFilter] = useState<string>('')
@@ -389,10 +383,7 @@ export const ScheduleSection: React.FC<ScheduleSectionProps> = ({
     return ids
   }, [timeoutNotesResponse.data])
 
-  // Build a timeline: each entry knows its own start time and when it ended
-  // (= the start time of the mission that replaced it, or undefined if running).
-  // events[0] = running  →  endedAt: undefined
-  // events[i] = ended    →  endedAt: events[i-1].unixTime
+  // Timeline: events[0] = running (endedAt: undefined), rest = completed.
   const missionTimeline = useMemo(() => {
     const events = missionStartedResponse.data ?? []
     return events.map((evt, idx) => ({
@@ -426,20 +417,8 @@ export const ScheduleSection: React.FC<ScheduleSectionProps> = ({
       }))
     }
 
-    // Enrich each item's status/endedAt from mission-started events.
-    // Priority:
-    // 1) interval containment (startedAt <= eventTime < endedAt) for exact runs
-    // 2) nearest-by-time within a small window as conservative fallback
-    //
-    // For pre-queued missions (sched TIMESTAMP "..."), use the scheduled start
-    // time as the reference point instead of the command send time, since the
-    // vehicle won't start until that time and the match window would otherwise
-    // be too far off.
-    // Satellite-delayed commands arrive at the vehicle 10–30 minutes after
-    // being sent. This means a `sched asap` command is SENT while the old
-    // mission is still running (send time falls inside the old interval), but
-    // the vehicle doesn't receive and execute it until after the old mission
-    // ends. We need a wider window to catch these transition commands.
+    // Enrich each item from missionStarted events: interval match first,
+    // nearest-by-time fallback. Uses scheduled time for pre-queued missions.
     const MATCH_WINDOW_MS = 10 * 60 * 1000
 
     const enriched = items.map((item) => {
@@ -467,13 +446,8 @@ export const ScheduleSection: React.FC<ScheduleSectionProps> = ({
           (candidate.endedAt == null || referenceTime < candidate.endedAt)
       )
       if (inInterval) {
-        // If the interval match is a completed run, the command may be a
-        // satellite-delayed transition — sent during the old run, but received
-        // by the vehicle after it ended (triggering a new run). Gate the
-        // redirect on the ACK receipt time rather than a fixed window: if the
-        // ACK arrived after the old run ended, redirect to the newer run. If
-        // the comms send is still in flight, hold the row as pending so the
-        // next ACK poll can evaluate it. No comms entry → completed normally.
+        // Completed interval: check for a satellite-delayed transition.
+        // ACK after interval end → redirect to newer run; still in-flight → pending.
         if (inInterval.status === 'completed') {
           const ackTime = ackedTimeMap.get(item.event.eventId)
           const confirmedSatelliteDelayed =
@@ -497,13 +471,10 @@ export const ScheduleSection: React.FC<ScheduleSectionProps> = ({
                 missionId: newerRun.name,
               }
             }
-            // ACK arrived but missionStarted hasn't yet. Hold as pending so
-            // the TBD→completed pass doesn't stamp this row as completed —
-            // it belongs to the incoming run, not the old one.
+            // ACK confirmed but missionStarted not in window yet — hold as pending.
             return { ...item, status: 'pending' as const }
           }
-          // No ACK yet — hold as pending if the satellite send is still in
-          // flight ('sent'). 'queued'/no comms entry → completed normally.
+          // No ACK — hold as pending only if still in-flight ('sent').
           const commsStatus = commsLookup.get(item.event.eventId)
           if (commsStatus === 'sent') {
             return { ...item, status: 'pending' as const }
@@ -552,9 +523,7 @@ export const ScheduleSection: React.FC<ScheduleSectionProps> = ({
             : item
         )
 
-      // Demote any OTHER rows for the same mission still marked running.
-      // Called after promoting the winning row in both matchingMissionIndex
-      // and sourceEventIdx paths.
+      // Demote any other rows for the same mission still marked running.
       const demoteOtherRunningRows = (skipIdx: number) => {
         for (let i = 0; i < enriched.length; i++) {
           if (i === skipIdx) continue
@@ -584,16 +553,9 @@ export const ScheduleSection: React.FC<ScheduleSectionProps> = ({
         )
           return bestIdx
         if (item.event.unixTime == null) return bestIdx
-        // Don't repromote a row already confirmed-completed by interval
-        // matching — it belongs to a prior run of this same mission, and
-        // promoting it would incorrectly show the old row as running.
+        // Skip interval-confirmed completed rows — they belong to a prior run.
         if (item.status === 'completed') return bestIdx
-        // Skip future-scheduled commands: if this row has a sched TIMESTAMP
-        // that is after the mission's known startedAt, it is queued to run
-        // later — it is not the currently running instance. Without this guard,
-        // a second queued profile_station (sent more recently) would win the
-        // "most recently sent" heuristic and be incorrectly promoted to running,
-        // hiding the future-queued row from the pending queue.
+        // Skip future-scheduled commands — queued for a later run, not this one.
         const itemScheduledTime = parseScheduledUnixTime(
           item.event.data,
           item.event.text
@@ -604,12 +566,8 @@ export const ScheduleSection: React.FC<ScheduleSectionProps> = ({
           itemScheduledTime > currentMissionEntry.startedAt
         )
           return bestIdx
-        // Skip prior-run commands: only candidates sent within the satellite
-        // delay window before the current mission start are eligible. Exception:
-        // when the enrichment phase already confirmed this command belongs to
-        // the current run (item.startedAt === currentMissionEntry.startedAt) —
-        // e.g. a PAM command sent hours early (#825) or a satellite-delayed
-        // sched-asap whose ACK arrived after the old run ended.
+        // Skip prior-run commands outside the satellite delay window.
+        // Exception: enrichment already confirmed this command for the current run.
         const itemReferenceTime = itemScheduledTime ?? item.event.unixTime ?? 0
         const startedAtMatchesCurrent =
           item.startedAt != null &&
@@ -623,8 +581,7 @@ export const ScheduleSection: React.FC<ScheduleSectionProps> = ({
             )
           )
             return bestIdx
-          // Pending commands haven't been confirmed for this run yet — skip
-          // until the enrichment redirect sets startedAt to match.
+          // Pending: not yet confirmed for this run via enrichment redirect.
           if (item.status === 'pending') return bestIdx
         }
         if (bestIdx === -1) return idx
@@ -636,9 +593,7 @@ export const ScheduleSection: React.FC<ScheduleSectionProps> = ({
           enriched[bestIdx].startedAt === currentMissionEntry.startedAt
         if (itemMatchedCurrentRun && !bestMatchedCurrentRun) return idx
         if (!itemMatchedCurrentRun && bestMatchedCurrentRun) return bestIdx
-        // Prefer the most recently SENT command: when the same mission is
-        // retried (re-sent without a future sched timestamp), the newest
-        // ack'd command is the active one.
+        // Prefer the most recently sent command for back-to-back reruns.
         const bestSentTime = enriched[bestIdx].event.unixTime ?? 0
         return (item.event.unixTime ?? 0) > bestSentTime ? idx : bestIdx
       }, -1)
@@ -660,36 +615,19 @@ export const ScheduleSection: React.FC<ScheduleSectionProps> = ({
             missionId: currentMissionEntry.name,
           }
         }
-        // Demote any OTHER rows for the same mission that are still running.
         demoteOtherRunningRows(matchingMissionIndex)
       } else {
-        // Don't inject a synthetic row for Default — Default mission rows are
-        // injected separately below via the missionTimeline Default pass.
+        // Default rows are injected separately via the missionTimeline pass below.
         if (!isDefaultMissionName(currentMissionEntry.name)) {
           const currentRawEvent = missionStartedResponse.data?.[0]
           if (currentRawEvent) {
-            // For missions where the vehicle-reported ID differs from the script
-            // filename (e.g. tail_acoustic_contact.tl reports follow_that_car),
-            // look for an unmatched command event whose data/text references the
-            // mission ID in parameter names (e.g. "set follow_that_car.Timeout").
-            // That event carries the real file path needed by "Use for new mission".
-            // Fall back to a synthetic load string only when no such event exists.
-            // Check for "set <missionName>." or "set <missionName>:" in the
-            // command data — present when the run command also sets a mission
-            // parameter (e.g. "set follow_that_car.MissionTimeout 3 h"). This
-            // is more precise than checking for "<missionName>." alone, which
-            // would false-match the filename ("keepstation.tl" contains
-            // "keepstation.").
+            // Filename ≠ missionId (e.g. tail_acoustic_contact.tl → follow_that_car):
+            // find the original command via "set <missionId>." parameter syntax.
             const setDot = `set ${currentMissionEntry.name}.`
             const setColon = `set ${currentMissionEntry.name}:`
-            // Use reduce (not findIndex) so back-to-back reruns of a mission
-            // whose .tl name ≠ missionId pick the most recently sent command,
-            // not whichever appears first in enriched.
             const sourceEventIdx = enriched.reduce((bestIdx, item, idx) => {
               const d = (item.event.data ?? item.event.text ?? '').toLowerCase()
-              // Only accept candidates that carry an actual mission file path
-              // (load <file>;run) — a standalone set <missionId>.* param update
-              // would match the prefix check but contains no loadable path.
+              // Must be a load+run command, not a standalone param update.
               if (
                 !isMissionCommand(item.event.data, item.event.text) ||
                 (!d.includes(setDot.toLowerCase()) &&
@@ -706,10 +644,7 @@ export const ScheduleSection: React.FC<ScheduleSectionProps> = ({
                 currentMissionEntry.startedAt != null &&
                 itemAckTime >= currentMissionEntry.startedAt
               if (!ackConfirmedForCurrentRun) {
-                // No ACK — both TBD and pending must be within the satellite
-                // delay window. A prior-run command can be pending indefinitely
-                // if the vehicle never received it; the window prevents it from
-                // being promoted as the current run's source event.
+                // No ACK — must be within the satellite delay window.
                 const refTime =
                   parseScheduledUnixTime(item.event.data, item.event.text) ??
                   item.event.unixTime ??
@@ -731,13 +666,7 @@ export const ScheduleSection: React.FC<ScheduleSectionProps> = ({
                 : bestIdx
             }, -1)
             if (sourceEventIdx >= 0) {
-              // The original command event references this mission by its
-              // vehicle-reported ID in a parameter name (e.g.
-              // "set follow_that_car.MissionTimeout 3 h"). Promote it in-place
-              // to the running row so no duplicate history entry appears. This
-              // covers the case where the .tl filename differs from the
-              // vehicle-reported mission name (e.g. tail_acoustic_contact.tl
-              // declares "mission follow_that_car").
+              // Promote in-place so no duplicate history entry appears.
               enriched[sourceEventIdx] = {
                 ...enriched[sourceEventIdx],
                 status: 'running',
@@ -767,11 +696,7 @@ export const ScheduleSection: React.FC<ScheduleSectionProps> = ({
       }
     }
 
-    // Promote any still-TBD rows that predate the currently running mission.
-    // A row whose scheduled/send time is before the running mission started
-    // was either already run (but not matched by name) or displaced — calling
-    // it 'pending' indefinitely is misleading. Future-scheduled rows are safe:
-    // their referenceTime (scheduled run time) will be after startedAt.
+    // Promote stale TBD rows that predate the current mission start to completed.
     const currentRunningStartedAt = missionTimeline[0]?.startedAt
     if (currentRunningStartedAt) {
       for (let i = 0; i < enriched.length; i++) {
@@ -788,9 +713,7 @@ export const ScheduleSection: React.FC<ScheduleSectionProps> = ({
       }
     }
 
-    // When the vehicle has been recovered, any remaining pending commands
-    // will never execute — treat them as completed so the history is clean.
-    // Must run AFTER enrichment so statuses are resolved from 'TBD' first.
+    // Recovered: remaining pending/TBD commands will never execute.
     if (isRecovered) {
       return enriched
         .map((item) =>
@@ -907,9 +830,7 @@ export const ScheduleSection: React.FC<ScheduleSectionProps> = ({
   }
 
   const scheduledCells = missions?.filter(isAboveSeparator)?.sort((a, b) => {
-    // Running mission sits just above the history separator (bottom of queue).
-    // Use toScheduleCellStatus for consistent normalisation (trims, lowercases,
-    // maps 'tbd' → 'pending') in case raw status strings ever vary.
+    // Running row sits at the bottom of the queue, just above the separator.
     const aRunning = toScheduleCellStatus(a.status) === 'running' ? 1 : 0
     const bRunning = toScheduleCellStatus(b.status) === 'running' ? 1 : 0
     if (aRunning !== bRunning) return aRunning - bRunning
@@ -936,20 +857,13 @@ export const ScheduleSection: React.FC<ScheduleSectionProps> = ({
     )
     .sort((a, b) => (b.event.unixTime ?? 0) - (a.event.unixTime ?? 0))
 
-  // Base hasPastSchedule on unfiltered history so the Schedule History header
-  // row (which contains the search input) is never hidden by an active search
-  // or filter — otherwise a no-match search removes the input itself, trapping
-  // the user with no way to clear or retry.
+  // Use unfiltered history so the header row (with search input) is always shown.
   const hasPastSchedule = (allHistoricCells?.length ?? 0) > 0
   const staticFilterCellOffset = hasPastSchedule ? 1 : 0
 
   const results = [scheduledCells, historicCells].flat()
 
-  // Pre-fetch mission IDs for all rows without a vehicle-reported missionId.
-  // Includes historic rows so the resolved ID persists if a pending row is
-  // demoted to history before telemetry arrives (e.g. timeout, cancel).
-  // useQueries runs all lookups in parallel and caches aggressively — mission
-  // definitions don't change during a deployment.
+  // Pre-fetch script IDs for rows without a vehicle-reported missionId.
   const pendingScriptPaths = useMemo(() => {
     const paths = new Set<string>()
     for (const m of results ?? []) {
@@ -963,8 +877,7 @@ export const ScheduleSection: React.FC<ScheduleSectionProps> = ({
 
   const scriptIdQueries = useQueries(
     pendingScriptPaths.map((path) => ({
-      // Key matches useScript's shape (['commands', 'script', params]) so the
-      // cache is shared with CommandModal and useMissionData lookups.
+      // Cache key matches useScript so CommandModal and useMissionData share it.
       queryKey: ['commands', 'script', { path, gitRef }],
       queryFn: () =>
         getScript(
@@ -990,10 +903,7 @@ export const ScheduleSection: React.FC<ScheduleSectionProps> = ({
     return map
   }, [pendingScriptPaths, scriptIdQueries])
 
-  // Show the "Previous Vehicle Directives" separator whenever there are
-  // historic items, even if no commands are currently active above it.
-  // Operators require a complete audit trail — timed-out or completed
-  // commands must always be visible and clearly labeled.
+  // Show the history separator whenever there are historic items.
   const hasSeparator = (historicCells?.length ?? 0) > 0
   const staticSeparatorCellOffset = hasSeparator ? 1 : 0
   const indexOfSeparator = hasSeparator
@@ -1031,8 +941,7 @@ export const ScheduleSection: React.FC<ScheduleSectionProps> = ({
   }
 
   const scheduleStatus: ScheduleCellProps['scheduleStatus'] | null =
-    // Find the most recent sched pause/resume command rather than relying on
-    // missions[0], which may now be a synthetic mission-started injection.
+    // Find most recent pause/resume — missions[0] may be a synthetic injection.
     missions?.find(
       (m) => m.event.data === 'sched pause' || m.event.data === 'sched resume'
     )?.event.data === 'sched pause'
