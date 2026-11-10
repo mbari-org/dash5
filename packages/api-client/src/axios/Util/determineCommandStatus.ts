@@ -202,9 +202,10 @@ export const determineCommandStatus = (
   }
 
   // Same client-side timeout inference for dispatched-but-unacknowledged commands.
-  // Exception: if the cell leg already delivered (state:2) for a cellsat command,
-  // skip client-side timeout — TethysDash generates a backend timeout note if the
-  // command truly timed out before reaching the vehicle (#891).
+  // Skip for cellsat when cell already delivered (state:2) — TethysDash writes
+  // a backend note if it truly timed out. Edge case: pickPrimarySbdSend may pick
+  // a state:2 send for a multi-part command where other parts are still state:0;
+  // rare and not worth addressing here.
   const cellDispatchSucceeded = via === 'cellsat' && matchingSbdSend.state === 2
   const timeoutMinutes = timeout ? parseInt(timeout, 10) : undefined
   const sentTimeoutMs =
