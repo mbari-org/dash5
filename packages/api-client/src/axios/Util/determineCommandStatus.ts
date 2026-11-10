@@ -202,11 +202,11 @@ export const determineCommandStatus = (
   }
 
   // Same client-side timeout inference for dispatched-but-unacknowledged commands.
-  // Skip for cellsat when cell already delivered (state:2) — TethysDash writes
-  // a backend note if it truly timed out. Edge case: pickPrimarySbdSend may pick
-  // a state:2 send for a multi-part command where other parts are still state:0;
-  // rare and not worth addressing here.
-  const cellDispatchSucceeded = via === 'cellsat' && matchingSbdSend.state === 2
+  // Skip for cellsat when all sends have cell-delivered (state:2) — TethysDash
+  // writes a backend note if it truly timed out. Mixed-state multi-part commands
+  // (some state:2, some state:0) still timeout client-side.
+  const cellDispatchSucceeded =
+    via === 'cellsat' && matchingSbdSends.every((s) => s.state === 2)
   const timeoutMinutes = timeout ? parseInt(timeout, 10) : undefined
   const sentTimeoutMs =
     timeoutMinutes && matchingSbdSend.unixTime
