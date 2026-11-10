@@ -556,10 +556,14 @@ test('advances to the Waypoints step when currentStepIndex prop changes from 0 t
   // Step 0: mission cards visible
   expect(screen.getByText(props.missions[0].note ?? '')).toBeInTheDocument()
 
-  // Parent advances step (e.g. "Use for new mission" auto-selection)
+  // Parent advances step (e.g. "Use for new mission" auto-selection sets selectedId + step together)
   rerender(
     <RecoilRoot>
-      <MissionModalView {...props} currentStepIndex={1} />
+      <MissionModalView
+        {...props}
+        currentStepIndex={1}
+        selectedId={props.missions[0].id}
+      />
     </RecoilRoot>
   )
   // Step 1: Waypoints — mission cards no longer shown, waypoints visible
