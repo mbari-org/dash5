@@ -115,10 +115,10 @@ const MissionModal: React.FC<MissionModalProps> = ({
     const missionPath = globalModalId?.meta?.mission
     const eventData = globalModalId?.meta?.eventData
 
-    // Reset when modal closes or changes
+    // MissionModal only mounts when id === 'newMission', so this branch is unreachable
+    // while mounted; state resets naturally on unmount.
     if (!globalModalId?.id || globalModalId?.id !== 'newMission') {
       hasAutoSelectedRef.current = false
-      setCurrentStepIndex(0)
       return
     }
 
@@ -146,7 +146,7 @@ const MissionModal: React.FC<MissionModalProps> = ({
         // re-renders (including Back navigation) will see the ref as true and skip.
         hasAutoSelectedRef.current = true
         setSelectedMission(matchingMission.id)
-        // Advance past Mission selection so the operator doesn't have to click Next.
+        // Advance past Mission selection. Zero-waypoint missions land on an empty Waypoints step; the operator can click Next to continue.
         setCurrentStepIndex(1)
         // If rerunning from schedule history (has eventData), always use 'Recent Runs'
         if (eventData) {
