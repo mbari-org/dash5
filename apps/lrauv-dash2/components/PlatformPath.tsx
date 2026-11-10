@@ -161,7 +161,9 @@ export const PlatformPath: React.FC<PlatformPathProps> = ({
       // Auth/config/5xx and other unexpected failures should remain visible.
       logger.warn(`Failed to load positions for platform ${platformId}:`, error)
     }
-    return null
+    // Keep stale positions visible when keepPreviousData has data available.
+    // Only remove the track when there is nothing cached to show.
+    if (!positionData) return null
   }
 
   const platformColor = color || 'cyan'

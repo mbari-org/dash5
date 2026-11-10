@@ -34,6 +34,10 @@ export const usePlatformPositions = (
     },
     {
       staleTime: TRACKDB_POSITION_REFRESH_MS,
+      // Keep previous position data visible while the new query key loads
+      // (endDate changes every tick). Without this, the track briefly disappears
+      // on each refresh cycle.
+      keepPreviousData: true,
       ...options,
     }
   )
