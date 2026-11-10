@@ -202,12 +202,17 @@ export const determineCommandStatus = (
   }
 
   // Same client-side timeout inference for dispatched-but-unacknowledged commands.
+  // Skip for cellsat when all sends have cell-delivered (state:2) — TethysDash
+  // writes a backend note if it truly timed out. Mixed-state multi-part commands
+  // (some state:2, some state:0) still timeout client-side.
+  const cellDispatchSucceeded =
+    via === 'cellsat' && matchingSbdSends.every((s) => s.state === 2)
   const timeoutMinutes = timeout ? parseInt(timeout, 10) : undefined
   const sentTimeoutMs =
     timeoutMinutes && matchingSbdSend.unixTime
       ? matchingSbdSend.unixTime + timeoutMinutes * 60 * 1000
       : undefined
-  if (sentTimeoutMs && Date.now() > sentTimeoutMs) {
+  if (!cellDispatchSucceeded && sentTimeoutMs && Date.now() > sentTimeoutMs) {
     return withChunkGate(
       {
         ...command,
