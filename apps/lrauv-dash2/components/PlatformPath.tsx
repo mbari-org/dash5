@@ -21,6 +21,14 @@ export const isTimeoutError = (error: unknown): boolean => {
   )
 }
 
+/** True for transient connectivity failures: timeout or no HTTP response (ODSS unreachable).
+ * HTTP errors (401, 5xx) return false — those are server-side and should hide the track. */
+export const isTransientError = (error: unknown): boolean =>
+  isTimeoutError(error) ||
+  (error instanceof Error &&
+    'isAxiosError' in error &&
+    (error as { response?: unknown }).response == null)
+
 // How far back to search for position fixes when no explicit window is given.
 // 365 days ensures infrequently-updated fixed platforms (e.g. CA offshore
 // structures that may not report for months) are still found.
@@ -173,9 +181,9 @@ export const PlatformPath: React.FC<PlatformPathProps> = ({
     return null
   }
 
-  // Keep stale positions for timeout errors when cached data exists.
-  // Auth/config/5xx errors always hide the track.
-  if (error && (!positionData || !isTimeoutError(error))) {
+  // Keep stale positions for transient failures (timeout or no HTTP response).
+  // Auth/5xx errors hide the track regardless.
+  if (error && (!positionData || !isTransientError(error))) {
     return null
   }
 
