@@ -105,14 +105,20 @@ const MissionModal: React.FC<MissionModalProps> = ({
   // Track if we've already auto-selected to prevent re-selecting when user changes selection
   const hasAutoSelectedRef = useRef(false)
 
+  // Controls which step MissionModalView opens on.
+  // Stays at 0 (Mission selection) until a mission is auto-selected, then
+  // advances to 1 so the operator doesn't have to click Next manually.
+  const [currentStepIndex, setCurrentStepIndex] = useState(0)
+
   // Auto-select mission from globalModalId meta if provided (only once on initial load)
   useEffect(() => {
     const missionPath = globalModalId?.meta?.mission
     const eventData = globalModalId?.meta?.eventData
 
-    // Reset the ref when modal closes (when globalModalId becomes null or changes)
+    // Reset when modal closes or changes
     if (!globalModalId?.id || globalModalId?.id !== 'newMission') {
       hasAutoSelectedRef.current = false
+      setCurrentStepIndex(0)
       return
     }
 
@@ -140,6 +146,8 @@ const MissionModal: React.FC<MissionModalProps> = ({
         // re-renders (including Back navigation) will see the ref as true and skip.
         hasAutoSelectedRef.current = true
         setSelectedMission(matchingMission.id)
+        // Advance past Mission selection so the operator doesn't have to click Next.
+        setCurrentStepIndex(1)
         // If rerunning from schedule history (has eventData), always use 'Recent Runs'
         if (eventData) {
           setSelectedMissionCategory('Recent Runs')
@@ -360,7 +368,7 @@ const MissionModal: React.FC<MissionModalProps> = ({
         height: 'calc(100vh - 6rem)',
       }}
       alternativeAddresses={alternativeAddresses}
-      currentStepIndex={0}
+      currentStepIndex={currentStepIndex}
       vehicleName={capitalize(vehicleName)}
       bottomDepth="n/a"
       totalDistance={estDistance ? `${estDistance.toPrecision(4)}km` : 'n/a'}

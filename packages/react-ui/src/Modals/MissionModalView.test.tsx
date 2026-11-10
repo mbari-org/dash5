@@ -546,6 +546,31 @@ test('Send Command close button dismisses the modal', () => {
   expect(onCancel).toHaveBeenCalledTimes(1)
 })
 
+// Parent-driven step advancement
+test('advances to the Waypoints step when currentStepIndex prop changes from 0 to 1', () => {
+  const { rerender } = render(
+    <RecoilRoot>
+      <MissionModalView {...props} currentStepIndex={0} />
+    </RecoilRoot>
+  )
+  // Step 0: mission cards visible
+  expect(screen.getByText(props.missions[0].note ?? '')).toBeInTheDocument()
+
+  // Parent advances step (e.g. "Use for new mission" auto-selection)
+  rerender(
+    <RecoilRoot>
+      <MissionModalView {...props} currentStepIndex={1} />
+    </RecoilRoot>
+  )
+  // Step 1: Waypoints — mission cards no longer shown, waypoints visible
+  expect(
+    screen.getByText(/Set up to 2 waypoints for Brizo/i)
+  ).toBeInTheDocument()
+  expect(
+    screen.queryByText(props.missions[0].note ?? '')
+  ).not.toBeInTheDocument()
+})
+
 test('Send Command Back returns to Confirm and does not dismiss', () => {
   const onCancel = jest.fn()
   render(
