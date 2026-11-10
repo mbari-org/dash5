@@ -15,6 +15,14 @@ const logger = createLogger('PlatformPath')
 export const isTimeoutError = (error: unknown): boolean =>
   error instanceof Error && !!error.message?.toLowerCase().includes('timeout')
 
+/** True for transient connectivity failures: timeout or no HTTP response (ODSS unreachable).
+ * HTTP errors (401, 5xx) return false — those are server-side and should hide the track. */
+export const isTransientError = (error: unknown): boolean =>
+  isTimeoutError(error) ||
+  (error instanceof Error &&
+    'isAxiosError' in error &&
+    (error as { response?: unknown }).response == null)
+
 // How far back to search for position fixes when no explicit window is given.
 // 365 days ensures infrequently-updated fixed platforms (e.g. CA offshore
 // structures that may not report for months) are still found.
@@ -161,10 +169,9 @@ export const PlatformPath: React.FC<PlatformPathProps> = ({
       // Auth/config/5xx and other unexpected failures should remain visible.
       logger.warn(`Failed to load positions for platform ${platformId}:`, error)
     }
-    // For timeout errors, keep stale positions visible if cached data exists.
-    // Auth/config/5xx errors hide the track regardless — stale data could
-    // appear current and mislead the operator.
-    if (!positionData || !isTimeoutError(error)) return null
+    // Keep stale positions for transient failures (timeout or no HTTP response).
+    // Auth/5xx errors hide the track regardless.
+    if (!positionData || !isTransientError(error)) return null
   }
 
   const platformColor = color || 'cyan'
