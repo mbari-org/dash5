@@ -90,6 +90,23 @@ describe('PlatformPath rendering', () => {
     expect(container).toBeEmptyDOMElement()
   })
 
+  it('keeps existing track visible during background refresh (keepPreviousData)', () => {
+    // Simulates a minute-tick key rotation: data is still present from the
+    // previous fetch while the new key is loading.
+    mockUsePlatformPositions.mockReturnValue({
+      data: {
+        positions: [
+          { timeMs: 1000, lat: 36.0, lon: -122.0 },
+          { timeMs: 2000, lat: 36.1, lon: -122.1 },
+        ],
+      },
+      isLoading: true,
+      error: null,
+    })
+    const { getByTestId } = render(<PlatformPath platformId="abc" />)
+    expect(getByTestId('polyline')).toBeInTheDocument()
+  })
+
   it('renders nothing when an error occurs', () => {
     mockUsePlatformPositions.mockReturnValue({
       data: undefined,
@@ -98,6 +115,22 @@ describe('PlatformPath rendering', () => {
     })
     const { container } = render(<PlatformPath platformId="abc" />)
     expect(container).toBeEmptyDOMElement()
+  })
+
+  it('keeps existing track visible when a background poll fails', () => {
+    // Simulates a failed minute-tick refetch with stale positions still cached.
+    mockUsePlatformPositions.mockReturnValue({
+      data: {
+        positions: [
+          { timeMs: 1000, lat: 36.0, lon: -122.0 },
+          { timeMs: 2000, lat: 36.1, lon: -122.1 },
+        ],
+      },
+      isLoading: false,
+      error: new Error('timeout of 5000ms exceeded'),
+    })
+    const { getByTestId } = render(<PlatformPath platformId="abc" />)
+    expect(getByTestId('polyline')).toBeInTheDocument()
   })
 
   it('renders nothing when positions array is empty', () => {
