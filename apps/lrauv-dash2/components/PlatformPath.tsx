@@ -1,7 +1,10 @@
 import React, { useMemo, useState, useEffect, useCallback } from 'react'
 import { Marker, Polyline, Tooltip, CircleMarker } from 'react-leaflet'
 import L from 'leaflet'
-import { usePlatformPositions } from '@mbari/api-client'
+import {
+  usePlatformPositions,
+  TRACKDB_POSITION_REFRESH_MS,
+} from '@mbari/api-client'
 import { createLogger } from '@mbari/utils'
 import { useTick } from '../lib/useTick'
 import { PLATFORM_PANE } from '../lib/constants'
@@ -11,6 +14,14 @@ const logger = createLogger('PlatformPath')
 /** Exported for testing — true only for genuine network timeout errors. */
 export const isTimeoutError = (error: unknown): boolean =>
   error instanceof Error && !!error.message?.toLowerCase().includes('timeout')
+
+/** True for transient connectivity failures: timeout or no HTTP response (ODSS unreachable).
+ * HTTP errors (401, 5xx) return false — those are server-side and should hide the track. */
+export const isTransientError = (error: unknown): boolean =>
+  isTimeoutError(error) ||
+  (error instanceof Error &&
+    'isAxiosError' in error &&
+    (error as { response?: unknown }).response == null)
 
 // How far back to search for position fixes when no explicit window is given.
 // 365 days ensures infrequently-updated fixed platforms (e.g. CA offshore
@@ -38,7 +49,7 @@ export const PlatformPath: React.FC<PlatformPathProps> = ({
   startDate,
   endDate,
   limitPositions = 20,
-  refreshIntervalMs = 5 * 60_000,
+  refreshIntervalMs = TRACKDB_POSITION_REFRESH_MS,
 }) => {
   const [hovered, setHovered] = useState(false)
   const [currentPosHovered, setCurrentPosHovered] = useState(false)
@@ -138,7 +149,11 @@ export const PlatformPath: React.FC<PlatformPathProps> = ({
     })
   }, [iconUrl, iconFailed, displayName, handleIconError])
 
-  if (isLoading) {
+  // Only hide on the very first load (no data yet). Background refreshes — which
+  // happen on every useTick interval — should keep the existing track visible
+  // rather than flickering the platform off the map while the new fetch runs
+  // (#857: 1-minute ticks would otherwise cause a blink every minute).
+  if (!positionData && isLoading) {
     return null
   }
 
@@ -154,7 +169,9 @@ export const PlatformPath: React.FC<PlatformPathProps> = ({
       // Auth/config/5xx and other unexpected failures should remain visible.
       logger.warn(`Failed to load positions for platform ${platformId}:`, error)
     }
-    return null
+    // Keep stale positions for transient failures (timeout or no HTTP response).
+    // Auth/5xx errors hide the track regardless.
+    if (!positionData || !isTransientError(error)) return null
   }
 
   const platformColor = color || 'cyan'

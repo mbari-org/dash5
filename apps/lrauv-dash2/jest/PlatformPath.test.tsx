@@ -44,7 +44,11 @@ jest.mock('@mbari/utils', () => ({
 
 jest.mock('../lib/useTick', () => ({ useTick: () => Date.now() }))
 
-import { PlatformPath, isTimeoutError } from '../components/PlatformPath'
+import {
+  PlatformPath,
+  isTimeoutError,
+  isTransientError,
+} from '../components/PlatformPath'
 
 beforeEach(() => mockUsePlatformPositions.mockReset())
 
@@ -77,6 +81,36 @@ describe('isTimeoutError', () => {
   })
 })
 
+describe('isTransientError', () => {
+  it('returns true for timeout errors', () => {
+    expect(isTransientError(new Error('timeout of 5000ms exceeded'))).toBe(true)
+  })
+
+  it('returns true for Axios network errors with no response', () => {
+    const networkError = Object.assign(new Error('Network Error'), {
+      isAxiosError: true,
+      response: undefined,
+    })
+    expect(isTransientError(networkError)).toBe(true)
+  })
+
+  it('returns false for HTTP errors with a response', () => {
+    const httpError = Object.assign(
+      new Error('Request failed with status code 401'),
+      {
+        isAxiosError: true,
+        response: { status: 401 },
+      }
+    )
+    expect(isTransientError(httpError)).toBe(false)
+  })
+
+  it('returns false for non-Error values', () => {
+    expect(isTransientError(null)).toBe(false)
+    expect(isTransientError('network error')).toBe(false)
+  })
+})
+
 // ─── Rendering behaviour ──────────────────────────────────────────────────────
 
 describe('PlatformPath rendering', () => {
@@ -90,11 +124,87 @@ describe('PlatformPath rendering', () => {
     expect(container).toBeEmptyDOMElement()
   })
 
+  it('keeps existing track visible during background refresh (keepPreviousData)', () => {
+    // Simulates a minute-tick key rotation: data is still present from the
+    // previous fetch while the new key is loading.
+    mockUsePlatformPositions.mockReturnValue({
+      data: {
+        positions: [
+          { timeMs: 1000, lat: 36.0, lon: -122.0 },
+          { timeMs: 2000, lat: 36.1, lon: -122.1 },
+        ],
+      },
+      isLoading: true,
+      error: null,
+    })
+    const { getByTestId } = render(<PlatformPath platformId="abc" />)
+    expect(getByTestId('polyline')).toBeInTheDocument()
+  })
+
   it('renders nothing when an error occurs', () => {
     mockUsePlatformPositions.mockReturnValue({
       data: undefined,
       isLoading: false,
       error: new Error('timeout of 5000ms exceeded'),
+    })
+    const { container } = render(<PlatformPath platformId="abc" />)
+    expect(container).toBeEmptyDOMElement()
+  })
+
+  it('keeps existing track visible when a background poll times out', () => {
+    // Timeout: transient, keep last-known position visible (#857).
+    mockUsePlatformPositions.mockReturnValue({
+      data: {
+        positions: [
+          { timeMs: 1000, lat: 36.0, lon: -122.0 },
+          { timeMs: 2000, lat: 36.1, lon: -122.1 },
+        ],
+      },
+      isLoading: false,
+      error: new Error('timeout of 5000ms exceeded'),
+    })
+    const { getByTestId } = render(<PlatformPath platformId="abc" />)
+    expect(getByTestId('polyline')).toBeInTheDocument()
+  })
+
+  it('keeps existing track visible when ODSS is unreachable (network error)', () => {
+    // No HTTP response means ODSS is down — treat as transient, keep last-known position.
+    const networkError = Object.assign(new Error('Network Error'), {
+      isAxiosError: true,
+      response: undefined,
+    })
+    mockUsePlatformPositions.mockReturnValue({
+      data: {
+        positions: [
+          { timeMs: 1000, lat: 36.0, lon: -122.0 },
+          { timeMs: 2000, lat: 36.1, lon: -122.1 },
+        ],
+      },
+      isLoading: false,
+      error: networkError,
+    })
+    const { getByTestId } = render(<PlatformPath platformId="abc" />)
+    expect(getByTestId('polyline')).toBeInTheDocument()
+  })
+
+  it('hides the track on HTTP errors even when stale data exists', () => {
+    // Auth/5xx errors hide the track — server responded, not a connectivity issue.
+    const httpError = Object.assign(
+      new Error('Request failed with status code 401'),
+      {
+        isAxiosError: true,
+        response: { status: 401 },
+      }
+    )
+    mockUsePlatformPositions.mockReturnValue({
+      data: {
+        positions: [
+          { timeMs: 1000, lat: 36.0, lon: -122.0 },
+          { timeMs: 2000, lat: 36.1, lon: -122.1 },
+        ],
+      },
+      isLoading: false,
+      error: httpError,
     })
     const { container } = render(<PlatformPath platformId="abc" />)
     expect(container).toBeEmptyDOMElement()
