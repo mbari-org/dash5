@@ -34,6 +34,10 @@ export const usePlatformPositions = (
     },
     {
       staleTime: TRACKDB_POSITION_REFRESH_MS,
+      // Keep previous position data visible while the new query key loads
+      // (endDate changes every tick). Without this, the track briefly disappears
+      // on each refresh cycle.
+      keepPreviousData: true,
       ...options,
       // Don't retry on timeout — getPlatformPositions uses a 15-s timeout to
       // match Dash4 (#837). Default React Query retries (3×) would mean up to
