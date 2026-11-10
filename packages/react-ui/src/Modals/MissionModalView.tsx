@@ -174,15 +174,29 @@ const MissionModalBody: React.FC<MissionModalViewProps> = ({
     onSelectMissionCategory?.(category)
   }
 
-  const { steps, currentStep, handleNext, handlePrevious, showSummary } =
-    useMissionModalSteps({
-      initialIndex: currentStepIndex,
-      waypoints,
-      defaultParameters: parameters,
-      updatedParameters,
-      safetyParams,
-      commsParams,
-    })
+  const {
+    steps,
+    currentStep,
+    setCurrentStep,
+    handleNext,
+    handlePrevious,
+    showSummary,
+  } = useMissionModalSteps({
+    initialIndex: currentStepIndex,
+    waypoints,
+    defaultParameters: parameters,
+    updatedParameters,
+    safetyParams,
+    commsParams,
+  })
+
+  // Allow the parent to drive the step after mount (e.g. "Use for new mission"
+  // auto-selects a mission asynchronously, then advances past the Mission step).
+  useEffect(() => {
+    if (currentStepIndex !== undefined) {
+      setCurrentStep(currentStepIndex)
+    }
+  }, [currentStepIndex]) // eslint-disable-line react-hooks/exhaustive-deps
 
   const {
     handleNaNwaypoints,
