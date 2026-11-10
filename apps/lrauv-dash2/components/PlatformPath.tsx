@@ -173,10 +173,9 @@ export const PlatformPath: React.FC<PlatformPathProps> = ({
     return null
   }
 
-  // If keepPreviousData is in effect, positionData still holds the last
-  // successful fetch even when error is set — continue rendering the stale
-  // track rather than hiding it. Only bail out if there is nothing to show (#837).
-  if (error && !positionData?.positions?.length) {
+  // Keep stale positions for timeout errors when cached data exists.
+  // Auth/config/5xx errors always hide the track.
+  if (error && (!positionData || !isTimeoutError(error))) {
     return null
   }
 
