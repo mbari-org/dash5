@@ -1849,8 +1849,8 @@ test('shows operator name (not Unknown) on synthetic running row when no command
   // Regression for #825: when matchingMissionIndex is -1 and a synthetic row is
   // injected, the operator should be sourced from the nearest run command in
   // /events (missionStarted events do not carry a user field in production).
-  // The prior-run command is outside the 30-min window so matchingMissionIndex
-  // returns -1, but the enriched lookup still finds it for the operator field.
+  // The prior-run command is outside the 24h queued window so matchingMissionIndex
+  // returns -1; the enriched lookup finds it for the operator and event ID.
   server.use(
     rest.get('/events', (_req, res, ctx) =>
       res(
