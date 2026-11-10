@@ -161,9 +161,10 @@ export const PlatformPath: React.FC<PlatformPathProps> = ({
       // Auth/config/5xx and other unexpected failures should remain visible.
       logger.warn(`Failed to load positions for platform ${platformId}:`, error)
     }
-    // Keep stale positions visible when keepPreviousData has data available.
-    // Only remove the track when there is nothing cached to show.
-    if (!positionData) return null
+    // For timeout errors, keep stale positions visible if cached data exists.
+    // Auth/config/5xx errors hide the track regardless — stale data could
+    // appear current and mislead the operator.
+    if (!positionData || !isTimeoutError(error)) return null
   }
 
   const platformColor = color || 'cyan'

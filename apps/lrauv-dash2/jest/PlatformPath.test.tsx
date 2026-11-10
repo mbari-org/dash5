@@ -117,8 +117,10 @@ describe('PlatformPath rendering', () => {
     expect(container).toBeEmptyDOMElement()
   })
 
-  it('keeps existing track visible when a background poll fails', () => {
+  it('keeps existing track visible when a background poll times out', () => {
     // Simulates a failed minute-tick refetch with stale positions still cached.
+    // Timeout errors keep the track visible; the operator sees slightly stale
+    // data rather than a blinking disappearance every minute (#857).
     mockUsePlatformPositions.mockReturnValue({
       data: {
         positions: [
@@ -131,6 +133,23 @@ describe('PlatformPath rendering', () => {
     })
     const { getByTestId } = render(<PlatformPath platformId="abc" />)
     expect(getByTestId('polyline')).toBeInTheDocument()
+  })
+
+  it('hides the track on non-timeout errors even when stale data exists', () => {
+    // Auth/5xx errors hide the track — stale positions could appear current
+    // and mislead the operator.
+    mockUsePlatformPositions.mockReturnValue({
+      data: {
+        positions: [
+          { timeMs: 1000, lat: 36.0, lon: -122.0 },
+          { timeMs: 2000, lat: 36.1, lon: -122.1 },
+        ],
+      },
+      isLoading: false,
+      error: new Error('Request failed with status code 401'),
+    })
+    const { container } = render(<PlatformPath platformId="abc" />)
+    expect(container).toBeEmptyDOMElement()
   })
 
   it('renders nothing when positions array is empty', () => {
