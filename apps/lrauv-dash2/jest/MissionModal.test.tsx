@@ -1,13 +1,39 @@
 import React from 'react'
-import { render, screen } from '@testing-library/react'
+import { render, screen, waitFor } from '@testing-library/react'
 import '@testing-library/jest-dom'
 import { QueryClient } from 'react-query'
 import { MockProviders } from '../components/testHelpers'
 
+// Controllable globalModalId for tests that exercise the auto-select path
+let mockGlobalModalId: { id: string; meta?: Record<string, unknown> } | null =
+  null
+
+jest.mock('../lib/useGlobalModalId', () => ({
+  __esModule: true,
+  default: () => ({
+    globalModalId: mockGlobalModalId,
+    setGlobalModalId: jest.fn(),
+  }),
+}))
+
+const matchingMission = {
+  id: 'Science/sci2.tl',
+  missionPath: 'Science/sci2.tl',
+  category: 'Science',
+  name: 'sci2',
+  note: 'Test mission',
+  description: 'Science mission',
+  vehicle: 'tethys',
+  ranBy: null,
+  ranOn: null,
+  recentRun: false,
+  frequentRun: false,
+}
+
 jest.mock('../lib/useMissionData', () => ({
   useMissionData: () => ({
     recentRuns: [],
-    allMissions: [],
+    allMissions: [matchingMission],
     selectedMissionData: null,
     isRecentRunsLoading: false,
     isFrequentRunsLoading: false,
@@ -17,7 +43,7 @@ jest.mock('../lib/useMissionData', () => ({
 }))
 
 jest.mock('../lib/useInsertTempMission', () => ({
-  useInsertTempMission: () => [],
+  useInsertTempMission: ({ missions }: { missions: unknown[] }) => missions,
 }))
 
 jest.mock('@mbari/api-client', () => ({
@@ -72,6 +98,10 @@ jest.mock('@mbari/react-ui', () => {
 
 import MissionModal from '../components/MissionModal'
 
+beforeEach(() => {
+  mockGlobalModalId = null
+})
+
 describe('MissionModal', () => {
   it('renders without crashing', () => {
     expect(() =>
@@ -89,7 +119,24 @@ describe('MissionModal', () => {
         <MissionModal onClose={jest.fn()} />
       </MockProviders>
     )
-    // Step progress shows "1. Mission" as the active step label
     expect(screen.getAllByText('1. Mission')[0]).toBeInTheDocument()
+  })
+
+  it('advances to the Waypoints step after "Use for new mission" auto-selects a matching mission', async () => {
+    mockGlobalModalId = {
+      id: 'newMission',
+      meta: { mission: 'Science/sci2.tl' },
+    }
+    render(
+      <MockProviders queryClient={new QueryClient()}>
+        <MissionModal onClose={jest.fn()} />
+      </MockProviders>
+    )
+    // After auto-select fires, the modal advances to step 1 (Waypoints)
+    await waitFor(() => {
+      expect(
+        screen.getByText(/Set up to 0 waypoints for Tethys/i)
+      ).toBeInTheDocument()
+    })
   })
 })
