@@ -394,7 +394,9 @@ const MissionModal: React.FC<MissionModalProps> = ({
       onFocusWaypoint={onFocusWaypoint}
       vehicles={vehicles}
       loading={sendingCommand}
-      missionsLoading={recentRunsLoading || frequentRunsLoading}
+      missionsLoading={
+        recentRunsLoading || frequentRunsLoading || isMissionListLoading
+      }
       previewText={previewText}
       previewSbdCount={previewSbdCount}
       unitOptions={unitsData}

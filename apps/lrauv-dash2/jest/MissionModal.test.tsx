@@ -53,6 +53,7 @@ jest.mock('@mbari/api-client', () => ({
   useUnits: () => ({ data: undefined }),
   useCreateCommand: () => ({ mutate: jest.fn(), isLoading: false }),
   useTethysApiContext: () => ({ axiosInstance: null, token: null }),
+  useStations: () => ({ data: [] }),
   getPreview: jest.fn(),
   countPreviewSbdChunks: jest.fn(),
 }))
@@ -92,7 +93,6 @@ jest.mock('@mbari/react-ui', () => {
       handleWaypointsUpdate: jest.fn(),
       updatedWaypoints: [],
     }),
-    useStations: () => ({ data: [] }),
   }
 })
 
