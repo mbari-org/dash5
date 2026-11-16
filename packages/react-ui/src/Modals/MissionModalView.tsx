@@ -73,6 +73,7 @@ export interface MissionModalViewProps
   /** Backend preview SBD fragment count (≥2 shown as a quiet note on Review). */
   previewSbdCount?: number
   loading?: boolean
+  /** Called whenever the child advances or goes back. Required when the parent owns `currentStepIndex` to keep state in sync. */
   onStepIndexChange?: (step: number) => void
   selectedMissionCategory?: string
   defaultSearchText?: string

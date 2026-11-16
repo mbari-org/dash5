@@ -140,13 +140,10 @@ const MissionModal: React.FC<MissionModalProps> = ({
       )
 
       if (matchingMission) {
-        // Set ref only after a confirmed match so the effect can still retry
-        // on later renders if template missions arrive after recent/frequent runs.
-        // Once all three loading flags are false and a match is found, all future
-        // re-renders (including Back navigation) will see the ref as true and skip.
-        hasAutoSelectedRef.current = true
         // Only apply if still on Mission step and no manual pick has been made.
+        // Ref is set inside so Back resets the guard and allows re-select.
         if (currentStepIndex === 0 && !selectedMission) {
+          hasAutoSelectedRef.current = true
           setSelectedMission(matchingMission.id)
           setCurrentStepIndex(1)
           if (eventData) {
