@@ -57,7 +57,14 @@ describe('isTimeoutError', () => {
     expect(isTimeoutError(new Error('axios timeout error'))).toBe(true)
   })
 
-  it('returns false for "timed out" phrasing (does not contain "timeout")', () => {
+  it('returns true for Axios ECONNABORTED code (timeout without "timeout" in message)', () => {
+    const err = Object.assign(new Error('Request timed out'), {
+      code: 'ECONNABORTED',
+    })
+    expect(isTimeoutError(err)).toBe(true)
+  })
+
+  it('returns false for "timed out" phrasing with no ECONNABORTED code', () => {
     expect(isTimeoutError(new Error('Request timed out'))).toBe(false)
   })
 
@@ -108,6 +115,26 @@ describe('PlatformPath rendering', () => {
     })
     const { container } = render(<PlatformPath platformId="abc" />)
     expect(container).toBeEmptyDOMElement()
+  })
+
+  it('still renders the track when error occurs but stale positions exist (keepPreviousData)', () => {
+    // Verifies that when keepPreviousData is in effect and a background refetch
+    // fails, the previously loaded track stays visible rather than disappearing
+    // (#837). positionData holds the last successful payload alongside the error.
+    mockUsePlatformPositions.mockReturnValue({
+      data: {
+        positions: [
+          { timeMs: 2000, lat: 36.1, lon: -122.1 },
+          { timeMs: 1000, lat: 36.0, lon: -122.0 },
+        ],
+      },
+      isLoading: false,
+      error: new Error('timeout of 15000ms exceeded'),
+    })
+    const { getByTestId } = render(
+      <PlatformPath platformId="abc" platformName="Test Platform" />
+    )
+    expect(getByTestId('polyline')).toBeInTheDocument()
   })
 
   it('renders a polyline when positions are available', () => {
