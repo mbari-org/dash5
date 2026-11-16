@@ -146,8 +146,9 @@ const MissionModal: React.FC<MissionModalProps> = ({
         // re-renders (including Back navigation) will see the ref as true and skip.
         hasAutoSelectedRef.current = true
         setSelectedMission(matchingMission.id)
-        // Advance past Mission selection. Zero-waypoint missions land on an empty Waypoints step; the operator can click Next to continue.
-        setCurrentStepIndex(1)
+        // Advance past Mission selection only if the operator hasn't already moved forward.
+        // Zero-waypoint missions land on an empty Waypoints step; the operator can click Next to continue.
+        if (currentStepIndex === 0) setCurrentStepIndex(1)
         // If rerunning from schedule history (has eventData), always use 'Recent Runs'
         if (eventData) {
           setSelectedMissionCategory('Recent Runs')
@@ -177,6 +178,7 @@ const MissionModal: React.FC<MissionModalProps> = ({
     recentRunsLoading,
     frequentRunsLoading,
     isMissionListLoading,
+    currentStepIndex,
   ])
 
   // Missions with parameter/waypoint overrides that should be applied.
@@ -369,6 +371,7 @@ const MissionModal: React.FC<MissionModalProps> = ({
       }}
       alternativeAddresses={alternativeAddresses}
       currentStepIndex={currentStepIndex}
+      onStepIndexChange={setCurrentStepIndex}
       vehicleName={capitalize(vehicleName)}
       bottomDepth="n/a"
       totalDistance={estDistance ? `${estDistance.toPrecision(4)}km` : 'n/a'}

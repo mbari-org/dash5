@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react'
+import React, { useEffect, useRef } from 'react'
 import { Modal } from '../Modal/Modal'
 import { StepProgress, StepProgressProps } from '../Navigation/StepProgress'
 import { SelectOption } from '../Fields/Select'
@@ -129,6 +129,7 @@ const MissionModalBody: React.FC<MissionModalViewProps> = ({
   onSelectMissionCategory,
   showAllVehicleMissions,
   onShowAllVehicleMissions,
+  onStepIndexChange,
 }) => {
   const {
     state: {
@@ -197,6 +198,16 @@ const MissionModalBody: React.FC<MissionModalViewProps> = ({
       setCurrentStep(currentStepIndex)
     }
   }, [currentStepIndex]) // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Keep the parent's step index in sync when the operator uses Next or Back.
+  const isFirstRender = useRef(true)
+  useEffect(() => {
+    if (isFirstRender.current) {
+      isFirstRender.current = false
+      return
+    }
+    onStepIndexChange?.(currentStep)
+  }, [currentStep]) // eslint-disable-line react-hooks/exhaustive-deps
 
   const {
     handleNaNwaypoints,
