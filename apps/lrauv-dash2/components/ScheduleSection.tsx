@@ -32,6 +32,7 @@ import {
   SbdChunkProgress,
   useTethysApiContext,
   getScript,
+  parseSbdChunkTotal,
 } from '@mbari/api-client'
 import { useQueryClient, useQueries } from 'react-query'
 import useGlobalModalId from '../lib/useGlobalModalId'
@@ -105,6 +106,23 @@ const toScheduleCellStatus = (status: string): ScheduleCellStatus => {
 const isDefaultMissionName = (name?: string) =>
   name?.trim().toLowerCase() === 'default'
 
+// Resolve mission path from structured event fields.
+const resolveMissionPath = (
+  event: Pick<GetEventsResponse, 'data' | 'text'>
+): string | undefined =>
+  missionPathFromEventData(event.data) || missionPathFromEventData(event.text)
+
+// Returns true if any of the event's mission path fields match targetPath.
+const missionMatchesPath = (
+  event: Pick<GetEventsResponse, 'data' | 'text'>,
+  targetPath: string | undefined
+): boolean =>
+  missionKeysMatch(
+    missionPathFromEventData(event.data) ?? '',
+    targetPath ?? ''
+  ) ||
+  missionKeysMatch(missionPathFromEventData(event.text) ?? '', targetPath ?? '')
+
 const missionKeysMatch = (leftPath: string, rightPath: string) => {
   if (!leftPath || !rightPath) return false
   const leftHasPath = leftPath.includes('/')
@@ -112,7 +130,12 @@ const missionKeysMatch = (leftPath: string, rightPath: string) => {
 
   if (leftHasPath && rightHasPath) return leftPath === rightPath
 
-  return normalizeMissionName(leftPath) === normalizeMissionName(rightPath)
+  const leftNorm = normalizeMissionName(leftPath)
+  const rightNorm = normalizeMissionName(rightPath)
+  if (leftNorm === rightNorm) return true
+  // Handle camelCase vs snake_case mismatch between filename (circle_sample.tl)
+  // and vehicle-reported mission name (CircleSample): strip underscores from both.
+  return leftNorm.replace(/_/g, '') === rightNorm.replace(/_/g, '')
 }
 
 export const parseMissionCommand = (name: string) => {
@@ -387,7 +410,21 @@ export const ScheduleSection: React.FC<ScheduleSectionProps> = ({
     // mission is still running (send time falls inside the old interval), but
     // the vehicle doesn't receive and execute it until after the old mission
     // ends. We need a wider window to catch these transition commands.
+    // Multi-SBD command text ends with "<refId> <chunkNum> <totalChunks>" e.g. "3y7e5 1 3".
+    // Returns the total chunk count, or null if the text doesn't match that pattern.
     const MATCH_WINDOW_MS = 10 * 60 * 1000
+    // Multi-SBD commands require all chunks to be delivered before the vehicle
+    // executes. For a 4-chunk sat command this can exceed 60 minutes, pushing
+    // past the default window. Use 60 min only for multi-SBD sends.
+    const MULTI_SBD_MATCH_WINDOW_MS = 60 * 60 * 1000
+    // Queued missions start long after the command was sent (e.g. PAM queued
+    // behind CircleSample fires 6+ hours later). Allow up to 24 h look-ahead
+    // when the command was sent before the mission started.
+    // TODO (medium-term): when Dash5 submits a command, store the mission ID
+    // (available from GET api/command/script response) in the command metadata.
+    // A direct ID lookup would replace all time-window heuristics here and
+    // eliminate the need for note-field path extraction entirely.
+    const QUEUED_MISSION_MATCH_WINDOW_MS = 24 * 60 * 60 * 1000
     const SATELLITE_DELAY_WINDOW_MS = 30 * 60 * 1000
 
     const parseScheduledUnixTime = (
@@ -414,9 +451,20 @@ export const ScheduleSection: React.FC<ScheduleSectionProps> = ({
 
     const enriched = items.map((item) => {
       if (item.status !== 'TBD') return item
-      const missionPath =
-        missionPathFromEventData(item.event.data) ||
-        missionPathFromEventData(item.event.text)
+
+      // Widen the match window for multi-SBD commands: each chunk takes time
+      // to deliver, so the mission start can lag the send time by > 10 min.
+      // Parse directly from command text — more reliable than checking commsLookup,
+      // which depends on commsEventsResponse pagination reaching this event.
+      const sbdChunkTotal = parseSbdChunkTotal(
+        item.event.data ?? item.event.text
+      )
+      const effectiveMatchWindowMs =
+        sbdChunkTotal != null && sbdChunkTotal > 1
+          ? MULTI_SBD_MATCH_WINDOW_MS
+          : MATCH_WINDOW_MS
+
+      const missionPath = resolveMissionPath(item.event)
       if (!missionPath || item.event.unixTime == null) return item
 
       // Use scheduled time as reference if available, else fall back to send time
@@ -472,17 +520,24 @@ export const ScheduleSection: React.FC<ScheduleSectionProps> = ({
         }
       }
 
-      // Fallback: pick nearest timeline entry by start time.
-      const best = candidates.reduce((prev, curr) =>
+      // Fallback: pick nearest timeline entry within the applicable window.
+      // Commands sent before the start get the 24h queued look-ahead;
+      // commands sent near the start use the tighter effectiveMatchWindowMs.
+      // Filtering all candidates first ensures repeated missions are handled
+      // correctly — the nearest run may be from a prior execution.
+      const eligible = candidates.filter((c) => {
+        const g = c.startedAt - referenceTime
+        if (g >= 0 && g <= QUEUED_MISSION_MATCH_WINDOW_MS) return true
+        return Math.abs(g) <= effectiveMatchWindowMs
+      })
+      if (eligible.length === 0) return item
+
+      const best = eligible.reduce((prev, curr) =>
         Math.abs(curr.startedAt - referenceTime) <
         Math.abs(prev.startedAt - referenceTime)
           ? curr
           : prev
       )
-
-      // Only enrich if within the match window to avoid false positives.
-      if (Math.abs(best.startedAt - referenceTime) > MATCH_WINDOW_MS)
-        return item
 
       return {
         ...item,
@@ -507,13 +562,7 @@ export const ScheduleSection: React.FC<ScheduleSectionProps> = ({
         )
 
       const matchingMissionIndex = enriched.reduce((bestIdx, item, idx) => {
-        const fromDataPath = missionPathFromEventData(item.event.data)
-        const fromTextPath = missionPathFromEventData(item.event.text)
-        if (
-          !missionKeysMatch(fromDataPath, currentMissionPath) &&
-          !missionKeysMatch(fromTextPath, currentMissionPath)
-        )
-          return bestIdx
+        if (!missionMatchesPath(item.event, currentMissionPath)) return bestIdx
         if (item.event.unixTime == null) return bestIdx
         // Don't repromote a row already confirmed-completed by interval
         // matching — it belongs to a prior run of this same mission, and
@@ -567,12 +616,7 @@ export const ScheduleSection: React.FC<ScheduleSectionProps> = ({
           if (i === matchingMissionIndex) continue
           const item = enriched[i]
           if (item.status !== 'running') continue
-          const fromDataPath = missionPathFromEventData(item.event.data)
-          const fromTextPath = missionPathFromEventData(item.event.text)
-          if (
-            missionKeysMatch(fromDataPath, currentMissionPath) ||
-            missionKeysMatch(fromTextPath, currentMissionPath)
-          ) {
+          if (missionMatchesPath(item.event, currentMissionPath)) {
             // End time is inferred as when the newer run of this mission began.
             enriched[i] = {
               ...item,
@@ -607,16 +651,34 @@ export const ScheduleSection: React.FC<ScheduleSectionProps> = ({
                   d.includes(missionParamColon))
               )
             })
+            // Find the nearest run command for this mission to carry its
+            // operator and event ID onto the synthetic row (missionStarted
+            // has no user field and its event ID is not useful for logs/comms
+            // cross-reference).
+            const nearestRunCommand =
+              sourceEvent ??
+              enriched
+                .filter(
+                  (item) =>
+                    isMissionCommand(item.event.data, item.event.text) &&
+                    missionMatchesPath(item.event, currentMissionPath) &&
+                    item.event.user != null
+                )
+                .sort(
+                  (a, b) => (b.event.unixTime ?? 0) - (a.event.unixTime ?? 0)
+                )[0]
             enriched.unshift({
               event: {
                 data:
-                  sourceEvent?.event.data ??
-                  sourceEvent?.event.text ??
+                  nearestRunCommand?.event.data ??
+                  nearestRunCommand?.event.text ??
                   `load ${currentMissionEntry.name};run`,
                 unixTime: currentRawEvent.unixTime,
-                eventId: currentRawEvent.eventId,
+                eventId:
+                  nearestRunCommand?.event.eventId ?? currentRawEvent.eventId,
                 eventType: 'run',
                 text: currentRawEvent.text,
+                user: nearestRunCommand?.event.user,
               },
               status: 'running',
               endedAt: undefined,
@@ -1048,6 +1110,7 @@ export const ScheduleSection: React.FC<ScheduleSectionProps> = ({
           onMoreClick={(target, rect) =>
             openMoreMenu({ ...target, isDefaultMission: true }, rect)
           }
+          showEventId={mission.event.eventId >= 0}
         />
       )
     }
@@ -1192,6 +1255,7 @@ export const ScheduleSection: React.FC<ScheduleSectionProps> = ({
             : undefined
         )}
         name={mission.event.user ?? 'Unknown'}
+        showEventId={true}
         scheduleStatus={
           (['pending', 'running'].includes(cellStatus) && scheduleStatus) ||
           undefined
