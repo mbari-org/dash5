@@ -145,10 +145,13 @@ const MissionModal: React.FC<MissionModalProps> = ({
         // Once all three loading flags are false and a match is found, all future
         // re-renders (including Back navigation) will see the ref as true and skip.
         hasAutoSelectedRef.current = true
-        setSelectedMission(matchingMission.id)
-        // Advance past Mission selection only if the operator hasn't already moved forward.
-        // Zero-waypoint missions land on an empty Waypoints step; the operator can click Next to continue.
-        if (currentStepIndex === 0) setCurrentStepIndex(1)
+        // Only apply auto-selection if the operator hasn't already moved forward.
+        // A belated mission-list load after the operator leaves Mission step should not overwrite their choice.
+        if (currentStepIndex === 0) {
+          setSelectedMission(matchingMission.id)
+          // Zero-waypoint missions land on an empty Waypoints step; the operator can click Next to continue.
+          setCurrentStepIndex(1)
+        }
         // If rerunning from schedule history (has eventData), always use 'Recent Runs'
         if (eventData) {
           setSelectedMissionCategory('Recent Runs')
