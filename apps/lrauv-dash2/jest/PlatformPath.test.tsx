@@ -34,6 +34,7 @@ jest.mock('leaflet', () => ({ divIcon: jest.fn(() => ({})) }))
 
 const mockUsePlatformPositions = jest.fn()
 jest.mock('@mbari/api-client', () => ({
+  TRACKDB_POSITION_REFRESH_MS: 60_000,
   usePlatformPositions: (...args: unknown[]) =>
     mockUsePlatformPositions(...args),
 }))

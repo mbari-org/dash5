@@ -155,28 +155,20 @@ export const PlatformPath: React.FC<PlatformPathProps> = ({
     })
   }, [iconUrl, iconFailed, displayName, handleIconError])
 
-  // Log errors once when they change rather than on every re-render. When
-  // keepPreviousData is in effect the component keeps rendering (stale track
-  // stays visible), so logging inline would fire on every parent update.
+  // Log once per error change (keepPreviousData keeps re-rendering; inline logging would repeat).
   useEffect(() => {
     if (!error) return
     if (isTimeoutError(error)) {
-      // Timeout errors are expected for slow or offline external platforms
-      // and are not actionable by the developer — log at debug to reduce noise.
       logger.debug(
         `Failed to load positions for platform ${platformId}:`,
         error
       )
     } else {
-      // Auth/config/5xx and other unexpected failures should remain visible.
       logger.warn(`Failed to load positions for platform ${platformId}:`, error)
     }
   }, [error, platformId])
 
-  // Only hide on the very first load (no data yet). Background refreshes — which
-  // happen on every useTick interval — should keep the existing track visible
-  // rather than flickering the platform off the map while the new fetch runs
-  // (#857: 1-minute ticks would otherwise cause a blink every minute).
+  // Hide only on first load. Background refreshes keep the existing track visible (#857).
   if (!positionData && isLoading) {
     return null
   }
