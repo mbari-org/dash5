@@ -3,6 +3,9 @@ import { getPlatformPositions, GetPlatformPositionsParams } from '../../axios'
 import { useTethysApiContext } from '../TethysApiProvider'
 import { SupportedQueryOptions } from '../types'
 
+// 1-minute cadence matches Dash4. Exported so PlatformPath can share the same value for useTick (#857).
+export const TRACKDB_POSITION_REFRESH_MS = 60_000
+
 export const usePlatformPositions = (
   params: GetPlatformPositionsParams,
   options?: SupportedQueryOptions
@@ -28,17 +31,14 @@ export const usePlatformPositions = (
       })
     },
     {
-      staleTime: 5 * 60 * 1000,
+      staleTime: TRACKDB_POSITION_REFRESH_MS,
       ...options,
-      // Don't retry on timeout — getPlatformPositions uses a 15-s timeout to
-      // match Dash4 (#837). Default React Query retries (3×) would mean up to
-      // ~60 s before an error surfaces for a truly unreachable platform.
-      retry: 0,
-      // Keep the last successfully loaded track visible while a background
-      // refetch is in progress, rather than hiding the platform during reload.
-      // Directly addresses the reporter's ask: "avoid failure to display of
-      // the previously successfully loaded track" (#837).
+      // Keep previous position data visible while the new query key loads
+      // (endDate changes every tick). Without this, the track briefly disappears
+      // on each refresh cycle.
       keepPreviousData: true,
+      // No retries — a 15-s timeout already matches Dash4 (#837); retrying would delay error display.
+      retry: 0,
     }
   )
 
