@@ -203,13 +203,13 @@ const MissionModalBody: React.FC<MissionModalViewProps> = ({
   }, [currentStepIndex]) // eslint-disable-line react-hooks/exhaustive-deps
 
   // Keep the parent's step index in sync when the operator uses Next or Back.
-  const isFirstRender = useRef(true)
+  // prevStepRef is initialized to currentStep so mount (and Strict Mode double-mount) is a no-op.
+  const prevStepRef = useRef(currentStep)
   useEffect(() => {
-    if (isFirstRender.current) {
-      isFirstRender.current = false
-      return
+    if (currentStep !== prevStepRef.current) {
+      prevStepRef.current = currentStep
+      onStepIndexChange?.(currentStep)
     }
-    onStepIndexChange?.(currentStep)
   }, [currentStep]) // eslint-disable-line react-hooks/exhaustive-deps
 
   const {
