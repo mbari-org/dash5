@@ -182,6 +182,7 @@ const MissionModalBody: React.FC<MissionModalViewProps> = ({
     handleNext,
     handlePrevious,
     showSummary,
+    setShowSummary,
   } = useMissionModalSteps({
     initialIndex: currentStepIndex,
     waypoints,
@@ -196,6 +197,7 @@ const MissionModalBody: React.FC<MissionModalViewProps> = ({
   useEffect(() => {
     if (currentStepIndex !== undefined) {
       setCurrentStep(currentStepIndex)
+      setShowSummary(false)
     }
   }, [currentStepIndex]) // eslint-disable-line react-hooks/exhaustive-deps
 
