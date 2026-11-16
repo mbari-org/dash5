@@ -145,29 +145,25 @@ const MissionModal: React.FC<MissionModalProps> = ({
         // Once all three loading flags are false and a match is found, all future
         // re-renders (including Back navigation) will see the ref as true and skip.
         hasAutoSelectedRef.current = true
-        // Only apply auto-selection if the operator hasn't already moved forward.
-        // A belated mission-list load after the operator leaves Mission step should not overwrite their choice.
-        if (currentStepIndex === 0) {
+        // Only apply if still on Mission step and no manual pick has been made.
+        if (currentStepIndex === 0 && !selectedMission) {
           setSelectedMission(matchingMission.id)
-          // Zero-waypoint missions land on an empty Waypoints step; the operator can click Next to continue.
           setCurrentStepIndex(1)
-        }
-        // If rerunning from schedule history (has eventData), always use 'Recent Runs'
-        if (eventData) {
-          setSelectedMissionCategory('Recent Runs')
-        } else if (matchingMission.recentRun) {
-          setSelectedMissionCategory('Recent Runs')
-        } else if (matchingMission.frequentRun) {
-          setSelectedMissionCategory('Frequent Runs')
-        } else if (matchingMission.category) {
-          // Set category based on mission's category
-          const categoryId = missionCategories.find(
-            (c) =>
-              c.name === matchingMission.category ||
-              c.id === matchingMission.category
-          )?.id
-          if (categoryId) {
-            setSelectedMissionCategory(categoryId)
+          if (eventData) {
+            setSelectedMissionCategory('Recent Runs')
+          } else if (matchingMission.recentRun) {
+            setSelectedMissionCategory('Recent Runs')
+          } else if (matchingMission.frequentRun) {
+            setSelectedMissionCategory('Frequent Runs')
+          } else if (matchingMission.category) {
+            const categoryId = missionCategories.find(
+              (c) =>
+                c.name === matchingMission.category ||
+                c.id === matchingMission.category
+            )?.id
+            if (categoryId) {
+              setSelectedMissionCategory(categoryId)
+            }
           }
         }
       }
@@ -182,6 +178,7 @@ const MissionModal: React.FC<MissionModalProps> = ({
     frequentRunsLoading,
     isMissionListLoading,
     currentStepIndex,
+    selectedMission,
   ])
 
   // Missions with parameter/waypoint overrides that should be applied.

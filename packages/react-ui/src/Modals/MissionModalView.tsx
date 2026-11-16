@@ -192,12 +192,12 @@ const MissionModalBody: React.FC<MissionModalViewProps> = ({
     commsParams,
   })
 
-  // Allow the parent to drive the step after mount (e.g. "Use for new mission"
-  // auto-selects a mission asynchronously, then advances past the Mission step).
+  // Allow the parent to drive the step after mount (e.g. "Use for new mission" auto-advance).
+  // Only acts when the step is actually changing to avoid clearing showSummary mid-wizard.
   useEffect(() => {
-    if (currentStepIndex !== undefined) {
-      setCurrentStep(currentStepIndex)
+    if (currentStepIndex !== undefined && currentStepIndex !== currentStep) {
       setShowSummary(false)
+      setCurrentStep(currentStepIndex)
     }
   }, [currentStepIndex]) // eslint-disable-line react-hooks/exhaustive-deps
 

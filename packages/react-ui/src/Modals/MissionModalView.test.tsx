@@ -575,6 +575,21 @@ test('advances to the Waypoints step when currentStepIndex prop changes from 0 t
   ).not.toBeInTheDocument()
 })
 
+test('calls onStepIndexChange when Next advances the step', () => {
+  const onStepIndexChange = jest.fn()
+  render(
+    <RecoilRoot>
+      <MissionModalView
+        {...props}
+        currentStepIndex={3}
+        onStepIndexChange={onStepIndexChange}
+      />
+    </RecoilRoot>
+  )
+  fireEvent.click(screen.getByRole('button', { name: 'Next' }))
+  expect(onStepIndexChange).toHaveBeenCalledWith(4)
+})
+
 test('Send Command Back returns to Confirm and does not dismiss', () => {
   const onCancel = jest.fn()
   render(
