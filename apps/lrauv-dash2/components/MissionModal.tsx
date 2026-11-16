@@ -141,7 +141,7 @@ const MissionModal: React.FC<MissionModalProps> = ({
 
       if (matchingMission) {
         // Only apply if still on Mission step and no manual pick has been made.
-        // Ref is set inside so Back resets the guard and allows re-select.
+        // Ref is set inside so a delayed load doesn't fire after the operator has moved on.
         if (currentStepIndex === 0 && !selectedMission) {
           hasAutoSelectedRef.current = true
           setSelectedMission(matchingMission.id)
