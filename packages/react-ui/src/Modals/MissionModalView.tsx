@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react'
+import React, { useEffect, useRef } from 'react'
 import { Modal } from '../Modal/Modal'
 import { StepProgress, StepProgressProps } from '../Navigation/StepProgress'
 import { SelectOption } from '../Fields/Select'
@@ -73,6 +73,7 @@ export interface MissionModalViewProps
   /** Backend preview SBD fragment count (≥2 shown as a quiet note on Review). */
   previewSbdCount?: number
   loading?: boolean
+  /** Called whenever the child advances or goes back. Required when the parent owns `currentStepIndex` to keep state in sync. */
   onStepIndexChange?: (step: number) => void
   selectedMissionCategory?: string
   defaultSearchText?: string
@@ -129,6 +130,7 @@ const MissionModalBody: React.FC<MissionModalViewProps> = ({
   onSelectMissionCategory,
   showAllVehicleMissions,
   onShowAllVehicleMissions,
+  onStepIndexChange,
 }) => {
   const {
     state: {
@@ -174,15 +176,41 @@ const MissionModalBody: React.FC<MissionModalViewProps> = ({
     onSelectMissionCategory?.(category)
   }
 
-  const { steps, currentStep, handleNext, handlePrevious, showSummary } =
-    useMissionModalSteps({
-      initialIndex: currentStepIndex,
-      waypoints,
-      defaultParameters: parameters,
-      updatedParameters,
-      safetyParams,
-      commsParams,
-    })
+  const {
+    steps,
+    currentStep,
+    setCurrentStep,
+    handleNext,
+    handlePrevious,
+    showSummary,
+    setShowSummary,
+  } = useMissionModalSteps({
+    initialIndex: currentStepIndex,
+    waypoints,
+    defaultParameters: parameters,
+    updatedParameters,
+    safetyParams,
+    commsParams,
+  })
+
+  // Allow the parent to drive the step after mount (e.g. "Use for new mission" auto-advance).
+  // Only acts when the step is actually changing to avoid clearing showSummary mid-wizard.
+  useEffect(() => {
+    if (currentStepIndex !== undefined && currentStepIndex !== currentStep) {
+      setShowSummary(false)
+      setCurrentStep(currentStepIndex)
+    }
+  }, [currentStepIndex]) // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Keep the parent's step index in sync when the operator uses Next or Back.
+  // prevStepRef is initialized to currentStep so mount (and Strict Mode double-mount) is a no-op.
+  const prevStepRef = useRef(currentStep)
+  useEffect(() => {
+    if (currentStep !== prevStepRef.current) {
+      prevStepRef.current = currentStep
+      onStepIndexChange?.(currentStep)
+    }
+  }, [currentStep]) // eslint-disable-line react-hooks/exhaustive-deps
 
   const {
     handleNaNwaypoints,

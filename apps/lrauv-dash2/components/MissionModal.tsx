@@ -105,12 +105,18 @@ const MissionModal: React.FC<MissionModalProps> = ({
   // Track if we've already auto-selected to prevent re-selecting when user changes selection
   const hasAutoSelectedRef = useRef(false)
 
+  // Controls which step MissionModalView opens on.
+  // Stays at 0 (Mission selection) until a mission is auto-selected, then
+  // advances to 1 so the operator doesn't have to click Next manually.
+  const [currentStepIndex, setCurrentStepIndex] = useState(0)
+
   // Auto-select mission from globalModalId meta if provided (only once on initial load)
   useEffect(() => {
     const missionPath = globalModalId?.meta?.mission
     const eventData = globalModalId?.meta?.eventData
 
-    // Reset the ref when modal closes (when globalModalId becomes null or changes)
+    // MissionModal only mounts when id === 'newMission', so this branch is unreachable
+    // while mounted; state resets naturally on unmount.
     if (!globalModalId?.id || globalModalId?.id !== 'newMission') {
       hasAutoSelectedRef.current = false
       return
@@ -134,28 +140,27 @@ const MissionModal: React.FC<MissionModalProps> = ({
       )
 
       if (matchingMission) {
-        // Set ref only after a confirmed match so the effect can still retry
-        // on later renders if template missions arrive after recent/frequent runs.
-        // Once all three loading flags are false and a match is found, all future
-        // re-renders (including Back navigation) will see the ref as true and skip.
-        hasAutoSelectedRef.current = true
-        setSelectedMission(matchingMission.id)
-        // If rerunning from schedule history (has eventData), always use 'Recent Runs'
-        if (eventData) {
-          setSelectedMissionCategory('Recent Runs')
-        } else if (matchingMission.recentRun) {
-          setSelectedMissionCategory('Recent Runs')
-        } else if (matchingMission.frequentRun) {
-          setSelectedMissionCategory('Frequent Runs')
-        } else if (matchingMission.category) {
-          // Set category based on mission's category
-          const categoryId = missionCategories.find(
-            (c) =>
-              c.name === matchingMission.category ||
-              c.id === matchingMission.category
-          )?.id
-          if (categoryId) {
-            setSelectedMissionCategory(categoryId)
+        // Only apply if still on Mission step and no manual pick has been made.
+        // Ref is set inside so a delayed load doesn't fire after the operator has moved on.
+        if (currentStepIndex === 0 && !selectedMission) {
+          hasAutoSelectedRef.current = true
+          setSelectedMission(matchingMission.id)
+          setCurrentStepIndex(1)
+          if (eventData) {
+            setSelectedMissionCategory('Recent Runs')
+          } else if (matchingMission.recentRun) {
+            setSelectedMissionCategory('Recent Runs')
+          } else if (matchingMission.frequentRun) {
+            setSelectedMissionCategory('Frequent Runs')
+          } else if (matchingMission.category) {
+            const categoryId = missionCategories.find(
+              (c) =>
+                c.name === matchingMission.category ||
+                c.id === matchingMission.category
+            )?.id
+            if (categoryId) {
+              setSelectedMissionCategory(categoryId)
+            }
           }
         }
       }
@@ -169,6 +174,8 @@ const MissionModal: React.FC<MissionModalProps> = ({
     recentRunsLoading,
     frequentRunsLoading,
     isMissionListLoading,
+    currentStepIndex,
+    selectedMission,
   ])
 
   // Missions with parameter/waypoint overrides that should be applied.
@@ -360,7 +367,8 @@ const MissionModal: React.FC<MissionModalProps> = ({
         height: 'calc(100vh - 6rem)',
       }}
       alternativeAddresses={alternativeAddresses}
-      currentStepIndex={0}
+      currentStepIndex={currentStepIndex}
+      onStepIndexChange={setCurrentStepIndex}
       vehicleName={capitalize(vehicleName)}
       bottomDepth="n/a"
       totalDistance={estDistance ? `${estDistance.toPrecision(4)}km` : 'n/a'}
@@ -386,7 +394,9 @@ const MissionModal: React.FC<MissionModalProps> = ({
       onFocusWaypoint={onFocusWaypoint}
       vehicles={vehicles}
       loading={sendingCommand}
-      missionsLoading={recentRunsLoading || frequentRunsLoading}
+      missionsLoading={
+        recentRunsLoading || frequentRunsLoading || isMissionListLoading
+      }
       previewText={previewText}
       previewSbdCount={previewSbdCount}
       unitOptions={unitsData}
