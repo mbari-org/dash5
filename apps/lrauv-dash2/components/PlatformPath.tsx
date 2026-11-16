@@ -22,12 +22,13 @@ export const isTimeoutError = (error: unknown): boolean => {
 }
 
 /** True for transient connectivity failures: timeout or no HTTP response (ODSS unreachable).
- * HTTP errors (401, 5xx) return false — those are server-side and should hide the track. */
+ * HTTP errors (401, 5xx) and Axios setup failures (no request sent) return false. */
 export const isTransientError = (error: unknown): boolean =>
   isTimeoutError(error) ||
   (error instanceof Error &&
-    'isAxiosError' in error &&
-    (error as { response?: unknown }).response == null)
+    (error as { isAxiosError?: unknown }).isAxiosError === true &&
+    (error as { response?: unknown }).response == null &&
+    !!(error as { request?: unknown }).request)
 
 // How far back to search for position fixes when no explicit window is given.
 // 365 days ensures infrequently-updated fixed platforms (e.g. CA offshore

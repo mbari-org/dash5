@@ -98,8 +98,17 @@ describe('isTransientError', () => {
     const networkError = Object.assign(new Error('Network Error'), {
       isAxiosError: true,
       response: undefined,
+      request: {},
     })
     expect(isTransientError(networkError)).toBe(true)
+  })
+
+  it('returns false for Axios setup failures where no request was sent', () => {
+    const setupError = Object.assign(new Error('Invalid URL'), {
+      isAxiosError: true,
+      response: undefined,
+    })
+    expect(isTransientError(setupError)).toBe(false)
   })
 
   it('returns false for HTTP errors with a response', () => {
@@ -180,6 +189,7 @@ describe('PlatformPath rendering', () => {
     const networkError = Object.assign(new Error('Network Error'), {
       isAxiosError: true,
       response: undefined,
+      request: {},
     })
     mockUsePlatformPositions.mockReturnValue({
       data: {
