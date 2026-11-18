@@ -1702,6 +1702,61 @@ test('parses legacy sched YYYYMMDD}T timestamp for backwards compatibility', asy
   })
 })
 
+test('pending row resolves mission ID via getScript when path is in event.text and event.data is path-free', async () => {
+  // Edge case: event.data is non-null but contains no mission file path
+  // (e.g. a bare "run" instruction), while event.text holds the full load command.
+  // allMissionPaths must extract the path from text independently — a coalesced
+  // `data ?? text` would skip text entirely because data is non-null.
+  server.use(
+    rest.get('/user/token', (_req, res, ctx) =>
+      res(ctx.status(200), ctx.json(mockAuthResponse))
+    ),
+    rest.get('/events', (_req, res, ctx) =>
+      res(
+        ctx.status(200),
+        ctx.json({
+          result: [
+            {
+              // data is non-null but path-free — no .tl/.xml, no "load <path>"
+              data: 'run',
+              text: 'load Science/profile_station_vt.tl;set profile_station.MissionTimeout 12 h;run',
+              unixTime: Date.now() - 30 * 1000,
+              eventId: 701,
+              eventType: 'run',
+              note: null,
+              user: 'test-operator',
+            },
+          ],
+        })
+      )
+    ),
+    rest.get('/events/mission-started', (_req, res, ctx) =>
+      res(ctx.status(200), ctx.json({ result: [] }))
+    ),
+    rest.get('/commands/script', (_req, res, ctx) =>
+      res(
+        ctx.status(200),
+        ctx.json({ result: { id: 'profile_station', scriptArgs: [] } })
+      )
+    )
+  )
+
+  render(
+    <MockProviders
+      queryClient={new QueryClient()}
+      testToken={mockAuthResponse.result.token}
+    >
+      <ScheduleSection {...props} currentDeploymentId={1} />
+    </MockProviders>
+  )
+
+  await waitFor(() => {
+    expect(screen.getByText('profile_station')).toBeInTheDocument()
+  })
+  // The filename-derived label must not appear — getScript resolved it via text
+  expect(screen.queryByText('profile_station_vt')).not.toBeInTheDocument()
+})
+
 test('pending row shows mission ID from getScript before vehicle telemetry arrives', async () => {
   // profile_station_vt.tl declares mission ID "profile_station". The pending
   // row should display "profile_station" immediately — not the filename-derived
@@ -1749,6 +1804,221 @@ test('pending row shows mission ID from getScript before vehicle telemetry arriv
     </MockProviders>
   )
 
+  await waitFor(() => {
+    expect(screen.getByText('profile_station')).toBeInTheDocument()
+  })
+  expect(screen.queryByText('profile_station_vt')).not.toBeInTheDocument()
+})
+
+test('_vt command row is promoted to running when script ID matches vehicle telemetry', async () => {
+  // profile_station_vt.tl: vehicle reports "Started mission profile_station".
+  // The enrichment and matchingMissionIndex logic must use the getScript ID
+  // ("profile_station") to correlate the _vt command row to the running mission
+  // and promote it to running status (Ended: TBD).
+  server.use(
+    rest.get('/user/token', (_req, res, ctx) =>
+      res(ctx.status(200), ctx.json(mockAuthResponse))
+    ),
+    rest.get('/events', (_req, res, ctx) =>
+      res(
+        ctx.status(200),
+        ctx.json({
+          result: [
+            {
+              data: 'load Science/profile_station_vt.tl;set profile_station.MissionTimeout 12 h;run',
+              unixTime: Date.now() - 60 * 1000,
+              eventId: 601,
+              eventType: 'run',
+              text: null,
+              note: null,
+              user: 'test-operator',
+            },
+          ],
+        })
+      )
+    ),
+    rest.get('/events/mission-started', (_req, res, ctx) =>
+      res(
+        ctx.status(200),
+        ctx.json({
+          result: [
+            {
+              text: 'Started mission profile_station',
+              unixTime: Date.now() - 55 * 1000,
+              eventId: 602,
+            },
+          ],
+        })
+      )
+    ),
+    rest.get('/commands/script', (_req, res, ctx) =>
+      res(
+        ctx.status(200),
+        ctx.json({ result: { id: 'profile_station', scriptArgs: [] } })
+      )
+    )
+  )
+
+  render(
+    <MockProviders
+      queryClient={new QueryClient()}
+      testToken={mockAuthResponse.result.token}
+    >
+      <ScheduleSection {...props} currentDeploymentId={1} />
+    </MockProviders>
+  )
+
+  // The _vt command row is matched to the running profile_station via script ID
+  // and promoted to running status — shown as "Ended: TBD".
+  await waitFor(() => {
+    expect(screen.getByText(/Ended:\s*TBD/i)).toBeInTheDocument()
+  })
+  // Row label resolves to script ID, not the raw filename
+  expect(screen.getByText('profile_station')).toBeInTheDocument()
+  expect(screen.queryByText('profile_station_vt')).not.toBeInTheDocument()
+})
+
+test('_vt row label shows raw filename when getScript is unavailable (no token)', async () => {
+  // No token → getScript is disabled (enabled: !!token is false).
+  // Without the _vt regex strip, the label falls back to the raw filename
+  // "profile_station_vt". This is accurate — it is the actual file name.
+  // Once a token is present and getScript resolves, the label becomes
+  // "profile_station" via scriptIdByPath.
+  server.use(
+    rest.get('/events', (_req, res, ctx) =>
+      res(
+        ctx.status(200),
+        ctx.json({
+          result: [
+            {
+              data: 'load Science/profile_station_vt.tl;set profile_station.MissionTimeout 12 h;run',
+              unixTime: Date.now() - 30 * 1000,
+              eventId: 701,
+              eventType: 'run',
+              text: null,
+              note: null,
+              user: 'test-operator',
+            },
+          ],
+        })
+      )
+    ),
+    rest.get('/events/mission-started', (_req, res, ctx) =>
+      res(ctx.status(200), ctx.json({ result: [] }))
+    )
+    // No /commands/script mock — getScript must not be called without a token
+  )
+
+  // Render without a token so getScript is disabled
+  render(
+    <MockProviders queryClient={new QueryClient()}>
+      <ScheduleSection {...props} currentDeploymentId={1} />
+    </MockProviders>
+  )
+
+  // Without a token, label shows the raw filename (no _vt strip)
+  await waitFor(() => {
+    expect(screen.getByText('profile_station_vt')).toBeInTheDocument()
+  })
+  expect(screen.queryByText('profile_station')).not.toBeInTheDocument()
+})
+
+test('deploymentLogsOnly: _vt mission in commandStatuses is resolved via getScript', async () => {
+  // allMissionPaths reads from deploymentResponse.data.commandStatuses regardless of
+  // deploymentLogsOnly mode, so getScript is pre-fetched for _vt paths in deployment
+  // logs. A placeholder event in /events keeps the cell count > 0 before the toggle
+  // so the virtualizer stays active and renders item 0 after the mode switch.
+  server.use(
+    rest.get('/user/token', (_req, res, ctx) =>
+      res(ctx.status(200), ctx.json(mockAuthResponse))
+    ),
+    rest.get('/deployments/commandStatus', (_req, res, ctx) =>
+      res(
+        ctx.status(200),
+        ctx.json({
+          result: {
+            eventTypes: 'command,run',
+            commandStatuses: [
+              {
+                event: {
+                  data: 'load Science/profile_station_vt.tl;set profile_station.MissionTimeout 12 h;run',
+                  unixTime: Date.now() - 60 * 1000,
+                  eventId: 801,
+                  eventType: 'run',
+                  text: null,
+                  note: null,
+                  user: 'test-operator',
+                },
+                status: 'running',
+                relatedEvents: [],
+              },
+            ],
+          },
+        })
+      )
+    ),
+    rest.get('/events', (_req, res, ctx) =>
+      res(
+        ctx.status(200),
+        ctx.json({
+          // Placeholder event so the virtualizer initialises with count=1 before
+          // the toggle — it does not render new cells when count transitions 0→1
+          // in JSDOM (zero-height viewport). This event is replaced by the _vt
+          // item once deploymentLogsOnly is toggled on.
+          result: [
+            {
+              data: 'load Science/keepstation.tl;run',
+              unixTime: Date.now() - 120 * 1000,
+              eventId: 800,
+              eventType: 'run',
+              text: null,
+              note: null,
+              user: 'test-operator',
+            },
+          ],
+        })
+      )
+    ),
+    rest.get('/events/mission-started', (_req, res, ctx) =>
+      res(ctx.status(200), ctx.json({ result: [] }))
+    ),
+    rest.get('/commands/script', (req, res, ctx) => {
+      // Return the correct canonical ID per path so keepstation stays as
+      // "keepstation" and doesn't accidentally resolve to "profile_station",
+      // keeping the pre-toggle and post-toggle label assertions unambiguous.
+      const path = req.url.searchParams.get('path') ?? ''
+      const id = path.includes('profile_station_vt')
+        ? 'profile_station'
+        : path
+            .split('/')
+            .pop()
+            ?.replace(/\.(xml|tl)$/i, '') ?? 'unknown'
+      return res(ctx.status(200), ctx.json({ result: { id, scriptArgs: [] } }))
+    })
+  )
+
+  render(
+    <MockProviders
+      queryClient={new QueryClient()}
+      testToken={mockAuthResponse.result.token}
+    >
+      <ScheduleSection {...props} currentDeploymentId={1} />
+    </MockProviders>
+  )
+
+  // Wait for the placeholder to render as "keepstation" — confirming getScript
+  // has not mis-resolved it to "profile_station" — then switch modes.
+  await waitFor(() => {
+    expect(screen.getByText('keepstation')).toBeInTheDocument()
+  })
+
+  const toggleButton = screen.getByRole('button', {
+    name: /displaying all logs/i,
+  })
+  await userEvent.click(toggleButton)
+
+  // In deploymentLogsOnly mode, the _vt item from commandStatuses replaces the
+  // placeholder. getScript resolves profile_station_vt.tl → "profile_station".
   await waitFor(() => {
     expect(screen.getByText('profile_station')).toBeInTheDocument()
   })
