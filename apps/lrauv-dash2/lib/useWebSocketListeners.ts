@@ -1,22 +1,26 @@
 import { useEffect } from 'react'
-import { useTethysApiContext } from '@mbari/api-client'
+import { useTethysApiContext, COMMAND_QUEUE_QUERY_KEY } from '@mbari/api-client'
 import { useQuery, useQueryClient } from 'react-query'
 
 type SubscriptionEventType =
   | 'VehicleConnected'
   | 'VehiclePingResult'
+  | 'ResourceUpdated'
   | 'presence'
   | null
 
 export const SUPPORTED_EVENT_TYPES: SubscriptionEventType[] = [
   'VehicleConnected',
   'VehiclePingResult',
+  'ResourceUpdated',
   'presence',
 ]
 
 export interface TethysSubscriptionEvent {
   eventName?: string
   vehicleName?: string
+  /** Identifies the updated resource for ResourceUpdated events (e.g. "commandQueue"). */
+  resource?: string
   hostName?: string
   checkedAt?: number
   presence?: string
@@ -71,6 +75,15 @@ export const useTethysSubscription = () => {
         console.log('Unsupported event type: ', data.eventName)
         return
       }
+
+      // ResourceUpdated carries no payload — invalidate the relevant query instead.
+      if (data.eventName === 'ResourceUpdated') {
+        if (data.resource === 'commandQueue') {
+          queryClient.invalidateQueries(COMMAND_QUEUE_QUERY_KEY)
+        }
+        return
+      }
+
       const queryKey = getTethysSubscriptionQueryKey(
         data.eventName,
         data.vehicleName,

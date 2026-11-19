@@ -60,7 +60,15 @@ export const determineCommandStatus = (
   sbdSendMap: Map<string, SbdSendMapValue>,
   sbdReceiptMap: Map<string, GetEventsResponse>,
   sbdReceiveMap: Map<number, GetEventsResponse>,
-  timeoutMap: Map<string, GetEventsResponse>
+  timeoutMap: Map<string, GetEventsResponse>,
+  options?: {
+    /**
+     * True when the backend queue confirms this command is dispatched (sent to
+     * the vehicle and awaiting ACK). A dispatched entry is no longer subject to
+     * the cell timeout, so we skip client-side sentTimeoutMs inference.
+     */
+    dispatched?: boolean
+  }
 ): CommsEvent => {
   const via = getVia(command.note)
 
@@ -201,13 +209,15 @@ export const determineCommandStatus = (
     }
   }
 
-  // Same client-side timeout inference for dispatched-but-unacknowledged commands.
+  // Client-side timeout inference for sent-but-unacknowledged commands.
+  // Skip when the backend queue confirms this command is dispatched — a
+  // dispatched entry is no longer subject to the cell timeout (4.99.134).
   const timeoutMinutes = timeout ? parseInt(timeout, 10) : undefined
   const sentTimeoutMs =
     timeoutMinutes && matchingSbdSend.unixTime
       ? matchingSbdSend.unixTime + timeoutMinutes * 60 * 1000
       : undefined
-  if (sentTimeoutMs && Date.now() > sentTimeoutMs) {
+  if (!options?.dispatched && sentTimeoutMs && Date.now() > sentTimeoutMs) {
     return withChunkGate(
       {
         ...command,

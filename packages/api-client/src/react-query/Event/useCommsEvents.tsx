@@ -8,6 +8,7 @@ import {
   EventType,
 } from '../../axios'
 import { useInfiniteEvents } from './useInfiniteEvents'
+import { useCommandQueue } from '../Command/useCommandQueue'
 
 const minCommandEvents = 10
 
@@ -56,6 +57,8 @@ export const useCommsEvents = ({
     if (!data?.pages) return []
     return data.pages.flat()
   }, [data?.pages])
+
+  const { dispatchedEventIds } = useCommandQueue(vehicles, { enabled })
 
   const { commands, sbdSendMap, sbdReceiptMap, sbdReceiveMap, timeoutMap } =
     useMemo(() => {
@@ -193,23 +196,28 @@ export const useCommsEvents = ({
 
   const updatedCommands = useMemo((): CommsEvent[] => {
     return commands.map((command) => {
+      const queueEntry = command.eventId
+        ? dispatchedEventIds.get(command.eventId)
+        : undefined
       return determineCommandStatus(
         command,
         sbdSendMap,
         sbdReceiptMap,
         sbdReceiveMap,
-        timeoutMap
+        timeoutMap,
+        { dispatched: queueEntry?.dispatched }
       )
     })
-    // clockTick is intentionally included: the memo re-runs every 60 s so
-    // client-side timeout inference (Date.now()) is re-evaluated without any
-    // network request. All other deps are exhaustive.
+    // clockTick re-runs every 60 s to re-evaluate client-side timeout inference
+    // (Date.now()) without a network request. dispatchedEventIds is included so
+    // the memo updates when the command queue changes via ResourceUpdated.
   }, [
     commands,
     sbdSendMap,
     sbdReceiptMap,
     sbdReceiveMap,
     timeoutMap,
+    dispatchedEventIds,
     clockTick,
   ])
 
