@@ -1,6 +1,6 @@
 import '@testing-library/jest-dom'
 import React from 'react'
-import { render } from '@testing-library/react'
+import { render, act } from '@testing-library/react'
 import { QueryClient, QueryClientProvider } from 'react-query'
 import { TethysApiContext } from '@mbari/api-client'
 import { useTethysSubscription } from '../lib/useWebSocketListeners'
@@ -117,5 +117,118 @@ describe('useTethysSubscription', () => {
     render(<Probe />, { wrapper })
 
     expect(MockWebSocket.instances).toHaveLength(0)
+  })
+
+  test('appends XEvent position to matching TrackDB platform cache entry', () => {
+    const queryClient = new QueryClient()
+
+    // Seed a cached platform positions entry for "rcsn_sim"
+    const platformKey = [
+      'trackdb',
+      'platforms',
+      'platform-abc',
+      'positions',
+      20,
+      undefined,
+      undefined,
+    ]
+    queryClient.setQueryData(platformKey, {
+      platformId: 'platform-abc',
+      platformName: 'rcsn_sim',
+      positions: [{ timeMs: 1700000000000, lat: 36.6, lon: -122.0 }],
+    })
+
+    const Wrapper = ({ children }: { children: React.ReactNode }) => (
+      <QueryClientProvider client={queryClient}>
+        <TethysApiContext.Provider
+          value={
+            {
+              token: 'test-token-123',
+              profile: {
+                email: 'user@mbari.org',
+                firstName: 'T',
+                lastName: 'U',
+              },
+              axiosInstance: {} as any,
+            } as any
+          }
+        >
+          {children}
+        </TethysApiContext.Provider>
+      </QueryClientProvider>
+    )
+    Wrapper.displayName = 'TestWrapper'
+
+    render(<Probe />, { wrapper: Wrapper })
+    const ws = MockWebSocket.instances[0]
+    ws.onopen?.()
+
+    act(() => {
+      ws.onmessage?.({
+        data: JSON.stringify({
+          eventName: 'XEvent',
+          appName: 'odss2dash',
+          payload: {
+            assetName: 'rcsn_sim',
+            position: { timeMs: 1700000060000, lat: 36.7, lon: -122.1 },
+            typeName: 'ship',
+          },
+        }),
+      } as MessageEvent)
+    })
+
+    const updated = queryClient.getQueryData<{
+      positions: { timeMs: number; lat: number; lon: number }[]
+    }>(platformKey)
+    expect(updated?.positions).toHaveLength(2)
+    expect(updated?.positions[1]).toEqual({
+      timeMs: 1700000060000,
+      lat: 36.7,
+      lon: -122.1,
+    })
+  })
+
+  test('ignores XEvent when no matching platform in cache', () => {
+    const queryClient = new QueryClient()
+    // No platform data seeded — should not throw
+
+    const Wrapper = ({ children }: { children: React.ReactNode }) => (
+      <QueryClientProvider client={queryClient}>
+        <TethysApiContext.Provider
+          value={
+            {
+              token: 'test-token-123',
+              profile: {
+                email: 'user@mbari.org',
+                firstName: 'T',
+                lastName: 'U',
+              },
+              axiosInstance: {} as any,
+            } as any
+          }
+        >
+          {children}
+        </TethysApiContext.Provider>
+      </QueryClientProvider>
+    )
+    Wrapper.displayName = 'TestWrapper'
+
+    render(<Probe />, { wrapper: Wrapper })
+    const ws = MockWebSocket.instances[0]
+    ws.onopen?.()
+
+    expect(() => {
+      act(() => {
+        ws.onmessage?.({
+          data: JSON.stringify({
+            eventName: 'XEvent',
+            payload: {
+              assetName: 'unknown_ship',
+              position: { timeMs: 1700000000000, lat: 36.0, lon: -122.0 },
+            },
+          }),
+        } as MessageEvent)
+      })
+    }).not.toThrow()
   })
 })
