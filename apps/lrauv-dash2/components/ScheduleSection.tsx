@@ -1116,7 +1116,7 @@ export const ScheduleSection: React.FC<ScheduleSectionProps> = ({
         if (commsStatus === 'ack') return 'ack'
         const isDispatched =
           mission.event.eventId != null &&
-          dispatchedEventIds.has(mission.event.eventId)
+          dispatchedEventIds.get(mission.event.eventId)?.dispatched === true
         if (
           commsStatus === 'timeout' ||
           (!isDispatched &&
@@ -1133,7 +1133,7 @@ export const ScheduleSection: React.FC<ScheduleSectionProps> = ({
       const commsStatusForTimeout = commsLookup.get(mission.event.eventId)
       const isDispatchedForTimeout =
         mission.event.eventId != null &&
-        dispatchedEventIds.has(mission.event.eventId)
+        dispatchedEventIds.get(mission.event.eventId)?.dispatched === true
       if (
         commsStatusForTimeout === 'timeout' ||
         (!isDispatchedForTimeout &&

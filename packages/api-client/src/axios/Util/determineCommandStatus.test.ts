@@ -287,10 +287,10 @@ describe('determineCommandStatus', () => {
     expect(result.commsIsoTime).toBe(baseTimeoutEvent.isoTime)
   })
 
-  it('should return timeout for cellsat command when sbdSend exists but its timeout has elapsed', () => {
+  it('should return sent for cellsat command when sbdSend exists but its timeout has elapsed with no backend timeout note', () => {
     // baseSbdSend is from 2023 with a 60-minute timeout — long since expired.
-    // Client-side inference should return 'timeout' instead of 'sent'.
-    // refId on the map entry is the command's eventId (how useCommsEvents builds the map).
+    // Without a backend timeout note, client-side inference no longer fires.
+    // The backend is now responsible for writing the timeout note (issue #897).
     const expiredCellsatSend: GetEventsResponse = {
       ...baseSbdSend,
       refId: baseCellsatCommand.eventId,
@@ -307,7 +307,7 @@ describe('determineCommandStatus', () => {
       new Map()
     )
 
-    expect(result.status).toBe('timeout')
+    expect(result.status).toBe('sent')
     expect(result.via).toBe('cellsat')
     expect(result.timeout).toBe('60')
   })
@@ -689,8 +689,10 @@ describe('determineCommandStatus', () => {
     })
   })
 
-  // #797: client-side timeout (no note) must also stop orange flash.
-  it('should clear inTransit on client-side timeout without a timeout note', () => {
+  // #797: without a backend timeout note, inTransit stays active (orange).
+  // Client-side timeout inference for sent-but-unacknowledged commands was
+  // removed in #897 — the backend now writes the timeout note.
+  it('should return sent with active inTransit for multipart cellsat after timeout window without a backend timeout note', () => {
     const multiPartCellsat: GetEventsResponse = {
       ...baseCellsatCommand,
       unixTime: Date.now() - 20 * 60 * 1000, // well past 5min
@@ -719,13 +721,13 @@ describe('determineCommandStatus', () => {
       sbdSendMap,
       new Map(),
       new Map(),
-      new Map() // no timeout note
+      new Map() // no timeout note — backend has not yet written one
     )
 
-    expect(result.status).toBe('timeout')
+    expect(result.status).toBe('sent')
     expect(result.sbdChunks).toEqual({
       delivered: 0,
-      inTransit: 0,
+      inTransit: 3,
       total: 3,
     })
   })

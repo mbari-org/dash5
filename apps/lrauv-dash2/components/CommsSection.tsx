@@ -136,7 +136,8 @@ const CommsSection: React.FC<CommsSectionProps> = ({
     // confirms this command is still dispatched (e.g. cellsat cell-side timeout
     // while sat is still active).
     const isDispatched =
-      item?.eventId !== undefined && dispatchedEventIds.has(item.eventId)
+      item?.eventId !== undefined &&
+      dispatchedEventIds.get(item.eventId)?.dispatched === true
     const timeoutIsoTime =
       item?.eventId !== undefined && !isDispatched
         ? timedOutMap.get(item.eventId)
