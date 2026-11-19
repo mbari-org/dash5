@@ -3,7 +3,6 @@ import { Marker, Polyline, Tooltip, CircleMarker } from 'react-leaflet'
 import L from 'leaflet'
 import { usePlatformPositions } from '@mbari/api-client'
 import { createLogger } from '@mbari/utils'
-import { useTick } from '../lib/useTick'
 import { PLATFORM_PANE } from '../lib/constants'
 
 const logger = createLogger('PlatformPath')
@@ -18,11 +17,6 @@ export const isTimeoutError = (error: unknown): boolean => {
   )
 }
 
-// How far back to search for position fixes when no explicit window is given.
-// 365 days ensures infrequently-updated fixed platforms (e.g. CA offshore
-// structures that may not report for months) are still found.
-const DEFAULT_LOOKBACK_DAYS = 365
-
 export interface PlatformPathProps {
   platformId: string
   platformName?: string
@@ -32,7 +26,6 @@ export interface PlatformPathProps {
   startDate?: string
   endDate?: string
   limitPositions?: number
-  refreshIntervalMs?: number
 }
 
 export const PlatformPath: React.FC<PlatformPathProps> = ({
@@ -44,7 +37,6 @@ export const PlatformPath: React.FC<PlatformPathProps> = ({
   startDate,
   endDate,
   limitPositions = 20,
-  refreshIntervalMs = 5 * 60_000,
 }) => {
   const [hovered, setHovered] = useState(false)
   const [currentPosHovered, setCurrentPosHovered] = useState(false)
@@ -58,19 +50,15 @@ export const PlatformPath: React.FC<PlatformPathProps> = ({
     setIconFailed(false)
   }, [iconUrl])
 
-  const nowMs = useTick(refreshIntervalMs)
-
+  // When an explicit date window is provided, use it. Otherwise, omit dates
+  // and rely on lastNumberOfFixes only — XEvent WebSocket notifications keep
+  // positions current in real-time, so a rotating query key is not needed.
   const queryWindow = useMemo(() => {
     if (startDate && endDate) {
       return { startDate, endDate }
     }
-    const end = nowMs
-    const start = end - DEFAULT_LOOKBACK_DAYS * 24 * 60 * 60 * 1000
-    return {
-      startDate: new Date(start).toISOString(),
-      endDate: new Date(end).toISOString(),
-    }
-  }, [startDate, endDate, nowMs])
+    return {}
+  }, [startDate, endDate])
 
   const {
     data: positionData,
@@ -85,6 +73,8 @@ export const PlatformPath: React.FC<PlatformPathProps> = ({
     },
     {
       enabled: !!platformId,
+      // Fallback poll when WebSocket drops — XEvent handles real-time updates.
+      refetchInterval: 10 * 60 * 1000,
     }
   )
 

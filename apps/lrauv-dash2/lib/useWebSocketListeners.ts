@@ -1,18 +1,36 @@
 import { useEffect } from 'react'
-import { useTethysApiContext } from '@mbari/api-client'
+import {
+  useTethysApiContext,
+  GetPlatformPositionsResponse,
+} from '@mbari/api-client'
 import { useQuery, useQueryClient } from 'react-query'
 
 type SubscriptionEventType =
   | 'VehicleConnected'
   | 'VehiclePingResult'
+  | 'XEvent'
   | 'presence'
   | null
 
 export const SUPPORTED_EVENT_TYPES: SubscriptionEventType[] = [
   'VehicleConnected',
   'VehiclePingResult',
+  'XEvent',
   'presence',
 ]
+
+export interface XEventPayload {
+  assetId?: string
+  assetName?: string
+  position?: {
+    timeMs: number
+    lat: number
+    lon: number
+  }
+  typeName?: string
+  color?: string
+  iconUrl?: string
+}
 
 export interface TethysSubscriptionEvent {
   eventName?: string
@@ -22,6 +40,8 @@ export interface TethysSubscriptionEvent {
   presence?: string
   reachable?: boolean
   email?: string
+  /** Present on XEvent notifications from odss2dash. */
+  payload?: XEventPayload
 }
 
 export const getTethysSubscriptionQueryKey = (
@@ -71,6 +91,31 @@ export const useTethysSubscription = () => {
         console.log('Unsupported event type: ', data.eventName)
         return
       }
+
+      // XEvent carries a real-time position update from odss2dash.
+      // Update the TrackDB position cache directly — no refetch needed.
+      if (data.eventName === 'XEvent') {
+        const pos = data.payload?.position
+        const assetName = data.payload?.assetName
+        if (pos && assetName) {
+          const allPlatformQueries =
+            queryClient.getQueriesData<GetPlatformPositionsResponse>([
+              'trackdb',
+              'platforms',
+            ])
+          for (const [key, existing] of allPlatformQueries) {
+            if (!existing || existing.platformName !== assetName) continue
+            // Append the new position; display logic in PlatformPath dedupes
+            // and limits to limitPositions (default 20).
+            queryClient.setQueryData<GetPlatformPositionsResponse>(key, {
+              ...existing,
+              positions: [...existing.positions, pos],
+            })
+          }
+        }
+        return
+      }
+
       const queryKey = getTethysSubscriptionQueryKey(
         data.eventName,
         data.vehicleName,
