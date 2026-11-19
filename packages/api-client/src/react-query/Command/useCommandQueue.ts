@@ -1,3 +1,4 @@
+import { useMemo } from 'react'
 import { useQuery } from 'react-query'
 import { getCommandQueue, QueuedSbdSendEvent } from '../../axios'
 import { useTethysApiContext } from '../TethysApiProvider'
@@ -28,14 +29,17 @@ export const useCommandQueue = (
     }
   )
 
-  const dispatchedEventIds = new Map<number, QueuedSbdSendEvent>()
-  if (query.data) {
-    for (const entries of Object.values(query.data)) {
-      for (const entry of entries) {
-        dispatchedEventIds.set(entry.refEventId, entry)
+  const dispatchedEventIds = useMemo(() => {
+    const map = new Map<number, QueuedSbdSendEvent>()
+    if (query.data) {
+      for (const entries of Object.values(query.data)) {
+        for (const entry of entries) {
+          map.set(entry.refEventId, entry)
+        }
       }
     }
-  }
+    return map
+  }, [query.data])
 
   return { ...query, dispatchedEventIds }
 }

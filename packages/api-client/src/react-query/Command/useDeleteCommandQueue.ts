@@ -5,6 +5,7 @@ import {
   RequestConfig,
 } from '../../axios'
 import { useTethysApiContext } from '../TethysApiProvider'
+import { COMMAND_QUEUE_QUERY_KEY } from './useCommandQueue'
 
 export const useDeleteCommandQueue = (config?: RequestConfig) => {
   const { axiosInstance, token } = useTethysApiContext()
@@ -26,6 +27,7 @@ export const useDeleteCommandQueue = (config?: RequestConfig) => {
           'deployments',
           'commandStatus',
         ])
+        queryClient.invalidateQueries(COMMAND_QUEUE_QUERY_KEY)
       },
     }
   )

@@ -126,12 +126,14 @@ export const determineCommandStatus = (
     // elapsed since it was created, treat it as timed out on the client side.
     // This covers commands that were never dispatched (no sbdSend) and for
     // which the backend may never write a timeout note.
+    // Skip when queue confirms dispatched — sbdSend may not yet appear in the
+    // events feed, but the directive is already in transit (4.99.134).
     const timeoutMinutes = timeout ? parseInt(timeout, 10) : undefined
     const timeoutMs =
       timeoutMinutes && command.unixTime
         ? command.unixTime + timeoutMinutes * 60 * 1000
         : undefined
-    if (timeoutMs && Date.now() > timeoutMs) {
+    if (!options?.dispatched && timeoutMs && Date.now() > timeoutMs) {
       return withChunkGate(
         {
           ...command,
