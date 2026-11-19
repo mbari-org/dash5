@@ -24,8 +24,8 @@ export const useCommandQueue = (
       getCommandQueue({ vehicles: vehiclesParam }, { instance: axiosInstance }),
     {
       staleTime: 30 * 1000,
-      enabled: vehicles.length > 0,
       ...options,
+      enabled: vehicles.length > 0 && (options?.enabled ?? true),
     }
   )
 
