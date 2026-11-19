@@ -24,6 +24,8 @@ export const useCommandQueue = (
       getCommandQueue({ vehicles: vehiclesParam }, { instance: axiosInstance }),
     {
       staleTime: 30 * 1000,
+      // Fallback poll when ResourceUpdated WebSocket is unavailable.
+      refetchInterval: 5 * 60 * 1000,
       ...options,
       enabled: vehicles.length > 0 && (options?.enabled ?? true),
     }

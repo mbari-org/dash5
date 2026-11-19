@@ -147,6 +147,23 @@ export const determineCommandStatus = (
         sbdChunks
       )
     }
+    // Backend confirms directive is already in transit (dispatched) but sbdSend
+    // has not yet appeared in the events feed. Show 'sent' so the operator sees
+    // forward progress rather than 'queued', which implies it has not left shore.
+    if (options?.dispatched) {
+      return withChunkGate(
+        {
+          ...command,
+          via,
+          timeout,
+          status: 'sent',
+          commsIsoTime: command.isoTime,
+          mtmsn: undefined,
+          momsn: undefined,
+        },
+        sbdChunks
+      )
+    }
     return withChunkGate(
       {
         ...command,

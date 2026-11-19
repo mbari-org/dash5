@@ -337,6 +337,42 @@ describe('determineCommandStatus', () => {
     expect(result.commsIsoTime).toBe(recentSbdSend.isoTime)
   })
 
+  it('should return sent (not queued) for cellsat command with no sbdSend when backend queue confirms dispatched', () => {
+    // No sbdSend at all — command never made it to the events feed yet.
+    // dispatched: true means it already left shore; show 'sent' not 'queued'.
+    const result = determineCommandStatus(
+      baseCellsatCommand,
+      new Map(),
+      new Map(),
+      new Map(),
+      new Map(),
+      { dispatched: true }
+    )
+
+    expect(result.status).toBe('sent')
+    expect(result.via).toBe('cellsat')
+  })
+
+  it('should return queued (not timeout) for cellsat command with no sbdSend when backend queue confirms dispatched and timeout elapsed', () => {
+    // Timeout window has elapsed but dispatched: true — suppress client timeout.
+    // Status falls through to 'sent' (dispatched path) rather than 'timeout'.
+    const expiredCommand = {
+      ...baseCellsatCommand,
+      unixTime: Date.now() - 2 * 60 * 60 * 1000, // 2 hours ago
+    }
+    const result = determineCommandStatus(
+      expiredCommand,
+      new Map(),
+      new Map(),
+      new Map(),
+      new Map(),
+      { dispatched: true }
+    )
+
+    expect(result.status).toBe('sent')
+    expect(result.via).toBe('cellsat')
+  })
+
   it('should return sent (not timeout) for cellsat command when backend queue confirms dispatched', () => {
     // sbdSend is from 2023 — well past the 60-minute timeout window.
     // Without dispatched:true this would be 'timeout'. With it, skip inference → 'sent'.
