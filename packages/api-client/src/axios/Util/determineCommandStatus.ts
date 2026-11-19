@@ -80,9 +80,12 @@ export const determineCommandStatus = (
     ? asSbdSendList(sbdSendMap.get(String(command.eventId)))
     : []
 
-  const hasTimeoutNote = Boolean(
-    command.eventId && timeoutMap.get(String(command.eventId))
-  )
+  // Skip hasTimeoutNote when the backend queue confirms dispatched — a cellsat
+  // command can receive a cell-timeout note while sat is still active, and
+  // freezing inTransit would incorrectly hide in-transit chunks for that case.
+  const hasTimeoutNote =
+    !options?.dispatched &&
+    Boolean(command.eventId && timeoutMap.get(String(command.eventId)))
 
   // Green = vehicle has the chunk; orange = shore dispatched, not confirmed.
   // Cell state:2 counts as delivered only for pure cell when not timed out;
