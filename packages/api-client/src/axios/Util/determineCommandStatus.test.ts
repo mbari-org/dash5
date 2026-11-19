@@ -353,7 +353,7 @@ describe('determineCommandStatus', () => {
     expect(result.via).toBe('cellsat')
   })
 
-  it('should return queued (not timeout) for cellsat command with no sbdSend when backend queue confirms dispatched and timeout elapsed', () => {
+  it('should return sent (not timeout) for cellsat command with no sbdSend when backend queue confirms dispatched and timeout has elapsed', () => {
     // Timeout window has elapsed but dispatched: true — suppress client timeout.
     // Status falls through to 'sent' (dispatched path) rather than 'timeout'.
     const expiredCommand = {

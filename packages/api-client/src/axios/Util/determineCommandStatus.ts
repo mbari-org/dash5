@@ -101,7 +101,9 @@ export const determineCommandStatus = (
   // A timeout note is ground truth for any comms type (cell, sat, cellsat, unknown).
   // Check it first — before sbdSend state — so a timed-out command is never
   // misreported as 'sent' or 'ack' regardless of what Iridium bookkeeping exists.
-  if (command.eventId) {
+  // Skip when the backend queue confirms dispatched: a cellsat command can receive
+  // a cell-timeout note while the sat side is still active in the queue.
+  if (command.eventId && !options?.dispatched) {
     const timeoutEvent = timeoutMap.get(String(command.eventId))
     if (timeoutEvent) {
       return withChunkGate(
@@ -226,29 +228,6 @@ export const determineCommandStatus = (
         sbdChunks
       )
     }
-  }
-
-  // Client-side timeout inference for sent-but-unacknowledged commands.
-  // Skip when the backend queue confirms this command is dispatched — a
-  // dispatched entry is no longer subject to the cell timeout (4.99.134).
-  const timeoutMinutes = timeout ? parseInt(timeout, 10) : undefined
-  const sentTimeoutMs =
-    timeoutMinutes && matchingSbdSend.unixTime
-      ? matchingSbdSend.unixTime + timeoutMinutes * 60 * 1000
-      : undefined
-  if (!options?.dispatched && sentTimeoutMs && Date.now() > sentTimeoutMs) {
-    return withChunkGate(
-      {
-        ...command,
-        via,
-        timeout,
-        status: 'timeout',
-        commsIsoTime: new Date(sentTimeoutMs).toISOString(),
-        mtmsn: matchingSbdReceipt?.mtmsn || undefined,
-        momsn: undefined,
-      },
-      sbdChunks
-    )
   }
 
   return withChunkGate(

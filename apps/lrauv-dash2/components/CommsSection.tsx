@@ -89,6 +89,7 @@ const CommsSection: React.FC<CommsSectionProps> = ({
   )
 
   const deploymentResponse = useCommsEvents(deploymentParams)
+  const { dispatchedEventIds } = deploymentResponse
 
   const allLogsParams = useMemo(
     () => ({
@@ -131,9 +132,15 @@ const CommsSection: React.FC<CommsSectionProps> = ({
 
     const item = data[index]
     // Override status when the internal timeout-notes query found a timeout note
-    // that useCommsEvents pagination didn't reach.
+    // that useCommsEvents pagination didn't reach. Skip when the backend queue
+    // confirms this command is still dispatched (e.g. cellsat cell-side timeout
+    // while sat is still active).
+    const isDispatched =
+      item?.eventId !== undefined && dispatchedEventIds.has(item.eventId)
     const timeoutIsoTime =
-      item?.eventId !== undefined ? timedOutMap.get(item.eventId) : undefined
+      item?.eventId !== undefined && !isDispatched
+        ? timedOutMap.get(item.eventId)
+        : undefined
     const resolvedStatus =
       timeoutIsoTime !== undefined ? 'timeout' : item?.status
     // Use the timeout note's isoTime for the cell timestamp when available;

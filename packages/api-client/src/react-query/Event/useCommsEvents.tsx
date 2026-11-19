@@ -225,6 +225,7 @@ export const useCommsEvents = ({
 
   return {
     data: updatedCommands,
+    dispatchedEventIds,
     isLoading: fetchingInitialCommands ? fetchingInitialCommands : isLoading,
     isFetching: fetching,
     fetchNextPage,
