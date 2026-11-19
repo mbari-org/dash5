@@ -2,8 +2,12 @@ import { useEffect } from 'react'
 import {
   useTethysApiContext,
   GetPlatformPositionsResponse,
+  PlatformPosition,
 } from '@mbari/api-client'
 import { useQuery, useQueryClient } from 'react-query'
+
+/** Cache key prefix for the per-platform XEvent position buffer. */
+export const XEVENT_BUFFER_KEY = 'xevent-buffer'
 
 type SubscriptionEventType =
   | 'VehicleConnected'
@@ -97,20 +101,48 @@ export const useTethysSubscription = () => {
       if (data.eventName === 'XEvent') {
         const pos = data.payload?.position
         const assetName = data.payload?.assetName
-        if (pos && assetName) {
+        const assetId = data.payload?.assetId
+        if (pos && (assetName || assetId)) {
           const allPlatformQueries =
             queryClient.getQueriesData<GetPlatformPositionsResponse>([
               'trackdb',
               'platforms',
             ])
+          let matched = false
           for (const [key, existing] of allPlatformQueries) {
-            if (!existing || existing.platformName !== assetName) continue
-            // Append the new position; display logic in PlatformPath dedupes
-            // and limits to limitPositions (default 20).
+            // Prefer platformId === assetId (Mongo ObjectId) for reliability;
+            // fall back to platformName === assetName when assetId is absent.
+            if (!existing) continue
+            const idMatch = assetId && existing.platformId === assetId
+            const nameMatch =
+              !idMatch && assetName && existing.platformName === assetName
+            if (!idMatch && !nameMatch) continue
+
+            matched = true
+            const platformId = existing.platformId
+            // lastNumberOfFixes lives at key[4] — use it to cap the array.
+            const cap = (key[4] as number | undefined) ?? 20
+
+            // Append the new position and trim to cap so the cache does not
+            // grow without bound over a long session.
             queryClient.setQueryData<GetPlatformPositionsResponse>(key, {
               ...existing,
-              positions: [...existing.positions, pos],
+              positions: [...existing.positions, pos].slice(-cap * 2),
             })
+
+            // Also write to a lightweight XEvent buffer so positions survive
+            // a background HTTP refetch (which replaces the main cache).
+            // PlatformPath merges the buffer with server data in displayPositions.
+            queryClient.setQueryData<PlatformPosition[]>(
+              ['trackdb', XEVENT_BUFFER_KEY, platformId],
+              (prev = []) => [...(prev ?? []), pos].slice(-cap)
+            )
+          }
+
+          // No cache entry yet — the initial fetch may not have completed.
+          // Invalidate so the query refetches and picks up this platform.
+          if (!matched) {
+            queryClient.invalidateQueries(['trackdb', 'platforms'])
           }
         }
         return

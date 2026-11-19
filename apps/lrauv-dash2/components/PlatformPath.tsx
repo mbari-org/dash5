@@ -1,9 +1,11 @@
 import React, { useMemo, useState, useEffect, useCallback } from 'react'
 import { Marker, Polyline, Tooltip, CircleMarker } from 'react-leaflet'
 import L from 'leaflet'
-import { usePlatformPositions } from '@mbari/api-client'
+import { useQuery } from 'react-query'
+import { usePlatformPositions, PlatformPosition } from '@mbari/api-client'
 import { createLogger } from '@mbari/utils'
 import { PLATFORM_PANE } from '../lib/constants'
+import { XEVENT_BUFFER_KEY } from '../lib/useWebSocketListeners'
 
 const logger = createLogger('PlatformPath')
 
@@ -78,9 +80,29 @@ export const PlatformPath: React.FC<PlatformPathProps> = ({
     }
   )
 
+  // Read the per-platform XEvent buffer written by useWebSocketListeners.
+  // Using useQuery with enabled: false subscribes to setQueryData writes
+  // without triggering any network request.
+  const { data: xeventBuffer } = useQuery<PlatformPosition[]>(
+    ['trackdb', XEVENT_BUFFER_KEY, platformId],
+    () => [],
+    { enabled: false, staleTime: Infinity }
+  )
+
   const displayPositions = useMemo(() => {
-    const positions = positionData?.positions
-    if (!positions || positions.length === 0) return []
+    const serverPositions = positionData?.positions ?? []
+
+    // Merge XEvent buffer positions that are newer than the server's latest
+    // so a background HTTP refetch cannot silently drop in-flight positions.
+    const latestServerTimeMs =
+      serverPositions.length > 0
+        ? Math.max(...serverPositions.map((p) => p.timeMs))
+        : 0
+    const freshXEvent = (xeventBuffer ?? []).filter(
+      (p) => p.timeMs > latestServerTimeMs
+    )
+    const positions = [...freshXEvent, ...serverPositions]
+    if (positions.length === 0) return []
 
     const sorted = [...positions].sort((a, b) => b.timeMs - a.timeMs)
     const seen = new Set<number>()
@@ -92,7 +114,7 @@ export const PlatformPath: React.FC<PlatformPathProps> = ({
       if (deduped.length >= limitPositions) break
     }
     return deduped
-  }, [positionData, limitPositions])
+  }, [positionData, xeventBuffer, limitPositions])
 
   const route = useMemo(() => {
     if (displayPositions.length === 0) return []
