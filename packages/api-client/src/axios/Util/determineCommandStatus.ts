@@ -60,7 +60,15 @@ export const determineCommandStatus = (
   sbdSendMap: Map<string, SbdSendMapValue>,
   sbdReceiptMap: Map<string, GetEventsResponse>,
   sbdReceiveMap: Map<number, GetEventsResponse>,
-  timeoutMap: Map<string, GetEventsResponse>
+  timeoutMap: Map<string, GetEventsResponse>,
+  options?: {
+    /**
+     * True when the backend queue confirms this command is dispatched (sent to
+     * the vehicle and awaiting ACK). A dispatched entry is no longer subject to
+     * the cell timeout, so we skip client-side sentTimeoutMs inference.
+     */
+    dispatched?: boolean
+  }
 ): CommsEvent => {
   const via = getVia(command.note)
 
@@ -72,9 +80,10 @@ export const determineCommandStatus = (
     ? asSbdSendList(sbdSendMap.get(String(command.eventId)))
     : []
 
-  const hasTimeoutNote = Boolean(
-    command.eventId && timeoutMap.get(String(command.eventId))
-  )
+  // Skip when dispatched: cellsat cell-timeout note must not freeze inTransit while sat is still active.
+  const hasTimeoutNote =
+    !options?.dispatched &&
+    Boolean(command.eventId && timeoutMap.get(String(command.eventId)))
 
   // Green = vehicle has the chunk; orange = shore dispatched, not confirmed.
   // Cell state:2 counts as delivered only for pure cell when not timed out;
@@ -90,10 +99,8 @@ export const determineCommandStatus = (
     }
   )
 
-  // A timeout note is ground truth for any comms type (cell, sat, cellsat, unknown).
-  // Check it first — before sbdSend state — so a timed-out command is never
-  // misreported as 'sent' or 'ack' regardless of what Iridium bookkeeping exists.
-  if (command.eventId) {
+  // Timeout note is ground truth — check before sbdSend state; skip when dispatched.
+  if (command.eventId && !options?.dispatched) {
     const timeoutEvent = timeoutMap.get(String(command.eventId))
     if (timeoutEvent) {
       return withChunkGate(
@@ -114,16 +121,13 @@ export const determineCommandStatus = (
   const matchingSbdSend = pickPrimarySbdSend(matchingSbdSends)
 
   if (!matchingSbdSend) {
-    // If the command carries a timeout duration and that window has already
-    // elapsed since it was created, treat it as timed out on the client side.
-    // This covers commands that were never dispatched (no sbdSend) and for
-    // which the backend may never write a timeout note.
+    // No sbdSend: apply client-side timeout if window elapsed and not dispatched.
     const timeoutMinutes = timeout ? parseInt(timeout, 10) : undefined
     const timeoutMs =
       timeoutMinutes && command.unixTime
         ? command.unixTime + timeoutMinutes * 60 * 1000
         : undefined
-    if (timeoutMs && Date.now() > timeoutMs) {
+    if (!options?.dispatched && timeoutMs && Date.now() > timeoutMs) {
       return withChunkGate(
         {
           ...command,
@@ -131,6 +135,21 @@ export const determineCommandStatus = (
           timeout,
           status: 'timeout',
           commsIsoTime: new Date(timeoutMs).toISOString(),
+          mtmsn: undefined,
+          momsn: undefined,
+        },
+        sbdChunks
+      )
+    }
+    // Dispatched but no sbdSend yet — show sent, not queued.
+    if (options?.dispatched) {
+      return withChunkGate(
+        {
+          ...command,
+          via,
+          timeout,
+          status: 'sent',
+          commsIsoTime: command.isoTime,
           mtmsn: undefined,
           momsn: undefined,
         },
@@ -199,27 +218,6 @@ export const determineCommandStatus = (
         sbdChunks
       )
     }
-  }
-
-  // Same client-side timeout inference for dispatched-but-unacknowledged commands.
-  const timeoutMinutes = timeout ? parseInt(timeout, 10) : undefined
-  const sentTimeoutMs =
-    timeoutMinutes && matchingSbdSend.unixTime
-      ? matchingSbdSend.unixTime + timeoutMinutes * 60 * 1000
-      : undefined
-  if (sentTimeoutMs && Date.now() > sentTimeoutMs) {
-    return withChunkGate(
-      {
-        ...command,
-        via,
-        timeout,
-        status: 'timeout',
-        commsIsoTime: new Date(sentTimeoutMs).toISOString(),
-        mtmsn: matchingSbdReceipt?.mtmsn || undefined,
-        momsn: undefined,
-      },
-      sbdChunks
-    )
   }
 
   return withChunkGate(

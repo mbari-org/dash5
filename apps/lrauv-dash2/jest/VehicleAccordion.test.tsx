@@ -10,6 +10,9 @@ import { MockProviders } from '../components/testHelpers'
 const server = setupServer(
   rest.get('/events/mission-started', (_req, res, ctx) =>
     res(ctx.status(200), ctx.json({ result: [] }))
+  ),
+  rest.get('/commands/queue', (_req, res, ctx) =>
+    res(ctx.status(200), ctx.json({ result: {} }))
   )
 )
 
