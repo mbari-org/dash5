@@ -1,10 +1,6 @@
 import { renderHook } from '@testing-library/react'
 import { useQuery } from 'react-query'
-import {
-  getEvents,
-  useLastDeployment,
-  useTethysApiContext,
-} from '@mbari/api-client'
+import { useLastDeployment, useTethysApiContext } from '@mbari/api-client'
 import { useBadBatteryFault } from '../lib/useBadBatteryFault'
 
 jest.mock('react-query', () => ({
@@ -50,6 +46,17 @@ describe('useBadBatteryFault', () => {
     expect(options.enabled).toBe(false)
   })
 
+  it('keeps the query disabled when unixTime is 0 (epoch sentinel)', () => {
+    mockUseLastDeployment.mockReturnValue({
+      data: { launchEvent: { unixTime: 0 }, startEvent: null },
+    })
+
+    renderHook(() => useBadBatteryFault('pontus'))
+
+    const [, , options] = mockUseQuery.mock.calls[0]
+    expect(options.enabled).toBe(false)
+  })
+
   it('enables the query once launchEvent.unixTime is available', () => {
     mockUseLastDeployment.mockReturnValue({
       data: { launchEvent: { unixTime: 1_700_000_000_000 }, startEvent: null },
@@ -70,6 +77,17 @@ describe('useBadBatteryFault', () => {
 
     const [, , options] = mockUseQuery.mock.calls[0]
     expect(options.enabled).toBe(true)
+  })
+
+  it('keeps the query disabled when options.enabled is false', () => {
+    mockUseLastDeployment.mockReturnValue({
+      data: { launchEvent: { unixTime: 1_700_000_000_000 }, startEvent: null },
+    })
+
+    renderHook(() => useBadBatteryFault('pontus', { enabled: false }))
+
+    const [, , options] = mockUseQuery.mock.calls[0]
+    expect(options.enabled).toBe(false)
   })
 
   it('includes the launch time as the from param in the query key', () => {

@@ -132,7 +132,7 @@ const ConnectedVehicleCellComponent: React.FC<{
   }
 
   const vehicle = resolveVehicleInfo(vehicleInfo)
-  const { data: badBattery } = useBadBatteryFault(name)
+  const { data: badBattery } = useBadBatteryFault(name, { enabled: isOpen })
 
   const deploymentStartTime = lastDeployment?.startEvent?.unixTime ?? 0
 
@@ -223,10 +223,15 @@ const ConnectedVehicleCellComponent: React.FC<{
         dockTri: vehicle.dock_tri,
         textGf: vehicle.text_gf,
         colorFlow: vehicle.color_flow,
+        textFlow: vehicle.text_flowago,
         ubatColor: vehicle.color_ubat,
-        textUbat: name.toLowerCase() === 'pontus' ? 'UBAT' : undefined,
-        textFlowLabel: name.toLowerCase() === 'pontus' ? 'Flow' : undefined,
-        colorWavecolor: vehicle.color_wavecolor,
+        textUbat: ['pontus', 'brizo'].includes(name.toLowerCase())
+          ? 'UBAT'
+          : undefined,
+        textFlowLabel: ['pontus', 'brizo'].includes(name.toLowerCase())
+          ? 'Flow'
+          : undefined,
+        colorWavecolor: vehicle.color_wavecolor ?? 'st0',
         textAmps: vehicle.text_amps,
         colorAmps: vehicle.color_amps,
         colorDvl: vehicle.color_dvl,

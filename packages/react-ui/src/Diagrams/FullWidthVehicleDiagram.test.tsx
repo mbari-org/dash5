@@ -549,7 +549,7 @@ test('should display UBAT and Flow labels when provided', async () => {
   expect(screen.queryByLabelText('flow label')).toHaveTextContent('Flow')
 })
 
-test('should hide UBAT and Flow labels when docked', async () => {
+test('should display UBAT and Flow labels when docked', async () => {
   render(
     <FullWidthVehicleDiagram
       {...props}
@@ -558,8 +558,13 @@ test('should hide UBAT and Flow labels when docked', async () => {
       textFlowLabel="Flow"
     />
   )
-  expect(screen.queryByLabelText('ubat label')).not.toBeInTheDocument()
-  expect(screen.queryByLabelText('flow label')).not.toBeInTheDocument()
+  expect(screen.queryByLabelText('ubat label')).toBeInTheDocument()
+  expect(screen.queryByLabelText('flow label')).toBeInTheDocument()
+})
+
+test('should display flow time-ago text when provided', async () => {
+  render(<FullWidthVehicleDiagram {...props} textFlow="2h ago" />)
+  expect(screen.getByText('2h ago')).toBeInTheDocument()
 })
 
 test('should apply dock_line class to the dock pole', async () => {

@@ -474,6 +474,11 @@ test('should display UBAT and Flow labels when provided', async () => {
   expect(screen.queryByLabelText('flow label')).toHaveTextContent('Flow')
 })
 
+test('should display flow time-ago text when provided', async () => {
+  render(<Vehicle {...props} textFlow="2h ago" />)
+  expect(screen.getByText('2h ago')).toBeInTheDocument()
+})
+
 test('should apply dock_line class to the dock pole', async () => {
   render(<Vehicle {...props} dockLine="stbuoyline" />)
   expect(screen.queryByTestId('dock line')).toHaveClass('stbuoyline')

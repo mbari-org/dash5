@@ -66,8 +66,10 @@ const VehicleDiagram: React.FC<{
 
   const missionText = vehicle?.text_mission ?? ''
 
-  const isDocked =
-    missionText.indexOf('PLUGGED') >= 0 || missionText.indexOf('RECOVERED') >= 0
+  // Use the same helper as the diagram status prop so sparkline gating and
+  // diagram rendering stay in sync from a single source of truth.
+  const derivedStatus = deriveVehiclePropsStatus({ missionText })
+  const isDocked = derivedStatus !== 'onMission'
   const { data: sparklineData } = useDepthSparkline(
     { vehicle: name },
     { enabled: !!vehicle && !isDocked }
@@ -164,9 +166,14 @@ const VehicleDiagram: React.FC<{
     dockTri: vehicle?.dock_tri,
     textGf: vehicle?.text_gf,
     colorFlow: vehicle?.color_flow,
+    textFlow: vehicle?.text_flowago,
     ubatColor: vehicle?.color_ubat,
-    textUbat: name.toLowerCase() === 'pontus' ? 'UBAT' : undefined,
-    textFlowLabel: name.toLowerCase() === 'pontus' ? 'Flow' : undefined,
+    textUbat: ['pontus', 'brizo'].includes(name.toLowerCase())
+      ? 'UBAT'
+      : undefined,
+    textFlowLabel: ['pontus', 'brizo'].includes(name.toLowerCase())
+      ? 'Flow'
+      : undefined,
     colorWavecolor: vehicle?.color_wavecolor ?? 'st0',
     textAmps: vehicle?.text_amps,
     colorAmps: vehicle?.color_amps,
@@ -204,7 +211,7 @@ const VehicleDiagram: React.FC<{
     colorMissionDefault: vehicle?.color_missiondefault,
     textVolts: vehicle?.text_volts,
     colorVolts: vehicle?.color_volts,
-    status: deriveVehiclePropsStatus({ missionText }),
+    status: derivedStatus,
     colorLeak: vehicle?.color_leak,
     textLeakAgo: vehicle?.text_leakago,
     textLeak: vehicle?.text_leak,

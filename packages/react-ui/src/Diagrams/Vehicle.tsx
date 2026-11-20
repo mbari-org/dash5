@@ -437,7 +437,7 @@ export const Vehicle: React.FC<VehicleProps> = ({
           cy="261"
           r="4"
         />
-        {!isDocked && textUbat && (
+        {textUbat && (
           <text
             aria-label="ubat label"
             transform="matrix(1 0 0 1 551.3628 254.5)"
@@ -446,7 +446,7 @@ export const Vehicle: React.FC<VehicleProps> = ({
             {textUbat}
           </text>
         )}
-        {!isDocked && textFlowLabel && (
+        {textFlowLabel && (
           <text
             aria-label="flow label"
             transform="matrix(1 0 0 1 551.3628 264.5)"

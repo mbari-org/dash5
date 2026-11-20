@@ -93,6 +93,7 @@ export const FullWidthVehicleDiagram: React.FC<
   ubatColor = 'st18',
   textUbat,
   colorFlow = 'st18',
+  textFlow,
   textFlowLabel,
   colorLeak = 'st18',
   textLeak,
@@ -462,7 +463,7 @@ export const FullWidthVehicleDiagram: React.FC<
             cy="261"
             r="4"
           />
-          {!isDocked && textUbat && (
+          {textUbat && (
             <text
               aria-label="ubat label"
               transform="matrix(1 0 0 1 551.3628 254.5)"
@@ -471,7 +472,7 @@ export const FullWidthVehicleDiagram: React.FC<
               {textUbat}
             </text>
           )}
-          {!isDocked && textFlowLabel && (
+          {textFlowLabel && (
             <text
               aria-label="flow label"
               transform="matrix(1 0 0 1 551.3628 264.5)"
@@ -480,6 +481,13 @@ export const FullWidthVehicleDiagram: React.FC<
               {textFlowLabel}
             </text>
           )}
+          <text
+            name="text_flowago"
+            transform="matrix(1 0 0 1 541.0 272.0)"
+            className="st12 st9 st13"
+          >
+            {textFlow}
+          </text>
 
           <CtdIndicator
             colorCtd={colorCtd}
@@ -591,4 +599,4 @@ export const FullWidthVehicleDiagram: React.FC<
   )
 }
 
-FullWidthVehicleDiagram.displayName = 'Diagrams.Vehicle'
+FullWidthVehicleDiagram.displayName = 'Diagrams.FullWidthVehicleDiagram'

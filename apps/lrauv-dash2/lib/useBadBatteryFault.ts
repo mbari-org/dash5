@@ -6,7 +6,10 @@ import {
 } from '@mbari/api-client'
 import { parseBadBatteryFault } from './parseBadBatteryFault'
 
-export const useBadBatteryFault = (vehicleName: string) => {
+export const useBadBatteryFault = (
+  vehicleName: string,
+  options?: { enabled?: boolean }
+) => {
   const { axiosInstance } = useTethysApiContext()
   const { data: lastDeployment } = useLastDeployment(
     { vehicle: vehicleName },
@@ -38,10 +41,12 @@ export const useBadBatteryFault = (vehicleName: string) => {
       return parseBadBatteryFault(events)
     },
     {
-      // Do not run until we have a real deployment start time — querying with
-      // from=1 would scan the vehicle's full history and can return a stale
-      // BAD BATT fault from a previous deployment.
-      enabled: !!vehicleName && from !== undefined,
+      // Do not run until we have a real, positive deployment start time.
+      // from=0 (epoch) is treated as "not yet loaded" — querying with 0 would
+      // scan the vehicle's full history and can surface a stale BAD BATT overlay
+      // from a prior deployment before the correct window is known.
+      enabled:
+        !!vehicleName && from != null && from > 0 && (options?.enabled ?? true),
       staleTime: 60 * 1000,
       refetchInterval: 30 * 1000,
     }
