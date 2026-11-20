@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react'
+import React, { useEffect, useRef, useState } from 'react'
 import { Modal } from '../Modal/Modal'
 import { StepProgress, StepProgressProps } from '../Navigation/StepProgress'
 import { SelectOption } from '../Fields/Select'
@@ -141,12 +141,11 @@ const MissionModalBody: React.FC<MissionModalViewProps> = ({
       commType,
       timeout,
     },
-    actions: {
-      setAlternateAddress,
-      setConfirmedVehicle,
-      setShowAlternateAddress,
-    },
   } = useScheduleContext()
+
+  // Tracks whether the vehicle selection on Confirm & Send is complete.
+  // False only while "No, send to:" is chosen with no vehicle picked yet.
+  const [vehicleSelectionValid, setVehicleSelectionValid] = useState(true)
 
   const {
     handleParamUpdate,
@@ -196,10 +195,9 @@ const MissionModalBody: React.FC<MissionModalViewProps> = ({
     editable,
   } = useManagedWaypoints(waypoints)
 
-  const isLastStep = currentStep === steps.length - 1
-  const confirmButtonText = isLastStep ? (
-    `Schedule ${vehicleName}`
-  ) : (
+  // Steps 0–4 always show "Next →"; the Confirm & Send step (5) is in its own
+  // switch case and uses its own button text, so this value is only for the default case.
+  const confirmButtonText = (
     <div>
       <span className="pr-2">Next</span>{' '}
       <FontAwesomeIcon icon={faAnglesRight} />
@@ -247,6 +245,7 @@ const MissionModalBody: React.FC<MissionModalViewProps> = ({
         )
       case steps.indexOf('Confirm & Send'):
         return (
+          !vehicleSelectionValid ||
           !scheduleMethod ||
           (scheduleMethod === 'time' && !specifiedTime) ||
           (showAlternateAddress && !alternateAddress)
@@ -411,6 +410,51 @@ const MissionModalBody: React.FC<MissionModalViewProps> = ({
     }
   }, [editable, setWaypointsEditable, currentStep, steps, showSummary])
 
+  // Re-fetch the SBD preview whenever scheduling options change on the Confirm & Send step.
+  // Using a ref lets the effect always call the latest closure without listing every arg
+  // as a dep — only the trigger conditions (commType, timeout, scheduleMethod, etc.) matter.
+  const confirmSendStepIndex = steps.indexOf('Confirm & Send')
+  const isConfirmSendStep = currentStep === confirmSendStepIndex
+
+  const triggerPreviewRef = useRef<(() => void) | null>(null)
+  triggerPreviewRef.current = () => {
+    if (!selectedId) return
+    const waypointOverrides = makeWaypointOverrides(
+      updatedWaypoints,
+      unfilteredMissionParameters
+    )
+    onSchedule?.({
+      selectedMissionId: selectedId as string,
+      parameterOverrides: [
+        waypointOverrides,
+        overriddenMissionParams,
+        safetyCommsParams.filter((p) => p.overrideValue),
+      ].flat(),
+      notes,
+      specifiedTime,
+      alternateAddress,
+      scheduleId: customScheduleId,
+      scheduleMethod,
+      confirmedVehicle: confirmedVehicle ?? vehicleName,
+      preview: true,
+      commType,
+      timeout,
+    })
+  }
+
+  useEffect(() => {
+    if (!isConfirmSendStep) return
+    triggerPreviewRef.current?.()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [
+    commType,
+    timeout,
+    scheduleMethod,
+    specifiedTime,
+    confirmedVehicle,
+    isConfirmSendStep,
+  ])
+
   // Fixed frame applied to every step — prevents short-content steps from shrinking
   // the modal and exposing the Schedule rows underneath for accidental clicks.
   const missionModalFrame = {
@@ -462,6 +506,7 @@ const MissionModalBody: React.FC<MissionModalViewProps> = ({
             previewText={previewText}
             previewSbdCount={previewSbdCount}
             alternativeAddresses={alternativeAddresses}
+            onVehicleSelectionValidChange={setVehicleSelectionValid}
           />
         </Modal>
       )

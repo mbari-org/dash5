@@ -462,6 +462,60 @@ test('Confirm & Send close button dismisses the modal', () => {
   expect(onCancel).toHaveBeenCalledTimes(1)
 })
 
+// Confirm & Send: vehicle radio fix
+test('Confirm & Send: No radio stays checked after clicking it', () => {
+  render(
+    <RecoilRoot>
+      <MissionModalView
+        {...props}
+        currentStepIndex={5}
+        vehicles={['Brizo', 'Triton']}
+      />
+    </RecoilRoot>
+  )
+  const noRadio = screen.getByRole('radio', { name: /no, send to:/i })
+  fireEvent.click(noRadio)
+  expect(noRadio).toBeChecked()
+})
+
+test('Confirm & Send: Send button disabled when No radio chosen without selecting a vehicle', () => {
+  render(
+    <RecoilRoot>
+      <MissionModalView
+        {...props}
+        currentStepIndex={5}
+        vehicles={['Brizo', 'Triton']}
+      />
+    </RecoilRoot>
+  )
+  fireEvent.click(screen.getByRole('radio', { name: /no, send to:/i }))
+  // Send button should be disabled until a different vehicle is chosen
+  const sendButton = screen.getByRole('button', { name: /^send to/i })
+  expect(sendButton).toBeDisabled()
+})
+
+// Confirm & Send: preview refetch when schedule options change
+test('Confirm & Send: onSchedule called with preview=true when comm type changes', () => {
+  const onSchedule = jest.fn()
+  render(
+    <RecoilRoot>
+      <MissionModalView
+        {...props}
+        currentStepIndex={5}
+        selectedId="1"
+        onSchedule={onSchedule}
+      />
+    </RecoilRoot>
+  )
+  onSchedule.mockClear() // clear the initial preview fetch on mount
+  // Use exact name to avoid matching the "cellsat" label which also contains "send via sat"
+  const satRadio = screen.getByRole('radio', { name: 'Send via sat' })
+  fireEvent.click(satRadio)
+  expect(onSchedule).toHaveBeenCalledWith(
+    expect.objectContaining({ preview: true, commType: 'sat' })
+  )
+})
+
 // SBD chunk note hides for single-part previews on Confirm & Send
 test('hides SBD chunk note for single-part previews on Confirm & Send', () => {
   render(
