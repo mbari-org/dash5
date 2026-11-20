@@ -5,7 +5,7 @@ import {
   ParameterProps,
   useManagedWaypoints,
   WaypointTableProps,
-  MISSION_MODAL_SEND_COMMAND_STEP,
+  MISSION_MODAL_CONFIRM_SEND_STEP,
 } from '@mbari/react-ui'
 import { capitalize, makeOrdinal } from '@mbari/utils'
 import {
@@ -588,7 +588,7 @@ const MissionModal: React.FC<MissionModalProps> = ({
         height: 'calc(100vh - 6rem)',
       }}
       alternativeAddresses={alternativeAddresses}
-      currentStepIndex={sendAgain ? MISSION_MODAL_SEND_COMMAND_STEP : 0}
+      currentStepIndex={sendAgain ? MISSION_MODAL_CONFIRM_SEND_STEP : 0}
       vehicleName={capitalize(vehicleName)}
       bottomDepth="n/a"
       totalDistance={estDistance ? `${estDistance.toPrecision(4)}km` : 'n/a'}
