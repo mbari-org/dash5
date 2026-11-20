@@ -80,9 +80,7 @@ export const determineCommandStatus = (
     ? asSbdSendList(sbdSendMap.get(String(command.eventId)))
     : []
 
-  // Skip hasTimeoutNote when the backend queue confirms dispatched — a cellsat
-  // command can receive a cell-timeout note while sat is still active, and
-  // freezing inTransit would incorrectly hide in-transit chunks for that case.
+  // Skip when dispatched: cellsat cell-timeout note must not freeze inTransit while sat is still active.
   const hasTimeoutNote =
     !options?.dispatched &&
     Boolean(command.eventId && timeoutMap.get(String(command.eventId)))
@@ -101,11 +99,7 @@ export const determineCommandStatus = (
     }
   )
 
-  // A timeout note is ground truth for any comms type (cell, sat, cellsat, unknown).
-  // Check it first — before sbdSend state — so a timed-out command is never
-  // misreported as 'sent' or 'ack' regardless of what Iridium bookkeeping exists.
-  // Skip when the backend queue confirms dispatched: a cellsat command can receive
-  // a cell-timeout note while the sat side is still active in the queue.
+  // Timeout note is ground truth — check before sbdSend state; skip when dispatched.
   if (command.eventId && !options?.dispatched) {
     const timeoutEvent = timeoutMap.get(String(command.eventId))
     if (timeoutEvent) {
@@ -127,12 +121,7 @@ export const determineCommandStatus = (
   const matchingSbdSend = pickPrimarySbdSend(matchingSbdSends)
 
   if (!matchingSbdSend) {
-    // If the command carries a timeout duration and that window has already
-    // elapsed since it was created, treat it as timed out on the client side.
-    // This covers commands that were never dispatched (no sbdSend) and for
-    // which the backend may never write a timeout note.
-    // Skip when queue confirms dispatched — sbdSend may not yet appear in the
-    // events feed, but the directive is already in transit (4.99.134).
+    // No sbdSend: apply client-side timeout if window elapsed and not dispatched.
     const timeoutMinutes = timeout ? parseInt(timeout, 10) : undefined
     const timeoutMs =
       timeoutMinutes && command.unixTime
@@ -152,9 +141,7 @@ export const determineCommandStatus = (
         sbdChunks
       )
     }
-    // Backend confirms directive is already in transit (dispatched) but sbdSend
-    // has not yet appeared in the events feed. Show 'sent' so the operator sees
-    // forward progress rather than 'queued', which implies it has not left shore.
+    // Dispatched but no sbdSend yet — show sent, not queued.
     if (options?.dispatched) {
       return withChunkGate(
         {

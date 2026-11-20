@@ -37,9 +37,7 @@ export const useCommandQueue = (
       for (const entries of Object.values(query.data)) {
         for (const entry of entries) {
           const existing = map.get(entry.refEventId)
-          // Multipart commands produce one queue entry per SBD part, all sharing
-          // the same refEventId. Preserve dispatched: true once any part is
-          // dispatched so a later undispatched part does not hide the earlier one.
+          // Multipart: preserve dispatched: true once any part is dispatched.
           map.set(entry.refEventId, {
             ...entry,
             dispatched: existing?.dispatched === true || entry.dispatched,
