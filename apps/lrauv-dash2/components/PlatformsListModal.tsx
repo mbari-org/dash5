@@ -94,11 +94,13 @@ export const PlatformsListModal: React.FC<PlatformsListModalProps> = ({
   const handleUnselectAll = useCallback(() => {
     unselectAllPlatforms()
     setNoPositionIds(new Set())
+    refreshGen.current += 1
   }, [unselectAllPlatforms])
 
   const handleReset = useCallback(() => {
     resetPlatforms()
     setNoPositionIds(new Set())
+    refreshGen.current += 1
   }, [resetPlatforms])
 
   const fetchLatestPosition = useCallback(
@@ -145,8 +147,11 @@ export const PlatformsListModal: React.FC<PlatformsListModalProps> = ({
       togglePlatformSelection(platformId)
       if (!isCurrentlySelected) {
         // Toggling on — fetch position and disable button if none available.
+        const gen = refreshGen.current
         void fetchLatestPosition(platformId)
           .then((data) => {
+            // Ignore if Refresh or Unselect All fired after this toggle.
+            if (refreshGen.current !== gen) return
             if (latestFiniteFix(data)) {
               // Valid position — clear any stale no-position flag from a prior
               // attempt (e.g. after Unselect All + re-select).
@@ -202,8 +207,11 @@ export const PlatformsListModal: React.FC<PlatformsListModalProps> = ({
       }
 
       if (!siteConfig?.appConfig?.odss2dashApi) return
+      const gen = refreshGen.current
       try {
         const data = await fetchLatestPosition(platformId)
+        // Ignore if Refresh fired while this fetch was in-flight.
+        if (refreshGen.current !== gen) return
         const latest = latestFiniteFix(data)
         if (latest) {
           setFlyToRequest({ lat: latest.lat, lon: latest.lon })
