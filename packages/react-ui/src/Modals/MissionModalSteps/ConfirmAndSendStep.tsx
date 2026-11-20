@@ -1,4 +1,4 @@
-import React, { useCallback } from 'react'
+import React, { useCallback, useState } from 'react'
 import clsx from 'clsx'
 import { SelectField } from '../../Fields'
 import { Input } from '../../Fields/Input'
@@ -21,6 +21,9 @@ export interface ConfirmAndSendStepProps {
   previewText?: string
   previewSbdCount?: number
   alternativeAddresses?: string[]
+  /** Called when the vehicle selection becomes valid (Yes chosen, or No + vehicle picked)
+   *  or invalid (No chosen with no vehicle yet). Parent uses this to gate the Send button. */
+  onVehicleSelectionValidChange?: (valid: boolean) => void
 }
 
 const SCHEDULE_OPTIONS: ScheduleOption[] = [
@@ -47,6 +50,7 @@ export const ConfirmAndSendStep: React.FC<ConfirmAndSendStepProps> = ({
   previewText,
   previewSbdCount,
   alternativeAddresses = [],
+  onVehicleSelectionValidChange,
 }) => {
   const {
     state: {
@@ -73,9 +77,15 @@ export const ConfirmAndSendStep: React.FC<ConfirmAndSendStepProps> = ({
     },
   } = useScheduleContext()
 
-  const isYesVehicle =
+  // Local boolean tracks whether the pilot confirmed the default vehicle (Yes) or is
+  // choosing a different one (No). Kept separate from confirmedVehicle so that clicking
+  // "No" does not immediately flip the radio back (which happened when the derived
+  // isYesVehicle was set from confirmedVehicle === null).
+  const [isCorrectVehicle, setIsCorrectVehicle] = useState(
     confirmedVehicle === null || confirmedVehicle === vehicleName
-  const displayVehicle = isYesVehicle
+  )
+
+  const displayVehicle = isCorrectVehicle
     ? vehicleName
     : confirmedVehicle ?? vehicleName
 
@@ -83,6 +93,7 @@ export const ConfirmAndSendStep: React.FC<ConfirmAndSendStepProps> = ({
 
   const handleSelectDifferentVehicle = (id: string | null) => {
     setConfirmedVehicle(id ?? vehicleName)
+    onVehicleSelectionValidChange?.(true)
   }
 
   const handleTimeoutChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -127,8 +138,12 @@ export const ConfirmAndSendStep: React.FC<ConfirmAndSendStepProps> = ({
                 id="vehicle-yes"
                 name="confirmedVehicle"
                 className="mr-2 h-4 w-4 checked:accent-teal-500"
-                checked={isYesVehicle}
-                onChange={() => setConfirmedVehicle(vehicleName)}
+                checked={isCorrectVehicle}
+                onChange={() => {
+                  setIsCorrectVehicle(true)
+                  setConfirmedVehicle(vehicleName)
+                  onVehicleSelectionValidChange?.(true)
+                }}
               />
               <label htmlFor="vehicle-yes">
                 Yes, send to{' '}
@@ -141,8 +156,14 @@ export const ConfirmAndSendStep: React.FC<ConfirmAndSendStepProps> = ({
                 id="vehicle-no"
                 name="confirmedVehicle"
                 className="mr-2 h-4 w-4 checked:accent-teal-500"
-                checked={!isYesVehicle}
-                onChange={() => setConfirmedVehicle(null)}
+                checked={!isCorrectVehicle}
+                onChange={() => {
+                  setIsCorrectVehicle(false)
+                  // Do NOT clear confirmedVehicle here — wait for the dropdown selection.
+                  // Clearing it immediately would make isCorrectVehicle flip back to true
+                  // because the old code derived it from confirmedVehicle === null.
+                  onVehicleSelectionValidChange?.(false)
+                }}
               />
               <label htmlFor="vehicle-no">No, send to:</label>
               <SelectField
@@ -150,10 +171,12 @@ export const ConfirmAndSendStep: React.FC<ConfirmAndSendStepProps> = ({
                 className="w-40"
                 options={vehicleOptions}
                 placeholder="Select LRAUV"
-                value={isYesVehicle ? undefined : confirmedVehicle ?? undefined}
+                value={
+                  isCorrectVehicle ? undefined : confirmedVehicle ?? undefined
+                }
                 onSelect={handleSelectDifferentVehicle}
-                required={!isYesVehicle}
-                disabled={isYesVehicle}
+                required={!isCorrectVehicle}
+                disabled={isCorrectVehicle}
               />
             </li>
           </ul>
