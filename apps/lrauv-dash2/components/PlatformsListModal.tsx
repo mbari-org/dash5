@@ -38,10 +38,8 @@ const latestFiniteFix = (
 const latestFixQueryKey = (platformId: string) =>
   [...TRACKDB_POSITIONS_KEY, platformId, 'positions', 1] as const
 
-// Scans ALL cached position queries for a platform (track + last-1) and
-// returns the newest finite fix. The track cache holds the most recent N fixes
-// within the lookback window, so max(timeMs) across all entries is the true
-// latest position — no date-window skew.
+// Scans all cached position queries for a platform (track + last-1) and
+// returns the newest finite fix across all entries.
 const cachedLatestPosition = (
   queryClient: QueryClient,
   platformId: string
@@ -90,12 +88,10 @@ export const PlatformsListModal: React.FC<PlatformsListModalProps> = ({
   const { setFlyToRequest } = useMapCamera()
   const queryClient = useQueryClient()
   const inflightPositions = useRef(new Map<string, Promise<PositionsPayload>>())
-  // Incremented by Refresh so in-flight fetches started before Refresh don't
-  // repopulate cache after it has been cleared.
+  // Bumped on Refresh/reset so stale in-flight fetches don't repopulate cache.
   const refreshGen = useRef(0)
   const isMounted = useRef(true)
-  // Kept in sync with workingSelection so async callbacks can check the
-  // current selection without relying on a stale closure value.
+  // Kept in sync with workingSelection so async callbacks see current selection.
   const workingSelectionRef = useRef(workingSelection)
   useEffect(() => {
     workingSelectionRef.current = workingSelection
@@ -108,16 +104,22 @@ export const PlatformsListModal: React.FC<PlatformsListModalProps> = ({
   }, [])
   const [noPositionIds, setNoPositionIds] = useState<Set<string>>(new Set())
 
-  // When PlatformPath (or any other consumer) fills the track cache after Apply,
-  // clear the disabled state for platforms that now have a valid position.
-  // Filter to position queries only to avoid churn from unrelated app polls.
+  // When PlatformPath fills the track cache, re-enable any platforms that now
+  // have a valid position. Filtered to TrackDB position updates only to avoid
+  // churn from unrelated app polls (depth, events, vehicles, etc.).
   useEffect(() => {
     return queryClient.getQueryCache().subscribe((event) => {
-      const key = event?.query?.queryKey as unknown[] | undefined
-      if (key?.[3] !== 'positions') return
+      if (event?.type !== 'queryUpdated') return
+      const key = event.query.queryKey as unknown[]
+      if (
+        key[0] !== 'trackdb' ||
+        key[1] !== 'platforms' ||
+        key[3] !== 'positions'
+      )
+        return
       setNoPositionIds((prev) => {
         if (!prev.size) return prev
-        const toRemove = [...prev].filter((id) =>
+        const toRemove = Array.from(prev).filter((id) =>
           cachedLatestPosition(queryClient, id)
         )
         if (!toRemove.length) return prev
@@ -128,19 +130,22 @@ export const PlatformsListModal: React.FC<PlatformsListModalProps> = ({
     })
   }, [queryClient])
 
-  const handleUnselectAll = useCallback(() => {
-    unselectAllPlatforms()
+  // Shared reset for position fetch state — used by Refresh, Unselect All, Reset.
+  const clearPositionFetchState = useCallback(() => {
     setNoPositionIds(new Set())
     refreshGen.current += 1
     inflightPositions.current.clear()
-  }, [unselectAllPlatforms])
+  }, [])
+
+  const handleUnselectAll = useCallback(() => {
+    unselectAllPlatforms()
+    clearPositionFetchState()
+  }, [clearPositionFetchState, unselectAllPlatforms])
 
   const handleReset = useCallback(() => {
     resetPlatforms()
-    setNoPositionIds(new Set())
-    refreshGen.current += 1
-    inflightPositions.current.clear()
-  }, [resetPlatforms])
+    clearPositionFetchState()
+  }, [clearPositionFetchState, resetPlatforms])
 
   const fetchLatestPosition = useCallback(
     (platformId: string) => {
@@ -163,8 +168,7 @@ export const PlatformsListModal: React.FC<PlatformsListModalProps> = ({
         { instance: axiosInstance, baseURL: odss2dashApi }
       )
         .then((data) => {
-          // Skip if Refresh fired after this fetch started — cache was cleared
-          // and we don't want stale data repopulating it.
+          // Skip if Refresh fired after this fetch started.
           if (refreshGen.current === gen) {
             queryClient.setQueryData(latestFixQueryKey(platformId), data)
           }
@@ -185,15 +189,24 @@ export const PlatformsListModal: React.FC<PlatformsListModalProps> = ({
       const isCurrentlySelected = workingSelection.includes(platformId)
       togglePlatformSelection(platformId)
       if (!isCurrentlySelected) {
-        // Toggling on — fetch position and disable button if none available.
+        // If a valid position is already in cache (track or last-1), no need
+        // to fetch — just ensure the button isn't stale-disabled.
+        if (cachedLatestPosition(queryClient, platformId)) {
+          setNoPositionIds((prev) => {
+            const next = new Set(prev)
+            next.delete(platformId)
+            return next
+          })
+          return
+        }
+        // Fetch the latest position and disable the button if none available.
         const gen = refreshGen.current
         void fetchLatestPosition(platformId)
           .then((data) => {
             // Ignore if Refresh or Unselect All fired after this toggle.
             if (refreshGen.current !== gen) return
             if (!isMounted.current) return
-            // If the platform was deselected while this fetch was in flight,
-            // don't update state — the toggle-off already cleared its entry.
+            // Skip if platform was deselected while fetch was in-flight.
             if (!workingSelectionRef.current.includes(platformId)) return
             if (latestFiniteFix(data)) {
               // Valid position from the fetch — clear any stale no-position flag.
@@ -203,15 +216,14 @@ export const PlatformsListModal: React.FC<PlatformsListModalProps> = ({
                 return next
               })
             } else if (!cachedLatestPosition(queryClient, platformId)) {
-              // No finite fix anywhere in cache — disable the button.
-              // If the track cache (from PlatformPath) already has a valid fix,
-              // skip disabling so Center Map can fly immediately on click.
-              setNoPositionIds((prev) => new Set([...prev, platformId]))
+              // No position in cache — disable the button.
+              setNoPositionIds(
+                (prev) => new Set(Array.from(prev).concat(platformId))
+              )
             }
           })
           .catch((err: unknown) => {
-            // Network or config error — not the same as "no position." Log only;
-            // don't disable the button so the user can retry.
+            // Network error — don't disable; user can retry.
             logger.warn(
               `Failed to fetch position on toggle for ${platformId}`,
               err
@@ -242,27 +254,57 @@ export const PlatformsListModal: React.FC<PlatformsListModalProps> = ({
         setFlyToRequest(cached)
         return
       }
+      // Await any in-flight prefetch so a click during toggle-on still flies.
+      const inflight = inflightPositions.current.get(platformId)
+      if (inflight) {
+        const gen = refreshGen.current
+        try {
+          const data = await inflight
+          if (refreshGen.current !== gen || !isMounted.current) return
+          if (!workingSelectionRef.current.includes(platformId)) return
+          const latest = latestFiniteFix(data)
+          if (latest) {
+            setFlyToRequest({ lat: latest.lat, lon: latest.lon })
+          } else if (!cachedLatestPosition(queryClient, platformId)) {
+            setNoPositionIds(
+              (prev) => new Set(Array.from(prev).concat(platformId))
+            )
+          }
+        } catch {
+          // Fetch error already handled by the initiating call — don't double-warn.
+        }
+        return
+      }
       // 2. If the last-1 cache entry exists but has no finite position, disable
       //    the button and bail — no need to re-fetch.
       const cachedLastOne = queryClient.getQueryData<PositionsPayload>(
         latestFixQueryKey(platformId)
       )
       if (cachedLastOne !== undefined) {
-        setNoPositionIds((prev) => new Set([...prev, platformId]))
+        setNoPositionIds((prev) => new Set(Array.from(prev).concat(platformId)))
         return
       }
 
-      if (!siteConfig?.appConfig?.odss2dashApi) return
+      if (!siteConfig?.appConfig?.odss2dashApi) {
+        logger.warn(
+          `Cannot fetch position for ${platformId}: odss2dashApi is not configured`
+        )
+        return
+      }
       const gen = refreshGen.current
       try {
         const data = await fetchLatestPosition(platformId)
-        // Ignore if Refresh fired or modal unmounted while this fetch was in-flight.
+        // Ignore if Refresh fired, modal unmounted, or platform was deselected
+        // while this fetch was in-flight.
         if (refreshGen.current !== gen || !isMounted.current) return
+        if (!workingSelectionRef.current.includes(platformId)) return
         const latest = latestFiniteFix(data)
         if (latest) {
           setFlyToRequest({ lat: latest.lat, lon: latest.lon })
         } else {
-          setNoPositionIds((prev) => new Set([...prev, platformId]))
+          setNoPositionIds(
+            (prev) => new Set(Array.from(prev).concat(platformId))
+          )
         }
       } catch (err) {
         logger.warn(`Failed to fetch position for platform ${platformId}:`, err)
@@ -348,22 +390,21 @@ export const PlatformsListModal: React.FC<PlatformsListModalProps> = ({
 
   const handleRefresh = useCallback(() => {
     refetchPlatforms()
-    setNoPositionIds(new Set())
-    // Bump generation so any in-flight fetches started before this Refresh
-    // don't repopulate cache after it has been cleared.
-    refreshGen.current += 1
-    inflightPositions.current.clear()
-    // Remove only the last-1 (no date window) position entries written by
-    // fetchLatestPosition. These have key[4] === 1. The 20-fix track caches
-    // used by PlatformPath (key[4] === 20) are intentionally left intact so
-    // the map does not blink while the modal refreshes.
+    clearPositionFetchState()
+    // Drop last-1 entries (key[4] === 1) only; track caches (key[4] === 20)
+    // stay so the map doesn't blink while the list refreshes.
     queryClient.removeQueries({
       predicate: (query) => {
         const key = query.queryKey as unknown[]
-        return key[3] === 'positions' && key[4] === 1
+        return (
+          key[0] === 'trackdb' &&
+          key[1] === 'platforms' &&
+          key[3] === 'positions' &&
+          key[4] === 1
+        )
       },
     })
-  }, [queryClient, refetchPlatforms])
+  }, [clearPositionFetchState, queryClient, refetchPlatforms])
 
   const isLoading = platformsLoading || isApplying
 
