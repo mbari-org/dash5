@@ -93,7 +93,34 @@ export const PlatformsListModal: React.FC<PlatformsListModalProps> = ({
   // Incremented by Refresh so in-flight fetches started before Refresh don't
   // repopulate cache after it has been cleared.
   const refreshGen = useRef(0)
+  const isMounted = useRef(true)
+  useEffect(() => {
+    isMounted.current = true
+    return () => {
+      isMounted.current = false
+    }
+  }, [])
   const [noPositionIds, setNoPositionIds] = useState<Set<string>>(new Set())
+
+  // When PlatformPath (or any other consumer) fills the track cache after Apply,
+  // clear the disabled state for platforms that now have a valid position.
+  // Filter to position queries only to avoid churn from unrelated app polls.
+  useEffect(() => {
+    return queryClient.getQueryCache().subscribe((event) => {
+      const key = event?.query?.queryKey as unknown[] | undefined
+      if (key?.[3] !== 'positions') return
+      setNoPositionIds((prev) => {
+        if (!prev.size) return prev
+        const toRemove = [...prev].filter((id) =>
+          cachedLatestPosition(queryClient, id)
+        )
+        if (!toRemove.length) return prev
+        const next = new Set(prev)
+        toRemove.forEach((id) => next.delete(id))
+        return next
+      })
+    })
+  }, [queryClient])
 
   const handleUnselectAll = useCallback(() => {
     unselectAllPlatforms()
@@ -158,15 +185,18 @@ export const PlatformsListModal: React.FC<PlatformsListModalProps> = ({
           .then((data) => {
             // Ignore if Refresh or Unselect All fired after this toggle.
             if (refreshGen.current !== gen) return
+            if (!isMounted.current) return
             if (latestFiniteFix(data)) {
-              // Valid position — clear any stale no-position flag from a prior
-              // attempt (e.g. after Unselect All + re-select).
+              // Valid position from the fetch — clear any stale no-position flag.
               setNoPositionIds((prev) => {
                 const next = new Set(prev)
                 next.delete(platformId)
                 return next
               })
-            } else {
+            } else if (!cachedLatestPosition(queryClient, platformId)) {
+              // No finite fix anywhere in cache — disable the button.
+              // If the track cache (from PlatformPath) already has a valid fix,
+              // skip disabling so Center Map can fly immediately on click.
               setNoPositionIds((prev) => new Set([...prev, platformId]))
             }
           })
@@ -187,7 +217,12 @@ export const PlatformsListModal: React.FC<PlatformsListModalProps> = ({
         })
       }
     },
-    [fetchLatestPosition, togglePlatformSelection, workingSelection]
+    [
+      fetchLatestPosition,
+      queryClient,
+      togglePlatformSelection,
+      workingSelection,
+    ]
   )
 
   const handleCenterOnPlatform = useCallback(
@@ -212,8 +247,8 @@ export const PlatformsListModal: React.FC<PlatformsListModalProps> = ({
       const gen = refreshGen.current
       try {
         const data = await fetchLatestPosition(platformId)
-        // Ignore if Refresh fired while this fetch was in-flight.
-        if (refreshGen.current !== gen) return
+        // Ignore if Refresh fired or modal unmounted while this fetch was in-flight.
+        if (refreshGen.current !== gen || !isMounted.current) return
         const latest = latestFiniteFix(data)
         if (latest) {
           setFlyToRequest({ lat: latest.lat, lon: latest.lon })
