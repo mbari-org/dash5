@@ -52,9 +52,7 @@ export const PlatformPath: React.FC<PlatformPathProps> = ({
     setIconFailed(false)
   }, [iconUrl])
 
-  // When an explicit date window is provided, use it. Otherwise, omit dates
-  // and rely on lastNumberOfFixes only — XEvent WebSocket notifications keep
-  // positions current in real-time, so a rotating query key is not needed.
+  // Use date window when provided; otherwise lastNumberOfFixes only — XEvent keeps positions current.
   const queryWindow = useMemo(() => {
     if (startDate && endDate) {
       return { startDate, endDate }
@@ -80,10 +78,7 @@ export const PlatformPath: React.FC<PlatformPathProps> = ({
     }
   )
 
-  // Read the per-platform XEvent buffer written by useWebSocketListeners.
-  // Using useQuery with enabled: false subscribes to setQueryData writes
-  // without triggering any network request. initialData seeds from cache
-  // so positions set before mount are visible on the first render.
+  // Subscribe to XEvent buffer without fetching; initialData seeds pre-mount positions from cache.
   const queryClient = useQueryClient()
   const xeventBufferKey = ['trackdb', XEVENT_BUFFER_KEY, platformId]
   const { data: xeventBuffer } = useQuery<PlatformPosition[]>(
@@ -100,14 +95,11 @@ export const PlatformPath: React.FC<PlatformPathProps> = ({
   const displayPositions = useMemo(() => {
     const serverPositions = positionData?.positions ?? []
 
-    // Merge XEvent buffer positions that are newer than the server's latest
-    // so a background HTTP refetch cannot silently drop in-flight positions.
+    // Merge XEvent buffer — keep positions newer than server's latest (>= preserves same-timestamp corrections).
     const latestServerTimeMs =
       serverPositions.length > 0
         ? Math.max(...serverPositions.map((p) => p.timeMs))
         : 0
-    // Use >= so an XEvent fix with the same timestamp but corrected coords
-    // is not silently dropped when server timestamp granularity is coarse.
     const freshXEvent = (xeventBuffer ?? []).filter(
       (p) => p.timeMs >= latestServerTimeMs
     )

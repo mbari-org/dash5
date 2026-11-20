@@ -96,15 +96,13 @@ export const useTethysSubscription = () => {
         return
       }
 
-      // XEvent carries a real-time position update from odss2dash.
-      // Update the TrackDB position cache directly — no refetch needed.
+      // XEvent: update TrackDB position cache directly.
       if (data.eventName === 'XEvent') {
         const pos = data.payload?.position
         const assetName = data.payload?.assetName
         const assetId = data.payload?.assetId
         if (pos && (assetName || assetId)) {
-          // Narrow to position queries only (key[3] === 'positions') to avoid
-          // accidentally matching the platform-list query or future cache shapes.
+          // Narrow to position queries only.
           const allPlatformQueries =
             queryClient.getQueriesData<GetPlatformPositionsResponse>([
               'trackdb',
@@ -113,14 +111,11 @@ export const useTethysSubscription = () => {
           let matched = false
           for (const [key, existing] of allPlatformQueries) {
             if (key[3] !== 'positions') continue
-            // platformId lives at key[2] — available even before the response
-            // lands, so we can match by assetId while the initial fetch is pending.
+            // key[2] is platformId — available before response lands.
             const queryPlatformId = key[2] as string
             const cap = (key[4] as number | undefined) ?? 20
 
-            // When assetId is present, match by id only — name fallback is
-            // skipped to avoid patching the wrong track when names collide or
-            // the payload carries an inconsistent assetId/assetName pair.
+            // Match by id when present; name fallback only when assetId is absent.
             const idMatch = assetId && queryPlatformId === assetId
             const nameMatch =
               !assetId &&
@@ -132,10 +127,7 @@ export const useTethysSubscription = () => {
             matched = true
             const platformId = existing?.platformId ?? queryPlatformId
 
-            // Update the main cache when the response is already available.
-            // If the query is still pending (existing is undefined), skip the
-            // main cache write — the buffer below is enough for PlatformPath
-            // to merge the position once the response arrives.
+            // Skip main cache write while pending — buffer covers it.
             if (existing) {
               queryClient.setQueryData<GetPlatformPositionsResponse>(key, {
                 ...existing,
@@ -143,21 +135,14 @@ export const useTethysSubscription = () => {
               })
             }
 
-            // Always write to the XEvent buffer so positions survive both
-            // a background HTTP refetch and an in-flight initial fetch.
-            // PlatformPath merges the buffer with server data in displayPositions.
+            // Always write buffer — survives HTTP refetch and pending initial fetch.
             queryClient.setQueryData<PlatformPosition[]>(
               ['trackdb', XEVENT_BUFFER_KEY, platformId],
               (prev = []) => [...(prev ?? []), pos].slice(-cap)
             )
           }
 
-          // No matching cache entry — the platform may not be selected yet or
-          // its initial fetch may not have completed. The 10-minute fallback
-          // poll in PlatformPath will pick up the position when the component
-          // mounts. Avoid invalidateQueries here: in a busy ODSS feed, repeated
-          // unmatched XEvents would trigger a refetch storm across all selected
-          // platforms.
+          // No match — not yet selected. Fallback poll handles it; no invalidate to avoid refetch storm.
         }
         return
       }
