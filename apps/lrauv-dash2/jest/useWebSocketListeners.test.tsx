@@ -328,7 +328,7 @@ describe('useTethysSubscription', () => {
       })
     }).not.toThrow()
 
-    // No invalidation — the 10-minute fallback poll handles unknown assets.
+    // No invalidation when no platform matches — not yet selected or mounted.
     const state = queryClient.getQueryState(posKey)
     expect(state?.isInvalidated).toBe(false)
   })
