@@ -302,6 +302,23 @@ describe('PlatformsListModal fly-to', () => {
     expect(mockSetFlyToRequest).not.toHaveBeenCalled()
   })
 
+  it('flies from the last-1 cache entry without refetching', async () => {
+    const client = createClient()
+    client.setQueryData(
+      ['trackdb', 'platforms', 'plat-paragon', 'positions', 1],
+      { positions: [{ timeMs: 5000, lat: 37.1, lon: -122.3 }] }
+    )
+
+    renderModal(client)
+
+    await userEvent.click(
+      screen.getByRole('button', { name: 'Center map on R/V Paragon' })
+    )
+
+    expect(mockGetPlatformPositions).not.toHaveBeenCalled()
+    expect(mockSetFlyToRequest).toHaveBeenCalledWith({ lat: 37.1, lon: -122.3 })
+  })
+
   it('disables the button without refetching when last-1 cache has no finite position', async () => {
     // Seed the cache with a known-empty last-1 entry.
     const client = createClient()
@@ -323,6 +340,31 @@ describe('PlatformsListModal fly-to', () => {
         screen.getByRole('button', { name: 'No position available' })
       ).toHaveAttribute('aria-disabled', 'true')
     })
+  })
+
+  it('re-fetches on click when no cache entry exists', async () => {
+    // Verifies the cache-miss path that Refresh produces: empty cache +
+    // cleared noPositionIds means the next click fetches rather than bailing.
+    mockGetPlatformPositions.mockResolvedValue({
+      positions: [{ timeMs: 1, lat: 36.8, lon: -122.0 }],
+    })
+
+    renderModal()
+
+    await userEvent.click(
+      screen.getByRole('button', { name: 'Center map on R/V Paragon' })
+    )
+
+    await waitFor(() => {
+      expect(mockGetPlatformPositions).toHaveBeenCalledWith(
+        expect.objectContaining({
+          platformId: 'plat-paragon',
+          lastNumberOfFixes: 1,
+        }),
+        expect.anything()
+      )
+    })
+    expect(mockSetFlyToRequest).toHaveBeenCalledWith({ lat: 36.8, lon: -122.0 })
   })
 
   it('does not disable the button when the toggle-on position fetch fails', async () => {

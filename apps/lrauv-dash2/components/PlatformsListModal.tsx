@@ -178,13 +178,16 @@ export const PlatformsListModal: React.FC<PlatformsListModalProps> = ({
         setFlyToRequest(cached)
         return
       }
-      // If the last-1 cache entry exists but has no finite position, disable
-      // the button and bail — no need to re-fetch.
+      // If the last-1 cache entry exists, use it directly rather than
+      // re-fetching — either fly to its position or disable the button.
       const cachedLastOne = queryClient.getQueryData<PositionsPayload>(
         latestFixQueryKey(platformId)
       )
       if (cachedLastOne !== undefined) {
-        if (!latestFiniteFix(cachedLastOne)) {
+        const fix = latestFiniteFix(cachedLastOne)
+        if (fix) {
+          setFlyToRequest({ lat: fix.lat, lon: fix.lon })
+        } else {
           setNoPositionIds((prev) => new Set([...prev, platformId]))
         }
         return
