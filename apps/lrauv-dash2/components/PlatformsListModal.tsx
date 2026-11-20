@@ -86,6 +86,9 @@ export const PlatformsListModal: React.FC<PlatformsListModalProps> = ({
   const { setFlyToRequest } = useMapCamera()
   const queryClient = useQueryClient()
   const inflightPositions = useRef(new Map<string, Promise<PositionsPayload>>())
+  // Incremented by Refresh so in-flight fetches started before Refresh don't
+  // repopulate cache after it has been cleared.
+  const refreshGen = useRef(0)
   const [noPositionIds, setNoPositionIds] = useState<Set<string>>(new Set())
 
   const handleUnselectAll = useCallback(() => {
@@ -110,6 +113,7 @@ export const PlatformsListModal: React.FC<PlatformsListModalProps> = ({
 
       // lastNumberOfFixes: 1 with no date window — latest fix regardless of
       // age, without scanning a long time range on every click.
+      const gen = refreshGen.current
       const request = getPlatformPositions(
         {
           platformId,
@@ -118,7 +122,11 @@ export const PlatformsListModal: React.FC<PlatformsListModalProps> = ({
         { instance: axiosInstance, baseURL: odss2dashApi }
       )
         .then((data) => {
-          queryClient.setQueryData(latestFixQueryKey(platformId), data)
+          // Skip if Refresh fired after this fetch started — cache was cleared
+          // and we don't want stale data repopulating it.
+          if (refreshGen.current === gen) {
+            queryClient.setQueryData(latestFixQueryKey(platformId), data)
+          }
           return data
         })
         .finally(() => {
@@ -287,8 +295,9 @@ export const PlatformsListModal: React.FC<PlatformsListModalProps> = ({
   const handleRefresh = useCallback(() => {
     refetchPlatforms()
     setNoPositionIds(new Set())
-    // Cancel any in-flight position fetches so they don't repopulate the cache
-    // after Refresh clears it.
+    // Bump generation so any in-flight fetches started before this Refresh
+    // don't repopulate cache after it has been cleared.
+    refreshGen.current += 1
     inflightPositions.current.clear()
     // Remove only per-platform position caches so the next Center Map click
     // re-fetches. Scoped to keys with 'positions' at index 3 to avoid evicting
