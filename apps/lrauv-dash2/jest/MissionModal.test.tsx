@@ -200,7 +200,7 @@ test('Send again selects event-scoped temp, not an older same-path run', async (
   render(<MissionModal onClose={jest.fn()} />)
 
   const view = await screen.findByTestId('mission-modal-view')
-  expect(view).toHaveAttribute('data-step', '7')
+  expect(view).toHaveAttribute('data-step', '5')
   expect(view).toHaveAttribute('data-selected', MISSION_PATH)
   expect(view.getAttribute('data-preview')).toContain(EVENT_DATA)
   expect(view).toHaveAttribute('data-has-overrides', 'true')
