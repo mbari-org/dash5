@@ -99,12 +99,14 @@ export const PlatformsListModal: React.FC<PlatformsListModalProps> = ({
     unselectAllPlatforms()
     setNoPositionIds(new Set())
     refreshGen.current += 1
+    inflightPositions.current.clear()
   }, [unselectAllPlatforms])
 
   const handleReset = useCallback(() => {
     resetPlatforms()
     setNoPositionIds(new Set())
     refreshGen.current += 1
+    inflightPositions.current.clear()
   }, [resetPlatforms])
 
   const fetchLatestPosition = useCallback(
