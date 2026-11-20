@@ -10,7 +10,7 @@ const MapFlyTo: React.FC = () => {
     if (flyToRequest) {
       if (flyToRequest.bounds) {
         map.fitBounds(flyToRequest.bounds, {
-          padding: [40, 40],
+          padding: [20, 20],
           animate: false,
         })
       } else {
