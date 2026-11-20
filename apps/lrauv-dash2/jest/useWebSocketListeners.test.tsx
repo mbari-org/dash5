@@ -2,7 +2,10 @@ import '@testing-library/jest-dom'
 import React from 'react'
 import { render, act } from '@testing-library/react'
 import { QueryClient, QueryClientProvider } from 'react-query'
-import { TethysApiContext } from '@mbari/api-client'
+import {
+  TethysApiContext,
+  GetPlatformPositionsResponse,
+} from '@mbari/api-client'
 import {
   useTethysSubscription,
   XEVENT_BUFFER_KEY,
@@ -214,7 +217,13 @@ describe('useTethysSubscription', () => {
       undefined,
       undefined,
     ]
-    queryClient.setQueryData(platformKey, undefined)
+    // setQueryData(key, undefined) is a no-op in React Query 3 and does not create a
+    // cache entry. Use prefetchQuery with a never-resolving function to create a real
+    // in-flight cache entry (data: undefined) that getQueriesData will see.
+    queryClient.prefetchQuery(
+      platformKey,
+      () => new Promise<GetPlatformPositionsResponse>(() => {})
+    )
 
     const Wrapper = ({ children }: { children: React.ReactNode }) => (
       <QueryClientProvider client={queryClient}>
