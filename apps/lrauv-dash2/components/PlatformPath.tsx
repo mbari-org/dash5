@@ -1,7 +1,7 @@
 import React, { useMemo, useState, useEffect, useCallback } from 'react'
 import { Marker, Polyline, Tooltip, CircleMarker } from 'react-leaflet'
 import L from 'leaflet'
-import { useQuery } from 'react-query'
+import { useQuery, useQueryClient } from 'react-query'
 import { usePlatformPositions, PlatformPosition } from '@mbari/api-client'
 import { createLogger } from '@mbari/utils'
 import { PLATFORM_PANE } from '../lib/constants'
@@ -82,11 +82,19 @@ export const PlatformPath: React.FC<PlatformPathProps> = ({
 
   // Read the per-platform XEvent buffer written by useWebSocketListeners.
   // Using useQuery with enabled: false subscribes to setQueryData writes
-  // without triggering any network request.
+  // without triggering any network request. initialData seeds from cache
+  // so positions set before mount are visible on the first render.
+  const queryClient = useQueryClient()
+  const xeventBufferKey = ['trackdb', XEVENT_BUFFER_KEY, platformId]
   const { data: xeventBuffer } = useQuery<PlatformPosition[]>(
-    ['trackdb', XEVENT_BUFFER_KEY, platformId],
+    xeventBufferKey,
     () => [],
-    { enabled: false, staleTime: Infinity }
+    {
+      enabled: false,
+      staleTime: Infinity,
+      initialData: () =>
+        queryClient.getQueryData<PlatformPosition[]>(xeventBufferKey),
+    }
   )
 
   const displayPositions = useMemo(() => {

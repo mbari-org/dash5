@@ -189,11 +189,22 @@ describe('useTethysSubscription', () => {
       lat: 36.7,
       lon: -122.1,
     })
+
+    // XEvent buffer should also be written so positions survive HTTP refetch.
+    const buffer = queryClient.getQueryData<
+      { timeMs: number; lat: number; lon: number }[]
+    >(['trackdb', XEVENT_BUFFER_KEY, 'platform-abc'])
+    expect(buffer).toHaveLength(1)
+    expect(buffer?.[0]).toEqual({
+      timeMs: 1700000060000,
+      lat: 36.7,
+      lon: -122.1,
+    })
   })
 
-  test('invalidates position queries when XEvent arrives with no matching platform in cache', () => {
+  test('does not throw and does not invalidate when XEvent has no matching platform in cache', () => {
     const queryClient = new QueryClient()
-    // Seed a position query so we can verify invalidation fires
+    // Seed a position query — it should NOT be invalidated
     const posKey = ['trackdb', 'platforms', 'p1', 'positions', 20]
     queryClient.setQueryData(posKey, {
       platformId: 'p1',
@@ -226,22 +237,23 @@ describe('useTethysSubscription', () => {
     const ws = MockWebSocket.instances[0]
     ws.onopen?.()
 
-    act(() => {
-      ws.onmessage?.({
-        data: JSON.stringify({
-          eventName: 'XEvent',
-          payload: {
-            assetName: 'unknown_ship',
-            position: { timeMs: 1700000000000, lat: 36.0, lon: -122.0 },
-          },
-        }),
-      } as MessageEvent)
-    })
+    expect(() => {
+      act(() => {
+        ws.onmessage?.({
+          data: JSON.stringify({
+            eventName: 'XEvent',
+            payload: {
+              assetName: 'unknown_ship',
+              position: { timeMs: 1700000000000, lat: 36.0, lon: -122.0 },
+            },
+          }),
+        } as MessageEvent)
+      })
+    }).not.toThrow()
 
-    // The position query should be marked stale (invalidated) even though
-    // no matching platform was found in cache.
+    // No invalidation — the 10-minute fallback poll handles unknown assets.
     const state = queryClient.getQueryState(posKey)
-    expect(state?.isInvalidated).toBe(true)
+    expect(state?.isInvalidated).toBe(false)
   })
 
   test('matches XEvent by assetId and writes to XEVENT_BUFFER_KEY', () => {

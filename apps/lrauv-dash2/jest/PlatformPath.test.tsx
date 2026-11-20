@@ -44,14 +44,20 @@ jest.mock('@mbari/utils', () => ({
 
 // PlatformPath reads the XEvent buffer via useQuery (react-query).
 // usePlatformPositions is already mocked above, so the only live useQuery
-// call is the buffer read — return empty data so tests stay isolation-clean.
+// calls are the buffer read and useQueryClient. Default to empty buffer;
+// individual tests can override via jest.mocked(useQuery).mockReturnValue.
 jest.mock('react-query', () => ({
   useQuery: jest.fn(() => ({ data: undefined })),
+  useQueryClient: jest.fn(() => ({ getQueryData: jest.fn(() => undefined) })),
 }))
 
+import { useQuery } from 'react-query'
 import { PlatformPath, isTimeoutError } from '../components/PlatformPath'
 
-beforeEach(() => mockUsePlatformPositions.mockReset())
+beforeEach(() => {
+  mockUsePlatformPositions.mockReset()
+  jest.mocked(useQuery).mockReturnValue({ data: undefined } as any)
+})
 
 // ─── Pure helper: isTimeoutError ──────────────────────────────────────────────
 
@@ -202,5 +208,32 @@ describe('PlatformPath rendering', () => {
     expect(markers[0]).toHaveAttribute('data-radius', '8')
     expect(markers[1]).toHaveAttribute('data-radius', '2')
     expect(markers[2]).toHaveAttribute('data-radius', '2')
+  })
+
+  it('merges XEvent buffer positions newer than the server latest into displayPositions', () => {
+    // Server has positions up to timeMs 2000.
+    mockUsePlatformPositions.mockReturnValue({
+      data: {
+        positions: [
+          { timeMs: 2000, lat: 36.1, lon: -122.1 },
+          { timeMs: 1000, lat: 36.0, lon: -122.0 },
+        ],
+      },
+      isLoading: false,
+      error: null,
+    })
+    // XEvent buffer has a newer position not yet on the server.
+    jest.mocked(useQuery).mockReturnValue({
+      data: [{ timeMs: 3000, lat: 36.2, lon: -122.2 }],
+    } as any)
+
+    const { getAllByTestId } = render(
+      <PlatformPath platformId="abc" platformName="Test Platform" />
+    )
+    // 3 positions total: 1 prominent + 2 historical = 3 circle markers
+    const markers = getAllByTestId('circle-marker')
+    expect(markers).toHaveLength(3)
+    // Latest (from XEvent buffer, timeMs 3000) is at the front
+    expect(markers[0]).toHaveAttribute('data-radius', '8')
   })
 })

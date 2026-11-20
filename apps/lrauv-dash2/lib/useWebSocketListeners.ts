@@ -113,12 +113,13 @@ export const useTethysSubscription = () => {
           let matched = false
           for (const [key, existing] of allPlatformQueries) {
             if (key[3] !== 'positions') continue
-            // Prefer platformId === assetId (Mongo ObjectId) for reliability;
-            // fall back to platformName === assetName when assetId is absent.
+            // When assetId is present, match by id only — name fallback is
+            // skipped to avoid patching the wrong track when names collide or
+            // the payload carries an inconsistent assetId/assetName pair.
             if (!existing) continue
             const idMatch = assetId && existing.platformId === assetId
             const nameMatch =
-              !idMatch && assetName && existing.platformName === assetName
+              !assetId && assetName && existing.platformName === assetName
             if (!idMatch && !nameMatch) continue
 
             matched = true
@@ -143,17 +144,12 @@ export const useTethysSubscription = () => {
             )
           }
 
-          // No cache entry yet — the initial fetch may not have completed.
-          // Invalidate position queries only to avoid refetching the entire
-          // TrackDB surface on every unknown XEvent.
-          if (!matched) {
-            queryClient.invalidateQueries({
-              predicate: (query) =>
-                query.queryKey[0] === 'trackdb' &&
-                query.queryKey[1] === 'platforms' &&
-                query.queryKey[3] === 'positions',
-            })
-          }
+          // No matching cache entry — the platform may not be selected yet or
+          // its initial fetch may not have completed. The 10-minute fallback
+          // poll in PlatformPath will pick up the position when the component
+          // mounts. Avoid invalidateQueries here: in a busy ODSS feed, repeated
+          // unmatched XEvents would trigger a refetch storm across all selected
+          // platforms.
         }
         return
       }
