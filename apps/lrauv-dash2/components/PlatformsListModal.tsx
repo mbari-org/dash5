@@ -175,7 +175,11 @@ export const PlatformsListModal: React.FC<PlatformsListModalProps> = ({
           return data
         })
         .finally(() => {
-          inflightPositions.current.delete(platformId)
+          // Only remove if this is still the current in-flight promise.
+          // A Refresh+re-toggle may have inserted a newer entry — don't evict it.
+          if (inflightPositions.current.get(platformId) === request) {
+            inflightPositions.current.delete(platformId)
+          }
         })
 
       inflightPositions.current.set(platformId, request)
