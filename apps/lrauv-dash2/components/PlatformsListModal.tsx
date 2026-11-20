@@ -94,6 +94,12 @@ export const PlatformsListModal: React.FC<PlatformsListModalProps> = ({
   // repopulate cache after it has been cleared.
   const refreshGen = useRef(0)
   const isMounted = useRef(true)
+  // Kept in sync with workingSelection so async callbacks can check the
+  // current selection without relying on a stale closure value.
+  const workingSelectionRef = useRef(workingSelection)
+  useEffect(() => {
+    workingSelectionRef.current = workingSelection
+  }, [workingSelection])
   useEffect(() => {
     isMounted.current = true
     return () => {
@@ -186,6 +192,9 @@ export const PlatformsListModal: React.FC<PlatformsListModalProps> = ({
             // Ignore if Refresh or Unselect All fired after this toggle.
             if (refreshGen.current !== gen) return
             if (!isMounted.current) return
+            // If the platform was deselected while this fetch was in flight,
+            // don't update state — the toggle-off already cleared its entry.
+            if (!workingSelectionRef.current.includes(platformId)) return
             if (latestFiniteFix(data)) {
               // Valid position from the fetch — clear any stale no-position flag.
               setNoPositionIds((prev) => {
@@ -344,7 +353,6 @@ export const PlatformsListModal: React.FC<PlatformsListModalProps> = ({
     // don't repopulate cache after it has been cleared.
     refreshGen.current += 1
     inflightPositions.current.clear()
-    // Remove only per-platform position caches so the next Center Map click
     // Remove only the last-1 (no date window) position entries written by
     // fetchLatestPosition. These have key[4] === 1. The 20-fix track caches
     // used by PlatformPath (key[4] === 20) are intentionally left intact so
