@@ -1,10 +1,11 @@
 import React, { useMemo, useState, useEffect, useCallback } from 'react'
 import { Marker, Polyline, Tooltip, CircleMarker } from 'react-leaflet'
 import L from 'leaflet'
-import { usePlatformPositions } from '@mbari/api-client'
+import { useQuery, useQueryClient } from 'react-query'
+import { usePlatformPositions, PlatformPosition } from '@mbari/api-client'
 import { createLogger } from '@mbari/utils'
-import { useTick } from '../lib/useTick'
 import { PLATFORM_PANE } from '../lib/constants'
+import { XEVENT_BUFFER_KEY } from '../lib/useWebSocketListeners'
 
 const logger = createLogger('PlatformPath')
 
@@ -18,11 +19,6 @@ export const isTimeoutError = (error: unknown): boolean => {
   )
 }
 
-// How far back to search for position fixes when no explicit window is given.
-// 365 days ensures infrequently-updated fixed platforms (e.g. CA offshore
-// structures that may not report for months) are still found.
-const DEFAULT_LOOKBACK_DAYS = 365
-
 export interface PlatformPathProps {
   platformId: string
   platformName?: string
@@ -32,7 +28,6 @@ export interface PlatformPathProps {
   startDate?: string
   endDate?: string
   limitPositions?: number
-  refreshIntervalMs?: number
 }
 
 export const PlatformPath: React.FC<PlatformPathProps> = ({
@@ -44,7 +39,6 @@ export const PlatformPath: React.FC<PlatformPathProps> = ({
   startDate,
   endDate,
   limitPositions = 20,
-  refreshIntervalMs = 5 * 60_000,
 }) => {
   const [hovered, setHovered] = useState(false)
   const [currentPosHovered, setCurrentPosHovered] = useState(false)
@@ -58,19 +52,13 @@ export const PlatformPath: React.FC<PlatformPathProps> = ({
     setIconFailed(false)
   }, [iconUrl])
 
-  const nowMs = useTick(refreshIntervalMs)
-
+  // Use date window when provided; otherwise lastNumberOfFixes only — XEvent keeps positions current.
   const queryWindow = useMemo(() => {
     if (startDate && endDate) {
       return { startDate, endDate }
     }
-    const end = nowMs
-    const start = end - DEFAULT_LOOKBACK_DAYS * 24 * 60 * 60 * 1000
-    return {
-      startDate: new Date(start).toISOString(),
-      endDate: new Date(end).toISOString(),
-    }
-  }, [startDate, endDate, nowMs])
+    return {}
+  }, [startDate, endDate])
 
   const {
     data: positionData,
@@ -88,9 +76,33 @@ export const PlatformPath: React.FC<PlatformPathProps> = ({
     }
   )
 
+  // Subscribe to XEvent buffer without fetching; initialData seeds pre-mount positions from cache.
+  const queryClient = useQueryClient()
+  const xeventBufferKey = ['trackdb', XEVENT_BUFFER_KEY, platformId]
+  const { data: xeventBuffer } = useQuery<PlatformPosition[]>(
+    xeventBufferKey,
+    () => [],
+    {
+      enabled: false,
+      staleTime: Infinity,
+      initialData: () =>
+        queryClient.getQueryData<PlatformPosition[]>(xeventBufferKey),
+    }
+  )
+
   const displayPositions = useMemo(() => {
-    const positions = positionData?.positions
-    if (!positions || positions.length === 0) return []
+    const serverPositions = positionData?.positions ?? []
+
+    // Merge XEvent buffer — keep positions newer than server's latest (>= preserves same-timestamp corrections).
+    const latestServerTimeMs =
+      serverPositions.length > 0
+        ? Math.max(...serverPositions.map((p) => p.timeMs))
+        : 0
+    const freshXEvent = (xeventBuffer ?? []).filter(
+      (p) => p.timeMs >= latestServerTimeMs
+    )
+    const positions = [...freshXEvent, ...serverPositions]
+    if (positions.length === 0) return []
 
     const sorted = [...positions].sort((a, b) => b.timeMs - a.timeMs)
     const seen = new Set<number>()
@@ -102,7 +114,7 @@ export const PlatformPath: React.FC<PlatformPathProps> = ({
       if (deduped.length >= limitPositions) break
     }
     return deduped
-  }, [positionData, limitPositions])
+  }, [positionData, xeventBuffer, limitPositions])
 
   const route = useMemo(() => {
     if (displayPositions.length === 0) return []

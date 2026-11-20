@@ -1,9 +1,15 @@
 import '@testing-library/jest-dom'
 import React from 'react'
-import { render } from '@testing-library/react'
+import { render, act } from '@testing-library/react'
 import { QueryClient, QueryClientProvider } from 'react-query'
-import { TethysApiContext } from '@mbari/api-client'
-import { useTethysSubscription } from '../lib/useWebSocketListeners'
+import {
+  TethysApiContext,
+  GetPlatformPositionsResponse,
+} from '@mbari/api-client'
+import {
+  useTethysSubscription,
+  XEVENT_BUFFER_KEY,
+} from '../lib/useWebSocketListeners'
 
 // Mock WebSocket globally
 class MockWebSocket {
@@ -117,5 +123,287 @@ describe('useTethysSubscription', () => {
     render(<Probe />, { wrapper })
 
     expect(MockWebSocket.instances).toHaveLength(0)
+  })
+
+  test('appends XEvent position to matching TrackDB platform cache entry', () => {
+    const queryClient = new QueryClient()
+
+    // Seed a cached platform positions entry for "rcsn_sim"
+    const platformKey = [
+      'trackdb',
+      'platforms',
+      'platform-abc',
+      'positions',
+      20,
+      undefined,
+      undefined,
+    ]
+    queryClient.setQueryData(platformKey, {
+      platformId: 'platform-abc',
+      platformName: 'rcsn_sim',
+      positions: [{ timeMs: 1700000000000, lat: 36.6, lon: -122.0 }],
+    })
+
+    const Wrapper = ({ children }: { children: React.ReactNode }) => (
+      <QueryClientProvider client={queryClient}>
+        <TethysApiContext.Provider
+          value={
+            {
+              token: 'test-token-123',
+              profile: {
+                email: 'user@mbari.org',
+                firstName: 'T',
+                lastName: 'U',
+              },
+              axiosInstance: {} as any,
+            } as any
+          }
+        >
+          {children}
+        </TethysApiContext.Provider>
+      </QueryClientProvider>
+    )
+    Wrapper.displayName = 'TestWrapper'
+
+    render(<Probe />, { wrapper: Wrapper })
+    const ws = MockWebSocket.instances[0]
+    ws.onopen?.()
+
+    act(() => {
+      ws.onmessage?.({
+        data: JSON.stringify({
+          eventName: 'XEvent',
+          appName: 'odss2dash',
+          payload: {
+            assetName: 'rcsn_sim',
+            position: { timeMs: 1700000060000, lat: 36.7, lon: -122.1 },
+            typeName: 'ship',
+          },
+        }),
+      } as MessageEvent)
+    })
+
+    const updated = queryClient.getQueryData<{
+      positions: { timeMs: number; lat: number; lon: number }[]
+    }>(platformKey)
+    expect(updated?.positions).toHaveLength(2)
+    expect(updated?.positions[1]).toEqual({
+      timeMs: 1700000060000,
+      lat: 36.7,
+      lon: -122.1,
+    })
+
+    // XEvent buffer should also be written so positions survive HTTP refetch.
+    const buffer = queryClient.getQueryData<
+      { timeMs: number; lat: number; lon: number }[]
+    >(['trackdb', XEVENT_BUFFER_KEY, 'platform-abc'])
+    expect(buffer).toHaveLength(1)
+    expect(buffer?.[0]).toEqual({
+      timeMs: 1700000060000,
+      lat: 36.7,
+      lon: -122.1,
+    })
+  })
+
+  test('writes XEvent buffer when platform query exists but is still pending (no response yet)', () => {
+    const queryClient = new QueryClient()
+    // Seed a position query key with no data (simulates in-flight initial fetch)
+    const platformKey = [
+      'trackdb',
+      'platforms',
+      'mongo-id-pending',
+      'positions',
+      20,
+      undefined,
+      undefined,
+    ]
+    // setQueryData(key, undefined) is a no-op in React Query 3 and does not create a
+    // cache entry. Use prefetchQuery with a never-resolving function to create a real
+    // in-flight cache entry (data: undefined) that getQueriesData will see.
+    queryClient.prefetchQuery(
+      platformKey,
+      () => new Promise<GetPlatformPositionsResponse>(() => {})
+    )
+
+    const Wrapper = ({ children }: { children: React.ReactNode }) => (
+      <QueryClientProvider client={queryClient}>
+        <TethysApiContext.Provider
+          value={
+            {
+              token: 'test-token-123',
+              profile: {
+                email: 'user@mbari.org',
+                firstName: 'T',
+                lastName: 'U',
+              },
+              axiosInstance: {} as any,
+            } as any
+          }
+        >
+          {children}
+        </TethysApiContext.Provider>
+      </QueryClientProvider>
+    )
+    Wrapper.displayName = 'TestWrapper'
+
+    render(<Probe />, { wrapper: Wrapper })
+    const ws = MockWebSocket.instances[0]
+    ws.onopen?.()
+
+    act(() => {
+      ws.onmessage?.({
+        data: JSON.stringify({
+          eventName: 'XEvent',
+          appName: 'odss2dash',
+          payload: {
+            assetId: 'mongo-id-pending',
+            position: { timeMs: 1700000060000, lat: 36.7, lon: -122.1 },
+          },
+        }),
+      } as MessageEvent)
+    })
+
+    // Main cache should still be undefined (no response yet)
+    const main = queryClient.getQueryData(platformKey)
+    expect(main).toBeUndefined()
+
+    // XEvent buffer should be written so PlatformPath can merge on mount
+    const buffer = queryClient.getQueryData<
+      { timeMs: number; lat: number; lon: number }[]
+    >(['trackdb', XEVENT_BUFFER_KEY, 'mongo-id-pending'])
+    expect(buffer).toHaveLength(1)
+    expect(buffer?.[0]).toEqual({
+      timeMs: 1700000060000,
+      lat: 36.7,
+      lon: -122.1,
+    })
+  })
+
+  test('does not throw and does not invalidate when XEvent has no matching platform in cache', () => {
+    const queryClient = new QueryClient()
+    // Seed a position query — it should NOT be invalidated
+    const posKey = ['trackdb', 'platforms', 'p1', 'positions', 20]
+    queryClient.setQueryData(posKey, {
+      platformId: 'p1',
+      platformName: 'other_ship',
+      positions: [],
+    })
+
+    const Wrapper = ({ children }: { children: React.ReactNode }) => (
+      <QueryClientProvider client={queryClient}>
+        <TethysApiContext.Provider
+          value={
+            {
+              token: 'test-token-123',
+              profile: {
+                email: 'user@mbari.org',
+                firstName: 'T',
+                lastName: 'U',
+              },
+              axiosInstance: {} as any,
+            } as any
+          }
+        >
+          {children}
+        </TethysApiContext.Provider>
+      </QueryClientProvider>
+    )
+    Wrapper.displayName = 'TestWrapper'
+
+    render(<Probe />, { wrapper: Wrapper })
+    const ws = MockWebSocket.instances[0]
+    ws.onopen?.()
+
+    expect(() => {
+      act(() => {
+        ws.onmessage?.({
+          data: JSON.stringify({
+            eventName: 'XEvent',
+            payload: {
+              assetName: 'unknown_ship',
+              position: { timeMs: 1700000000000, lat: 36.0, lon: -122.0 },
+            },
+          }),
+        } as MessageEvent)
+      })
+    }).not.toThrow()
+
+    // No invalidation when no platform matches — not yet selected or mounted.
+    const state = queryClient.getQueryState(posKey)
+    expect(state?.isInvalidated).toBe(false)
+  })
+
+  test('matches XEvent by assetId and writes to XEVENT_BUFFER_KEY', () => {
+    const queryClient = new QueryClient()
+    const platformKey = [
+      'trackdb',
+      'platforms',
+      'mongo-id-123',
+      'positions',
+      20,
+      undefined,
+      undefined,
+    ]
+    queryClient.setQueryData(platformKey, {
+      platformId: 'mongo-id-123',
+      platformName: 'rcsn_sim',
+      positions: [{ timeMs: 1700000000000, lat: 36.6, lon: -122.0 }],
+    })
+
+    const Wrapper = ({ children }: { children: React.ReactNode }) => (
+      <QueryClientProvider client={queryClient}>
+        <TethysApiContext.Provider
+          value={
+            {
+              token: 'test-token-123',
+              profile: {
+                email: 'user@mbari.org',
+                firstName: 'T',
+                lastName: 'U',
+              },
+              axiosInstance: {} as any,
+            } as any
+          }
+        >
+          {children}
+        </TethysApiContext.Provider>
+      </QueryClientProvider>
+    )
+    Wrapper.displayName = 'TestWrapper'
+
+    render(<Probe />, { wrapper: Wrapper })
+    const ws = MockWebSocket.instances[0]
+    ws.onopen?.()
+
+    act(() => {
+      ws.onmessage?.({
+        data: JSON.stringify({
+          eventName: 'XEvent',
+          appName: 'odss2dash',
+          payload: {
+            assetId: 'mongo-id-123',
+            assetName: 'different_name', // assetId should take precedence
+            position: { timeMs: 1700000060000, lat: 36.7, lon: -122.1 },
+          },
+        }),
+      } as MessageEvent)
+    })
+
+    // Main cache updated
+    const updated = queryClient.getQueryData<{
+      positions: { timeMs: number; lat: number; lon: number }[]
+    }>(platformKey)
+    expect(updated?.positions).toHaveLength(2)
+
+    // XEvent buffer written
+    const buffer = queryClient.getQueryData<
+      { timeMs: number; lat: number; lon: number }[]
+    >(['trackdb', XEVENT_BUFFER_KEY, 'mongo-id-123'])
+    expect(buffer).toHaveLength(1)
+    expect(buffer?.[0]).toEqual({
+      timeMs: 1700000060000,
+      lat: 36.7,
+      lon: -122.1,
+    })
   })
 })

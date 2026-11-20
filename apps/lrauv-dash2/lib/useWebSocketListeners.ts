@@ -1,18 +1,40 @@
 import { useEffect } from 'react'
-import { useTethysApiContext } from '@mbari/api-client'
+import {
+  useTethysApiContext,
+  GetPlatformPositionsResponse,
+  PlatformPosition,
+} from '@mbari/api-client'
 import { useQuery, useQueryClient } from 'react-query'
+
+/** Cache key prefix for the per-platform XEvent position buffer. */
+export const XEVENT_BUFFER_KEY = 'xevent-buffer'
 
 type SubscriptionEventType =
   | 'VehicleConnected'
   | 'VehiclePingResult'
+  | 'XEvent'
   | 'presence'
   | null
 
 export const SUPPORTED_EVENT_TYPES: SubscriptionEventType[] = [
   'VehicleConnected',
   'VehiclePingResult',
+  'XEvent',
   'presence',
 ]
+
+export interface XEventPayload {
+  assetId?: string
+  assetName?: string
+  position?: {
+    timeMs: number
+    lat: number
+    lon: number
+  }
+  typeName?: string
+  color?: string
+  iconUrl?: string
+}
 
 export interface TethysSubscriptionEvent {
   eventName?: string
@@ -22,6 +44,8 @@ export interface TethysSubscriptionEvent {
   presence?: string
   reachable?: boolean
   email?: string
+  /** Present on XEvent notifications from odss2dash. */
+  payload?: XEventPayload
 }
 
 export const getTethysSubscriptionQueryKey = (
@@ -71,6 +95,58 @@ export const useTethysSubscription = () => {
         console.log('Unsupported event type: ', data.eventName)
         return
       }
+
+      // XEvent: update TrackDB position cache directly.
+      if (data.eventName === 'XEvent') {
+        const pos = data.payload?.position
+        const assetName = data.payload?.assetName
+        const assetId = data.payload?.assetId
+        if (pos && (assetName || assetId)) {
+          // Narrow to position queries only.
+          const allPlatformQueries =
+            queryClient.getQueriesData<GetPlatformPositionsResponse>([
+              'trackdb',
+              'platforms',
+            ])
+          let matched = false
+          for (const [key, existing] of allPlatformQueries) {
+            if (key[3] !== 'positions') continue
+            // key[2] is platformId — available before response lands.
+            const queryPlatformId = key[2] as string
+            const cap = (key[4] as number | undefined) ?? 20
+
+            // Match by id when present; name fallback only when assetId is absent.
+            const idMatch = assetId && queryPlatformId === assetId
+            const nameMatch =
+              !assetId &&
+              assetName &&
+              existing &&
+              existing.platformName === assetName
+            if (!idMatch && !nameMatch) continue
+
+            matched = true
+            const platformId = existing?.platformId ?? queryPlatformId
+
+            // Skip main cache write while pending — buffer covers it.
+            if (existing) {
+              queryClient.setQueryData<GetPlatformPositionsResponse>(key, {
+                ...existing,
+                positions: [...existing.positions, pos].slice(-cap),
+              })
+            }
+
+            // Always write buffer — survives HTTP refetch and pending initial fetch.
+            queryClient.setQueryData<PlatformPosition[]>(
+              ['trackdb', XEVENT_BUFFER_KEY, platformId],
+              (prev = []) => [...(prev ?? []), pos].slice(-cap)
+            )
+          }
+
+          // No match — not yet selected. Fallback poll handles it; no invalidate to avoid refetch storm.
+        }
+        return
+      }
+
       const queryKey = getTethysSubscriptionQueryKey(
         data.eventName,
         data.vehicleName,
