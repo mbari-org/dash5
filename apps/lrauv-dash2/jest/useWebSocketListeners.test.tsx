@@ -3,7 +3,10 @@ import React from 'react'
 import { render, act } from '@testing-library/react'
 import { QueryClient, QueryClientProvider } from 'react-query'
 import { TethysApiContext } from '@mbari/api-client'
-import { useTethysSubscription } from '../lib/useWebSocketListeners'
+import {
+  useTethysSubscription,
+  XEVENT_BUFFER_KEY,
+} from '../lib/useWebSocketListeners'
 
 // Mock WebSocket globally
 class MockWebSocket {
@@ -188,9 +191,15 @@ describe('useTethysSubscription', () => {
     })
   })
 
-  test('ignores XEvent when no matching platform in cache', () => {
+  test('invalidates position queries when XEvent arrives with no matching platform in cache', () => {
     const queryClient = new QueryClient()
-    // No platform data seeded — should not throw
+    // Seed a position query so we can verify invalidation fires
+    const posKey = ['trackdb', 'platforms', 'p1', 'positions', 20]
+    queryClient.setQueryData(posKey, {
+      platformId: 'p1',
+      platformName: 'other_ship',
+      positions: [],
+    })
 
     const Wrapper = ({ children }: { children: React.ReactNode }) => (
       <QueryClientProvider client={queryClient}>
@@ -217,18 +226,95 @@ describe('useTethysSubscription', () => {
     const ws = MockWebSocket.instances[0]
     ws.onopen?.()
 
-    expect(() => {
-      act(() => {
-        ws.onmessage?.({
-          data: JSON.stringify({
-            eventName: 'XEvent',
-            payload: {
-              assetName: 'unknown_ship',
-              position: { timeMs: 1700000000000, lat: 36.0, lon: -122.0 },
-            },
-          }),
-        } as MessageEvent)
-      })
-    }).not.toThrow()
+    act(() => {
+      ws.onmessage?.({
+        data: JSON.stringify({
+          eventName: 'XEvent',
+          payload: {
+            assetName: 'unknown_ship',
+            position: { timeMs: 1700000000000, lat: 36.0, lon: -122.0 },
+          },
+        }),
+      } as MessageEvent)
+    })
+
+    // The position query should be marked stale (invalidated) even though
+    // no matching platform was found in cache.
+    const state = queryClient.getQueryState(posKey)
+    expect(state?.isInvalidated).toBe(true)
+  })
+
+  test('matches XEvent by assetId and writes to XEVENT_BUFFER_KEY', () => {
+    const queryClient = new QueryClient()
+    const platformKey = [
+      'trackdb',
+      'platforms',
+      'mongo-id-123',
+      'positions',
+      20,
+      undefined,
+      undefined,
+    ]
+    queryClient.setQueryData(platformKey, {
+      platformId: 'mongo-id-123',
+      platformName: 'rcsn_sim',
+      positions: [{ timeMs: 1700000000000, lat: 36.6, lon: -122.0 }],
+    })
+
+    const Wrapper = ({ children }: { children: React.ReactNode }) => (
+      <QueryClientProvider client={queryClient}>
+        <TethysApiContext.Provider
+          value={
+            {
+              token: 'test-token-123',
+              profile: {
+                email: 'user@mbari.org',
+                firstName: 'T',
+                lastName: 'U',
+              },
+              axiosInstance: {} as any,
+            } as any
+          }
+        >
+          {children}
+        </TethysApiContext.Provider>
+      </QueryClientProvider>
+    )
+    Wrapper.displayName = 'TestWrapper'
+
+    render(<Probe />, { wrapper: Wrapper })
+    const ws = MockWebSocket.instances[0]
+    ws.onopen?.()
+
+    act(() => {
+      ws.onmessage?.({
+        data: JSON.stringify({
+          eventName: 'XEvent',
+          appName: 'odss2dash',
+          payload: {
+            assetId: 'mongo-id-123',
+            assetName: 'different_name', // assetId should take precedence
+            position: { timeMs: 1700000060000, lat: 36.7, lon: -122.1 },
+          },
+        }),
+      } as MessageEvent)
+    })
+
+    // Main cache updated
+    const updated = queryClient.getQueryData<{
+      positions: { timeMs: number; lat: number; lon: number }[]
+    }>(platformKey)
+    expect(updated?.positions).toHaveLength(2)
+
+    // XEvent buffer written
+    const buffer = queryClient.getQueryData<
+      { timeMs: number; lat: number; lon: number }[]
+    >(['trackdb', XEVENT_BUFFER_KEY, 'mongo-id-123'])
+    expect(buffer).toHaveLength(1)
+    expect(buffer?.[0]).toEqual({
+      timeMs: 1700000060000,
+      lat: 36.7,
+      lon: -122.1,
+    })
   })
 })

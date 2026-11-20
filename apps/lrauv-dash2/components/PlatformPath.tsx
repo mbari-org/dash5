@@ -98,8 +98,10 @@ export const PlatformPath: React.FC<PlatformPathProps> = ({
       serverPositions.length > 0
         ? Math.max(...serverPositions.map((p) => p.timeMs))
         : 0
+    // Use >= so an XEvent fix with the same timestamp but corrected coords
+    // is not silently dropped when server timestamp granularity is coarse.
     const freshXEvent = (xeventBuffer ?? []).filter(
-      (p) => p.timeMs > latestServerTimeMs
+      (p) => p.timeMs >= latestServerTimeMs
     )
     const positions = [...freshXEvent, ...serverPositions]
     if (positions.length === 0) return []

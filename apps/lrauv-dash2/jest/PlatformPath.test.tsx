@@ -42,8 +42,6 @@ jest.mock('@mbari/utils', () => ({
   createLogger: jest.fn(() => ({ debug: jest.fn(), warn: jest.fn() })),
 }))
 
-jest.mock('../lib/useTick', () => ({ useTick: () => Date.now() }))
-
 // PlatformPath reads the XEvent buffer via useQuery (react-query).
 // usePlatformPositions is already mocked above, so the only live useQuery
 // call is the buffer read — return empty data so tests stay isolation-clean.

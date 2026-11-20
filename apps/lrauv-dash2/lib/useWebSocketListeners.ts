@@ -103,6 +103,8 @@ export const useTethysSubscription = () => {
         const assetName = data.payload?.assetName
         const assetId = data.payload?.assetId
         if (pos && (assetName || assetId)) {
+          // Narrow to position queries only (key[3] === 'positions') to avoid
+          // accidentally matching the platform-list query or future cache shapes.
           const allPlatformQueries =
             queryClient.getQueriesData<GetPlatformPositionsResponse>([
               'trackdb',
@@ -110,6 +112,7 @@ export const useTethysSubscription = () => {
             ])
           let matched = false
           for (const [key, existing] of allPlatformQueries) {
+            if (key[3] !== 'positions') continue
             // Prefer platformId === assetId (Mongo ObjectId) for reliability;
             // fall back to platformName === assetName when assetId is absent.
             if (!existing) continue
@@ -124,10 +127,11 @@ export const useTethysSubscription = () => {
             const cap = (key[4] as number | undefined) ?? 20
 
             // Append the new position and trim to cap so the cache does not
-            // grow without bound over a long session.
+            // grow without bound. Both the main cache and the XEvent buffer
+            // are trimmed to the same cap for consistency.
             queryClient.setQueryData<GetPlatformPositionsResponse>(key, {
               ...existing,
-              positions: [...existing.positions, pos].slice(-cap * 2),
+              positions: [...existing.positions, pos].slice(-cap),
             })
 
             // Also write to a lightweight XEvent buffer so positions survive
@@ -140,9 +144,15 @@ export const useTethysSubscription = () => {
           }
 
           // No cache entry yet — the initial fetch may not have completed.
-          // Invalidate so the query refetches and picks up this platform.
+          // Invalidate position queries only to avoid refetching the entire
+          // TrackDB surface on every unknown XEvent.
           if (!matched) {
-            queryClient.invalidateQueries(['trackdb', 'platforms'])
+            queryClient.invalidateQueries({
+              predicate: (query) =>
+                query.queryKey[0] === 'trackdb' &&
+                query.queryKey[1] === 'platforms' &&
+                query.queryKey[3] === 'positions',
+            })
           }
         }
         return
