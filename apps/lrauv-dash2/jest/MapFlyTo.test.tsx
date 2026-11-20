@@ -2,7 +2,6 @@ import '@testing-library/jest-dom'
 import React from 'react'
 import { render } from '@testing-library/react'
 
-const mockSetView = jest.fn()
 const mockFlyTo = jest.fn()
 const mockFitBounds = jest.fn()
 const mockGetZoom = jest.fn(() => 8)
@@ -18,7 +17,6 @@ let mockFlyToRequest: {
 
 jest.mock('react-leaflet', () => ({
   useMap: () => ({
-    setView: mockSetView,
     flyTo: mockFlyTo,
     fitBounds: mockFitBounds,
     getZoom: mockGetZoom,
@@ -62,7 +60,6 @@ describe('MapFlyTo', () => {
     expect(mockFlyTo).toHaveBeenCalledWith([36.8, -122.0], 13, {
       duration: 0.45,
     })
-    expect(mockSetView).not.toHaveBeenCalled()
     expect(mockOnce).toHaveBeenCalledWith('moveend', expect.any(Function))
     expect(mockSetFlyToRequest).toHaveBeenCalledWith(null)
   })
@@ -82,6 +79,17 @@ describe('MapFlyTo', () => {
     })
     expect(mockFlyTo).not.toHaveBeenCalled()
     expect(mockSetFlyToRequest).toHaveBeenCalledWith(null)
+  })
+
+  it('does not zoom out when already zoomed in past 13', () => {
+    mockGetZoom.mockReturnValue(15)
+    mockFlyToRequest = { lat: 36.8, lon: -122.0 }
+
+    render(<MapFlyTo />)
+
+    expect(mockFlyTo).toHaveBeenCalledWith([36.8, -122.0], 15, {
+      duration: 0.45,
+    })
   })
 
   it('syncs GoogleMutant on fly-to and again on moveend, without redraw', () => {

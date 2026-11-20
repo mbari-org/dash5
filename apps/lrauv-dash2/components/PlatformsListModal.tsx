@@ -69,8 +69,8 @@ export const PlatformsListModal: React.FC<PlatformsListModalProps> = ({
   const {
     workingSelection,
     togglePlatformSelection,
-    unselectAll: handleUnselectAll,
-    reset: handleReset,
+    unselectAll: unselectAllPlatforms,
+    reset: resetPlatforms,
     apply: handleApply,
     hasChanges,
     isApplying,
@@ -86,6 +86,17 @@ export const PlatformsListModal: React.FC<PlatformsListModalProps> = ({
   const { setFlyToRequest } = useMapCamera()
   const queryClient = useQueryClient()
   const inflightPositions = useRef(new Map<string, Promise<PositionsPayload>>())
+  const [noPositionIds, setNoPositionIds] = useState<Set<string>>(new Set())
+
+  const handleUnselectAll = useCallback(() => {
+    unselectAllPlatforms()
+    setNoPositionIds(new Set())
+  }, [unselectAllPlatforms])
+
+  const handleReset = useCallback(() => {
+    resetPlatforms()
+    setNoPositionIds(new Set())
+  }, [resetPlatforms])
 
   const fetchLatestPosition = useCallback(
     (platformId: string) => {
@@ -120,20 +131,44 @@ export const PlatformsListModal: React.FC<PlatformsListModalProps> = ({
     [axiosInstance, queryClient, siteConfig]
   )
 
-  const handlePrefetchPlatform = useCallback(
+  const handleTogglePlatform = useCallback(
     (platformId: string) => {
-      if (cachedLatestPosition(queryClient, platformId)) return
-      if (
-        queryClient.getQueryData(latestFixQueryKey(platformId)) !== undefined
-      ) {
-        return
+      const isCurrentlySelected = workingSelection.includes(platformId)
+      togglePlatformSelection(platformId)
+      if (!isCurrentlySelected) {
+        // Toggling on — fetch position and disable button if none available.
+        void fetchLatestPosition(platformId)
+          .then((data) => {
+            if (latestFiniteFix(data)) {
+              // Valid position — clear any stale no-position flag from a prior
+              // attempt (e.g. after Unselect All + re-select).
+              setNoPositionIds((prev) => {
+                const next = new Set(prev)
+                next.delete(platformId)
+                return next
+              })
+            } else {
+              setNoPositionIds((prev) => new Set([...prev, platformId]))
+            }
+          })
+          .catch((err: unknown) => {
+            // Network or config error — not the same as "no position." Log only;
+            // don't disable the button so the user can retry.
+            logger.warn(
+              `Failed to fetch position on toggle for ${platformId}`,
+              err
+            )
+          })
+      } else {
+        // Toggling off — clear no-position state.
+        setNoPositionIds((prev) => {
+          const next = new Set(prev)
+          next.delete(platformId)
+          return next
+        })
       }
-      if (!siteConfig?.appConfig?.odss2dashApi) return
-      void fetchLatestPosition(platformId).catch(() => {
-        // Hover prefetch is best-effort; click path logs failures.
-      })
     },
-    [fetchLatestPosition, queryClient, siteConfig]
+    [fetchLatestPosition, togglePlatformSelection, workingSelection]
   )
 
   const handleCenterOnPlatform = useCallback(
@@ -143,9 +178,15 @@ export const PlatformsListModal: React.FC<PlatformsListModalProps> = ({
         setFlyToRequest(cached)
         return
       }
-      if (
-        queryClient.getQueryData(latestFixQueryKey(platformId)) !== undefined
-      ) {
+      // If the last-1 cache entry exists but has no finite position, disable
+      // the button and bail — no need to re-fetch.
+      const cachedLastOne = queryClient.getQueryData<PositionsPayload>(
+        latestFixQueryKey(platformId)
+      )
+      if (cachedLastOne !== undefined) {
+        if (!latestFiniteFix(cachedLastOne)) {
+          setNoPositionIds((prev) => new Set([...prev, platformId]))
+        }
         return
       }
 
@@ -155,6 +196,8 @@ export const PlatformsListModal: React.FC<PlatformsListModalProps> = ({
         const latest = latestFiniteFix(data)
         if (latest) {
           setFlyToRequest({ lat: latest.lat, lon: latest.lon })
+        } else {
+          setNoPositionIds((prev) => new Set([...prev, platformId]))
         }
       } catch (err) {
         logger.warn(`Failed to fetch position for platform ${platformId}:`, err)
@@ -240,7 +283,17 @@ export const PlatformsListModal: React.FC<PlatformsListModalProps> = ({
 
   const handleRefresh = useCallback(() => {
     refetchPlatforms()
-  }, [refetchPlatforms])
+    setNoPositionIds(new Set())
+    // Remove only per-platform position caches so the next Center Map click
+    // re-fetches. Scoped to keys with 'positions' at index 3 to avoid evicting
+    // the platform list (which shares the ['trackdb','platforms'] prefix).
+    queryClient.removeQueries({
+      predicate: (query) => {
+        const key = query.queryKey as unknown[]
+        return key[3] === 'positions'
+      },
+    })
+  }, [queryClient, refetchPlatforms])
 
   const isLoading = platformsLoading || isApplying
 
@@ -369,13 +422,13 @@ export const PlatformsListModal: React.FC<PlatformsListModalProps> = ({
                       name={groupName}
                       items={groups[groupName]}
                       selectedIds={workingSelection}
-                      onToggleSelect={togglePlatformSelection}
+                      onToggleSelect={handleTogglePlatform}
                       expanded={expandedGroups.has(groupName)}
                       onToggleExpand={() => toggleGroupExpanded(groupName)}
                       filterText={filterText}
                       onlySelected={onlySelected}
                       onCenterClick={handleCenterOnPlatform}
-                      onCenterHover={handlePrefetchPlatform}
+                      noPositionIds={noPositionIds}
                     />
                   ))
                 )}

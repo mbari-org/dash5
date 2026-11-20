@@ -47,16 +47,12 @@ jest.mock('@mbari/api-client', () => ({
   useTethysApiContext: (...args: unknown[]) => mockUseTethysApiContext(...args),
 }))
 
+const mockTogglePlatformSelection = jest.fn()
+const mockUsePlatformSelectionWorkflow = jest.fn()
+
 jest.mock('../lib/usePlatformSelectionWorkflow', () => ({
-  usePlatformSelectionWorkflow: () => ({
-    workingSelection: [],
-    togglePlatformSelection: jest.fn(),
-    unselectAll: jest.fn(),
-    reset: jest.fn(),
-    apply: jest.fn(),
-    hasChanges: false,
-    isApplying: false,
-  }),
+  usePlatformSelectionWorkflow: (...args: unknown[]) =>
+    mockUsePlatformSelectionWorkflow(...args),
 }))
 
 jest.mock('../components/MapCameraContext', () => ({
@@ -104,6 +100,15 @@ describe('PlatformsListModal fly-to', () => {
     mockUseTethysApiContext.mockReturnValue({
       axiosInstance,
       siteConfig: { appConfig: { odss2dashApi } },
+    })
+    mockUsePlatformSelectionWorkflow.mockReturnValue({
+      workingSelection: ['plat-paragon'],
+      togglePlatformSelection: mockTogglePlatformSelection,
+      unselectAll: jest.fn(),
+      reset: jest.fn(),
+      apply: jest.fn(),
+      hasChanges: false,
+      isApplying: false,
     })
   })
 
@@ -193,38 +198,34 @@ describe('PlatformsListModal fly-to', () => {
     )
   })
 
-  it('prefetches on hover so a later click can reuse one in-flight request', async () => {
-    let resolveFetch: (value: unknown) => void = () => undefined
-    mockGetPlatformPositions.mockImplementation(
-      () =>
-        new Promise((resolve) => {
-          resolveFetch = resolve
-        })
-    )
-
-    renderModal()
-    const button = screen.getByRole('button', {
-      name: 'Center map on R/V Paragon',
-    })
-
-    await userEvent.hover(button)
-    await waitFor(() => {
-      expect(mockGetPlatformPositions).toHaveBeenCalledTimes(1)
-    })
-    expect(mockSetFlyToRequest).not.toHaveBeenCalled()
-
-    await userEvent.click(button)
-    expect(mockGetPlatformPositions).toHaveBeenCalledTimes(1)
-
-    resolveFetch({
+  it('fetches position when platform is toggled on', async () => {
+    mockGetPlatformPositions.mockResolvedValue({
       positions: [{ timeMs: 1, lat: 36.8, lon: -122.0 }],
     })
+    // Render with platform not yet selected so the toggle fires the fetch.
+    // beforeEach will restore the default on the next test.
+    mockUsePlatformSelectionWorkflow.mockReturnValue({
+      workingSelection: [],
+      togglePlatformSelection: mockTogglePlatformSelection,
+      unselectAll: jest.fn(),
+      reset: jest.fn(),
+      apply: jest.fn(),
+      hasChanges: false,
+      isApplying: false,
+    })
+
+    renderModal()
+
+    await userEvent.click(screen.getByRole('checkbox', { name: /paragon/i }))
 
     await waitFor(() => {
-      expect(mockSetFlyToRequest).toHaveBeenCalledWith({
-        lat: 36.8,
-        lon: -122.0,
-      })
+      expect(mockGetPlatformPositions).toHaveBeenCalledWith(
+        expect.objectContaining({
+          platformId: 'plat-paragon',
+          lastNumberOfFixes: 1,
+        }),
+        expect.anything()
+      )
     })
   })
 
@@ -244,7 +245,7 @@ describe('PlatformsListModal fly-to', () => {
     expect(mockSetFlyToRequest).not.toHaveBeenCalled()
   })
 
-  it('does not fly when the platform has no positions', async () => {
+  it('does not fly and disables the button when the platform has no positions', async () => {
     mockGetPlatformPositions.mockResolvedValue({ positions: [] })
 
     renderModal()
@@ -257,9 +258,14 @@ describe('PlatformsListModal fly-to', () => {
       expect(mockGetPlatformPositions).toHaveBeenCalled()
     })
     expect(mockSetFlyToRequest).not.toHaveBeenCalled()
+    await waitFor(() => {
+      expect(
+        screen.getByRole('button', { name: 'No position available' })
+      ).toHaveAttribute('aria-disabled', 'true')
+    })
   })
 
-  it('does not fly when lat or lon is non-finite', async () => {
+  it('does not fly and disables the button when lat or lon is non-finite', async () => {
     mockGetPlatformPositions.mockResolvedValue({
       positions: [{ timeMs: 1, lat: Infinity, lon: -122.0 }],
     })
@@ -274,6 +280,11 @@ describe('PlatformsListModal fly-to', () => {
       expect(mockGetPlatformPositions).toHaveBeenCalled()
     })
     expect(mockSetFlyToRequest).not.toHaveBeenCalled()
+    await waitFor(() => {
+      expect(
+        screen.getByRole('button', { name: 'No position available' })
+      ).toHaveAttribute('aria-disabled', 'true')
+    })
   })
 
   it('does not fly when the position fetch fails', async () => {
@@ -289,5 +300,143 @@ describe('PlatformsListModal fly-to', () => {
       expect(mockGetPlatformPositions).toHaveBeenCalled()
     })
     expect(mockSetFlyToRequest).not.toHaveBeenCalled()
+  })
+
+  it('disables the button without refetching when last-1 cache has no finite position', async () => {
+    // Seed the cache with a known-empty last-1 entry.
+    const client = createClient()
+    client.setQueryData(
+      ['trackdb', 'platforms', 'plat-paragon', 'positions', 1],
+      { positions: [] }
+    )
+
+    renderModal(client)
+
+    await userEvent.click(
+      screen.getByRole('button', { name: 'Center map on R/V Paragon' })
+    )
+
+    expect(mockGetPlatformPositions).not.toHaveBeenCalled()
+    expect(mockSetFlyToRequest).not.toHaveBeenCalled()
+    await waitFor(() => {
+      expect(
+        screen.getByRole('button', { name: 'No position available' })
+      ).toHaveAttribute('aria-disabled', 'true')
+    })
+  })
+
+  it('does not disable the button when the toggle-on position fetch fails', async () => {
+    // A network/config error is not "no position" — the button should stay
+    // enabled so the user can retry.
+    mockGetPlatformPositions.mockRejectedValue(new Error('network down'))
+    mockUsePlatformSelectionWorkflow.mockReturnValue({
+      workingSelection: [],
+      togglePlatformSelection: mockTogglePlatformSelection,
+      unselectAll: jest.fn(),
+      reset: jest.fn(),
+      apply: jest.fn(),
+      hasChanges: false,
+      isApplying: false,
+    })
+
+    const client = createClient()
+    const { rerender } = render(
+      <QueryClientProvider client={client}>
+        <PlatformsListModal onClose={jest.fn()} />
+      </QueryClientProvider>
+    )
+
+    await userEvent.click(screen.getByRole('checkbox', { name: /paragon/i }))
+
+    await waitFor(() => {
+      expect(mockGetPlatformPositions).toHaveBeenCalled()
+    })
+
+    // Platform now selected — button visible.
+    mockUsePlatformSelectionWorkflow.mockReturnValue({
+      workingSelection: ['plat-paragon'],
+      togglePlatformSelection: mockTogglePlatformSelection,
+      unselectAll: jest.fn(),
+      reset: jest.fn(),
+      apply: jest.fn(),
+      hasChanges: false,
+      isApplying: false,
+    })
+    rerender(
+      <QueryClientProvider client={client}>
+        <PlatformsListModal onClose={jest.fn()} />
+      </QueryClientProvider>
+    )
+
+    // Button should be enabled — network error, not an empty position result.
+    expect(
+      screen.getByRole('button', { name: 'Center map on R/V Paragon' })
+    ).not.toHaveAttribute('aria-disabled', 'true')
+  })
+
+  it('re-enables the button when platform is toggled off and back on with a valid position', async () => {
+    // First toggle-on returns no position — button disabled.
+    mockGetPlatformPositions.mockResolvedValue({ positions: [] })
+
+    const client = createClient()
+    const { rerender } = render(
+      <QueryClientProvider client={client}>
+        <PlatformsListModal onClose={jest.fn()} />
+      </QueryClientProvider>
+    )
+
+    await userEvent.click(
+      screen.getByRole('button', { name: 'Center map on R/V Paragon' })
+    )
+
+    await waitFor(() => {
+      expect(
+        screen.getByRole('button', { name: 'No position available' })
+      ).toHaveAttribute('aria-disabled', 'true')
+    })
+
+    // Toggle platform OFF — platform deselected, noPositionIds entry cleared.
+    mockUsePlatformSelectionWorkflow.mockReturnValue({
+      workingSelection: [],
+      togglePlatformSelection: mockTogglePlatformSelection,
+      unselectAll: jest.fn(),
+      reset: jest.fn(),
+      apply: jest.fn(),
+      hasChanges: false,
+      isApplying: false,
+    })
+    rerender(
+      <QueryClientProvider client={client}>
+        <PlatformsListModal onClose={jest.fn()} />
+      </QueryClientProvider>
+    )
+
+    // Toggle back ON — this time fetch returns a valid position.
+    mockGetPlatformPositions.mockResolvedValue({
+      positions: [{ timeMs: 1, lat: 36.8, lon: -122.0 }],
+    })
+    await userEvent.click(screen.getByRole('checkbox', { name: /paragon/i }))
+
+    mockUsePlatformSelectionWorkflow.mockReturnValue({
+      workingSelection: ['plat-paragon'],
+      togglePlatformSelection: mockTogglePlatformSelection,
+      unselectAll: jest.fn(),
+      reset: jest.fn(),
+      apply: jest.fn(),
+      hasChanges: false,
+      isApplying: false,
+    })
+    rerender(
+      <QueryClientProvider client={client}>
+        <PlatformsListModal onClose={jest.fn()} />
+      </QueryClientProvider>
+    )
+
+    // Button should be enabled — toggle-on success cleared the stale no-position flag.
+    await waitFor(() => {
+      expect(
+        screen.getByRole('button', { name: 'Center map on R/V Paragon' })
+      ).not.toHaveAttribute('aria-disabled', 'true')
+    })
   })
 })

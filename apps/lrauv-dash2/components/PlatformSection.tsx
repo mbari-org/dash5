@@ -18,7 +18,8 @@ export interface PlatformSectionProps {
   onlySelected?: boolean
   headerRight?: React.ReactNode
   onCenterClick?: (platformId: string) => void
-  onCenterHover?: (platformId: string) => void
+  /** Platform IDs whose position fetch returned empty — button shown but disabled. */
+  noPositionIds?: Set<string>
 }
 
 export const PlatformSection: React.FC<PlatformSectionProps> = ({
@@ -32,7 +33,7 @@ export const PlatformSection: React.FC<PlatformSectionProps> = ({
   onlySelected,
   headerRight,
   onCenterClick,
-  onCenterHover,
+  noPositionIds,
 }) => {
   const filteredItems = useMemo(() => {
     let filtered = items
@@ -143,17 +144,15 @@ export const PlatformSection: React.FC<PlatformSectionProps> = ({
                         </span>
                       </span>
                     </label>
-                    {onCenterClick !== undefined && (
-                      <CenterMapButton
-                        label={`Center map on ${item.name}`}
-                        onClick={() => onCenterClick(item._id)}
-                        onMouseEnter={
-                          onCenterHover
-                            ? () => onCenterHover(item._id)
-                            : undefined
-                        }
-                      />
-                    )}
+                    {onCenterClick !== undefined &&
+                      selectedIds.includes(item._id) && (
+                        <CenterMapButton
+                          label={`Center map on ${item.name}`}
+                          onClick={() => onCenterClick(item._id)}
+                          disabled={noPositionIds?.has(item._id)}
+                          disabledLabel="No position available"
+                        />
+                      )}
                   </div>
                 </li>
               ))

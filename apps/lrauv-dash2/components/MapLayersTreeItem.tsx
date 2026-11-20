@@ -15,25 +15,37 @@ import {
 export interface CenterMapButtonProps {
   label: string
   onClick: () => void
-  onMouseEnter?: () => void
+  disabled?: boolean
+  disabledLabel?: string
 }
 
 export const CenterMapButton: React.FC<CenterMapButtonProps> = ({
   label,
   onClick,
-  onMouseEnter,
+  disabled,
+  disabledLabel,
 }) => (
-  <Tippy content={label} placement="top-start" appendTo={() => document.body}>
+  <Tippy
+    content={disabled ? disabledLabel ?? label : label}
+    placement="top-start"
+    appendTo={() => document.body}
+  >
     <button
       type="button"
-      onMouseEnter={onMouseEnter}
+      aria-disabled={disabled}
+      tabIndex={disabled ? -1 : 0}
       onClick={(e) => {
         e.preventDefault()
         e.stopPropagation()
-        onClick()
+        if (!disabled) onClick()
+      }}
+      onKeyDown={(e) => {
+        if (disabled && (e.key === 'Enter' || e.key === ' ')) {
+          e.preventDefault()
+        }
       }}
       className="ml-2 focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-blue-500"
-      aria-label={label}
+      aria-label={disabled ? disabledLabel ?? label : label}
       style={{
         width: '20px',
         height: '20px',
@@ -46,7 +58,8 @@ export const CenterMapButton: React.FC<CenterMapButtonProps> = ({
         display: 'inline-flex',
         alignItems: 'center',
         justifyContent: 'center',
-        cursor: 'pointer',
+        cursor: disabled ? 'not-allowed' : 'pointer',
+        opacity: disabled ? 0.4 : 1,
       }}
     >
       <FontAwesomeIcon

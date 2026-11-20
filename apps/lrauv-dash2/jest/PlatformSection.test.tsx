@@ -43,9 +43,24 @@ describe('PlatformSection center-map button', () => {
     ).not.toBeInTheDocument()
   })
 
-  it('renders a center-map button and passes the platform id on click', async () => {
+  it('does not render a center-map button when platform is not selected', () => {
     const onCenterClick = jest.fn()
     render(<PlatformSection {...baseProps} onCenterClick={onCenterClick} />)
+
+    expect(
+      screen.queryByRole('button', { name: 'Center map on R/V Paragon' })
+    ).not.toBeInTheDocument()
+  })
+
+  it('renders a center-map button and passes the platform id on click', async () => {
+    const onCenterClick = jest.fn()
+    render(
+      <PlatformSection
+        {...baseProps}
+        selectedIds={['plat-paragon']}
+        onCenterClick={onCenterClick}
+      />
+    )
 
     await userEvent.click(
       screen.getByRole('button', { name: 'Center map on R/V Paragon' })
@@ -55,22 +70,21 @@ describe('PlatformSection center-map button', () => {
     expect(onCenterClick).toHaveBeenCalledWith('plat-paragon')
   })
 
-  it('prefetches on hover when onCenterHover is provided', async () => {
+  it('renders the center-map button as disabled when noPositionIds contains the platform', async () => {
     const onCenterClick = jest.fn()
-    const onCenterHover = jest.fn()
     render(
       <PlatformSection
         {...baseProps}
+        selectedIds={['plat-paragon']}
         onCenterClick={onCenterClick}
-        onCenterHover={onCenterHover}
+        noPositionIds={new Set(['plat-paragon'])}
       />
     )
 
-    await userEvent.hover(
-      screen.getByRole('button', { name: 'Center map on R/V Paragon' })
-    )
+    const btn = screen.getByRole('button', { name: 'No position available' })
+    expect(btn).toHaveAttribute('aria-disabled', 'true')
 
-    expect(onCenterHover).toHaveBeenCalledWith('plat-paragon')
+    await userEvent.click(btn)
     expect(onCenterClick).not.toHaveBeenCalled()
   })
 
