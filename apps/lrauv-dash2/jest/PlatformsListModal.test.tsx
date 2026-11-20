@@ -437,7 +437,8 @@ describe('PlatformsListModal fly-to', () => {
       ).toHaveAttribute('aria-disabled', 'true')
     })
 
-    // Toggle platform OFF — platform deselected, noPositionIds entry cleared.
+    // Toggle platform OFF — platform deselected. noPositionIds will be cleared
+    // by the toggle-on success path when re-selected with a valid position.
     mockUsePlatformSelectionWorkflow.mockReturnValue({
       workingSelection: [],
       togglePlatformSelection: mockTogglePlatformSelection,

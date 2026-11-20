@@ -287,6 +287,9 @@ export const PlatformsListModal: React.FC<PlatformsListModalProps> = ({
   const handleRefresh = useCallback(() => {
     refetchPlatforms()
     setNoPositionIds(new Set())
+    // Cancel any in-flight position fetches so they don't repopulate the cache
+    // after Refresh clears it.
+    inflightPositions.current.clear()
     // Remove only per-platform position caches so the next Center Map click
     // re-fetches. Scoped to keys with 'positions' at index 3 to avoid evicting
     // the platform list (which shares the ['trackdb','platforms'] prefix).
