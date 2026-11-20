@@ -345,12 +345,14 @@ export const PlatformsListModal: React.FC<PlatformsListModalProps> = ({
     refreshGen.current += 1
     inflightPositions.current.clear()
     // Remove only per-platform position caches so the next Center Map click
-    // re-fetches. Scoped to keys with 'positions' at index 3 to avoid evicting
-    // the platform list (which shares the ['trackdb','platforms'] prefix).
+    // Remove only the last-1 (no date window) position entries written by
+    // fetchLatestPosition. These have key[4] === 1. The 20-fix track caches
+    // used by PlatformPath (key[4] === 20) are intentionally left intact so
+    // the map does not blink while the modal refreshes.
     queryClient.removeQueries({
       predicate: (query) => {
         const key = query.queryKey as unknown[]
-        return key[3] === 'positions'
+        return key[3] === 'positions' && key[4] === 1
       },
     })
   }, [queryClient, refetchPlatforms])
