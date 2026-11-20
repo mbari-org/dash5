@@ -1,13 +1,27 @@
 import { renderHook, act } from '@testing-library/react'
 import useMissionModalSteps, {
-  MISSION_MODAL_SEND_COMMAND_STEP,
+  MISSION_MODAL_CONFIRM_SEND_STEP,
 } from './useMissionModalSteps'
 
-test('MISSION_MODAL_SEND_COMMAND_STEP is Review & Send index', () => {
-  expect(MISSION_MODAL_SEND_COMMAND_STEP).toBe(7)
+test('MISSION_MODAL_CONFIRM_SEND_STEP is Confirm & Send index (5)', () => {
+  expect(MISSION_MODAL_CONFIRM_SEND_STEP).toBe(5)
 })
 
-// steps order: Mission(0) Waypoints(1) Parameters(2) Safety&Comms(3) Review(4) Schedule(5) Confirm(6) SendCommand(7)
+// steps order: Mission(0) Waypoints(1) Parameters(2) Safety&Comms(3) Review(4) ConfirmAndSend(5)
+
+test('step array has 6 entries', () => {
+  const { result } = renderHook(() =>
+    useMissionModalSteps({
+      initialIndex: 0,
+      defaultParameters: [],
+      updatedParameters: [],
+      safetyParams: [],
+      commsParams: [],
+      waypoints: [],
+    })
+  )
+  expect(result.current.steps).toHaveLength(6)
+})
 
 const baseProps = {
   initialIndex: 0,
