@@ -73,8 +73,6 @@ export const PlatformPath: React.FC<PlatformPathProps> = ({
     },
     {
       enabled: !!platformId,
-      // Fallback poll when WebSocket drops — XEvent handles real-time updates.
-      refetchInterval: 10 * 60 * 1000,
     }
   )
 
