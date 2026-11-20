@@ -42,10 +42,7 @@ jest.mock('@mbari/utils', () => ({
   createLogger: jest.fn(() => ({ debug: jest.fn(), warn: jest.fn() })),
 }))
 
-// PlatformPath reads the XEvent buffer via useQuery (react-query).
-// usePlatformPositions is already mocked above, so the only live useQuery
-// calls are the buffer read and useQueryClient. Default to empty buffer;
-// individual tests can override via jest.mocked(useQuery).mockReturnValue.
+// Mock useQuery for the XEvent buffer; override per-test with jest.mocked(useQuery).mockReturnValue.
 jest.mock('react-query', () => ({
   useQuery: jest.fn(() => ({ data: undefined })),
   useQueryClient: jest.fn(() => ({ getQueryData: jest.fn(() => undefined) })),
