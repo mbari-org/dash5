@@ -8,6 +8,8 @@ export interface CreateCommandParams {
   commandNote: string
   runCommand?: string
   schedDate: string
+  /** Days to run at schedDate's clock time, including that date. Requires a dated schedDate. */
+  schedRepeat?: number
   via?: string
   timeout?: number
   destinationAddress?: string
