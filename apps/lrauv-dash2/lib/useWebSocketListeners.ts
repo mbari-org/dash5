@@ -113,30 +113,38 @@ export const useTethysSubscription = () => {
           let matched = false
           for (const [key, existing] of allPlatformQueries) {
             if (key[3] !== 'positions') continue
+            // platformId lives at key[2] — available even before the response
+            // lands, so we can match by assetId while the initial fetch is pending.
+            const queryPlatformId = key[2] as string
+            const cap = (key[4] as number | undefined) ?? 20
+
             // When assetId is present, match by id only — name fallback is
             // skipped to avoid patching the wrong track when names collide or
             // the payload carries an inconsistent assetId/assetName pair.
-            if (!existing) continue
-            const idMatch = assetId && existing.platformId === assetId
+            const idMatch = assetId && queryPlatformId === assetId
             const nameMatch =
-              !assetId && assetName && existing.platformName === assetName
+              !assetId &&
+              assetName &&
+              existing &&
+              existing.platformName === assetName
             if (!idMatch && !nameMatch) continue
 
             matched = true
-            const platformId = existing.platformId
-            // lastNumberOfFixes lives at key[4] — use it to cap the array.
-            const cap = (key[4] as number | undefined) ?? 20
+            const platformId = existing?.platformId ?? queryPlatformId
 
-            // Append the new position and trim to cap so the cache does not
-            // grow without bound. Both the main cache and the XEvent buffer
-            // are trimmed to the same cap for consistency.
-            queryClient.setQueryData<GetPlatformPositionsResponse>(key, {
-              ...existing,
-              positions: [...existing.positions, pos].slice(-cap),
-            })
+            // Update the main cache when the response is already available.
+            // If the query is still pending (existing is undefined), skip the
+            // main cache write — the buffer below is enough for PlatformPath
+            // to merge the position once the response arrives.
+            if (existing) {
+              queryClient.setQueryData<GetPlatformPositionsResponse>(key, {
+                ...existing,
+                positions: [...existing.positions, pos].slice(-cap),
+              })
+            }
 
-            // Also write to a lightweight XEvent buffer so positions survive
-            // a background HTTP refetch (which replaces the main cache).
+            // Always write to the XEvent buffer so positions survive both
+            // a background HTTP refetch and an in-flight initial fetch.
             // PlatformPath merges the buffer with server data in displayPositions.
             queryClient.setQueryData<PlatformPosition[]>(
               ['trackdb', XEVENT_BUFFER_KEY, platformId],

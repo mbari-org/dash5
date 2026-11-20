@@ -202,6 +202,74 @@ describe('useTethysSubscription', () => {
     })
   })
 
+  test('writes XEvent buffer when platform query exists but is still pending (no response yet)', () => {
+    const queryClient = new QueryClient()
+    // Seed a position query key with no data (simulates in-flight initial fetch)
+    const platformKey = [
+      'trackdb',
+      'platforms',
+      'mongo-id-pending',
+      'positions',
+      20,
+      undefined,
+      undefined,
+    ]
+    queryClient.setQueryData(platformKey, undefined)
+
+    const Wrapper = ({ children }: { children: React.ReactNode }) => (
+      <QueryClientProvider client={queryClient}>
+        <TethysApiContext.Provider
+          value={
+            {
+              token: 'test-token-123',
+              profile: {
+                email: 'user@mbari.org',
+                firstName: 'T',
+                lastName: 'U',
+              },
+              axiosInstance: {} as any,
+            } as any
+          }
+        >
+          {children}
+        </TethysApiContext.Provider>
+      </QueryClientProvider>
+    )
+    Wrapper.displayName = 'TestWrapper'
+
+    render(<Probe />, { wrapper: Wrapper })
+    const ws = MockWebSocket.instances[0]
+    ws.onopen?.()
+
+    act(() => {
+      ws.onmessage?.({
+        data: JSON.stringify({
+          eventName: 'XEvent',
+          appName: 'odss2dash',
+          payload: {
+            assetId: 'mongo-id-pending',
+            position: { timeMs: 1700000060000, lat: 36.7, lon: -122.1 },
+          },
+        }),
+      } as MessageEvent)
+    })
+
+    // Main cache should still be undefined (no response yet)
+    const main = queryClient.getQueryData(platformKey)
+    expect(main).toBeUndefined()
+
+    // XEvent buffer should be written so PlatformPath can merge on mount
+    const buffer = queryClient.getQueryData<
+      { timeMs: number; lat: number; lon: number }[]
+    >(['trackdb', XEVENT_BUFFER_KEY, 'mongo-id-pending'])
+    expect(buffer).toHaveLength(1)
+    expect(buffer?.[0]).toEqual({
+      timeMs: 1700000060000,
+      lat: 36.7,
+      lon: -122.1,
+    })
+  })
+
   test('does not throw and does not invalidate when XEvent has no matching platform in cache', () => {
     const queryClient = new QueryClient()
     // Seed a position query — it should NOT be invalidated
