@@ -38,6 +38,10 @@ const latestFiniteFix = (
 const latestFixQueryKey = (platformId: string) =>
   [...TRACKDB_POSITIONS_KEY, platformId, 'positions', 1] as const
 
+// Scans ALL cached position queries for a platform (track + last-1) and
+// returns the newest finite fix. The track cache holds the most recent N fixes
+// within the lookback window, so max(timeMs) across all entries is the true
+// latest position — no date-window skew.
 const cachedLatestPosition = (
   queryClient: QueryClient,
   platformId: string
@@ -186,23 +190,19 @@ export const PlatformsListModal: React.FC<PlatformsListModalProps> = ({
 
   const handleCenterOnPlatform = useCallback(
     async (platformId: string) => {
+      // 1. Use any cached position (track or last-1) — fly immediately.
       const cached = cachedLatestPosition(queryClient, platformId)
       if (cached) {
         setFlyToRequest(cached)
         return
       }
-      // If the last-1 cache entry exists, use it directly rather than
-      // re-fetching — either fly to its position or disable the button.
+      // 2. If the last-1 cache entry exists but has no finite position, disable
+      //    the button and bail — no need to re-fetch.
       const cachedLastOne = queryClient.getQueryData<PositionsPayload>(
         latestFixQueryKey(platformId)
       )
       if (cachedLastOne !== undefined) {
-        const fix = latestFiniteFix(cachedLastOne)
-        if (fix) {
-          setFlyToRequest({ lat: fix.lat, lon: fix.lon })
-        } else {
-          setNoPositionIds((prev) => new Set([...prev, platformId]))
-        }
+        setNoPositionIds((prev) => new Set([...prev, platformId]))
         return
       }
 

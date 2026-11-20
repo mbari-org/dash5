@@ -113,6 +113,8 @@ describe('PlatformsListModal fly-to', () => {
   })
 
   it('flies immediately from a cached track position without querying TrackDB', async () => {
+    // Track cache (key[4] = 20) is a valid source for cache-first fly-to.
+    // max(timeMs) across all cached entries is the true latest position.
     const client = createClient()
     client.setQueryData(
       ['trackdb', 'platforms', 'plat-paragon', 'positions', 20],
@@ -131,10 +133,7 @@ describe('PlatformsListModal fly-to', () => {
     )
 
     expect(mockGetPlatformPositions).not.toHaveBeenCalled()
-    expect(mockSetFlyToRequest).toHaveBeenCalledWith({
-      lat: 36.9,
-      lon: -122.1,
-    })
+    expect(mockSetFlyToRequest).toHaveBeenCalledWith({ lat: 36.9, lon: -122.1 })
   })
 
   it('flies to the newest cached fix when track and last-1 caches disagree', async () => {
