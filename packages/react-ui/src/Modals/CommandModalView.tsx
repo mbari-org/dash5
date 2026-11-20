@@ -175,13 +175,15 @@ const CommandModalBody: React.FC<CommandModalViewProps> = ({
   )
 
   const handleNext = () => {
-    // Allow advancing if:
-    // 1. selectedCommandId is set (templated commands)
-    // 2. OR we're on step 1 and have commandText or selectedCommandName (freeform commands)
-    if (
-      selectedCommandId ||
-      (currentStep === 1 && (commandText || selectedCommandName))
-    ) {
+    // Allow advancing when any command is present — either a templated command
+    // (selectedCommandId) or a freeform command (commandText).
+    // selectedCommandName alone is not sufficient: it can remain stale after the
+    // operator clears the textarea, which would let an empty command reach Confirm.
+    // The previous check gated freeform advancement on step === 1, which blocked
+    // "Use for new command" flows that start at step 1 and need to advance from
+    // step 2 (Schedule) to the ConfirmVehicleDialog.
+    const hasCommand = selectedCommandId || !!commandText?.trim()
+    if (hasCommand) {
       setCurrentStep(currentStep + 1)
     }
   }

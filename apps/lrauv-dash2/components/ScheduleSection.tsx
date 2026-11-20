@@ -287,10 +287,11 @@ export const ScheduleSection: React.FC<ScheduleSectionProps> = ({
     { enabled: !!vehicleName, staleTime: 15 * 1000, refetchInterval: 30 * 1000 }
   )
 
-  // Fetch note events that record operator cancellations so we can stamp
-  // schedule items as 'cancelled' instead of incorrectly showing 'completed'.
-  // The TethysDash backend writes a note with text matching:
+  // Fetch note events that record operator cancellations and force-discards so
+  // we can stamp schedule items as 'cancelled' instead of incorrectly showing
+  // 'completed'. The TethysDash backend writes notes with text matching:
   //   "Cancelled request {eventId} for '{vehicle}': ..."
+  //   "Force-discarded request {eventId} for '{vehicle}' ..."
   const cancellationNotesResponse = useEvents(
     {
       vehicles: [vehicleName],
@@ -305,7 +306,9 @@ export const ScheduleSection: React.FC<ScheduleSectionProps> = ({
   const cancelledEventIds = useMemo(() => {
     const ids = new Set<number>()
     cancellationNotesResponse.data?.forEach((note) => {
-      const match = note.note?.match(/Cancelled request (\d+)/)
+      const match = note.note?.match(
+        /(?:Cancelled|Force-discarded) request (\d+)/
+      )
       if (match) ids.add(parseInt(match[1], 10))
     })
     return ids
@@ -1424,46 +1427,106 @@ export const ScheduleSection: React.FC<ScheduleSectionProps> = ({
     const isConfirmed = await confirm({
       title: `Are you sure you want to discard this ${commandType} directive (event ID ${eventId})? This will remove it from the shore-side queue.`,
     })
-    if (isConfirmed) {
-      try {
-        await deleteCommandQueueMutation.mutateAsync({
-          vehicle: vehicleName,
-          refEventId: eventId,
-        })
-      } catch (e) {
-        toast.error(
-          `Failed to cancel directive ${eventId}. It may have already been sent to the vehicle.`
-        )
-        return
-      }
+    if (!isConfirmed) return
 
-      // Refresh schedule immediately after the DELETE succeeds, regardless of note outcome.
-      queryClient.invalidateQueries(['event', 'events'])
-      queryClient.invalidateQueries(['events'])
-      queryClient.invalidateQueries(['event', 'missionStarted'])
-
-      toast.success(`Cancelled directive ${eventId}.`)
-
+    const getCommandText = () => {
       const matchedResult = results.find((r) => r?.event.eventId === eventId)
       const rawCommandText =
         matchedResult?.event?.data ?? matchedResult?.event?.text ?? ''
       const normalizedCommandText = rawCommandText.replace(/\s+/g, ' ').trim()
-      const commandText =
-        normalizedCommandText.length > 200
-          ? `${normalizedCommandText.slice(0, 200)}…`
-          : normalizedCommandText
+      return normalizedCommandText.length > 200
+        ? `${normalizedCommandText.slice(0, 200)}…`
+        : normalizedCommandText
+    }
+
+    const writeNote = async (
+      note: string,
+      action: 'cancel' | 'discard' = 'cancel'
+    ) => {
       try {
-        await createNoteMutation.mutateAsync({
-          vehicle: vehicleName,
-          note: `Cancelled request ${eventId} for '${vehicleName}': '${commandText}'`,
-        })
+        await createNoteMutation.mutateAsync({ vehicle: vehicleName, note })
         queryClient.invalidateQueries(['event', 'events'])
       } catch (e) {
         toast.error(
-          `Directive ${eventId} was cancelled, but the cancellation note could not be recorded.`
+          action === 'discard'
+            ? `Directive ${eventId} was discarded, but the discard note could not be recorded.`
+            : `Directive ${eventId} was cancelled, but the cancellation note could not be recorded.`
         )
       }
     }
+
+    const invalidateSchedule = () => {
+      queryClient.invalidateQueries(['event', 'events'])
+      queryClient.invalidateQueries(['events'])
+      queryClient.invalidateQueries(['event', 'missionStarted'])
+    }
+
+    let data
+    try {
+      data = await deleteCommandQueueMutation.mutateAsync({
+        vehicle: vehicleName,
+        refEventId: eventId,
+      })
+    } catch (e) {
+      toast.error(`Failed to cancel directive ${eventId}.`)
+      return
+    }
+
+    if (data?.error) {
+      // TethysDash returns "Command already dispatched to vehicle" when the
+      // command has been sent and is awaiting ACK — the only state where
+      // force=true succeeds. Any other refusal (e.g. timed out) means force
+      // would also fail, so we surface a terminal message instead.
+      const isDispatched = data.error.toLowerCase().includes('dispatched')
+
+      if (!isDispatched) {
+        // Timed-out or otherwise non-cancellable — force would also be refused.
+        toast.error(`This directive can no longer be cancelled.`)
+        return
+      }
+
+      // Command was dispatched (sent to vehicle, awaiting ACK) — force=true can remove it.
+      const shouldForce = await confirm({
+        title: `Directive ${eventId} has already been sent to the vehicle and may have been run. Discard it anyway?`,
+      })
+      if (!shouldForce) return
+
+      let forceData
+      try {
+        forceData = await deleteCommandQueueMutation.mutateAsync({
+          vehicle: vehicleName,
+          refEventId: eventId,
+          force: true,
+        })
+      } catch (e) {
+        toast.error(`Failed to force-discard directive ${eventId}.`)
+        return
+      }
+
+      if (forceData?.error) {
+        toast.error(
+          `Could not force-discard directive ${eventId}: ${forceData.error}`
+        )
+        return
+      }
+
+      invalidateSchedule()
+      toast.success(
+        `Directive ${eventId} discarded. Note: the vehicle may have already run this command.`
+      )
+      await writeNote(
+        `Force-discarded request ${eventId} for '${vehicleName}' (vehicle may have already run this command): '${getCommandText()}'`,
+        'discard'
+      )
+      return
+    }
+
+    // Normal success — cancel was accepted by TethysDash.
+    invalidateSchedule()
+    toast.success(`Cancelled directive ${eventId}.`)
+    await writeNote(
+      `Cancelled request ${eventId} for '${vehicleName}': '${getCommandText()}'`
+    )
   }
 
   const handleDownload = ({
@@ -1570,7 +1633,7 @@ export const ScheduleSection: React.FC<ScheduleSectionProps> = ({
                       },
                     },
                     ...(!currentMoreMenu.isDefaultMission &&
-                    currentMoreMenu.status === 'pending'
+                    ['pending', 'sent', 'ack'].includes(currentMoreMenu.status)
                       ? [
                           {
                             label: 'Cancel this Directive',

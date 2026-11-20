@@ -19,7 +19,12 @@ export const useDeleteCommandQueue = (config?: RequestConfig) => {
       })
     },
     {
-      onSuccess: () => {
+      onSuccess: (data) => {
+        // Skip cache invalidation when TethysDash returns an error body on a
+        // 200 (e.g. "Command already dispatched to vehicle"). The caller reads
+        // data.error and may show a confirm dialog before retrying with force=true;
+        // invalidating caches here would trigger spurious refetches mid-flow.
+        if (data?.error) return
         queryClient.invalidateQueries(['event', 'events'])
         queryClient.invalidateQueries([
           'deployment',
