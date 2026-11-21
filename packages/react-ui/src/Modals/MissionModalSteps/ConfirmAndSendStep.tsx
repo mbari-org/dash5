@@ -21,8 +21,7 @@ export interface ConfirmAndSendStepProps {
   previewText?: string
   previewSbdCount?: number
   alternativeAddresses?: string[]
-  /** Called when the vehicle selection becomes valid (Yes chosen, or No + vehicle picked)
-   *  or invalid (No chosen with no vehicle yet). Parent uses this to gate the Send button. */
+  /** Gates the Send button — false when No is chosen but no vehicle is picked yet. */
   onVehicleSelectionValidChange?: (valid: boolean) => void
 }
 
@@ -77,10 +76,7 @@ export const ConfirmAndSendStep: React.FC<ConfirmAndSendStepProps> = ({
     },
   } = useScheduleContext()
 
-  // Local boolean tracks whether the pilot confirmed the default vehicle (Yes) or is
-  // choosing a different one (No). Kept separate from confirmedVehicle so that clicking
-  // "No" does not immediately flip the radio back (which happened when the derived
-  // isYesVehicle was set from confirmedVehicle === null).
+  // Separate from confirmedVehicle so clicking No doesn't immediately flip back to Yes.
   const [isCorrectVehicle, setIsCorrectVehicle] = useState(
     confirmedVehicle === null || confirmedVehicle === vehicleName
   )
@@ -159,16 +155,14 @@ export const ConfirmAndSendStep: React.FC<ConfirmAndSendStepProps> = ({
                 checked={!isCorrectVehicle}
                 onChange={() => {
                   setIsCorrectVehicle(false)
-                  // Do NOT clear confirmedVehicle here — wait for the dropdown selection.
-                  // Clearing it immediately would make isCorrectVehicle flip back to true
-                  // because the old code derived it from confirmedVehicle === null.
+                  setConfirmedVehicle(null)
                   onVehicleSelectionValidChange?.(false)
                 }}
               />
               <label htmlFor="vehicle-no">No, send to:</label>
               <SelectField
                 name="vehicle list"
-                className="w-40"
+                className="w-48"
                 options={vehicleOptions}
                 placeholder="Select LRAUV"
                 value={
@@ -242,7 +236,11 @@ export const ConfirmAndSendStep: React.FC<ConfirmAndSendStepProps> = ({
               <li key={value} className="flex items-center">
                 <label
                   className="flex cursor-pointer items-center py-0.5"
-                  onClick={() => setScheduleMethod(value as ScheduleMethod)}
+                  onClick={() => {
+                    setScheduleMethod(value as ScheduleMethod)
+                    // Clear any previously entered time when switching away from "For specific time:"
+                    if (value !== 'time') setSpecifiedTime(null)
+                  }}
                 >
                   <input
                     type="radio"
