@@ -409,7 +409,7 @@ const MissionModalBody: React.FC<MissionModalViewProps> = ({
   }, [editable, setWaypointsEditable, currentStep, steps, showSummary])
 
   // Re-fetch preview when scheduling state changes on Confirm & Send.
-  // Ref holds the latest closure; only trigger conditions are listed as deps.
+  // Ref holds the latest closure; deps are trigger conditions only.
   // wasOnConfirmSendRef guards against a double-fetch: Review's Next already
   // calls preview before advancing, so skip the effect on first mount of this step.
   const confirmSendStepIndex = steps.indexOf('Confirm & Send')

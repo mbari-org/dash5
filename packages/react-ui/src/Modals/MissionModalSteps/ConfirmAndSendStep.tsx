@@ -81,9 +81,7 @@ export const ConfirmAndSendStep: React.FC<ConfirmAndSendStepProps> = ({
     confirmedVehicle === null || confirmedVehicle === vehicleName
   )
 
-  // Sync parent validity on mount. A non-null confirmedVehicle means the pilot
-  // already chose an alternate vehicle and that selection is valid, even though
-  // isCorrectVehicle initializes to false in that case.
+  // Sync on mount — non-null confirmedVehicle is already a valid selection.
   useEffect(() => {
     onVehicleSelectionValidChange?.(
       isCorrectVehicle || confirmedVehicle !== null

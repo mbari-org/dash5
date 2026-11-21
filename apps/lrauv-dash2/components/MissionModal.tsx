@@ -176,8 +176,7 @@ const MissionModal: React.FC<MissionModalProps> = ({
     if (matchingMission) {
       // Set ref only after a confirmed match so the effect can still retry
       // on later renders if template missions arrive after recent/frequent runs.
-      // Once all three loading flags are false and a match is found, all future
-      // re-renders (including Back navigation) will see the ref as true and skip.
+      // Skip on Back navigation once matched.
       hasAutoSelectedRef.current = true
       setSelectedMission(matchingMission.id)
       // If rerunning from schedule history (has eventData), always use 'Recent Runs'
@@ -316,10 +315,7 @@ const MissionModal: React.FC<MissionModalProps> = ({
   // is applied on first paint with the prior run's params, not template defaults.
   const [sendAgainReady, setSendAgainReady] = useState(!sendAgain)
   const sendAgainAbortRef = useRef(false)
-  // When meta changes while id stays `newMission` (second Send again without
-  // unmount), rebuild this key so the loading gate re-arms instead of reusing
-  // the previous selection / preview. Adjust state during render so the stale
-  // wizard cannot paint for even one frame.
+  // Second Send again without unmount — rebuild key to re-arm the loading gate.
   const sendAgainSessionKey = sendAgain
     ? `${globalModalId?.meta?.mission ?? ''}\0${
         globalModalId?.meta?.eventData ?? ''
@@ -393,10 +389,7 @@ const MissionModal: React.FC<MissionModalProps> = ({
       return
     }
 
-    // Seed the Review step preview on the first readiness transition only.
-    // Guarding on !sendAgainReady prevents a dependency-triggered re-run from
-    // overwriting a preview the operator already confirmed via Back + Continue.
-    // handleSchedule({ preview: true }) will replace this on step 6 entry.
+    // Seed Review step preview once on first readiness — not on dep re-runs.
     if (!sendAgainReady) {
       setPreviewText(
         previewTextFromEventData(innerCommandFromEventData(eventData))
