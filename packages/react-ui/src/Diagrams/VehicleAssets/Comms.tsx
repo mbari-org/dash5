@@ -35,7 +35,7 @@ export const Comms: React.FC<CommsProps> = ({
       <rect
         data-testid="cell"
         x="260.15"
-        y="212.24"
+        y="206"
         className={colorCell}
         width="26.43"
         height="11.31"
@@ -49,7 +49,7 @@ export const Comms: React.FC<CommsProps> = ({
       </text>
       <text
         aria-label="text cell"
-        transform="matrix(1 0 0 1 262.2472 221.3249)"
+        transform="matrix(1 0 0 1 262.2472 215)"
         className="st9 st10"
       >
         {textCell}
@@ -61,7 +61,7 @@ export const Comms: React.FC<CommsProps> = ({
         Sat comms
       </text>
       <text
-        transform="matrix(1 0 0 1 291.6499 221.6039)"
+        transform="matrix(1 0 0 1 291.6499 215)"
         className={clsx(isDocked ? 'st18' : 'st9 st10')}
       >
         Cell comms
@@ -75,7 +75,7 @@ export const Comms: React.FC<CommsProps> = ({
       </text>
       <text
         name="text_cellago"
-        transform="matrix(1 0 0 1 342.0 221.2224)"
+        transform="matrix(1 0 0 1 342.0 215)"
         className={`st9 st13 ${colorSatCommsText || 'st12'}`}
       >
         {textCellAgo}
