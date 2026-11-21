@@ -195,8 +195,7 @@ const MissionModalBody: React.FC<MissionModalViewProps> = ({
     editable,
   } = useManagedWaypoints(waypoints)
 
-  // Steps 0–4 always show "Next →"; the Confirm & Send step (5) is in its own
-  // switch case and uses its own button text, so this value is only for the default case.
+  // Only used in the default case (steps 0–4); Confirm & Send renders its own button.
   const confirmButtonText = (
     <div>
       <span className="pr-2">Next</span>{' '}
@@ -410,12 +409,14 @@ const MissionModalBody: React.FC<MissionModalViewProps> = ({
     }
   }, [editable, setWaypointsEditable, currentStep, steps, showSummary])
 
-  // Re-fetch the SBD preview whenever scheduling options change on the Confirm & Send step.
-  // Using a ref lets the effect always call the latest closure without listing every arg
-  // as a dep — only the trigger conditions (commType, timeout, scheduleMethod, etc.) matter.
+  // Re-fetch preview when scheduling state changes on Confirm & Send.
+  // Ref holds the latest closure; only trigger conditions are listed as deps.
+  // wasOnConfirmSendRef guards against a double-fetch: Review's Next already
+  // calls preview before advancing, so skip the effect on first mount of this step.
   const confirmSendStepIndex = steps.indexOf('Confirm & Send')
   const isConfirmSendStep = currentStep === confirmSendStepIndex
 
+  const wasOnConfirmSendRef = useRef(false)
   const triggerPreviewRef = useRef<(() => void) | null>(null)
   triggerPreviewRef.current = () => {
     if (!selectedId) return
@@ -443,7 +444,15 @@ const MissionModalBody: React.FC<MissionModalViewProps> = ({
   }
 
   useEffect(() => {
-    if (!isConfirmSendStep) return
+    if (!isConfirmSendStep) {
+      wasOnConfirmSendRef.current = false
+      return
+    }
+    // Skip on first entry — Review's Next already fetched the preview.
+    if (!wasOnConfirmSendRef.current) {
+      wasOnConfirmSendRef.current = true
+      return
+    }
     triggerPreviewRef.current?.()
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [
@@ -482,7 +491,13 @@ const MissionModalBody: React.FC<MissionModalViewProps> = ({
       return (
         <Modal
           {...missionModalFrame}
-          title="Confirm & Send"
+          title={
+            <StepProgress
+              steps={steps}
+              currentStepIndex={currentStep}
+              className="h-[52px]"
+            />
+          }
           onConfirm={handleSchedule}
           onCancel={onCancel}
           onClose={onCancel}

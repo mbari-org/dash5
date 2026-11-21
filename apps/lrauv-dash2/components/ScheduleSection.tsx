@@ -1422,7 +1422,7 @@ export const ScheduleSection: React.FC<ScheduleSectionProps> = ({
     }
   }
 
-  /** Exact re-send: open Mission modal at Review & Send (#799). */
+  /** Exact re-send: open Mission modal at Confirm & Send (#799). */
   const handleSendAgain = ({ eventId }: { eventId: number }) => {
     openMissionFromScheduleEvent({ eventId, sendAgain: true })
   }

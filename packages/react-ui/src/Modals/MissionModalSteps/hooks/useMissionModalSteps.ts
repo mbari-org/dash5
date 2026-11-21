@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import { ParameterProps } from '../../../Tables/ParameterTable'
 import { WaypointProps } from '../../../Tables/WaypointTable'
 
