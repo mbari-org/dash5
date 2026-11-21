@@ -150,7 +150,7 @@ export const buildSbdChunkProgress = (
  * Without this, cellsat commands that ack via cell keep pulsing orange
  * for unconfirmed satellite chunks even after the directive is past.
  */
-export const clearSbdInTransitOnTimeout = (
+export const freezeSbdInTransitForTerminalStatus = (
   status: string | undefined,
   sbdChunks?: SbdChunkProgress
 ): SbdChunkProgress | undefined => {
@@ -160,3 +160,6 @@ export const clearSbdInTransitOnTimeout = (
   }
   return sbdChunks
 }
+
+/** @deprecated Use freezeSbdInTransitForTerminalStatus */
+export const clearSbdInTransitOnTimeout = freezeSbdInTransitForTerminalStatus

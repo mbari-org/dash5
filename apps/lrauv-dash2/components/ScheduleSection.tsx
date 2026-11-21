@@ -28,7 +28,7 @@ import {
   useDeleteCommandQueue,
   useCreateNote,
   timeoutExpiredRegEx,
-  clearSbdInTransitOnTimeout,
+  freezeSbdInTransitForTerminalStatus,
   SbdChunkProgress,
   useTethysApiContext,
   getScript,
@@ -1185,7 +1185,7 @@ export const ScheduleSection: React.FC<ScheduleSectionProps> = ({
         statusTooltip={
           cellStatus === 'ack' ? `Received by ${vehicleName}` : undefined
         }
-        sbdChunks={clearSbdInTransitOnTimeout(
+        sbdChunks={freezeSbdInTransitForTerminalStatus(
           cellStatus,
           mission.event.eventId != null
             ? commsSbdChunksLookup.get(mission.event.eventId)
@@ -1347,7 +1347,7 @@ export const ScheduleSection: React.FC<ScheduleSectionProps> = ({
                 isLoadRunMission,
                 commsStatus: commsLookup.get(mission.event.eventId),
                 ...commsMsgIdLookup.get(mission.event.eventId),
-                sbdChunks: clearSbdInTransitOnTimeout(
+                sbdChunks: freezeSbdInTransitForTerminalStatus(
                   cellStatus,
                   mission.event.eventId != null
                     ? commsSbdChunksLookup.get(mission.event.eventId)

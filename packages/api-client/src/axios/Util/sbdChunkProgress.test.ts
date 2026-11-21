@@ -3,7 +3,7 @@ import {
   countDeliveredSbdChunks,
   buildSbdChunkProgress,
   isSbdChunkDelivered,
-  clearSbdInTransitOnTimeout,
+  freezeSbdInTransitForTerminalStatus,
 } from './sbdChunkProgress'
 import { GetEventsResponse } from '../Event/getEvents'
 
@@ -146,11 +146,11 @@ describe('buildSbdChunkProgress', () => {
   })
 })
 
-describe('clearSbdInTransitOnTimeout', () => {
+describe('freezeSbdInTransitForTerminalStatus', () => {
   const chunks = { delivered: 1, inTransit: 2, total: 4 }
 
   it('zeros inTransit when status is timeout', () => {
-    expect(clearSbdInTransitOnTimeout('timeout', chunks)).toEqual({
+    expect(freezeSbdInTransitForTerminalStatus('timeout', chunks)).toEqual({
       delivered: 1,
       inTransit: 0,
       total: 4,
@@ -158,7 +158,7 @@ describe('clearSbdInTransitOnTimeout', () => {
   })
 
   it('zeros inTransit when status is ack', () => {
-    expect(clearSbdInTransitOnTimeout('ack', chunks)).toEqual({
+    expect(freezeSbdInTransitForTerminalStatus('ack', chunks)).toEqual({
       delivered: 1,
       inTransit: 0,
       total: 4,
@@ -166,7 +166,7 @@ describe('clearSbdInTransitOnTimeout', () => {
   })
 
   it('zeros inTransit when status is completed', () => {
-    expect(clearSbdInTransitOnTimeout('completed', chunks)).toEqual({
+    expect(freezeSbdInTransitForTerminalStatus('completed', chunks)).toEqual({
       delivered: 1,
       inTransit: 0,
       total: 4,
@@ -174,11 +174,15 @@ describe('clearSbdInTransitOnTimeout', () => {
   })
 
   it('leaves chunks unchanged for non-terminal statuses', () => {
-    expect(clearSbdInTransitOnTimeout('sent', chunks)).toEqual(chunks)
-    expect(clearSbdInTransitOnTimeout('queued', chunks)).toEqual(chunks)
+    expect(freezeSbdInTransitForTerminalStatus('sent', chunks)).toEqual(chunks)
+    expect(freezeSbdInTransitForTerminalStatus('queued', chunks)).toEqual(
+      chunks
+    )
   })
 
   it('returns undefined when chunks are missing', () => {
-    expect(clearSbdInTransitOnTimeout('timeout', undefined)).toBeUndefined()
+    expect(
+      freezeSbdInTransitForTerminalStatus('timeout', undefined)
+    ).toBeUndefined()
   })
 })
