@@ -1,4 +1,10 @@
-import React, { useState, useRef, useMemo, useEffect } from 'react'
+import React, {
+  useState,
+  useRef,
+  useMemo,
+  useEffect,
+  useLayoutEffect,
+} from 'react'
 import {
   AccessoryButton,
   AccordionCells,
@@ -868,6 +874,7 @@ export const ScheduleSection: React.FC<ScheduleSectionProps> = ({
   const totalCellCount = baseTotalCellCount + (showLoadMore ? 1 : 0)
 
   const menuRef = useRef<HTMLDivElement | null>(null)
+  const [menuHeight, setMenuHeight] = useState(0)
   const [currentMoreMenu, setCurrentMoreMenu] = useState<{
     eventId?: number
     commandType: 'mission' | 'command'
@@ -886,6 +893,14 @@ export const ScheduleSection: React.FC<ScheduleSectionProps> = ({
       setCurrentMoreMenu({ ...target, rect })
     }
   }
+
+  useLayoutEffect(() => {
+    if (currentMoreMenu && menuRef.current) {
+      setMenuHeight(menuRef.current.offsetHeight)
+    } else if (!currentMoreMenu) {
+      setMenuHeight(0)
+    }
+  }, [currentMoreMenu])
 
   const scheduleStatus: ScheduleCellProps['scheduleStatus'] | null =
     // Find the most recent sched pause/resume command rather than relying on
@@ -1549,9 +1564,7 @@ export const ScheduleSection: React.FC<ScheduleSectionProps> = ({
           className="fixed mr-2 mb-2 min-w-[140px] whitespace-nowrap"
           ref={menuRef}
           style={{
-            top:
-              (currentMoreMenu?.rect?.top ?? 0) -
-              (menuRef.current?.offsetHeight ?? 0),
+            top: (currentMoreMenu?.rect?.top ?? 0) - menuHeight,
             right:
               typeof window !== 'undefined'
                 ? window.innerWidth - (currentMoreMenu?.rect?.right ?? 0)
