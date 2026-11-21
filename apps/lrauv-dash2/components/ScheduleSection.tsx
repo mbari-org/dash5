@@ -1566,7 +1566,8 @@ export const ScheduleSection: React.FC<ScheduleSectionProps> = ({
               ...(authenticated
                 ? [
                     ...(!currentMoreMenu.isDefaultMission &&
-                    currentMoreMenu.commandType === 'mission'
+                    currentMoreMenu.commandType === 'mission' &&
+                    !['running', 'pending'].includes(currentMoreMenu.status)
                       ? [
                           {
                             label: 'Send again',

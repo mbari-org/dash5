@@ -36,7 +36,14 @@ export const innerCommandFromEventData = (
   const match = firstLine.match(
     /^sched\s+(?:[^"\s]+\s+)*"([\s\S]+?)"(?:\s.*)?$/i
   )
-  return match ? match[1] : firstLine
+  if (match) return match[1]
+  // Unquoted legacy form: sched asap|<timestamp> inner command
+  const unquotedMatch = firstLine.match(
+    /^sched\s+(?:asap|\d{4,8}T\d{4,6})\s+([\s\S]+)$/i
+  )
+  return unquotedMatch
+    ? unquotedMatch[1].replace(/\s+tok\s+\d+\s+\d+\s*$/i, '').trim()
+    : firstLine
 }
 
 /** True when a list entry is the event-scoped temp from useInsertTempMission. */
