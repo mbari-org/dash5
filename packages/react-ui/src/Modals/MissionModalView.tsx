@@ -69,7 +69,6 @@ export interface MissionModalViewProps
   /** Backend preview SBD fragment count (≥2 shown as a quiet note on Review). */
   previewSbdCount?: number
   loading?: boolean
-  onStepIndexChange?: (step: number) => void
   selectedMissionCategory?: string
   defaultSearchText?: string
   missionsLoading?: boolean

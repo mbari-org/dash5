@@ -42,10 +42,6 @@ export interface MissionModalProps {
   style?: React.CSSProperties
 }
 
-const onFocusWaypoint: WaypointTableProps['onFocusWaypoint'] = (index) => {
-  console.log(index)
-}
-
 const extractNum = (v: string | undefined) => v?.match(/-?\d+(?:\.\d+)?/)?.[0]
 
 const MissionModal: React.FC<MissionModalProps> = ({
@@ -614,7 +610,6 @@ const MissionModal: React.FC<MissionModalProps> = ({
       onSelectMission={handleSelectMission}
       waypoints={waypoints}
       stations={stations}
-      onFocusWaypoint={onFocusWaypoint}
       vehicles={vehicles}
       loading={sendingCommand}
       missionsLoading={recentRunsLoading || frequentRunsLoading}

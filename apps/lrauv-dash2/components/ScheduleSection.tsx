@@ -1504,17 +1504,6 @@ export const ScheduleSection: React.FC<ScheduleSectionProps> = ({
     element.remove()
   }
 
-  const handleMoveInQueue = ({
-    eventId,
-    commandType,
-  }: {
-    eventId: number
-    commandType: string
-    direction: 'up' | 'down'
-  }) => {
-    console.log('should move in queue:', eventId, commandType)
-  }
-
   const handleRefresh = () => {
     refetch()
   }
@@ -1627,36 +1616,6 @@ export const ScheduleSection: React.FC<ScheduleSectionProps> = ({
                   closeMoreMenu()
                 },
               },
-              ...(authenticated
-                ? [
-                    {
-                      label: 'Move Up',
-                      onSelect: () => {
-                        handleMoveInQueue({
-                          eventId: currentMoreMenu?.eventId as number,
-                          commandType: currentMoreMenu?.commandType,
-                          direction: 'up',
-                        })
-                        closeMoreMenu()
-                      },
-                    },
-                    {
-                      label: 'Move Down',
-                      onSelect: () => {
-                        handleMoveInQueue({
-                          eventId: currentMoreMenu?.eventId as number,
-                          commandType: currentMoreMenu?.commandType,
-                          direction: 'down',
-                        })
-                        closeMoreMenu()
-                      },
-                    },
-                  ].filter(
-                    () =>
-                      ['running', 'pending'].includes(currentMoreMenu.status) &&
-                      !currentMoreMenu.isDefaultMission
-                  )
-                : []),
             ]}
           />
         </div>
