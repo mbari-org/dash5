@@ -173,6 +173,14 @@ describe('freezeSbdInTransitForTerminalStatus', () => {
     })
   })
 
+  it('zeros inTransit when status is cancelled', () => {
+    expect(freezeSbdInTransitForTerminalStatus('cancelled', chunks)).toEqual({
+      delivered: 1,
+      inTransit: 0,
+      total: 4,
+    })
+  })
+
   it('leaves chunks unchanged for non-terminal statuses', () => {
     expect(freezeSbdInTransitForTerminalStatus('sent', chunks)).toEqual(chunks)
     expect(freezeSbdInTransitForTerminalStatus('queued', chunks)).toEqual(

@@ -155,7 +155,12 @@ export const freezeSbdInTransitForTerminalStatus = (
   sbdChunks?: SbdChunkProgress
 ): SbdChunkProgress | undefined => {
   if (!sbdChunks) return undefined
-  if (status === 'timeout' || status === 'ack' || status === 'completed') {
+  if (
+    status === 'timeout' ||
+    status === 'ack' ||
+    status === 'completed' ||
+    status === 'cancelled'
+  ) {
     return { ...sbdChunks, inTransit: 0 }
   }
   return sbdChunks
