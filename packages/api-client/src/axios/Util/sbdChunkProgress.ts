@@ -144,12 +144,7 @@ export const buildSbdChunkProgress = (
   return { total, delivered, inTransit }
 }
 
-/**
- * Freeze in-transit chunks for any terminal status so chunk boxes stop
- * pulsing once a command is done. Covers timeout, ack, and completed.
- * Without this, cellsat commands that ack via cell keep pulsing orange
- * for unconfirmed satellite chunks even after the directive is past.
- */
+/** Freeze in-transit chunks for terminal statuses (timeout, ack, completed, cancelled). */
 export const freezeSbdInTransitForTerminalStatus = (
   status: string | undefined,
   sbdChunks?: SbdChunkProgress
