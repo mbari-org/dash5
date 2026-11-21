@@ -504,7 +504,7 @@ const MissionModal: React.FC<MissionModalProps> = ({
             const inner = innerCommandFromEventData(sendAgainEventData) ?? ''
             return schedDate
               ? `sched ${schedDate} "${inner}"`
-              : `sched asap "${inner}"`
+              : `sched "${inner}"`
           })()
         : previewSbd
     )
@@ -583,6 +583,7 @@ const MissionModal: React.FC<MissionModalProps> = ({
 
   return (
     <MissionModalView
+      key={armedSendAgainSessionKey}
       style={{
         height: 'calc(100vh - 6rem)',
       }}
