@@ -568,7 +568,7 @@ const MissionModal: React.FC<MissionModalProps> = ({
 
   if (sendAgain && !sendAgainReady) {
     return (
-      <div className="fixed inset-0 z-50 flex h-screen w-screen flex-col items-center justify-center gap-3 bg-black/20 font-display backdrop-blur-sm">
+      <div className="fixed inset-0 z-[1003] flex h-screen w-screen flex-col items-center justify-center gap-3 bg-black/20 font-display backdrop-blur-sm">
         <div className="flex flex-col items-center gap-3 rounded-md border bg-white px-8 py-6 text-sm text-stone-600">
           <div role="status" aria-label="Loading mission to send again">
             Loading mission…
