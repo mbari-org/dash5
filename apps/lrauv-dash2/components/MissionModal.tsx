@@ -443,6 +443,8 @@ const MissionModal: React.FC<MissionModalProps> = ({
     globalModalId?.meta?.eventData,
     sendAgainReady,
     onClose,
+    vehicleName,
+    axiosInstance,
   ])
 
   const initialScheduleState = useMemo(() => {
