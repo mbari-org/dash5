@@ -445,6 +445,7 @@ const MissionModal: React.FC<MissionModalProps> = ({
     onClose,
     vehicleName,
     axiosInstance,
+    token,
   ])
 
   const initialScheduleState = useMemo(() => {
