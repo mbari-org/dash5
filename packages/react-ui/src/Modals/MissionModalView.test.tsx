@@ -445,98 +445,14 @@ test('should display only plotted waypoints (i.e. ones that do not have NaN as a
   ).not.toBeInTheDocument()
 })
 
-// Send Command (Review and Send): Step 7
-test('shows quiet SBD chunk note beside review intro when count >= 2', () => {
-  render(
-    <RecoilRoot>
-      <MissionModalView
-        {...props}
-        currentStepIndex={7}
-        previewText={'sched asap "load Science/sci2.tl;run"'}
-        previewSbdCount={3}
-      />
-    </RecoilRoot>
-  )
-  expect(
-    screen.getByText(/The following command will be sent to/i)
-  ).toBeInTheDocument()
-  expect(
-    screen.getByText('(This will be sent as 3 SBD chunks)')
-  ).toBeInTheDocument()
-})
-
-test('hides SBD chunk note for single-part previews', () => {
-  render(
-    <RecoilRoot>
-      <MissionModalView
-        {...props}
-        currentStepIndex={7}
-        previewText={'sched asap "load Science/sci2.tl;run"'}
-        previewSbdCount={1}
-      />
-    </RecoilRoot>
-  )
-  expect(screen.queryByText(/SBD chunk/i)).not.toBeInTheDocument()
-})
-
-const expectBackBesidePrimary = (primaryName: RegExp) => {
-  const back = screen.getByRole('button', { name: 'Back' })
-  const primary = screen.getByRole('button', { name: primaryName })
-  const cancel = screen.getByRole('button', { name: /^Cancel$/i })
-  expect(back.closest('li')).toBe(primary.closest('li'))
-  expect(cancel.closest('li')).not.toBe(back.closest('li'))
-}
-
-test('Confirm Cancel dismisses and Back sits beside Confirm', () => {
-  const onCancel = jest.fn()
-  render(
-    <RecoilRoot>
-      <MissionModalView {...props} currentStepIndex={6} onCancel={onCancel} />
-    </RecoilRoot>
-  )
-  expect(screen.getByText(/is that right/i)).toBeInTheDocument()
-  expectBackBesidePrimary(/^Confirm$/i)
-  fireEvent.click(screen.getByRole('button', { name: /^Cancel$/i }))
-  expect(onCancel).toHaveBeenCalledTimes(1)
-})
-
-test('Confirm Back returns to Schedule and does not dismiss', () => {
-  const onCancel = jest.fn()
-  render(
-    <RecoilRoot>
-      <MissionModalView {...props} currentStepIndex={6} onCancel={onCancel} />
-    </RecoilRoot>
-  )
-  fireEvent.click(screen.getByRole('button', { name: 'Back' }))
-  expect(onCancel).not.toHaveBeenCalled()
-  expect(screen.queryByText(/is that right/i)).not.toBeInTheDocument()
-  expect(screen.getAllByText(/6\. Schedule/i).length).toBeGreaterThan(0)
-})
-
-test('Send Command Cancel dismisses the modal instead of stepping back', () => {
+// Confirm & Send close button (×) dismisses the modal
+test('Confirm & Send close button dismisses the modal', () => {
   const onCancel = jest.fn()
   render(
     <RecoilRoot>
       <MissionModalView
         {...props}
-        currentStepIndex={7}
-        previewText={'sched asap "load Science/sci2.tl;run"'}
-        onCancel={onCancel}
-      />
-    </RecoilRoot>
-  )
-  expectBackBesidePrimary(/^Confirm$/i)
-  fireEvent.click(screen.getByRole('button', { name: /^Cancel$/i }))
-  expect(onCancel).toHaveBeenCalledTimes(1)
-})
-
-test('Send Command close button dismisses the modal', () => {
-  const onCancel = jest.fn()
-  render(
-    <RecoilRoot>
-      <MissionModalView
-        {...props}
-        currentStepIndex={7}
+        currentStepIndex={5}
         previewText={'sched asap "load Science/sci2.tl;run"'}
         onCancel={onCancel}
       />
@@ -546,19 +462,121 @@ test('Send Command close button dismisses the modal', () => {
   expect(onCancel).toHaveBeenCalledTimes(1)
 })
 
-test('Send Command Back returns to Confirm and does not dismiss', () => {
-  const onCancel = jest.fn()
+// Confirm & Send: vehicle radio fix
+test('Confirm & Send: No radio stays checked after clicking it', () => {
   render(
     <RecoilRoot>
       <MissionModalView
         {...props}
-        currentStepIndex={7}
-        previewText={'sched asap "load Science/sci2.tl;run"'}
-        onCancel={onCancel}
+        currentStepIndex={5}
+        vehicles={['Brizo', 'Triton']}
       />
+    </RecoilRoot>
+  )
+  const noRadio = screen.getByRole('radio', { name: /no, send to:/i })
+  fireEvent.click(noRadio)
+  expect(noRadio).toBeChecked()
+})
+
+test('Confirm & Send: Send button disabled when No radio chosen without selecting a vehicle', () => {
+  render(
+    <RecoilRoot>
+      <MissionModalView
+        {...props}
+        currentStepIndex={5}
+        vehicles={['Brizo', 'Triton']}
+      />
+    </RecoilRoot>
+  )
+  fireEvent.click(screen.getByRole('radio', { name: /no, send to:/i }))
+  // Send button should be disabled until a different vehicle is chosen
+  const sendButton = screen.getByRole('button', { name: /^send to/i })
+  expect(sendButton).toBeDisabled()
+})
+
+// Confirm & Send: preview refetch when schedule options change
+test('Confirm & Send: onSchedule called with preview=true when comm type changes', () => {
+  const onSchedule = jest.fn()
+  render(
+    <RecoilRoot>
+      <MissionModalView
+        {...props}
+        currentStepIndex={5}
+        selectedId="1"
+        onSchedule={onSchedule}
+      />
+    </RecoilRoot>
+  )
+  onSchedule.mockClear() // clear the initial preview fetch on mount
+  // Use exact name to avoid matching the "cellsat" label which also contains "send via sat"
+  const satRadio = screen.getByRole('radio', { name: 'Send via sat' })
+  fireEvent.click(satRadio)
+  expect(onSchedule).toHaveBeenCalledWith(
+    expect.objectContaining({ preview: true, commType: 'sat' })
+  )
+})
+
+// SBD chunk note hides for single-part previews on Confirm & Send
+test('hides SBD chunk note for single-part previews on Confirm & Send', () => {
+  render(
+    <RecoilRoot>
+      <MissionModalView
+        {...props}
+        currentStepIndex={5}
+        previewText={'sched asap "load Science/sci2.tl;run"'}
+        previewSbdCount={1}
+      />
+    </RecoilRoot>
+  )
+  expect(screen.queryByText(/SBD chunk/i)).not.toBeInTheDocument()
+})
+
+// Confirm & Send: Step 5 (collapsed)
+test('renders ConfirmAndSendStep with vehicle selector on step 5', () => {
+  render(
+    <RecoilRoot>
+      <MissionModalView {...props} currentStepIndex={5} />
+    </RecoilRoot>
+  )
+  expect(screen.getByText(/send to vehicle/i)).toBeInTheDocument()
+})
+
+test('Confirm & Send shows SBD chunk note when count >= 2', () => {
+  render(
+    <RecoilRoot>
+      <MissionModalView
+        {...props}
+        currentStepIndex={5}
+        previewText={'sched asap "load Science/sci2.tl;run"'}
+        previewSbdCount={3}
+      />
+    </RecoilRoot>
+  )
+  expect(
+    screen.getByText('(This will be sent as 3 SBD chunks)')
+  ).toBeInTheDocument()
+})
+
+test('Confirm & Send Cancel dismisses the modal', () => {
+  const onCancel = jest.fn()
+  render(
+    <RecoilRoot>
+      <MissionModalView {...props} currentStepIndex={5} onCancel={onCancel} />
+    </RecoilRoot>
+  )
+  fireEvent.click(screen.getByRole('button', { name: /^Cancel$/i }))
+  expect(onCancel).toHaveBeenCalledTimes(1)
+})
+
+test('Confirm & Send Back returns to Review step', () => {
+  const onCancel = jest.fn()
+  render(
+    <RecoilRoot>
+      <MissionModalView {...props} currentStepIndex={5} onCancel={onCancel} />
     </RecoilRoot>
   )
   fireEvent.click(screen.getByRole('button', { name: 'Back' }))
   expect(onCancel).not.toHaveBeenCalled()
-  expect(screen.getByText(/is that right/i)).toBeInTheDocument()
+  // Review step shows waypoint/override count summary
+  expect(screen.queryByText(/Review mission summary/i)).toBeInTheDocument()
 })

@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react'
+import React, { useEffect, useRef, useState } from 'react'
 import { Modal } from '../Modal/Modal'
 import { StepProgress, StepProgressProps } from '../Navigation/StepProgress'
 import { SelectOption } from '../Fields/Select'
@@ -15,21 +15,17 @@ import { ParameterProps, ParameterTableProps } from '../Tables/ParameterTable'
 import { ParameterSummary } from './MissionModalSteps/ParameterSummary'
 import { SafetyCommsStep } from './MissionModalSteps/SafetyCommsStep'
 import { ReviewStep } from './MissionModalSteps/ReviewStep'
-import {
-  ScheduleMethod,
-  ScheduleStep,
-  CommType,
-} from './MissionModalSteps/ScheduleStep'
-import { AlternativeAddressStep } from './MissionModalSteps/AlternativeAddressStep'
+import { ScheduleMethod, CommType } from './MissionModalSteps/ScheduleStep'
+import { ConfirmAndSendStep } from './MissionModalSteps/ConfirmAndSendStep'
 import makeWaypointOverrides from './MissionModalSteps/helpers/makeWaypointOverrides'
 import useManagedWaypoints from './MissionModalSteps/hooks/useManagedWaypoints'
 import useManagedParameters from './MissionModalSteps/hooks/useManagedParameters'
 import useMissionModalSteps from './MissionModalSteps/hooks/useMissionModalSteps'
-import { ConfirmVehicleDialog } from './ConfirmVehicleDialog'
 
 import {
   ScheduleProvider,
   useScheduleContext,
+  ScheduleState,
 } from './MissionModalSteps/hooks/useSchedule'
 
 export type OnScheduleMissionHandler = (args: {
@@ -73,13 +69,14 @@ export interface MissionModalViewProps
   /** Backend preview SBD fragment count (≥2 shown as a quiet note on Review). */
   previewSbdCount?: number
   loading?: boolean
-  onStepIndexChange?: (step: number) => void
   selectedMissionCategory?: string
   defaultSearchText?: string
   missionsLoading?: boolean
   onSelectMissionCategory?: (category?: string) => void
   showAllVehicleMissions?: boolean
   onShowAllVehicleMissions?: (show: boolean) => void
+  /** Prefill Schedule step (e.g. via/timeout from a prior Send again). */
+  initialScheduleState?: Partial<ScheduleState>
 }
 
 export const MissionModalView: React.FC<MissionModalViewProps> = (props) => (
@@ -88,6 +85,7 @@ export const MissionModalView: React.FC<MissionModalViewProps> = (props) => (
       scheduleMethod: 'ASAP',
       alternateAddress: null,
       commType: 'cellsat',
+      ...props.initialScheduleState,
     }}
   >
     <MissionModalBody {...props} />
@@ -142,12 +140,11 @@ const MissionModalBody: React.FC<MissionModalViewProps> = ({
       commType,
       timeout,
     },
-    actions: {
-      setAlternateAddress,
-      setConfirmedVehicle,
-      setShowAlternateAddress,
-    },
   } = useScheduleContext()
+
+  // Tracks whether the vehicle selection on Confirm & Send is complete.
+  // False only while "No, send to:" is chosen with no vehicle picked yet.
+  const [vehicleSelectionValid, setVehicleSelectionValid] = useState(true)
 
   const {
     handleParamUpdate,
@@ -197,10 +194,8 @@ const MissionModalBody: React.FC<MissionModalViewProps> = ({
     editable,
   } = useManagedWaypoints(waypoints)
 
-  const isLastStep = currentStep === steps.length - 1
-  const confirmButtonText = isLastStep ? (
-    `Schedule ${vehicleName}`
-  ) : (
+  // Only used in the default case (steps 0–4); Confirm & Send renders its own button.
+  const confirmButtonText = (
     <div>
       <span className="pr-2">Next</span>{' '}
       <FontAwesomeIcon icon={faAnglesRight} />
@@ -209,13 +204,7 @@ const MissionModalBody: React.FC<MissionModalViewProps> = ({
 
   const missionName = missions.find(({ id }) => id === selectedId)?.name ?? ''
 
-  const handleAlternateAddress = () => setShowAlternateAddress(true)
-
   const handleBack = () => {
-    if (showAlternateAddress) {
-      setShowAlternateAddress(false)
-      setAlternateAddress(null)
-    }
     // When returning to the select mission step, clear mission selection and overrides
     if (!showSummary && currentStep === steps.indexOf('Mission') + 1) {
       handleSelectMission(null)
@@ -227,23 +216,13 @@ const MissionModalBody: React.FC<MissionModalViewProps> = ({
   const extraButtons = (): ExtraButton[] => {
     if (currentStep === 0) return []
 
-    const buttons: ExtraButton[] = [
+    return [
       {
         buttonText: 'Back',
         appearance: 'secondary',
         onClick: handleBack,
       },
     ]
-
-    if (steps[currentStep] === 'Schedule' && !showAlternateAddress) {
-      buttons.push({
-        buttonText: 'Send to alternate address',
-        appearance: 'secondary',
-        onClick: handleAlternateAddress,
-        disabled: disableConfirm(),
-      })
-    }
-    return buttons
   }
 
   const disableConfirm = () => {
@@ -262,8 +241,9 @@ const MissionModalBody: React.FC<MissionModalViewProps> = ({
               lon !== ''
           ) || focusedWaypointIndex != null
         )
-      case steps.indexOf('Schedule'):
+      case steps.indexOf('Confirm & Send'):
         return (
+          !vehicleSelectionValid ||
           !scheduleMethod ||
           (scheduleMethod === 'time' && !specifiedTime) ||
           (showAlternateAddress && !alternateAddress)
@@ -379,29 +359,13 @@ const MissionModalBody: React.FC<MissionModalViewProps> = ({
           />
         )
 
-      case steps.indexOf('Schedule'):
-        return showAlternateAddress ? (
-          <AlternativeAddressStep
-            vehicleName={vehicleName}
-            mission={missionName}
-            alternativeAddresses={alternativeAddresses}
-          />
-        ) : (
-          <ScheduleStep
-            waypointCount={plottedWaypointCount}
-            overrideCount={overrideCount}
-            vehicleName={vehicleName}
-            commandText={missionName}
-          />
-        )
-
       default:
         return null
     }
   }
 
   const handleSchedule = () => {
-    const preview = currentStep !== steps.indexOf('Send Command')
+    const preview = currentStep !== steps.indexOf('Confirm & Send')
 
     const waypointOverrides = makeWaypointOverrides(
       updatedWaypoints,
@@ -444,82 +408,120 @@ const MissionModalBody: React.FC<MissionModalViewProps> = ({
     }
   }, [editable, setWaypointsEditable, currentStep, steps, showSummary])
 
+  // Re-fetch preview when scheduling state changes on Confirm & Send.
+  // Ref holds the latest closure; only trigger conditions are listed as deps.
+  // wasOnConfirmSendRef guards against a double-fetch: Review's Next already
+  // calls preview before advancing, so skip the effect on first mount of this step.
+  const confirmSendStepIndex = steps.indexOf('Confirm & Send')
+  const isConfirmSendStep = currentStep === confirmSendStepIndex
+
+  const wasOnConfirmSendRef = useRef(false)
+  const triggerPreviewRef = useRef<(() => void) | null>(null)
+  triggerPreviewRef.current = () => {
+    if (!selectedId) return
+    const waypointOverrides = makeWaypointOverrides(
+      updatedWaypoints,
+      unfilteredMissionParameters
+    )
+    onSchedule?.({
+      selectedMissionId: selectedId as string,
+      parameterOverrides: [
+        waypointOverrides,
+        overriddenMissionParams,
+        safetyCommsParams.filter((p) => p.overrideValue),
+      ].flat(),
+      notes,
+      specifiedTime,
+      alternateAddress,
+      scheduleId: customScheduleId,
+      scheduleMethod,
+      confirmedVehicle: confirmedVehicle ?? vehicleName,
+      preview: true,
+      commType,
+      timeout,
+    })
+  }
+
+  useEffect(() => {
+    if (!isConfirmSendStep) {
+      wasOnConfirmSendRef.current = false
+      return
+    }
+    // Skip on first entry — Review's Next already fetched the preview.
+    if (!wasOnConfirmSendRef.current) {
+      wasOnConfirmSendRef.current = true
+      return
+    }
+    triggerPreviewRef.current?.()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [
+    commType,
+    timeout,
+    scheduleMethod,
+    specifiedTime,
+    confirmedVehicle,
+    isConfirmSendStep,
+  ])
+
+  // Fixed frame applied to every step — prevents short-content steps from shrinking
+  // the modal and exposing the Schedule rows underneath for accidental clicks.
   const missionModalFrame = {
     className,
-    style: { maxHeight: '95vh', ...style },
+    style: {
+      ...style,
+      height: 'calc(100vh - 6rem)',
+      minHeight: 'calc(100vh - 6rem)',
+      maxHeight: 'calc(100vh - 6rem)',
+    },
     snapTo: 'top-right' as const,
     extraWideModal: true,
     bodyOverflowHidden: true,
+    allowPointerEventsOnChildren: true,
     open: true,
   }
 
-  switch (currentStep) {
-    case steps.indexOf('Confirm'):
-      return (
-        <ConfirmVehicleDialog
-          {...missionModalFrame}
-          vehicle={vehicleName}
-          vehicleList={vehicles ?? []}
-          mission={selectedId ?? ''}
-          onChangeVehicle={setConfirmedVehicle}
-          // Cancel aborts the whole flow; Back returns to Schedule.
-          onCancel={onCancel}
-          onConfirm={handleSchedule}
-          extraButtons={[
-            {
-              buttonText: 'Back',
-              appearance: 'secondary',
-              onClick: handlePrevious,
-            },
-          ]}
-        />
-      )
+  // On the Review step, clicking Next also kicks off the SBD preview fetch so
+  // the preview is in-flight before Confirm & Send renders.
+  const isReviewStep = steps[currentStep] === 'Review'
+  const defaultConfirmHandler = isReviewStep ? handleSchedule : handleNext
 
-    case steps.indexOf('Send Command'):
+  switch (currentStep) {
+    case steps.indexOf('Confirm & Send'):
       return (
         <Modal
           {...missionModalFrame}
-          title="Review and Send Command"
+          title={
+            <StepProgress
+              steps={steps}
+              currentStepIndex={currentStep}
+              className="h-[52px]"
+            />
+          }
           onConfirm={handleSchedule}
           onCancel={onCancel}
           onClose={onCancel}
+          disableConfirm={disableConfirm()}
           loading={loading}
-          extraButtons={[
+          confirmButtonText={`Send to ${confirmedVehicle ?? vehicleName}`}
+          leftExtraButtons={[
             {
               buttonText: 'Back',
               appearance: 'secondary',
-              onClick: handlePrevious,
+              onClick: handleBack,
             },
           ]}
         >
-          <div className="flex h-full min-h-0 flex-col overflow-auto">
-            <p className="mb-2 flex items-baseline justify-between gap-4">
-              <span>
-                The following command will be sent to{' '}
-                <span className="text-teal-500">
-                  {confirmedVehicle ?? vehicleName}
-                </span>
-                :
-              </span>
-              {previewSbdCount != null && previewSbdCount >= 2 && (
-                <span className="shrink-0 text-sm text-stone-500">
-                  (This will be sent as {previewSbdCount} SBD chunks)
-                </span>
-              )}
-            </p>
-            <pre className="w-full rounded-lg bg-stone-100 p-4 font-mono">
-              {previewText?.split(';').join(';\n')}
-            </pre>
-
-            {notes && (
-              <>
-                <p className="my-2">Additional notes:</p>
-                <pre className="w-full rounded-lg bg-stone-100 p-4 font-mono">
-                  {notes}
-                </pre>
-              </>
-            )}
-          </div>
+          <ConfirmAndSendStep
+            vehicleName={vehicleName}
+            vehicleList={vehicles ?? []}
+            commandText={missionName}
+            waypointCount={plottedWaypointCount}
+            overrideCount={overrideCount}
+            previewText={previewText}
+            previewSbdCount={previewSbdCount}
+            alternativeAddresses={alternativeAddresses}
+            onVehicleSelectionValidChange={setVehicleSelectionValid}
+          />
         </Modal>
       )
 
@@ -527,7 +529,6 @@ const MissionModalBody: React.FC<MissionModalViewProps> = ({
       return (
         <Modal
           {...missionModalFrame}
-          allowPointerEventsOnChildren
           title={
             <StepProgress
               steps={steps.slice(0, steps.length - 1)}
@@ -535,7 +536,7 @@ const MissionModalBody: React.FC<MissionModalViewProps> = ({
               className="h-[52px]"
             />
           }
-          onConfirm={handleNext}
+          onConfirm={defaultConfirmHandler}
           disableConfirm={disableConfirm()}
           onCancel={onCancel}
           onClose={onCancel}
