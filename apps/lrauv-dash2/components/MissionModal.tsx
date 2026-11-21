@@ -323,7 +323,7 @@ const MissionModal: React.FC<MissionModalProps> = ({
   const sendAgainSessionKey = sendAgain
     ? `${globalModalId?.meta?.mission ?? ''}\0${
         globalModalId?.meta?.eventData ?? ''
-      }`
+      }\0${globalModalId?.meta?.eventId ?? ''}`
     : ''
   const [armedSendAgainSessionKey, setArmedSendAgainSessionKey] =
     useState(sendAgainSessionKey)
