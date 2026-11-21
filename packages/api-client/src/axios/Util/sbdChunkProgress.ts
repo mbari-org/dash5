@@ -145,15 +145,18 @@ export const buildSbdChunkProgress = (
 }
 
 /**
- * When UI overrides status to timeout (e.g. CommsSection timedOutMap), clear
- * in-transit so chunk boxes do not keep pulsing after the timeout icon shows.
- * Matches determineCommandStatus's withChunkGate behavior.
+ * Freeze in-transit chunks for any terminal status so chunk boxes stop
+ * pulsing once a command is done. Covers timeout, ack, and completed.
+ * Without this, cellsat commands that ack via cell keep pulsing orange
+ * for unconfirmed satellite chunks even after the directive is past.
  */
 export const clearSbdInTransitOnTimeout = (
   status: string | undefined,
   sbdChunks?: SbdChunkProgress
 ): SbdChunkProgress | undefined => {
   if (!sbdChunks) return undefined
-  if (status === 'timeout') return { ...sbdChunks, inTransit: 0 }
+  if (status === 'timeout' || status === 'ack' || status === 'completed') {
+    return { ...sbdChunks, inTransit: 0 }
+  }
   return sbdChunks
 }

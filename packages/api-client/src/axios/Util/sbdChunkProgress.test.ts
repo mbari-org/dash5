@@ -157,9 +157,25 @@ describe('clearSbdInTransitOnTimeout', () => {
     })
   })
 
-  it('leaves chunks unchanged for non-timeout statuses', () => {
+  it('zeros inTransit when status is ack', () => {
+    expect(clearSbdInTransitOnTimeout('ack', chunks)).toEqual({
+      delivered: 1,
+      inTransit: 0,
+      total: 4,
+    })
+  })
+
+  it('zeros inTransit when status is completed', () => {
+    expect(clearSbdInTransitOnTimeout('completed', chunks)).toEqual({
+      delivered: 1,
+      inTransit: 0,
+      total: 4,
+    })
+  })
+
+  it('leaves chunks unchanged for non-terminal statuses', () => {
     expect(clearSbdInTransitOnTimeout('sent', chunks)).toEqual(chunks)
-    expect(clearSbdInTransitOnTimeout('ack', chunks)).toEqual(chunks)
+    expect(clearSbdInTransitOnTimeout('queued', chunks)).toEqual(chunks)
   })
 
   it('returns undefined when chunks are missing', () => {
