@@ -81,10 +81,13 @@ export const ConfirmAndSendStep: React.FC<ConfirmAndSendStepProps> = ({
     confirmedVehicle === null || confirmedVehicle === vehicleName
   )
 
-  // Sync parent validity on mount so Back → Next doesn't leave Send disabled
-  // while Yes is shown (parent retains false from the previous No selection).
+  // Sync parent validity on mount. A non-null confirmedVehicle means the pilot
+  // already chose an alternate vehicle and that selection is valid, even though
+  // isCorrectVehicle initializes to false in that case.
   useEffect(() => {
-    onVehicleSelectionValidChange?.(isCorrectVehicle)
+    onVehicleSelectionValidChange?.(
+      isCorrectVehicle || confirmedVehicle !== null
+    )
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
