@@ -48,6 +48,20 @@ describe('innerCommandFromEventData', () => {
     )
   })
 
+  it('strips unquoted legacy sched asap prefix', () => {
+    expect(
+      innerCommandFromEventData('sched asap load Science/sci2.tl;run')
+    ).toBe('load Science/sci2.tl;run')
+  })
+
+  it('strips unquoted legacy sched timestamp prefix', () => {
+    expect(
+      innerCommandFromEventData(
+        'sched 20250616T0415 load Science/profile_station.tl;run'
+      )
+    ).toBe('load Science/profile_station.tl;run')
+  })
+
   it('strips multi-token sched wrapper (e.g. repeat scheduling)', () => {
     expect(
       innerCommandFromEventData(
