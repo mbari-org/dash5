@@ -1,5 +1,5 @@
 /**
- * Build Review & Send preview text from a prior Schedule event payload (#799).
+ * Build Confirm & Send preview text from a prior Schedule event payload (#799).
  * Event data may already be wrapped in `sched … "…"`.
  */
 export const previewTextFromEventData = (
@@ -57,7 +57,7 @@ export type SendAgainGateResult =
   | { action: 'abort'; reason: 'no-match' | 'script-error' }
 
 /**
- * Decide when Send again may mount the wizard on Send Command.
+ * Decide when Send again may mount the wizard on Confirm & Send.
  * Must wait for getScript and (when eventData is present) the event-scoped
  * temp mission so defaultOverrides match the Review preview — not a different
  * recent run that shares the same path.

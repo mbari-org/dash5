@@ -316,7 +316,7 @@ const MissionModal: React.FC<MissionModalProps> = ({
   const previewRequestIdRef = useRef(0)
 
   // Defer mounting the wizard until Send again has a selected mission, script
-  // definition (for overrides), and preview — so currentStepIndex=Send Command
+  // definition (for overrides), and preview — so currentStepIndex=Confirm & Send
   // is applied on first paint with the prior run's params, not template defaults.
   const [sendAgainReady, setSendAgainReady] = useState(!sendAgain)
   const sendAgainAbortRef = useRef(false)
