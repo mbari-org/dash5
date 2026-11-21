@@ -540,7 +540,7 @@ const MissionModal: React.FC<MissionModalProps> = ({
 
     createCommand(
       {
-        vehicle: confirmedVehicle?.toLowerCase() ?? '',
+        vehicle: (confirmedVehicle ?? vehicleName ?? '').toLowerCase(),
         commandNote: notes ?? '',
         runCommand: 'y',
         schedDate,
