@@ -1,4 +1,4 @@
-import React, { useCallback, useState } from 'react'
+import React, { useCallback, useEffect, useState } from 'react'
 import clsx from 'clsx'
 import { SelectField } from '../../Fields'
 import { Input } from '../../Fields/Input'
@@ -80,6 +80,13 @@ export const ConfirmAndSendStep: React.FC<ConfirmAndSendStepProps> = ({
   const [isCorrectVehicle, setIsCorrectVehicle] = useState(
     confirmedVehicle === null || confirmedVehicle === vehicleName
   )
+
+  // Sync parent validity on mount so Back → Next doesn't leave Send disabled
+  // while Yes is shown (parent retains false from the previous No selection).
+  useEffect(() => {
+    onVehicleSelectionValidChange?.(isCorrectVehicle)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
 
   const displayVehicle = isCorrectVehicle
     ? vehicleName
