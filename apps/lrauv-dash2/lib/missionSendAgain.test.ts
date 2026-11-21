@@ -42,6 +42,20 @@ describe('innerCommandFromEventData', () => {
     )
   })
 
+  it('strips bare sched wrapper (no scheduling token before quote)', () => {
+    expect(innerCommandFromEventData('sched "restart logs"')).toBe(
+      'restart logs'
+    )
+  })
+
+  it('strips multi-token sched wrapper (e.g. repeat scheduling)', () => {
+    expect(
+      innerCommandFromEventData(
+        'sched 20260824T1000 repeat 2 "load Science/sci2.tl;run"'
+      )
+    ).toBe('load Science/sci2.tl;run')
+  })
+
   it('returns bare command unchanged', () => {
     expect(innerCommandFromEventData('load Science/sci2.tl;run')).toBe(
       'load Science/sci2.tl;run'
