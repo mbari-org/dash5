@@ -7,7 +7,7 @@ import {
 } from '@mbari/api-client'
 import { createLogger } from '@mbari/utils'
 import { useTick } from '../lib/useTick'
-import { PLATFORM_PANE } from '../lib/constants'
+import { PLATFORM_PANE, PLATFORM_LOOKBACK_DAYS } from '../lib/constants'
 
 const logger = createLogger('PlatformPath')
 
@@ -77,7 +77,7 @@ export const PlatformPath: React.FC<PlatformPathProps> = ({
       return { startDate, endDate }
     }
     const end = nowMs
-    const start = end - DEFAULT_LOOKBACK_DAYS * 24 * 60 * 60 * 1000
+    const start = end - PLATFORM_LOOKBACK_DAYS * 24 * 60 * 60 * 1000
     return {
       startDate: new Date(start).toISOString(),
       endDate: new Date(end).toISOString(),
