@@ -30,11 +30,6 @@ export const isTransientError = (error: unknown): boolean =>
     (error as { response?: unknown }).response == null &&
     !!(error as { request?: unknown }).request)
 
-// How far back to search for position fixes when no explicit window is given.
-// 365 days ensures infrequently-updated fixed platforms (e.g. CA offshore
-// structures that may not report for months) are still found.
-const DEFAULT_LOOKBACK_DAYS = 365
-
 export interface PlatformPathProps {
   platformId: string
   platformName?: string
