@@ -217,6 +217,8 @@ export const Modal: React.FC<ModalProps> = ({
         blurBackground && 'bg-black/20 backdrop-blur-sm',
         !bodyOverflowHidden
           ? 'overflow-auto'
+          : snapTo
+          ? 'flex flex-col'
           : styles.overlayToContainModalSize,
         allowPointerEventsOnChildren && styles.allowPointerEventsOnChildren
       )}
