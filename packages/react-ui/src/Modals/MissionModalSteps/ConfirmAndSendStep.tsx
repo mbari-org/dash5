@@ -86,7 +86,8 @@ export const ConfirmAndSendStep: React.FC<ConfirmAndSendStepProps> = ({
   }
 
   const handleTimeoutChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setTimeout(e.target.value ? parseInt(e.target.value, 10) : undefined)
+    const raw = e.target.value ? parseInt(e.target.value, 10) : undefined
+    setTimeout(raw !== undefined && (isNaN(raw) || raw <= 0) ? undefined : raw)
   }
 
   const handleScheduleIdChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -205,6 +206,7 @@ export const ConfirmAndSendStep: React.FC<ConfirmAndSendStepProps> = ({
             <Input
               name="timeout"
               type="number"
+              min="1"
               disabled={commType === 'sat'}
               className="h-fit w-20"
               value={timeout?.toString() ?? '5'}
