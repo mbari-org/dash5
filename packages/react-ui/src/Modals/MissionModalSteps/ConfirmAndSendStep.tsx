@@ -6,9 +6,9 @@ import { TextArea } from '../../Fields/TextArea'
 import { DateField } from '../../Fields/DateField'
 import {
   CommType,
-  CommTypeOption,
+  COMM_TYPE_OPTIONS,
   ScheduleMethod,
-  ScheduleOption,
+  SCHEDULE_OPTIONS,
 } from './ScheduleStep'
 import { useScheduleContext } from './hooks/useSchedule'
 
@@ -24,21 +24,6 @@ export interface ConfirmAndSendStepProps {
   /** Gates the Send button — false when No is chosen but no vehicle is picked yet. */
   onVehicleSelectionValidChange?: (valid: boolean) => void
 }
-
-const SCHEDULE_OPTIONS: ScheduleOption[] = [
-  { value: 'ASAP', label: 'ASAP' },
-  { value: 'end', label: 'At the end of the current schedule' },
-  { value: 'time', label: 'For specific time:' },
-]
-
-const COMM_TYPE_OPTIONS: CommTypeOption[] = [
-  {
-    value: 'cellsat',
-    label: 'Attempt via cell until timeout, then send via sat',
-  },
-  { value: 'cell', label: 'Attempt via cell until timeout' },
-  { value: 'sat', label: 'Send via sat' },
-]
 
 export const ConfirmAndSendStep: React.FC<ConfirmAndSendStepProps> = ({
   vehicleName,

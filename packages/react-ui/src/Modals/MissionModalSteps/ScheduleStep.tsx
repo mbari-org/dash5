@@ -26,13 +26,13 @@ export interface ScheduleProps {
   overrideCount?: number
 }
 
-const SCHEDULE_OPTIONS: ScheduleOption[] = [
+export const SCHEDULE_OPTIONS: ScheduleOption[] = [
   { value: 'ASAP', label: 'ASAP' },
   { value: 'end', label: 'At the end of the current schedule' },
   { value: 'time', label: 'For specific time:' },
 ]
 
-const COMM_TYPE_OPTIONS: CommTypeOption[] = [
+export const COMM_TYPE_OPTIONS: CommTypeOption[] = [
   {
     value: 'cellsat',
     label: 'Attempt via cell until timeout, then send via sat',
