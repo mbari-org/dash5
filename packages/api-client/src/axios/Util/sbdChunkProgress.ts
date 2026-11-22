@@ -160,6 +160,3 @@ export const freezeSbdInTransitForTerminalStatus = (
   }
   return sbdChunks
 }
-
-/** @deprecated Use freezeSbdInTransitForTerminalStatus */
-export const clearSbdInTransitOnTimeout = freezeSbdInTransitForTerminalStatus
