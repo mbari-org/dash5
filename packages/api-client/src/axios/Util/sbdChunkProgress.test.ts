@@ -3,7 +3,7 @@ import {
   countDeliveredSbdChunks,
   buildSbdChunkProgress,
   isSbdChunkDelivered,
-  clearSbdInTransitOnTimeout,
+  freezeSbdInTransitForTerminalStatus,
 } from './sbdChunkProgress'
 import { GetEventsResponse } from '../Event/getEvents'
 
@@ -146,23 +146,51 @@ describe('buildSbdChunkProgress', () => {
   })
 })
 
-describe('clearSbdInTransitOnTimeout', () => {
+describe('freezeSbdInTransitForTerminalStatus', () => {
   const chunks = { delivered: 1, inTransit: 2, total: 4 }
 
   it('zeros inTransit when status is timeout', () => {
-    expect(clearSbdInTransitOnTimeout('timeout', chunks)).toEqual({
+    expect(freezeSbdInTransitForTerminalStatus('timeout', chunks)).toEqual({
       delivered: 1,
       inTransit: 0,
       total: 4,
     })
   })
 
-  it('leaves chunks unchanged for non-timeout statuses', () => {
-    expect(clearSbdInTransitOnTimeout('sent', chunks)).toEqual(chunks)
-    expect(clearSbdInTransitOnTimeout('ack', chunks)).toEqual(chunks)
+  it('zeros inTransit when status is ack', () => {
+    expect(freezeSbdInTransitForTerminalStatus('ack', chunks)).toEqual({
+      delivered: 1,
+      inTransit: 0,
+      total: 4,
+    })
+  })
+
+  it('zeros inTransit when status is completed', () => {
+    expect(freezeSbdInTransitForTerminalStatus('completed', chunks)).toEqual({
+      delivered: 1,
+      inTransit: 0,
+      total: 4,
+    })
+  })
+
+  it('zeros inTransit when status is cancelled', () => {
+    expect(freezeSbdInTransitForTerminalStatus('cancelled', chunks)).toEqual({
+      delivered: 1,
+      inTransit: 0,
+      total: 4,
+    })
+  })
+
+  it('leaves chunks unchanged for non-terminal statuses', () => {
+    expect(freezeSbdInTransitForTerminalStatus('sent', chunks)).toEqual(chunks)
+    expect(freezeSbdInTransitForTerminalStatus('queued', chunks)).toEqual(
+      chunks
+    )
   })
 
   it('returns undefined when chunks are missing', () => {
-    expect(clearSbdInTransitOnTimeout('timeout', undefined)).toBeUndefined()
+    expect(
+      freezeSbdInTransitForTerminalStatus('timeout', undefined)
+    ).toBeUndefined()
   })
 })

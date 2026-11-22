@@ -272,3 +272,43 @@ test('should display log files when provided', async () => {
 
   expect(screen.queryByText(`${props.logFiles?.[0]}`)).toBeInTheDocument()
 })
+
+test('should display updated launch date when launchDate prop changes after API call', async () => {
+  const newLaunchDate = '2022-07-10T09:00:00.000-07:00'
+  const { rerender } = render(
+    <DeploymentDetailsPopUp {...props} launchDate={undefined} />
+  )
+
+  // Initially no launch date — mark button should be visible
+  expect(
+    screen.queryByLabelText(/mark launch time now button/i)
+  ).toBeInTheDocument()
+
+  // Simulate prop update after successful API call
+  rerender(<DeploymentDetailsPopUp {...props} launchDate={newLaunchDate} />)
+
+  const expectedFormatted = DateTime.fromJSDate(
+    new Date(newLaunchDate)
+  ).toLocaleString(DateTime.DATETIME_FULL)
+  expect(screen.queryByText(expectedFormatted)).toBeInTheDocument()
+})
+
+test('should clear launch date when launchDate prop becomes undefined', async () => {
+  const existingLaunchDate = '2022-07-05T11:28:52.637-07:00'
+  const { rerender } = render(
+    <DeploymentDetailsPopUp {...props} launchDate={existingLaunchDate} />
+  )
+
+  const formatted = DateTime.fromJSDate(
+    new Date(existingLaunchDate)
+  ).toLocaleString(DateTime.DATETIME_FULL)
+  expect(screen.queryByText(formatted)).toBeInTheDocument()
+
+  // Simulate switching to a deployment with no launch event
+  rerender(<DeploymentDetailsPopUp {...props} launchDate={undefined} />)
+
+  expect(screen.queryByText(formatted)).not.toBeInTheDocument()
+  expect(
+    screen.queryByLabelText(/mark launch time now button/i)
+  ).toBeInTheDocument()
+})
