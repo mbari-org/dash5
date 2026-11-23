@@ -117,6 +117,7 @@ export const LrauvsLayerSection: React.FC<LrauvsLayerSectionProps> = ({
       const n2wpOn = isLeafChecked(vehicleName, 'navigatingToWaypoints')
       const rwpOn = isLeafChecked(vehicleName, 'reachedWaypoints')
       const argosOn = isLeafChecked(vehicleName, 'argos')
+      const emergenciesOn = isLeafChecked(vehicleName, 'emergencies')
       const current =
         (gpsOn
           ? positions.markerPosition ?? positions.gpsFixes[0]
@@ -124,7 +125,8 @@ export const LrauvsLayerSection: React.FC<LrauvsLayerSectionProps> = ({
         (waypointsOn ? positions.waypoints[0] : undefined) ??
         (n2wpOn ? positions.navigatingToWaypoints[0] : undefined) ??
         (rwpOn ? positions.reachedWaypoints[0] : undefined) ??
-        (argosOn ? positions.argos[0] : undefined)
+        (argosOn ? positions.argos[0] : undefined) ??
+        (emergenciesOn ? positions.emergencies[0] : undefined)
       if (current) setFlyToRequest({ lat: current[0], lon: current[1] })
     },
     [getVehicleLeafPositions, isLeafChecked, setFlyToRequest]
