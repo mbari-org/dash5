@@ -67,7 +67,7 @@ export interface ScheduleCellProps {
 
 const styles = {
   container: 'flex font-display items-center text-sm',
-  icon: 'flex px-4',
+  icon: 'flex flex-col items-center gap-1 px-4',
   detailsContainer: 'flex flex-grow flex-col p-4',
   text: 'text-stone-500 opacity-90',
   textLight: 'text-stone-500 opacity-60',
@@ -148,7 +148,7 @@ export const ScheduleCell: React.FC<ScheduleCellProps> = ({
         className="grid flex-grow grid-cols-9 items-center"
         onClick={swallow(onSelect)}
       >
-        <div className={clsx(styles.icon, 'flex-col items-center gap-1')}>
+        <div className={styles.icon}>
           {status === 'sent' ? (
             <span title={statusTooltip ?? status}>
               <ConnectedIcon
