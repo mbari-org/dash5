@@ -503,7 +503,7 @@ const MissionModalBody: React.FC<MissionModalViewProps> = ({
           disableConfirm={disableConfirm()}
           loading={loading}
           confirmButtonText={`Send to ${confirmedVehicle ?? vehicleName}`}
-          leftExtraButtons={[
+          extraButtons={[
             {
               buttonText: 'Back',
               appearance: 'secondary',

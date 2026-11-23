@@ -140,7 +140,7 @@ export const ConfirmAndSendStep: React.FC<ConfirmAndSendStepProps> = ({
                 <span className="text-teal-500">{vehicleName}</span>
               </label>
             </li>
-            <li className="flex items-center gap-2">
+            <li className="flex items-center">
               <input
                 type="radio"
                 id="vehicle-no"
@@ -156,7 +156,7 @@ export const ConfirmAndSendStep: React.FC<ConfirmAndSendStepProps> = ({
               <label htmlFor="vehicle-no">No, send to:</label>
               <SelectField
                 name="vehicle list"
-                className="w-48"
+                className="w-48 pl-2"
                 options={vehicleOptions}
                 placeholder="Select LRAUV"
                 value={
