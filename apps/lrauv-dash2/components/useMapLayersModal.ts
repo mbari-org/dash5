@@ -6,7 +6,6 @@ import {
   useKmlLayers,
 } from '@mbari/api-client'
 import { useSelectedStations } from './SelectedStationContext'
-import type { Station } from './SelectedStationContext'
 import { useMapCamera } from './MapCameraContext'
 import { useSelectedPolygons } from './SelectedPolygonsContext'
 import { useSelectedTileLayers } from './SelectedTileLayersContext'

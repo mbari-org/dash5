@@ -109,21 +109,25 @@ export const LrauvsLayerSection: React.FC<LrauvsLayerSectionProps> = ({
     (vehicleName: string) => {
       const positions = getVehicleLeafPositions(vehicleName)
       if (!positions) return
-      // Fly to the vehicle's current location using the best available source:
-      // 1. markerPosition = the same point used to draw the vehicle dot on the map
-      // 2. waypoints[0]   = latestPosition from /wp (active vehicles)
-      // 3. gpsFixes[0]    = most recent GPS fix
-      // 4. reachedWaypoints / navigatingToWaypoints / argos as last resorts
+      // Fly to the vehicle's current location using the best visible source.
+      // Each source is only used when its leaf is checked so we always fly
+      // to something the operator can actually see on the map.
+      const gpsOn = isLeafChecked(vehicleName, 'gpsFixes')
+      const waypointsOn = isLeafChecked(vehicleName, 'waypoints')
+      const n2wpOn = isLeafChecked(vehicleName, 'navigatingToWaypoints')
+      const rwpOn = isLeafChecked(vehicleName, 'reachedWaypoints')
+      const argosOn = isLeafChecked(vehicleName, 'argos')
       const current =
-        positions.markerPosition ??
-        positions.waypoints[0] ??
-        positions.gpsFixes[0] ??
-        positions.navigatingToWaypoints[0] ??
-        positions.reachedWaypoints[0] ??
-        positions.argos[0]
+        (gpsOn
+          ? positions.markerPosition ?? positions.gpsFixes[0]
+          : undefined) ??
+        (waypointsOn ? positions.waypoints[0] : undefined) ??
+        (n2wpOn ? positions.navigatingToWaypoints[0] : undefined) ??
+        (rwpOn ? positions.reachedWaypoints[0] : undefined) ??
+        (argosOn ? positions.argos[0] : undefined)
       if (current) setFlyToRequest({ lat: current[0], lon: current[1] })
     },
-    [getVehicleLeafPositions, setFlyToRequest]
+    [getVehicleLeafPositions, isLeafChecked, setFlyToRequest]
   )
 
   const handleCenterAll = useCallback(() => {
@@ -162,9 +166,14 @@ export const LrauvsLayerSection: React.FC<LrauvsLayerSectionProps> = ({
 
   if (isFiltering && filteredVehicleNames.length === 0) return null
 
+  // When a search filter is active, root checkbox state and actions apply only
+  // to the visible (filtered) vehicles so the operator isn't surprised by a
+  // click that changes layers for vehicles outside the search results.
+  const activeVehicleNames = isFiltering ? filteredVehicleNames : vehicleNames
+
   const allVehiclesAllOn =
-    vehicleNames.length > 0 &&
-    vehicleNames.every((vn) => {
+    activeVehicleNames.length > 0 &&
+    activeVehicleNames.every((vn) => {
       const counts = vehicleCounts[vn]
       return ORDERED_LEAF_KEYS.filter(
         (leaf) =>
@@ -174,8 +183,8 @@ export const LrauvsLayerSection: React.FC<LrauvsLayerSectionProps> = ({
     })
 
   const someVehicleHasAnyOn =
-    vehicleNames.length > 0 &&
-    vehicleNames.some((vn) => {
+    activeVehicleNames.length > 0 &&
+    activeVehicleNames.some((vn) => {
       const counts = vehicleCounts[vn]
       return ORDERED_LEAF_KEYS.filter(
         (leaf) =>
@@ -196,9 +205,13 @@ export const LrauvsLayerSection: React.FC<LrauvsLayerSectionProps> = ({
         indeterminate={rootIndeterminate}
         onToggleExpand={() => toggleExpanded('lrauvs')}
         onToggleCheck={
-          vehicleNames.length > 0 ? () => toggleAll(vehicleNames) : undefined
+          activeVehicleNames.length > 0
+            ? () => toggleAll(activeVehicleNames)
+            : undefined
         }
-        onCenterClick={vehicleNames.length > 0 ? handleCenterAll : undefined}
+        onCenterClick={
+          activeVehicleNames.length > 0 ? handleCenterAll : undefined
+        }
         centerLabel={
           vehicleNames.length === 1
             ? `Center map on ${vehicleNames[0]}`

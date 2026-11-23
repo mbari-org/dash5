@@ -619,9 +619,7 @@ const VehiclePath: React.FC<VehiclePathProps> = ({
     ? formatElapsedTime(Date.now() - getTime(parseISO(latestTimeFix)))
     : ''
 
-  // showGpsFixes intentionally removed — GPS track dots, crumb trail,
-  // hover highlight, and HitCircles are always rendered (Dash4 parity).
-  // The GPS Fixes leaf only gates the layer-panel hover overlay rings.
+  const showGpsFixes = isLeafChecked(name, 'gpsFixes')
   const showWaypoints = isLeafChecked(name, 'waypoints')
   const showArgos = isLeafChecked(name, 'argos')
   const showNavigatingToWaypoints = isLeafChecked(name, 'navigatingToWaypoints')
@@ -634,9 +632,7 @@ const VehiclePath: React.FC<VehiclePathProps> = ({
           If there are no past fixes yet (before first GPS fix), render nothing
           rather than falling back to the full route which would double-draw
           under the dashed future segment. */}
-      {/* Main GPS track polyline — always visible regardless of GPS fixes
-          leaf state. The leaf controls supplementary position markers only. */}
-      {(!dimTime || activeRoute) && (
+      {showGpsFixes && (!dimTime || activeRoute) && (
         <Polyline
           pathOptions={lineStyle}
           positions={activeRoute ?? route}
@@ -676,28 +672,26 @@ const VehiclePath: React.FC<VehiclePathProps> = ({
             radius={20}
           />
         ))}
-      {/* GPS surfacing dots — always visible across the full deployment
-          (Dash4 parity). Index 0 is the latest position rendered separately
-          as the solid current-position dot; skip it here. Non-interactive.
-          The GPS Fixes leaf checkbox controls the layer-panel hover overlay
-          rings only — not these dots. */}
-      {displayedFixes.map((fix, index) =>
-        index === 0 ? null : (
-          <CircleMarker
-            key={`${name}:surfacing:${fix.eventId ?? fix.unixTime}`}
-            center={{ lat: fix.latitude, lng: fix.longitude }}
-            radius={2}
-            color={color}
-            fillColor={color}
-            fillOpacity={0.7}
-            weight={1}
-            interactive={false}
-          />
-        )
-      )}
-      {/* Current vehicle position — always visible (fundamental "where is
-          this vehicle" indicator). */}
-      {latest && (
+      {/* GPS surfacing dots — visible when GPS Fixes leaf is checked.
+          Index 0 is the latest position rendered separately as the solid
+          current-position dot; skip it here. Non-interactive. */}
+      {showGpsFixes &&
+        displayedFixes.map((fix, index) =>
+          index === 0 ? null : (
+            <CircleMarker
+              key={`${name}:surfacing:${fix.eventId ?? fix.unixTime}`}
+              center={{ lat: fix.latitude, lng: fix.longitude }}
+              radius={2}
+              color={color}
+              fillColor={color}
+              fillOpacity={0.7}
+              weight={1}
+              interactive={false}
+            />
+          )
+        )}
+      {/* Current vehicle position — visible when GPS Fixes leaf is checked. */}
+      {showGpsFixes && latest && (
         <CircleMarker
           data-vehicle-point={`${name}-latest`}
           center={{ lat: latest.latitude, lng: latest.longitude }}
@@ -720,26 +714,28 @@ const VehiclePath: React.FC<VehiclePathProps> = ({
       )}
       {/* Scrub indicator dot — shown for any scrub source (depth chart, timeline)
           unless the map-hover highlight is already visible at that position.
-          Rendered regardless of whether the GPS fixes leaf is checked so that
-          scrubbing always shows where on the track the selected time falls. */}
-      {indicatorCoord && mapHoverFix?.unixTime !== indicatorCoord.unixTime && (
-        <CircleMarker
-          center={{
-            lat: indicatorCoord.latitude,
-            lng: indicatorCoord.longitude,
-          }}
-          interactive={false}
-          pathOptions={{
-            color,
-            fillColor: color,
-            fillOpacity: 0.85,
-            weight: 2,
-          }}
-          radius={8}
-        />
-      )}
+          Gated on GPS Fixes so scrubbing respects the leaf visibility state. */}
+      {showGpsFixes &&
+        indicatorCoord &&
+        mapHoverFix?.unixTime !== indicatorCoord.unixTime && (
+          <CircleMarker
+            center={{
+              lat: indicatorCoord.latitude,
+              lng: indicatorCoord.longitude,
+            }}
+            interactive={false}
+            pathOptions={{
+              color,
+              fillColor: color,
+              fillOpacity: 0.85,
+              weight: 2,
+            }}
+            radius={8}
+          />
+        )}
       {/* Crumb trail dots — only shown while the timeline bar is being hovered */}
-      {activeRoute &&
+      {showGpsFixes &&
+        activeRoute &&
         activeRoute.map((r, i) => (
           <VehiclePoint
             key={`${name}:${
@@ -753,7 +749,7 @@ const VehiclePath: React.FC<VehiclePathProps> = ({
           />
         ))}
       {/* Hover highlight — grows at the nearest fix when hovering the map track */}
-      {mapHoverFix && (
+      {showGpsFixes && mapHoverFix && (
         <CircleMarker
           center={{ lat: mapHoverFix.latitude, lng: mapHoverFix.longitude }}
           interactive={false}
@@ -797,15 +793,15 @@ const VehiclePath: React.FC<VehiclePathProps> = ({
           </Tooltip>
         </CircleMarker>
       )}
-      {/* Dashed inactive/future track segment — always visible as part of the
-          track line. The individual preview dots below are also always rendered. */}
-      {dedupedInactiveRoute && (
+      {/* Dashed inactive/future track segment — visible when GPS Fixes is checked. */}
+      {showGpsFixes && dedupedInactiveRoute && (
         <Polyline
           pathOptions={{ color, weight: 2, opacity: 0.5, dashArray: '4, 6' }}
           positions={dedupedInactiveRoute}
         />
       )}
-      {dedupedInactiveRoute &&
+      {showGpsFixes &&
+        dedupedInactiveRoute &&
         dedupedInactiveRoute.map((r, i) => (
           <CircleMarker
             key={`${name}:${
@@ -824,21 +820,24 @@ const VehiclePath: React.FC<VehiclePathProps> = ({
         ))}
 
       {/* Memoized hit targets — isolated from VehiclePath re-renders to
-          prevent spurious mouseout/mouseover events causing tooltip flicker. */}
-      {
+          prevent spurious mouseout/mouseover events causing tooltip flicker.
+          Use deduplicated fixes (same set as rendered dots) to avoid mounting
+          extra invisible hit circles for duplicate-timestamp entries on long
+          deployments. */}
+      {showGpsFixes && (
         <HitCircles
           name={name}
           grouped={grouped}
-          route={route}
+          route={displayedFixes.map(
+            (f) => [f.latitude, f.longitude] as [number, number]
+          )}
           color={color}
           onCoord={handleCoord}
           onMouseOut={handleMouseOut}
         />
-      }
-      {/* Invisible hit target for the latest-position tooltip — always
-          rendered so the position tooltip is always reachable, even when
-          the GPS fixes leaf is unchecked. */}
-      {latest && (
+      )}
+      {/* Invisible hit target for the latest-position tooltip. */}
+      {showGpsFixes && latest && (
         <CircleMarker
           center={{ lat: latest.latitude, lng: latest.longitude }}
           radius={12}
@@ -905,7 +904,10 @@ const VehiclePath: React.FC<VehiclePathProps> = ({
           const radiusMeters = Number.isFinite(lcValue)
             ? accuracyRadii[lcValue] ?? 0
             : 0
-          const argoColor = hasError ? 'red' : color
+          // Always use vehicle color for the dot and circle border.
+          // If there's an error (bad LC / no fix), that's shown in the tooltip
+          // text instead of changing the color to red.
+          const argoColor = color
           return (
             <React.Fragment
               key={`${name}:argo:${point.eventId ?? point.unixTime}`}
@@ -944,13 +946,10 @@ const VehiclePath: React.FC<VehiclePathProps> = ({
                   radius={radiusMeters}
                   pathOptions={{
                     color: argoColor,
-                    weight: hasError ? 7 : 2,
+                    weight: 2,
                     opacity: 0.6,
                     dashArray: '5 7',
-                    // Dash4 parity: fill is a fixed light blue regardless of
-                    // vehicle color — both Pontus (orange) and Aku (orange) show
-                    // the same blue fill in Dash4 screenshots.
-                    fillColor: '#3388ff',
+                    fillColor: argoColor,
                     fillOpacity: 0.15,
                   }}
                 />
@@ -1053,7 +1052,9 @@ const VehiclePath: React.FC<VehiclePathProps> = ({
           - Leaf row hover → only if that leaf is checked; show circles at
             that leaf's positions (waypoints capped at 20); permanent lat/lon
             tooltips at each point, plus a connecting line.
-          - Vehicle row hover → yellow ring at the current location only.
+          - Vehicle row hover → yellow rings at the last-20 GPS positions,
+            but only when the GPS Fixes leaf is checked. Nothing shown when
+            GPS Fixes is off.
           - LRAUVs root hover → yellow rings at every loaded point for this
             vehicle, including unchecked leaves. No line and no labels.
           - Every one of these hovers draws Dash4's small red center dot.
@@ -1132,12 +1133,13 @@ const VehiclePath: React.FC<VehiclePathProps> = ({
             now: minuteTick,
           })
         } else {
-          // Vehicle name hover: yellow rings at all last-20 GPS positions
-          // (Dash4 parity). No tooltips, no connecting line (withTooltip=false,
-          // isLeafHover=false). Same set as the GPS Fixes leaf hover.
-          pts = displayedFixes
-            .slice(0, GPS_FIXES_DISPLAY_CAP)
-            .map((p) => [p.latitude, p.longitude] as [number, number])
+          // Vehicle name hover: yellow rings at last-20 GPS positions,
+          // but only when GPS Fixes leaf is checked.
+          if (showGpsFixes) {
+            pts = displayedFixes
+              .slice(0, GPS_FIXES_DISPLAY_CAP)
+              .map((p) => [p.latitude, p.longitude] as [number, number])
+          }
         }
 
         if (pts.length === 0) return null

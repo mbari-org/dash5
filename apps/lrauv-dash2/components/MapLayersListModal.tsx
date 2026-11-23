@@ -36,7 +36,6 @@ export const MapLayersListModal: React.FC<{
     setSelectedStations,
     starredSet,
     toggleStarStation,
-    setHighlightedStationName,
     setFlyToRequest,
     handleToggleSelectAllStations,
     isStationSelected,
@@ -212,6 +211,7 @@ export const MapLayersListModal: React.FC<{
                 setSelectedKmlLayers={setSelectedKmlLayers}
               />
               {isFiltering &&
+                filteredVehicleNames.length === 0 &&
                 filteredMarkers.length === 0 &&
                 filteredStations.length === 0 &&
                 filteredPolygons.length === 0 &&

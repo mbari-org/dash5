@@ -7,12 +7,6 @@ import { useMapCamera } from './MapCameraContext'
 
 type StationItem = GetStationsResponse
 
-interface FlyToRequest {
-  lat: number
-  lon: number
-  bounds?: [[number, number], [number, number]]
-}
-
 interface SelectedStation {
   name: string
   lat: number

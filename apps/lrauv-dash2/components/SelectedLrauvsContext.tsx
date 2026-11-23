@@ -481,8 +481,9 @@ export const useSelectedLrauvs = (): SelectedLrauvsContextProps => {
 
 const NO_OP_HOVER: LrauvsHoverState = { vehicleName: null, leaf: null }
 
-/** Safe version — returns all-visible defaults when no provider is present.
- *  Used in VehiclePath so the vehicle detail page (no layers modal) is unaffected. */
+/** Safe version — returns all-visible defaults when no provider is present
+ *  (e.g. in isolated tests or Storybook stories). Both map pages wrap with
+ *  SelectedLrauvsProvider, so VehiclePath respects layer checkboxes in production. */
 export const useSelectedLrauvsOptional = (): SelectedLrauvsContextProps => {
   const context = useContext(SelectedLrauvsContext)
   const noopRef = useRef<SelectedLrauvsContextProps>({
