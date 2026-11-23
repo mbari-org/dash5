@@ -4,6 +4,7 @@ import { capitalize, capitalizeEach, parseMissionPath } from '@mbari/utils'
 import { extractOverrides, GetScriptResponse } from '@mbari/api-client'
 import { Mission } from '@mbari/react-ui'
 import { GlobalModalMetaData } from './useGlobalModalId'
+import { innerCommandFromEventData } from './missionSendAgain'
 
 interface UseInsertTempMissionParams {
   globalModalMeta?: GlobalModalMetaData | null
@@ -37,9 +38,12 @@ export const useInsertTempMission = ({
       return missions
     }
 
-    // Extract overrides from eventData
+    // Extract overrides from the first chunk only. Multi-chunk SBD payloads
+    // repeat the full inner command on every line; passing the whole string
+    // to extractOverrides would inflate the override arrays N-fold.
+    const innerCmd = innerCommandFromEventData(eventData) ?? ''
     const { parameterOverrides, waypointOverrides } = extractOverrides(
-      eventData,
+      innerCmd,
       selectedMissionData.latLonNamePairs ?? []
     )
 
