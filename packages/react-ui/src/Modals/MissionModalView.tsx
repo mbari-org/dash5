@@ -246,7 +246,8 @@ const MissionModalBody: React.FC<MissionModalViewProps> = ({
           !vehicleSelectionValid ||
           !scheduleMethod ||
           (scheduleMethod === 'time' && !specifiedTime) ||
-          (showAlternateAddress && !alternateAddress)
+          (showAlternateAddress && !alternateAddress) ||
+          ((commType === 'cell' || commType === 'cellsat') && !timeout)
         )
       default:
         return false
@@ -408,14 +409,16 @@ const MissionModalBody: React.FC<MissionModalViewProps> = ({
     }
   }, [editable, setWaypointsEditable, currentStep, steps, showSummary])
 
-  // Re-fetch preview when scheduling state changes on Confirm & Send.
+  // Re-fetch preview whenever Confirm & Send becomes the active step, and whenever
+  // scheduling state changes while on the step. This covers three cases:
+  //   1. Normal flow (arriving from Review) — Review's Next fires one preview call;
+  //      this effect fires a second. Both are identical, so the extra call is harmless.
+  //   2. Send Again (opens directly at Confirm & Send with no prior Review step).
+  //   3. Navigate back to change parameters, then return to Confirm & Send.
   // Ref holds the latest closure; deps are trigger conditions only.
-  // wasOnConfirmSendRef guards against a double-fetch: Review's Next already
-  // calls preview before advancing, so skip the effect on first mount of this step.
   const confirmSendStepIndex = steps.indexOf('Confirm & Send')
   const isConfirmSendStep = currentStep === confirmSendStepIndex
 
-  const wasOnConfirmSendRef = useRef(false)
   const triggerPreviewRef = useRef<(() => void) | null>(null)
   triggerPreviewRef.current = () => {
     if (!selectedId) return
@@ -443,15 +446,7 @@ const MissionModalBody: React.FC<MissionModalViewProps> = ({
   }
 
   useEffect(() => {
-    if (!isConfirmSendStep) {
-      wasOnConfirmSendRef.current = false
-      return
-    }
-    // Skip on first entry — Review's Next already fetched the preview.
-    if (!wasOnConfirmSendRef.current) {
-      wasOnConfirmSendRef.current = true
-      return
-    }
+    if (!isConfirmSendStep) return
     triggerPreviewRef.current?.()
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [
@@ -531,7 +526,7 @@ const MissionModalBody: React.FC<MissionModalViewProps> = ({
           {...missionModalFrame}
           title={
             <StepProgress
-              steps={steps.slice(0, steps.length - 1)}
+              steps={steps}
               currentStepIndex={currentStep}
               className="h-[52px]"
             />

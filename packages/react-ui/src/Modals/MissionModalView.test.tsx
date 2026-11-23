@@ -580,3 +580,62 @@ test('Confirm & Send Back returns to Review step', () => {
   // Review step shows waypoint/override count summary
   expect(screen.queryByText(/Review mission summary/i)).toBeInTheDocument()
 })
+
+// Bug 1 fix: step progress bar shows all steps including Confirm & Send on every step
+test('step progress bar shows Confirm & Send on step 0', () => {
+  render(
+    <RecoilRoot>
+      <MissionModalView {...props} currentStepIndex={0} />
+    </RecoilRoot>
+  )
+  // StepProgress renders each label as "N. Label" twice (hidden + visible span)
+  expect(screen.getAllByText(/Confirm & Send/).length).toBeGreaterThan(0)
+})
+
+// Bug 2 fix: preview fetched on first mount at Confirm & Send (Send Again opens here directly)
+test('Confirm & Send: onSchedule called with preview=true on initial mount (Send Again scenario)', () => {
+  const onSchedule = jest.fn()
+  render(
+    <RecoilRoot>
+      <MissionModalView
+        {...props}
+        currentStepIndex={5}
+        selectedId="1"
+        onSchedule={onSchedule}
+      />
+    </RecoilRoot>
+  )
+  expect(onSchedule).toHaveBeenCalledWith(
+    expect.objectContaining({ preview: true })
+  )
+})
+
+// Bug 2 fix: preview re-fetched when navigating back to change parameters and returning,
+// and edited state (e.g. commType) is preserved in the re-fetch payload
+test('Confirm & Send: onSchedule called with preview=true when re-entering after navigating back, with edited state preserved', () => {
+  const onSchedule = jest.fn()
+  render(
+    <RecoilRoot>
+      <MissionModalView
+        {...props}
+        currentStepIndex={5}
+        selectedId="1"
+        onSchedule={onSchedule}
+      />
+    </RecoilRoot>
+  )
+  // Change comm type to sat before navigating away
+  fireEvent.click(screen.getByRole('radio', { name: 'Send via sat' }))
+  onSchedule.mockClear() // clear calls so far
+
+  // Navigate back to Review
+  fireEvent.click(screen.getByRole('button', { name: 'Back' }))
+
+  // Return to Confirm & Send via Review's Next button
+  fireEvent.click(screen.getByRole('button', { name: /Next/i }))
+
+  // Preview re-fired with the edited commType preserved
+  expect(onSchedule).toHaveBeenCalledWith(
+    expect.objectContaining({ preview: true, commType: 'sat' })
+  )
+})

@@ -396,7 +396,7 @@ const MissionModal: React.FC<MissionModalProps> = ({
       )
       setSendAgainReady(true)
       // Trigger SBD preview so the chunk count appears immediately on the
-      // Review step without the user having to navigate through step 6 first.
+      // Confirm & Send step (index 5) without the user having to navigate through it first.
       const innerCmd = innerCommandFromEventData(eventData)
       if (innerCmd && vehicleName && axiosInstance) {
         const requestId = ++previewRequestIdRef.current
@@ -462,6 +462,7 @@ const MissionModal: React.FC<MissionModalProps> = ({
     preview,
     commType,
     timeout,
+    scheduleId,
   }) => {
     const missionPathForCommand =
       missionsWithTemporaryEntry.find((m) => m.id === selectedMissionId)
@@ -480,27 +481,11 @@ const MissionModal: React.FC<MissionModalProps> = ({
       units: unitsData,
     })
 
-    // For Send again, strip any sched wrapper from eventData — createCommand
-    // expects the raw inner payload (e.g. "load Science/sci2.tl;run") and
-    // handles scheduling separately via schedDate.
-    const sendAgainEventData = sendAgain
-      ? globalModalId?.meta?.eventData
-      : undefined
-    const formattedCommandText =
-      (sendAgainEventData
-        ? innerCommandFromEventData(sendAgainEventData)
-        : undefined) || rebuiltCommandText
+    // Always use rebuiltCommandText — Send Again is editable; parameterOverrides
+    // always reflects the current wizard state whether or not the user changed anything.
+    const formattedCommandText = rebuiltCommandText
 
-    setPreviewText(
-      sendAgainEventData
-        ? (() => {
-            const inner = innerCommandFromEventData(sendAgainEventData) ?? ''
-            return schedDate
-              ? `sched ${schedDate} "${inner}"`
-              : `sched "${inner}"`
-          })()
-        : previewSbd
-    )
+    setPreviewText(previewSbd)
 
     if (preview) {
       // Ask the backend how many SBD fragments this payload becomes (#797).
@@ -537,6 +522,7 @@ const MissionModal: React.FC<MissionModalProps> = ({
         commandNote: notes ?? '',
         runCommand: 'y',
         schedDate,
+        schedId: scheduleId ?? undefined,
         destinationAddress: alternateAddress ?? undefined,
         commandText: formattedCommandText ?? '',
         via: commType,

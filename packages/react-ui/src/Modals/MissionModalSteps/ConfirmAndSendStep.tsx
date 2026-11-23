@@ -209,7 +209,7 @@ export const ConfirmAndSendStep: React.FC<ConfirmAndSendStepProps> = ({
               min="1"
               disabled={commType === 'sat'}
               className="h-fit w-20"
-              value={timeout?.toString() ?? '5'}
+              value={timeout?.toString() ?? ''}
               onChange={handleTimeoutChange}
             />
             <span
