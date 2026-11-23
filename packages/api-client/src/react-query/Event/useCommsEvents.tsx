@@ -180,7 +180,7 @@ export const useCommsEvents = ({
   ])
 
   const fetchMore = useCallback(async () => {
-    if (isLoading || isFetchingNextPage || isFetchingMore) return
+    if (isLoading || isFetching || isFetchingNextPage || isFetchingMore) return
 
     if (hasNextPage) {
       setTargetCommandCount(commands.length + minCommandEvents)
@@ -190,6 +190,7 @@ export const useCommsEvents = ({
     commands.length,
     hasNextPage,
     isLoading,
+    isFetching,
     isFetchingNextPage,
     isFetchingMore,
   ])
@@ -228,6 +229,7 @@ export const useCommsEvents = ({
     dispatchedEventIds,
     isLoading: fetchingInitialCommands ? fetchingInitialCommands : isLoading,
     isFetching: fetching,
+    isFetchingMore,
     fetchNextPage,
     hasNextPage,
     refetch,

@@ -12,6 +12,64 @@ import {
   faLinkSlash,
 } from '@fortawesome/free-solid-svg-icons'
 
+export interface CenterMapButtonProps {
+  label: string
+  onClick: () => void
+  disabled?: boolean
+  disabledLabel?: string
+}
+
+export const CenterMapButton: React.FC<CenterMapButtonProps> = ({
+  label,
+  onClick,
+  disabled,
+  disabledLabel,
+}) => (
+  <Tippy
+    content={disabled ? disabledLabel ?? label : label}
+    placement="top-start"
+    appendTo={() => document.body}
+  >
+    <button
+      type="button"
+      aria-disabled={disabled}
+      tabIndex={disabled ? -1 : 0}
+      onClick={(e) => {
+        e.preventDefault()
+        e.stopPropagation()
+        if (!disabled) onClick()
+      }}
+      onKeyDown={(e) => {
+        if (disabled && (e.key === 'Enter' || e.key === ' ')) {
+          e.preventDefault()
+        }
+      }}
+      className="ml-2 focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-blue-500"
+      aria-label={disabled ? disabledLabel ?? label : label}
+      style={{
+        width: '20px',
+        height: '20px',
+        flexShrink: 0,
+        borderRadius: '3px',
+        background: '#fff',
+        border: 0,
+        padding: 0,
+        boxShadow: '0 1px 3px rgba(0,0,0,0.35)',
+        display: 'inline-flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        cursor: disabled ? 'not-allowed' : 'pointer',
+        opacity: disabled ? 0.4 : 1,
+      }}
+    >
+      <FontAwesomeIcon
+        icon={faArrowsToCircle}
+        style={{ color: '#6b7280', fontSize: '14.5px' }}
+      />
+    </button>
+  </Tippy>
+)
+
 export interface TreeItemProps {
   label: string
   isExpanded?: boolean
@@ -186,41 +244,7 @@ export const TreeItem: React.FC<TreeItemProps> = ({
           )}
           <span className="text-sm font-medium">{label}</span>
           {onCenterClick !== undefined && (
-            <Tippy
-              content={centerLabel}
-              placement="top-start"
-              appendTo={() => document.body}
-            >
-              <button
-                type="button"
-                onClick={(e) => {
-                  e.preventDefault()
-                  e.stopPropagation()
-                  onCenterClick()
-                }}
-                className="ml-2 focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-blue-500"
-                aria-label={centerLabel}
-                style={{
-                  width: '20px',
-                  height: '20px',
-                  flexShrink: 0,
-                  borderRadius: '3px',
-                  background: '#fff',
-                  border: 0,
-                  padding: 0,
-                  boxShadow: '0 1px 3px rgba(0,0,0,0.35)',
-                  display: 'inline-flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  cursor: 'pointer',
-                }}
-              >
-                <FontAwesomeIcon
-                  icon={faArrowsToCircle}
-                  style={{ color: '#6b7280', fontSize: '14.5px' }}
-                />
-              </button>
-            </Tippy>
+            <CenterMapButton label={centerLabel} onClick={onCenterClick} />
           )}
           {onRemoveClick !== undefined && (
             <Tippy

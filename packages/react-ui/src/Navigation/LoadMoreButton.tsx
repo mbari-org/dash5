@@ -6,6 +6,8 @@ import { faArrowCircleDown } from '@fortawesome/free-solid-svg-icons'
 interface LoadMoreButtonProps {
   onClick: () => void
   isLoading?: boolean
+  /** Disables the button without changing the label. Use for background refetches or backfill. */
+  disabled?: boolean
   className?: string
   label?: string
 }
@@ -17,6 +19,7 @@ const styles = {
 export const LoadMoreButton: React.FC<LoadMoreButtonProps> = ({
   onClick,
   isLoading = false,
+  disabled = false,
   className,
   label,
 }) => {
@@ -25,7 +28,7 @@ export const LoadMoreButton: React.FC<LoadMoreButtonProps> = ({
     <button
       aria-label="Load more"
       onClick={onClick}
-      disabled={isLoading}
+      disabled={isLoading || disabled}
       className={clsx(styles.button, className)}
     >
       <FontAwesomeIcon icon={faArrowCircleDown} className="mr-1.5 mt-0.5" />

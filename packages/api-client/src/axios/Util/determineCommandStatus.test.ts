@@ -287,10 +287,10 @@ describe('determineCommandStatus', () => {
     expect(result.commsIsoTime).toBe(baseTimeoutEvent.isoTime)
   })
 
-  it('should return sent for cellsat command when sbdSend exists but its timeout has elapsed with no backend timeout note', () => {
+  it('should timeout client-side for cellsat command when sbdSend state:0 elapsed with no backend timeout note', () => {
     // baseSbdSend is from 2023 with a 60-minute timeout — long since expired.
-    // Without a backend timeout note, client-side inference no longer fires.
-    // The backend is now responsible for writing the timeout note (issue #897).
+    // state:0 means cell dispatch did not succeed, so cellDispatchSucceeded is
+    // false and client-side timeout inference still fires.
     const expiredCellsatSend: GetEventsResponse = {
       ...baseSbdSend,
       refId: baseCellsatCommand.eventId,
@@ -307,7 +307,7 @@ describe('determineCommandStatus', () => {
       new Map()
     )
 
-    expect(result.status).toBe('sent')
+    expect(result.status).toBe('timeout')
     expect(result.via).toBe('cellsat')
     expect(result.timeout).toBe('60')
   })
@@ -689,10 +689,44 @@ describe('determineCommandStatus', () => {
     })
   })
 
-  // #797: without a backend timeout note, inTransit stays active (orange).
-  // Client-side timeout inference for sent-but-unacknowledged commands was
-  // removed in #897 — the backend now writes the timeout note.
-  it('should return sent with active inTransit for multipart cellsat after timeout window without a backend timeout note', () => {
+  // #891: cellsat + state:2 (cell delivered) + past timeout + no backend note
+  // must stay 'sent', not timeout client-side. TethysDash is the authority on
+  // whether a cell-delivered command truly timed out.
+  it('should stay sent for cellsat with state:2 past timeout when no backend note exists', () => {
+    const expiredCellsatWithCellDelivery: GetEventsResponse = {
+      ...baseCellsatCommand,
+      unixTime: Date.now() - 20 * 60 * 1000, // well past 5min
+      note: 'command[via: cellsat, timeout:5min]',
+    }
+    const cellDeliveredSend: GetEventsResponse = {
+      ...cellSbdSend,
+      eventId: 91,
+      refId: expiredCellsatWithCellDelivery.eventId,
+      state: 2, // cell dispatch succeeded
+      unixTime: Date.now() - 20 * 60 * 1000,
+      isoTime: new Date(Date.now() - 20 * 60 * 1000).toISOString(),
+    }
+    const sbdSendMap = new Map<string, GetEventsResponse>([
+      [String(expiredCellsatWithCellDelivery.eventId), cellDeliveredSend],
+    ])
+
+    const result = determineCommandStatus(
+      expiredCellsatWithCellDelivery,
+      sbdSendMap,
+      new Map(),
+      new Map(),
+      new Map() // no backend timeout note
+    )
+
+    expect(result.status).toBe('sent')
+    expect(result.via).toBe('cellsat')
+    expect(result.commsIsoTime).toBe(cellDeliveredSend.isoTime)
+  })
+
+  // #797: client-side timeout (no note, state:0 send) must still stop orange flash.
+  // This covers the case where cell dispatch did NOT succeed (state:0 — only sent
+  // to Iridium, not cell-delivered) and the timeout window has passed.
+  it('should timeout client-side for cellsat with state:0 send past timeout when no backend note', () => {
     const multiPartCellsat: GetEventsResponse = {
       ...baseCellsatCommand,
       unixTime: Date.now() - 20 * 60 * 1000, // well past 5min
@@ -707,10 +741,10 @@ describe('determineCommandStatus', () => {
       [
         String(multiPartCellsat.eventId),
         [1, 2, 3].map((n) => ({
-          ...cellSbdSend,
+          ...baseSbdSend,
           eventId: 90 + n,
           refId: multiPartCellsat.eventId,
-          state: 2,
+          state: 0, // sent to Iridium, not cell-delivered
           unixTime: Date.now() - 20 * 60 * 1000,
         })),
       ],
@@ -724,10 +758,10 @@ describe('determineCommandStatus', () => {
       new Map() // no timeout note — backend has not yet written one
     )
 
-    expect(result.status).toBe('sent')
+    expect(result.status).toBe('timeout')
     expect(result.sbdChunks).toEqual({
       delivered: 0,
-      inTransit: 3,
+      inTransit: 0, // frozen on timeout
       total: 3,
     })
   })
