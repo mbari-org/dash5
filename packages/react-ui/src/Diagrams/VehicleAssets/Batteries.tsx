@@ -24,6 +24,8 @@ export interface BatteryProps {
   svgCurrent?: VehicleProps['svgCurrent']
   colorDuration?: VehicleProps['colorDuration']
   isDocked?: boolean
+  showBadBattery?: boolean
+  textBadBattery?: string
   onClick?: (event: React.MouseEvent<SVGElement, MouseEvent>) => void
 }
 export const Batteries: React.FC<BatteryProps> = ({
@@ -48,6 +50,8 @@ export const Batteries: React.FC<BatteryProps> = ({
   textCurrent,
   svgCurrent,
   colorDuration,
+  showBadBattery,
+  textBadBattery,
   onClick: handleClick,
 }) => {
   const parsedCurrentBar = useMemo(() => {
@@ -126,6 +130,60 @@ export const Batteries: React.FC<BatteryProps> = ({
         cy="241.38"
         r="4"
       />
+      {showBadBattery && (
+        <g aria-label="bad battery overlay">
+          <title>Bad battery cell detected</title>
+          <circle
+            aria-label="bad battery spot"
+            className="st28"
+            cx="309"
+            cy="241.38"
+            r="2"
+          />
+          <circle
+            aria-label="bad battery spot"
+            className="st28"
+            cx="329"
+            cy="241.38"
+            r="2"
+          />
+          <circle
+            aria-label="bad battery spot"
+            className="st28"
+            cx="349"
+            cy="241.38"
+            r="2"
+          />
+          <circle
+            aria-label="bad battery spot"
+            className="st28"
+            cx="369"
+            cy="241.38"
+            r="2"
+          />
+          {textBadBattery ? (
+            <text
+              aria-label="bad battery count"
+              transform="matrix(1 0 0 1 276.5 245.5)"
+              className="stbadcount"
+              textLength="9"
+              lengthAdjust="spacingAndGlyphs"
+            >
+              {textBadBattery}
+            </text>
+          ) : null}
+          <text
+            aria-label="bad battery label"
+            transform="matrix(1 0 0 1 287.0 242)"
+            className="st12 st9 st13"
+          >
+            BAD
+          </text>
+          <text transform="matrix(1 0 0 1 287.0 249)" className="st12 st9 st13">
+            BATT
+          </text>
+        </g>
+      )}
       <rect
         aria-label="amps"
         x="336.28"

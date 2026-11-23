@@ -89,8 +89,12 @@ export const FullWidthVehicleDiagram: React.FC<
   colorBat7 = 'st3',
   colorBat8 = 'st3',
   colorArgo = 'st18',
+  textArgoAgo,
   ubatColor = 'st18',
+  textUbat,
   colorFlow = 'st18',
+  textFlow,
+  textFlowLabel,
   colorLeak = 'st18',
   textLeak,
   textLeakAgo,
@@ -131,6 +135,8 @@ export const FullWidthVehicleDiagram: React.FC<
   textBatteryDuration,
   textBatteryUnits,
   textCurrent,
+  showBadBattery,
+  textBadBattery,
   textNeedsComms,
   textMissionAgo,
   textVersion,
@@ -374,9 +380,14 @@ export const FullWidthVehicleDiagram: React.FC<
             textCurrent={textCurrent}
             svgCurrent={svgCurrent}
             colorDuration={colorDuration}
+            showBadBattery={showBadBattery}
+            textBadBattery={textBadBattery}
           />
 
-          <ArgosBatteryIndicator colorArgo={colorArgo} />
+          <ArgosBatteryIndicator
+            colorArgo={colorArgo}
+            textArgoAgo={textArgoAgo}
+          />
 
           <MissionLabel
             textMission={textMission}
@@ -438,6 +449,7 @@ export const FullWidthVehicleDiagram: React.FC<
               White (st3) when docked, otherwise server-driven (pontus-specific). */}
           <circle
             name="UBAT"
+            aria-label="ubat"
             className={isDocked ? 'st3' : ubatColor}
             cx="544"
             cy="251"
@@ -445,11 +457,37 @@ export const FullWidthVehicleDiagram: React.FC<
           />
           <circle
             name="flow"
+            aria-label="flow"
             className={isDocked ? 'st3' : colorFlow}
             cx="544"
             cy="261"
             r="4"
           />
+          {textUbat && (
+            <text
+              aria-label="ubat label"
+              transform="matrix(1 0 0 1 551.3628 254.5)"
+              className="st9 st10"
+            >
+              {textUbat}
+            </text>
+          )}
+          {textFlowLabel && (
+            <text
+              aria-label="flow label"
+              transform="matrix(1 0 0 1 551.3628 264.5)"
+              className="st9 st10"
+            >
+              {textFlowLabel}
+            </text>
+          )}
+          <text
+            name="text_flowago"
+            transform="matrix(1 0 0 1 541.0 272.0)"
+            className="st12 st9 st13"
+          >
+            {textFlow}
+          </text>
 
           <CtdIndicator
             colorCtd={colorCtd}
@@ -561,4 +599,4 @@ export const FullWidthVehicleDiagram: React.FC<
   )
 }
 
-FullWidthVehicleDiagram.displayName = 'Diagrams.Vehicle'
+FullWidthVehicleDiagram.displayName = 'Diagrams.FullWidthVehicleDiagram'

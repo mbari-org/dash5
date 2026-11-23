@@ -144,16 +144,19 @@ export const buildSbdChunkProgress = (
   return { total, delivered, inTransit }
 }
 
-/**
- * When UI overrides status to timeout (e.g. CommsSection timedOutMap), clear
- * in-transit so chunk boxes do not keep pulsing after the timeout icon shows.
- * Matches determineCommandStatus's withChunkGate behavior.
- */
-export const clearSbdInTransitOnTimeout = (
+/** Freeze in-transit chunks for terminal statuses (timeout, ack, completed, cancelled). */
+export const freezeSbdInTransitForTerminalStatus = (
   status: string | undefined,
   sbdChunks?: SbdChunkProgress
 ): SbdChunkProgress | undefined => {
   if (!sbdChunks) return undefined
-  if (status === 'timeout') return { ...sbdChunks, inTransit: 0 }
+  if (
+    status === 'timeout' ||
+    status === 'ack' ||
+    status === 'completed' ||
+    status === 'cancelled'
+  ) {
+    return { ...sbdChunks, inTransit: 0 }
+  }
   return sbdChunks
 }
