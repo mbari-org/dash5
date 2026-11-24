@@ -7,12 +7,6 @@ import { useMapCamera } from './MapCameraContext'
 
 type StationItem = GetStationsResponse
 
-interface FlyToRequest {
-  lat: number
-  lon: number
-  bounds?: [[number, number], [number, number]]
-}
-
 interface SelectedStation {
   name: string
   lat: number
@@ -29,10 +23,10 @@ interface StationsLayerSectionProps {
   stations: StationItem[] | undefined
   validStations: StationItem[]
   selectedStations: SelectedStation[]
-  expandedSections: { stations: boolean }
+  expandedSections: Record<string, boolean>
   starredSet: Set<string>
   isStationSelected: (name: string) => boolean
-  toggleExpanded: (section: 'stations') => void
+  toggleExpanded: (section: string) => void
   handleToggleSelectAllStations: () => void
   setSelectedStations: React.Dispatch<React.SetStateAction<SelectedStation[]>>
 }

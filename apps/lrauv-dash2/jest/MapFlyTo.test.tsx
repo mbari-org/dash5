@@ -74,7 +74,7 @@ describe('MapFlyTo', () => {
     render(<MapFlyTo />)
 
     expect(mockFitBounds).toHaveBeenCalledWith(bounds, {
-      padding: [40, 40],
+      padding: [20, 20],
       animate: true,
     })
     expect(mockFlyTo).not.toHaveBeenCalled()

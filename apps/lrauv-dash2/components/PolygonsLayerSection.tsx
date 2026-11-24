@@ -24,9 +24,9 @@ interface PolygonsLayerSectionProps {
   filteredPolygons: PolygonItem[]
   polygons: PolygonItem[] | undefined
   selectedPolygons: string[]
-  expandedSections: { polygons: boolean }
+  expandedSections: Record<string, boolean>
   polygonBoundsMap: Map<string, PolygonBounds | null>
-  toggleExpanded: (section: 'polygons') => void
+  toggleExpanded: (section: string) => void
   setSelectedPolygons: (
     updater: string[] | ((prev: string[]) => string[])
   ) => void
