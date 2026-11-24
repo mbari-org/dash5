@@ -187,3 +187,42 @@ test('command confirmation Back returns to Schedule and does not dismiss', async
     screen.getByRole('button', { name: `Schedule ${props.vehicleName}` })
   ).toBeInTheDocument()
 })
+
+test('defaultCommand flow: advancing from Build through Schedule to Confirm', async () => {
+  // Regression test for "Use for new command" — the modal starts at step 1 (Build)
+  // with a pre-filled command. The old gate checked step === 1 only, so clicking
+  // Next on the Schedule step (step 2) silently did nothing.
+  const user = userEvent.setup()
+  var scheduledText = ''
+  render(
+    <CommandModalView
+      {...props}
+      selectedId={undefined}
+      currentStepIndex={1}
+      defaultCommand="failComponent"
+      onSchedule={(args) => {
+        scheduledText = args.commandText
+      }}
+    />
+  )
+
+  // Should start at Build step with command pre-filled in freeform textarea
+  const textarea = screen.getByRole('textbox')
+  expect(textarea).toBeInTheDocument()
+  expect(textarea).toHaveValue('failComponent')
+
+  // Advance from Build (step 1) to Schedule (step 2)
+  await user.click(screen.getByText(/next/i).closest('button') as Element)
+  expect(screen.getByText(/failComponent/i)).toBeInTheDocument()
+  expect(screen.getByText(/Brizo/i, { selector: 'span' })).toBeInTheDocument()
+
+  // Advance from Schedule (step 2) to ConfirmVehicleDialog (step 3)
+  await user.click(
+    screen.getByText(/Schedule Brizo/i).closest('button') as Element
+  )
+  expect(screen.getByText(/Brizo should do failComponent/i)).toBeInTheDocument()
+
+  // Confirm and verify the command was sent
+  await user.click(screen.getByText(/confirm/i).closest('button') as Element)
+  expect(scheduledText).toBe('failComponent')
+})
