@@ -8,6 +8,7 @@ export interface CreateCommandParams {
   commandNote: string
   runCommand?: string
   schedDate: string
+  schedId?: string
   via?: string
   timeout?: number
   destinationAddress?: string

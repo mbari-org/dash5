@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import { ParameterProps } from '../../../Tables/ParameterTable'
 import { WaypointProps } from '../../../Tables/WaypointTable'
 
@@ -8,10 +8,11 @@ const steps = [
   'Parameters',
   'Safety & Comms',
   'Review',
-  'Schedule',
-  'Confirm',
-  'Send Command',
+  'Confirm & Send',
 ]
+
+/** Step index for Confirm & Send — used by Schedule "Send again" (#799). */
+export const MISSION_MODAL_CONFIRM_SEND_STEP = steps.indexOf('Confirm & Send')
 
 export interface UseMissionModalStepsProps {
   initialIndex: number

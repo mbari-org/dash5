@@ -15,6 +15,8 @@ export interface InputProps {
   onKeyUp?: React.KeyboardEventHandler<HTMLInputElement>
   onKeyDown?: React.KeyboardEventHandler<HTMLInputElement>
   type?: string
+  min?: string | number
+  max?: string | number
   /** Controls mobile keyboard auto-capitalisation. Defaults to "none" to
    *  prevent browsers from capitalising the first character of email/password
    *  fields. Pass "words" or "sentences" for name fields where capitalisation
