@@ -121,6 +121,118 @@ const makeClient = () =>
 // ── Tests ─────────────────────────────────────────────────────────────────────
 
 describe('useDepthSparkline', () => {
+  it('activates the fallback query when the primary depth endpoint returns 404', async () => {
+    // Fallback data: surface point followed by a dive
+    const fallbackTimes = [
+      (NOW_MIN - 20) * 60000, // surface
+      (NOW_MIN - 15) * 60000,
+      (NOW_MIN - 10) * 60000,
+    ]
+    const fallbackValues = [2, 30, 60]
+
+    server.use(
+      rest.get('/data/depth', (req, res, ctx) => {
+        // Primary (with `from` param) → 404; fallback (no `from`) → 200
+        if (req.url.searchParams.has('from')) {
+          return res(ctx.status(404))
+        }
+        return res(
+          ctx.status(200),
+          ctx.json({ times: fallbackTimes, values: fallbackValues })
+        )
+      })
+    )
+
+    render(
+      <MockProviders queryClient={makeClient()}>
+        <SparklineConsumer vehicle="brizo" />
+      </MockProviders>
+    )
+
+    // Fallback trims to current dive (from last surface point at index 0).
+    // Last point is 10 min old → padding adds 3 more → 3 data + 3 pad = 6.
+    await waitFor(() =>
+      expect(screen.getByTestId('depthLen')).not.toHaveTextContent('0')
+    )
+    expect(screen.getByTestId('depthLen')).toHaveTextContent('6')
+    expect(screen.getByTestId('padded')).toHaveTextContent('true')
+  })
+
+  it('activates the fallback query when the primary returns an empty dataset', async () => {
+    const fallbackTimes = [
+      (NOW_MIN - 20) * 60000, // surface
+      (NOW_MIN - 15) * 60000,
+      (NOW_MIN - 10) * 60000,
+    ]
+    const fallbackValues = [2, 30, 60]
+
+    server.use(
+      rest.get('/data/depth', (req, res, ctx) => {
+        // Primary (with `from` param) → 200 but empty; fallback (no `from`) → 200 with data
+        if (req.url.searchParams.has('from')) {
+          return res(ctx.status(200), ctx.json({ times: [], values: [] }))
+        }
+        return res(
+          ctx.status(200),
+          ctx.json({ times: fallbackTimes, values: fallbackValues })
+        )
+      })
+    )
+
+    render(
+      <MockProviders queryClient={makeClient()}>
+        <SparklineConsumer vehicle="brizo" />
+      </MockProviders>
+    )
+
+    // Same result as the 404 path — fallback fires and renders trimmed + padded data.
+    await waitFor(() =>
+      expect(screen.getByTestId('depthLen')).not.toHaveTextContent('0')
+    )
+    expect(screen.getByTestId('depthLen')).toHaveTextContent('6')
+    expect(screen.getByTestId('padded')).toHaveTextContent('true')
+  })
+
+  it('trims fallback data to the current dive (after last surface point)', async () => {
+    // Two dives: older dive (deep), surface, current dive (shallow)
+    const fallbackTimes = [
+      (NOW_MIN - 600) * 60000, // prior dive
+      (NOW_MIN - 500) * 60000, // prior dive
+      (NOW_MIN - 400) * 60000, // surface between dives
+      (NOW_MIN - 300) * 60000, // current dive start
+      (NOW_MIN - 200) * 60000, // current dive mid
+      (NOW_MIN - 100) * 60000, // current dive deep
+    ]
+    const fallbackValues = [120, 150, 2, 10, 30, 40]
+
+    server.use(
+      rest.get('/data/depth', (req, res, ctx) => {
+        if (req.url.searchParams.has('from')) {
+          return res(ctx.status(404))
+        }
+        return res(
+          ctx.status(200),
+          ctx.json({ times: fallbackTimes, values: fallbackValues })
+        )
+      })
+    )
+
+    render(
+      <MockProviders queryClient={makeClient()}>
+        <SparklineConsumer vehicle="brizo" />
+      </MockProviders>
+    )
+
+    // Only the 4 points from the last surface onward (indices 2–5) should appear
+    // (plus padding since last point is >4 min old → +3 pad points = 7 total).
+    await waitFor(() =>
+      expect(screen.getByTestId('depthLen')).not.toHaveTextContent('0')
+    )
+    // 4 current-dive points + 3 pad points
+    expect(screen.getByTestId('depthLen')).toHaveTextContent('7')
+    expect(screen.getByTestId('padded')).toHaveTextContent('true')
+  })
+
   it('returns depth times clamped to the 8-hour window', async () => {
     render(
       <MockProviders queryClient={makeClient()}>

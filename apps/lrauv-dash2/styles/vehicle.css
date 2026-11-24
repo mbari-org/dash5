@@ -69,6 +69,14 @@
     font-family: HelveticaNeue-Medium, Helvetica, Arial, sans-serif;; 
   }
 
+	/* Condensed 8px so the stick count fits inside the hull next to BAD */
+	.stbadcount {
+    font-family: HelveticaNeue-Medium, 'Helvetica Neue Condensed', 'Arial Narrow', Helvetica, Arial, sans-serif;
+    font-size: 8px;
+    font-weight: 700;
+    fill: #B4372D;
+  }
+
 	.st15 {
     font-size: 11px;
   }
@@ -216,5 +224,12 @@
     fill-opacity: 0.667;
     stroke: #AAAAAA;
     stroke-opacity: 0.667;
+    stroke-width: 4.5;
+  }
+
+  /* Dock mooring pole — Dash4 LRAUV_svg.py .stbuoyline. JSON sends dock_line: "stbuoyline". */
+  .stbuoyline {
+    fill: none;
+    stroke: #6D6E6E;
     stroke-width: 4.5;
   }

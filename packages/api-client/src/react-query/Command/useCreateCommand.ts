@@ -1,6 +1,7 @@
 import { useMutation, useQueryClient } from 'react-query'
 import { CreateCommandParams, createCommand, RequestConfig } from '../../axios'
 import { useTethysApiContext } from '../TethysApiProvider'
+import { COMMAND_QUEUE_QUERY_KEY } from './useCommandQueue'
 
 export const useCreateCommand = (config?: RequestConfig) => {
   const { axiosInstance, token } = useTethysApiContext()
@@ -22,6 +23,7 @@ export const useCreateCommand = (config?: RequestConfig) => {
           'deployments',
           'commandStatus',
         ])
+        queryClient.invalidateQueries(COMMAND_QUEUE_QUERY_KEY)
       },
     }
   )

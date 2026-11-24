@@ -4,7 +4,7 @@ import {
   useCommsEvents,
   useEvents,
   timeoutExpiredRegEx,
-  clearSbdInTransitOnTimeout,
+  freezeSbdInTransitForTerminalStatus,
 } from '@mbari/api-client'
 import {
   AccordionCells,
@@ -42,10 +42,7 @@ const CommsSection: React.FC<CommsSectionProps> = ({
     setDeploymentLogsOnly((prev) => !prev)
   }
 
-  // Internal full-history timeout-notes query — covers all entry points
-  // (CommsModal, VehicleAccordion inline) without requiring callers to pass
-  // timedOutEventIds. Builds a map of eventId → timeout isoTime so the cell
-  // can display the correct timestamp when overriding a stale queued/sent status.
+  // Full-history timeout-notes query — builds eventId → isoTime map for timestamp-accurate override.
   const timeoutNotesResponse = useEvents(
     {
       vehicles: [vehicleName],
@@ -55,9 +52,7 @@ const CommsSection: React.FC<CommsSectionProps> = ({
     },
     {
       enabled: !!vehicleName,
-      // from: 1 triggers recursive backfill on every refetch. Historical timeout
-      // notes only accumulate — fetch once per session and rely on the client-side
-      // Date.now() inference in determineCommandStatus for new timeouts.
+      // from: 1 avoids recursive backfill — timeout notes only accumulate.
       staleTime: Infinity,
     }
   )
@@ -89,6 +84,7 @@ const CommsSection: React.FC<CommsSectionProps> = ({
   )
 
   const deploymentResponse = useCommsEvents(deploymentParams)
+  const { dispatchedEventIds } = deploymentResponse
 
   const allLogsParams = useMemo(
     () => ({
@@ -106,6 +102,7 @@ const CommsSection: React.FC<CommsSectionProps> = ({
     data = [],
     isLoading,
     isFetching,
+    isFetchingMore,
     hasNextPage,
     refetch,
     fetchMore,
@@ -123,21 +120,27 @@ const CommsSection: React.FC<CommsSectionProps> = ({
       return (
         <LoadMoreButton
           onClick={handleLoadMore}
-          isLoading={isFetching}
+          isLoading={isFetchingMore}
+          disabled={
+            !isFetchingMore && (isFetching || (isLoading && dataCount > 0))
+          }
           label="Load more logs"
         />
       )
     }
 
     const item = data[index]
-    // Override status when the internal timeout-notes query found a timeout note
-    // that useCommsEvents pagination didn't reach.
+    // Override when timeout note is outside pagination window; skip when dispatched.
+    const isDispatched =
+      item?.eventId !== undefined &&
+      dispatchedEventIds.get(item.eventId)?.dispatched === true
     const timeoutIsoTime =
-      item?.eventId !== undefined ? timedOutMap.get(item.eventId) : undefined
+      item?.eventId !== undefined && !isDispatched
+        ? timedOutMap.get(item.eventId)
+        : undefined
     const resolvedStatus =
       timeoutIsoTime !== undefined ? 'timeout' : item?.status
-    // Use the timeout note's isoTime for the cell timestamp when available;
-    // fall back to the item's commsIsoTime (sent/queued time) otherwise.
+    // Use timeout note isoTime when available; fall back to commsIsoTime.
     const displayIsoTime = timeoutIsoTime || item?.commsIsoTime || ''
     const commandType = item?.eventType === 'run' ? 'mission' : 'command'
     const today = DateTime.fromISO(displayIsoTime).hasSame(
@@ -162,7 +165,10 @@ const CommsSection: React.FC<CommsSectionProps> = ({
         timeout={item?.timeout}
         day={day}
         time={time}
-        sbdChunks={clearSbdInTransitOnTimeout(resolvedStatus, item?.sbdChunks)}
+        sbdChunks={freezeSbdInTransitForTerminalStatus(
+          resolvedStatus,
+          item?.sbdChunks
+        )}
       />
     ) : (
       <span />
@@ -186,7 +192,7 @@ const CommsSection: React.FC<CommsSectionProps> = ({
       <AccordionCells
         cellAtIndex={cellAtIndex}
         count={totalCount}
-        loading={isLoading || isFetching}
+        loading={isLoading && dataCount === 0}
       />
     </>
   )

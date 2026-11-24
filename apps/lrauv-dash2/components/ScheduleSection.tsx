@@ -28,7 +28,7 @@ import {
   useDeleteCommandQueue,
   useCreateNote,
   timeoutExpiredRegEx,
-  clearSbdInTransitOnTimeout,
+  freezeSbdInTransitForTerminalStatus,
   SbdChunkProgress,
   useTethysApiContext,
   getScript,
@@ -263,6 +263,7 @@ export const ScheduleSection: React.FC<ScheduleSectionProps> = ({
     vehicles: [vehicleName],
     from: commsEventsFrom,
   })
+  const { dispatchedEventIds } = commsEventsResponse
 
   // Poll comms events every 30 s (matches mission-started poll rate) so that
   // Sent → Ack → Timeout transitions appear on schedule rows without a page refresh.
@@ -1167,9 +1168,13 @@ export const ScheduleSection: React.FC<ScheduleSectionProps> = ({
         // Dispatched one-shots — use comms lookup to upgrade to ack/timeout.
         const commsStatus = commsLookup.get(mission.event.eventId)
         if (commsStatus === 'ack') return 'ack'
+        const isDispatched =
+          mission.event.eventId != null &&
+          dispatchedEventIds.get(mission.event.eventId)?.dispatched === true
         if (
           commsStatus === 'timeout' ||
-          (mission.event.eventId != null &&
+          (!isDispatched &&
+            mission.event.eventId != null &&
             timedOutEventIds.has(mission.event.eventId))
         )
           return 'timeout'
@@ -1177,11 +1182,16 @@ export const ScheduleSection: React.FC<ScheduleSectionProps> = ({
       }
       // A timeout note is ground truth versus pending/completed/etc., but not
       // versus an operator cancel (handled above). timedOutEventIds covers
-      // full history; commsLookup covers the current window.
+      // full history; commsLookup covers the current window. Skip the
+      // timedOutEventIds override when the backend queue confirms dispatched.
       const commsStatusForTimeout = commsLookup.get(mission.event.eventId)
+      const isDispatchedForTimeout =
+        mission.event.eventId != null &&
+        dispatchedEventIds.get(mission.event.eventId)?.dispatched === true
       if (
         commsStatusForTimeout === 'timeout' ||
-        (mission.event.eventId != null &&
+        (!isDispatchedForTimeout &&
+          mission.event.eventId != null &&
           timedOutEventIds.has(mission.event.eventId))
       )
         return 'timeout'
@@ -1239,7 +1249,7 @@ export const ScheduleSection: React.FC<ScheduleSectionProps> = ({
         statusTooltip={
           cellStatus === 'ack' ? `Received by ${vehicleName}` : undefined
         }
-        sbdChunks={clearSbdInTransitOnTimeout(
+        sbdChunks={freezeSbdInTransitForTerminalStatus(
           cellStatus,
           mission.event.eventId != null
             ? commsSbdChunksLookup.get(mission.event.eventId)
@@ -1401,7 +1411,7 @@ export const ScheduleSection: React.FC<ScheduleSectionProps> = ({
                 isLoadRunMission,
                 commsStatus: commsLookup.get(mission.event.eventId),
                 ...commsMsgIdLookup.get(mission.event.eventId),
-                sbdChunks: clearSbdInTransitOnTimeout(
+                sbdChunks: freezeSbdInTransitForTerminalStatus(
                   cellStatus,
                   mission.event.eventId != null
                     ? commsSbdChunksLookup.get(mission.event.eventId)

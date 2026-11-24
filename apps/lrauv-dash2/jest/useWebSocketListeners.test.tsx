@@ -1,8 +1,8 @@
 import '@testing-library/jest-dom'
 import React from 'react'
-import { render } from '@testing-library/react'
+import { render, act } from '@testing-library/react'
 import { QueryClient, QueryClientProvider } from 'react-query'
-import { TethysApiContext } from '@mbari/api-client'
+import { TethysApiContext, COMMAND_QUEUE_QUERY_KEY } from '@mbari/api-client'
 import { useTethysSubscription } from '../lib/useWebSocketListeners'
 
 // Mock WebSocket globally
@@ -117,5 +117,51 @@ describe('useTethysSubscription', () => {
     render(<Probe />, { wrapper })
 
     expect(MockWebSocket.instances).toHaveLength(0)
+  })
+
+  test('invalidates command queue queries on ResourceUpdated commandQueue', () => {
+    const queryClient = new QueryClient()
+    // Seed a cached entry so we can observe it being invalidated.
+    const queueKey = [...COMMAND_QUEUE_QUERY_KEY, 'sim']
+    queryClient.setQueryData(queueKey, { sim: [] })
+
+    const Wrapper = ({ children }: { children: React.ReactNode }) => (
+      <QueryClientProvider client={queryClient}>
+        <TethysApiContext.Provider
+          value={
+            {
+              token: 'test-token-123',
+              profile: {
+                email: 'user@mbari.org',
+                firstName: 'T',
+                lastName: 'U',
+              },
+              axiosInstance: {} as any,
+            } as any
+          }
+        >
+          {children}
+        </TethysApiContext.Provider>
+      </QueryClientProvider>
+    )
+    Wrapper.displayName = 'TestWrapper'
+
+    render(<Probe />, { wrapper: Wrapper })
+    const ws = MockWebSocket.instances[0]
+    ws.onopen?.()
+
+    act(() => {
+      ws.onmessage?.({
+        data: JSON.stringify({
+          eventName: 'ResourceUpdated',
+          resource: 'commandQueue',
+          key: 'sim',
+        }),
+      } as MessageEvent)
+    })
+
+    // The cached entry should now be stale (invalidated).
+    const state = queryClient.getQueryState(queueKey)
+    expect(state?.isInvalidated).toBe(true)
   })
 })

@@ -60,6 +60,9 @@ const server = setupServer(
   }),
   rest.get('/events', (_req, res, ctx) => {
     return res(ctx.status(200), ctx.json({ result: [] }))
+  }),
+  rest.get('/commands/queue', (_req, res, ctx) => {
+    return res(ctx.status(200), ctx.json({ result: {} }))
   })
 )
 

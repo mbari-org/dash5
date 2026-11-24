@@ -287,10 +287,10 @@ describe('determineCommandStatus', () => {
     expect(result.commsIsoTime).toBe(baseTimeoutEvent.isoTime)
   })
 
-  it('should return timeout for cellsat command when sbdSend exists but its timeout has elapsed', () => {
+  it('should timeout client-side for cellsat command when sbdSend state:0 elapsed with no backend timeout note', () => {
     // baseSbdSend is from 2023 with a 60-minute timeout — long since expired.
-    // Client-side inference should return 'timeout' instead of 'sent'.
-    // refId on the map entry is the command's eventId (how useCommsEvents builds the map).
+    // state:0 means cell dispatch did not succeed, so cellDispatchSucceeded is
+    // false and client-side timeout inference still fires.
     const expiredCellsatSend: GetEventsResponse = {
       ...baseSbdSend,
       refId: baseCellsatCommand.eventId,
@@ -335,6 +335,66 @@ describe('determineCommandStatus', () => {
     expect(result.via).toBe('cellsat')
     expect(result.timeout).toBe('60')
     expect(result.commsIsoTime).toBe(recentSbdSend.isoTime)
+  })
+
+  it('should return sent (not queued) for cellsat command with no sbdSend when backend queue confirms dispatched', () => {
+    // No sbdSend at all — command never made it to the events feed yet.
+    // dispatched: true means it already left shore; show 'sent' not 'queued'.
+    const result = determineCommandStatus(
+      baseCellsatCommand,
+      new Map(),
+      new Map(),
+      new Map(),
+      new Map(),
+      { dispatched: true }
+    )
+
+    expect(result.status).toBe('sent')
+    expect(result.via).toBe('cellsat')
+  })
+
+  it('should return sent (not timeout) for cellsat command with no sbdSend when backend queue confirms dispatched and timeout has elapsed', () => {
+    // Timeout window has elapsed but dispatched: true — suppress client timeout.
+    // Status falls through to 'sent' (dispatched path) rather than 'timeout'.
+    const expiredCommand = {
+      ...baseCellsatCommand,
+      unixTime: Date.now() - 2 * 60 * 60 * 1000, // 2 hours ago
+    }
+    const result = determineCommandStatus(
+      expiredCommand,
+      new Map(),
+      new Map(),
+      new Map(),
+      new Map(),
+      { dispatched: true }
+    )
+
+    expect(result.status).toBe('sent')
+    expect(result.via).toBe('cellsat')
+  })
+
+  it('should return sent (not timeout) for cellsat command when backend queue confirms dispatched', () => {
+    // sbdSend is from 2023 — well past the 60-minute timeout window.
+    // Without dispatched:true this would be 'timeout'. With it, skip inference → 'sent'.
+    const expiredCellsatSend: GetEventsResponse = {
+      ...baseSbdSend,
+      refId: baseCellsatCommand.eventId,
+    }
+    const sbdSendMap = new Map<string, GetEventsResponse>([
+      [String(baseCellsatCommand.eventId), expiredCellsatSend],
+    ])
+
+    const result = determineCommandStatus(
+      baseCellsatCommand,
+      sbdSendMap,
+      new Map(),
+      new Map(),
+      new Map(),
+      { dispatched: true }
+    )
+
+    expect(result.status).toBe('sent')
+    expect(result.via).toBe('cellsat')
   })
 
   it('should return timeout for a queued cell command whose timeout window has elapsed (no backend note needed)', () => {
@@ -629,8 +689,44 @@ describe('determineCommandStatus', () => {
     })
   })
 
-  // #797: client-side timeout (no note) must also stop orange flash.
-  it('should clear inTransit on client-side timeout without a timeout note', () => {
+  // #891: cellsat + state:2 (cell delivered) + past timeout + no backend note
+  // must stay 'sent', not timeout client-side. TethysDash is the authority on
+  // whether a cell-delivered command truly timed out.
+  it('should stay sent for cellsat with state:2 past timeout when no backend note exists', () => {
+    const expiredCellsatWithCellDelivery: GetEventsResponse = {
+      ...baseCellsatCommand,
+      unixTime: Date.now() - 20 * 60 * 1000, // well past 5min
+      note: 'command[via: cellsat, timeout:5min]',
+    }
+    const cellDeliveredSend: GetEventsResponse = {
+      ...cellSbdSend,
+      eventId: 91,
+      refId: expiredCellsatWithCellDelivery.eventId,
+      state: 2, // cell dispatch succeeded
+      unixTime: Date.now() - 20 * 60 * 1000,
+      isoTime: new Date(Date.now() - 20 * 60 * 1000).toISOString(),
+    }
+    const sbdSendMap = new Map<string, GetEventsResponse>([
+      [String(expiredCellsatWithCellDelivery.eventId), cellDeliveredSend],
+    ])
+
+    const result = determineCommandStatus(
+      expiredCellsatWithCellDelivery,
+      sbdSendMap,
+      new Map(),
+      new Map(),
+      new Map() // no backend timeout note
+    )
+
+    expect(result.status).toBe('sent')
+    expect(result.via).toBe('cellsat')
+    expect(result.commsIsoTime).toBe(cellDeliveredSend.isoTime)
+  })
+
+  // #797: client-side timeout (no note, state:0 send) must still stop orange flash.
+  // This covers the case where cell dispatch did NOT succeed (state:0 — only sent
+  // to Iridium, not cell-delivered) and the timeout window has passed.
+  it('should timeout client-side for cellsat with state:0 send past timeout when no backend note', () => {
     const multiPartCellsat: GetEventsResponse = {
       ...baseCellsatCommand,
       unixTime: Date.now() - 20 * 60 * 1000, // well past 5min
@@ -645,10 +741,10 @@ describe('determineCommandStatus', () => {
       [
         String(multiPartCellsat.eventId),
         [1, 2, 3].map((n) => ({
-          ...cellSbdSend,
+          ...baseSbdSend,
           eventId: 90 + n,
           refId: multiPartCellsat.eventId,
-          state: 2,
+          state: 0, // sent to Iridium, not cell-delivered
           unixTime: Date.now() - 20 * 60 * 1000,
         })),
       ],
@@ -659,13 +755,13 @@ describe('determineCommandStatus', () => {
       sbdSendMap,
       new Map(),
       new Map(),
-      new Map() // no timeout note
+      new Map() // no timeout note — backend has not yet written one
     )
 
     expect(result.status).toBe('timeout')
     expect(result.sbdChunks).toEqual({
       delivered: 0,
-      inTransit: 0,
+      inTransit: 0, // frozen on timeout
       total: 3,
     })
   })

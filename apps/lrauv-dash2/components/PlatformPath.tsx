@@ -4,18 +4,19 @@ import L from 'leaflet'
 import { usePlatformPositions } from '@mbari/api-client'
 import { createLogger } from '@mbari/utils'
 import { useTick } from '../lib/useTick'
-import { PLATFORM_PANE } from '../lib/constants'
+import { PLATFORM_PANE, PLATFORM_LOOKBACK_DAYS } from '../lib/constants'
 
 const logger = createLogger('PlatformPath')
 
-/** Exported for testing — true only for genuine network timeout errors. */
-export const isTimeoutError = (error: unknown): boolean =>
-  error instanceof Error && !!error.message?.toLowerCase().includes('timeout')
-
-// How far back to search for position fixes when no explicit window is given.
-// 365 days ensures infrequently-updated fixed platforms (e.g. CA offshore
-// structures that may not report for months) are still found.
-const DEFAULT_LOOKBACK_DAYS = 365
+/** Exported for testing — true for Axios timeout errors (message or ECONNABORTED code). */
+export const isTimeoutError = (error: unknown): boolean => {
+  if (!(error instanceof Error)) return false
+  const axiosCode = (error as { code?: string }).code
+  return (
+    !!error.message?.toLowerCase().includes('timeout') ||
+    axiosCode === 'ECONNABORTED'
+  )
+}
 
 export interface PlatformPathProps {
   platformId: string
@@ -59,7 +60,7 @@ export const PlatformPath: React.FC<PlatformPathProps> = ({
       return { startDate, endDate }
     }
     const end = nowMs
-    const start = end - DEFAULT_LOOKBACK_DAYS * 24 * 60 * 60 * 1000
+    const start = end - PLATFORM_LOOKBACK_DAYS * 24 * 60 * 60 * 1000
     return {
       startDate: new Date(start).toISOString(),
       endDate: new Date(end).toISOString(),
@@ -138,11 +139,11 @@ export const PlatformPath: React.FC<PlatformPathProps> = ({
     })
   }, [iconUrl, iconFailed, displayName, handleIconError])
 
-  if (isLoading) {
-    return null
-  }
-
-  if (error) {
+  // Log errors once when they change rather than on every re-render. When
+  // keepPreviousData is in effect the component keeps rendering (stale track
+  // stays visible), so logging inline would fire on every parent update.
+  useEffect(() => {
+    if (!error) return
     if (isTimeoutError(error)) {
       // Timeout errors are expected for slow or offline external platforms
       // and are not actionable by the developer — log at debug to reduce noise.
@@ -154,6 +155,16 @@ export const PlatformPath: React.FC<PlatformPathProps> = ({
       // Auth/config/5xx and other unexpected failures should remain visible.
       logger.warn(`Failed to load positions for platform ${platformId}:`, error)
     }
+  }, [error, platformId])
+
+  if (isLoading) {
+    return null
+  }
+
+  // If keepPreviousData is in effect, positionData still holds the last
+  // successful fetch even when error is set — continue rendering the stale
+  // track rather than hiding it. Only bail out if there is nothing to show (#837).
+  if (error && !positionData?.positions?.length) {
     return null
   }
 
