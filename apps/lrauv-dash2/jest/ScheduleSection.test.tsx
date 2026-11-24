@@ -118,6 +118,9 @@ const server = setupServer(
       ctx.status(200),
       ctx.json({ result: { eventTypes: 'command,run', commandStatuses: [] } })
     )
+  }),
+  rest.get('/commands/queue', (_req, res, ctx) => {
+    return res(ctx.status(200), ctx.json({ result: {} }))
   })
 )
 

@@ -287,10 +287,10 @@ describe('determineCommandStatus', () => {
     expect(result.commsIsoTime).toBe(baseTimeoutEvent.isoTime)
   })
 
-  it('should return timeout for cellsat command when sbdSend exists but its timeout has elapsed', () => {
+  it('should timeout client-side for cellsat command when sbdSend state:0 elapsed with no backend timeout note', () => {
     // baseSbdSend is from 2023 with a 60-minute timeout — long since expired.
-    // Client-side inference should return 'timeout' instead of 'sent'.
-    // refId on the map entry is the command's eventId (how useCommsEvents builds the map).
+    // state:0 means cell dispatch did not succeed, so cellDispatchSucceeded is
+    // false and client-side timeout inference still fires.
     const expiredCellsatSend: GetEventsResponse = {
       ...baseSbdSend,
       refId: baseCellsatCommand.eventId,
@@ -335,6 +335,66 @@ describe('determineCommandStatus', () => {
     expect(result.via).toBe('cellsat')
     expect(result.timeout).toBe('60')
     expect(result.commsIsoTime).toBe(recentSbdSend.isoTime)
+  })
+
+  it('should return sent (not queued) for cellsat command with no sbdSend when backend queue confirms dispatched', () => {
+    // No sbdSend at all — command never made it to the events feed yet.
+    // dispatched: true means it already left shore; show 'sent' not 'queued'.
+    const result = determineCommandStatus(
+      baseCellsatCommand,
+      new Map(),
+      new Map(),
+      new Map(),
+      new Map(),
+      { dispatched: true }
+    )
+
+    expect(result.status).toBe('sent')
+    expect(result.via).toBe('cellsat')
+  })
+
+  it('should return sent (not timeout) for cellsat command with no sbdSend when backend queue confirms dispatched and timeout has elapsed', () => {
+    // Timeout window has elapsed but dispatched: true — suppress client timeout.
+    // Status falls through to 'sent' (dispatched path) rather than 'timeout'.
+    const expiredCommand = {
+      ...baseCellsatCommand,
+      unixTime: Date.now() - 2 * 60 * 60 * 1000, // 2 hours ago
+    }
+    const result = determineCommandStatus(
+      expiredCommand,
+      new Map(),
+      new Map(),
+      new Map(),
+      new Map(),
+      { dispatched: true }
+    )
+
+    expect(result.status).toBe('sent')
+    expect(result.via).toBe('cellsat')
+  })
+
+  it('should return sent (not timeout) for cellsat command when backend queue confirms dispatched', () => {
+    // sbdSend is from 2023 — well past the 60-minute timeout window.
+    // Without dispatched:true this would be 'timeout'. With it, skip inference → 'sent'.
+    const expiredCellsatSend: GetEventsResponse = {
+      ...baseSbdSend,
+      refId: baseCellsatCommand.eventId,
+    }
+    const sbdSendMap = new Map<string, GetEventsResponse>([
+      [String(baseCellsatCommand.eventId), expiredCellsatSend],
+    ])
+
+    const result = determineCommandStatus(
+      baseCellsatCommand,
+      sbdSendMap,
+      new Map(),
+      new Map(),
+      new Map(),
+      { dispatched: true }
+    )
+
+    expect(result.status).toBe('sent')
+    expect(result.via).toBe('cellsat')
   })
 
   it('should return timeout for a queued cell command whose timeout window has elapsed (no backend note needed)', () => {
@@ -695,13 +755,13 @@ describe('determineCommandStatus', () => {
       sbdSendMap,
       new Map(),
       new Map(),
-      new Map() // no timeout note
+      new Map() // no timeout note — backend has not yet written one
     )
 
     expect(result.status).toBe('timeout')
     expect(result.sbdChunks).toEqual({
       delivered: 0,
-      inTransit: 0,
+      inTransit: 0, // frozen on timeout
       total: 3,
     })
   })
