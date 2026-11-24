@@ -34,6 +34,10 @@ jest.mock('leaflet', () => ({ divIcon: jest.fn(() => ({})) }))
 
 const mockUsePlatformPositions = jest.fn()
 jest.mock('@mbari/api-client', () => ({
+  // Must match TRACKDB_POSITION_REFRESH_MS in usePlatformPositions.ts.
+  // jest.requireActual cannot load @mbari/api-client (requires React context),
+  // so the value is mirrored here — update both if the constant changes.
+  TRACKDB_POSITION_REFRESH_MS: 60_000,
   usePlatformPositions: (...args: unknown[]) =>
     mockUsePlatformPositions(...args),
 }))
@@ -44,7 +48,11 @@ jest.mock('@mbari/utils', () => ({
 
 jest.mock('../lib/useTick', () => ({ useTick: () => Date.now() }))
 
-import { PlatformPath, isTimeoutError } from '../components/PlatformPath'
+import {
+  PlatformPath,
+  isTimeoutError,
+  isTransientError,
+} from '../components/PlatformPath'
 
 beforeEach(() => mockUsePlatformPositions.mockReset())
 
@@ -84,6 +92,45 @@ describe('isTimeoutError', () => {
   })
 })
 
+describe('isTransientError', () => {
+  it('returns true for timeout errors', () => {
+    expect(isTransientError(new Error('timeout of 5000ms exceeded'))).toBe(true)
+  })
+
+  it('returns true for Axios network errors with no response', () => {
+    const networkError = Object.assign(new Error('Network Error'), {
+      isAxiosError: true,
+      response: undefined,
+      request: {},
+    })
+    expect(isTransientError(networkError)).toBe(true)
+  })
+
+  it('returns false for Axios setup failures where no request was sent', () => {
+    const setupError = Object.assign(new Error('Invalid URL'), {
+      isAxiosError: true,
+      response: undefined,
+    })
+    expect(isTransientError(setupError)).toBe(false)
+  })
+
+  it('returns false for HTTP errors with a response', () => {
+    const httpError = Object.assign(
+      new Error('Request failed with status code 401'),
+      {
+        isAxiosError: true,
+        response: { status: 401 },
+      }
+    )
+    expect(isTransientError(httpError)).toBe(false)
+  })
+
+  it('returns false for non-Error values', () => {
+    expect(isTransientError(null)).toBe(false)
+    expect(isTransientError('network error')).toBe(false)
+  })
+})
+
 // ─── Rendering behaviour ──────────────────────────────────────────────────────
 
 describe('PlatformPath rendering', () => {
@@ -97,11 +144,118 @@ describe('PlatformPath rendering', () => {
     expect(container).toBeEmptyDOMElement()
   })
 
+  it('keeps existing track visible during background refresh (keepPreviousData)', () => {
+    // Simulates a minute-tick key rotation: data is still present from the
+    // previous fetch while the new key is loading. React Query v3 with
+    // keepPreviousData uses isFetching: true / isLoading: false during a
+    // background refresh (isLoading is only true on the very first fetch).
+    mockUsePlatformPositions.mockReturnValue({
+      data: {
+        positions: [
+          { timeMs: 1000, lat: 36.0, lon: -122.0 },
+          { timeMs: 2000, lat: 36.1, lon: -122.1 },
+        ],
+      },
+      isLoading: false,
+      isFetching: true,
+      error: null,
+    })
+    const { getByTestId } = render(<PlatformPath platformId="abc" />)
+    expect(getByTestId('polyline')).toBeInTheDocument()
+  })
+
   it('renders nothing when an error occurs', () => {
     mockUsePlatformPositions.mockReturnValue({
       data: undefined,
       isLoading: false,
       error: new Error('timeout of 5000ms exceeded'),
+    })
+    const { container } = render(<PlatformPath platformId="abc" />)
+    expect(container).toBeEmptyDOMElement()
+  })
+
+  it('keeps existing track visible when a background poll times out', () => {
+    // Timeout is transient — keep last-known position visible rather than
+    // blanking the map (#857). When keepPreviousData is in effect and a
+    // background refetch fails, positionData holds the last successful payload
+    // alongside the error so the track stays rendered (#837).
+    mockUsePlatformPositions.mockReturnValue({
+      data: {
+        positions: [
+          { timeMs: 1000, lat: 36.0, lon: -122.0 },
+          { timeMs: 2000, lat: 36.1, lon: -122.1 },
+        ],
+      },
+      isLoading: false,
+      error: new Error('timeout of 5000ms exceeded'),
+    })
+    const { getByTestId } = render(<PlatformPath platformId="abc" />)
+    expect(getByTestId('polyline')).toBeInTheDocument()
+  })
+
+  it('keeps existing track visible when ODSS is unreachable (network error)', () => {
+    // No HTTP response means ODSS is down — treat as transient, keep last-known position.
+    const networkError = Object.assign(new Error('Network Error'), {
+      isAxiosError: true,
+      response: undefined,
+      request: {},
+    })
+    mockUsePlatformPositions.mockReturnValue({
+      data: {
+        positions: [
+          { timeMs: 1000, lat: 36.0, lon: -122.0 },
+          { timeMs: 2000, lat: 36.1, lon: -122.1 },
+        ],
+      },
+      isLoading: false,
+      error: networkError,
+    })
+    const { getByTestId } = render(<PlatformPath platformId="abc" />)
+    expect(getByTestId('polyline')).toBeInTheDocument()
+  })
+
+  it('hides the track on HTTP errors even when stale data exists', () => {
+    // Auth/5xx errors hide the track — server responded, not a connectivity issue.
+    const httpError = Object.assign(
+      new Error('Request failed with status code 401'),
+      {
+        isAxiosError: true,
+        response: { status: 401 },
+      }
+    )
+    mockUsePlatformPositions.mockReturnValue({
+      data: {
+        positions: [
+          { timeMs: 1000, lat: 36.0, lon: -122.0 },
+          { timeMs: 2000, lat: 36.1, lon: -122.1 },
+        ],
+      },
+      isLoading: false,
+      error: httpError,
+    })
+    const { container } = render(<PlatformPath platformId="abc" />)
+    expect(container).toBeEmptyDOMElement()
+  })
+
+  it('hides the track on 5xx errors even when stale data exists', () => {
+    // 5xx errors also hide the track — same as 401, the server responded so
+    // this is not a transient connectivity failure.
+    const serverError = Object.assign(
+      new Error('Request failed with status code 500'),
+      {
+        isAxiosError: true,
+        response: { status: 500 },
+      }
+    )
+    mockUsePlatformPositions.mockReturnValue({
+      data: {
+        positions: [
+          { timeMs: 1000, lat: 36.0, lon: -122.0 },
+          { timeMs: 2000, lat: 36.1, lon: -122.1 },
+        ],
+      },
+      isLoading: false,
+      error: serverError,
     })
     const { container } = render(<PlatformPath platformId="abc" />)
     expect(container).toBeEmptyDOMElement()
@@ -115,26 +269,6 @@ describe('PlatformPath rendering', () => {
     })
     const { container } = render(<PlatformPath platformId="abc" />)
     expect(container).toBeEmptyDOMElement()
-  })
-
-  it('still renders the track when error occurs but stale positions exist (keepPreviousData)', () => {
-    // Verifies that when keepPreviousData is in effect and a background refetch
-    // fails, the previously loaded track stays visible rather than disappearing
-    // (#837). positionData holds the last successful payload alongside the error.
-    mockUsePlatformPositions.mockReturnValue({
-      data: {
-        positions: [
-          { timeMs: 2000, lat: 36.1, lon: -122.1 },
-          { timeMs: 1000, lat: 36.0, lon: -122.0 },
-        ],
-      },
-      isLoading: false,
-      error: new Error('timeout of 15000ms exceeded'),
-    })
-    const { getByTestId } = render(
-      <PlatformPath platformId="abc" platformName="Test Platform" />
-    )
-    expect(getByTestId('polyline')).toBeInTheDocument()
   })
 
   it('renders a polyline when positions are available', () => {

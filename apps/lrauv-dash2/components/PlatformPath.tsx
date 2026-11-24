@@ -1,7 +1,10 @@
 import React, { useMemo, useState, useEffect, useCallback } from 'react'
 import { Marker, Polyline, Tooltip, CircleMarker } from 'react-leaflet'
 import L from 'leaflet'
-import { usePlatformPositions } from '@mbari/api-client'
+import {
+  usePlatformPositions,
+  TRACKDB_POSITION_REFRESH_MS,
+} from '@mbari/api-client'
 import { createLogger } from '@mbari/utils'
 import { useTick } from '../lib/useTick'
 import { PLATFORM_PANE, PLATFORM_LOOKBACK_DAYS } from '../lib/constants'
@@ -17,6 +20,15 @@ export const isTimeoutError = (error: unknown): boolean => {
     axiosCode === 'ECONNABORTED'
   )
 }
+
+/** True for transient connectivity failures: timeout or no HTTP response (ODSS unreachable).
+ * HTTP errors (401, 5xx) and Axios setup failures (no request sent) return false. */
+export const isTransientError = (error: unknown): boolean =>
+  isTimeoutError(error) ||
+  (error instanceof Error &&
+    (error as { isAxiosError?: unknown }).isAxiosError === true &&
+    (error as { response?: unknown }).response == null &&
+    !!(error as { request?: unknown }).request)
 
 export interface PlatformPathProps {
   platformId: string
@@ -39,7 +51,7 @@ export const PlatformPath: React.FC<PlatformPathProps> = ({
   startDate,
   endDate,
   limitPositions = 20,
-  refreshIntervalMs = 5 * 60_000,
+  refreshIntervalMs = TRACKDB_POSITION_REFRESH_MS,
 }) => {
   const [hovered, setHovered] = useState(false)
   const [currentPosHovered, setCurrentPosHovered] = useState(false)
@@ -139,32 +151,27 @@ export const PlatformPath: React.FC<PlatformPathProps> = ({
     })
   }, [iconUrl, iconFailed, displayName, handleIconError])
 
-  // Log errors once when they change rather than on every re-render. When
-  // keepPreviousData is in effect the component keeps rendering (stale track
-  // stays visible), so logging inline would fire on every parent update.
+  // Log once per error change (keepPreviousData keeps re-rendering; inline logging would repeat).
   useEffect(() => {
     if (!error) return
     if (isTimeoutError(error)) {
-      // Timeout errors are expected for slow or offline external platforms
-      // and are not actionable by the developer — log at debug to reduce noise.
       logger.debug(
         `Failed to load positions for platform ${platformId}:`,
         error
       )
     } else {
-      // Auth/config/5xx and other unexpected failures should remain visible.
       logger.warn(`Failed to load positions for platform ${platformId}:`, error)
     }
   }, [error, platformId])
 
-  if (isLoading) {
+  // Hide only on first load. Background refreshes keep the existing track visible (#857).
+  if (!positionData && isLoading) {
     return null
   }
 
-  // If keepPreviousData is in effect, positionData still holds the last
-  // successful fetch even when error is set — continue rendering the stale
-  // track rather than hiding it. Only bail out if there is nothing to show (#837).
-  if (error && !positionData?.positions?.length) {
+  // Keep stale positions for transient failures (timeout or no HTTP response).
+  // Auth/5xx errors hide the track regardless.
+  if (error && (!positionData || !isTransientError(error))) {
     return null
   }
 
