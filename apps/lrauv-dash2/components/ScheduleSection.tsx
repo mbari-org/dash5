@@ -211,6 +211,29 @@ const isOutsideSatelliteWindow = (
   missionStartedAt: number
 ): boolean => refTime < missionStartedAt - SATELLITE_DELAY_WINDOW_MS
 
+/** True when item is eligible to match the current run — ACK-confirmed or within
+ *  the satellite delay window. Returns false when currentStartedAt is unknown
+ *  to avoid binding prior-run commands. */
+const isInSatelliteWindowForCurrentRun = (
+  item: CommandStatusItem,
+  currentStartedAt: number | null | undefined,
+  ackedTimeMap: Map<number, number>
+): boolean => {
+  const ackTime = ackedTimeMap.get(item.event.eventId)
+  if (
+    ackTime != null &&
+    currentStartedAt != null &&
+    ackTime >= currentStartedAt
+  )
+    return true
+  if (currentStartedAt == null) return false
+  const refTime =
+    parseScheduledUnixTime(item.event.data, item.event.text) ??
+    item.event.unixTime ??
+    0
+  return !isOutsideSatelliteWindow(refTime, currentStartedAt)
+}
+
 export const ScheduleSection: React.FC<ScheduleSectionProps> = ({
   authenticated,
   currentDeploymentId,
@@ -567,17 +590,17 @@ export const ScheduleSection: React.FC<ScheduleSectionProps> = ({
         )
           return bestIdx
         // Skip prior-run commands outside the satellite delay window.
-        // Exception: enrichment already confirmed this command for the current run.
-        const itemReferenceTime = itemScheduledTime ?? item.event.unixTime ?? 0
+        // Uses the shared helper so ACK confirmation overrides the window check,
+        // matching the same eligibility logic used in inFlightPendingIdx / sourceEventIdx.
         const startedAtMatchesCurrent =
           item.startedAt != null &&
           item.startedAt === currentMissionEntry.startedAt
         if (!startedAtMatchesCurrent) {
           if (
-            currentMissionEntry.startedAt != null &&
-            isOutsideSatelliteWindow(
-              itemReferenceTime,
-              currentMissionEntry.startedAt
+            !isInSatelliteWindowForCurrentRun(
+              item,
+              currentMissionEntry.startedAt,
+              ackedTimeMap
             )
           )
             return bestIdx
@@ -598,27 +621,81 @@ export const ScheduleSection: React.FC<ScheduleSectionProps> = ({
         return (item.event.unixTime ?? 0) > bestSentTime ? idx : bestIdx
       }, -1)
 
+      // Check for a pending in-flight sat send for this mission within the window.
+      // Computed before the matchingMissionIndex check so it can override a stale
+      // TBD match (bug: TBD from an older send wins over a more recent pending send).
+      // Uses reduce (not findIndex) to pick the most recently sent pending row when
+      // multiple back-to-back sat resends are in the event list.
+      const inFlightPendingIdx = enriched.reduce((bestIdx, item, idx) => {
+        if (item.status !== 'pending') return bestIdx
+        const fromDataPath = missionPathFromEventData(item.event.data)
+        const fromTextPath = missionPathFromEventData(item.event.text)
+        if (
+          !missionKeysMatch(fromDataPath, currentMissionPath) &&
+          !missionKeysMatch(fromTextPath, currentMissionPath)
+        )
+          return bestIdx
+        if (
+          !isInSatelliteWindowForCurrentRun(
+            item,
+            currentMissionEntry.startedAt,
+            ackedTimeMap
+          )
+        )
+          return bestIdx
+        if (bestIdx === -1) return idx
+        return (item.event.unixTime ?? 0) >
+          (enriched[bestIdx].event.unixTime ?? 0)
+          ? idx
+          : bestIdx
+      }, -1)
+
       if (matchingMissionIndex >= 0) {
-        const matchingItem = enriched[matchingMissionIndex]
-        if (matchingItem.status !== 'running') {
-          enriched[matchingMissionIndex] = {
-            ...matchingItem,
+        const matchedItem = enriched[matchingMissionIndex]
+        // If the best confirmed match is TBD and a more recently sent pending
+        // in-flight sat send exists, promote the pending row instead to avoid
+        // showing both a TBD-promoted running row and the pending row together.
+        const preferPending =
+          inFlightPendingIdx >= 0 &&
+          matchedItem.status === 'TBD' &&
+          (enriched[inFlightPendingIdx].event.unixTime ?? 0) >
+            (matchedItem.event.unixTime ?? 0)
+        const promoteIdx = preferPending
+          ? inFlightPendingIdx
+          : matchingMissionIndex
+        const promoteItem = enriched[promoteIdx]
+        if (promoteItem.status !== 'running') {
+          enriched[promoteIdx] = {
+            ...promoteItem,
             status: 'running',
             endedAt: undefined,
             startedAt: currentMissionEntry.startedAt,
             missionId: currentMissionEntry.name,
           }
-        } else if (!matchingItem.startedAt) {
-          enriched[matchingMissionIndex] = {
-            ...matchingItem,
+        } else if (!promoteItem.startedAt) {
+          enriched[promoteIdx] = {
+            ...promoteItem,
             startedAt: currentMissionEntry.startedAt,
             missionId: currentMissionEntry.name,
           }
         }
-        demoteOtherRunningRows(matchingMissionIndex)
+        demoteOtherRunningRows(promoteIdx)
       } else {
+        if (inFlightPendingIdx >= 0) {
+          enriched[inFlightPendingIdx] = {
+            ...enriched[inFlightPendingIdx],
+            status: 'running',
+            endedAt: undefined,
+            startedAt: currentMissionEntry.startedAt,
+            missionId: currentMissionEntry.name,
+          }
+          demoteOtherRunningRows(inFlightPendingIdx)
+        }
         // Default rows are injected separately via the missionTimeline pass below.
-        if (!isDefaultMissionName(currentMissionEntry.name)) {
+        if (
+          inFlightPendingIdx < 0 &&
+          !isDefaultMissionName(currentMissionEntry.name)
+        ) {
           const currentRawEvent = missionStartedResponse.data?.[0]
           if (currentRawEvent) {
             // Filename ≠ missionId (e.g. tail_acoustic_contact.tl → follow_that_car):
@@ -637,27 +714,16 @@ export const ScheduleSection: React.FC<ScheduleSectionProps> = ({
               // Only TBD or pending — completed rows belong to a prior interval.
               if (item.status !== 'TBD' && item.status !== 'pending')
                 return bestIdx
-              // Accept if ACK confirms this command triggered the current run.
-              const itemAckTime = ackedTimeMap.get(item.event.eventId)
-              const ackConfirmedForCurrentRun =
-                itemAckTime != null &&
-                currentMissionEntry.startedAt != null &&
-                itemAckTime >= currentMissionEntry.startedAt
-              if (!ackConfirmedForCurrentRun) {
-                // No ACK — must be within the satellite delay window.
-                const refTime =
-                  parseScheduledUnixTime(item.event.data, item.event.text) ??
-                  item.event.unixTime ??
-                  0
-                if (
-                  currentMissionEntry.startedAt == null ||
-                  isOutsideSatelliteWindow(
-                    refTime,
-                    currentMissionEntry.startedAt
-                  )
+              // Accept if ACK confirms this command triggered the current run,
+              // or if it is within the satellite delay window.
+              if (
+                !isInSatelliteWindowForCurrentRun(
+                  item,
+                  currentMissionEntry.startedAt,
+                  ackedTimeMap
                 )
-                  return bestIdx
-              }
+              )
+                return bestIdx
               // Pick the most recently sent candidate.
               if (bestIdx === -1) return idx
               return (item.event.unixTime ?? 0) >

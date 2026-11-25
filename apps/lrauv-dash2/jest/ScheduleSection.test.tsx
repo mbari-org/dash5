@@ -2088,3 +2088,93 @@ test('pending row shows mission ID from getScript before vehicle telemetry arriv
   })
   expect(screen.queryByText('profile_station_vt')).not.toBeInTheDocument()
 })
+
+test('promotes pending in-flight sat send to running instead of injecting a synthetic row', async () => {
+  // The command was sent via satellite, is still in-flight (commsStatus 'sent'),
+  // and was held as 'pending' by enrichment. Without the fix, matchingMissionIndex
+  // skips pending items and a synthetic running row is injected alongside the
+  // pending row — two rows for the same mission.
+  const sentTime = Date.now() - 10 * 60 * 1000 // 10 min ago — within the 30 min window
+  const missionStartedTime = Date.now() - 5 * 60 * 1000 // 5 min ago
+
+  server.use(
+    rest.get('/events', (req, res, ctx) => {
+      // Single param-aware handler: branch on eventTypes so each query gets the
+      // right data. The comms query includes sbdSend; the history query does not.
+      const eventTypes = req.url.searchParams.get('eventTypes') ?? ''
+      const isNoteQuery = eventTypes === 'note'
+      const isCommsQuery = eventTypes.includes('sbdSend')
+      const runEvent = {
+        data: 'load Science/profile_station.tl;set profile_station.MissionTimeout 12 h;run',
+        unixTime: sentTime,
+        eventId: 101,
+        eventType: 'run',
+        text: null,
+        note: null,
+        user: 'operator',
+      }
+      const sbdSendEvent = {
+        eventId: 301,
+        eventType: 'sbdSend',
+        unixTime: sentTime,
+        state: 0,
+        mtmsn: 0,
+        dataLen: 0,
+        refId: 101,
+        index: 0,
+        component: '',
+        vehicleName: 'example',
+        isoTime: new Date(sentTime).toISOString(),
+        fix: { latitude: 0, longitude: 0 },
+        text: null,
+      }
+      return res(
+        ctx.status(200),
+        ctx.json({
+          result: isNoteQuery
+            ? []
+            : isCommsQuery
+            ? [runEvent, sbdSendEvent]
+            : [runEvent],
+        })
+      )
+    }),
+    rest.get('/events/mission-started', (_req, res, ctx) =>
+      res(
+        ctx.status(200),
+        ctx.json({
+          result: [
+            {
+              eventId: 201,
+              eventType: 'missionStarted',
+              vehicleName: 'example',
+              unixTime: missionStartedTime,
+              isoTime: new Date(missionStartedTime).toISOString(),
+              fix: { latitude: 0, longitude: 0 },
+              state: 1,
+              dataLen: 0,
+              refId: 0,
+              index: 0,
+              component: '',
+              text: 'Started mission profile_station',
+            },
+          ],
+        })
+      )
+    )
+  )
+
+  render(
+    <MockProviders queryClient={new QueryClient()}>
+      <ScheduleSection {...props} currentDeploymentId={1} />
+    </MockProviders>
+  )
+
+  // The original command row should be promoted to running — exactly one running row.
+  await waitFor(() => {
+    expect(screen.getByText(/Ended:\s*TBD/i)).toBeInTheDocument()
+  })
+
+  // Operator name should come from the original event, not "Unknown" from a synthetic row.
+  expect(screen.queryByText('Unknown')).not.toBeInTheDocument()
+})
